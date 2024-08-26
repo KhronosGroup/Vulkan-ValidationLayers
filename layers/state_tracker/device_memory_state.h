@@ -62,9 +62,9 @@ class DeviceMemory : public StateObject {
     void *p_driver_data;                   // Pointer to application's actual memory
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
-    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *allocate_info, uint64_t fake_address,
+    DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *allocate_info, u64 fake_address,
                  const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                 std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
+                 std::optional<DedicatedBinding> &&dedicated_binding, u32 physical_device_count);
 
     bool IsImport() const { return import_handle_type.has_value(); }
     bool IsImportAHB() const {
@@ -202,7 +202,7 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
 // Non sparse multi planar bindable memory tracker
 class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
   public:
-    BindableMultiplanarMemoryTracker(const VkMemoryRequirements *requirements, uint32_t num_planes);
+    BindableMultiplanarMemoryTracker(const VkMemoryRequirements *requirements, u32 num_planes);
 
     const MEM_BINDING *Binding() const override { return nullptr; }
 
@@ -318,9 +318,7 @@ class Bindable : public StateObject {
         return memory_tracker_->GetBoundRanges(ranges_bounds, ranges);
     }
 
-    BindableMemoryTracker::DeviceMemoryState GetBoundMemoryStates() const {
-        return memory_tracker_->GetBoundMemoryStates();
-    }
+    BindableMemoryTracker::DeviceMemoryState GetBoundMemoryStates() const { return memory_tracker_->GetBoundMemoryStates(); }
 
     // Kept for compatibility
     const MEM_BINDING *Binding() const { return memory_tracker_->Binding(); }
@@ -333,6 +331,7 @@ class Bindable : public StateObject {
     mutable BindableMemoryTracker::DeviceMemoryState cached_invalid_memory_;
 
     void SetMemoryTracker(BindableMemoryTracker *tracker) { memory_tracker_ = tracker; }
+
   public:
     // Tracks external memory types creating resource
     const VkExternalMemoryHandleTypeFlags external_memory_handle_types;

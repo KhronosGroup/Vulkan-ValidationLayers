@@ -17,6 +17,7 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
+#include "utils/numerical_types.h"
 
 namespace rt {
 
@@ -35,7 +36,7 @@ VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevi
                                               const VkAccelerationStructureBuildRangeInfoKHR *range_infos);
 
 inline const VkAccelerationStructureGeometryKHR &GetGeometry(const VkAccelerationStructureBuildGeometryInfoKHR &info,
-                                                             uint32_t geometry_i) {
+                                                             u32 geometry_i) {
     return info.pGeometries ? info.pGeometries[geometry_i] : *info.ppGeometries[geometry_i];
 }
 }  // namespace rt

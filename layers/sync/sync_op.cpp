@@ -196,10 +196,9 @@ using EventImageRangeGenerator = FilteredGeneratorGenerator<AccessContext::Scope
 
 SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                               VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                               const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                               const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                               const VkImageMemoryBarrier *pImageMemoryBarriers)
+                               VkDependencyFlags dependencyFlags, u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                               u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                               u32 imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers)
     : SyncOpBase(command), barriers_(1) {
     auto &barrier_set = barriers_[0];
     barrier_set.dependency_flags = dependencyFlags;
@@ -214,10 +213,10 @@ SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_stat
                                         imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
+SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, u32 event_count,
                                const VkDependencyInfoKHR *dep_infos)
     : SyncOpBase(command), barriers_(event_count) {
-    for (uint32_t i = 0; i < event_count; i++) {
+    for (u32 i = 0; i < event_count; i++) {
         const auto &dep_info = dep_infos[i];
         auto &barrier_set = barriers_[i];
         barrier_set.dependency_flags = dep_info.dependencyFlags;
@@ -236,9 +235,9 @@ SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_stat
 
 SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                              VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                             VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                                             const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                             const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                             VkDependencyFlags dependencyFlags, u32 memoryBarrierCount,
+                                             const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                                             const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
                                              const VkImageMemoryBarrier *pImageMemoryBarriers)
     : SyncOpBarriers(command, sync_state, queue_flags, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                      pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
@@ -380,10 +379,10 @@ bool SyncOpPipelineBarrier::ReplayValidate(ReplayState &replay, ResourceUsageTag
 }
 
 void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst,
-                                                    VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
+                                                    VkDependencyFlags dependency_flags, u32 memory_barrier_count,
                                                     const VkMemoryBarrier *barriers) {
-    memory_barriers.reserve(std::max<uint32_t>(1, memory_barrier_count));
-    for (uint32_t barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
+    memory_barriers.reserve(std::max<u32>(1, memory_barrier_count));
+    for (u32 barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
         const auto &barrier = barriers[barrier_index];
         SyncBarrier sync_barrier(barrier, src, dst);
         memory_barriers.emplace_back(sync_barrier);
@@ -397,9 +396,9 @@ void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, co
 
 void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src,
                                                           const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
-                                                          uint32_t barrier_count, const VkBufferMemoryBarrier *barriers) {
+                                                          u32 barrier_count, const VkBufferMemoryBarrier *barriers) {
     buffer_memory_barriers.reserve(barrier_count);
-    for (uint32_t index = 0; index < barrier_count; index++) {
+    for (u32 index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
         auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer);
         if (buffer) {
@@ -413,9 +412,9 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
 }
 
 void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                                    uint32_t memory_barrier_count, const VkMemoryBarrier2 *barriers) {
+                                                    u32 memory_barrier_count, const VkMemoryBarrier2 *barriers) {
     memory_barriers.reserve(memory_barrier_count);
-    for (uint32_t barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
+    for (u32 barrier_index = 0; barrier_index < memory_barrier_count; barrier_index++) {
         const auto &barrier = barriers[barrier_index];
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
@@ -426,10 +425,10 @@ void SyncOpBarriers::BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, Vk
 }
 
 void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                                          VkDependencyFlags dependencyFlags, uint32_t barrier_count,
+                                                          VkDependencyFlags dependencyFlags, u32 barrier_count,
                                                           const VkBufferMemoryBarrier2 *barriers) {
     buffer_memory_barriers.reserve(barrier_count);
-    for (uint32_t index = 0; index < barrier_count; index++) {
+    for (u32 index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
@@ -446,9 +445,9 @@ void SyncOpBarriers::BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &s
 
 void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src,
                                                          const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
-                                                         uint32_t barrier_count, const VkImageMemoryBarrier *barriers) {
+                                                         u32 barrier_count, const VkImageMemoryBarrier *barriers) {
     image_memory_barriers.reserve(barrier_count);
-    for (uint32_t index = 0; index < barrier_count; index++) {
+    for (u32 index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
         auto image = sync_state.Get<ImageState>(barrier.image);
         if (image) {
@@ -463,10 +462,10 @@ void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sy
 }
 
 void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                                         VkDependencyFlags dependencyFlags, uint32_t barrier_count,
+                                                         VkDependencyFlags dependencyFlags, u32 barrier_count,
                                                          const VkImageMemoryBarrier2 *barriers) {
     image_memory_barriers.reserve(barrier_count);
-    for (uint32_t index = 0; index < barrier_count; index++) {
+    for (u32 index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
@@ -482,11 +481,10 @@ void SyncOpBarriers::BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sy
     }
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                   uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
-                                   VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                                   const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, u32 eventCount,
+                                   const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                   u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
                                    const VkImageMemoryBarrier *pImageMemoryBarriers)
     : SyncOpBarriers(command, sync_state, queue_flags, srcStageMask, dstStageMask, VkDependencyFlags(0U), memoryBarrierCount,
                      pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
@@ -494,8 +492,8 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
     MakeEventsList(sync_state, eventCount, pEvents);
 }
 
-SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                   uint32_t eventCount, const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo)
+SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, u32 eventCount,
+                                   const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo)
     : SyncOpBarriers(command, sync_state, queue_flags, eventCount, pDependencyInfo) {
     MakeEventsList(sync_state, eventCount, pEvents);
     assert(events_.size() == barriers_.size());  // Just so nobody gets clever and decides to cull the event or barrier arrays
@@ -789,9 +787,9 @@ bool SyncOpWaitEvents::ReplayValidate(ReplayState &replay, ResourceUsageTag reco
     return DoValidate(replay.GetExecutionContext(), replay.GetBaseTag() + recorded_tag);
 }
 
-void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events) {
+void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, u32 event_count, const VkEvent *events) {
     events_.reserve(event_count);
-    for (uint32_t event_index = 0; event_index < event_count; event_index++) {
+    for (u32 event_index = 0; event_index < event_count; event_index++) {
         events_.emplace_back(sync_state.Get<vvl::Event>(events[event_index]));
     }
 }
@@ -1063,7 +1061,7 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     if (nullptr == rp_state_.get()) return skip;
     auto &rp_state = *rp_state_.get();
 
-    const uint32_t subpass = 0;
+    const u32 subpass = 0;
 
     // Construct the state we can use to validate against... (since validation is const and RecordCmdBeginRenderPass
     // hasn't happened yet)
@@ -1192,7 +1190,7 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag r
 void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {}
 
 ReplayState::ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
-                         const ErrorObject &error_obj, uint32_t index, ResourceUsageTag base_tag)
+                         const ErrorObject &error_obj, u32 index, ResourceUsageTag base_tag)
     : exec_context_(exec_context), recorded_context_(recorded_context), error_obj_(error_obj), index_(index), base_tag_(base_tag) {}
 
 void ReplayState::BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op) {

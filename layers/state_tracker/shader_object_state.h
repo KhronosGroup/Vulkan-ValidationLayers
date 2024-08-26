@@ -29,7 +29,7 @@ namespace vvl {
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
 struct ShaderObject : public StateObject {
     ShaderObject(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
-                 std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders);
+                 std::shared_ptr<spirv::Module> &spirv_module, u32 createInfoCount, VkShaderEXT *pShaders);
 
     const vku::safe_VkShaderCreateInfoEXT safe_create_info;
     const VkShaderCreateInfoEXT &create_info;
@@ -42,7 +42,7 @@ struct ShaderObject : public StateObject {
     // The values of existing entries in the samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
     const ActiveSlotMap active_slots;
-    const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
+    const u32 max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
     using SetLayoutVector = std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>;
     const SetLayoutVector set_layouts;

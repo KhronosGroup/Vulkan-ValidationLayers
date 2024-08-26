@@ -33,9 +33,8 @@
 
 bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
                                                  const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
-                                                 uint32_t primary_attachment, uint32_t secondary_attachment,
-                                                 const Location &caller_loc, const Location &attachment_loc,
-                                                 const char *vuid) const {
+                                                 u32 primary_attachment, u32 secondary_attachment, const Location &caller_loc,
+                                                 const Location &attachment_loc, const char *vuid) const {
     bool skip = false;
     const auto &primary_pass_ci = rp1_state.create_info;
     const auto &secondary_pass_ci = rp2_state.create_info;
@@ -112,9 +111,9 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
     const auto &secondary_desc = rp2_state.create_info.pSubpasses[subpass];
     const Location subpass_loc(Func::Empty, Field::pSubpasses, subpass);
 
-    uint32_t max_input_attachment_count = std::max(primary_desc.inputAttachmentCount, secondary_desc.inputAttachmentCount);
-    for (uint32_t i = 0; i < max_input_attachment_count; ++i) {
-        uint32_t primary_input_attach = VK_ATTACHMENT_UNUSED, secondary_input_attach = VK_ATTACHMENT_UNUSED;
+    u32 max_input_attachment_count = std::max(primary_desc.inputAttachmentCount, secondary_desc.inputAttachmentCount);
+    for (u32 i = 0; i < max_input_attachment_count; ++i) {
+        u32 primary_input_attach = VK_ATTACHMENT_UNUSED, secondary_input_attach = VK_ATTACHMENT_UNUSED;
         if (i < primary_desc.inputAttachmentCount) {
             primary_input_attach = primary_desc.pInputAttachments[i].attachment;
         }
@@ -125,9 +124,9 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
                                                 secondary_input_attach, loc,
                                                 subpass_loc.dot(Field::pInputAttachments, i).dot(Field::attachment), vuid);
     }
-    uint32_t max_color_attachment_count = std::max(primary_desc.colorAttachmentCount, secondary_desc.colorAttachmentCount);
-    for (uint32_t i = 0; i < max_color_attachment_count; ++i) {
-        uint32_t primary_color_attach = VK_ATTACHMENT_UNUSED, secondary_color_attach = VK_ATTACHMENT_UNUSED;
+    u32 max_color_attachment_count = std::max(primary_desc.colorAttachmentCount, secondary_desc.colorAttachmentCount);
+    for (u32 i = 0; i < max_color_attachment_count; ++i) {
+        u32 primary_color_attach = VK_ATTACHMENT_UNUSED, secondary_color_attach = VK_ATTACHMENT_UNUSED;
         if (i < primary_desc.colorAttachmentCount) {
             primary_color_attach = primary_desc.pColorAttachments[i].attachment;
         }
@@ -138,7 +137,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
                                                 secondary_color_attach, loc,
                                                 subpass_loc.dot(Field::pColorAttachments, i).dot(Field::attachment), vuid);
         if (rp1_state.create_info.subpassCount > 1) {
-            uint32_t primary_resolve_attach = VK_ATTACHMENT_UNUSED, secondary_resolve_attach = VK_ATTACHMENT_UNUSED;
+            u32 primary_resolve_attach = VK_ATTACHMENT_UNUSED, secondary_resolve_attach = VK_ATTACHMENT_UNUSED;
             if (i < primary_desc.colorAttachmentCount && primary_desc.pResolveAttachments) {
                 primary_resolve_attach = primary_desc.pResolveAttachments[i].attachment;
             }
@@ -150,7 +149,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
                                                     subpass_loc.dot(Field::pResolveAttachments, i).dot(Field::attachment), vuid);
         }
     }
-    uint32_t primary_depthstencil_attach = VK_ATTACHMENT_UNUSED, secondary_depthstencil_attach = VK_ATTACHMENT_UNUSED;
+    u32 primary_depthstencil_attach = VK_ATTACHMENT_UNUSED, secondary_depthstencil_attach = VK_ATTACHMENT_UNUSED;
     if (primary_desc.pDepthStencilAttachment) {
         primary_depthstencil_attach = primary_desc.pDepthStencilAttachment[0].attachment;
     }
@@ -240,7 +239,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
 
 bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
                                                  const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
-                                                 const uint32_t dependency, const Location &loc, const char *vuid) const {
+                                                 const u32 dependency, const Location &loc, const char *vuid) const {
     bool skip = false;
 
     const auto &primary_dep = rp1_state.create_info.pDependencies[dependency];
@@ -386,7 +385,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                          FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(),
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.subpassCount, rp2_state.create_info.subpassCount);
     } else {
-        for (uint32_t i = 0; i < rp1_state.create_info.subpassCount; ++i) {
+        for (u32 i = 0; i < rp1_state.create_info.subpassCount; ++i) {
             skip |= ValidateSubpassCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, i, loc, vuid);
         }
     }
@@ -400,7 +399,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.dependencyCount,
                          rp2_state.create_info.dependencyCount);
     } else {
-        for (uint32_t i = 0; i < rp1_state.create_info.dependencyCount; ++i) {
+        for (u32 i = 0; i < rp1_state.create_info.dependencyCount; ++i) {
             skip |= ValidateDependencyCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, i, loc, vuid);
         }
     }
@@ -413,7 +412,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                          FormatHandle(rp2_object).c_str(), rp1_state.create_info.correlatedViewMaskCount,
                          rp2_state.create_info.correlatedViewMaskCount);
     } else {
-        for (uint32_t i = 0; i < rp1_state.create_info.correlatedViewMaskCount; ++i) {
+        for (u32 i = 0; i < rp1_state.create_info.correlatedViewMaskCount; ++i) {
             if (rp1_state.create_info.pCorrelatedViewMasks[i] != rp2_state.create_info.pCorrelatedViewMasks[i]) {
                 const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
                 skip |= LogError(vuid, objlist, loc,
@@ -433,8 +432,8 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
 
     // Both renderpasses must agree on usage of a Fragment Density Map type
     if (fdm1 && fdm2) {
-        uint32_t primary_input_attach = fdm1->fragmentDensityMapAttachment.attachment;
-        uint32_t secondary_input_attach = fdm2->fragmentDensityMapAttachment.attachment;
+        u32 primary_input_attach = fdm1->fragmentDensityMapAttachment.attachment;
+        u32 secondary_input_attach = fdm2->fragmentDensityMapAttachment.attachment;
         Location fdm_loc(Func::Empty, Struct::VkRenderPassFragmentDensityMapCreateInfoEXT);
         skip |= ValidateAttachmentCompatibility(rp1_object, rp1_state, rp2_object, rp2_state, primary_input_attach,
                                                 secondary_input_attach, loc, fdm_loc.dot(Field::attachment), vuid);
@@ -491,12 +490,13 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
 
     skip |= ValidateCmd(cb_state, error_obj.location);
 
-    uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
+    u32 clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
 
     // Handle extension struct from EXT_sample_locations
-    const auto *sample_locations_begin_info = vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
+    const auto *sample_locations_begin_info =
+        vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
     if (sample_locations_begin_info) {
-        for (uint32_t i = 0; i < sample_locations_begin_info->attachmentInitialSampleLocationsCount; ++i) {
+        for (u32 i = 0; i < sample_locations_begin_info->attachmentInitialSampleLocationsCount; ++i) {
             const Location sampler_loc =
                 rp_begin_loc.pNext(Struct::VkRenderPassSampleLocationsBeginInfoEXT, Field::pAttachmentInitialSampleLocations, i);
             const VkAttachmentSampleLocationsEXT &sample_location =
@@ -511,7 +511,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
             }
         }
 
-        for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
+        for (u32 i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
             const Location sampler_loc =
                 rp_begin_loc.pNext(Struct::VkRenderPassSampleLocationsBeginInfoEXT, Field::pPostSubpassSampleLocations, i);
             const VkSubpassSampleLocationsEXT &sample_location = sample_locations_begin_info->pPostSubpassSampleLocations[i];
@@ -526,11 +526,11 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
         }
     }
 
-    for (uint32_t i = 0; i < rp_state->create_info.attachmentCount; ++i) {
+    for (u32 i = 0; i < rp_state->create_info.attachmentCount; ++i) {
         auto attachment = &rp_state->create_info.pAttachments[i];
         if (FormatSpecificLoadAndStoreOpSettings(attachment->format, attachment->loadOp, attachment->stencilLoadOp,
                                                  VK_ATTACHMENT_LOAD_OP_CLEAR)) {
-            clear_op_size = static_cast<uint32_t>(i) + 1;
+            clear_op_size = static_cast<u32>(i) + 1;
 
             if (vkuFormatHasDepth(attachment->format) && pRenderPassBegin->pClearValues) {
                 skip |= ValidateClearDepthStencilValue(commandBuffer, pRenderPassBegin->pClearValues[i].depthStencil,
@@ -679,7 +679,8 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
     }
 
     if (pSubpassEndInfo && pSubpassEndInfo->pNext) {
-        const auto *fdm_offset_info = vku::FindStructInPNextChain<VkSubpassFragmentDensityMapOffsetEndInfoQCOM>(pSubpassEndInfo->pNext);
+        const auto *fdm_offset_info =
+            vku::FindStructInPNextChain<VkSubpassFragmentDensityMapOffsetEndInfoQCOM>(pSubpassEndInfo->pNext);
         if (fdm_offset_info && fdm_offset_info->fragmentDensityOffsetCount != 0) {
             if ((!enabled_features.fragmentDensityMapOffset) || (!enabled_features.fragmentDensityMap)) {
                 const LogObjectList objlist(commandBuffer, rp_state.Handle());
@@ -691,13 +692,13 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
             }
 
             bool fdm_non_zero_offsets = false;
-            for (uint32_t k = 0; k < fdm_offset_info->fragmentDensityOffsetCount; k++) {
+            for (u32 k = 0; k < fdm_offset_info->fragmentDensityOffsetCount; k++) {
                 if ((fdm_offset_info->pFragmentDensityOffsets[k].x != 0) || (fdm_offset_info->pFragmentDensityOffsets[k].y != 0)) {
                     const Location offset_loc = error_obj.location.pNext(Struct::VkSubpassFragmentDensityMapOffsetEndInfoQCOM,
                                                                          Field::pFragmentDensityOffsets, k);
                     fdm_non_zero_offsets = true;
-                    uint32_t width = phys_dev_ext_props.fragment_density_map_offset_props.fragmentDensityOffsetGranularity.width;
-                    uint32_t height = phys_dev_ext_props.fragment_density_map_offset_props.fragmentDensityOffsetGranularity.height;
+                    u32 width = phys_dev_ext_props.fragment_density_map_offset_props.fragmentDensityOffsetGranularity.width;
+                    u32 height = phys_dev_ext_props.fragment_density_map_offset_props.fragmentDensityOffsetGranularity.height;
 
                     if (SafeModulo(fdm_offset_info->pFragmentDensityOffsets[k].x, width) != 0) {
                         const LogObjectList objlist(commandBuffer, rp_state.Handle());
@@ -718,7 +719,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
             }
 
             const VkImageView *image_views = cb_state.activeFramebuffer.get()->create_info.pAttachments;
-            for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
+            for (u32 i = 0; i < rpci->attachmentCount; ++i) {
                 const auto view_state = Get<vvl::ImageView>(image_views[i]);
                 ASSERT_AND_CONTINUE(view_state);
                 const auto &ici = view_state->image_state->create_info;
@@ -786,7 +787,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                 }
 
                 // input attachments
-                for (uint32_t k = 0; k < subpass.inputAttachmentCount; k++) {
+                for (u32 k = 0; k < subpass.inputAttachmentCount; k++) {
                     const auto attachment = subpass.pInputAttachments[k].attachment;
                     if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) &&
                         ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
@@ -802,7 +803,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                 }
 
                 // color attachments
-                for (uint32_t k = 0; k < subpass.colorAttachmentCount; k++) {
+                for (u32 k = 0; k < subpass.colorAttachmentCount; k++) {
                     const auto attachment = subpass.pColorAttachments[k].attachment;
                     if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) &&
                         ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
@@ -819,7 +820,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
 
                 // Resolve attachments
                 if (subpass.pResolveAttachments != nullptr) {
-                    for (uint32_t k = 0; k < subpass.colorAttachmentCount; k++) {
+                    for (u32 k = 0; k < subpass.colorAttachmentCount; k++) {
                         const auto attachment = subpass.pResolveAttachments[k].attachment;
                         if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) &&
                             ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
@@ -836,7 +837,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
                 }
 
                 // Preserve attachments
-                for (uint32_t k = 0; k < subpass.preserveAttachmentCount; k++) {
+                for (u32 k = 0; k < subpass.preserveAttachmentCount; k++) {
                     const auto attachment = subpass.pPreserveAttachments[k];
                     if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) &&
                         ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
@@ -914,7 +915,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
 
     const auto *device_group_render_pass_begin_info =
         vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(begin_info.pNext);
-    const uint32_t device_group_area_count =
+    const u32 device_group_area_count =
         device_group_render_pass_begin_info ? device_group_render_pass_begin_info->deviceRenderAreaCount : 0;
 
     auto framebuffer_state = Get<vvl::Framebuffer>(begin_info.framebuffer);
@@ -922,7 +923,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
     const auto *framebuffer_info = &framebuffer_state->create_info;
     // These VUs depend on count being non-zero, or else acts like struct is not there
     if (device_group_area_count > 0) {
-        for (uint32_t i = 0; i < device_group_area_count; ++i) {
+        for (u32 i = 0; i < device_group_area_count; ++i) {
             const Location render_area_loc =
                 begin_info_loc.pNext(Struct::VkDeviceGroupRenderPassBeginInfo, Field::pDeviceRenderAreas, i);
             const auto &deviceRenderArea = device_group_render_pass_begin_info->pDeviceRenderAreas[i];
@@ -965,8 +966,8 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
         }
 
         const auto x_adjusted_extent =
-            static_cast<int64_t>(begin_info.renderArea.offset.x) + static_cast<int64_t>(begin_info.renderArea.extent.width);
-        if (x_adjusted_extent > static_cast<int64_t>(framebuffer_info->width)) {
+            static_cast<i64>(begin_info.renderArea.offset.x) + static_cast<i64>(begin_info.renderArea.extent.width);
+        if (x_adjusted_extent > static_cast<i64>(framebuffer_info->width)) {
             const LogObjectList objlist(begin_info.renderPass, framebuffer_state->Handle());
             skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02852", objlist, render_area_loc,
                              "offset.x (%" PRId32 ") + extent.width (%" PRId32 ") is greater than framebuffer width (%" PRId32 ").",
@@ -974,8 +975,8 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
         }
 
         const auto y_adjusted_extent =
-            static_cast<int64_t>(begin_info.renderArea.offset.y) + static_cast<int64_t>(begin_info.renderArea.extent.height);
-        if (y_adjusted_extent > static_cast<int64_t>(framebuffer_info->height)) {
+            static_cast<i64>(begin_info.renderArea.offset.y) + static_cast<i64>(begin_info.renderArea.extent.height);
+        if (y_adjusted_extent > static_cast<i64>(framebuffer_info->height)) {
             const LogObjectList objlist(begin_info.renderPass, framebuffer_state->Handle());
             skip |=
                 LogError("VUID-VkRenderPassBeginInfo-pNext-02853", objlist, render_area_loc,
@@ -1028,7 +1029,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
     auto render_pass_state = Get<vvl::RenderPass>(begin_info.renderPass);
     ASSERT_AND_RETURN_SKIP(render_pass_state);
     const auto *render_pass_create_info = &render_pass_state->create_info;
-    for (uint32_t i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
+    for (u32 i = 0; i < render_pass_attachment_begin_info->attachmentCount; ++i) {
         const Location attachment_loc = begin_info_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo, Field::pAttachments, i);
         auto image_view_state = Get<vvl::ImageView>(render_pass_attachment_begin_info->pAttachments[i]);
         ASSERT_AND_CONTINUE(image_view_state);
@@ -1089,9 +1090,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                              framebuffer_attachment_image_info->height);
         }
 
-        const uint32_t layerCount = image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
-                                        ? image_view_state->create_info.subresourceRange.layerCount
-                                        : image_create_info->extent.depth;
+        const u32 layerCount = image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
+                                   ? image_view_state->create_info.subresourceRange.layerCount
+                                   : image_create_info->extent.depth;
         if (framebuffer_attachment_image_info->layerCount != layerCount) {
             skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-03213", objlist, attachment_loc,
                              "has a subresource range with a layerCount of %" PRIu32
@@ -1110,9 +1111,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                              image_format_list_create_info->viewFormatCount, i, framebuffer_attachment_image_info->viewFormatCount);
             }
 
-            for (uint32_t j = 0; j < image_format_list_create_info->viewFormatCount; ++j) {
+            for (u32 j = 0; j < image_format_list_create_info->viewFormatCount; ++j) {
                 bool format_found = false;
-                for (uint32_t k = 0; k < framebuffer_attachment_image_info->viewFormatCount; ++k) {
+                for (u32 k = 0; k < framebuffer_attachment_image_info->viewFormatCount; ++k) {
                     if (image_format_list_create_info->pViewFormats[j] == framebuffer_attachment_image_info->pViewFormats[k]) {
                         format_found = true;
                     }
@@ -1135,7 +1136,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                              string_VkFormat(render_pass_create_info->pAttachments[i].format));
         } else if (image_view_create_info->format == VK_FORMAT_UNDEFINED) {
             // both have external foramts
-            const uint64_t attachment_external_format = GetExternalFormat(render_pass_create_info->pAttachments[i].pNext);
+            const u64 attachment_external_format = GetExternalFormat(render_pass_create_info->pAttachments[i].pNext);
             if (image_view_state->image_state->ahb_format != attachment_external_format) {
                 skip |= LogError("VUID-VkRenderPassBeginInfo-framebuffer-09354", objlist, attachment_loc,
                                  "externalFormat is %" PRIu64 ", but the VkRenderPass was created with a pAttachments[%" PRIu32
@@ -1189,9 +1190,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
             if (!subpass->pResolveAttachments || !subpass->pColorAttachments) {
                 continue;
             }
-            const uint32_t resolve_attachment = subpass->pResolveAttachments[0].attachment;
-            const uint32_t color_attachment = subpass->pColorAttachments[0].attachment;
-            const uint64_t attachment_external_format =
+            const u32 resolve_attachment = subpass->pResolveAttachments[0].attachment;
+            const u32 color_attachment = subpass->pColorAttachments[0].attachment;
+            const u64 attachment_external_format =
                 GetExternalFormat(render_pass_create_info->pAttachments[resolve_attachment].pNext);
             auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
             if (it != ahb_ext_resolve_formats_map.end()) {
@@ -1212,7 +1213,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
     return skip;
 }
 
-bool CoreChecks::ValidateAttachmentIndex(uint32_t attachment, uint32_t attachment_count, const Location &loc) const {
+bool CoreChecks::ValidateAttachmentIndex(u32 attachment, u32 attachment_count, const Location &loc) const {
     bool skip = false;
     const bool use_rp2 = loc.function != Func::vkCreateRenderPass;
     assert(attachment != VK_ATTACHMENT_UNUSED);
@@ -1234,7 +1235,7 @@ enum AttachmentType {
     ATTACHMENT_RESOLVE = 16,
 };
 
-char const *StringAttachmentType(uint8_t type) {
+char const *StringAttachmentType(u8 type) {
     switch (type) {
         case ATTACHMENT_COLOR:
             return "color";
@@ -1251,8 +1252,8 @@ char const *StringAttachmentType(uint8_t type) {
     }
 }
 
-bool CoreChecks::AddAttachmentUse(std::vector<uint8_t> &attachment_uses, std::vector<VkImageLayout> &attachment_layouts,
-                                  uint32_t attachment, uint8_t new_use, VkImageLayout new_layout, const Location loc) const {
+bool CoreChecks::AddAttachmentUse(std::vector<u8> &attachment_uses, std::vector<VkImageLayout> &attachment_layouts, u32 attachment,
+                                  u8 new_use, VkImageLayout new_layout, const Location loc) const {
     if (attachment >= attachment_uses.size()) return false; /* out of range, but already reported */
 
     bool skip = false;
@@ -1297,7 +1298,8 @@ bool CoreChecks::ValidateAttachmentReference(VkAttachmentReference2 reference, c
     assert(reference.attachment != VK_ATTACHMENT_UNUSED);
 
     // currently VkAttachmentReference and VkAttachmentReference2 have no overlapping VUs
-    const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(reference.pNext);
+    const auto *attachment_reference_stencil_layout =
+        vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(reference.pNext);
     switch (reference.layout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
         case VK_IMAGE_LAYOUT_PREINITIALIZED:
@@ -1383,16 +1385,18 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
     // Track when we're observing the first use of an attachment
     std::vector<bool> attach_first_use(pCreateInfo->attachmentCount, true);
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->subpassCount; ++i) {
         const Location subpass_loc = create_info_loc.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
-        const auto ms_render_to_single_sample = vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass.pNext);
-        const auto subpass_depth_stencil_resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
-        std::vector<uint8_t> attachment_uses(pCreateInfo->attachmentCount);
+        const auto ms_render_to_single_sample =
+            vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass.pNext);
+        const auto subpass_depth_stencil_resolve =
+            vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
+        std::vector<u8> attachment_uses(pCreateInfo->attachmentCount);
         std::vector<VkImageLayout> attachment_layouts(pCreateInfo->attachmentCount);
 
         // Track if attachments are used as input as well as another type
-        vvl::unordered_set<uint32_t> input_attachments;
+        vvl::unordered_set<u32> input_attachments;
 
         if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS &&
             subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
@@ -1405,9 +1409,9 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
         // Check input attachments first
         // - so we can detect first-use-as-input for VU #00349
         // - if other color or depth/stencil is also input, it limits valid layouts
-        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+        for (u32 j = 0; j < subpass.inputAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pInputAttachments[j];
-            const uint32_t attachment_index = attachment_ref.attachment;
+            const u32 attachment_index = attachment_ref.attachment;
             if (attachment_index == VK_ATTACHMENT_UNUSED) {
                 continue;
             }
@@ -1487,7 +1491,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     const bool used_as_depth = (subpass.pDepthStencilAttachment != NULL &&
                                                 subpass.pDepthStencilAttachment->attachment == attachment_index);
                     bool used_as_color = false;
-                    for (uint32_t k = 0; !used_as_depth && !used_as_color && k < subpass.colorAttachmentCount; ++k) {
+                    for (u32 k = 0; !used_as_depth && !used_as_color && k < subpass.colorAttachmentCount; ++k) {
                         used_as_color = (subpass.pColorAttachments[k].attachment == attachment_index);
                     }
                     if (!used_as_depth && !used_as_color && attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -1544,9 +1548,9 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
             }
         }
 
-        for (uint32_t j = 0; j < subpass.preserveAttachmentCount; ++j) {
+        for (u32 j = 0; j < subpass.preserveAttachmentCount; ++j) {
             const Location preserve_loc = subpass_loc.dot(Field::preserveAttachmentCount, j);
-            uint32_t attachment = subpass.pPreserveAttachments[j];
+            u32 attachment = subpass.pPreserveAttachments[j];
             if (attachment == VK_ATTACHMENT_UNUSED) {
                 const char *vuid =
                     use_rp2 ? "VUID-VkSubpassDescription2-attachment-03073" : "VUID-VkSubpassDescription-attachment-00853";
@@ -1559,7 +1563,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 }
 
                 if (fragment_density_map_info) {
-                    const uint32_t fdm_attachment_index = fragment_density_map_info->fragmentDensityMapAttachment.attachment;
+                    const u32 fdm_attachment_index = fragment_density_map_info->fragmentDensityMapAttachment.attachment;
                     if ((fdm_attachment_index != VK_ATTACHMENT_UNUSED) && (attachment == fdm_attachment_index)) {
                         skip |= LogError("VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02548",
                                          device, preserve_loc,
@@ -1572,7 +1576,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
         bool subpass_performs_resolve = false;
 
-        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+        for (u32 j = 0; j < subpass.colorAttachmentCount; ++j) {
             if (!subpass.pResolveAttachments) {
                 continue;
             }
@@ -1674,7 +1678,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
         }
 
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            const uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
+            const u32 attachment = subpass.pDepthStencilAttachment->attachment;
             const VkImageLayout image_layout = subpass.pDepthStencilAttachment->layout;
             const Location ds_loc = subpass_loc.dot(Field::pDepthStencilAttachment);
             const Location attachment_loc = create_info_loc.dot(Field::pAttachments, attachment);
@@ -1830,7 +1834,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 }
 
                 if (IsImageLayoutDepthOnly(subpass.pDepthStencilAttachment->layout)) {
-                    if (vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext) == nullptr) {
+                    if (vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(subpass.pDepthStencilAttachment->pNext) ==
+                        nullptr) {
                         if (vkuFormatIsDepthAndStencil(attachment_format)) {
                             skip |=
                                 LogError("VUID-VkRenderPassCreateInfo2-attachment-06244", device, attachment_loc.dot(Field::format),
@@ -1855,10 +1860,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
             }
         }
 
-        uint32_t last_sample_count_attachment = VK_ATTACHMENT_UNUSED;
-        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+        u32 last_sample_count_attachment = VK_ATTACHMENT_UNUSED;
+        for (u32 j = 0; j < subpass.colorAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pColorAttachments[j];
-            const uint32_t attachment_index = attachment_ref.attachment;
+            const u32 attachment_index = attachment_ref.attachment;
             const Location color_loc = subpass_loc.dot(Field::pColorAttachments, j);
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 const Location attachment_loc = create_info_loc.dot(Field::pAttachments, attachment_index);
@@ -1913,9 +1918,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                                              attachment_ref.layout, color_loc);
 
                     VkSampleCountFlagBits current_sample_count = attachment_description.samples;
-                    if (use_rp2 &&
-                        enabled_features.multisampledRenderToSingleSampled &&
-                        ms_render_to_single_sample && ms_render_to_single_sample->multisampledRenderToSingleSampledEnable) {
+                    if (use_rp2 && enabled_features.multisampledRenderToSingleSampled && ms_render_to_single_sample &&
+                        ms_render_to_single_sample->multisampledRenderToSingleSampledEnable) {
                         if (current_sample_count != VK_SAMPLE_COUNT_1_BIT &&
                             current_sample_count != ms_render_to_single_sample->rasterizationSamples) {
                             skip |= LogError("VUID-VkSubpassDescription2-pNext-06870", device,
@@ -2021,7 +2025,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
             if (subpass_performs_resolve && subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED &&
                 subpass.pResolveAttachments[j].attachment < pCreateInfo->attachmentCount) {
                 auto const &resolve_attachment_ref = subpass.pResolveAttachments[j];
-                const uint32_t resolve_attachment_index = resolve_attachment_ref.attachment;
+                const u32 resolve_attachment_index = resolve_attachment_ref.attachment;
                 const auto &resolve_desc = pCreateInfo->pAttachments[resolve_attachment_index];
                 const Location &resolve_loc = subpass_loc.dot(Field::pResolveAttachments, j);
                 if (enabled_features.externalFormatResolve && resolve_desc.format == VK_FORMAT_UNDEFINED) {
@@ -2072,8 +2076,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                             resolve_attachment_index, resolve_attachment_index, subpass.viewMask);
                     }
 
-                    for (uint32_t k = 0; k < subpass.inputAttachmentCount; ++k) {
-                        const uint32_t input_attachment_index = subpass.pInputAttachments[k].attachment;
+                    for (u32 k = 0; k < subpass.inputAttachmentCount; ++k) {
+                        const u32 input_attachment_index = subpass.pInputAttachments[k].attachment;
                         if (input_attachment_index == VK_ATTACHMENT_UNUSED) {
                             continue;
                         }
@@ -2157,7 +2161,7 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInf
     const char *vuid;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
 
-    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const Location dependencies_loc = error_obj.location.dot(Field::pDependencies, i);
         const VkSubpassDependency2 &dependency = pCreateInfo->pDependencies[i];
 
@@ -2256,7 +2260,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
     bool view_mask_zero = false;
     bool view_mask_non_zero = false;
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->subpassCount; ++i) {
         const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         if (subpass.viewMask != 0) {
@@ -2266,7 +2270,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
                                  "is %" PRIu32 ", but multiview feature is not enabled.", subpass.viewMask);
             }
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
-            if (highest_view_bit > 0 && static_cast<uint32_t>(highest_view_bit) >= phys_dev_props_core11.maxMultiviewViewCount) {
+            if (highest_view_bit > 0 && static_cast<u32>(highest_view_bit) >= phys_dev_props_core11.maxMultiviewViewCount) {
                 skip |= LogError("VUID-VkSubpassDescription2-viewMask-06706", device, subpass_loc,
                                  "highest bit (%" PRIu32
                                  ") is not less than VkPhysicalDeviceMultiviewProperties::maxMultiviewViewCount (%" PRIu32 ").",
@@ -2299,8 +2303,8 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
                              "Multiview is not enabled but correlation masks are still provided");
         }
     }
-    uint32_t aggregated_cvms = 0;
-    for (uint32_t i = 0; i < pCreateInfo->correlatedViewMaskCount; ++i) {
+    u32 aggregated_cvms = 0;
+    for (u32 i = 0; i < pCreateInfo->correlatedViewMaskCount; ++i) {
         if (aggregated_cvms & pCreateInfo->pCorrelatedViewMasks[i]) {
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056"
                            : "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841";
@@ -2310,7 +2314,8 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
         aggregated_cvms |= pCreateInfo->pCorrelatedViewMasks[i];
     }
 
-    const auto *fragment_density_map_info = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
+    const auto *fragment_density_map_info =
+        vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
     if (fragment_density_map_info) {
         if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
             const Location fragment_loc =
@@ -2360,7 +2365,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
 
     auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
     auto structure = use_rp2 ? Struct::VkSubpassDependency2 : Struct::VkSubpassDependency;
-    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         Location loc(func_name, structure, Field::pDependencies, i);
         skip |= ValidateSubpassDependency(error_obj, loc, dependency);
@@ -2374,7 +2379,8 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
-    const VkRenderPassMultiviewCreateInfo *multiview_info = vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
+    const VkRenderPassMultiviewCreateInfo *multiview_info =
+        vku::FindStructInPNextChain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
     if (multiview_info) {
         if (multiview_info->subpassCount && multiview_info->subpassCount != pCreateInfo->subpassCount) {
             skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-01928", device, error_obj.location,
@@ -2387,7 +2393,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         }
         bool all_zero = true;
         bool all_not_zero = true;
-        for (uint32_t i = 0; i < multiview_info->subpassCount; ++i) {
+        for (u32 i = 0; i < multiview_info->subpassCount; ++i) {
             if (!enabled_features.multiview && multiview_info->pViewMasks[i] != 0) {
                 skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-multiview-06555", device, error_obj.location,
                                  "multiview feature is not enabled, but "
@@ -2397,7 +2403,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             all_zero &= multiview_info->pViewMasks[i] == 0;
             all_not_zero &= multiview_info->pViewMasks[i] != 0;
             if (MostSignificantBit(multiview_info->pViewMasks[i]) >=
-                static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+                static_cast<i32>(phys_dev_props_core11.maxMultiviewViewCount)) {
                 skip |= LogError("VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", device, error_obj.location,
                                  "Most significant bit in "
                                  "VkRenderPassMultiviewCreateInfo->pViewMask[%" PRIu32 "] (%" PRIu32
@@ -2414,7 +2420,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                              "VkRenderPassCreateInfo::correlationMaskCount is %" PRIu32 ", but all elements of pViewMasks are 0.",
                              multiview_info->correlationMaskCount);
         }
-        for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+        for (u32 i = 0; i < pCreateInfo->dependencyCount; ++i) {
             if ((pCreateInfo->pDependencies[i].dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0) {
                 if (i < multiview_info->dependencyCount && multiview_info->pViewOffsets[i] != 0) {
                     skip |= LogError("VUID-VkRenderPassCreateInfo-pNext-02512", device,
@@ -2433,9 +2439,9 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     const VkRenderPassInputAttachmentAspectCreateInfo *input_attachment_aspect_info =
         vku::FindStructInPNextChain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
     if (input_attachment_aspect_info) {
-        for (uint32_t i = 0; i < input_attachment_aspect_info->aspectReferenceCount; ++i) {
-            uint32_t subpass = input_attachment_aspect_info->pAspectReferences[i].subpass;
-            uint32_t attachment = input_attachment_aspect_info->pAspectReferences[i].inputAttachmentIndex;
+        for (u32 i = 0; i < input_attachment_aspect_info->aspectReferenceCount; ++i) {
+            u32 subpass = input_attachment_aspect_info->pAspectReferences[i].subpass;
+            u32 attachment = input_attachment_aspect_info->pAspectReferences[i].inputAttachmentIndex;
             if (subpass >= pCreateInfo->subpassCount) {
                 skip |= LogError(
                     "VUID-VkRenderPassCreateInfo-pNext-01926", device,
@@ -2470,7 +2476,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
 
     // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->subpassCount; i++) {
         const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
         const auto *resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
@@ -2496,8 +2502,8 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
             continue;
         }
 
-        const uint32_t ds_attachment = subpass.pDepthStencilAttachment->attachment;
-        const uint32_t resolve_attachment = resolve->pDepthStencilResolveAttachment->attachment;
+        const u32 ds_attachment = subpass.pDepthStencilAttachment->attachment;
+        const u32 resolve_attachment = resolve->pDepthStencilResolveAttachment->attachment;
 
         // ValidateAttachmentIndex() should catch if this is invalid, but skip to avoid crashing
         if (ds_attachment >= pCreateInfo->attachmentCount) {
@@ -2592,8 +2598,8 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
                              ds_resolve_loc, "is not NULL, but both depth and stencil resolve modes are VK_RESOLVE_MODE_NONE.");
         }
 
-        const uint32_t resolve_depth_size = vkuFormatDepthSize(resolve_attachment_format);
-        const uint32_t resolve_stencil_size = vkuFormatStencilSize(resolve_attachment_format);
+        const u32 resolve_depth_size = vkuFormatDepthSize(resolve_attachment_format);
+        const u32 resolve_stencil_size = vkuFormatStencilSize(resolve_attachment_format);
 
         if (resolve_depth_size > 0 &&
             ((vkuFormatDepthSize(ds_attachment_format) != resolve_depth_size) ||
@@ -2671,11 +2677,11 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
         return false;
     }
 
-    for (uint32_t attachment_description = 0; attachment_description < pCreateInfo->attachmentCount; ++attachment_description) {
-        std::vector<uint32_t> used_as_fragment_shading_rate_attachment;
+    for (u32 attachment_description = 0; attachment_description < pCreateInfo->attachmentCount; ++attachment_description) {
+        std::vector<u32> used_as_fragment_shading_rate_attachment;
 
         // Prepass to find any use as a fragment shading rate attachment structures and validate them independently
-        for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+        for (u32 subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
             const auto *fragment_shading_rate_attachment =
                 vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(pCreateInfo->pSubpasses[subpass].pNext);
             if (!fragment_shading_rate_attachment || !fragment_shading_rate_attachment->pFragmentShadingRateAttachment) {
@@ -2766,8 +2772,8 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                                  "(%" PRIu32 ") is higher than the advertised maximum height %" PRIu32 ".", texel_size.height,
                                  phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height);
                 }
-                uint32_t aspect_ratio = texel_size.width / texel_size.height;
-                uint32_t inverse_aspect_ratio = texel_size.height / texel_size.width;
+                u32 aspect_ratio = texel_size.width / texel_size.height;
+                u32 inverse_aspect_ratio = texel_size.height / texel_size.width;
                 if (aspect_ratio >
                     phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio) {
                     skip |= LogError(
@@ -2790,7 +2796,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
         }
 
         // Lambda function turning a vector of integers into a string
-        auto vector_to_string = [&](std::vector<uint32_t> vector) {
+        auto vector_to_string = [&](std::vector<u32> vector) {
             std::stringstream ss;
             size_t size = vector.size();
             for (size_t i = 0; i < used_as_fragment_shading_rate_attachment.size(); i++) {
@@ -2808,13 +2814,13 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
 
         // Search for other uses of the same attachment
         if (!used_as_fragment_shading_rate_attachment.empty()) {
-            for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+            for (u32 subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
                 const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, subpass);
                 const VkSubpassDescription2 &subpass_info = pCreateInfo->pSubpasses[subpass];
 
                 std::string fsr_attachment_subpasses_string = vector_to_string(used_as_fragment_shading_rate_attachment);
 
-                for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
+                for (u32 attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
                     if (subpass_info.pColorAttachments[attachment].attachment == attachment_description) {
                         skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
                                          subpass_loc.dot(Field::pColorAttachments, attachment).dot(Field::attachment),
@@ -2823,7 +2829,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                                          attachment_description, fsr_attachment_subpasses_string.c_str());
                     }
                 }
-                for (uint32_t attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
+                for (u32 attachment = 0; attachment < subpass_info.colorAttachmentCount; ++attachment) {
                     if (subpass_info.pResolveAttachments &&
                         subpass_info.pResolveAttachments[attachment].attachment == attachment_description) {
                         skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
@@ -2833,7 +2839,7 @@ bool CoreChecks::ValidateFragmentShadingRateAttachments(const VkRenderPassCreate
                                          attachment_description, fsr_attachment_subpasses_string.c_str());
                     }
                 }
-                for (uint32_t attachment = 0; attachment < subpass_info.inputAttachmentCount; ++attachment) {
+                for (u32 attachment = 0; attachment < subpass_info.inputAttachmentCount; ++attachment) {
                     if (subpass_info.pInputAttachments[attachment].attachment == attachment_description) {
                         skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-04585", device,
                                          subpass_loc.dot(Field::pInputAttachments, attachment).dot(Field::attachment),
@@ -2884,11 +2890,11 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const vvl
 
     // Upcasting to handle overflow
     const bool x_extent_valid =
-        static_cast<int64_t>(image_view->image_state->create_info.extent.width) >=
-        static_cast<int64_t>(pRenderingInfo->renderArea.offset.x) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.width);
+        static_cast<i64>(image_view->image_state->create_info.extent.width) >=
+        static_cast<i64>(pRenderingInfo->renderArea.offset.x) + static_cast<i64>(pRenderingInfo->renderArea.extent.width);
     const bool y_extent_valid =
-        static_cast<int64_t>(image_view->image_state->create_info.extent.height) >=
-        static_cast<int64_t>(pRenderingInfo->renderArea.offset.y) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.height);
+        static_cast<i64>(image_view->image_state->create_info.extent.height) >=
+        static_cast<i64>(pRenderingInfo->renderArea.offset.y) + static_cast<i64>(pRenderingInfo->renderArea.extent.height);
 
     auto device_group_render_pass_begin_info = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
@@ -3074,7 +3080,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
     }
 
     if (!enabled_features.fragmentDensityMapNonSubsampledImages) {
-        for (uint32_t j = 0; j < rendering_info.colorAttachmentCount; ++j) {
+        for (u32 j = 0; j < rendering_info.colorAttachmentCount; ++j) {
             if (rendering_info.pColorAttachments[j].imageView != VK_NULL_HANDLE) {
                 auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[j].imageView);
                 if (image_view_state && !(image_view_state->image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
@@ -3125,7 +3131,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
                              "internal image was created with flags %s.",
                              string_VkImageCreateFlags(fragment_density_map_view_state->image_state->create_info.flags).c_str());
         }
-        int32_t layer_count = static_cast<int32_t>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
+        i32 layer_count = static_cast<i32>(fragment_density_map_view_state->normalized_subresource_range.layerCount);
         if (layer_count != 1 && !enabled_features.multiview) {
             const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
             skip |= LogError("VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-apiVersion-07908", objlist, view_loc,
@@ -3164,10 +3170,10 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
     if (!non_zero_device_render_area) {
         if (fragment_density_map_attachment_info && fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE) {
             // Upcasting to handle overflow
-            const int64_t x_adjusted_extent = static_cast<int64_t>(rendering_info.renderArea.offset.x) +
-                                              static_cast<int64_t>(rendering_info.renderArea.extent.width);
-            const int64_t y_adjusted_extent = static_cast<int64_t>(rendering_info.renderArea.offset.y) +
-                                              static_cast<int64_t>(rendering_info.renderArea.extent.height);
+            const i64 x_adjusted_extent =
+                static_cast<i64>(rendering_info.renderArea.offset.x) + static_cast<i64>(rendering_info.renderArea.extent.width);
+            const i64 y_adjusted_extent =
+                static_cast<i64>(rendering_info.renderArea.offset.y) + static_cast<i64>(rendering_info.renderArea.extent.height);
 
             auto view_state = Get<vvl::ImageView>(fragment_density_map_attachment_info->imageView);
             ASSERT_AND_RETURN_SKIP(view_state);
@@ -3176,7 +3182,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
             if (image_state->create_info.extent.width <
                 vvl::GetQuotientCeil(
                     x_adjusted_extent,
-                    static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
+                    static_cast<i64>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
                 const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView, image_state->Handle());
                 skip |= LogError(
                     "VUID-VkRenderingInfo-pNext-06112", objlist,
@@ -3191,7 +3197,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
             if (image_state->create_info.extent.height <
                 vvl::GetQuotientCeil(
                     y_adjusted_extent,
-                    static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
+                    static_cast<i64>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
                 const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView, image_state->Handle());
                 skip |= LogError(
                     "VUID-VkRenderingInfo-pNext-06114", objlist,
@@ -3231,7 +3237,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
         }
     } else {
         int highest_view_bit = MostSignificantBit(rendering_info.viewMask);
-        int32_t layer_count = view_state->normalized_subresource_range.layerCount;
+        i32 layer_count = view_state->normalized_subresource_range.layerCount;
         if (layer_count != 1 && layer_count < highest_view_bit) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06124", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
@@ -3283,14 +3289,13 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
     const bool non_zero_device_render_area = device_group_begin_info && device_group_begin_info->deviceRenderAreaCount != 0;
     if (!non_zero_device_render_area) {
         // Upcasting to handle overflow
-        const int64_t x_adjusted_extent =
-            static_cast<int64_t>(rendering_info.renderArea.offset.x) + static_cast<int64_t>(rendering_info.renderArea.extent.width);
-        const int64_t y_adjusted_extent = static_cast<int64_t>(rendering_info.renderArea.offset.y) +
-                                          static_cast<int64_t>(rendering_info.renderArea.extent.height);
+        const i64 x_adjusted_extent =
+            static_cast<i64>(rendering_info.renderArea.offset.x) + static_cast<i64>(rendering_info.renderArea.extent.width);
+        const i64 y_adjusted_extent =
+            static_cast<i64>(rendering_info.renderArea.offset.y) + static_cast<i64>(rendering_info.renderArea.extent.height);
 
-        if (static_cast<int64_t>(view_state.image_state->create_info.extent.width) <
-            vvl::GetQuotientCeil(x_adjusted_extent,
-                                 static_cast<int64_t>(fsr_attachment_info.shadingRateAttachmentTexelSize.width))) {
+        if (static_cast<i64>(view_state.image_state->create_info.extent.width) <
+            vvl::GetQuotientCeil(x_adjusted_extent, static_cast<i64>(fsr_attachment_info.shadingRateAttachmentTexelSize.width))) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06119", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                              "width (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.x (%" PRId32
@@ -3300,9 +3305,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
                              rendering_info.renderArea.extent.width, fsr_attachment_info.shadingRateAttachmentTexelSize.width);
         }
 
-        if (static_cast<int64_t>(view_state.image_state->create_info.extent.height) <
-            vvl::GetQuotientCeil(y_adjusted_extent,
-                                 static_cast<int64_t>(fsr_attachment_info.shadingRateAttachmentTexelSize.height))) {
+        if (static_cast<i64>(view_state.image_state->create_info.extent.height) <
+            vvl::GetQuotientCeil(y_adjusted_extent, static_cast<i64>(fsr_attachment_info.shadingRateAttachmentTexelSize.height))) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-06121", objlist,
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                              "height (%" PRIu32 ") must not be less than (pRenderingInfo->renderArea.offset.y (%" PRId32
@@ -3313,12 +3317,12 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRateRenderArea(
         }
     } else {
         if (device_group_begin_info) {
-            for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < device_group_begin_info->deviceRenderAreaCount;
+            for (u32 deviceRenderAreaIndex = 0; deviceRenderAreaIndex < device_group_begin_info->deviceRenderAreaCount;
                  ++deviceRenderAreaIndex) {
-                const int32_t offset_x = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
-                const uint32_t width = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
-                const int32_t offset_y = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
-                const uint32_t height = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
+                const i32 offset_x = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].offset.x;
+                const u32 width = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].extent.width;
+                const i32 offset_y = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].offset.y;
+                const u32 height = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex].extent.height;
 
                 vvl::Image *image_state = view_state.image_state.get();
                 if (image_state->create_info.extent.width <
@@ -3361,15 +3365,15 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
         return false;
     }
 
-    for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < device_group_begin_info->deviceRenderAreaCount;
+    for (u32 deviceRenderAreaIndex = 0; deviceRenderAreaIndex < device_group_begin_info->deviceRenderAreaCount;
          ++deviceRenderAreaIndex) {
         const Location group_loc =
             rendering_info_loc.pNext(Struct::VkDeviceGroupRenderPassBeginInfo, Field::pDeviceRenderAreas, deviceRenderAreaIndex);
         const VkRect2D render_area = device_group_begin_info->pDeviceRenderAreas[deviceRenderAreaIndex];
-        const int32_t offset_x = render_area.offset.x;
-        const uint32_t width = render_area.extent.width;
-        const int32_t offset_y = render_area.offset.y;
-        const uint32_t height = render_area.extent.height;
+        const i32 offset_x = render_area.offset.x;
+        const u32 width = render_area.extent.width;
+        const i32 offset_y = render_area.offset.y;
+        const u32 height = render_area.extent.height;
 
         if (offset_x < 0) {
             skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166", commandBuffer,
@@ -3398,7 +3402,7 @@ bool CoreChecks::ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer
                              offset_y, height, phys_dev_props.limits.maxFramebufferHeight);
         }
 
-        for (uint32_t j = 0; j < rendering_info.colorAttachmentCount; ++j) {
+        for (u32 j = 0; j < rendering_info.colorAttachmentCount; ++j) {
             if (rendering_info.pColorAttachments[j].imageView == VK_NULL_HANDLE) {
                 continue;
             }
@@ -3523,7 +3527,7 @@ bool CoreChecks::ValidateBeginRenderingMultisampledRenderToSingleSampled(VkComma
     if (!msrtss_info) {
         return false;
     }
-    for (uint32_t j = 0; j < rendering_info.colorAttachmentCount; ++j) {
+    for (u32 j = 0; j < rendering_info.colorAttachmentCount; ++j) {
         if (rendering_info.pColorAttachments[j].imageView != VK_NULL_HANDLE) {
             if (const auto image_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[j].imageView)) {
                 skip |= ValidateMultisampledRenderToSingleSampleView(
@@ -3572,13 +3576,13 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
           IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
           (enabled_features.multisampledRenderToSingleSampled))) {
-        uint32_t first_sample_count_attachment = VK_ATTACHMENT_UNUSED;
-        for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
+        u32 first_sample_count_attachment = VK_ATTACHMENT_UNUSED;
+        for (u32 j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
             if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
                 const auto image_view = Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[j].imageView);
                 ASSERT_AND_CONTINUE(image_view);
                 first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
-                                                    ? static_cast<uint32_t>(image_view->samples)
+                                                    ? static_cast<u32>(image_view->samples)
                                                     : first_sample_count_attachment;
                 const LogObjectList objlist(commandBuffer, pRenderingInfo->pColorAttachments[j].imageView);
                 if (first_sample_count_attachment != image_view->samples) {
@@ -3596,7 +3600,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             const auto image_view = Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(image_view);
             first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
-                                                ? static_cast<uint32_t>(image_view->samples)
+                                                ? static_cast<u32>(image_view->samples)
                                                 : first_sample_count_attachment;
             const LogObjectList objlist(commandBuffer, pRenderingInfo->pDepthAttachment->imageView);
             if (first_sample_count_attachment != image_view->samples) {
@@ -3612,7 +3616,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             const auto image_view = Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(image_view);
             first_sample_count_attachment = (first_sample_count_attachment == VK_ATTACHMENT_UNUSED)
-                                                ? static_cast<uint32_t>(image_view->samples)
+                                                ? static_cast<u32>(image_view->samples)
                                                 : first_sample_count_attachment;
             const LogObjectList objlist(commandBuffer, pRenderingInfo->pStencilAttachment->imageView);
             if (first_sample_count_attachment != image_view->samples) {
@@ -3652,10 +3656,10 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         }
 
         // Upcasting to handle overflow
-        const int64_t x_adjusted_extent = static_cast<int64_t>(pRenderingInfo->renderArea.offset.x) +
-                                          static_cast<int64_t>(pRenderingInfo->renderArea.extent.width);
-        const int64_t y_adjusted_extent = static_cast<int64_t>(pRenderingInfo->renderArea.offset.y) +
-                                          static_cast<int64_t>(pRenderingInfo->renderArea.extent.height);
+        const i64 x_adjusted_extent =
+            static_cast<i64>(pRenderingInfo->renderArea.offset.x) + static_cast<i64>(pRenderingInfo->renderArea.extent.width);
+        const i64 y_adjusted_extent =
+            static_cast<i64>(pRenderingInfo->renderArea.offset.y) + static_cast<i64>(pRenderingInfo->renderArea.extent.height);
         if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
             skip |= LogError("VUID-VkRenderingInfo-pNext-07815", commandBuffer, rendering_info_loc.dot(Field::renderArea),
                              "offset.x (%" PRId32 ") + extent.width (%" PRIu32
@@ -3714,7 +3718,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         }
     }
 
-    for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
+    for (u32 j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
         const auto &attachment_info = pRenderingInfo->pColorAttachments[j];
         const Location color_loc = rendering_info_loc.dot(Field::pColorAttachments, j);
         skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo, attachment_info, color_loc);
@@ -3990,7 +3994,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
         }
     }
 
-    if (MostSignificantBit(pRenderingInfo->viewMask) >= static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+    if (MostSignificantBit(pRenderingInfo->viewMask) >= static_cast<i32>(phys_dev_props_core11.maxMultiviewViewCount)) {
         skip |= LogError("VUID-VkRenderingInfo-viewMask-06128", commandBuffer, rendering_info_loc.dot(Field::viewMask),
                          "(0x%" PRIx32 ") most significant bit must be less maxMultiviewViewCount (%" PRIu32 ")",
                          pRenderingInfo->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
@@ -4173,15 +4177,15 @@ void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, co
     RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
-bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attachments, const VkFramebufferCreateInfo &fbci,
+bool CoreChecks::MatchUsage(u32 count, const VkAttachmentReference2 *attachments, const VkFramebufferCreateInfo &fbci,
                             VkImageUsageFlagBits usage_flag, const char *vuid, const Location &create_info_loc) const {
     bool skip = false;
 
     if (!attachments) {
         return false;
     }
-    for (uint32_t attach = 0; attach < count; attach++) {
-        const uint32_t fb_attachment = attachments[attach].attachment;
+    for (u32 attach = 0; attach < count; attach++) {
+        const u32 fb_attachment = attachments[attach].attachment;
         // Attachment counts are verified elsewhere, but prevent an invalid access
         if (fb_attachment == VK_ATTACHMENT_UNUSED || fb_attachment >= fbci.attachmentCount) {
             continue;
@@ -4205,7 +4209,7 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
             const VkFramebufferAttachmentsCreateInfo *fbaci =
                 vku::FindStructInPNextChain<VkFramebufferAttachmentsCreateInfo>(fbci.pNext);
             if (fbaci != nullptr && fbaci->pAttachmentImageInfos != nullptr && fbaci->attachmentImageInfoCount > fb_attachment) {
-                uint32_t image_usage = fbaci->pAttachmentImageInfos[fb_attachment].usage;
+                u32 image_usage = fbaci->pAttachmentImageInfos[fb_attachment].usage;
                 if ((image_usage & usage_flag) == 0) {
                     skip |= LogError(vuid, device, create_info_loc.dot(Field::pAttachments, fb_attachment),
                                      "expected usage (%s) conflicts with the image's flags (%s).",
@@ -4217,15 +4221,15 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2 *attach
     return skip;
 }
 
-bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, const VkAttachmentReference2 *attachments,
+bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(u32 count, const VkAttachmentReference2 *attachments,
                                                                 const VkFramebufferCreateInfo &fbci,
-                                                                const VkRenderPassCreateInfo2 &rpci, uint32_t subpass,
+                                                                const VkRenderPassCreateInfo2 &rpci, u32 subpass,
                                                                 VkSampleCountFlagBits sample_count,
                                                                 const Location &create_info_loc) const {
     bool skip = false;
 
-    for (uint32_t attach = 0; attach < count; attach++) {
-        const uint32_t fb_attachment = attachments[attach].attachment;
+    for (u32 attach = 0; attach < count; attach++) {
+        const u32 fb_attachment = attachments[attach].attachment;
         if (fb_attachment == VK_ATTACHMENT_UNUSED || fb_attachment >= fbci.attachmentCount) {
             continue;
         }
@@ -4339,7 +4343,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
     bool skip = false;
 
     const VkImageView *image_views = create_info.pAttachments;
-    for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
+    for (u32 i = 0; i < create_info.attachmentCount; ++i) {
         const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         auto view_state = Get<vvl::ImageView>(image_views[i]);
         ASSERT_AND_CONTINUE(view_state);
@@ -4353,7 +4357,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                              FormatHandle(create_info.renderPass).c_str());
         } else if (ivci.format == VK_FORMAT_UNDEFINED) {
             // both have external foramts
-            const uint64_t attachment_external_format = GetExternalFormat(rpci.pAttachments[i].pNext);
+            const u64 attachment_external_format = GetExternalFormat(rpci.pAttachments[i].pNext);
             if (view_state->image_state->ahb_format != attachment_external_format) {
                 LogObjectList objlist(create_info.renderPass, image_views[i]);
                 skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-09350", objlist, attachment_loc,
@@ -4388,26 +4392,26 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                              " but only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
                              subresource_range.levelCount);
         }
-        const uint32_t mip_level = subresource_range.baseMipLevel;
-        uint32_t mip_width = std::max(1u, ici.extent.width >> mip_level);
-        uint32_t mip_height = std::max(1u, ici.extent.height >> mip_level);
+        const u32 mip_level = subresource_range.baseMipLevel;
+        u32 mip_width = std::max(1u, ici.extent.width >> mip_level);
+        u32 mip_height = std::max(1u, ici.extent.height >> mip_level);
         bool used_as_input_color_resolve_depth_stencil_attachment = false;
         bool used_as_fragment_shading_rate_attachment = false;
         bool fsr_non_zero_viewmasks = false;
 
-        for (uint32_t j = 0; j < rpci.subpassCount; ++j) {
+        for (u32 j = 0; j < rpci.subpassCount; ++j) {
             const VkSubpassDescription2 &subpass = rpci.pSubpasses[j];
 
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
 
-            for (uint32_t k = 0; k < rpci.pSubpasses[j].inputAttachmentCount; ++k) {
+            for (u32 k = 0; k < rpci.pSubpasses[j].inputAttachmentCount; ++k) {
                 if (subpass.pInputAttachments[k].attachment == i) {
                     used_as_input_color_resolve_depth_stencil_attachment = true;
                     break;
                 }
             }
 
-            for (uint32_t k = 0; k < rpci.pSubpasses[j].colorAttachmentCount; ++k) {
+            for (u32 k = 0; k < rpci.pSubpasses[j].colorAttachmentCount; ++k) {
                 if (subpass.pColorAttachments[k].attachment == i ||
                     (subpass.pResolveAttachments && subpass.pResolveAttachments[k].attachment == i)) {
                     used_as_input_color_resolve_depth_stencil_attachment = true;
@@ -4420,7 +4424,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
             }
 
             if (used_as_input_color_resolve_depth_stencil_attachment) {
-                if (static_cast<int32_t>(subresource_range.layerCount) <= highest_view_bit) {
+                if (static_cast<i32>(subresource_range.layerCount) <= highest_view_bit) {
                     LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                     skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-04536", objlist, attachment_loc,
                                      "has a layer count (%" PRIu32
@@ -4472,8 +4476,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                     if (highest_view_bit >= 0) {
                         fsr_non_zero_viewmasks = true;
                     }
-                    if (static_cast<int32_t>(subresource_range.layerCount) <= highest_view_bit &&
-                        subresource_range.layerCount != 1) {
+                    if (static_cast<i32>(subresource_range.layerCount) <= highest_view_bit && subresource_range.layerCount != 1) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-flags-04537", objlist, attachment_loc,
                                          "has a layer count (%" PRIu32
@@ -4487,7 +4490,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                 const auto *fdm_attachment = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci.pNext);
 
                 if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                    int32_t layer_count = view_state->normalized_subresource_range.layerCount;
+                    i32 layer_count = view_state->normalized_subresource_range.layerCount;
                     if (rp_state.has_multiview_enabled && layer_count != 1 && layer_count <= highest_view_bit) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
@@ -4509,7 +4512,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
 
             if (enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop &&
                 subpass.pResolveAttachments && subpass.pResolveAttachments[0].attachment == i && subpass.pColorAttachments) {
-                const uint64_t attachment_external_format =
+                const u64 attachment_external_format =
                     GetExternalFormat(rpci.pAttachments[subpass.pResolveAttachments[0].attachment].pNext);
                 auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
                 if (it != ahb_ext_resolve_formats_map.end()) {
@@ -4531,7 +4534,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
             const auto *fdm_attachment = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci.pNext);
             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
                 if (fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                    uint32_t ceiling_width = vvl::GetQuotientCeil(
+                    u32 ceiling_width = vvl::GetQuotientCeil(
                         create_info.width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                     if (mip_width < ceiling_width) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
@@ -4547,7 +4550,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                                          "width: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
                                          subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
                     }
-                    uint32_t ceiling_height = vvl::GetQuotientCeil(
+                    u32 ceiling_height = vvl::GetQuotientCeil(
                         create_info.height, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
                     if (mip_height < ceiling_height) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
@@ -4575,8 +4578,8 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                     if ((ici.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) != 0) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-02552", objlist, attachment_loc,
-                                            "must not be created with flag value VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT if it is "
-                                            "used as a fragment density map");
+                                         "must not be created with flag value VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT if it is "
+                                         "used as a fragment density map");
                     }
                 } else if (!enabled_features.fragmentDensityMapNonSubsampledImages &&
                            (ici.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) == 0) {
@@ -4604,7 +4607,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                                  ") smaller than the corresponding framebuffer height (%" PRIu32 ").",
                                  mip_level, mip_height, create_info.height);
             }
-            uint32_t layerCount = view_state->GetAttachmentLayerCount();
+            u32 layerCount = view_state->GetAttachmentLayerCount();
             if (layerCount < create_info.layers) {
                 LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                 skip |= LogError("VUID-VkFramebufferCreateInfo-flags-04535", objlist, attachment_loc,
@@ -4667,11 +4670,11 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
     const VkFramebufferAttachmentsCreateInfo &framebuffer_attachments_create_info) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < create_info.attachmentCount; ++i) {
+    for (u32 i = 0; i < create_info.attachmentCount; ++i) {
         const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         auto &aii = framebuffer_attachments_create_info.pAttachmentImageInfos[i];
         bool format_found = false;
-        for (uint32_t j = 0; j < aii.viewFormatCount; ++j) {
+        for (u32 j = 0; j < aii.viewFormatCount; ++j) {
             if (aii.pViewFormats[j] == rpci.pAttachments[i].format) {
                 format_found = true;
             }
@@ -4688,19 +4691,19 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
         bool used_as_fragment_shading_rate_attachment = false;
         bool fsr_non_zero_viewmasks = false;
 
-        for (uint32_t j = 0; j < rpci.subpassCount; ++j) {
+        for (u32 j = 0; j < rpci.subpassCount; ++j) {
             const VkSubpassDescription2 &subpass = rpci.pSubpasses[j];
 
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
 
-            for (uint32_t k = 0; k < rpci.pSubpasses[j].inputAttachmentCount; ++k) {
+            for (u32 k = 0; k < rpci.pSubpasses[j].inputAttachmentCount; ++k) {
                 if (subpass.pInputAttachments[k].attachment == i) {
                     used_as_input_color_resolve_depth_stencil_attachment = true;
                     break;
                 }
             }
 
-            for (uint32_t k = 0; k < rpci.pSubpasses[j].colorAttachmentCount; ++k) {
+            for (u32 k = 0; k < rpci.pSubpasses[j].colorAttachmentCount; ++k) {
                 if (subpass.pColorAttachments[k].attachment == i ||
                     (subpass.pResolveAttachments && subpass.pResolveAttachments[k].attachment == i)) {
                     used_as_input_color_resolve_depth_stencil_attachment = true;
@@ -4745,7 +4748,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                     if (highest_view_bit >= 0) {
                         fsr_non_zero_viewmasks = true;
                     }
-                    if (aii.layerCount != 1 && static_cast<int32_t>(aii.layerCount) <= highest_view_bit) {
+                    if (aii.layerCount != 1 && static_cast<i32>(aii.layerCount) <= highest_view_bit) {
                         skip |= LogError("VUID-VkFramebufferCreateInfo-flags-04587", create_info.renderPass, attachment_loc,
                                          "has a layer count (%" PRIu32
                                          ") "
@@ -4761,7 +4764,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                 if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
                     const auto &maxFragmentDensityTexelSize =
                         phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize;
-                    const uint32_t ceiling_width = vvl::GetQuotientCeil(create_info.width, maxFragmentDensityTexelSize.width);
+                    const u32 ceiling_width = vvl::GetQuotientCeil(create_info.width, maxFragmentDensityTexelSize.width);
                     if (aii.width < ceiling_width) {
                         LogObjectList objlist(create_info.renderPass);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03196", objlist, attachment_loc,
@@ -4772,7 +4775,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                                          "width (%" PRIu32 ").",
                                          j, create_info.width, maxFragmentDensityTexelSize.width, aii.width);
                     }
-                    const uint32_t ceiling_height = vvl::GetQuotientCeil(create_info.height, maxFragmentDensityTexelSize.height);
+                    const u32 ceiling_height = vvl::GetQuotientCeil(create_info.height, maxFragmentDensityTexelSize.height);
                     if (aii.height < ceiling_height) {
                         LogObjectList objlist(create_info.renderPass);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03197", objlist, attachment_loc,
@@ -4820,8 +4823,8 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
     }
 
     // Validate image usage
-    uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
-    for (uint32_t i = 0; i < rpci.subpassCount; ++i) {
+    u32 attachment_index = VK_ATTACHMENT_UNUSED;
+    for (u32 i = 0; i < rpci.subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = rpci.pSubpasses[i];
 
         skip |= MatchUsage(subpass.colorAttachmentCount, subpass.pColorAttachments, create_info,
@@ -4851,16 +4854,16 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
 
     // VUID-VkSubpassDescription2-multiview-06558 forces viewMask to be zero if not using multiView
     if ((rpci.subpassCount > 0) && (rpci.pSubpasses[0].viewMask != 0)) {
-        for (uint32_t i = 0; i < rpci.subpassCount; ++i) {
+        for (u32 i = 0; i < rpci.subpassCount; ++i) {
             const VkSubpassDescription2 &subpass = rpci.pSubpasses[i];
             const auto *depth_stencil_resolve = vku::FindStructInPNextChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
-            uint32_t view_bits = subpass.viewMask;
+            u32 view_bits = subpass.viewMask;
             int highest_view_bit = MostSignificantBit(view_bits);
 
-            for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+            for (u32 j = 0; j < subpass.colorAttachmentCount; ++j) {
                 attachment_index = subpass.pColorAttachments[j].attachment;
                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                    int32_t layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
+                    i32 layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
                     if (layer_count <= highest_view_bit) {
                         skip |= LogError(
                             "VUID-VkFramebufferCreateInfo-renderPass-03198", create_info.renderPass,
@@ -4876,8 +4879,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                 if (subpass.pResolveAttachments) {
                     attachment_index = subpass.pResolveAttachments[j].attachment;
                     if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                        int32_t layer_count =
-                            framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
+                        i32 layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
                         if (layer_count <= highest_view_bit) {
                             skip |=
                                 LogError("VUID-VkFramebufferCreateInfo-renderPass-03198", create_info.renderPass,
@@ -4894,10 +4896,10 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                 }
             }
 
-            for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+            for (u32 j = 0; j < subpass.inputAttachmentCount; ++j) {
                 attachment_index = subpass.pInputAttachments[j].attachment;
                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                    int32_t layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
+                    i32 layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
                     if (layer_count <= highest_view_bit) {
                         skip |= LogError(
                             "VUID-VkFramebufferCreateInfo-renderPass-03198", create_info.renderPass,
@@ -4915,7 +4917,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
             if (subpass.pDepthStencilAttachment != nullptr) {
                 attachment_index = subpass.pDepthStencilAttachment->attachment;
                 if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                    int32_t layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
+                    i32 layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
                     if (layer_count <= highest_view_bit) {
                         skip |= LogError(
                             "VUID-VkFramebufferCreateInfo-renderPass-03198", create_info.renderPass,
@@ -4932,8 +4934,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
                 if (depth_stencil_resolve != nullptr && depth_stencil_resolve->pDepthStencilResolveAttachment != nullptr) {
                     attachment_index = depth_stencil_resolve->pDepthStencilResolveAttachment->attachment;
                     if (attachment_index != VK_ATTACHMENT_UNUSED) {
-                        int32_t layer_count =
-                            framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
+                        i32 layer_count = framebuffer_attachments_create_info.pAttachmentImageInfos[attachment_index].layerCount;
                         if (layer_count <= highest_view_bit) {
                             skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-03198", create_info.renderPass,
                                              create_info_loc
@@ -4958,7 +4959,7 @@ bool CoreChecks::ValidateFrameBufferAttachmentsImageless(
 bool CoreChecks::ValidateFrameBufferSubpasses(const VkFramebufferCreateInfo &create_info, const Location &create_info_loc,
                                               const VkRenderPassCreateInfo2 &rpci) const {
     bool skip = false;
-    for (uint32_t subpass = 0; subpass < rpci.subpassCount; subpass++) {
+    for (u32 subpass = 0; subpass < rpci.subpassCount; subpass++) {
         const VkSubpassDescription2 &subpass_description = rpci.pSubpasses[subpass];
         const auto *ms_rendered_to_single_sampled =
             vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_description.pNext);
@@ -5043,10 +5044,10 @@ bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttach
     bool skip = false;
 
     if (location_info.pColorAttachmentLocations) {
-        vvl::unordered_map<uint32_t, uint32_t> unique;
+        vvl::unordered_map<u32, u32> unique;
 
-        for (uint32_t i = 0; i < location_info.colorAttachmentCount; ++i) {
-            const uint32_t location = location_info.pColorAttachmentLocations[i];
+        for (u32 i = 0; i < location_info.colorAttachmentCount; ++i) {
+            const u32 location = location_info.pColorAttachmentLocations[i];
             const Location loc = loc_info.dot(Struct::VkRenderingAttachmentLocationInfoKHR, Field::pColorAttachmentLocations, i);
 
             if (!enabled_features.dynamicRenderingLocalRead && location != i) {
@@ -5146,10 +5147,10 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInp
     }
 
     if (index_info.pColorAttachmentInputIndices) {
-        std::map<uint32_t, uint32_t> unique;
+        std::map<u32, u32> unique;
 
-        for (uint32_t i = 0; i < index_info.colorAttachmentCount; ++i) {
-            const uint32_t index = index_info.pColorAttachmentInputIndices[i];
+        for (u32 i = 0; i < index_info.colorAttachmentCount; ++i) {
+            const u32 index = index_info.pColorAttachmentInputIndices[i];
 
             if (index == VK_ATTACHMENT_UNUSED) {
                 continue;
@@ -5205,8 +5206,8 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(
     bool skip = false;
 
     if (!enabled_features.dynamicRenderingLocalRead) {
-        skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516", commandBuffer, error_obj.location,
-                         "dynamicRenderingLocalRead was not enabled.");
+        skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516", commandBuffer,
+                         error_obj.location, "dynamicRenderingLocalRead was not enabled.");
     }
 
     skip |= ValidateCmd(cb_state, error_obj.location);

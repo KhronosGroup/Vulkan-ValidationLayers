@@ -131,7 +131,7 @@ TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
     pipe_0.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe_0.rs_state_ci_.pNext = &line_state;
     pipe_0.CreateGraphicsPipeline();
-    name_info.objectHandle = (uint64_t)pipe_0.Handle();
+    name_info.objectHandle = (u64)pipe_0.Handle();
     name_info.pObjectName = "Both Dynamic";
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
@@ -140,7 +140,7 @@ TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
     pipe_1.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe_1.rs_state_ci_.pNext = &line_state;
     pipe_1.CreateGraphicsPipeline();
-    name_info.objectHandle = (uint64_t)pipe_1.Handle();
+    name_info.objectHandle = (u64)pipe_1.Handle();
     name_info.pObjectName = "Single Dynamic";
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
@@ -148,7 +148,7 @@ TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
     pipe_2.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe_2.rs_state_ci_.pNext = &line_state;
     pipe_2.CreateGraphicsPipeline();
-    name_info.objectHandle = (uint64_t)pipe_2.Handle();
+    name_info.objectHandle = (u64)pipe_2.Handle();
     name_info.pObjectName = "No Dynamic";
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
@@ -379,10 +379,10 @@ TEST_F(NegativeDynamicState, SetScissorParam) {
                                         {{{0, -1}, {16, 16}}, "VUID-vkCmdSetScissor-x-00595"},
                                         {{{1, 0}, {vvl::kI32Max, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
                                         {{{vvl::kI32Max, 0}, {1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
-                                        {{{0, 0}, {uint32_t{vvl::kI32Max} + 1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
+                                        {{{0, 0}, {u32{vvl::kI32Max} + 1, 16}}, "VUID-vkCmdSetScissor-offset-00596"},
                                         {{{0, 1}, {16, vvl::kI32Max}}, "VUID-vkCmdSetScissor-offset-00597"},
                                         {{{0, vvl::kI32Max}, {16, 1}}, "VUID-vkCmdSetScissor-offset-00597"},
-                                        {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetScissor-offset-00597"}};
+                                        {{{0, 0}, {16, u32{vvl::kI32Max} + 1}}, "VUID-vkCmdSetScissor-offset-00597"}};
 
     for (const auto &test_case : test_cases) {
         m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
@@ -411,7 +411,7 @@ TEST_F(NegativeDynamicState, SetScissorParamMultiviewport) {
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, max_scissors, nullptr);
     m_errorMonitor->VerifyFound();
 
-    const uint32_t too_big_max_scissors = 65536 + 1;  // let's say this is too much to allocate
+    const u32 too_big_max_scissors = 65536 + 1;  // let's say this is too much to allocate
     if (max_scissors >= too_big_max_scissors) {
         printf("VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n");
     } else {
@@ -2215,7 +2215,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
         std::vector<VkVertexInputBindingDescription2EXT> bindings(m_device->phy().limits_.maxVertexInputBindings + 1u, binding);
-        for (uint32_t i = 0; i < bindings.size(); ++i) bindings[i].binding = i;
+        for (u32 i = 0; i < bindings.size(); ++i) bindings[i].binding = i;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791");
         vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), m_device->phy().limits_.maxVertexInputBindings + 1u, bindings.data(), 0,
                                  nullptr);
@@ -2230,7 +2230,7 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0};
         std::vector<VkVertexInputAttributeDescription2EXT> attributes(m_device->phy().limits_.maxVertexInputAttributes + 1u,
                                                                       attribute);
-        for (uint32_t i = 0; i < attributes.size(); ++i) attributes[i].location = i;
+        for (u32 i = 0; i < attributes.size(); ++i) attributes[i].location = i;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792");
         vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, m_device->phy().limits_.maxVertexInputAttributes + 1u,
                                  attributes.data());
@@ -2464,16 +2464,16 @@ TEST_F(NegativeDynamicState, ColorBlendAttchment) {
     }
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
-    constexpr uint32_t color_attachments = 2;
+    constexpr u32 color_attachments = 2;
     InitRenderTarget(color_attachments);
 
     std::stringstream fsSource;
     fsSource << "#version 450\n";
-    for (uint32_t i = 0; i < color_attachments; ++i) {
+    for (u32 i = 0; i < color_attachments; ++i) {
         fsSource << "layout(location = " << i << ") out vec4 c" << i << ";\n";
     }
     fsSource << " void main() {\n";
-    for (uint32_t i = 0; i < color_attachments; ++i) {
+    for (u32 i = 0; i < color_attachments; ++i) {
         fsSource << "c" << i << " = vec4(0.0f);\n";
     }
 
@@ -2680,7 +2680,7 @@ TEST_F(NegativeDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const u32 count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }
@@ -3132,12 +3132,12 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     vkt::ImageView depth_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     const std::array<VkImageView, 2> attachments = {color_view, depth_view};
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), static_cast<uint32_t>(attachments.size()), attachments.data(), 128, 128);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), static_cast<u32>(attachments.size()), attachments.data(), 128, 128);
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     // 1 from VK_SAMPLE_COUNT_1_BIT
-    const uint32_t valid_count =
+    const u32 valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
 
     if (valid_count <= 1) {
@@ -3423,7 +3423,7 @@ TEST_F(NegativeDynamicState, SetViewportParamMultiviewport) {
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, max_viewports, nullptr);
     m_errorMonitor->VerifyFound();
 
-    const uint32_t too_big_max_viewports = 65536 + 1;  // let's say this is too much to allocate
+    const u32 too_big_max_viewports = 65536 + 1;  // let's say this is too much to allocate
     if (max_viewports >= too_big_max_viewports) {
         printf("VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n");
     } else {
@@ -3488,7 +3488,7 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 1;
     discard_rectangles.offset.y = 0;
-    discard_rectangles.extent.width = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    discard_rectangles.extent.width = static_cast<u32>(std::numeric_limits<i32>::max());
     discard_rectangles.extent.height = 64;
 
     m_commandBuffer->begin();
@@ -3497,7 +3497,7 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     m_errorMonitor->VerifyFound();
 
     discard_rectangles.offset.x = 0;
-    discard_rectangles.offset.y = std::numeric_limits<int32_t>::max();
+    discard_rectangles.offset.y = std::numeric_limits<i32>::max();
     discard_rectangles.extent.width = 64;
     discard_rectangles.extent.height = 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589");
@@ -3959,9 +3959,9 @@ TEST_F(NegativeDynamicState, Viewport) {
     // test viewport and scissor arrays
     using std::vector;
     struct TestCase {
-        uint32_t viewport_count;
+        u32 viewport_count;
         VkViewport *viewports;
-        uint32_t scissor_count;
+        u32 scissor_count;
         VkRect2D *scissors;
 
         vector<std::string> vuids;
@@ -4122,9 +4122,9 @@ TEST_F(NegativeDynamicState, MultiViewport) {
 
     using std::vector;
     struct TestCase {
-        uint32_t viewport_count;
+        u32 viewport_count;
         VkViewport *viewports;
-        uint32_t scissor_count;
+        u32 scissor_count;
         VkRect2D *scissors;
 
         vector<std::string> vuids;
@@ -4693,7 +4693,7 @@ TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
         GTEST_SKIP() << "exclusiveScissor not supported.";
     }
     RETURN_IF_SKIP(InitState(nullptr, &features2));
-    uint32_t count;
+    u32 count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, properties.data());
@@ -4988,7 +4988,7 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
 
     VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_advanced_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(blend_advanced_props);
-    uint32_t attachment_count = blend_advanced_props.advancedBlendMaxColorAttachments + 1;
+    u32 attachment_count = blend_advanced_props.advancedBlendMaxColorAttachments + 1;
 
     if (attachment_count > m_device->phy().limits_.maxColorAttachments) {
         GTEST_SKIP() << "advancedBlendMaxColorAttachments is equal to maxColorAttachments";
@@ -5008,7 +5008,7 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
     std::vector<std::unique_ptr<vkt::Image>> images(attachment_count);
     std::vector<vkt::ImageView> image_views(attachment_count);
     std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
-    for (uint32_t i = 0; i < attachment_count; ++i) {
+    for (u32 i = 0; i < attachment_count; ++i) {
         images[i] = std::make_unique<vkt::Image>(*m_device, image_ci);
         image_views[i] = images[i]->CreateView();
         rendering_attachment_info[i] = vku::InitStructHelper();
@@ -5036,7 +5036,7 @@ TEST_F(NegativeDynamicState, AdvancedBlendMaxAttachments) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    for (uint32_t i = 0; i < attachment_count; ++i) {
+    for (u32 i = 0; i < attachment_count; ++i) {
         VkBool32 color_blend_enable = i == 0;
         vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), i, 1u, &color_blend_enable);
         VkColorBlendAdvancedEXT color_blend_advanced;
@@ -5225,7 +5225,7 @@ TEST_F(NegativeDynamicState, SampleLocationsEnable) {
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     // 1 from VK_SAMPLE_COUNT_1_BIT
-    const uint32_t valid_count =
+    const u32 valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
 
     if (valid_count <= 1) {
@@ -5272,7 +5272,7 @@ TEST_F(NegativeDynamicState, SampleLocationsEnable) {
     VkMultisamplePropertiesEXT multisample_prop2 = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_2_BIT, &multisample_prop2);
     // 2 from VK_SAMPLE_COUNT_2_BIT
-    const uint32_t valid_count2 =
+    const u32 valid_count2 =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 2;
 
     std::vector<VkSampleLocationEXT> sample_location2(valid_count2, {0.5f, 0.5f});
@@ -5500,7 +5500,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsGridSize) {
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     // 1 from VK_SAMPLE_COUNT_1_BIT
-    const uint32_t valid_count =
+    const u32 valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
 
     if (valid_count <= 1) {

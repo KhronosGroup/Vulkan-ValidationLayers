@@ -169,7 +169,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSets) {
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+                              static_cast<u32>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -198,7 +198,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetsGPL) {
     // Now bind with a layout that was _not_ created with independent sets, which should trigger 06754
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+                              static_cast<u32>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -701,10 +701,10 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     OneOffDescriptorSet ds2(m_device, {
                                           {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       });
-    OneOffDescriptorSet ds_immutable_sampler(m_device,
-                                             {
-                                                 {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
-                                             });
+    OneOffDescriptorSet ds_immutable_sampler(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
+                  });
 
     // We _vs and _fs layouts are identical, but we want them to be separate handles handles for the sake layout merging
     vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds2.layout_}, {},
@@ -777,7 +777,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -853,7 +853,7 @@ TEST_F(NegativeGraphicsLibrary, FragmentStateWithPreRaster) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitFragmentLibInfo(stages.data());
-    pipe.gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
+    pipe.gp_ci_.stageCount = static_cast<u32>(stages.size());
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06895");
     pipe.CreateGraphicsPipeline();
@@ -1166,7 +1166,7 @@ TEST_F(NegativeGraphicsLibrary, Tessellation) {
         fo_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = static_cast<uint32_t>(libs.size());
+    link_info.libraryCount = static_cast<u32>(libs.size());
     link_info.pLibraries = libs.data();
 
     // Pass a tess control shader without a tess eval shader
@@ -1367,9 +1367,10 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
                                      });
-    OneOffDescriptorSet ds1(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds1(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
     OneOffDescriptorSet ds2(m_device, {
                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       });
@@ -1449,12 +1450,12 @@ TEST_F(NegativeGraphicsLibrary, BindEmptyDS) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets_empty.size()), desc_sets_empty.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets_empty.size()), desc_sets_empty.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     // Using a VK_NULL_HANDLE descriptor set _is_ legal
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets_null.size()), desc_sets_null.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets_null.size()), desc_sets_null.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -1605,7 +1606,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    uint8_t data[4] = {0, 0, 0, 0};
+    u8 data[4] = {0, 0, 0, 0};
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = 4;
     sm_id_create_info.pIdentifier = data;
@@ -1622,7 +1623,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
 
     VkShaderModuleCreateInfo sm_ci = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885");
-    uint32_t code = 0;
+    u32 code = 0;
     sm_ci.codeSize = 4;
     sm_ci.pCode = &code;
     vk::GetShaderModuleCreateInfoIdentifierEXT(device(), &sm_ci, &get_identifier);

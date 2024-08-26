@@ -36,9 +36,9 @@ class Queue;
 
 struct QueueSubmission {
     struct SemaphoreInfo {
-        SemaphoreInfo(std::shared_ptr<Semaphore> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
+        SemaphoreInfo(std::shared_ptr<Semaphore> &&sem, u64 pl) : semaphore(std::move(sem)), payload(pl) {}
         std::shared_ptr<Semaphore> semaphore;
-        uint64_t payload{0};
+        u64 payload{0};
     };
     QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
@@ -48,18 +48,18 @@ struct QueueSubmission {
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<Fence> fence;
     LocationCapture loc;
-    uint64_t seq{0};
-    uint32_t perf_submit_pass{0};
+    u64 seq{0};
+    u32 perf_submit_pass{0};
     std::promise<void> completed;
     std::shared_future<void> waiter;
 
     void AddCommandBuffer(std::shared_ptr<vvl::CommandBuffer> &&cb_state) { cbs.emplace_back(std::move(cb_state)); }
 
-    void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
+    void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, u64 value) {
         signal_semaphores.emplace_back(std::move(semaphore_state), value);
     }
 
-    void AddWaitSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
+    void AddWaitSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, u64 value) {
         wait_semaphores.emplace_back(std::move(semaphore_state), value);
     }
 
@@ -77,16 +77,16 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
 }
 
 struct SubmitResult {
-    uint64_t last_submission_seq = 0;
+    u64 last_submission_seq = 0;
 
     bool has_external_fence = false;
-    uint64_t submission_with_external_fence_seq = 0;
+    u64 submission_with_external_fence_seq = 0;
 };
 
 class Queue : public StateObject {
   public:
-    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+    Queue(ValidationStateTracker &dev_data, VkQueue handle, u32 family_index, u32 queue_index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties &queueFamilyProperties)
         : StateObject(handle, kVulkanObjectTypeQueue),
           queue_family_index(family_index),
           queue_index(queue_index),
@@ -106,21 +106,21 @@ class Queue : public StateObject {
 
     // Tell the queue thread that submissions up to and including the submission with
     // sequence number until_seq have finished. kU64Max means to finish all submissions.
-    void Notify(uint64_t until_seq = kU64Max);
+    void Notify(u64 until_seq = kU64Max);
 
     // Wait for the queue thread to finish processing submissions with sequence numbers
     // up to and including until_seq. kU64Max means to finish all submissions.
-    void Wait(const Location &loc, uint64_t until_seq = kU64Max);
+    void Wait(const Location &loc, u64 until_seq = kU64Max);
 
     // Helper that combines Notify and Wait
-    void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
+    void NotifyAndWait(const Location &loc, u64 until_seq = kU64Max);
 
   public:
     // Queue family index. As queueFamilyIndex parameter in vkGetDeviceQueue.
-    const uint32_t queue_family_index;
+    const u32 queue_family_index;
 
     // Index of the queue within a queue family. As queueIndex parameter in vkGetDeviceQueue.
-    const uint32_t queue_index;
+    const u32 queue_index;
 
     const VkDeviceQueueCreateFlags create_flags;
     const VkQueueFamilyProperties queue_family_properties;
@@ -155,8 +155,8 @@ class Queue : public StateObject {
     // be accessed with lock_ held
     std::unique_ptr<std::thread> thread_;
     std::deque<QueueSubmission> submissions_;
-    std::atomic<uint64_t> seq_{0};
-    uint64_t request_seq_{0};
+    std::atomic<u64> seq_{0};
+    u64 request_seq_{0};
     bool exit_thread_{false};
     mutable std::mutex lock_;
     // condition to wake up the queue's thread

@@ -66,76 +66,71 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
-                                   uint32_t* const debug_output_buffer, const Location& loc);
-    void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                              uint32_t firstInstance, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
-                                      uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
+    void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, u32 operation_index,
+                                   u32* const debug_output_buffer, const Location& loc);
+    void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance,
+                              const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u32 drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
+                                      u32 instanceCount, u32 firstInstance, u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex,
+                                     i32 vertexOffset, u32 firstInstance, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, u32 drawCount,
+                                             const VkMultiDrawIndexedInfoEXT* pIndexInfo, u32 instanceCount, u32 firstInstance,
+                                             u32 stride, const i32* pVertexOffset, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 count, u32 stride,
                                       const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                     uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                     const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                             const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
-                                             uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
-                                             const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                      uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                             uint32_t stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 count,
+                                             u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                              uint32_t stride, const RecordObject& record_obj) override;
+                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                              const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                           uint32_t stride, const RecordObject& record_obj) override;
+                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                           const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride, const RecordObject& record_obj) override;
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                     u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                  uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount, uint32_t firstInstance,
-                                                  VkBuffer counterBuffer, VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                  uint32_t vertexStride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                  u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, u32 instanceCount, u32 firstInstance,
+                                                  VkBuffer counterBuffer, VkDeviceSize counterBufferOffset, u32 counterOffset,
+                                                  u32 vertexStride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u32 taskCount, u32 firstTask,
                                          const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 drawCount,
+                                                 u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                          uint32_t groupCountZ, const RecordObject& record_obj) override;
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                      u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, u32 groupCountX, u32 groupCountY, u32 groupCountZ,
+                                          const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) override;
+                                                  u32 drawCount, u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                       uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
-                                  const RecordObject& record_obj) override;
+                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                       u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, u32 x, u32 y, u32 z, const RecordObject& record_obj) override;
     void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                           const RecordObject& record_obj) override;
-    void PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
-                                      uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
-                                      const RecordObject& record_obj) override;
-    void PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                         uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+    void PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, u32 baseGroupX, u32 baseGroupY, u32 baseGroupZ,
+                                      u32 groupCountX, u32 groupCountY, u32 groupCountZ, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u32 baseGroupX, u32 baseGroupY, u32 baseGroupZ,
+                                         u32 groupCountX, u32 groupCountY, u32 groupCountZ,
                                          const RecordObject& record_obj) override;
     void PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
                                      VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                      VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                     VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                     uint32_t width, uint32_t height, uint32_t depth, const RecordObject& record_obj) override;
+                                     VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride, u32 width,
+                                     u32 height, u32 depth, const RecordObject& record_obj) override;
     void PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                       const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                       const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                       const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                      const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
-                                      uint32_t height, uint32_t depth, const RecordObject& record_obj) override;
+                                      const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, u32 width, u32 height,
+                                      u32 depth, const RecordObject& record_obj) override;
     void PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
                                               const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                               const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,

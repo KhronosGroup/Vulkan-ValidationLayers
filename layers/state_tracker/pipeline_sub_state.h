@@ -53,34 +53,34 @@ struct PipelineSubState {
 };
 
 struct VertexAttrState {
-    VertexAttrState(uint32_t index_, const VkVertexInputAttributeDescription *desc_) : index(index_) {
+    VertexAttrState(u32 index_, const VkVertexInputAttributeDescription *desc_) : index(index_) {
         desc.location = desc_->location;
         desc.binding = desc_->binding;
         desc.format = desc_->format;
         desc.offset = desc_->offset;
     }
 
-    VertexAttrState(uint32_t index_, const VkVertexInputAttributeDescription2EXT *desc_) : index(index_), desc(desc_) {}
+    VertexAttrState(u32 index_, const VkVertexInputAttributeDescription2EXT *desc_) : index(index_), desc(desc_) {}
 
-    uint32_t index;  // Original index into the caller's pVertexAttributeDescriptions
+    u32 index;  // Original index into the caller's pVertexAttributeDescriptions
     vku::safe_VkVertexInputAttributeDescription2EXT desc;
 };
 
 struct VertexBindingState {
-    VertexBindingState(uint32_t index_, const VkVertexInputBindingDescription *desc_) : index(index_) {
+    VertexBindingState(u32 index_, const VkVertexInputBindingDescription *desc_) : index(index_) {
         desc.binding = desc_->binding;
         desc.stride = desc_->stride;
         desc.inputRate = desc_->inputRate;
         desc.divisor = 1;
     }
 
-    VertexBindingState(uint32_t index_, const VkVertexInputBindingDescription2EXT *desc_) : index(index_), desc(desc_) {}
+    VertexBindingState(u32 index_, const VkVertexInputBindingDescription2EXT *desc_) : index(index_), desc(desc_) {}
 
     // Original index into the caller's pVertexBindingDescriptions
-    uint32_t index;
+    u32 index;
     vku::safe_VkVertexInputBindingDescription2EXT desc;
     // Attributes for this binding, key is the location
-    vvl::unordered_map<uint32_t, VertexAttrState> locations;
+    vvl::unordered_map<u32, VertexAttrState> locations;
 };
 
 struct VertexInputState : public PipelineSubState {
@@ -90,7 +90,7 @@ struct VertexInputState : public PipelineSubState {
     vku::safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
 
     // key is binding number
-    vvl::unordered_map<uint32_t, VertexBindingState> bindings;
+    vvl::unordered_map<u32, VertexBindingState> bindings;
 
     std::shared_ptr<VertexInputState> FromCreateInfo(const ValidationStateTracker &state,
                                                      const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
@@ -112,7 +112,7 @@ struct PreRasterState : public PipelineSubState {
     const vku::safe_VkPipelineTessellationStateCreateInfo *tessellation_state = nullptr;
 
     std::shared_ptr<const vvl::RenderPass> rp_state;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     VkShaderStageFlagBits last_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 
@@ -121,7 +121,7 @@ struct PreRasterState : public PipelineSubState {
 
     std::shared_ptr<const vvl::ShaderModule> vertex_shader, geometry_shader, task_shader, mesh_shader;
     const vku::safe_VkPipelineShaderStageCreateInfo *vertex_shader_ci = nullptr, *geometry_shader_ci = nullptr,
-                                                   *task_shader_ci = nullptr, *mesh_shader_ci = nullptr;
+                                                    *task_shader_ci = nullptr, *mesh_shader_ci = nullptr;
 };
 
 std::unique_ptr<const vku::safe_VkPipelineColorBlendStateCreateInfo> ToSafeColorBlendState(
@@ -142,7 +142,7 @@ std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI
 
 struct FragmentShaderState : public PipelineSubState {
     FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data, std::shared_ptr<const vvl::RenderPass> rp,
-                        uint32_t subpass, VkPipelineLayout layout);
+                        u32 subpass, VkPipelineLayout layout);
 
     template <typename CreateInfo>
     FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data, const CreateInfo &create_info,
@@ -160,7 +160,7 @@ struct FragmentShaderState : public PipelineSubState {
     static inline VkShaderStageFlags ValidShaderStages() { return VK_SHADER_STAGE_FRAGMENT_BIT; }
 
     std::shared_ptr<const vvl::RenderPass> rp_state;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     std::shared_ptr<const vvl::PipelineLayout> pipeline_layout;
     std::unique_ptr<const vku::safe_VkPipelineMultisampleStateCreateInfo> ms_state;
@@ -196,7 +196,7 @@ static bool IsSampleLocationEnabled(const CreateInfo &create_info) {
 struct FragmentOutputState : public PipelineSubState {
     using AttachmentStateVector = std::vector<VkPipelineColorBlendAttachmentState>;
 
-    FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp);
+    FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, u32 sp);
     // For a graphics library, a "non-safe" create info must be passed in in order for pColorBlendState and pMultisampleState to not
     // get stripped out. If this is a "normal" pipeline, then we want to keep the logic from vku::safe_VkGraphicsPipelineCreateInfo
     // that strips out pointers that should be ignored.
@@ -228,7 +228,7 @@ struct FragmentOutputState : public PipelineSubState {
     static bool IsBlendConstantsEnabled(const AttachmentStateVector &attachment_states);
 
     std::shared_ptr<const vvl::RenderPass> rp_state;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     std::unique_ptr<const vku::safe_VkPipelineColorBlendStateCreateInfo> color_blend_state;
     std::unique_ptr<const vku::safe_VkPipelineMultisampleStateCreateInfo> ms_state;

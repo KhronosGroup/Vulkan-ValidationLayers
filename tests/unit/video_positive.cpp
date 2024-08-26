@@ -169,8 +169,8 @@ TEST_F(PositiveVideo, VideoDecodeH264) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 3;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 3;
+    const u32 active_refs = 2;
 
     VideoConfig config =
         GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264(), dpb_slots), active_refs));
@@ -217,8 +217,8 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 2;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 2;
+    const u32 active_refs = 2;
 
     VideoConfig config =
         GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264Interlaced(), dpb_slots), active_refs));
@@ -265,8 +265,8 @@ TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 3;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 3;
+    const u32 active_refs = 2;
 
     VideoConfig config =
         GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264Interlaced(), dpb_slots), active_refs));
@@ -312,8 +312,8 @@ TEST_F(PositiveVideo, VideoDecodeH265) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 3;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 3;
+    const u32 active_refs = 2;
 
     VideoConfig config =
         GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH265(), dpb_slots), active_refs));
@@ -361,8 +361,8 @@ TEST_F(PositiveVideo, VideoDecodeAV1) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 3;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 3;
+    const u32 active_refs = 2;
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeAV1(), dpb_slots), active_refs));
     if (!config) {
@@ -466,8 +466,8 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 3;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 3;
+    const u32 active_refs = 2;
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(
         GetConfigsWithDpbSlots(GetConfigsWithRateControl(GetConfigsEncodeH264()), dpb_slots), active_refs));
@@ -485,7 +485,7 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         auto rc_layer = VideoEncodeRateControlLayerInfo(config);
         rc_layer->averageBitrate = 64000;
         rc_layer->maxBitrate = 64000;
@@ -525,8 +525,8 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t dpb_slots = 3;
-    const uint32_t active_refs = 2;
+    const u32 dpb_slots = 3;
+    const u32 active_refs = 2;
 
     VideoConfig config = GetConfig(GetConfigsWithReferences(
         GetConfigsWithDpbSlots(GetConfigsWithRateControl(GetConfigsEncodeH265()), dpb_slots), active_refs));
@@ -544,7 +544,7 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         auto rc_layer = VideoEncodeRateControlLayerInfo(config);
         rc_layer->averageBitrate = 128000;
         rc_layer->maxBitrate = 128000;
@@ -667,7 +667,7 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH264) {
     // Calling without feedback info and data pointer is legal
     context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, nullptr);
 
-    std::vector<uint8_t> data_buffer(data_size);
+    std::vector<u8> data_buffer(data_size);
 
     // Calling without feedback info but data pointer is legal
     context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, data_buffer.data());
@@ -702,7 +702,7 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsH265) {
     // Calling without feedback info and data pointer is legal
     context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, nullptr);
 
-    std::vector<uint8_t> data_buffer(data_size);
+    std::vector<u8> data_buffer(data_size);
 
     // Calling without feedback info but data pointer is legal
     context.vk.GetEncodedVideoSessionParametersKHR(device(), &get_info, nullptr, &data_size, data_buffer.data());

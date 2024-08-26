@@ -45,10 +45,10 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, u32 commandBufferCount,
                                                    const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
     bool skip = false;
-    for (uint32_t i = 0; i < commandBufferCount; i++) {
+    for (u32 i = 0; i < commandBufferCount; i++) {
         auto cb_state = GetRead<vvl::CommandBuffer>(pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
         if (cb_state && cb_state->InUse()) {
@@ -154,7 +154,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         p_inherited_rendering_info->rasterizationSamples);
                 }
 
-                for (uint32_t i = 0; i < p_inherited_rendering_info->colorAttachmentCount; ++i) {
+                for (u32 i = 0; i < p_inherited_rendering_info->colorAttachmentCount; ++i) {
                     if (p_inherited_rendering_info->pColorAttachmentFormats != nullptr) {
                         const VkFormat attachment_format = p_inherited_rendering_info->pColorAttachmentFormats[i];
                         if (attachment_format != VK_FORMAT_UNDEFINED) {
@@ -226,7 +226,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 }
 
                 if (MostSignificantBit(p_inherited_rendering_info->viewMask) >=
-                    static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+                    static_cast<i32>(phys_dev_props_core11.maxMultiviewViewCount)) {
                     skip |= LogError("VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009", commandBuffer,
                                      inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::viewMask),
                                      "(0x%" PRIx32 ") most significant bit is superior or equal to maxMultiviewViewCount (%" PRIu32
@@ -445,14 +445,14 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                      const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         if (!buffer_state) continue;  // if using nullDescriptors
 
@@ -563,19 +563,19 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
 // Contact David Zhao Akeley <dakeley@nvidia.com> for clarifications and bug fixes.
 class CoreChecks::ViewportScissorInheritanceTracker {
     static_assert(4 == sizeof(vvl::CommandBuffer::viewportMask), "Adjust max_viewports to match viewportMask bit width");
-    static constexpr uint32_t kMaxViewports = 32, kNotTrashed = uint32_t(-2), kTrashedByPrimary = uint32_t(-1);
+    static constexpr u32 kMaxViewports = 32, kNotTrashed = u32(-2), kTrashedByPrimary = u32(-1);
 
     const ValidationObject &validation_;
     const vvl::CommandBuffer *primary_state_ = nullptr;
-    uint32_t viewport_mask_;
-    uint32_t scissor_mask_;
-    uint32_t viewport_trashed_by_[kMaxViewports];  // filled in VisitPrimary.
-    uint32_t scissor_trashed_by_[kMaxViewports];
+    u32 viewport_mask_;
+    u32 scissor_mask_;
+    u32 viewport_trashed_by_[kMaxViewports];  // filled in VisitPrimary.
+    u32 scissor_trashed_by_[kMaxViewports];
     VkViewport viewports_to_inherit_[kMaxViewports];
-    uint32_t viewport_count_to_inherit_;  // 0 if viewport count (EXT state) has never been defined (but not trashed)
-    uint32_t scissor_count_to_inherit_;   // 0 if scissor count (EXT state) has never been defined (but not trashed)
-    uint32_t viewport_count_trashed_by_;
-    uint32_t scissor_count_trashed_by_;
+    u32 viewport_count_to_inherit_;  // 0 if viewport count (EXT state) has never been defined (but not trashed)
+    u32 scissor_count_to_inherit_;   // 0 if scissor count (EXT state) has never been defined (but not trashed)
+    u32 viewport_count_trashed_by_;
+    u32 scissor_count_trashed_by_;
 
   public:
     ViewportScissorInheritanceTracker(const ValidationObject &validation) : validation_(validation) {}
@@ -587,8 +587,8 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         viewport_mask_ = primary_state.viewportMask | primary_state.viewportWithCountMask;
         scissor_mask_ = primary_state.scissorMask | primary_state.scissorWithCountMask;
 
-        for (uint32_t n = 0; n < kMaxViewports; ++n) {
-            uint32_t bit = uint32_t(1) << n;
+        for (u32 n = 0; n < kMaxViewports; ++n) {
+            u32 bit = u32(1) << n;
             viewport_trashed_by_[n] = primary_state.trashedViewportMask & bit ? kTrashedByPrimary : kNotTrashed;
             scissor_trashed_by_[n] = primary_state.trashedScissorMask & bit ? kTrashedByPrimary : kNotTrashed;
             if (n < primary_state.dynamic_state_value.viewports.size() && viewport_mask_ & bit) {
@@ -603,7 +603,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         return false;
     }
 
-    bool VisitSecondary(uint32_t cmd_buffer_idx, const Location &cb_loc, const vvl::CommandBuffer &secondary_state) {
+    bool VisitSecondary(u32 cmd_buffer_idx, const Location &cb_loc, const vvl::CommandBuffer &secondary_state) {
         bool skip = false;
         if (secondary_state.inheritedViewportDepths.empty()) {
             skip |= VisitSecondaryNoInheritance(cmd_buffer_idx, secondary_state);
@@ -624,12 +624,12 @@ class CoreChecks::ViewportScissorInheritanceTracker {
   private:
     // Track state inheritance as specified by VK_NV_inherited_scissor_viewport, including states
     // overwritten to undefined value by bound pipelines with non-dynamic state.
-    bool VisitSecondaryNoInheritance(uint32_t cmd_buffer_idx, const vvl::CommandBuffer &secondary_state) {
+    bool VisitSecondaryNoInheritance(u32 cmd_buffer_idx, const vvl::CommandBuffer &secondary_state) {
         viewport_mask_ |= secondary_state.viewportMask | secondary_state.viewportWithCountMask;
         scissor_mask_ |= secondary_state.scissorMask | secondary_state.scissorWithCountMask;
 
-        for (uint32_t n = 0; n < kMaxViewports; ++n) {
-            uint32_t bit = uint32_t(1) << n;
+        for (u32 n = 0; n < kMaxViewports; ++n) {
+            u32 bit = u32(1) << n;
             if ((secondary_state.viewportMask | secondary_state.viewportWithCountMask) & bit) {
                 if (n < secondary_state.dynamic_state_value.viewports.size()) {
                     viewports_to_inherit_[n] = secondary_state.dynamic_state_value.viewports[n];
@@ -661,13 +661,13 @@ class CoreChecks::ViewportScissorInheritanceTracker {
     }
 
     // Validate needed inherited state as specified by VK_NV_inherited_scissor_viewport.
-    bool VisitSecondaryInheritance(uint32_t cmd_buffer_idx, const Location &cb_loc, const vvl::CommandBuffer &secondary_state) {
+    bool VisitSecondaryInheritance(u32 cmd_buffer_idx, const Location &cb_loc, const vvl::CommandBuffer &secondary_state) {
         bool skip = false;
-        uint32_t check_viewport_count = 0, check_scissor_count = 0;
+        u32 check_viewport_count = 0, check_scissor_count = 0;
 
         // Common code for reporting missing inherited state (for a myriad of reasons).
-        auto check_missing_inherit = [&](uint32_t was_ever_defined, uint32_t trashed_by, VkDynamicState state, uint32_t index = 0,
-                                         uint32_t static_use_count = 0, const VkViewport *inherited_viewport = nullptr,
+        auto check_missing_inherit = [&](u32 was_ever_defined, u32 trashed_by, VkDynamicState state, u32 index = 0,
+                                         u32 static_use_count = 0, const VkViewport *inherited_viewport = nullptr,
                                          const VkViewport *expected_viewport_depth = nullptr) {
             if (was_ever_defined && trashed_by == kNotTrashed) {
                 if (state != VK_DYNAMIC_STATE_VIEWPORT) return false;
@@ -756,8 +756,8 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         }
 
         // Check the maximum of (viewports used by pipelines with static viewport count, "" dynamic viewport count)
-        // but limit to length of inheritedViewportDepths array and uint32_t bit width (validation layer limit).
-        check_viewport_count = std::min(std::min(kMaxViewports, uint32_t(secondary_state.inheritedViewportDepths.size())),
+        // but limit to length of inheritedViewportDepths array and u32 bit width (validation layer limit).
+        check_viewport_count = std::min(std::min(kMaxViewports, u32(secondary_state.inheritedViewportDepths.size())),
                                         std::max(check_viewport_count, secondary_state.usedViewportScissorCount));
         check_scissor_count = std::min(kMaxViewports, std::max(check_scissor_count, secondary_state.usedViewportScissorCount));
 
@@ -771,25 +771,25 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 unsigned(secondary_state.inheritedViewportDepths.size()));
         }
 
-        for (uint32_t n = 0; n < check_viewport_count; ++n) {
-            skip |= check_missing_inherit(viewport_mask_ & uint32_t(1) << n, viewport_trashed_by_[n], VK_DYNAMIC_STATE_VIEWPORT, n,
+        for (u32 n = 0; n < check_viewport_count; ++n) {
+            skip |= check_missing_inherit(viewport_mask_ & u32(1) << n, viewport_trashed_by_[n], VK_DYNAMIC_STATE_VIEWPORT, n,
                                           secondary_state.usedViewportScissorCount, &viewports_to_inherit_[n],
                                           &secondary_state.inheritedViewportDepths[n]);
         }
 
-        for (uint32_t n = 0; n < check_scissor_count; ++n) {
-            skip |= check_missing_inherit(scissor_mask_ & uint32_t(1) << n, scissor_trashed_by_[n], VK_DYNAMIC_STATE_SCISSOR, n,
+        for (u32 n = 0; n < check_scissor_count; ++n) {
+            skip |= check_missing_inherit(scissor_mask_ & u32(1) << n, scissor_trashed_by_[n], VK_DYNAMIC_STATE_SCISSOR, n,
                                           secondary_state.usedViewportScissorCount);
         }
         return skip;
     }
 };
 
-constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kMaxViewports;
-constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kNotTrashed;
-constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kTrashedByPrimary;
+constexpr u32 CoreChecks::ViewportScissorInheritanceTracker::kMaxViewports;
+constexpr u32 CoreChecks::ViewportScissorInheritanceTracker::kNotTrashed;
+constexpr u32 CoreChecks::ViewportScissorInheritanceTracker::kTrashedByPrimary;
 
-bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
+bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, u32 commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -867,7 +867,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
     }
 
-    for (uint32_t i = 0; i < commandBuffersCount; i++) {
+    for (u32 i = 0; i < commandBuffersCount; i++) {
         const auto &sub_cb_state = *GetRead<vvl::CommandBuffer>(pCommandBuffers[i]);
         const Location cb_loc = error_obj.location.dot(Field::pCommandBuffers, i);
 
@@ -900,7 +900,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 "%" PRIu32 ").",
                                 location_info->colorAttachmentCount, unsigned(cb_state.rendering_attachments.color_indexes.size()));
                         } else {
-                            for (uint32_t idx = 0; idx < location_info->colorAttachmentCount; idx++) {
+                            for (u32 idx = 0; idx < location_info->colorAttachmentCount; idx++) {
                                 if (location_info->pColorAttachmentLocations &&
                                     location_info->pColorAttachmentLocations[idx] !=
                                         cb_state.rendering_attachments.color_locations[idx]) {
@@ -935,7 +935,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 "%" PRIu32 ").",
                                 index_info->colorAttachmentCount, unsigned(cb_state.rendering_attachments.color_indexes.size()));
                         } else {
-                            for (uint32_t idx = 0; idx < index_info->colorAttachmentCount; idx++) {
+                            for (u32 idx = 0; idx < index_info->colorAttachmentCount; idx++) {
                                 if (index_info->pColorAttachmentInputIndices && cb_state.rendering_attachments.color_indexes[idx] !=
                                                                                     index_info->pColorAttachmentInputIndices[idx]) {
                                     skip |= LogError(vuid_090505, objlist,
@@ -985,7 +985,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      FormatHandle(pCommandBuffers[i]).c_str());
                 }
             } else if (sub_cb_state.beginInfo.pInheritanceInfo != nullptr) {
-                const uint32_t inheritance_subpass = sub_cb_state.beginInfo.pInheritanceInfo->subpass;
+                const u32 inheritance_subpass = sub_cb_state.beginInfo.pInheritanceInfo->subpass;
                 const VkRenderPass inheritance_render_pass = sub_cb_state.beginInfo.pInheritanceInfo->renderPass;
                 if (!(sub_cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     const LogObjectList objlist(pCommandBuffers[i], cb_state.activeRenderPass->Handle());
@@ -1081,8 +1081,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              inheritance_rendering_info.colorAttachmentCount, rendering_info.colorAttachmentCount);
                         }
 
-                        for (uint32_t color_i = 0, count = std::min(inheritance_rendering_info.colorAttachmentCount,
-                                                                    rendering_info.colorAttachmentCount);
+                        for (u32 color_i = 0, count = std::min(inheritance_rendering_info.colorAttachmentCount,
+                                                               rendering_info.colorAttachmentCount);
                              color_i < count; color_i++) {
                             if (rendering_info.pColorAttachments[color_i].imageView == VK_NULL_HANDLE) {
                                 if (inheritance_rendering_info.pColorAttachmentFormats[color_i] != VK_FORMAT_UNDEFINED) {
@@ -1200,7 +1200,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             vku::FindStructInPNextChain<VkAttachmentSampleCountInfoAMD>(inheritance_rendering_info.pNext);
 
                         if (amd_sample_count) {
-                            for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {
+                            for (u32 index = 0; index < rendering_info.colorAttachmentCount; index++) {
                                 if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
                                     continue;
                                 }
@@ -1261,7 +1261,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 }
                             }
                         } else {
-                            for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {
+                            for (u32 index = 0; index < rendering_info.colorAttachmentCount; index++) {
                                 if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
                                     continue;
                                 }
@@ -1478,8 +1478,8 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
-bool CoreChecks::ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer &cb_state, const std::string &vuid, const uint32_t stride,
-                                                 Struct struct_name, const uint32_t struct_size, const Location &loc) const {
+bool CoreChecks::ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer &cb_state, const std::string &vuid, const u32 stride,
+                                                 Struct struct_name, const u32 struct_size, const Location &loc) const {
     bool skip = false;
     static const int condition_multiples = 0b0011;
     if ((stride & condition_multiples) || (stride < struct_size)) {
@@ -1489,12 +1489,12 @@ bool CoreChecks::ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer &cb_st
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer &cb_state, const std::string &vuid, const uint32_t stride,
-                                                 Struct struct_name, const uint32_t struct_size, const uint32_t drawCount,
+bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer &cb_state, const std::string &vuid, const u32 stride,
+                                                 Struct struct_name, const u32 struct_size, const u32 drawCount,
                                                  const VkDeviceSize offset, const vvl::Buffer &buffer_state,
                                                  const Location &loc) const {
     bool skip = false;
-    uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
+    u64 validation_value = stride * (drawCount - 1) + offset + struct_size;
     if (validation_value > buffer_state.create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(buffer_state.Handle());
@@ -1507,8 +1507,8 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer &cb_st
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                   uint32_t bindingCount, const VkBuffer *pBuffers,
+bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, u32 firstBinding,
+                                                                   u32 bindingCount, const VkBuffer *pBuffers,
                                                                    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1519,7 +1519,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                          "transform feedback is active.");
     }
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         ASSERT_AND_CONTINUE(buffer_state);
@@ -1563,8 +1563,8 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
-                                                             uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, u32 firstCounterBuffer,
+                                                             u32 counterBufferCount, const VkBuffer *pCounterBuffers,
                                                              const VkDeviceSize *pCounterBufferOffsets,
                                                              const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1597,7 +1597,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     }
 
     const auto &rp_ci = cb_state->activeRenderPass->create_info;
-    for (uint32_t i = 0; i < rp_ci.subpassCount; ++i) {
+    for (u32 i = 0; i < rp_ci.subpassCount; ++i) {
         // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
         if (rp_ci.pSubpasses[i].viewMask > 0) {
             skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-None-02373", commandBuffer, error_obj.location,
@@ -1623,7 +1623,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                              "pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.");
         }
     } else {
-        for (uint32_t i = 0; i < counterBufferCount; ++i) {
+        for (u32 i = 0; i < counterBufferCount; ++i) {
             if (pCounterBuffers[i] == VK_NULL_HANDLE) {
                 continue;
             }
@@ -1650,8 +1650,8 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
-                                                           uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, u32 firstCounterBuffer,
+                                                           u32 counterBufferCount, const VkBuffer *pCounterBuffers,
                                                            const VkDeviceSize *pCounterBufferOffsets,
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1662,7 +1662,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
     }
 
     if (pCounterBuffers) {
-        for (uint32_t i = 0; i < counterBufferCount; ++i) {
+        for (u32 i = 0; i < counterBufferCount; ++i) {
             if (pCounterBuffers[i] == VK_NULL_HANDLE) {
                 continue;
             }
@@ -1689,7 +1689,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
                                                       const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                       const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
                                                       const ErrorObject &error_obj) const {
@@ -1697,7 +1697,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
 
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         if (!buffer_state) continue;  // if using nullDescriptors
 
@@ -1734,10 +1734,10 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                         uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                         const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                         const VkDeviceSize *pStrides, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
+                                                         const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                         const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
+                                                         const ErrorObject &error_obj) const {
     return PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
                                                 error_obj);
 }

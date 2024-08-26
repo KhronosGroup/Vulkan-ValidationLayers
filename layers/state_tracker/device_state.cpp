@@ -22,7 +22,7 @@ namespace vvl {
 
 const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(VkPhysicalDevice phys_dev) {
     std::vector<VkQueueFamilyProperties> result;
-    uint32_t count;
+    u32 count;
     DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, nullptr);
     result.resize(count);
     DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, result.data());

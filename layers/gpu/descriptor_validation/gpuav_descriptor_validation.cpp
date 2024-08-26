@@ -45,7 +45,7 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
 
     // If the user calls vkCmdBindDescriptorSet::firstSet to a non-zero value, these indexes don't line up
     size_t update_index = 0;
-    for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
+    for (u32 i = 0; i < last_bound.per_set.size(); i++) {
         if (last_bound.per_set[i].bound_descriptor_set) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
             if (slot != last_bound.pipeline_state->active_slots.end()) {
@@ -105,7 +105,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
     bindless_state->global_state = gpuav.desc_heap_->GetDeviceAddress();
     di_buffers.descriptor_set_buffers.reserve(di_buffers.descriptor_set_buffers.size() + last_bound.per_set.size());
-    for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
+    for (u32 i = 0; i < last_bound.per_set.size(); i++) {
         const auto &last_bound_set = last_bound.per_set[i];
         if (!last_bound_set.bound_descriptor_set) {
             continue;
@@ -177,7 +177,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     for (auto [di_info_i, di_info] : vvl::enumerate(di_input_buffer_list)) {
         Location draw_loc(vvl::Func::vkCmdDraw);
         // For each descriptor set ...
-        for (uint32_t i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
+        for (u32 i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
             auto &set = di_info->descriptor_set_buffers[i];
             if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
@@ -196,7 +196,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             }
 
             vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
-            const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
+            const u32 shader_set = glsl::kDescriptorSetWrittenMask | i;
             auto used_descs = set.output_state->UsedDescriptors(loc, *set.state, shader_set);
             // For each used binding ...
             for (const auto &u : used_descs) {

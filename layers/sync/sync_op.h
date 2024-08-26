@@ -132,7 +132,7 @@ struct SyncImageMemoryBarrier {
     using Image = std::shared_ptr<const ImageState>;
 
     Image image;
-    uint32_t index;
+    u32 index;
     SyncBarrier barrier;
     VkImageLayout old_layout;
     VkImageLayout new_layout;
@@ -141,7 +141,7 @@ struct SyncImageMemoryBarrier {
     bool IsLayoutTransition() const { return old_layout != new_layout; }
     const VkImageSubresourceRange &Range() const { return range; };
     const ImageState *GetState() const { return image.get(); }
-    SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
+    SyncImageMemoryBarrier(const Image &image_, u32 index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
                            VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
         : image(image_),
           index(index_),
@@ -168,7 +168,7 @@ class SyncOpBase {
   protected:
     // Only non-null and valid for SyncOps within a render pass instance  WIP -- think about how to manage for non RPI calls within
     // RPI and 2ndarys...
-    uint32_t subpass_ = VK_SUBPASS_EXTERNAL;
+    u32 subpass_ = VK_SUBPASS_EXTERNAL;
     vvl::Func command_;
 };
 
@@ -182,11 +182,11 @@ class SyncOpBarriers : public SyncOpBase {
                                     AccessContext *access_context);
 
     SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
-                   VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
-                   const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                   VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, u32 memoryBarrierCount,
+                   const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
                    const VkImageMemoryBarrier *pImageMemoryBarriers);
-    SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
+    SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, u32 event_count,
                    const VkDependencyInfoKHR *pDependencyInfo);
 
     ~SyncOpBarriers() override = default;
@@ -202,19 +202,19 @@ class SyncOpBarriers : public SyncOpBase {
         std::vector<SyncImageMemoryBarrier> image_memory_barriers;
         bool single_exec_scope;
         void MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
-                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers);
+                                u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers);
         void MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                      VkDependencyFlags dependencyFlags, uint32_t bufferMemoryBarrierCount,
+                                      VkDependencyFlags dependencyFlags, u32 bufferMemoryBarrierCount,
                                       const VkBufferMemoryBarrier *pBufferMemoryBarriers);
         void MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                     VkDependencyFlags dependencyFlags, uint32_t imageMemoryBarrierCount,
+                                     VkDependencyFlags dependencyFlags, u32 imageMemoryBarrierCount,
                                      const VkImageMemoryBarrier *pImageMemoryBarriers);
-        void MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags, uint32_t barrier_count,
+        void MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags, u32 barrier_count,
                                 const VkMemoryBarrier2 *barriers);
         void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                      uint32_t barrier_count, const VkBufferMemoryBarrier2 *barriers);
+                                      u32 barrier_count, const VkBufferMemoryBarrier2 *barriers);
         void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                     uint32_t barrier_count, const VkImageMemoryBarrier2 *barriers);
+                                     u32 barrier_count, const VkImageMemoryBarrier2 *barriers);
     };
     std::vector<BarrierSet> barriers_;
 };
@@ -223,8 +223,8 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
   public:
     SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                           VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                          u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
                           const VkImageMemoryBarrier *pImageMemoryBarriers);
     SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                           const VkDependencyInfoKHR &pDependencyInfo);
@@ -238,13 +238,13 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
 
 class SyncOpWaitEvents : public SyncOpBarriers {
   public:
-    SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
+    SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, u32 eventCount,
                      const VkEvent *pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                     uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                     const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                     u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                     const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
                      const VkImageMemoryBarrier *pImageMemoryBarriers);
 
-    SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
+    SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, u32 eventCount,
                      const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo);
     ~SyncOpWaitEvents() override = default;
 
@@ -260,7 +260,7 @@ class SyncOpWaitEvents : public SyncOpBarriers {
     // TODO PHASE2 This is the wrong thing to use for "replay".. as the event state will have moved on since the record
     // TODO PHASE2 May need to capture by value w.r.t. "first use" or build up in calling/enqueue context through replay.
     std::vector<std::shared_ptr<const vvl::Event>> events_;
-    void MakeEventsList(const SyncValidator &sync_state, uint32_t event_count, const VkEvent *events);
+    void MakeEventsList(const SyncValidator &sync_state, u32 event_count, const VkEvent *events);
 };
 
 class SyncOpResetEvent : public SyncOpBase {
@@ -414,7 +414,7 @@ class ReplayState {
 
         const SyncOpBeginRenderPass *begin_op = nullptr;
         const AccessContext *replay_context = nullptr;
-        uint32_t subpass = VK_SUBPASS_EXTERNAL;
+        u32 subpass = VK_SUBPASS_EXTERNAL;
         std::vector<AccessContext> subpass_contexts;
         void Reset() {
             begin_op = nullptr;
@@ -429,7 +429,7 @@ class ReplayState {
     bool DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const;
 
     ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
-                const ErrorObject &error_object, uint32_t index, ResourceUsageTag base_tag);
+                const ErrorObject &error_object, u32 index, ResourceUsageTag base_tag);
 
     CommandExecutionContext &GetExecutionContext() const { return exec_context_; }
     ResourceUsageTag GetBaseTag() const { return base_tag_; }
@@ -449,7 +449,7 @@ class ReplayState {
     CommandExecutionContext &exec_context_;
     const CommandBufferAccessContext &recorded_context_;
     const ErrorObject &error_obj_;
-    const uint32_t index_;
+    const u32 index_;
     const ResourceUsageTag base_tag_;
     RenderPassReplayState rp_replay_;
 };

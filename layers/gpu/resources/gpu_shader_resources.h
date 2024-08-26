@@ -28,7 +28,7 @@
 namespace gpuav {
 
 struct DescSetState {
-    uint32_t num = 0;
+    u32 num = 0;
     std::shared_ptr<DescriptorSet> state = {};
     BindingVariableMap binding_req = {};
     // State that will be used by the GPU-AV shader instrumentation
@@ -61,19 +61,19 @@ struct BindlessStateBuffer {
 
 // Represented as a uvec2 in the shader
 struct BindingLayout {
-    uint32_t count;
-    uint32_t state_start;
+    u32 count;
+    u32 state_start;
 };
 
 // Represented as a uvec2 in the shader
 struct DescriptorState {
     DescriptorState() : id(0), extra_data(0) {}
-    DescriptorState(vvl::DescriptorClass dc, uint32_t id_, uint32_t extra_data_ = 1)
+    DescriptorState(vvl::DescriptorClass dc, u32 id_, u32 extra_data_ = 1)
         : id(ClassToShaderBits(dc) | id_), extra_data(extra_data_) {}
-    uint32_t id;
-    uint32_t extra_data;
+    u32 id;
+    u32 extra_data;
 
-    static uint32_t ClassToShaderBits(vvl::DescriptorClass dc) {
+    static u32 ClassToShaderBits(vvl::DescriptorClass dc) {
         switch (dc) {
             case vvl::DescriptorClass::PlainSampler:
                 return (kSamplerDesc << kDescBitShift);

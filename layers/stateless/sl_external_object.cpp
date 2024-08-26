@@ -314,7 +314,7 @@ struct ExternalOperationsInfo {
     const VkExportMemoryAllocateInfo *export_info = nullptr;
     const VkExportMemoryAllocateInfoNV *export_info_nv = nullptr;
 
-    uint32_t total_import_ops = 0;
+    u32 total_import_ops = 0;
     bool has_export = false;
 };
 

@@ -22,11 +22,11 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
-static inline bool RenderPassUsesAttachmentAsResolve(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
-    for (uint32_t subpass = 0; subpass < create_info.subpassCount; subpass++) {
+static inline bool RenderPassUsesAttachmentAsResolve(const vku::safe_VkRenderPassCreateInfo2& create_info, u32 attachment) {
+    for (u32 subpass = 0; subpass < create_info.subpassCount; subpass++) {
         const auto& subpass_info = create_info.pSubpasses[subpass];
         if (subpass_info.pResolveAttachments) {
-            for (uint32_t i = 0; i < subpass_info.colorAttachmentCount; i++) {
+            for (u32 i = 0; i < subpass_info.colorAttachmentCount; i++) {
                 if (subpass_info.pResolveAttachments[i].attachment == attachment) return true;
             }
         }
@@ -35,20 +35,20 @@ static inline bool RenderPassUsesAttachmentAsResolve(const vku::safe_VkRenderPas
     return false;
 }
 
-static inline bool RenderPassUsesAttachmentOnTile(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
-    for (uint32_t subpass = 0; subpass < create_info.subpassCount; subpass++) {
+static inline bool RenderPassUsesAttachmentOnTile(const vku::safe_VkRenderPassCreateInfo2& create_info, u32 attachment) {
+    for (u32 subpass = 0; subpass < create_info.subpassCount; subpass++) {
         const auto& subpass_info = create_info.pSubpasses[subpass];
 
         // If an attachment is ever used as a color attachment,
         // resolve attachment or depth stencil attachment,
         // it needs to exist on tile at some point.
 
-        for (uint32_t i = 0; i < subpass_info.colorAttachmentCount; i++) {
+        for (u32 i = 0; i < subpass_info.colorAttachmentCount; i++) {
             if (subpass_info.pColorAttachments[i].attachment == attachment) return true;
         }
 
         if (subpass_info.pResolveAttachments) {
-            for (uint32_t i = 0; i < subpass_info.colorAttachmentCount; i++) {
+            for (u32 i = 0; i < subpass_info.colorAttachmentCount; i++) {
                 if (subpass_info.pResolveAttachments[i].attachment == attachment) return true;
             }
         }
@@ -59,15 +59,15 @@ static inline bool RenderPassUsesAttachmentOnTile(const vku::safe_VkRenderPassCr
     return false;
 }
 
-static inline bool RenderPassUsesAttachmentAsImageOnly(const vku::safe_VkRenderPassCreateInfo2& create_info, uint32_t attachment) {
+static inline bool RenderPassUsesAttachmentAsImageOnly(const vku::safe_VkRenderPassCreateInfo2& create_info, u32 attachment) {
     if (RenderPassUsesAttachmentOnTile(create_info, attachment)) {
         return false;
     }
 
-    for (uint32_t subpass = 0; subpass < create_info.subpassCount; subpass++) {
+    for (u32 subpass = 0; subpass < create_info.subpassCount; subpass++) {
         const auto& subpass_info = create_info.pSubpasses[subpass];
 
-        for (uint32_t i = 0; i < subpass_info.inputAttachmentCount; i++) {
+        for (u32 i = 0; i < subpass_info.inputAttachmentCount; i++) {
             if (subpass_info.pInputAttachments[i].attachment == attachment) {
                 return true;
             }
@@ -83,7 +83,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
     bool skip = false;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->attachmentCount; ++i) {
         VkFormat format = pCreateInfo->pAttachments[i].format;
         const Location attachment_loc = create_info_loc.dot(Field::pAttachments, i);
         if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
@@ -122,16 +122,16 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
                     "Attachment %u in the VkRenderPass is a multisampled image with %u samples, but it uses loadOp/storeOp "
                     "which requires accessing data from memory. Multisampled images should always be loadOp = CLEAR or DONT_CARE, "
                     "storeOp = DONT_CARE. This allows the implementation to use lazily allocated memory effectively.",
-                    i, static_cast<uint32_t>(attachment.samples));
+                    i, static_cast<u32>(attachment.samples));
             }
         }
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
-        for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+        for (u32 i = 0; i < pCreateInfo->subpassCount; ++i) {
             if (pCreateInfo->pSubpasses[i].pResolveAttachments) {
-                for (uint32_t j = 0; j < pCreateInfo->pSubpasses[i].colorAttachmentCount; ++j) {
-                    const uint32_t attachment = pCreateInfo->pSubpasses[i].pResolveAttachments[j].attachment;
+                for (u32 j = 0; j < pCreateInfo->pSubpasses[i].colorAttachmentCount; ++j) {
+                    const u32 attachment = pCreateInfo->pSubpasses[i].pResolveAttachments[j].attachment;
                     if (attachment != VK_ATTACHMENT_UNUSED) {
                         const VkFormat format = pCreateInfo->pAttachments[attachment].format;
                         VkSubpassResolvePerformanceQueryEXT performance_query = vku::InitStructHelper();
@@ -152,7 +152,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
         }
     }
 
-    for (uint32_t dependency = 0; dependency < pCreateInfo->dependencyCount; dependency++) {
+    for (u32 dependency = 0; dependency < pCreateInfo->dependencyCount; dependency++) {
         const Location dependency_loc = create_info_loc.dot(Field::pDependencies, dependency);
         skip |= CheckPipelineStageFlags(device, dependency_loc.dot(Field::srcStageMask),
                                         pCreateInfo->pDependencies[dependency].srcStageMask);
@@ -180,7 +180,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
         }
     }
     // Check if any attachments have LOAD operation on them
-    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+    for (u32 att = 0; att < rp_state->create_info.attachmentCount; att++) {
         const auto& attachment = rp_state->create_info.pAttachments[att];
 
         bool attachment_has_readback = false;
@@ -217,7 +217,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
 
     bool clearing = false;
 
-    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+    for (u32 att = 0; att < rp_state->create_info.attachmentCount; att++) {
         const auto& attachment = rp_state->create_info.pAttachments[att];
 
         if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
@@ -250,7 +250,7 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA) && rp_state->create_info.pAttachments) {
-        for (uint32_t i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
+        for (u32 i = 0; i < pRenderPassBegin->clearValueCount; ++i) {
             const auto& attachment = rp_state->create_info.pAttachments[i];
             if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                 const auto& clear_color = pRenderPassBegin->pClearValues[i].color;
@@ -267,7 +267,7 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
     bool skip = false;
     const Location rendering_info = loc.dot(Field::pRenderingInfo);
 
-    for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+    for (u32 i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
         const auto& color_attachment = pRenderingInfo->pColorAttachments[i];
         const Location color_attachment_info = rendering_info.dot(Field::pColorAttachments, i);
 
@@ -375,7 +375,7 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
 
         const auto depth_attachment = rp->create_info.pSubpasses[cb_state->GetActiveSubpass()].pDepthStencilAttachment;
         if (depth_attachment) {
-            const uint32_t attachment_index = depth_attachment->attachment;
+            const u32 attachment_index = depth_attachment->attachment;
             if (attachment_index != VK_ATTACHMENT_UNUSED) {
                 depth_image_view = cb_state->active_attachments[attachment_index].image_view;
             }
@@ -397,7 +397,7 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, 
     ASSERT_AND_RETURN(rp_state);
 
     // Check load ops
-    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+    for (u32 att = 0; att < rp_state->create_info.attachmentCount; att++) {
         const auto& attachment = rp_state->create_info.pAttachments[att];
 
         if (!RenderPassUsesAttachmentAsImageOnly(rp_state->create_info, att) &&
@@ -440,7 +440,7 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, 
     }
 
     // Check store ops
-    for (uint32_t att = 0; att < rp_state->create_info.attachmentCount; att++) {
+    for (u32 att = 0; att < rp_state->create_info.attachmentCount; att++) {
         const auto& attachment = rp_state->create_info.pAttachments[att];
 
         if (!RenderPassUsesAttachmentOnTile(rp_state->create_info, att)) {
@@ -496,7 +496,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_st
                 depth_image_view = depth_image_view_shared_ptr.get();
             }
 
-            for (uint32_t i = 0; i < rp->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
+            for (u32 i = 0; i < rp->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
                 const auto& color_attachment = rp->dynamic_rendering_begin_rendering_info.pColorAttachments[i];
                 if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                     if (auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
@@ -511,14 +511,14 @@ void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_st
                 if (rp->create_info.subpassCount > 0) {
                     const auto depth_attachment = rp->create_info.pSubpasses[0].pDepthStencilAttachment;
                     if (depth_attachment) {
-                        const uint32_t attachment_index = depth_attachment->attachment;
+                        const u32 attachment_index = depth_attachment->attachment;
                         if (attachment_index != VK_ATTACHMENT_UNUSED) {
                             load_op.emplace(rp->create_info.pAttachments[attachment_index].loadOp);
                             depth_image_view = cb_state.active_attachments[attachment_index].image_view;
                         }
                     }
                 }
-                for (uint32_t i = 0; i < cb_state.active_render_pass_begin_info.clearValueCount; ++i) {
+                for (u32 i = 0; i < cb_state.active_render_pass_begin_info.clearValueCount; ++i) {
                     const auto& attachment = rp->create_info.pAttachments[i];
                     if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
                         const auto& clear_color = cb_state.active_render_pass_begin_info.pClearValues[i].color;
@@ -559,10 +559,10 @@ void BestPractices::RecordCmdEndRenderingCommon(bp_state::CommandBuffer& cb_stat
             }
         } else {
             if (rp_state.create_info.subpassCount > 0) {
-                const uint32_t last_subpass = rp_state.create_info.subpassCount - 1;
+                const u32 last_subpass = rp_state.create_info.subpassCount - 1;
                 const auto depth_attachment = rp_state.create_info.pSubpasses[last_subpass].pDepthStencilAttachment;
                 if (depth_attachment) {
-                    const uint32_t attachment = depth_attachment->attachment;
+                    const u32 attachment = depth_attachment->attachment;
                     if (attachment != VK_ATTACHMENT_UNUSED) {
                         store_op.emplace(rp_state.create_info.pAttachments[attachment].storeOp);
                     }
@@ -636,8 +636,8 @@ void BestPractices::RecordCmdNextSubpass(bp_state::CommandBuffer& cb_state) {
 }
 
 void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                   VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                   const void* pValues, const RecordObject& record_obj) {
+                                                   VkShaderStageFlags stageFlags, u32 offset, u32 size, const void* pValues,
+                                                   const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
 }
 
@@ -787,8 +787,8 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
         // the optimal thing to do is to defer the clear until you're actually
         // going to render to the image.
 
-        uint32_t num_attachments = rp->create_info.attachmentCount;
-        for (uint32_t i = 0; i < num_attachments; i++) {
+        u32 num_attachments = rp->create_info.attachmentCount;
+        for (u32 i = 0; i < num_attachments; i++) {
             if (!RenderPassUsesAttachmentOnTile(rp->create_info, i) || RenderPassUsesAttachmentAsResolve(rp->create_info, i)) {
                 continue;
             }
@@ -807,7 +807,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
             }
 
             if (vkuFormatHasStencil(attachment.format) && (attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
-                                                        attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
+                                                           attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE)) {
                 bandwidth_aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
 
@@ -817,7 +817,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
 
             auto itr = std::find_if(render_pass_state.touchesAttachments.begin(), render_pass_state.touchesAttachments.end(),
                                     [i](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == i; });
-            uint32_t untouched_aspects = bandwidth_aspects;
+            u32 untouched_aspects = bandwidth_aspects;
             if (itr != render_pass_state.touchesAttachments.end()) {
                 untouched_aspects &= ~itr->aspects;
             }
@@ -837,7 +837,7 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     return skip;
 }
 
-void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
+void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, u32 fb_attachment, VkImageAspectFlags aspects) {
     auto& rp_state = cb_state.render_pass_state;
     // Called when we have a partial clear attachment, or a normal draw call which accesses an attachment.
     auto itr =
@@ -851,9 +851,8 @@ void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, ui
     }
 }
 
-void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cmd_state, uint32_t fb_attachment,
-                                                     uint32_t color_attachment, VkImageAspectFlags aspects, uint32_t rectCount,
-                                                     const VkClearRect* pRects) {
+void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cmd_state, u32 fb_attachment, u32 color_attachment,
+                                                     VkImageAspectFlags aspects, u32 rectCount, const VkClearRect* pRects) {
     auto& rp_state = cmd_state.render_pass_state;
     // If we observe a full clear before any other access to a frame buffer attachment,
     // we have candidate for redundant clear attachments.
@@ -861,7 +860,7 @@ void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cm
         std::find_if(rp_state.touchesAttachments.begin(), rp_state.touchesAttachments.end(),
                      [fb_attachment](const bp_state::AttachmentInfo& info) { return info.framebufferAttachment == fb_attachment; });
 
-    uint32_t new_aspects = aspects;
+    u32 new_aspects = aspects;
     if (itr != rp_state.touchesAttachments.end()) {
         new_aspects = aspects & ~itr->aspects;
         itr->aspects |= aspects;

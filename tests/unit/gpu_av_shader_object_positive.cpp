@@ -131,8 +131,8 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
 
     indirect_draw_parameters_buffer.memory().unmap();
 
-    constexpr int32_t int_count = 16;
-    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    constexpr i32 int_count = 16;
+    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(i32), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     // Use different push constant ranges for vertex and fragment shader.
     // The underlying storage buffer is the same.
@@ -140,20 +140,20 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     struct PushConstants {
         // Vertex shader
         VkDeviceAddress storage_buffer_ptr_1;
-        int32_t integers_1[int_count / 2];
+        i32 integers_1[int_count / 2];
         // Fragment shader
         VkDeviceAddress storage_buffer_ptr_2;
-        int32_t integers_2[int_count / 2];
+        i32 integers_2[int_count / 2];
     } push_constants;
 
     push_constants.storage_buffer_ptr_1 = storage_buffer.address();
-    push_constants.storage_buffer_ptr_2 = storage_buffer.address() + sizeof(int32_t) * (int_count / 2);
-    for (int32_t i = 0; i < int_count / 2; ++i) {
+    push_constants.storage_buffer_ptr_2 = storage_buffer.address() + sizeof(i32) * (int_count / 2);
+    for (i32 i = 0; i < int_count / 2; ++i) {
         push_constants.integers_1[i] = i;
         push_constants.integers_2[i] = (int_count / 2) + i;
     }
 
-    constexpr uint32_t shader_pcr_byte_size = uint32_t(sizeof(VkDeviceAddress)) + uint32_t(sizeof(int32_t)) * (int_count / 2);
+    constexpr u32 shader_pcr_byte_size = u32(sizeof(VkDeviceAddress)) + u32(sizeof(i32)) * (int_count / 2);
     std::array<VkPushConstantRange, 2> push_constant_ranges = {{
         {VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size},
         {VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size, shader_pcr_byte_size},
@@ -216,9 +216,9 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
     VkShaderCreateInfoEXT vs_ci = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr,
-                                                   static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
+                                                   static_cast<u32>(push_constant_ranges.size()), push_constant_ranges.data());
     VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr,
-                                                   static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
+                                                   static_cast<u32>(push_constant_ranges.size()), push_constant_ranges.data());
 
     const vkt::Shader vs(*m_device, vs_ci);
     const vkt::Shader fs(*m_device, fs_ci);
@@ -245,8 +245,8 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.memory().map());
-    for (int32_t i = 0; i < int_count; ++i) {
+    auto storage_buffer_ptr = static_cast<i32 *>(storage_buffer.memory().map());
+    for (i32 i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
     storage_buffer.memory().unmap();
@@ -264,11 +264,11 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    constexpr int32_t int_count = 8;
+    constexpr i32 int_count = 8;
 
     struct PushConstants {
         VkDeviceAddress storage_buffer;
-        int32_t integers[int_count];
+        i32 integers[int_count];
     };
 
     // Graphics pipeline
@@ -334,12 +334,12 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     graphics_plci.pPushConstantRanges = &graphics_push_constant_ranges;
     vkt::PipelineLayout graphics_pipeline_layout(*m_device, graphics_plci);
 
-    vkt::Buffer graphics_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    vkt::Buffer graphics_storage_buffer(*m_device, int_count * sizeof(i32), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                         vkt::device_address);
 
     PushConstants graphics_push_constants;
     graphics_push_constants.storage_buffer = graphics_storage_buffer.address();
-    for (int32_t i = 0; i < int_count; ++i) {
+    for (i32 i = 0; i < int_count; ++i) {
         graphics_push_constants.integers[i] = i;
     }
 
@@ -393,12 +393,11 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     compute_plci.pPushConstantRanges = &compute_push_constant_ranges;
     vkt::PipelineLayout compute_pipeline_layout(*m_device, compute_plci);
 
-    vkt::Buffer compute_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                       vkt::device_address);
+    vkt::Buffer compute_storage_buffer(*m_device, int_count * sizeof(i32), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     PushConstants compute_push_constants;
     compute_push_constants.storage_buffer = compute_storage_buffer.address();
-    for (int32_t i = 0; i < int_count; ++i) {
+    for (i32 i = 0; i < int_count; ++i) {
         compute_push_constants.integers[i] = int_count + i;
     }
 
@@ -442,14 +441,14 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.memory().map());
-    for (int32_t i = 0; i < int_count; ++i) {
+    auto compute_storage_buffer_ptr = static_cast<i32 *>(compute_storage_buffer.memory().map());
+    for (i32 i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
     compute_storage_buffer.memory().unmap();
 
-    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.memory().map());
-    for (int32_t i = 0; i < int_count; ++i) {
+    auto graphics_storage_buffer_ptr = static_cast<i32 *>(graphics_storage_buffer.memory().map());
+    for (i32 i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
     graphics_storage_buffer.memory().unmap();

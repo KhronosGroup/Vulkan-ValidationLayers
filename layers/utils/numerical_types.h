@@ -1,6 +1,7 @@
 /* Copyright (c) 2015-2024 The Khronos Group Inc.
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-#include "vulkan/vulkan_core.h"
-#include "utils/numerical_types.h"
+#include <cstdint>
 
-VkResult util_GetExtensionProperties(const u32 count, const VkExtensionProperties *layer_extensions, u32 *pCount,
-                                     VkExtensionProperties *pProperties);
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
 
-VkResult util_GetLayerProperties(const u32 count, const VkLayerProperties *layer_properties, u32 *pCount,
-                                 VkLayerProperties *pProperties);
+using i8 = int8_t;
+using i16 = int16_t;
+using i32 = int32_t;
+using i64 = int64_t;
+
+using f32 = float;
+using f64 = double;

@@ -238,8 +238,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &render_target_ci.format;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info =
-        vku::InitStructHelper(&inheritance_rendering_info);
+    VkCommandBufferInheritanceInfo secondary_cmd_buffer_inheritance_info = vku::InitStructHelper(&inheritance_rendering_info);
 
     VkCommandBufferBeginInfo secondary_cmd_buffer_begin_info = vku::InitStructHelper();
     secondary_cmd_buffer_begin_info.flags =
@@ -403,9 +402,9 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
     subpass_dependency.dependencyFlags = 0;
 
     VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper();
-    renderpass_ci.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderpass_ci.attachmentCount = static_cast<u32>(attachments.size());
     renderpass_ci.pAttachments = attachments.data();
-    renderpass_ci.subpassCount = static_cast<uint32_t>(subpass_descs.size());
+    renderpass_ci.subpassCount = static_cast<u32>(subpass_descs.size());
     renderpass_ci.pSubpasses = subpass_descs.data();
     renderpass_ci.dependencyCount = 1;
     renderpass_ci.pDependencies = &subpass_dependency;
@@ -578,8 +577,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                                                             {VK_IMAGE_ASPECT_COLOR_BIT, 1},
                                                             {VK_IMAGE_ASPECT_COLOR_BIT, 2}}};
                 VkClearRect clear_rect{rect, 0, 1};
-                vk::CmdClearAttachments(m_commandBuffer->handle(), static_cast<uint32_t>(clears.size()), clears.data(), 1,
-                                        &clear_rect);
+                vk::CmdClearAttachments(m_commandBuffer->handle(), static_cast<u32>(clears.size()), clears.data(), 1, &clear_rect);
                 m_commandBuffer->EndRenderPass();
             }
         }
@@ -627,7 +625,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
             clear_attachments[2].colorAttachment = 0;
             VkClearRect clear_rect{rect, 0, 1};
             // Expected to succeeed
-            vk::CmdClearAttachments(secondary_cmd_buffer->handle(), static_cast<uint32_t>(clear_attachments.size()),
+            vk::CmdClearAttachments(secondary_cmd_buffer->handle(), static_cast<u32>(clear_attachments.size()),
                                     clear_attachments.data(), 1, &clear_rect);
 
             // Clear color out of range
@@ -1449,8 +1447,7 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     depth_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
     depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
-        vku::InitStructHelper();
+    VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
     fragment_density_map.imageView = depth_image_view;
     fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -1627,8 +1624,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
     if (shading_rate) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageView-06183");
-        VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate =
-            vku::InitStructHelper();
+        VkRenderingFragmentShadingRateAttachmentInfoKHR fragment_shading_rate = vku::InitStructHelper();
         fragment_shading_rate.imageView = depth_image_view.handle();
         fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
         fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
@@ -1661,8 +1657,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
     if (fragment_density) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-imageView-06184");
-        VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
-            vku::InitStructHelper();
+        VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map = vku::InitStructHelper();
         fragment_density_map.imageView = depth_image_view.handle();
         fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -2780,7 +2775,9 @@ TEST_F(NegativeDynamicRendering, SecondaryCommandBufferIncompatibleSubpass) {
 }
 
 TEST_F(NegativeDynamicRendering, SecondaryCommandBufferContents) {
-    TEST_DESCRIPTION("Execute secondary command buffers within active render pass that was not begun with VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
+    TEST_DESCRIPTION(
+        "Execute secondary command buffers within active render pass that was not begun with "
+        "VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
@@ -2931,7 +2928,7 @@ TEST_F(NegativeDynamicRendering, PipelineRenderingCreateInfoFormat) {
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
-    uint32_t over_limit = m_device->phy().limits_.maxColorAttachments + 1;
+    u32 over_limit = m_device->phy().limits_.maxColorAttachments + 1;
     std::vector<VkFormat> color_format(over_limit);
     std::fill(color_format.begin(), color_format.end(), VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -4115,7 +4112,7 @@ TEST_F(NegativeDynamicRendering, RenderingInfoColorAttachment) {
 
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
-    const uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
+    const u32 max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
     std::vector<VkRenderingAttachmentInfoKHR> color_attachments(max_color_attachments);
     for (auto &attachment : color_attachments) {
         attachment = vku::InitStructHelper();
@@ -4859,8 +4856,7 @@ TEST_F(NegativeDynamicRendering, BadRenderPassContentsWhenCallingCmdExecuteComma
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -4925,8 +4921,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithNonNullRenderPass) {
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -4976,8 +4971,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingFlags) {
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -5029,8 +5023,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingColorAttachmentCo
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.colorAttachmentCount = 0;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -5187,8 +5180,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingDepthStencilImage
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = imageView;
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     inheritance_rendering_info.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -5239,8 +5231,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingViewMask) {
 
     VkFormat color_formats = {VK_FORMAT_UNDEFINED};  // undefined because no image view will be used
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.viewMask = 0;
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
@@ -5294,8 +5285,7 @@ TEST_F(NegativeDynamicRendering, ExecuteCommandsWithMismatchingImageViewRasteriz
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
@@ -5502,8 +5492,7 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
     pipe.CreateGraphicsPipeline();
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritanceRenderingInfo =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritanceRenderingInfo = vku::InitStructHelper();
     inheritanceRenderingInfo.colorAttachmentCount = 1;
     inheritanceRenderingInfo.pColorAttachmentFormats = &format;
     inheritanceRenderingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -5655,8 +5644,7 @@ TEST_F(NegativeDynamicRendering, EndRenderingWithIncorrectlyStartedRenderpassIns
 
     VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
 
-    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info = vku::InitStructHelper();
     inheritance_rendering_info.colorAttachmentCount = 1;
     inheritance_rendering_info.pColorAttachmentFormats = &color_formats;
     inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_16_BIT;
@@ -6017,7 +6005,7 @@ TEST_F(NegativeDynamicRendering, MismatchingDepthAttachmentFormatInSecondaryCmdB
                                    VK_FORMAT_D16_UNORM,         VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
     VkFormat depth_format1 = VK_FORMAT_UNDEFINED;
     VkFormat depth_format2 = VK_FORMAT_UNDEFINED;
-    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+    for (u32 i = 0; i < size(ds_formats); ++i) {
         VkFormatProperties format_props;
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), ds_formats[i], &format_props);
 
@@ -6301,15 +6289,15 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rp_striped_props);
 
-    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width;
-    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+    const u32 stripe_width = rp_striped_props.renderPassStripeGranularity.width;
+    const u32 stripe_height = rp_striped_props.renderPassStripeGranularity.height;
 
     VkRenderingInfoKHR rendering_info = vku::InitStructHelper();
     rendering_info.layerCount = 1;
 
-    uint32_t stripe_count = rp_striped_props.maxRenderPassStripes + 1;
+    u32 stripe_count = rp_striped_props.maxRenderPassStripes + 1;
     std::vector<VkRenderPassStripeInfoARM> stripe_infos(rp_striped_props.maxRenderPassStripes + 1);
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
@@ -6335,7 +6323,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     stripe_infos.resize(stripe_count);
     rp_stripe_info.pStripeInfos = stripe_infos.data();
     rp_stripe_info.stripeInfoCount = stripe_count;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = i > 1 && i <= 4 ? (stripe_width * (i - 1) / 2) : stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
         stripe_infos[i].stripeArea.extent.width = stripe_width;
@@ -6351,8 +6339,8 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     m_commandBuffer->end();
 
     // Offset, width and height not multiple of granularity width and height
-    const uint32_t half_stripe_width = stripe_width / 2;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    const u32 half_stripe_width = stripe_width / 2;
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = (i == 1 ? half_stripe_width : stripe_width) * i;
         stripe_infos[i].stripeArea.offset.y = 0;
         stripe_infos[i].stripeArea.extent.width = i == 2 ? half_stripe_width : stripe_width;
@@ -6367,9 +6355,9 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    const uint32_t non_align_stripe_width = stripe_width - 12;
+    const u32 non_align_stripe_width = stripe_width - 12;
     rendering_info.renderArea.extent.width = (stripe_width * (stripe_count - 1)) + non_align_stripe_width + 4;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
         stripe_infos[i].stripeArea.extent.width = i == 7 ? non_align_stripe_width : stripe_width;
@@ -6384,8 +6372,8 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     m_commandBuffer->end();
 
     rendering_info.renderArea.extent = {stripe_width, stripe_height * stripe_count};
-    const uint32_t half_stripe_height = stripe_height / 2;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    const u32 half_stripe_height = stripe_height / 2;
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = 0;
         stripe_infos[i].stripeArea.offset.y = (i == 1 ? half_stripe_height : stripe_height) * i;
         stripe_infos[i].stripeArea.extent.width = stripe_width;
@@ -6400,9 +6388,9 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    const uint32_t non_align_stripe_height = stripe_height - 12;
+    const u32 non_align_stripe_height = stripe_height - 12;
     rendering_info.renderArea.extent.height = (stripe_height * (stripe_count - 1)) + non_align_stripe_height + 4;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = 0;
         stripe_infos[i].stripeArea.offset.y = stripe_height * i;
         stripe_infos[i].stripeArea.extent.width = stripe_width;
@@ -6430,12 +6418,12 @@ TEST_F(NegativeDynamicRendering, RenderPassStripeInfoQueueSubmit2) {
     VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rp_striped_props);
 
-    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width;
-    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+    const u32 stripe_width = rp_striped_props.renderPassStripeGranularity.width;
+    const u32 stripe_height = rp_striped_props.renderPassStripeGranularity.height;
 
-    const uint32_t stripe_count = 8;
+    const u32 stripe_count = 8;
     std::vector<VkRenderPassStripeInfoARM> stripe_infos(stripe_count);
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
@@ -6481,7 +6469,7 @@ TEST_F(NegativeDynamicRendering, RenderPassStripeInfoQueueSubmit2) {
     vkt::Semaphore semaphore[stripe_count + 1];
     VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count + 1];
 
-    for (uint32_t i = 0; i < stripe_count + 1; ++i) {
+    for (u32 i = 0; i < stripe_count + 1; ++i) {
         VkSemaphoreCreateInfo create_info = i == 4 ? semaphore_timeline_create_info : semaphore_create_info;
         semaphore[i].init(*m_device, create_info);
 

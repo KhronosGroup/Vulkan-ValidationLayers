@@ -18,7 +18,7 @@ class NegativeImageDrm : public ImageDrmTest {};
 TEST_F(NegativeImageDrm, Basic) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    std::vector<u64> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -146,7 +146,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
+    std::vector<u64> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -166,7 +166,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
+    for (u64 mod : mods) {
         VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
         drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         drm_format_modifier.drmFormatModifier = mod;
@@ -260,7 +260,7 @@ TEST_F(NegativeImageDrm, MutableFormat) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT with no VkImageFormatListCreateInfo.");
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    std::vector<u64> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -380,12 +380,12 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    uint32_t queue_family_property_count = 0;
+    u32 queue_family_property_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);
     if (queue_family_property_count < 2) {
         GTEST_SKIP() << "pQueueFamilyPropertyCount is not 2 or more";
     }
-    uint32_t queue_family_indices[2] = {0, 1};
+    u32 queue_family_indices[2] = {0, 1};
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -423,7 +423,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
+    std::vector<u64> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -444,7 +444,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
+    for (u64 mod : mods) {
         auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         drm_format_modifier.drmFormatModifier = mod;
@@ -482,7 +482,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
+    std::vector<u64> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_DISJOINT_BIT, 3);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -503,7 +503,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
+    for (u64 mod : mods) {
         auto drm_format_modifier = vku::InitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
         drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         drm_format_modifier.drmFormatModifier = mod;
@@ -536,7 +536,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     // Plane 0
     image_plane_req.planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
     vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
-    uint32_t mem_type = 0;
+    u32 mem_type = 0;
     auto phys_mem_props2 = vku::InitStruct<VkPhysicalDeviceMemoryProperties2>();
     vk::GetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
     for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {

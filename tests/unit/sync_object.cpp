@@ -266,12 +266,12 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0) ||
                                  ((m_device->phy().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -695,7 +695,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->phy().queue_properties_;
-    const std::optional<uint32_t> queue_family_index = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> queue_family_index = m_device->ComputeOnlyQueueFamily();
     if (!queue_family_index) {
         GTEST_SKIP() << "No compute-only queue found; skipped";
     }
@@ -776,11 +776,11 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &color_view.handle());
 
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -1128,11 +1128,11 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {
 
     InitRenderTarget();
 
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -1167,11 +1167,11 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -1204,13 +1204,13 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     RETURN_IF_SKIP(Init());
 
     // Find queues of two families
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 queue_family_count = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (queue_family_count == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0) ||
                                  ((m_device->phy().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
 
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -1222,7 +1222,7 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
         if (only_one_family) {
             printf("Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
         } else {
-            std::vector<uint32_t> families = {submit_family, other_family};
+            std::vector<u32> families = {submit_family, other_family};
             BarrierQueueFamilyTestHelper conc_test(&test_context);
             conc_test.Init(&families);
             {
@@ -1295,8 +1295,8 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
                   other_family, other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
 
         // Need a third queue family to test this.
-        uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
-        for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
+        u32 third_family = VK_QUEUE_FAMILY_IGNORED;
+        for (u32 candidate = 0; candidate < queue_family_count; ++candidate) {
             if (candidate != submit_family && candidate != other_family &&
                 m_device->phy().queue_properties_[candidate].queueCount != 0) {
                 third_family = candidate;
@@ -1479,12 +1479,12 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     RETURN_IF_SKIP(Init());
 
     // Find queues of two families
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
 
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -1493,7 +1493,7 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     if (only_one_family) {
         printf("Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
     } else {
-        std::vector<uint32_t> families = {submit_family, other_family};
+        std::vector<u32> families = {submit_family, other_family};
         BarrierQueueFamilyTestHelper conc_test(&test_context);
 
         conc_test.Init(&families);
@@ -1543,11 +1543,11 @@ TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {
     img_barrier_template.subresourceRange.layerCount = 0;
     img_barrier_template.subresourceRange.levelCount = 0;
 
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -1721,12 +1721,12 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     RETURN_IF_SKIP(Init());
 
     // Find queues of two families
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t invalid = static_cast<uint32_t>(m_device->phy().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const u32 submit_family = m_device->graphics_queue_node_index_;
+    const u32 invalid = static_cast<u32>(m_device->phy().queue_properties_.size());
+    const u32 other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = (invalid == 1) || (m_device->phy().queue_properties_[other_family].queueCount == 0);
 
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    std::vector<u32> qf_indices{{submit_family, other_family}};
     if (only_one_family) {
         qf_indices.resize(1);
     }
@@ -2207,7 +2207,7 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueueFamilies) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const std::optional<uint32_t> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx) {
         GTEST_SKIP() << "Required queue families not present (non-graphics non-compute capable required)";
     }
@@ -2343,7 +2343,7 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-    uint64_t signalValue = 20;
+    u64 signalValue = 20;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 0;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = nullptr;
     // this array needs a length of 2, even though the binary semaphore won't look at the values array
@@ -2361,14 +2361,14 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    uint64_t values[2] = {signalValue, 0 /*ignored*/};
+    u64 values[2] = {signalValue, 0 /*ignored*/};
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 2;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = values;
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // the indexes in pWaitSemaphores and pWaitSemaphoreValues should match
     VkSemaphore reversed[2] = {semaphore[1], semaphore[0]};
-    uint64_t reversed_values[2] = {vvl::kU64Max /* ignored */, 20};
+    u64 reversed_values[2] = {vvl::kU64Max /* ignored */, 20};
     VkPipelineStageFlags wait_stages[2] = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
@@ -2426,7 +2426,7 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     m_errorMonitor->VerifyFound();
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-    uint64_t signalValue = 1;
+    u64 signalValue = 1;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
     submit_info[0].pNext = &timeline_semaphore_submit_info;
@@ -2462,8 +2462,8 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
     vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-    uint64_t signalValue = 1;
-    uint64_t waitValue = 3;
+    u64 signalValue = 1;
+    u64 waitValue = 3;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -2516,7 +2516,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
     {
         // Double signal with the same value (7)
         signalValue++;
-        uint64_t signal_values[2] = {signalValue, signalValue};
+        u64 signal_values[2] = {signalValue, signalValue};
         VkSemaphore signal_sems[2] = {semaphore.handle(), semaphore.handle()};
 
         VkTimelineSemaphoreSubmitInfoKHR tl_info_2 = vku::InitStructHelper();
@@ -2534,7 +2534,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
-        uint64_t bigValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
+        u64 bigValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &bigValue;
 
         m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pSignalSemaphores-03244");
@@ -2582,8 +2582,8 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-    uint64_t signalValue = 1;
-    uint64_t waitValue = 3;
+    u64 signalValue = 1;
+    u64 waitValue = 3;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
@@ -2645,7 +2645,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     {
         // Double signal with the same value (7)
         signalValue++;
-        uint64_t signal_values[2] = {signalValue, signalValue};
+        u64 signal_values[2] = {signalValue, signalValue};
         VkSemaphore signal_sems[2] = {semaphore.handle(), semaphore.handle()};
 
         VkTimelineSemaphoreSubmitInfoKHR tl_info_2 = vku::InitStructHelper();
@@ -2663,7 +2663,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
 
     // Check if we can test violations of maxTimelineSemaphoreValueDifference
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
-        uint64_t bigValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
+        u64 bigValue = signalValue + timelineproperties.maxTimelineSemaphoreValueDifference + 1;
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &bigValue;
 
         m_errorMonitor->SetDesiredError("VUID-VkBindSparseInfo-pSignalSemaphores-03251");
@@ -2698,7 +2698,7 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
 
-    uint64_t value = 5;
+    u64 value = 5;
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, value);
 
     // Check for re-signalling an already completed value (5)
@@ -2922,7 +2922,7 @@ TEST_F(NegativeSyncObject, WaitSemaphoresType) {
     VkSemaphoreWaitInfo semaphore_wait_info = vku::InitStructHelper();
     semaphore_wait_info.semaphoreCount = 2;
     semaphore_wait_info.pSemaphores = &semaphore[0];
-    const uint64_t wait_values[] = {10, 40};
+    const u64 wait_values[] = {10, 40};
     semaphore_wait_info.pValues = &wait_values[0];
 
     m_errorMonitor->SetDesiredError("VUID-VkSemaphoreWaitInfo-pSemaphores-03256");
@@ -2983,8 +2983,8 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
 
     VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-    uint64_t waitValue = 10;
-    uint64_t signalValue = 20;
+    u64 waitValue = 10;
+    u64 signalValue = 20;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = &waitValue;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
@@ -3044,7 +3044,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
             ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &binary_semaphore_create_info, nullptr, &binary_sem));
 
             signalValue = 1;
-            uint64_t offendingValue = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
+            u64 offendingValue = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
             submit_info.waitSemaphoreCount = 1;
             submit_info.pWaitSemaphores = &timeline_sem;
@@ -3180,7 +3180,7 @@ TEST_F(NegativeSyncObject, SemaphoreCounterType) {
 
     vkt::Semaphore semaphore(*m_device);
 
-    uint64_t value = 0xdeadbeef;
+    u64 value = 0xdeadbeef;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetSemaphoreCounterValue-semaphore-03255");
     vk::GetSemaphoreCounterValueKHR(device(), semaphore.handle(), &value);
@@ -3586,7 +3586,7 @@ TEST_F(NegativeSyncObject, MemoryBarrierStageNotSupportedByQueue) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    std::optional<u32> transfer_only_family = m_device->TransferOnlyQueueFamily();
     if (!transfer_only_family.has_value()) {
         GTEST_SKIP() << "Transfer-only queue family is required";
     }
@@ -3632,7 +3632,7 @@ TEST_F(NegativeSyncObject, BufferBarrierStageNotSupportedByQueue) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    std::optional<u32> compute_only_family = m_device->ComputeOnlyQueueFamily();
     if (!compute_only_family.has_value()) {
         GTEST_SKIP() << "Compute-only queue family is required";
     }
@@ -3684,7 +3684,7 @@ TEST_F(NegativeSyncObject, ImageBarrierStageNotSupportedByQueue) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    std::optional<u32> compute_only_family = m_device->ComputeOnlyQueueFamily();
     if (!compute_only_family.has_value()) {
         GTEST_SKIP() << "Compute-only queue family is required";
     }

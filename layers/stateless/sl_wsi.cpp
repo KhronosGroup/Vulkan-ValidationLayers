@@ -19,8 +19,8 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
-bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                                    VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
+bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, u64 timeout,
+                                                                    VkSemaphore semaphore, VkFence fence, u32 *pImageIndex,
                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -33,7 +33,7 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice dev
 }
 
 bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                                     uint32_t *pImageIndex, const ErrorObject &error_obj) const {
+                                                                     u32 *pImageIndex, const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pAcquireInfo->semaphore == VK_NULL_HANDLE && pAcquireInfo->fence == VK_NULL_HANDLE) {
@@ -57,7 +57,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
         }
 
         // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
-        // queueFamilyIndexCount uint32_t values
+        // queueFamilyIndexCount u32 values
         if (create_info.pQueueFamilyIndices == nullptr) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01277", device, loc.dot(Field::imageSharingMode),
                              "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");
@@ -70,7 +70,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
     // Validate VK_KHR_image_format_list VkImageFormatListCreateInfo
     const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(create_info.pNext);
     if (format_list_info) {
-        const uint32_t view_format_count = format_list_info->viewFormatCount;
+        const u32 view_format_count = format_list_info->viewFormatCount;
         if (((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) == 0) && (view_format_count > 1)) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-04100", device,
                              loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
@@ -79,7 +79,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
         }
 
         // Using the first format, compare the rest of the formats against it that they are compatible
-        for (uint32_t i = 1; i < view_format_count; i++) {
+        for (u32 i = 1; i < view_format_count; i++) {
             if (vkuFormatCompatibilityClass(format_list_info->pViewFormats[0]) !=
                 vkuFormatCompatibilityClass(format_list_info->pViewFormats[i])) {
                 skip |= LogError("VUID-VkSwapchainCreateInfoKHR-pNext-04099", device,
@@ -103,7 +103,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
                              loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount).Fields().c_str());
         } else {
             bool found_base_format = false;
-            for (uint32_t i = 0; i < format_list_info->viewFormatCount; ++i) {
+            for (u32 i = 0; i < format_list_info->viewFormatCount; ++i) {
                 if (format_list_info->pViewFormats[i] == create_info.imageFormat) {
                     found_base_format = true;
                     break;
@@ -129,14 +129,14 @@ bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice devi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, u32 swapchainCount,
                                                                           const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                                           const VkAllocationCallbacks *pAllocator,
                                                                           VkSwapchainKHR *pSwapchains,
                                                                           const ErrorObject &error_obj) const {
     bool skip = false;
     if (pCreateInfos) {
-        for (uint32_t i = 0; i < swapchainCount; i++) {
+        for (u32 i = 0; i < swapchainCount; i++) {
             skip |= ValidateSwapchainCreateInfo(pCreateInfos[i], error_obj.location.dot(Field::pCreateInfos, i));
         }
     }
@@ -164,8 +164,8 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
     }
 
     if (pPresentInfo) {
-        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-            for (uint32_t j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
+        for (u32 i = 0; i < pPresentInfo->swapchainCount; ++i) {
+            for (u32 j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
                 if (pPresentInfo->pSwapchains[i] == pPresentInfo->pSwapchains[j]) {
                     skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", device, error_obj.location.dot(Field::pSwapchain),
                                      "at index %" PRIu32 " and index %" PRIu32 " are both %s.", i, j,
@@ -199,8 +199,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalD
 }
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice,
-                                                                                   VkSurfaceKHR surface,
-                                                                                   uint32_t *pSurfaceFormatCount,
+                                                                                   VkSurfaceKHR surface, u32 *pSurfaceFormatCount,
                                                                                    VkSurfaceFormatKHR *pSurfaceFormats,
                                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
@@ -214,7 +213,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsK
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
                                                                                         VkSurfaceKHR surface,
-                                                                                        uint32_t *pPresentModeCount,
+                                                                                        u32 *pPresentModeCount,
                                                                                         VkPresentModeKHR *pPresentModes,
                                                                                         const ErrorObject &error_obj) const {
     bool skip = false;
@@ -286,7 +285,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
 }
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pSurfaceFormatCount,
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, u32 *pSurfaceFormatCount,
     VkSurfaceFormat2KHR *pSurfaceFormats, const ErrorObject &error_obj) const {
     bool skip = false;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
@@ -299,7 +298,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pPresentModeCount,
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, u32 *pPresentModeCount,
     VkPresentModeKHR *pPresentModes, const ErrorObject &error_obj) const {
     bool skip = false;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {

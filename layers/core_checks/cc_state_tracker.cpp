@@ -39,7 +39,7 @@ core::CommandBuffer::CommandBuffer(CoreChecks& core, VkCommandBuffer handle, con
 // this to all happen completely while the state tracker is holding the lock.
 // Eventually we'll probably want to move all of the core state into this derived
 // class.
-void core::CommandBuffer::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
+void core::CommandBuffer::RecordWaitEvents(vvl::Func command, u32 eventCount, const VkEvent* pEvents,
                                            VkPipelineStageFlags2KHR srcStageMask) {
     // vvl::CommandBuffer will add to the events vector.
     auto first_event_index = events.size();

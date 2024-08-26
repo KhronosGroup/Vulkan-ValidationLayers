@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-extern uint64_t object_track_index;
+extern u64 object_track_index;
 
 // Object Status -- used to track state of individual objects
 typedef VkFlags ObjectStatusFlags;
@@ -27,16 +27,16 @@ enum ObjectStatusFlagBits {
 
 // Object and state information structure
 struct ObjTrackState {
-    uint64_t handle;                                               // Object handle (new)
-    VulkanObjectType object_type;                                  // Object type identifier
-    ObjectStatusFlags status;                                      // Object state
-    uint64_t parent_object;                                        // Parent object
-    std::unique_ptr<vvl::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
+    u64 handle;                                               // Object handle (new)
+    VulkanObjectType object_type;                             // Object type identifier
+    ObjectStatusFlags status;                                 // Object state
+    u64 parent_object;                                        // Parent object
+    std::unique_ptr<vvl::unordered_set<u64> > child_objects;  // Child objects (used for VkDescriptorPool only)
 };
 
-typedef vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
+typedef vvl::concurrent_unordered_map<u64, std::shared_ptr<ObjTrackState>, 6> object_map_type;
 // Used for GPL and we know there are at most only 4 libraries that should be used
-typedef vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6> object_list_map_type;
+typedef vvl::concurrent_unordered_map<u64, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6> object_list_map_type;
 
 class ObjectLifetimes : public ValidationObject {
     using Func = vvl::Func;
@@ -54,8 +54,8 @@ class ObjectLifetimes : public ValidationObject {
     WriteLockGuard WriteSharedLock() { return WriteLockGuard(object_lifetime_mutex); }
     ReadLockGuard ReadSharedLock() const { return ReadLockGuard(object_lifetime_mutex); }
 
-    std::atomic<uint64_t> num_objects[kVulkanObjectTypeMax + 1];
-    std::atomic<uint64_t> num_total_objects;
+    std::atomic<u64> num_objects[kVulkanObjectTypeMax + 1];
+    std::atomic<u64> num_total_objects;
     // Vector of unordered_maps per object type to hold ObjTrackState info
     object_map_type object_map[kVulkanObjectTypeMax + 1];
     // Special-case map for swapchain images
@@ -73,7 +73,7 @@ class ObjectLifetimes : public ValidationObject {
     template <typename T1>
     void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, const Location &loc,
                       std::shared_ptr<ObjTrackState> pNode) {
-        uint64_t object_handle = HandleToUint64(object);
+        u64 object_handle = HandleToUint64(object);
         const bool inserted = map.insert(object_handle, pNode);
         if (!inserted) {
             // The object should not already exist. If we couldn't add it to the map, there was probably
@@ -111,15 +111,15 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
                                                const Location &create_info_loc) const;
     bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const;
-    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, const char *invalid_handle_vuid,
+    bool ValidateAnonymousObject(u64 object, VkObjectType core_object_type, const char *invalid_handle_vuid,
                                  const char *wrong_parent_vuid, const Location &loc) const;
-    bool ValidateAccelerationStructures(const char *src_handle_vuid, const char *dst_handle_vuid, uint32_t count,
+    bool ValidateAccelerationStructures(const char *src_handle_vuid, const char *dst_handle_vuid, u32 count,
                                         const VkAccelerationStructureBuildGeometryInfoKHR *infos, const Location &loc) const;
 
-    bool TracksObject(uint64_t object_handle, VulkanObjectType object_type) const;
-    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
+    bool TracksObject(u64 object_handle, VulkanObjectType object_type) const;
+    bool CheckObjectValidity(u64 object_handle, VulkanObjectType object_type, const char *invalid_handle_vuid,
                              const char *wrong_parent_vuid, const Location &loc, VulkanObjectType parent_type) const;
-    bool CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid, const Location &loc) const;
+    bool CheckPipelineObjectValidity(u64 object_handle, const char *invalid_handle_vuid, const Location &loc) const;
 
     template <typename T1>
     bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_vuid,
@@ -133,7 +133,7 @@ class ObjectLifetimes : public ValidationObject {
 
     template <typename T1>
     void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator, const Location &loc) {
-        uint64_t object_handle = HandleToUint64(object);
+        u64 object_handle = HandleToUint64(object);
         const bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].contains(object_handle)) {
             auto pNewObjNode = std::make_shared<ObjTrackState>();
@@ -146,12 +146,12 @@ class ObjectLifetimes : public ValidationObject {
             num_total_objects++;
 
             if (object_type == kVulkanObjectTypeDescriptorPool) {
-                pNewObjNode->child_objects.reset(new vvl::unordered_set<uint64_t>);
+                pNewObjNode->child_objects.reset(new vvl::unordered_set<u64>);
             }
         }
     }
 
-    void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type);
+    void DestroyObjectSilently(u64 object, VulkanObjectType object_type);
 
     template <typename T1>
     void RecordDestroyObject(T1 object_handle, VulkanObjectType object_type) {

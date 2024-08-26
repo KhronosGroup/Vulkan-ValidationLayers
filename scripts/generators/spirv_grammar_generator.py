@@ -295,20 +295,20 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             #include <vector>
             #include <spirv/unified1/spirv.hpp>
 
-            const char* string_SpvOpcode(uint32_t opcode);
-            const char* string_SpvStorageClass(uint32_t storage_class);
-            const char* string_SpvExecutionModel(uint32_t execution_model);
-            const char* string_SpvExecutionMode(uint32_t execution_mode);
-            const char* string_SpvDecoration(uint32_t decoration);
-            const char* string_SpvBuiltIn(uint32_t built_in);
-            const char* string_SpvDim(uint32_t dim);
-            std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
+            const char* string_SpvOpcode(u32 opcode);
+            const char* string_SpvStorageClass(u32 storage_class);
+            const char* string_SpvExecutionModel(u32 execution_model);
+            const char* string_SpvExecutionMode(u32 execution_mode);
+            const char* string_SpvDecoration(u32 decoration);
+            const char* string_SpvBuiltIn(u32 built_in);
+            const char* string_SpvDim(u32 dim);
+            std::string string_SpvCooperativeMatrixOperands(u32 mask);
             ''')
 
         hasTypeCase = "\n".join([f"        case spv::{f}:" for f in self.hasType])
         hasResultCase = "\n".join([f"        case spv::{f}:" for f in self.hasResult])
         out.append(f'''
-            static constexpr bool OpcodeHasType(uint32_t opcode) {{
+            static constexpr bool OpcodeHasType(u32 opcode) {{
                 switch (opcode) {{
             {hasTypeCase}
                         return true;
@@ -317,7 +317,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            static constexpr bool OpcodeHasResult(uint32_t opcode) {{
+            static constexpr bool OpcodeHasResult(u32 opcode) {{
                 switch (opcode) {{
             {hasResultCase}
                         return true;
@@ -332,7 +332,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         groupCase = "\n".join([f"        case spv::{f}:" for f in self.groupOps])
         out.append(f'''
             // Any non supported operation will be covered with other VUs
-            static constexpr bool AtomicOperation(uint32_t opcode) {{
+            static constexpr bool AtomicOperation(u32 opcode) {{
                 switch (opcode) {{
             {atomicCase}
                         return true;
@@ -342,7 +342,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             }}
 
             // Any non supported operation will be covered with other VUs
-            static constexpr bool GroupOperation(uint32_t opcode) {{
+            static constexpr bool GroupOperation(u32 opcode) {{
                 switch (opcode) {{
             {groupCase}
                         return true;
@@ -356,7 +356,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         imageFetchOpsCase = "\n".join([f"        case spv::{f}:" for f in self.imageFetchOps])
         imageSampleOpsCase = "\n".join([f"        case spv::{f}:" for f in self.imageSampleOps])
         out.append(f'''
-            static constexpr bool ImageGatherOperation(uint32_t opcode) {{
+            static constexpr bool ImageGatherOperation(u32 opcode) {{
                 switch (opcode) {{
             {imageGatherOpsCase}
                         return true;
@@ -365,7 +365,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            static constexpr bool ImageFetchOperation(uint32_t opcode) {{
+            static constexpr bool ImageFetchOperation(u32 opcode) {{
                 switch (opcode) {{
             {imageFetchOpsCase}
                         return true;
@@ -374,7 +374,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            static constexpr bool ImageSampleOperation(uint32_t opcode) {{
+            static constexpr bool ImageSampleOperation(u32 opcode) {{
                 switch (opcode) {{
             {imageSampleOpsCase}
                         return true;
@@ -386,8 +386,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // Return number of optional parameter from ImageOperands
-            static constexpr uint32_t ImageOperandsParamCount(uint32_t image_operand) {
-                uint32_t count = 0;
+            static constexpr u32 ImageOperandsParamCount(u32 image_operand) {
+                u32 count = 0;
                 switch (image_operand) {
             ''')
 
@@ -409,8 +409,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // Return operand position of Memory Scope <ID> or zero if there is none
-            static constexpr uint32_t OpcodeMemoryScopePosition(uint32_t opcode) {
-                uint32_t position = 0;
+            static constexpr u32 OpcodeMemoryScopePosition(u32 opcode) {
+                u32 position = 0;
                 switch (opcode) {
             ''')
         for index, opcodes in enumerate(self.memoryScopePosition):
@@ -428,8 +428,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // Return operand position of Execution Scope <ID> or zero if there is none
-            static constexpr uint32_t OpcodeExecutionScopePosition(uint32_t opcode) {
-                uint32_t position = 0;
+            static constexpr u32 OpcodeExecutionScopePosition(u32 opcode) {
+                u32 position = 0;
                 switch (opcode) {
             ''')
         for index, opcodes in enumerate(self.executionScopePosition):
@@ -447,8 +447,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // Return operand position of Image Operands <ID> or zero if there is none
-            static constexpr uint32_t OpcodeImageOperandsPosition(uint32_t opcode) {
-                uint32_t position = 0;
+            static constexpr u32 OpcodeImageOperandsPosition(u32 opcode) {
+                u32 position = 0;
                 switch (opcode) {
             ''')
         for index, opcodes in enumerate(self.imageOperandsPosition):
@@ -466,8 +466,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // Return operand position of 'Image' or 'Sampled Image' IdRef or zero if there is none.
-            static constexpr uint32_t OpcodeImageAccessPosition(uint32_t opcode) {
-                uint32_t position = 0;
+            static constexpr u32 OpcodeImageAccessPosition(u32 opcode) {
+                u32 position = 0;
                 switch (opcode) {
             ''')
         for index, opcodes in enumerate(self.imageAccessOperand):
@@ -494,7 +494,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
         typeCase = "\n".join([f"case spv::{f}: return SpvType::k{f[6:]};" for f in self.typeOps])
         out.append(f'''
-            static constexpr SpvType GetSpvType(uint32_t opcode) {{
+            static constexpr SpvType GetSpvType(u32 opcode) {{
                 switch (opcode) {{
                     {typeCase}
                     default:
@@ -519,7 +519,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 std::vector<OperandKind> types;
             };
 
-            const OperandInfo& GetOperandInfo(uint32_t opcode);
+            const OperandInfo& GetOperandInfo(u32 opcode);
             ''')
 
         self.write("".join(out))
@@ -532,7 +532,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             ''')
 
         out.append(f'''
-            const char* string_SpvOpcode(uint32_t opcode) {{
+            const char* string_SpvOpcode(u32 opcode) {{
                 switch(opcode) {{
             {"".join([f"""        case spv::{x}:
                         return "{x}";
@@ -542,7 +542,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvStorageClass(uint32_t storage_class) {{
+            const char* string_SpvStorageClass(u32 storage_class) {{
                 switch(storage_class) {{
             {"".join([f"""        case spv::StorageClass{x}:
                         return "{x}";
@@ -552,7 +552,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvExecutionModel(uint32_t execution_model) {{
+            const char* string_SpvExecutionModel(u32 execution_model) {{
                 switch(execution_model) {{
             {"".join([f"""        case spv::ExecutionModel{x}:
                         return "{x}";
@@ -562,7 +562,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvExecutionMode(uint32_t execution_mode) {{
+            const char* string_SpvExecutionMode(u32 execution_mode) {{
                 switch(execution_mode) {{
             {"".join([f"""        case spv::ExecutionMode{x}:
                         return "{x}";
@@ -572,7 +572,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvDecoration(uint32_t decoration) {{
+            const char* string_SpvDecoration(u32 decoration) {{
                 switch(decoration) {{
             {"".join([f"""        case spv::Decoration{x}:
                         return "{x}";
@@ -582,7 +582,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvBuiltIn(uint32_t built_in) {{
+            const char* string_SpvBuiltIn(u32 built_in) {{
                 switch(built_in) {{
             {"".join([f"""        case spv::BuiltIn{x}:
                         return "{x}";
@@ -592,7 +592,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            const char* string_SpvDim(uint32_t dim) {{
+            const char* string_SpvDim(u32 dim) {{
                 switch(dim) {{
             {"".join([f"""        case spv::Dim{x}:
                         return "{x}";
@@ -614,7 +614,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 }}
             }}
 
-            std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {{
+            std::string string_SpvCooperativeMatrixOperands(u32 mask) {{
                 std::string ret;
                 while(mask) {{
                     if (mask & 1) {{
@@ -630,8 +630,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
 
         out.append('''
-            const OperandInfo& GetOperandInfo(uint32_t opcode) {
-                static const vvl::unordered_map<uint32_t, OperandInfo> kOperandTable {
+            const OperandInfo& GetOperandInfo(u32 opcode) {
+                static const vvl::unordered_map<u32, OperandInfo> kOperandTable {
                 // clang-format off\n''')
         for info in self.opcodes.values():
             opname = info['opname']

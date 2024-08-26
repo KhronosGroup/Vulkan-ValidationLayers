@@ -214,7 +214,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
+    const u32 set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
 
     // First try to use too many sets in the pipeline layout
     {
@@ -222,7 +222,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
         std::vector<const vkt::DescriptorSetLayout *> empty_layouts(set_limit);
-        for (uint32_t i = 0; i < set_limit; i++) {
+        for (u32 i = 0; i < set_limit; i++) {
             empty_layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout bad_pipe_layout(*m_device, empty_layouts);
@@ -231,7 +231,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
 
     // Reduce by one (so there is room now) and do something invalid. (To make sure things still work as expected)
     std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
-    for (uint32_t i = 0; i < set_limit - 1; i++) {
+    for (u32 i = 0; i < set_limit - 1; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
     vkt::PipelineLayout pipe_layout(*m_device, layouts);
@@ -291,7 +291,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     descriptor_set.UpdateDescriptorSets();
 
     // Add one to use the descriptor slot we tried to reserve
-    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets + 1;
+    const u32 set_limit = m_device->phy().limits_.maxBoundDescriptorSets + 1;
 
     // First try to use too many sets in the pipeline layout
     {
@@ -299,7 +299,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
         std::vector<const vkt::DescriptorSetLayout *> empty_layouts(set_limit);
-        for (uint32_t i = 0; i < set_limit; i++) {
+        for (u32 i = 0; i < set_limit; i++) {
             empty_layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout bad_pipe_layout(*m_device, empty_layouts);
@@ -308,7 +308,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
 
     // Reduce by one (so there is room now) and do something invalid. (To make sure things still work as expected)
     std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
-    for (uint32_t i = 0; i < set_limit - 1; i++) {
+    for (u32 i = 0; i < set_limit - 1; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
     vkt::PipelineLayout pipe_layout(*m_device, layouts);
@@ -465,14 +465,14 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    //#version 450
-    //layout (set = 0, binding = 0) uniform sampler2D tex[2];
-    //layout(location=0) out vec4 color;
+    // #version 450
+    // layout (set = 0, binding = 0) uniform sampler2D tex[2];
+    // layout(location=0) out vec4 color;
     //
-    //void main() {
-    //    color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
-    //}
-    // but with OpInBoundsAccessChain instead of normal generated OpAccessChain
+    // void main() {
+    //     color = textureLodOffset(tex[1], vec2(0), 0, ivec2(0));
+    // }
+    //  but with OpInBoundsAccessChain instead of normal generated OpAccessChain
     const char *fsSource = R"(
                OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
@@ -1068,7 +1068,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    auto ptr = static_cast<uint8_t *>(copy_src_buffer.memory().map());
+    auto ptr = static_cast<u8 *>(copy_src_buffer.memory().map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.create_info().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
         auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
@@ -1118,7 +1118,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    auto ptr = static_cast<uint8_t *>(copy_src_buffer.memory().map());
+    auto ptr = static_cast<u8 *>(copy_src_buffer.memory().map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.create_info().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
         auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);

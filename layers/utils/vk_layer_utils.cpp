@@ -145,7 +145,7 @@ std::string GetTempFilePath() {
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
+VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const u32 mip_level) {
     // Return zero extent if mip level doesn't exist
     if (mip_level >= ci.mipLevels) {
         return VkExtent3D{0, 0, 0};
@@ -163,10 +163,10 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
 
     // Mip Maps
     {
-        const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
-        const uint32_t min_size = 1 + corner;
+        const u32 corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
+        const u32 min_size = 1 + corner;
         const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
-        for (uint32_t *dim : dimensions) {
+        for (u32 *dim : dimensions) {
             // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
             if (*dim == 0) {
                 continue;
@@ -185,7 +185,7 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
 }
 
 // Returns true if [x, x + x_size) and [y, y + y_size) overlap
-bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
+bool RangesIntersect(i64 x, u64 x_size, i64 y, u64 y_size) {
     auto intersection = GetRangeIntersection(x, x_size, y, y_size);
     return intersection.non_empty();
 }

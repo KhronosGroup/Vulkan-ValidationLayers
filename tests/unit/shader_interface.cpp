@@ -39,12 +39,12 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
 
     // vec4 == 4 components
     // This gives 124 which is just below the set max limit
-    const uint32_t numVec4 = 31;
+    const u32 numVec4 = 31;
 
     std::string vsSourceStr =
         "#version 450\n"
         "layout(location = 0) out block {\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         vsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
     }
     vsSourceStr +=
@@ -52,7 +52,7 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
         "\n"
         "void main() {\n"
         "    vec4 x = vec4(1.0);\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         vsSourceStr += "outVs.v" + std::to_string(i) + " = x;\n";
     }
 
@@ -73,7 +73,7 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     std::string fsSourceStr =
         "#version 450\n"
         "layout(location = 0) in block {\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         fsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
     }
     fsSourceStr +=
@@ -114,12 +114,12 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
 
     // vec4 == 4 components
     // This gives 128 which is the max limit
-    const uint32_t numVec4 = 32;  // 32 * 4 == 128
+    const u32 numVec4 = 32;  // 32 * 4 == 128
 
     std::string vsSourceStr =
         "#version 450\n"
         "layout(location = 0) out block {\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         vsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
     }
     vsSourceStr +=
@@ -127,7 +127,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
         "\n"
         "void main() {\n"
         "    vec4 x = vec4(1.0);\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         vsSourceStr += "outVs.v" + std::to_string(i) + " = x;\n";
     }
     vsSourceStr += "}";
@@ -135,7 +135,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     std::string fsSourceStr =
         "#version 450\n"
         "layout(location = 0) in block {\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         fsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
     }
     // By added gl_PointCoord it adds 2 more components to the fragment input stage
@@ -165,21 +165,21 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
+    for (u32 overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
-        const uint32_t maxVsOutComp = m_device->phy().limits_.maxVertexOutputComponents + overflow;
+        const u32 maxVsOutComp = m_device->phy().limits_.maxVertexOutputComponents + overflow;
         std::string vsSourceStr = "#version 450\n\n";
-        const uint32_t numVec4 = maxVsOutComp / 4;
-        uint32_t location = 0;
+        const u32 numVec4 = maxVsOutComp / 4;
+        u32 location = 0;
         if (overflow == 2) {
             vsSourceStr += "layout(location=" + std::to_string(numVec4 + 1) + ") out vec4 vn;\n";
         } else if (overflow == 1) {
-            for (uint32_t i = 0; i < numVec4; i++) {
+            for (u32 i = 0; i < numVec4; i++) {
                 vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec4 v" + std::to_string(i) + ";\n";
                 location += 1;
             }
-            const uint32_t remainder = maxVsOutComp % 4;
+            const u32 remainder = maxVsOutComp % 4;
             if (remainder != 0) {
                 if (remainder == 1) {
                     vsSourceStr += "layout(location=" + std::to_string(location) + ") out float" + " vn;\n";
@@ -232,12 +232,12 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
     }
     // vec4 == 4 components
     // so this put the test over 128
-    const uint32_t numVec4 = 33;
+    const u32 numVec4 = 33;
 
     std::string vsSourceStr =
         "#version 450\n"
         "layout(location = 0) out block {\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         vsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
     }
     vsSourceStr +=
@@ -245,7 +245,7 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
         "\n"
         "void main() {\n"
         "    vec4 x = vec4(1.0);\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         vsSourceStr += "outVs.v" + std::to_string(i) + " = x;\n";
     }
     vsSourceStr += "}";
@@ -253,7 +253,7 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
     std::string fsSourceStr =
         "#version 450\n"
         "layout(location = 0) in block {\n";
-    for (uint32_t i = 0; i < numVec4; i++) {
+    for (u32 i = 0; i < numVec4; i++) {
         fsSourceStr += "vec4 v" + std::to_string(i) + ";\n";
     }
     fsSourceStr +=
@@ -284,21 +284,21 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
+    for (u32 overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
-        const uint32_t maxFsInComp = m_device->phy().limits_.maxFragmentInputComponents + overflow;
+        const u32 maxFsInComp = m_device->phy().limits_.maxFragmentInputComponents + overflow;
         std::string fsSourceStr = "#version 450\n\n";
-        const uint32_t numVec4 = maxFsInComp / 4;
-        uint32_t location = 0;
+        const u32 numVec4 = maxFsInComp / 4;
+        u32 location = 0;
         if (overflow == 2) {
             fsSourceStr += "layout(location=" + std::to_string(numVec4 + 1) + ") in float" + " vn;\n";
         } else {
-            for (uint32_t i = 0; i < numVec4; i++) {
+            for (u32 i = 0; i < numVec4; i++) {
                 fsSourceStr += "layout(location=" + std::to_string(location) + ") in vec4 v" + std::to_string(i) + ";\n";
                 location += 1;
             }
-            const uint32_t remainder = maxFsInComp % 4;
+            const u32 remainder = maxFsInComp % 4;
             if (remainder != 0) {
                 if (remainder == 1) {
                     fsSourceStr += "layout(location=" + std::to_string(location) + ") in float" + " vn;\n";
@@ -1701,12 +1701,12 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirvMaintenance5) {
                OpReturn
                OpFunctionEnd
         )";
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1743,12 +1743,12 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirvMaintenance5Compute) {
                OpReturn
                OpFunctionEnd
         )";
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;

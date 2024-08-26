@@ -150,7 +150,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
         }
 
         // Request too many bindings.
-        if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+        if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<u32>::max()) {
             auto const bindingCount = tf_properties.maxTransformFeedbackBuffers + 1;
             std::vector<VkBuffer> buffers(bindingCount, buffer_obj.handle());
 
@@ -174,7 +174,7 @@ TEST_F(NegativeTransformFeedback, CmdBindTransformFeedbackBuffersEXT) {
     }
 
     {
-        const uint32_t buffer_size = 8;
+        const u32 buffer_size = 8;
         vkt::Buffer const buffer_obj(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT);
 
         // Request an offset that is too large.
@@ -285,7 +285,7 @@ TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackEXT) {
         }
 
         // Request too many buffers.
-        if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+        if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<u32>::max()) {
             auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369");
@@ -375,7 +375,7 @@ TEST_F(NegativeTransformFeedback, CmdEndTransformFeedbackEXT) {
             }
 
             // Request too many buffers.
-            if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<uint32_t>::max()) {
+            if (tf_properties.maxTransformFeedbackBuffers < std::numeric_limits<u32>::max()) {
                 auto const counterBufferCount = tf_properties.maxTransformFeedbackBuffers + 1;
 
                 m_errorMonitor->SetDesiredError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377");
@@ -639,8 +639,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
-        vku::InitStructHelper();
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
     transform_feedback_features.transformFeedback = VK_TRUE;
     transform_feedback_features.geometryStreams = VK_TRUE;
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper(&transform_feedback_features);
@@ -918,8 +917,8 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
     }
 
     {
-        uint32_t offset = transform_feedback_props.maxTransformFeedbackBufferDataSize / 2;
-        uint32_t count = transform_feedback_props.maxTransformFeedbackStreamDataSize / offset + 1;
+        u32 offset = transform_feedback_props.maxTransformFeedbackBufferDataSize / 2;
+        u32 count = transform_feedback_props.maxTransformFeedbackStreamDataSize / offset + 1;
         // Limit to 25, because we are dynamically adding variables using letters as names
         if (count < 25) {
             std::stringstream gsSource;
@@ -940,13 +939,13 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
                OpSource GLSL 450
                OpName %main "main"  ; id %4)asm";
 
-            for (uint32_t i = 0; i < count; ++i) {
+            for (u32 i = 0; i < count; ++i) {
                 char v = 'a' + static_cast<char>(i);
                 gsSource << "\nOpName %var" << v << " \"" << v << "\"";
             }
             gsSource << "\n; Annotations\n";
 
-            for (uint32_t i = 0; i < count; ++i) {
+            for (u32 i = 0; i < count; ++i) {
                 char v = 'a' + static_cast<char>(i);
                 gsSource << "OpDecorate %var" << v << " Location " << i << "\n";
                 gsSource << "OpDecorate %var" << v << " Stream 0\n";
@@ -965,7 +964,7 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
 %_ptr_Output_float = OpTypePointer Output %float)asm";
 
             gsSource << "\n";
-            for (uint32_t i = 0; i < count; ++i) {
+            for (u32 i = 0; i < count; ++i) {
                 char v = 'a' + static_cast<char>(i);
                 gsSource << "%var" << v << " = OpVariable %_ptr_Output_float Output\n";
             }

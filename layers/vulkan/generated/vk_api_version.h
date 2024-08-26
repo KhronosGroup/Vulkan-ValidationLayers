@@ -22,9 +22,12 @@
  ****************************************************************************/
 // NOLINTBEGIN
 #pragma once
+
 #include <vulkan/vulkan.h>
 #include <sstream>
 #include <iomanip>
+
+#include "utils/numerical_types.h"
 
 #define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
 
@@ -42,16 +45,16 @@ enum class Version {
 class APIVersion {
   public:
     APIVersion() : api_version_(VVL_UNRECOGNIZED_API_VERSION) {}
-    APIVersion(uint32_t api_version) : api_version_(api_version) {}
-    APIVersion& operator=(uint32_t api_version) {
+    APIVersion(u32 api_version) : api_version_(api_version) {}
+    APIVersion& operator=(u32 api_version) {
         api_version_ = api_version;
         return *this;
     }
     bool Valid() const { return api_version_ != VVL_UNRECOGNIZED_API_VERSION; }
-    uint32_t Value() const { return api_version_; }
-    uint32_t Major() const { return VK_API_VERSION_MAJOR(api_version_); }
-    uint32_t Minor() const { return VK_API_VERSION_MINOR(api_version_); }
-    uint32_t Patch() const { return VK_API_VERSION_PATCH(api_version_); }
+    u32 Value() const { return api_version_; }
+    u32 Major() const { return VK_API_VERSION_MAJOR(api_version_); }
+    u32 Minor() const { return VK_API_VERSION_MINOR(api_version_); }
+    u32 Patch() const { return VK_API_VERSION_PATCH(api_version_); }
     bool operator<(APIVersion api_version) const { return api_version_ < api_version.api_version_; }
     bool operator<=(APIVersion api_version) const { return api_version_ <= api_version.api_version_; }
     bool operator>(APIVersion api_version) const { return api_version_ > api_version.api_version_; }
@@ -60,7 +63,7 @@ class APIVersion {
     bool operator!=(APIVersion api_version) const { return api_version_ != api_version.api_version_; }
 
   private:
-    uint32_t api_version_;
+    u32 api_version_;
 };
 
 static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {

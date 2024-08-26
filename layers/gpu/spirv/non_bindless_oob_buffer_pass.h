@@ -30,20 +30,20 @@ class NonBindlessOOBBufferPass : public Pass {
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
+    u32 CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
     void Reset() final;
 
-    uint32_t link_function_id = 0;
-    uint32_t GetLinkFunctionId();
+    u32 link_function_id = 0;
+    u32 GetLinkFunctionId();
 
     const Instruction* access_chain_inst_ = nullptr;
     const Instruction* var_inst_ = nullptr;
 
-    uint32_t descriptor_array_size_id_ = 0;  // the size of the descriptor array (size is 1 if no array)
-    uint32_t descriptor_set_ = 0;
-    uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;  // index input the descriptor array
-    uint32_t descriptor_offset_id_ = 0;
+    u32 descriptor_array_size_id_ = 0;  // the size of the descriptor array (size is 1 if no array)
+    u32 descriptor_set_ = 0;
+    u32 descriptor_binding_ = 0;
+    u32 descriptor_index_id_ = 0;  // index input the descriptor array
+    u32 descriptor_offset_id_ = 0;
 };
 
 }  // namespace spirv

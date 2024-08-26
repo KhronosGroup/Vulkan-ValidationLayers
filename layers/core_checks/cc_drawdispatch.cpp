@@ -40,7 +40,7 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, 
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uint32_t instanceCount, uint32_t firstInstance,
+bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, u32 instanceCount, u32 firstInstance,
                                          const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
@@ -48,8 +48,8 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
 
     // Verify maxMultiviewInstanceIndex
     if (cb_state.activeRenderPass && enabled_features.multiview &&
-        ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
-         static_cast<uint64_t>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
+        ((static_cast<u64>(instanceCount) + static_cast<u64>(firstInstance)) >
+         static_cast<u64>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
         objlist.add(cb_state.activeRenderPass->Handle());
         skip |= LogError(vuid.max_multiview_instance_index_02688, objlist, loc,
@@ -63,7 +63,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
             pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
         if (vertex_input_divisor_state && phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE &&
             firstInstance != 0u) {
-            for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
+            for (u32 i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
                 if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
                     skip |= LogError(vuid.vertex_input_09461, objlist, loc,
@@ -153,8 +153,8 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                        uint32_t firstVertex, uint32_t firstInstance, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex,
+                                        u32 firstInstance, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -166,9 +166,9 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
-                                                uint32_t firstInstance, uint32_t stride, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u32 drawCount, const VkMultiDrawInfoEXT *pVertexInfo,
+                                                u32 instanceCount, u32 firstInstance, u32 stride,
+                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -199,7 +199,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_state, uint32_t indexCount, uint32_t firstIndex,
+bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_state, u32 indexCount, u32 firstIndex,
                                                   const Location &loc, const char *first_index_vuid) const {
     bool skip = false;
     if (enabled_features.robustBufferAccess2) {
@@ -207,7 +207,7 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_s
     }
     const auto &index_buffer_binding = cb_state.index_buffer_binding;
     if (const auto buffer_state = Get<vvl::Buffer>(index_buffer_binding.buffer)) {
-        const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
+        const u32 index_size = GetIndexAlignment(index_buffer_binding.index_type);
         // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
         // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
         // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
@@ -227,9 +227,8 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_s
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                               uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                               const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex,
+                                               i32 vertexOffset, u32 firstInstance, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -244,9 +243,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                       const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
-                                                       uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset,
+bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, u32 drawCount,
+                                                       const VkMultiDrawIndexedInfoEXT *pIndexInfo, u32 instanceCount,
+                                                       u32 firstInstance, u32 stride, const i32 *pVertexOffset,
                                                        const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -281,7 +280,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
                          error_obj.location.dot(Field::drawCount), "is %" PRIu32 " but pIndexInfo is NULL.", drawCount);
     } else {
         const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
-        for (uint32_t i = 0; i < drawCount; i++) {
+        for (u32 i = 0; i < drawCount; i++) {
             const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
             skip |= ValidateCmdDrawIndexedBufferSize(cb_state, info_ptr->indexCount, info_ptr->firstIndex,
                                                      error_obj.location.dot(Field::pIndexInfo, i),
@@ -291,8 +290,8 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 drawCount,
+                                                u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -340,7 +339,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
+                                                       u32 drawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -390,8 +389,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                            uint32_t groupCountZ, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, u32 groupCountX, u32 groupCountY, u32 groupCountZ,
+                                            const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -423,9 +422,9 @@ bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint3
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                uint32_t groupCountZ, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u32 baseGroupX, u32 baseGroupY, u32 baseGroupZ,
+                                                u32 groupCountX, u32 groupCountY, u32 groupCountZ,
+                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -434,7 +433,7 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
 
     // Paired if {} else if {} tests used to avoid any possible uint underflow
-    uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupCount[0];
+    u32 limit = phys_dev_props.limits.maxComputeWorkGroupCount[0];
     if (baseGroupX >= limit) {
         skip |=
             LogError("VUID-vkCmdDispatchBase-baseGroupX-00421", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
@@ -505,9 +504,9 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                   uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                   uint32_t groupCountZ, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u32 baseGroupX, u32 baseGroupY, u32 baseGroupZ,
+                                                   u32 groupCountX, u32 groupCountY, u32 groupCountZ,
+                                                   const ErrorObject &error_obj) const {
     return PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                           error_obj);
 }
@@ -538,8 +537,8 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
     return skip;
 }
 bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride, const ErrorObject &error_obj) const {
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                     u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -583,16 +582,15 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride, const ErrorObject &error_obj) const {
+                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                        u32 stride, const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                            uint32_t maxDrawCount, uint32_t stride,
-                                                            const ErrorObject &error_obj) const {
+                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                            u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -637,16 +635,15 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                               uint32_t maxDrawCount, uint32_t stride,
-                                                               const ErrorObject &error_obj) const {
+                                                               u32 maxDrawCount, u32 stride, const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                       stride, error_obj);
 }
 
-bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
-                                                            uint32_t firstInstance, VkBuffer counterBuffer,
-                                                            VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                            uint32_t vertexStride, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, u32 instanceCount, u32 firstInstance,
+                                                            VkBuffer counterBuffer, VkDeviceSize counterBufferOffset,
+                                                            u32 counterOffset, u32 vertexStride,
+                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -702,8 +699,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                                VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                                VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                               uint32_t width, uint32_t height, uint32_t depth,
-                                               const ErrorObject &error_obj) const {
+                                               u32 width, u32 height, u32 depth, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -944,8 +940,8 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
-                                                uint32_t height, uint32_t depth, const ErrorObject &error_obj) const {
+                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, u32 width,
+                                                u32 height, u32 depth, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -985,7 +981,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer command
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u32 taskCount, u32 firstTask,
                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1006,8 +1002,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           uint32_t drawCount, uint32_t stride,
-                                                           const ErrorObject &error_obj) const {
+                                                           u32 drawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1057,8 +1052,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                                uint32_t maxDrawCount, uint32_t stride,
-                                                                const ErrorObject &error_obj) const {
+                                                                u32 maxDrawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1093,8 +1087,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                                    uint32_t groupCountZ, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, u32 groupCountX, u32 groupCountY,
+                                                    u32 groupCountZ, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1131,15 +1125,15 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
             groupCountZ, phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]);
     }
 
-    uint32_t maxTaskWorkGroupTotalCount = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount;
-    uint64_t invocations = static_cast<uint64_t>(groupCountX) * static_cast<uint64_t>(groupCountY);
+    u32 maxTaskWorkGroupTotalCount = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount;
+    u64 invocations = static_cast<u64>(groupCountX) * static_cast<u64>(groupCountY);
     // Prevent overflow.
     bool fail = false;
     if (invocations > vvl::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
         fail = true;
     }
     if (!fail) {
-        invocations *= static_cast<uint64_t>(groupCountZ);
+        invocations *= static_cast<u64>(groupCountZ);
         if (invocations > vvl::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
             fail = true;
         }
@@ -1157,8 +1151,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                            uint32_t drawCount, uint32_t stride,
-                                                            const ErrorObject &error_obj) const {
+                                                            u32 drawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1205,8 +1198,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                  VkDeviceSize offset, VkBuffer countBuffer,
-                                                                 VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                 uint32_t stride, const ErrorObject &error_obj) const {
+                                                                 VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                                                 const ErrorObject &error_obj) const {
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     bool skip = false;
@@ -1358,7 +1351,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
         // if the bound set is not compatible, the rest will just be extra redundant errors
         for (const auto &set_binding_pair : pipeline.active_slots) {
             std::string error_string;
-            uint32_t set_index = set_binding_pair.first;
+            u32 set_index = set_binding_pair.first;
             const auto set_info = last_bound_state.per_set[set_index];
             if (!set_info.bound_descriptor_set) {
                 skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
@@ -1424,7 +1417,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
             // if the bound set is not copmatible, the rest will just be extra redundant errors
             for (const auto &set_binding_pair : shader_state->active_slots) {
                 std::string error_string;
-                uint32_t set_index = set_binding_pair.first;
+                u32 set_index = set_binding_pair.first;
                 const auto set_info = last_bound_state.per_set[set_index];
                 if (!set_info.bound_descriptor_set) {
                     const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
@@ -1551,7 +1544,7 @@ bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT &info_1
         info_1.sampleLocationsCount != info_2.sampleLocationsCount) {
         return false;
     }
-    for (uint32_t i = 0; i < info_1.sampleLocationsCount; ++i) {
+    for (u32 i = 0; i < info_1.sampleLocationsCount; ++i) {
         if (info_1.pSampleLocations[i].x != info_2.pSampleLocations[i].x ||
             info_1.pSampleLocations[i].y != info_2.pSampleLocations[i].y) {
             return false;
@@ -1589,9 +1582,9 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
                                           vuid.indirect_count_contiguous_memory_02714);
     skip |= ValidateBufferUsageFlags(objlist, count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      vuid.indirect_count_buffer_bit_02715, loc.dot(Field::countBuffer));
-    if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.create_info.size) {
+    if (count_buffer_offset + sizeof(u32) > count_buffer_state.create_info.size) {
         skip |= LogError(vuid.indirect_count_offset_04129, objlist, loc,
-                         "countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
+                         "countBufferOffset (%" PRIu64 ") + sizeof(u32) is greater than the buffer size of %" PRIu64 ".",
                          count_buffer_offset, count_buffer_state.create_info.size);
     }
     return skip;
@@ -1676,7 +1669,7 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
     const spirv::EntryPoint *fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
     if (!fragment_entry_point) return skip;
 
-    uint32_t max_fragment_location = 0;
+    u32 max_fragment_location = 0;
     for (const auto *variable : fragment_entry_point->user_defined_interface_variables) {
         if (variable->storage_class != spv::StorageClassOutput) continue;
         if (variable->decorations.location != spirv::kInvalidValue) {
@@ -1688,9 +1681,9 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
     // If color blend is disabled, the blend equation doesn't matter
     const bool dynamic_blend_enable = !pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     const bool dynamic_blend_equation = !pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
-    const uint32_t attachment_count = pipeline ? pipeline->ColorBlendState()->attachmentCount
-                                               : (uint32_t)cb_state.dynamic_state_value.color_blend_equations.size();
-    for (uint32_t i = 0; i < attachment_count; ++i) {
+    const u32 attachment_count =
+        pipeline ? pipeline->ColorBlendState()->attachmentCount : (u32)cb_state.dynamic_state_value.color_blend_equations.size();
+    for (u32 i = 0; i < attachment_count; ++i) {
         const bool blend_enable = dynamic_blend_enable ? cb_state.dynamic_state_value.color_blend_enabled[i]
                                                        : pipeline->ColorBlendState()->pAttachments[i].blendEnable;
         if (!blend_enable) continue;

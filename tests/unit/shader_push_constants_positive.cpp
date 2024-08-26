@@ -291,7 +291,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
 
     // range A and B are the same while range C is different
     // All 3 ranges fit the range from the shader
-    const uint32_t pc_size = 32;
+    const u32 pc_size = 32;
     VkPushConstantRange range_a = {VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size};
     VkPushConstantRange range_b = {VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size};
     VkPushConstantRange range_c = {VK_SHADER_STAGE_VERTEX_BIT, 16, pc_size};
@@ -611,15 +611,15 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
 
     std::array<VkPushConstantRange, 2> push_ranges;
     push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    push_ranges[0].size = sizeof(uint64_t);
+    push_ranges[0].size = sizeof(u64);
     push_ranges[0].offset = 0;
     push_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    push_ranges[1].size = sizeof(uint64_t);
-    push_ranges[1].offset = sizeof(uint64_t);
+    push_ranges[1].size = sizeof(u64);
+    push_ranges[1].offset = sizeof(u64);
 
     VkPipelineLayoutCreateInfo const pipeline_layout_info{
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr,           0, 0, nullptr,
-        static_cast<uint32_t>(push_ranges.size()),     push_ranges.data()};
+        static_cast<u32>(push_ranges.size()),          push_ranges.data()};
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -737,17 +737,17 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     )glsl";
 
     // Setting makes the VkPushConstantRange valid
-    uint32_t data = 1;
+    u32 data = 1;
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};

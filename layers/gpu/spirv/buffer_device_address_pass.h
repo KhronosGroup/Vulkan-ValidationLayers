@@ -30,14 +30,14 @@ class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
+    u32 CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
-    uint32_t link_function_id = 0;
-    uint32_t GetLinkFunctionId();
+    u32 link_function_id = 0;
+    u32 GetLinkFunctionId();
 
-    uint32_t type_length_ = 0;
-    uint32_t access_opcode_ = 0;
+    u32 type_length_ = 0;
+    u32 access_opcode_ = 0;
 };
 
 }  // namespace spirv

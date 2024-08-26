@@ -18,7 +18,8 @@
 #pragma once
 
 #include <string>
-#include <cstdint>
+
+#include "utils/numerical_types.h"
 
 #ifndef VVL_ENABLE_SYNCVAL_STATS
 #define VVL_ENABLE_SYNCVAL_STATS 0
@@ -32,18 +33,18 @@ namespace syncval_stats {
 #if VVL_ENABLE_SYNCVAL_STATS != 0
 
 struct Value32 {
-    std::atomic_uint32_t u32;
-    void Update(uint32_t new_value);
-    uint32_t Add(uint32_t n);
-    uint32_t Sub(uint32_t n);
+    std::atomic_u32 u32;
+    void Update(u32 new_value);
+    u32 Add(u32 n);
+    u32 Sub(u32 n);
 };
 
 struct ValueMax32 {
     Value32 value;
     Value32 max_value;
-    void Update(uint32_t new_value);
-    void Add(uint32_t n);
-    void Sub(uint32_t n);
+    void Update(u32 new_value);
+    void Add(u32 n);
+    void Sub(u32 n);
 };
 
 struct Stats {
@@ -55,8 +56,8 @@ struct Stats {
     void RemoveCommandBufferContext();
 
     ValueMax32 handle_record_counter;
-    void AddHandleRecord(uint32_t count = 1);
-    void RemoveHandleRecord(uint32_t count = 1);
+    void AddHandleRecord(u32 count = 1);
+    void RemoveHandleRecord(u32 count = 1);
 
     void ReportOnDestruction();
     std::string CreateReport();
@@ -64,8 +65,8 @@ struct Stats {
 
 #else
 struct Stats {
-    void AddHandleRecord(uint32_t count = 1) {}
-    void RemoveHandleRecord(uint32_t count = 1) {}
+    void AddHandleRecord(u32 count = 1) {}
+    void RemoveHandleRecord(u32 count = 1) {}
     void AddCommandBufferContext() {}
     void RemoveCommandBufferContext() {}
     void ReportOnDestruction() {}

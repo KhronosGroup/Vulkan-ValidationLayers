@@ -28,45 +28,45 @@
 // Holds the 'Location' of where the code is inside a function/struct/etc
 // see docs/error_object.md for more details
 struct Location {
-    static const uint32_t kNoIndex = vvl::kU32Max;
+    static const u32 kNoIndex = vvl::kU32Max;
 
     // name of the vulkan function we're checking
     const vvl::Func function;
 
     const vvl::Struct structure;
     const vvl::Field field;
-    const uint32_t index;  // optional index if checking an array.
-    const bool isPNext;    // will print the struct is from a 'pNext` chain
+    const u32 index;     // optional index if checking an array.
+    const bool isPNext;  // will print the struct is from a 'pNext` chain
     const Location* prev;
 
-    Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
+    Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, u32 i = kNoIndex)
         : function(func), structure(s), field(f), index(i), isPNext(false), prev(nullptr) {}
-    Location(vvl::Func func, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
+    Location(vvl::Func func, vvl::Field f = vvl::Field::Empty, u32 i = kNoIndex)
         : function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
-    Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
+    Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, u32 i, bool p)
         : function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
 
-    void AppendFields(std::ostream &out) const;
+    void AppendFields(std::ostream& out) const;
     std::string Fields() const;
     std::string Message() const;
 
     // the dot() method is for walking down into a structure that is being validated
     // eg:  loc.dot(Field::pMemoryBarriers, 5).dot(Field::srcStagemask)
-    Location dot(vvl::Struct s, vvl::Field sub_field, uint32_t sub_index = kNoIndex) const {
+    Location dot(vvl::Struct s, vvl::Field sub_field, u32 sub_index = kNoIndex) const {
         Location result(*this, s, sub_field, sub_index, false);
         return result;
     }
-    Location dot(vvl::Field sub_field, uint32_t sub_index = kNoIndex) const {
+    Location dot(vvl::Field sub_field, u32 sub_index = kNoIndex) const {
         Location result(*this, this->structure, sub_field, sub_index, false);
         return result;
     }
-    Location dot(uint32_t sub_index) const {
+    Location dot(u32 sub_index) const {
         Location result(*this, this->structure, this->field, sub_index, false);
         return result;
     }
 
     // same as dot() but will mark these were part of a pNext struct
-    Location pNext(vvl::Struct s, vvl::Field sub_field = vvl::Field::Empty, uint32_t sub_index = kNoIndex) const {
+    Location pNext(vvl::Struct s, vvl::Field sub_field = vvl::Field::Empty, u32 sub_index = kNoIndex) const {
         Location result(*this, s, sub_field, sub_index, true);
         return result;
     }
@@ -79,7 +79,7 @@ struct Location {
 // Contains the base information needed for errors to be logged out
 // Created for each function as a starting point to build off of
 struct ErrorObject {
-    const Location location;   // starting location (Always the function entrypoint)
+    const Location location;         // starting location (Always the function entrypoint)
     const VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
     const LogObjectList objlist;
     const chassis::HandleData* handle_data;
@@ -111,8 +111,8 @@ struct LocationVuidAdapter {
 
 struct LocationCapture {
     LocationCapture(const Location& loc);
-    LocationCapture(const LocationCapture &other);
-    LocationCapture(LocationCapture &&other);
+    LocationCapture(const LocationCapture& other);
+    LocationCapture(LocationCapture&& other);
 
     const Location& Get() const { return capture.back(); }
 

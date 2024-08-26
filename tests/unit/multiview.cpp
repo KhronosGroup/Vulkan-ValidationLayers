@@ -35,8 +35,8 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
 
     VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_props);
-    if (multiview_props.maxMultiviewInstanceIndex == std::numeric_limits<uint32_t>::max()) {
-        GTEST_SKIP() << "maxMultiviewInstanceIndex is uint32_t max";
+    if (multiview_props.maxMultiviewInstanceIndex == std::numeric_limits<u32>::max()) {
+        GTEST_SKIP() << "maxMultiviewInstanceIndex is u32 max";
     }
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -66,7 +66,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     }
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    uint32_t viewMask = 0x1u;
+    u32 viewMask = 0x1u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
@@ -159,7 +159,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         subpasses[i].pColorAttachments = &colorAttachmentReference;
     }
 
-    uint32_t viewMasks[multiview_count] = {};
+    u32 viewMasks[multiview_count] = {};
     for (unsigned i = 0; i < multiview_count; ++i) {
         viewMasks[i] = 1u << i;
     }
@@ -197,7 +197,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     }
 
-    rp_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    rp_info.dependencyCount = static_cast<u32>(dependencies.size());
     rp_info.pDependencies = dependencies.data();
 
     vk::CreateRenderPass(m_device->handle(), &rp_info, nullptr, &m_renderPass);
@@ -508,7 +508,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         float const vertex_data[] = {1.0f, 0.0f};
         vkt::Buffer vbo(*m_device, sizeof(vertex_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-        uint32_t const index_data[] = {0};
+        u32 const index_data[] = {0};
         vkt::Buffer ibo(*m_device, sizeof(index_data), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
         VkVertexInputBindingDescription input_binding{};
@@ -588,7 +588,7 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(Init());
 
-    uint32_t viewMask = 0x1u;
+    u32 viewMask = 0x1u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
@@ -661,7 +661,7 @@ TEST_F(NegativeMultiview, Features) {
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    for (u32 i = 0; i < queue_info.size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }
@@ -708,7 +708,7 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
     std::array viewMasks = {0x3u};
     std::array correlationMasks = {0x1u, 0x2u};
     auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(
-        nullptr, 1u, viewMasks.data(), 0u, nullptr, static_cast<uint32_t>(correlationMasks.size()), correlationMasks.data());
+        nullptr, 1u, viewMasks.data(), 0u, nullptr, static_cast<u32>(correlationMasks.size()), correlationMasks.data());
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
     PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, false);
@@ -749,7 +749,7 @@ TEST_F(NegativeMultiview, RenderPassViewMasksNotEnough) {
         {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
         {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
     };
-    uint32_t viewMasks[] = {0x3u, 0u};
+    u32 viewMasks[] = {0x3u, 0u};
     auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, viewMasks, 0u, nullptr, 0u, nullptr);
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
@@ -822,7 +822,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_att;
 
-    uint32_t viewMasks[] = {0x3u};
+    u32 viewMasks[] = {0x3u};
     VkRenderPassMultiviewCreateInfo rpmvci = vku::InitStructHelper();
     rpmvci.subpassCount = 1;
     rpmvci.pViewMasks = viewMasks;
@@ -861,7 +861,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     rp[0].init(*m_device, rpci);
     rpci.pNext = nullptr;
     rp[1].init(*m_device, rpci);
-    uint32_t viewMasks2[] = {0x1u};
+    u32 viewMasks2[] = {0x1u};
     rpmvci.pViewMasks = viewMasks2;
     rpci.pNext = &rpmvci;
     rp[2].init(*m_device, rpci);
@@ -1006,8 +1006,8 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     VkSubpassDescription subpasses[2];
     subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMasks[] = {0x3u, 0x0};
-    uint32_t correlationMasks[] = {0x1u, 0x3u};
+    u32 viewMasks[] = {0x3u, 0x0};
+    u32 correlationMasks[] = {0x1u, 0x3u};
     auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 0u, nullptr, 2u, correlationMasks);
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
@@ -1033,9 +1033,9 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     VkSubpassDescription subpasses[2];
     subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMasks[] = {0x1u, 0x2u};
-    uint32_t correlationMasks[] = {0x1u, 0x2u};
-    int32_t view_offset = 1;
+    u32 viewMasks[] = {0x1u, 0x2u};
+    u32 correlationMasks[] = {0x1u, 0x2u};
+    i32 view_offset = 1;
     auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 1u, &view_offset, 2u, correlationMasks);
 
     VkSubpassDependency dependency = {};
@@ -1060,8 +1060,8 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
     }
 
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
-    uint32_t correlationMask = 0x1u;
+    u32 viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
+    u32 correlationMask = 0x1u;
     auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, &viewMask, 0u, nullptr, 1u, &correlationMask);
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);

@@ -19,7 +19,7 @@ class NegativeBuffer : public VkLayerTest {};
 
 TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     TEST_DESCRIPTION("Check alignment parameters for vkCmdUpdateBuffer");
-    uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
+    u32 updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
 
     RETURN_IF_SKIP(Init());
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -200,7 +200,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     buff_view_ci.range = 0;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-00928"});
 
-    uint32_t format_size = vkuFormatElementSize(buff_view_ci.format);
+    u32 format_size = vkuFormatElementSize(buff_view_ci.format);
     // Range must be a multiple of the element size of format, so add one to ensure it is not
     buff_view_ci.range = format_size + 1;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-00929"});
@@ -395,8 +395,8 @@ TEST_F(NegativeBuffer, UpdateBufferWithinRenderPass) {
     vkt::Buffer dst_buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     VkDeviceSize dstOffset = 0;
-    uint32_t Data[] = {1, 2, 3, 4, 5, 6, 7, 8};
-    VkDeviceSize dataSize = sizeof(Data) / sizeof(uint32_t);
+    u32 Data[] = {1, 2, 3, 4, 5, 6, 7, 8};
+    VkDeviceSize dataSize = sizeof(Data) / sizeof(u32);
     vk::CmdUpdateBuffer(m_commandBuffer->handle(), dst_buffer.handle(), dstOffset, dataSize, &Data);
 
     m_errorMonitor->VerifyFound();
@@ -451,7 +451,7 @@ TEST_F(NegativeBuffer, VertexBufferOffset) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    const uint32_t maxVertexInputBindings = m_device->phy().limits_.maxVertexInputBindings;
+    const u32 maxVertexInputBindings = m_device->phy().limits_.maxVertexInputBindings;
     const VkDeviceSize vbo_size = 3 * sizeof(float);
     vkt::Buffer vbo(*m_device, vbo_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->begin();
@@ -483,7 +483,7 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
     AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    const uint32_t buffer_size = 32;
+    const u32 buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -516,7 +516,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     RETURN_IF_SKIP(Init());
 
     InitRenderTarget();
-    const uint32_t buffer_size = 32;
+    const u32 buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -548,7 +548,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t buffer_size = 32;
+    const u32 buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
@@ -713,7 +713,7 @@ TEST_F(NegativeBuffer, ConditionalRenderingOffset) {
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t buffer_size = 128;
+    const u32 buffer_size = 128;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = vku::InitStructHelper();

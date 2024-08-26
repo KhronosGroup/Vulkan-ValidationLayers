@@ -158,7 +158,7 @@ TEST_F(NegativeDescriptors, DescriptorPool) {
 
     RETURN_IF_SKIP(Init());
     m_errorMonitor->SetDesiredError("VUID-vkResetDescriptorPool-descriptorPool-parameter");
-    constexpr uint64_t fake_pool_handle = 0xbaad6001;
+    constexpr u64 fake_pool_handle = 0xbaad6001;
     VkDescriptorPool bad_pool = CastFromUint64<VkDescriptorPool>(fake_pool_handle);
     vk::ResetDescriptorPool(device(), bad_pool, 0);
     m_errorMonitor->VerifyFound();
@@ -171,7 +171,7 @@ TEST_F(NegativeDescriptors, DescriptorSet) {
     // call vk::CmdBindDescriptorSets w/ false Descriptor Set
     RETURN_IF_SKIP(Init());
 
-    constexpr uint64_t fake_set_handle = 0xbaad6001;
+    constexpr u64 fake_set_handle = 0xbaad6001;
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(fake_set_handle);
 
     VkDescriptorSetLayoutBinding layout_binding = {};
@@ -209,7 +209,7 @@ TEST_F(NegativeDescriptors, DescriptorSet) {
 TEST_F(NegativeDescriptors, DescriptorSetLayout) {
     // Attempt to create a Pipeline Layout with an invalid Descriptor Set Layout.
     // ObjectTracker should catch this.
-    constexpr uint64_t fake_layout_handle = 0xbaad6001;
+    constexpr u64 fake_layout_handle = 0xbaad6001;
     VkDescriptorSetLayout bad_layout = CastFromUint64<VkDescriptorSetLayout>(fake_layout_handle);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter");
     RETURN_IF_SKIP(Init());
@@ -1064,7 +1064,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetCases) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
-    uint32_t pDynOff[2] = {0, 756};
+    u32 pDynOff[2] = {0, 756};
     // Now cause error b/c too many dynOffsets in array for # of dyn descriptors
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -1257,7 +1257,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     m_commandBuffer->begin();
 
     VkDescriptorSet descriptorSets[3] = {descriptor_set_0.set_, descriptor_set_1.set_, descriptor_set_2.set_};
-    uint32_t offsets[5] = {0, 0, 0, 0, 0};
+    u32 offsets[5] = {0, 0, 0, 0, 0};
 
     if (partial_size > 1) {
         // non multiple of alignment
@@ -1270,7 +1270,7 @@ TEST_F(NegativeDescriptors, DynamicDescriptorSet) {
     }
 
     // Larger than buffer
-    const uint32_t partial_size32 = static_cast<uint32_t>(partial_size);
+    const u32 partial_size32 = static_cast<u32>(partial_size);
     offsets[0] = partial_size32;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
@@ -1332,7 +1332,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
                                        });
 
     // Update descriptors
-    const uint32_t BINDING_COUNT = 3;
+    const u32 BINDING_COUNT = 3;
     VkDescriptorBufferInfo buff_info[BINDING_COUNT] = {};
     buff_info[0].buffer = VK_NULL_HANDLE;
     buff_info[0].offset = 0;
@@ -1382,7 +1382,7 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
+    u32 dyn_off[BINDING_COUNT] = {0, 1024, 256};
     // The 2 active descriptors produce this error
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
@@ -1513,7 +1513,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const uint32_t NUM_DESCRIPTOR_TYPES = 5;
+    static const u32 NUM_DESCRIPTOR_TYPES = 5;
     VkDescriptorPoolSize ds_type_count[NUM_DESCRIPTOR_TYPES] = {};
     ds_type_count[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ds_type_count[0].descriptorCount = 10;
@@ -1536,7 +1536,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    static const uint32_t MAX_DS_TYPES_IN_LAYOUT = 2;
+    static const u32 MAX_DS_TYPES_IN_LAYOUT = 2;
     VkDescriptorSetLayoutBinding dsl_binding[MAX_DS_TYPES_IN_LAYOUT] = {};
     dsl_binding[0].binding = 0;
     dsl_binding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1581,7 +1581,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
 
     const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
 
-    static const uint32_t NUM_SETS = 4;
+    static const u32 NUM_SETS = 4;
     VkDescriptorSet descriptorSet[NUM_SETS] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorPool = ds_pool.handle();
@@ -1762,10 +1762,10 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT for this format";
     }
 
-    constexpr uint32_t kLocalDescriptorTypeRangeSize = (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT - VK_DESCRIPTOR_TYPE_SAMPLER + 1);
+    constexpr u32 kLocalDescriptorTypeRangeSize = (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT - VK_DESCRIPTOR_TYPE_SAMPLER + 1);
 
     std::array<VkDescriptorPoolSize, kLocalDescriptorTypeRangeSize> ds_type_count;
-    for (uint32_t i = 0; i < ds_type_count.size(); ++i) {
+    for (u32 i = 0; i < ds_type_count.size(); ++i) {
         ds_type_count[i].type = VkDescriptorType(i);
         ds_type_count[i].descriptorCount = 1;
     }
@@ -1787,7 +1787,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     std::vector<UpDescriptorSetLayout> ds_layouts;
     descriptor_sets.reserve(kLocalDescriptorTypeRangeSize);
     ds_layouts.reserve(kLocalDescriptorTypeRangeSize);
-    for (uint32_t i = 0; i < kLocalDescriptorTypeRangeSize; ++i) {
+    for (u32 i = 0; i < kLocalDescriptorTypeRangeSize; ++i) {
         dsl_bindings[0].descriptorType = VkDescriptorType(i);
         ds_layouts.push_back(UpDescriptorSetLayout(new vkt::DescriptorSetLayout(*m_device, dsl_bindings)));
         descriptor_sets.push_back(UpDescriptorSet(ds_pool.alloc_sets(*m_device, *ds_layouts.back())));
@@ -1842,7 +1842,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         "VUID-VkWriteDescriptorSet-descriptorType-00338"   // INPUT_ATTACHMENT
     };
 
-    for (uint32_t i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
+    for (u32 i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
         if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
             // Now check for UNIFORM_TEXEL_BUFFER using storage_texel_buffer_view
             descriptor_write.pTexelBufferView = &storage_texel_buffer_view;
@@ -2373,7 +2373,7 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, sizeof(uint32_t)};
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, sizeof(u32)};
 
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(0xcadecade);
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -2399,7 +2399,7 @@ TEST_F(NegativeDescriptors, CreateDescriptorPool) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t default_descriptor_count = 1;
+    const u32 default_descriptor_count = 1;
     const VkDescriptorPoolSize dp_size_template{VK_DESCRIPTOR_TYPE_SAMPLER, default_descriptor_count};
 
     const auto dp_ci_template = vku::InitStruct<VkDescriptorPoolCreateInfo>(nullptr, 0u, 1u, 1u, &dp_size_template);
@@ -2438,7 +2438,7 @@ TEST_F(NegativeDescriptors, DuplicateDescriptorBinding) {
 
     RETURN_IF_SKIP(Init());
     // Create layout where two binding #s are "1"
-    static const uint32_t NUM_BINDINGS = 3;
+    static const u32 NUM_BINDINGS = 3;
     VkDescriptorSetLayoutBinding dsl_binding[NUM_BINDINGS] = {};
     dsl_binding[0].binding = 1;
     dsl_binding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -2505,13 +2505,13 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
         GTEST_SKIP() << "DescriptorCount exceeds InlineUniformBlockSize limit";
     }
 
-    uint32_t maxBlocks = std::max(inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks,
-                                  inline_uniform_props.maxDescriptorSetInlineUniformBlocks);
+    u32 maxBlocks = std::max(inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks,
+                             inline_uniform_props.maxDescriptorSetInlineUniformBlocks);
     if (maxBlocks > 4096) {
         GTEST_SKIP() << "Too large of a maximum number of inline uniform blocks";
     }
 
-    for (uint32_t i = 0; i < 1 + maxBlocks; ++i) {
+    for (u32 i = 0; i < 1 + maxBlocks; ++i) {
         dslb.binding = i;
         dslb_vec.push_back(dslb);
     }
@@ -2595,7 +2595,7 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    uint32_t dummyData[8] = {};
+    u32 dummyData[8] = {};
     VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
     write_inline_uniform.dataSize = 3;
     write_inline_uniform.pData = &dummyData[0];
@@ -3260,8 +3260,8 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
     vkt::DescriptorSetLayout descLayout;
     {
         VkDescriptorSetLayoutBinding layoutBinding[3] = {};
-        uint32_t bindingCount[] = {sizeof(inline_data) / 2, 0, sizeof(inline_data) / 2};
-        uint32_t bindingPoint[] = {0, 1, 2};
+        u32 bindingCount[] = {sizeof(inline_data) / 2, 0, sizeof(inline_data) / 2};
+        u32 bindingPoint[] = {0, 1, 2};
         VkDescriptorType descType[] = {VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
                                        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT};
         for (size_t i = 0; i < 3; ++i) {
@@ -3823,8 +3823,8 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t width = 32;
-    const uint32_t height = 32;
+    const u32 width = 32;
+    const u32 height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     RenderPassSingleSubpass rp(*this);
@@ -3904,8 +3904,8 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t width = 32;
-    const uint32_t height = 32;
+    const u32 width = 32;
+    const u32 height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     RenderPassSingleSubpass rp(*this);
@@ -4008,7 +4008,7 @@ TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
 
     VkDescriptorSetLayoutBinding bindings[2] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, std::numeric_limits<uint32_t>::max() / 64, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, std::numeric_limits<u32>::max() / 64, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
     ds_layout_ci.bindingCount = 2;
     ds_layout_ci.pBindings = bindings;
@@ -4017,7 +4017,7 @@ TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
 
     VkDescriptorSetVariableDescriptorCountAllocateInfoEXT count_alloc_info = vku::InitStructHelper();
     count_alloc_info.descriptorSetCount = 1;
-    uint32_t variable_count = 2;
+    u32 variable_count = 2;
     count_alloc_info.pDescriptorCounts = &variable_count;
 
     VkDescriptorPoolSize pool_sizes[2] = {{bindings[0].descriptorType, bindings[0].descriptorCount},
@@ -4613,7 +4613,7 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     InitRenderTarget();
 
     VkFormat format = VK_FORMAT_UNDEFINED;
-    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
+    for (u32 fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
@@ -4821,7 +4821,7 @@ TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t alignment = static_cast<uint32_t>(m_device->phy().limits_.minStorageBufferOffsetAlignment);
+    u32 alignment = static_cast<u32>(m_device->phy().limits_.minStorageBufferOffsetAlignment);
     if (alignment < 2) {
         GTEST_SKIP() << "minStorageBufferOffsetAlignment too small";
     }
@@ -4831,7 +4831,7 @@ TEST_F(NegativeDescriptors, BindStorageBufferDynamicAlignment) {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    uint32_t dynamic_offset = alignment - 1;
+    u32 dynamic_offset = alignment - 1;
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972");
@@ -4968,7 +4968,7 @@ TEST_F(NegativeDescriptors, IncompatibleDescriptorFlagsWithBindingFlags) {
     m_errorMonitor->VerifyFound();
 
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    uint32_t descriptorCounts[2] = {1u, 1u};
+    u32 descriptorCounts[2] = {1u, 1u};
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_allocate = vku::InitStructHelper();
     variable_allocate.descriptorSetCount = 2u;
     variable_allocate.pDescriptorCounts = descriptorCounts;
@@ -5008,18 +5008,18 @@ TEST_F(NegativeDescriptors, MaxInlineUniformTotalSize) {
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_properties = vku::InitStructHelper();
     VkPhysicalDeviceVulkan13Properties properties13 = vku::InitStructHelper(&inline_uniform_block_properties);
     GetPhysicalDeviceProperties2(properties13);
-    const uint32_t limit = properties13.maxInlineUniformTotalSize;
+    const u32 limit = properties13.maxInlineUniformTotalSize;
 
-    if (limit == std::numeric_limits<uint32_t>::max()) {
+    if (limit == std::numeric_limits<u32>::max()) {
         GTEST_SKIP() << "maxInlineUniformTotalSize is too large";
     }
 
-    const uint32_t binding_count = limit / inline_uniform_block_properties.maxInlineUniformBlockSize + 1;
+    const u32 binding_count = limit / inline_uniform_block_properties.maxInlineUniformBlockSize + 1;
     std::vector<VkDescriptorSetLayoutBinding> bindings(binding_count);
     const VkShaderStageFlags stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                          VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                          VK_SHADER_STAGE_FRAGMENT_BIT};
-    for (uint32_t i = 0; i < binding_count; ++i) {
+    for (u32 i = 0; i < binding_count; ++i) {
         bindings[i].binding = i;
         bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
         bindings[i].descriptorCount = inline_uniform_block_properties.maxInlineUniformBlockSize;

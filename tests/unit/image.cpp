@@ -102,7 +102,7 @@ TEST_F(NegativeImage, UnknownObject) {
 
     // Pass bogus handle into GetImageMemoryRequirements
     VkMemoryRequirements mem_reqs;
-    constexpr uint64_t fakeImageHandle = 0xCADECADE;
+    constexpr u64 fakeImageHandle = 0xCADECADE;
     VkImage fauxImage = CastFromUint64<VkImage>(fakeImageHandle);
 
     vk::GetImageMemoryRequirements(device(), fauxImage, &mem_reqs);
@@ -688,9 +688,9 @@ TEST_F(NegativeImage, BlitOffsets) {
                      &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    blit_region.srcOffsets[1] = {64, 65, 1};                                                 // src y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");                  // y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");                   // src region
+    blit_region.srcOffsets[1] = {64, 65, 1};                                 // src y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");  // y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
     vk::CmdBlitImage(m_commandBuffer->handle(), image_3D.handle(), image_3D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
                      &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -714,9 +714,9 @@ TEST_F(NegativeImage, BlitOffsets) {
                      &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    blit_region.dstOffsets[0] = {0, 65, 32};                                                 // dst y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");                  // y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");                   // dst region
+    blit_region.dstOffsets[0] = {0, 65, 32};                                 // dst y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");  // y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
     vk::CmdBlitImage(m_commandBuffer->handle(), image_2D.handle(), image_2D.Layout(), image_3D.handle(), image_3D.Layout(), 1,
                      &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -1058,8 +1058,8 @@ TEST_F(NegativeImage, ImageLayout) {
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
+    const i32 tex_width = 32;
+    const i32 tex_height = 32;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1480,7 +1480,7 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    uint32_t feature_count = 5;
+    u32 feature_count = 5;
     // List of features to be tested
     VkFormatFeatureFlagBits features[] = {
         VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,            // 02274
@@ -1508,7 +1508,7 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     VkFormatProperties formatProps;
 
     // All but one test in this loop and do last test after for special format case
-    uint32_t i = 0;
+    u32 i = 0;
     for (i = 0; i < (feature_count - 1); i++) {
         // Modify formats to have mismatched features
 
@@ -1808,8 +1808,8 @@ TEST_F(NegativeImage, ImageViewNoMemoryBoundToImage) {
     VkImage image;
 
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
+    const i32 tex_width = 32;
+    const i32 tex_height = 32;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3071,8 +3071,8 @@ TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
     // One bad format and one good format for Color attachment
     const VkFormat tex_format_bad = depth_format;
     const VkFormat tex_format_good = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
+    const i32 tex_width = 32;
+    const i32 tex_height = 32;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3188,8 +3188,7 @@ TEST_F(NegativeImage, Stencil) {
 
     image_create_info.pNext = &image_stencil_create_info;
 
-    VkPhysicalDeviceImageFormatInfo2 image_format_info2 =
-        vku::InitStructHelper(&image_stencil_create_info);
+    VkPhysicalDeviceImageFormatInfo2 image_format_info2 = vku::InitStructHelper(&image_stencil_create_info);
     image_format_info2.format = image_create_info.format;
     image_format_info2.type = image_create_info.imageType;
     image_format_info2.tiling = image_create_info.tiling;
@@ -3694,7 +3693,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
 
     image_mem.init(*m_device, mem_alloc);
 
-    std::array<uint32_t, 2> deviceIndices = {{0, 0}};
+    std::array<u32, 2> deviceIndices = {{0, 0}};
     VkRect2D splitInstanceBindregion = {{0, 0}, {16, 16}};
     VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = vku::InitStructHelper();
     bind_devicegroup_info.deviceIndexCount = 2;
@@ -3722,7 +3721,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCountWithDeviceGroup) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
@@ -3894,7 +3893,7 @@ TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
 
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
@@ -3948,7 +3947,7 @@ TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
 
     vkt::DeviceMemory memory(*m_device, mem_alloc);
 
-    uint32_t deviceIndex = 0;
+    u32 deviceIndex = 0;
 
     VkRect2D region = {};
     region.offset.x = 0;
@@ -4152,7 +4151,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     // queueFamilyIndexCount must be greater than 1
     {
         ci.queueFamilyIndexCount = 1;
-        const uint32_t queue_family = 0;
+        const u32 queue_family = 0;
         ci.pQueueFamilyIndices = &queue_family;
         CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-00942");
     }
@@ -4168,7 +4167,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     // Each element of pQueueFamilyIndices must be less than pQueueFamilyPropertyCount returned by either
     // vkGetPhysicalDeviceQueueFamilyProperties or vkGetPhysicalDeviceQueueFamilyProperties2
     {
-        uint32_t queue_node_count = 0;
+        u32 queue_node_count = 0;
         vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, nullptr);
 
         const std::array queue_families = {0U, queue_node_count};
@@ -4971,7 +4970,7 @@ TEST_F(NegativeImage, SlicedUsage) {
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.levelCount = 1;
 
-    auto get_effective_depth = [&]() -> uint32_t {
+    auto get_effective_depth = [&]() -> u32 {
         return GetEffectiveExtent(ci, ivci.subresourceRange.aspectMask, ivci.subresourceRange.baseMipLevel).depth;
     };
 
@@ -5536,7 +5535,7 @@ TEST_F(NegativeImage, ImageAlignmentControlBitmask) {
     AddRequiredFeature(vkt::Feature::imageAlignmentControl);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t bad_alignment = 0x40000000;
+    const u32 bad_alignment = 0x40000000;
     VkPhysicalDeviceImageAlignmentControlPropertiesMESA props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props);
     if (props.supportedImageAlignmentMask & bad_alignment) {

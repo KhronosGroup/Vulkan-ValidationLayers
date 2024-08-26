@@ -62,24 +62,24 @@ void RenderPassSingleSubpass::AddAttachmentReference(VkAttachmentReference refer
     attachments_references_.push_back(reference);
 }
 
-void RenderPassSingleSubpass::AddInputAttachment(uint32_t index) {
+void RenderPassSingleSubpass::AddInputAttachment(u32 index) {
     input_attachments_.push_back(attachments_references_[index]);
     subpass_description_.inputAttachmentCount = input_attachments_.size();
     subpass_description_.pInputAttachments = input_attachments_.data();
 }
 
-void RenderPassSingleSubpass::AddColorAttachment(uint32_t index) {
+void RenderPassSingleSubpass::AddColorAttachment(u32 index) {
     color_attachments_.push_back(attachments_references_[index]);
     subpass_description_.colorAttachmentCount = color_attachments_.size();
     subpass_description_.pColorAttachments = color_attachments_.data();
 }
 
-void RenderPassSingleSubpass::AddResolveAttachment(uint32_t index) {
+void RenderPassSingleSubpass::AddResolveAttachment(u32 index) {
     resolve_attachment_ = attachments_references_[index];
     subpass_description_.pResolveAttachments = &resolve_attachment_;
 }
 
-void RenderPassSingleSubpass::AddDepthStencilAttachment(uint32_t index) {
+void RenderPassSingleSubpass::AddDepthStencilAttachment(u32 index) {
     ds_attachment_ = attachments_references_[index];
     subpass_description_.pDepthStencilAttachment = &ds_attachment_;
 }
@@ -152,38 +152,38 @@ void RenderPass2SingleSubpass::AddAttachmentDescription(VkFormat format, VkSampl
         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout));
 }
 
-void RenderPass2SingleSubpass::SetAttachmentDescriptionPNext(uint32_t index, void* pNext) {
+void RenderPass2SingleSubpass::SetAttachmentDescriptionPNext(u32 index, void* pNext) {
     attachment_descriptions_[index].pNext = pNext;
 }
 
-void RenderPass2SingleSubpass::AddAttachmentReference(uint32_t attachment, VkImageLayout layout, VkImageAspectFlags aspect_mask,
+void RenderPass2SingleSubpass::AddAttachmentReference(u32 attachment, VkImageLayout layout, VkImageAspectFlags aspect_mask,
                                                       void* pNext) {
     attachments_references_.push_back(vku::InitStruct<VkAttachmentReference2>(pNext, attachment, layout, aspect_mask));
 }
 
-void RenderPass2SingleSubpass::AddInputAttachment(uint32_t index) {
+void RenderPass2SingleSubpass::AddInputAttachment(u32 index) {
     input_attachments_.push_back(attachments_references_[index]);
     subpass_description_.inputAttachmentCount = input_attachments_.size();
     subpass_description_.pInputAttachments = input_attachments_.data();
 }
 
-void RenderPass2SingleSubpass::AddColorAttachment(uint32_t index) {
+void RenderPass2SingleSubpass::AddColorAttachment(u32 index) {
     color_attachments_.push_back(attachments_references_[index]);
     subpass_description_.colorAttachmentCount = color_attachments_.size();
     subpass_description_.pColorAttachments = color_attachments_.data();
 }
 
-void RenderPass2SingleSubpass::AddResolveAttachment(uint32_t index) {
+void RenderPass2SingleSubpass::AddResolveAttachment(u32 index) {
     resolve_attachment_ = attachments_references_[index];
     subpass_description_.pResolveAttachments = &resolve_attachment_;
 }
 
-void RenderPass2SingleSubpass::AddDepthStencilAttachment(uint32_t index) {
+void RenderPass2SingleSubpass::AddDepthStencilAttachment(u32 index) {
     ds_attachment_ = attachments_references_[index];
     subpass_description_.pDepthStencilAttachment = &ds_attachment_;
 }
 
-void RenderPass2SingleSubpass::AddDepthStencilResolveAttachment(uint32_t index, VkResolveModeFlagBits depth_resolve_mode,
+void RenderPass2SingleSubpass::AddDepthStencilResolveAttachment(u32 index, VkResolveModeFlagBits depth_resolve_mode,
                                                                 VkResolveModeFlagBits stencil_resolve_mode) {
     ds_attachment_resolve_ = vku::InitStructHelper();
     ds_attachment_resolve_.pDepthStencilResolveAttachment = &attachments_references_[index];
@@ -192,7 +192,7 @@ void RenderPass2SingleSubpass::AddDepthStencilResolveAttachment(uint32_t index, 
     subpass_description_.pNext = &ds_attachment_resolve_;
 }
 
-void RenderPass2SingleSubpass::AddFragmentShadingRateAttachment(uint32_t index, VkExtent2D texel_size) {
+void RenderPass2SingleSubpass::AddFragmentShadingRateAttachment(u32 index, VkExtent2D texel_size) {
     fsr_attachment_ = vku::InitStructHelper();
     fsr_attachment_.pFragmentShadingRateAttachment = &attachments_references_[index];
     fsr_attachment_.shadingRateAttachmentTexelSize = texel_size;

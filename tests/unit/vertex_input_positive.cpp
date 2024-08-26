@@ -758,7 +758,7 @@ TEST_F(PositiveVertexInput, VertexStrideDoubleDynamicStride) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
 
     // flip order around
-    binding.stride = static_cast<uint32_t>(bad_stride);
+    binding.stride = static_cast<u32>(bad_stride);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &good_stride);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);

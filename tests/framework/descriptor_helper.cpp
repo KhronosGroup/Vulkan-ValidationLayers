@@ -21,7 +21,7 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bi
     for (const auto &b : bindings) sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
 
     VkDescriptorPoolCreateInfo dspci = {
-        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, create_pool_pnext, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, create_pool_pnext, poolFlags, 1, u32(sizes.size()), sizes.data()};
     err = vk::CreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
     if (err != VK_SUCCESS) return;
 
@@ -44,8 +44,8 @@ void OneOffDescriptorSet::Clear() {
     descriptor_writes.clear();
 }
 
-void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type,
-                                             uint32_t descriptor_count /*= 1*/) {
+void OneOffDescriptorSet::AddDescriptorWrite(u32 binding, u32 array_element, VkDescriptorType descriptor_type,
+                                             u32 descriptor_count /*= 1*/) {
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = set_;
     descriptor_write.dstBinding = binding;
@@ -56,7 +56,7 @@ void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_el
 }
 
 void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range,
-                                                    VkDescriptorType descriptorType, uint32_t arrayElement) {
+                                                    VkDescriptorType descriptorType, u32 arrayElement) {
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer;
     buffer_info.offset = offset;
@@ -69,7 +69,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer
 }
 
 void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView buffer_view, VkDescriptorType descriptorType,
-                                                    uint32_t arrayElement) {
+                                                    u32 arrayElement) {
     ResourceInfo resource_info;
     resource_info.buffer_view = buffer_view;
     resource_infos.emplace_back(resource_info);
@@ -77,8 +77,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView bu
 }
 
 void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
-                                                   VkDescriptorType descriptorType, VkImageLayout imageLayout,
-                                                   uint32_t arrayElement) {
+                                                   VkDescriptorType descriptorType, VkImageLayout imageLayout, u32 arrayElement) {
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
     image_info.sampler = sampler;
@@ -90,9 +89,9 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
     AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
-void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
+void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, u32 accelerationStructureCount,
                                                      const VkAccelerationStructureKHR *pAccelerationStructures,
-                                                     uint32_t arrayElement /*= 0*/) {
+                                                     u32 arrayElement /*= 0*/) {
     VkWriteDescriptorSetAccelerationStructureKHR write_desc_set_accel_struct = vku::InitStructHelper();
     write_desc_set_accel_struct.accelerationStructureCount = accelerationStructureCount;
     write_desc_set_accel_struct.pAccelerationStructures = pAccelerationStructures;

@@ -23,10 +23,10 @@
 // Note: some of the types in this header are needed by both the DescriptorSet and Pipeline
 // state objects. It is helpful to have a separate header to avoid circular #include madness.
 struct DescriptorSlot {
-    uint32_t set;
-    uint32_t binding;
+    u32 set;
+    u32 binding;
 
-    DescriptorSlot(uint32_t s, uint32_t b) : set(s), binding(b) {}
+    DescriptorSlot(u32 s, u32 b) : set(s), binding(b) {}
 };
 
 inline bool operator==(const DescriptorSlot &lhs, const DescriptorSlot &rhs) noexcept {
@@ -35,7 +35,7 @@ inline bool operator==(const DescriptorSlot &lhs, const DescriptorSlot &rhs) noe
 
 struct SamplerUsedByImage {
     DescriptorSlot sampler_slot;
-    uint32_t sampler_index;
+    u32 sampler_index;
 };
 
 inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) noexcept {
@@ -45,12 +45,12 @@ inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b)
 namespace std {
 template <>
 struct hash<DescriptorSlot> {
-    size_t operator()(DescriptorSlot slot) const noexcept { return hash<uint32_t>()(slot.set) ^ hash<uint32_t>()(slot.binding); }
+    size_t operator()(DescriptorSlot slot) const noexcept { return hash<u32>()(slot.set) ^ hash<u32>()(slot.binding); }
 };
 template <>
 struct hash<SamplerUsedByImage> {
     size_t operator()(SamplerUsedByImage s) const noexcept {
-        return hash<DescriptorSlot>()(s.sampler_slot) ^ hash<uint32_t>()(s.sampler_index);
+        return hash<DescriptorSlot>()(s.sampler_slot) ^ hash<u32>()(s.sampler_index);
     }
 };
 }  // namespace std
@@ -92,7 +92,7 @@ class SamplerYcbcrConversion : public StateObject {
     const VkFormatFeatureFlags2KHR format_features;
     const VkFormat format;
     const VkFilter chromaFilter;
-    const uint64_t external_format;
+    const u64 external_format;
 
     SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *info,
                            VkFormatFeatureFlags2KHR features)

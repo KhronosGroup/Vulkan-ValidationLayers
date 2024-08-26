@@ -24,8 +24,8 @@
 #include "instrumentation_non_bindless_oob_texel_buffer_comp.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t instrumentation_non_bindless_oob_texel_buffer_comp_size = 1374;
-[[maybe_unused]] const uint32_t instrumentation_non_bindless_oob_texel_buffer_comp[1374] = {
+[[maybe_unused]] const u32 instrumentation_non_bindless_oob_texel_buffer_comp_size = 1374;
+[[maybe_unused]] const u32 instrumentation_non_bindless_oob_texel_buffer_comp[1374] = {
     0x07230203, 0x00010300, 0x0008000b, 0x000000d0, 0x00000000, 0x00020011, 0x00000001, 0x00020011, 0x00000005, 0x00020011,
     0x000014e3, 0x0009000a, 0x5f565053, 0x5f52484b, 0x73796870, 0x6c616369, 0x6f74735f, 0x65676172, 0x6675625f, 0x00726566,
     0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x000014e4, 0x00000001, 0x00030003,

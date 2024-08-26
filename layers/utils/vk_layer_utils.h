@@ -29,6 +29,7 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
 
+#include "utils/numerical_types.h"
 #include "generated/vk_extension_helper.h"
 #include "error_message/logging.h"
 
@@ -90,7 +91,7 @@ static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
 }
 
 // It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
-static const uint32_t kCommonMaxGraphicsShaderStages = 3;
+static const u32 kCommonMaxGraphicsShaderStages = 3;
 
 typedef void *dispatch_key;
 static inline dispatch_key GetDispatchKey(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
@@ -107,7 +108,7 @@ constexpr bool IsPowerOfTwo(T x) {
 
 // Returns the 0-based index of the MSB, like the x86 bit scan reverse (bsr) instruction
 // Note: an input mask of 0 yields -1
-static inline int MostSignificantBit(uint32_t mask) {
+static inline int MostSignificantBit(u32 mask) {
 #if defined __GNUC__
     return mask ? __builtin_clz(mask) ^ 31 : -1;
 #elif defined _MSC_VER
@@ -147,7 +148,7 @@ constexpr T Align(T x, T p2) {
 }
 
 // Returns the 0-based index of the LSB. An input mask of 0 yields -1
-static inline int LeastSignificantBit(uint32_t mask) { return u_ffs(static_cast<int>(mask)) - 1; }
+static inline int LeastSignificantBit(u32 mask) { return u_ffs(static_cast<int>(mask)) - 1; }
 
 template <typename FlagBits, typename Flags>
 FlagBits LeastSignificantFlag(Flags flags) {
@@ -161,7 +162,7 @@ FlagBits LeastSignificantFlag(Flags flags) {
 // An example of a more efficient implementation: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
 template <typename FlagBits, typename Flags, typename Callback>
 void IterateFlags(Flags flags, Callback callback) {
-    uint32_t bit_shift = 0;
+    u32 bit_shift = 0;
     while (flags) {
         if (flags & 1) {
             callback(static_cast<FlagBits>(1ull << bit_shift));
@@ -171,8 +172,8 @@ void IterateFlags(Flags flags, Callback callback) {
     }
 }
 
-static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
-    uint32_t size = 0;
+static inline u32 SampleCountSize(VkSampleCountFlagBits sample_count) {
+    u32 size = 0;
     switch (sample_count) {
         case VK_SAMPLE_COUNT_1_BIT:
             size = 1;
@@ -261,7 +262,7 @@ static inline bool IsIdentitySwizzle(VkComponentMapping components) {
     // clang-format on
 }
 
-static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
+static inline u32 GetIndexAlignment(VkIndexType indexType) {
     switch (indexType) {
         case VK_INDEX_TYPE_UINT16:
             return 2;
@@ -280,7 +281,7 @@ static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
 
 // vkspec.html#formats-planes-image-aspect
 static inline bool IsValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask) {
-    const uint32_t planes = vkuFormatPlaneCount(format);
+    const u32 planes = vkuFormatPlaneCount(format);
     constexpr VkImageAspectFlags valid_planes =
         VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 
@@ -397,22 +398,22 @@ inline std::optional<VkDeviceSize> ComputeValidSize(VkDeviceSize offset, VkDevic
 }
 
 // Only 32 bit fields should need a bit count
-static inline uint32_t GetBitSetCount(uint32_t field) {
+static inline u32 GetBitSetCount(u32 field) {
     std::bitset<32> view_bits(field);
-    return static_cast<uint32_t>(view_bits.count());
+    return static_cast<u32>(view_bits.count());
 }
 
-static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
+static inline u32 FullMipChainLevels(VkExtent3D extent) {
     // uint cast applies floor()
-    return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
+    return 1u + static_cast<u32>(log2(std::max({extent.height, extent.width, extent.depth})));
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
+VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const u32 mip_level);
 
 // Used to get the VkExternalFormatANDROID without having to use ifdef in logic
 // Result of zero is same of not having pNext struct
-constexpr uint64_t GetExternalFormat(const void *pNext) {
+constexpr u64 GetExternalFormat(const void *pNext) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     if (pNext) {
         const auto *external_format = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pNext);
@@ -490,20 +491,18 @@ static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) 
     return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
 }
 
-bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size);
+bool RangesIntersect(i64 x, u64 x_size, i64 y, u64 y_size);
 
 namespace vvl {
 
 static inline void ToLower(std::string &str) {
     // std::tolower() returns int which can cause compiler warnings
-    transform(str.begin(), str.end(), str.begin(),
-              [](char c) { return static_cast<char>(std::tolower(c)); });
+    transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 }
 
 static inline void ToUpper(std::string &str) {
     // std::toupper() returns int which can cause compiler warnings
-    transform(str.begin(), str.end(), str.begin(),
-              [](char c) { return static_cast<char>(std::toupper(c)); });
+    transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::toupper(c)); });
 }
 
 // The standard does not specify the value of data() for zero-sized contatiners as being null or non-null,

@@ -32,18 +32,18 @@ static_assert(XXH_VERSION_RELEASE == 2);
 
 namespace hash_util {
 
-uint32_t VuidHash(std::string_view vuid) {
-    constexpr uint32_t seed = 8;
+u32 VuidHash(std::string_view vuid) {
+    constexpr u32 seed = 8;
     return XXH32(vuid.data(), vuid.size(), seed);
 }
 
-uint32_t ShaderHash(const void *pCode, const size_t codeSize) {
-    constexpr uint32_t seed = 0;
+u32 ShaderHash(const void *pCode, const size_t codeSize) {
+    constexpr u32 seed = 0;
     return XXH32(pCode, codeSize, seed);
 }
 
-uint64_t DescriptorVariableHash(const void *info, const size_t info_size) {
-    constexpr uint64_t seed = 0;
+u64 DescriptorVariableHash(const void *info, const size_t info_size) {
+    constexpr u64 seed = 0;
     return XXH64(info, info_size, seed);
 }
 

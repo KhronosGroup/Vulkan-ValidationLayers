@@ -73,7 +73,7 @@ void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, 
     }
 }
 
-void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, u32 descriptorSetCount,
                                                      const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets,
                                                              record_obj);
@@ -149,8 +149,8 @@ bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSample
     return skip;
 }
 
-bool BestPractices::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                        const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+bool BestPractices::PreCallValidateUpdateDescriptorSets(VkDevice device, u32 descriptorWriteCount,
+                                                        const VkWriteDescriptorSet* pDescriptorWrites, u32 descriptorCopyCount,
                                                         const VkCopyDescriptorSet* pDescriptorCopies,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;

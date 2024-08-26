@@ -301,7 +301,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorAccelerationStructures) {
 
     // Create one descriptor set layout holding (maxPerStageDescriptorAccelerationStructures + 1) bindings
     // for the same shader stage
-    const uint32_t max_accel_structs = accel_struct_props.maxPerStageDescriptorAccelerationStructures;
+    const u32 max_accel_structs = accel_struct_props.maxPerStageDescriptorAccelerationStructures;
     if (max_accel_structs > 4096) {
         GTEST_SKIP() << "maxPerStageDescriptorAccelerationStructures is too large";
     } else if (max_accel_structs < 1) {
@@ -310,7 +310,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorAccelerationStructures) {
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     dslb_vec.reserve(max_accel_structs);
 
-    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+    for (u32 i = 0; i < max_accel_structs + 1; ++i) {
         VkDescriptorSetLayoutBinding dslb = {};
         dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         dslb.descriptorCount = 1;
@@ -352,7 +352,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorUpdateAfterBindAccelerationStruc
 
     // Create one descriptor set layout with flag VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT holding
     // (maxPerStageDescriptorUpdateAfterBindAccelerationStructures + 1) bindings for the same shader stage
-    const uint32_t max_accel_structs = accel_struct_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
+    const u32 max_accel_structs = accel_struct_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
     if (max_accel_structs > 4096) {
         GTEST_SKIP() << "maxPerStageDescriptorUpdateAfterBindAccelerationStructures is too large";
     } else if (max_accel_structs < 1) {
@@ -362,7 +362,7 @@ TEST_F(NegativeRayTracing, MaxPerStageDescriptorUpdateAfterBindAccelerationStruc
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     dslb_vec.reserve(max_accel_structs);
 
-    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+    for (u32 i = 0; i < max_accel_structs + 1; ++i) {
         VkDescriptorSetLayoutBinding dslb = {};
         dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         dslb.descriptorCount = 1;
@@ -403,7 +403,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetAccelerationStructures) {
 
     // Create one descriptor set layout holding (maxDescriptorSetAccelerationStructures + 1) bindings
     // in total for two different shader stage
-    const uint32_t max_accel_structs = accel_struct_props.maxDescriptorSetAccelerationStructures;
+    const u32 max_accel_structs = accel_struct_props.maxDescriptorSetAccelerationStructures;
     if (max_accel_structs > 4096) {
         GTEST_SKIP() << "maxDescriptorSetAccelerationStructures is too large";
     } else if (max_accel_structs < 1) {
@@ -413,7 +413,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetAccelerationStructures) {
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     dslb_vec.reserve(max_accel_structs);
 
-    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+    for (u32 i = 0; i < max_accel_structs + 1; ++i) {
         VkDescriptorSetLayoutBinding dslb = {};
         dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         dslb.descriptorCount = 1;
@@ -455,7 +455,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetUpdateAfterBindAccelerationStructures
 
     // Create one descriptor set layout with flag VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT holding
     // (maxDescriptorSetUpdateAfterBindAccelerationStructures + 1) bindings in total for two different shader stage
-    const uint32_t max_accel_structs = accel_struct_props.maxDescriptorSetUpdateAfterBindAccelerationStructures;
+    const u32 max_accel_structs = accel_struct_props.maxDescriptorSetUpdateAfterBindAccelerationStructures;
     if (max_accel_structs > 4096) {
         GTEST_SKIP() << "maxDescriptorSetUpdateAfterBindAccelerationStructures is too large";
     } else if (max_accel_structs < 1) {
@@ -465,7 +465,7 @@ TEST_F(NegativeRayTracing, MaxDescriptorSetUpdateAfterBindAccelerationStructures
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
     dslb_vec.reserve(max_accel_structs);
 
-    for (uint32_t i = 0; i < max_accel_structs + 1; ++i) {
+    for (u32 i = 0; i < max_accel_structs + 1; ++i) {
         VkDescriptorSetLayoutBinding dslb = {};
         dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         dslb.descriptorCount = 1;
@@ -900,7 +900,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
     blas.BuildHost();
     m_errorMonitor->VerifyFound();
 
-    std::vector<uint32_t> data(4096);
+    std::vector<u32> data(4096);
     // .dstAccelerationStructure buffer is not bound to host visible memory
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-buffer-03733");
     vk::WriteAccelerationStructuresPropertiesKHR(device(), 1, &blas.GetDstAS()->handle(),
@@ -960,8 +960,8 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     blas->SetDeviceBuffer(std::move(non_host_visible_buffer));
     blas->Build();
 
-    uint8_t output[4096];
-    uint8_t *aligned_output = reinterpret_cast<uint8_t *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(output), 16));
+    u8 output[4096];
+    u8 *aligned_output = reinterpret_cast<u8 *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(output), 16));
     VkDeviceOrHostAddressConstKHR output_data;
     output_data.hostAddress = aligned_output;
 
@@ -1182,7 +1182,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
 
         VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = vku::InitStructHelper();
         raytracing_pipeline_ci.flags = 0;
-        raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
+        raytracing_pipeline_ci.stageCount = static_cast<u32>(shader_stages.size());
         raytracing_pipeline_ci.pStages = shader_stages.data();
         raytracing_pipeline_ci.pGroups = shader_groups.data();
         raytracing_pipeline_ci.groupCount = shader_groups.size();
@@ -1243,7 +1243,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     // Invalid stride, greater than maxShaderGroupStride
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
-        uint32_t align = ray_tracing_properties.shaderGroupHandleSize;
+        u32 align = ray_tracing_properties.shaderGroupHandleSize;
         invalid_stride.stride = static_cast<VkDeviceSize>(ray_tracing_properties.maxShaderGroupStride) +
                                 (align - (ray_tracing_properties.maxShaderGroupStride % align));
         m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-stride-04041");
@@ -1455,7 +1455,7 @@ TEST_F(NegativeRayTracing, AccelerationStructureVersionInfoKHR) {
 
     VkAccelerationStructureVersionInfoKHR valid_version = vku::InitStructHelper();
     VkAccelerationStructureCompatibilityKHR compatablity;
-    uint8_t mode[] = {VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR};
+    u8 mode[] = {VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR};
     valid_version.pVersionData = mode;
     {
         VkAccelerationStructureVersionInfoKHR invalid_version = valid_version;
@@ -2220,7 +2220,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
     blas->SetDeviceBuffer(std::move(buffer));
     blas->Build();
 
-    std::vector<uint8_t> data(4096, 0);
+    std::vector<u8> data(4096, 0);
     VkDeviceOrHostAddressKHR output_data;
     output_data.hostAddress = reinterpret_cast<void *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(data.data()), 16));
     VkCopyAccelerationStructureToMemoryInfoKHR copy_info = vku::InitStructHelper();
@@ -2402,8 +2402,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesHost) {
     m_device->Wait();
 
     constexpr size_t stride = 1;
-    constexpr size_t data_size = sizeof(uint32_t) * stride;
-    uint8_t data[data_size];
+    constexpr size_t data_size = sizeof(u32) * stride;
+    u8 data[data_size];
     // Incorrect query type
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06742");
     vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(), VK_QUERY_TYPE_OCCLUSION,
@@ -2535,7 +2535,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
 
     constexpr size_t stride = sizeof(VkDeviceSize);
     constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
-    uint8_t data[data_size];
+    u8 data[data_size];
 
     // On host query with invalid query type
     {
@@ -2651,7 +2651,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall
 
     constexpr size_t stride = 1;
     constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
-    uint8_t data[data_size];
+    u8 data[data_size];
 
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964");
     vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
@@ -3527,7 +3527,7 @@ TEST_F(NegativeRayTracing, TooManyInstances) {
     m_device->Wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
-    tlas.GetGeometries()[0].SetPrimitiveCount(std::numeric_limits<uint32_t>::max());
+    tlas.GetGeometries()[0].SetPrimitiveCount(std::numeric_limits<u32>::max());
     m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03785");
     tlas.GetSizeInfo();
     m_errorMonitor->VerifyFound();
@@ -3673,7 +3673,7 @@ TEST_F(NegativeRayTracing, HostBuildOverlappingScratchBuffers) {
     constexpr size_t blas_count = 3;
 
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
-    auto scratch_data = std::make_shared<std::vector<uint8_t>>(1 << 15, 0);
+    auto scratch_data = std::make_shared<std::vector<u8>>(1 << 15, 0);
     for (size_t i = 0; i < blas_count; ++i) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
         blas.SetHostScratchBuffer(scratch_data);

@@ -47,7 +47,7 @@ TEST_F(PositiveRayTracing, GetAccelerationStructureBuildSizes) {
 
     VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    uint32_t max_primitives_count = 0;
+    u32 max_primitives_count = 0;
     VkAccelerationStructureBuildSizesInfoKHR build_sizes_info = vku::InitStructHelper();
     vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
                                               &max_primitives_count, &build_sizes_info);
@@ -164,7 +164,7 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
 
         VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = vku::InitStructHelper();
         raytracing_pipeline_ci.flags = 0;
-        raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
+        raytracing_pipeline_ci.stageCount = static_cast<u32>(shader_stages.size());
         raytracing_pipeline_ci.pStages = shader_stages.data();
         raytracing_pipeline_ci.pGroups = shader_groups.data();
         raytracing_pipeline_ci.groupCount = shader_groups.size();
@@ -1196,7 +1196,7 @@ TEST_F(PositiveRayTracing, WriteAccelerationStructuresPropertiesDevice) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Buffer buffer(*m_device, 4 * sizeof(uint64_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 4 * sizeof(u64), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
@@ -1214,7 +1214,7 @@ TEST_F(PositiveRayTracing, WriteAccelerationStructuresPropertiesDevice) {
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u);
     vk::CmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &blas.GetDstAS()->handle(),
                                                     VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, query_pool.handle(), 0);
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u, buffer, 0u, sizeof(uint64_t),
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u, buffer, 0u, sizeof(u64),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
     m_commandBuffer->end();

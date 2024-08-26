@@ -28,7 +28,7 @@ class ImageState : public vvl::Image {
         : vvl::Image(dev_data, handle, pCreateInfo, features), opaque_base_address_(0U) {}
 
     ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
+               VkSwapchainKHR swapchain, u32 swapchain_index, VkFormatFeatureFlags2KHR features)
         : vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
@@ -66,7 +66,7 @@ class Swapchain : public vvl::Swapchain {
     Swapchain(ValidationStateTracker &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
     ~Swapchain() { Destroy(); }
     void RecordPresentedImage(PresentedImage &&presented_images);
-    PresentedImage MovePresentedImage(uint32_t image_index);
+    PresentedImage MovePresentedImage(u32 image_index);
     void GetPresentBatches(std::vector<QueueBatchContext::Ptr> &batches) const;
     std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }

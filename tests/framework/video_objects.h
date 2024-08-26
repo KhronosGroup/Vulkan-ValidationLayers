@@ -31,7 +31,7 @@ class VideoConfig {
 
     operator bool() const { return profile_.videoCodecOperation != VK_VIDEO_CODEC_OPERATION_NONE_KHR; }
 
-    uint32_t QueueFamilyIndex() const { return session_create_info_.queueFamilyIndex; }
+    u32 QueueFamilyIndex() const { return session_create_info_.queueFamilyIndex; }
     const VkVideoProfileInfoKHR* Profile() const { return profile_.ptr(); }
     VkVideoProfileInfoKHR* Profile() { return profile_.ptr(); }
     const VkExtensionProperties* StdVersion() const { return &caps_.stdHeaderVersion; }
@@ -44,10 +44,10 @@ class VideoConfig {
     const std::vector<VkVideoFormatPropertiesKHR>& SupportedPictureFormatProps() const { return picture_format_props_; }
     const std::vector<VkVideoFormatPropertiesKHR>& SupportedDpbFormatProps() const { return dpb_format_props_; }
 
-    uint32_t DpbSlotCount() const { return session_create_info_.maxDpbSlots; }
+    u32 DpbSlotCount() const { return session_create_info_.maxDpbSlots; }
     VkExtent2D MaxCodedExtent() const { return session_create_info_.maxCodedExtent; }
 
-    void SetQueueFamilyIndex(uint32_t queue_family_index) { session_create_info_.queueFamilyIndex = queue_family_index; }
+    void SetQueueFamilyIndex(u32 queue_family_index) { session_create_info_.queueFamilyIndex = queue_family_index; }
 
     void SetCodecProfile(void* profile) {
         auto codec_specific = reinterpret_cast<VkBaseInStructure*>(profile);
@@ -58,7 +58,9 @@ class VideoConfig {
 
     VkVideoCapabilitiesKHR* Caps() { return caps_.ptr(); }
     const VkVideoCapabilitiesKHR* Caps() const { return caps_.ptr(); }
-    const VkVideoDecodeCapabilitiesKHR* DecodeCaps() const { return vku::FindStructInPNextChain<VkVideoDecodeCapabilitiesKHR>(caps_.pNext); }
+    const VkVideoDecodeCapabilitiesKHR* DecodeCaps() const {
+        return vku::FindStructInPNextChain<VkVideoDecodeCapabilitiesKHR>(caps_.pNext);
+    }
     const VkVideoDecodeH264CapabilitiesKHR* DecodeCapsH264() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR);
         return vku::FindStructInPNextChain<VkVideoDecodeH264CapabilitiesKHR>(caps_.pNext);
@@ -96,8 +98,7 @@ class VideoConfig {
     VkVideoEncodeRateControlModeFlagBitsKHR GetAnySupportedRateControlMode() const {
         // Return a "real" rate control mode here, excluding the "DISABLED" mode
         assert(EncodeCaps()->rateControlModes > VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR);
-        return static_cast<VkVideoEncodeRateControlModeFlagBitsKHR>(1
-                                                                    << static_cast<uint32_t>(log2(EncodeCaps()->rateControlModes)));
+        return static_cast<VkVideoEncodeRateControlModeFlagBitsKHR>(1 << static_cast<u32>(log2(EncodeCaps()->rateControlModes)));
     }
 
     bool SupportsRateControlMode(VkVideoEncodeRateControlModeFlagBitsKHR rate_control_mode) const {
@@ -105,42 +106,42 @@ class VideoConfig {
                (EncodeCaps()->rateControlModes & rate_control_mode) != 0;
     }
 
-    uint32_t MaxEncodeH264MBCount() const {
+    u32 MaxEncodeH264MBCount() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR);
-        const uint32_t mb_size = 16;
+        const u32 mb_size = 16;
         return ((MaxCodedExtent().width + mb_size - 1) / mb_size) * ((MaxCodedExtent().height + mb_size - 1) / mb_size);
     }
 
-    uint32_t MaxEncodeH264MBRowCount() const {
+    u32 MaxEncodeH264MBRowCount() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR);
-        const uint32_t mb_size = 16;
+        const u32 mb_size = 16;
         return (MaxCodedExtent().height + mb_size - 1) / mb_size;
     }
 
-    uint32_t MaxEncodeH265CTBSize() const {
+    u32 MaxEncodeH265CTBSize() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR);
-        return 16 * static_cast<uint32_t>(log2(EncodeCapsH265()->ctbSizes));
+        return 16 * static_cast<u32>(log2(EncodeCapsH265()->ctbSizes));
     }
 
-    uint32_t MaxEncodeH265CTBCount() const {
+    u32 MaxEncodeH265CTBCount() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR);
-        const uint32_t max_ctb_size = MaxEncodeH265CTBSize();
+        const u32 max_ctb_size = MaxEncodeH265CTBSize();
         return ((MaxCodedExtent().width + max_ctb_size - 1) / max_ctb_size) *
                ((MaxCodedExtent().height + max_ctb_size - 1) / max_ctb_size);
     }
 
-    uint32_t MaxEncodeH265CTBRowCount() const {
+    u32 MaxEncodeH265CTBRowCount() const {
         assert(profile_.videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR);
-        const uint32_t max_ctb_size = MaxEncodeH265CTBSize();
+        const u32 max_ctb_size = MaxEncodeH265CTBSize();
         return (MaxCodedExtent().height + max_ctb_size - 1) / max_ctb_size;
     }
 
-    int32_t ClampH264Qp(int32_t qp) const {
+    i32 ClampH264Qp(i32 qp) const {
         auto caps = EncodeCapsH264();
         return std::clamp(qp, caps->minQp, caps->maxQp);
     }
 
-    int32_t ClampH265Qp(int32_t qp) const {
+    i32 ClampH265Qp(i32 qp) const {
         auto caps = EncodeCapsH265();
         return std::clamp(qp, caps->minQp, caps->maxQp);
     }
@@ -180,7 +181,7 @@ class VideoConfig {
         session_create_info_.referencePictureFormat = dpb_format_props[0].format;
     }
 
-    StdVideoH264SequenceParameterSet CreateH264SPS(uint8_t sps_id) const {
+    StdVideoH264SequenceParameterSet CreateH264SPS(u8 sps_id) const {
         StdVideoH264SequenceParameterSet sps{};
         sps.seq_parameter_set_id = sps_id;
 
@@ -198,35 +199,35 @@ class VideoConfig {
 
         sps.flags.frame_mbs_only_flag = 1;
         sps.chroma_format_idc = static_cast<StdVideoH264ChromaFormatIdc>(log2(profile_.chromaSubsampling));
-        sps.bit_depth_luma_minus8 = static_cast<uint8_t>(log2(profile_.lumaBitDepth));
-        sps.bit_depth_chroma_minus8 = static_cast<uint8_t>(log2(profile_.chromaBitDepth));
+        sps.bit_depth_luma_minus8 = static_cast<u8>(log2(profile_.lumaBitDepth));
+        sps.bit_depth_chroma_minus8 = static_cast<u8>(log2(profile_.chromaBitDepth));
         sps.pic_width_in_mbs_minus1 = (caps_.minCodedExtent.width + 15) / 16 - 1;
         sps.pic_height_in_map_units_minus1 = (caps_.minCodedExtent.height + 15) / 16 - 1;
 
         return sps;
     }
 
-    StdVideoH264PictureParameterSet CreateH264PPS(uint8_t sps_id, uint8_t pps_id) const {
+    StdVideoH264PictureParameterSet CreateH264PPS(u8 sps_id, u8 pps_id) const {
         StdVideoH264PictureParameterSet pps{};
         pps.seq_parameter_set_id = sps_id;
         pps.pic_parameter_set_id = pps_id;
         return pps;
     }
 
-    StdVideoH265VideoParameterSet CreateH265VPS(uint8_t vps_id) const {
+    StdVideoH265VideoParameterSet CreateH265VPS(u8 vps_id) const {
         StdVideoH265VideoParameterSet vps{};
         vps.vps_video_parameter_set_id = vps_id;
         return vps;
     }
 
-    StdVideoH265SequenceParameterSet CreateH265SPS(uint8_t vps_id, uint8_t sps_id) const {
+    StdVideoH265SequenceParameterSet CreateH265SPS(u8 vps_id, u8 sps_id) const {
         StdVideoH265SequenceParameterSet sps{};
         sps.sps_video_parameter_set_id = vps_id;
         sps.sps_seq_parameter_set_id = sps_id;
         return sps;
     }
 
-    StdVideoH265PictureParameterSet CreateH265PPS(uint8_t vps_id, uint8_t sps_id, uint8_t pps_id) const {
+    StdVideoH265PictureParameterSet CreateH265PPS(u8 vps_id, u8 sps_id, u8 pps_id) const {
         StdVideoH265PictureParameterSet pps{};
         pps.sps_video_parameter_set_id = vps_id;
         pps.pps_seq_parameter_set_id = sps_id;
@@ -393,15 +394,15 @@ class VideoPictureResource {
     VkImage Image() const { return image_; }
     VkImageView ImageView() const { return image_view_; }
 
-    const VkDependencyInfo* LayoutTransition(VkImageLayout new_layout, uint32_t first_layer = 0,
-                                             uint32_t layer_count = VK_REMAINING_ARRAY_LAYERS) {
+    const VkDependencyInfo* LayoutTransition(VkImageLayout new_layout, u32 first_layer = 0,
+                                             u32 layer_count = VK_REMAINING_ARRAY_LAYERS) {
         barrier_.newLayout = new_layout;
         barrier_.subresourceRange.baseArrayLayer = first_layer;
         barrier_.subresourceRange.layerCount = layer_count;
         return &dep_info_;
     }
 
-    const VkDependencyInfo* MemoryBarrier(uint32_t first_layer = 0, uint32_t layer_count = VK_REMAINING_ARRAY_LAYERS) {
+    const VkDependencyInfo* MemoryBarrier(u32 first_layer = 0, u32 layer_count = VK_REMAINING_ARRAY_LAYERS) {
         barrier_.newLayout = barrier_.oldLayout;
         barrier_.subresourceRange.baseArrayLayer = first_layer;
         barrier_.subresourceRange.layerCount = layer_count;
@@ -417,7 +418,7 @@ class VideoPictureResource {
           dep_info_(vku::InitStruct<VkDependencyInfo>()),
           barrier_(vku::InitStruct<VkImageMemoryBarrier2>()) {}
 
-    void Init(const VkVideoProfileListInfoKHR* profile_list, VkExtent2D extent, uint32_t layers,
+    void Init(const VkVideoProfileListInfoKHR* profile_list, VkExtent2D extent, u32 layers,
               const VkVideoFormatPropertiesKHR& format_props, bool is_protected) {
         {
             VkImageCreateInfo create_info = vku::InitStructHelper();
@@ -577,7 +578,7 @@ class VideoDPB : public VideoPictureResource {
         Init(&profile_list, config.MaxCodedExtent(), config.DpbSlotCount(), *config.DpbFormatProps(), is_protected);
 
         reference_pictures_.resize(config.DpbSlotCount());
-        for (uint32_t i = 0; i < config.DpbSlotCount(); ++i) {
+        for (u32 i = 0; i < config.DpbSlotCount(); ++i) {
             reference_pictures_[i] = vku::InitStructHelper();
             reference_pictures_[i].codedOffset = {0, 0};
             reference_pictures_[i].codedExtent = config.MaxCodedExtent();
@@ -587,7 +588,7 @@ class VideoDPB : public VideoPictureResource {
     }
 
     size_t PictureCount() const { return reference_pictures_.size(); }
-    const VkVideoPictureResourceInfoKHR& Picture(int32_t index) const { return reference_pictures_[index]; }
+    const VkVideoPictureResourceInfoKHR& Picture(i32 index) const { return reference_pictures_[index]; }
 
   private:
     std::vector<VkVideoPictureResourceInfoKHR> reference_pictures_{};
@@ -642,8 +643,8 @@ class VideoEncodeRateControlLayerInfo : public VideoOpParams<VkVideoEncodeRateCo
 
     VideoEncodeRateControlLayerInfo(const VideoConfig& config, bool include_codec_info = false)
         : VideoOpParams<VkVideoEncodeRateControlLayerInfoKHR>(config), include_codec_info_(include_codec_info), codec_info_() {
-        info_.averageBitrate = std::min((uint64_t)32000, config.EncodeCaps()->maxBitrate);
-        info_.maxBitrate = std::min((uint64_t)32000, config.EncodeCaps()->maxBitrate);
+        info_.averageBitrate = std::min((u64)32000, config.EncodeCaps()->maxBitrate);
+        info_.maxBitrate = std::min((u64)32000, config.EncodeCaps()->maxBitrate);
         info_.frameRateNumerator = 15;
         info_.frameRateDenominator = 1;
 
@@ -757,7 +758,7 @@ class VideoEncodeRateControlInfo : public VideoOpParams<VkVideoEncodeRateControl
             layers_[i].pNext = layer_info_[i]->pNext;
         }
 
-        info_.layerCount = (uint32_t)layers_.size();
+        info_.layerCount = (u32)layers_.size();
         info_.pLayers = layers_.data();
         return *this;
     }
@@ -769,7 +770,7 @@ class VideoEncodeRateControlInfo : public VideoOpParams<VkVideoEncodeRateControl
     // array of VkVideoEncodeRateControlLayerInfoKHR structures stored in the layers_ vector.
     class LayerModifierProxy {
       public:
-        LayerModifierProxy(VideoEncodeRateControlInfo& parent, uint32_t layer_index, VideoEncodeRateControlLayerInfo& info)
+        LayerModifierProxy(VideoEncodeRateControlInfo& parent, u32 layer_index, VideoEncodeRateControlLayerInfo& info)
             : parent_(parent), layer_index_(layer_index), info_(info) {}
 
         LayerModifierProxy(const LayerModifierProxy&) = delete;
@@ -783,14 +784,14 @@ class VideoEncodeRateControlInfo : public VideoOpParams<VkVideoEncodeRateControl
 
       private:
         VideoEncodeRateControlInfo& parent_;
-        uint32_t layer_index_;
+        u32 layer_index_;
         VideoEncodeRateControlLayerInfo& info_;
     };
 
-    LayerModifierProxy Layer(uint32_t index) { return LayerModifierProxy(*this, index, layer_info_[index]); }
+    LayerModifierProxy Layer(u32 index) { return LayerModifierProxy(*this, index, layer_info_[index]); }
 
   protected:
-    void UpdateLayer(uint32_t layer_index) {
+    void UpdateLayer(u32 layer_index) {
         assert(layer_index < layers_.size());
         assert(layer_index < layer_info_.size());
         layers_[layer_index] = layer_info_[layer_index];
@@ -861,7 +862,7 @@ class VideoBeginCodingInfo : public VideoOpParams<VkVideoBeginCodingInfoKHR> {
         return *this;
     }
 
-    VideoBeginCodingInfo& AddResource(int32_t slot_index, const VkVideoPictureResourceInfoKHR& resource) {
+    VideoBeginCodingInfo& AddResource(i32 slot_index, const VkVideoPictureResourceInfoKHR& resource) {
         slot_resources_.push_back(vku::InitStruct<VkVideoReferenceSlotInfoKHR>());
         auto& res = slot_resources_[info_.referenceSlotCount++];
 
@@ -873,11 +874,11 @@ class VideoBeginCodingInfo : public VideoOpParams<VkVideoBeginCodingInfoKHR> {
         return *this;
     }
 
-    VideoBeginCodingInfo& AddResource(int32_t slot_index, int32_t resource_index) {
+    VideoBeginCodingInfo& AddResource(i32 slot_index, i32 resource_index) {
         return AddResource(slot_index, dpb_->Picture(resource_index));
     }
 
-    VideoBeginCodingInfo& InvalidateSlot(int32_t slot_index) {
+    VideoBeginCodingInfo& InvalidateSlot(i32 slot_index) {
         slot_resources_.push_back(vku::InitStruct<VkVideoReferenceSlotInfoKHR>());
         auto& res = slot_resources_[info_.referenceSlotCount++];
 
@@ -979,7 +980,7 @@ class VideoCodingControlInfo : public VideoOpParams<VkVideoCodingControlInfoKHR>
         return *this;
     }
 
-    VideoCodingControlInfo& EncodeQualityLevel(uint32_t quality_level) {
+    VideoCodingControlInfo& EncodeQualityLevel(u32 quality_level) {
         info_.flags |= VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR;
         encode_quality_level_info_.qualityLevel = quality_level;
         ChainInfo(encode_quality_level_info_);
@@ -1010,7 +1011,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         struct {
             VkVideoDecodeH264PictureInfoKHR picture_info{};
             StdVideoDecodeH264PictureInfo std_picture_info{};
-            std::vector<uint32_t> slice_offsets{};
+            std::vector<u32> slice_offsets{};
             VkVideoDecodeH264DpbSlotInfoKHR setup_slot_info{};
             StdVideoDecodeH264ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoDecodeH264DpbSlotInfoKHR> dpb_slot_info{};
@@ -1019,7 +1020,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         struct {
             VkVideoDecodeH265PictureInfoKHR picture_info{};
             StdVideoDecodeH265PictureInfo std_picture_info{};
-            std::vector<uint32_t> slice_segment_offsets{};
+            std::vector<u32> slice_segment_offsets{};
             VkVideoDecodeH265DpbSlotInfoKHR setup_slot_info{};
             StdVideoDecodeH265ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoDecodeH265DpbSlotInfoKHR> dpb_slot_info{};
@@ -1028,8 +1029,8 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         struct {
             VkVideoDecodeAV1PictureInfoKHR picture_info{};
             StdVideoDecodeAV1PictureInfo std_picture_info{};
-            std::vector<uint32_t> tile_offsets{};
-            std::vector<uint32_t> tile_sizes{};
+            std::vector<u32> tile_offsets{};
+            std::vector<u32> tile_sizes{};
             VkVideoDecodeAV1DpbSlotInfoKHR setup_slot_info{};
             StdVideoDecodeAV1ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoDecodeAV1DpbSlotInfoKHR> dpb_slot_info{};
@@ -1038,7 +1039,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
     };
 
     VideoDecodeInfo(const VideoConfig& config, BitstreamBuffer& bitstream, VideoDPB* dpb, const VideoDecodeOutput* output,
-                    int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false)
+                    i32 slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false)
         : VideoOpParams<VkVideoDecodeInfoKHR>(config),
           output_distinct_(config.SupportsDecodeOutputDistinct()),
           distinct_output_picture_(output->Picture()),
@@ -1074,7 +1075,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h264.picture_info = vku::InitStructHelper();
                 codec_info_.decode_h264.picture_info.pStdPictureInfo = &codec_info_.decode_h264.std_picture_info;
-                codec_info_.decode_h264.picture_info.sliceCount = (uint32_t)codec_info_.decode_h264.slice_offsets.size();
+                codec_info_.decode_h264.picture_info.sliceCount = (u32)codec_info_.decode_h264.slice_offsets.size();
                 codec_info_.decode_h264.picture_info.pSliceOffsets = codec_info_.decode_h264.slice_offsets.data();
 
                 codec_info_.decode_h264.std_picture_info = {};
@@ -1087,7 +1088,8 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h264.std_setup_reference_info = {};
 
-                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(), vku::InitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
+                codec_info_.decode_h264.dpb_slot_info.resize(references_.size(),
+                                                             vku::InitStruct<VkVideoDecodeH264DpbSlotInfoKHR>());
                 codec_info_.decode_h264.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
@@ -1103,8 +1105,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h265.picture_info = vku::InitStructHelper();
                 codec_info_.decode_h265.picture_info.pStdPictureInfo = &codec_info_.decode_h265.std_picture_info;
-                codec_info_.decode_h265.picture_info.sliceSegmentCount =
-                    (uint32_t)codec_info_.decode_h265.slice_segment_offsets.size();
+                codec_info_.decode_h265.picture_info.sliceSegmentCount = (u32)codec_info_.decode_h265.slice_segment_offsets.size();
                 codec_info_.decode_h265.picture_info.pSliceSegmentOffsets = codec_info_.decode_h265.slice_segment_offsets.data();
 
                 codec_info_.decode_h265.std_picture_info = {};
@@ -1117,7 +1118,8 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h265.std_setup_reference_info = {};
 
-                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(), vku::InitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
+                codec_info_.decode_h265.dpb_slot_info.resize(references_.size(),
+                                                             vku::InitStruct<VkVideoDecodeH265DpbSlotInfoKHR>());
                 codec_info_.decode_h265.std_reference_info.resize(references_.size(), {});
 
                 for (size_t i = 0; i < references_.size(); ++i) {
@@ -1135,18 +1137,18 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
                 codec_info_.decode_av1.picture_info = vku::InitStructHelper();
                 codec_info_.decode_av1.picture_info.pStdPictureInfo = &codec_info_.decode_av1.std_picture_info;
 
-                for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
+                for (u32 i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
                     codec_info_.decode_av1.picture_info.referenceNameSlotIndices[i] = -1;
                 }
 
                 codec_info_.decode_av1.picture_info.frameHeaderOffset = 0;
-                codec_info_.decode_av1.picture_info.tileCount = (uint32_t)codec_info_.decode_av1.tile_offsets.size();
+                codec_info_.decode_av1.picture_info.tileCount = (u32)codec_info_.decode_av1.tile_offsets.size();
                 codec_info_.decode_av1.picture_info.pTileOffsets = codec_info_.decode_av1.tile_offsets.data();
                 codec_info_.decode_av1.picture_info.pTileSizes = codec_info_.decode_av1.tile_sizes.data();
 
                 codec_info_.decode_av1.std_picture_info = {};
                 // We will simply use the DPB slot index as the VBI slot index for the purposes of testing
-                codec_info_.decode_av1.std_picture_info.refresh_frame_flags = static_cast<uint8_t>(1 << slot_index);
+                codec_info_.decode_av1.std_picture_info.refresh_frame_flags = static_cast<u8>(1 << slot_index);
 
                 reconstructed_.pNext = &codec_info_.decode_av1.setup_slot_info;
 
@@ -1269,7 +1271,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         return *this;
     }
 
-    VideoDecodeInfo& AddReferenceFrame(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource) {
+    VideoDecodeInfo& AddReferenceFrame(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource) {
         assert(dpb_ != nullptr);
         size_t index = info_.referenceSlotCount++;
 
@@ -1292,7 +1294,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
                 if (info.referenceNameSlotIndices[def_ref_name - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME] < 0) {
                     info.referenceNameSlotIndices[def_ref_name - STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME] = slot_index;
                 } else {
-                    for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
+                    for (u32 i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
                         if (info.referenceNameSlotIndices[i] < 0) {
                             info.referenceNameSlotIndices[i] = slot_index;
                         }
@@ -1306,13 +1308,13 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         }
     }
 
-    VideoDecodeInfo& AddReferenceFrame(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo& AddReferenceFrame(i32 slot_index, i32 resource_index) {
         return AddReferenceFrame(slot_index, &dpb_->Picture(resource_index));
     }
 
-    VideoDecodeInfo& AddReferenceFrame(int32_t slot_index) { return AddReferenceFrame(slot_index, slot_index); }
+    VideoDecodeInfo& AddReferenceFrame(i32 slot_index) { return AddReferenceFrame(slot_index, slot_index); }
 
-    VideoDecodeInfo& AddReferenceTopField(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource) {
+    VideoDecodeInfo& AddReferenceTopField(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource) {
         assert(dpb_ != nullptr);
         size_t index = info_.referenceSlotCount++;
 
@@ -1335,13 +1337,13 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         }
     }
 
-    VideoDecodeInfo& AddReferenceTopField(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo& AddReferenceTopField(i32 slot_index, i32 resource_index) {
         return AddReferenceTopField(slot_index, &dpb_->Picture(resource_index));
     }
 
-    VideoDecodeInfo& AddReferenceTopField(int32_t slot_index) { return AddReferenceTopField(slot_index, slot_index); }
+    VideoDecodeInfo& AddReferenceTopField(i32 slot_index) { return AddReferenceTopField(slot_index, slot_index); }
 
-    VideoDecodeInfo& AddReferenceBottomField(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource) {
+    VideoDecodeInfo& AddReferenceBottomField(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource) {
         assert(dpb_ != nullptr);
         size_t index = info_.referenceSlotCount++;
 
@@ -1364,13 +1366,13 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         }
     }
 
-    VideoDecodeInfo& AddReferenceBottomField(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo& AddReferenceBottomField(i32 slot_index, i32 resource_index) {
         return AddReferenceBottomField(slot_index, &dpb_->Picture(resource_index));
     }
 
-    VideoDecodeInfo& AddReferenceBottomField(int32_t slot_index) { return AddReferenceBottomField(slot_index, slot_index); }
+    VideoDecodeInfo& AddReferenceBottomField(i32 slot_index) { return AddReferenceBottomField(slot_index, slot_index); }
 
-    VideoDecodeInfo& AddReferenceBothFields(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource) {
+    VideoDecodeInfo& AddReferenceBothFields(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource) {
         assert(dpb_ != nullptr);
         size_t index = info_.referenceSlotCount++;
 
@@ -1393,13 +1395,13 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         }
     }
 
-    VideoDecodeInfo& AddReferenceBothFields(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo& AddReferenceBothFields(i32 slot_index, i32 resource_index) {
         return AddReferenceBothFields(slot_index, &dpb_->Picture(resource_index));
     }
 
-    VideoDecodeInfo& AddReferenceBothFields(int32_t slot_index) { return AddReferenceBothFields(slot_index, slot_index); }
+    VideoDecodeInfo& AddReferenceBothFields(i32 slot_index) { return AddReferenceBothFields(slot_index, slot_index); }
 
-    VideoDecodeInfo& InlineQuery(VkQueryPool pool, uint32_t first = 0, uint32_t count = 1) {
+    VideoDecodeInfo& InlineQuery(VkQueryPool pool, u32 first = 0, u32 count = 1) {
         inline_query_info_ = vku::InitStructHelper();
         inline_query_info_.queryPool = pool;
         inline_query_info_.firstQuery = first;
@@ -1431,7 +1433,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h264.picture_info = other.codec_info_.decode_h264.picture_info;
                 codec_info_.decode_h264.picture_info.pStdPictureInfo = &codec_info_.decode_h264.std_picture_info;
-                codec_info_.decode_h264.picture_info.sliceCount = (uint32_t)codec_info_.decode_h264.slice_offsets.size();
+                codec_info_.decode_h264.picture_info.sliceCount = (u32)codec_info_.decode_h264.slice_offsets.size();
                 codec_info_.decode_h264.picture_info.pSliceOffsets = codec_info_.decode_h264.slice_offsets.data();
 
                 codec_info_.decode_h264.std_picture_info = other.codec_info_.decode_h264.std_picture_info;
@@ -1459,8 +1461,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_h265.picture_info = other.codec_info_.decode_h265.picture_info;
                 codec_info_.decode_h265.picture_info.pStdPictureInfo = &codec_info_.decode_h265.std_picture_info;
-                codec_info_.decode_h265.picture_info.sliceSegmentCount =
-                    (uint32_t)codec_info_.decode_h265.slice_segment_offsets.size();
+                codec_info_.decode_h265.picture_info.sliceSegmentCount = (u32)codec_info_.decode_h265.slice_segment_offsets.size();
                 codec_info_.decode_h265.picture_info.pSliceSegmentOffsets = codec_info_.decode_h265.slice_segment_offsets.data();
 
                 codec_info_.decode_h265.std_picture_info = other.codec_info_.decode_h265.std_picture_info;
@@ -1491,7 +1492,7 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
                 codec_info_.decode_av1.picture_info.pStdPictureInfo = &codec_info_.decode_av1.std_picture_info;
 
                 codec_info_.decode_av1.picture_info.frameHeaderOffset = other.codec_info_.decode_av1.picture_info.frameHeaderOffset;
-                codec_info_.decode_av1.picture_info.tileCount = (uint32_t)codec_info_.decode_av1.tile_offsets.size();
+                codec_info_.decode_av1.picture_info.tileCount = (u32)codec_info_.decode_av1.tile_offsets.size();
                 codec_info_.decode_av1.picture_info.pTileOffsets = codec_info_.decode_av1.tile_offsets.data();
                 codec_info_.decode_av1.picture_info.pTileSizes = codec_info_.decode_av1.tile_sizes.data();
 
@@ -1562,7 +1563,7 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
     };
 
     VideoEncodeInfo(const VideoConfig& config, BitstreamBuffer& bitstream, VideoDPB* dpb, const VideoEncodeInput* input,
-                    int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false)
+                    i32 slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false)
         : VideoOpParams<VkVideoEncodeInfoKHR>(config),
           dpb_(dpb),
           reconstructed_(vku::InitStruct<VkVideoReferenceSlotInfoKHR>()),
@@ -1602,7 +1603,7 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
                 codec_info_.encode_h264.std_picture_info.pRefLists = &codec_info_.encode_h264.std_ref_lists_info;
 
                 codec_info_.encode_h264.std_ref_lists_info = {};
-                for (uint32_t i = 0; i < STD_VIDEO_H264_MAX_NUM_LIST_REF; ++i) {
+                for (u32 i = 0; i < STD_VIDEO_H264_MAX_NUM_LIST_REF; ++i) {
                     codec_info_.encode_h264.std_ref_lists_info.RefPicList0[i] = STD_VIDEO_H264_NO_REFERENCE_PICTURE;
                     codec_info_.encode_h264.std_ref_lists_info.RefPicList1[i] = STD_VIDEO_H264_NO_REFERENCE_PICTURE;
                 }
@@ -1646,7 +1647,7 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
                 codec_info_.encode_h265.std_picture_info.pRefLists = &codec_info_.encode_h265.std_ref_lists_info;
 
                 codec_info_.encode_h265.std_ref_lists_info = {};
-                for (uint32_t i = 0; i < STD_VIDEO_H265_MAX_NUM_LIST_REF; ++i) {
+                for (u32 i = 0; i < STD_VIDEO_H265_MAX_NUM_LIST_REF; ++i) {
                     codec_info_.encode_h265.std_ref_lists_info.RefPicList0[i] = STD_VIDEO_H265_NO_REFERENCE_PICTURE;
                     codec_info_.encode_h265.std_ref_lists_info.RefPicList1[i] = STD_VIDEO_H265_NO_REFERENCE_PICTURE;
                 }
@@ -1711,27 +1712,27 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
         return *this;
     }
 
-    VideoEncodeInfo& AddReferenceFrame(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource) {
+    VideoEncodeInfo& AddReferenceFrame(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource) {
         return AddReferenceFrameInternal(slot_index, resource, false);
     }
 
-    VideoEncodeInfo& AddReferenceFrame(int32_t slot_index, int32_t resource_index) {
+    VideoEncodeInfo& AddReferenceFrame(i32 slot_index, i32 resource_index) {
         return AddReferenceFrame(slot_index, &dpb_->Picture(resource_index));
     }
 
-    VideoEncodeInfo& AddReferenceFrame(int32_t slot_index) { return AddReferenceFrame(slot_index, slot_index); }
+    VideoEncodeInfo& AddReferenceFrame(i32 slot_index) { return AddReferenceFrame(slot_index, slot_index); }
 
-    VideoEncodeInfo& AddBackReferenceFrame(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource) {
+    VideoEncodeInfo& AddBackReferenceFrame(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource) {
         return AddReferenceFrameInternal(slot_index, resource, true);
     }
 
-    VideoEncodeInfo& AddBackReferenceFrame(int32_t slot_index, int32_t resource_index) {
+    VideoEncodeInfo& AddBackReferenceFrame(i32 slot_index, i32 resource_index) {
         return AddBackReferenceFrame(slot_index, &dpb_->Picture(resource_index));
     }
 
-    VideoEncodeInfo& AddBackReferenceFrame(int32_t slot_index) { return AddBackReferenceFrame(slot_index, slot_index); }
+    VideoEncodeInfo& AddBackReferenceFrame(i32 slot_index) { return AddBackReferenceFrame(slot_index, slot_index); }
 
-    VideoEncodeInfo& InlineQuery(VkQueryPool pool, uint32_t first = 0, uint32_t count = 1) {
+    VideoEncodeInfo& InlineQuery(VkQueryPool pool, u32 first = 0, u32 count = 1) {
         inline_query_info_ = vku::InitStructHelper();
         inline_query_info_.queryPool = pool;
         inline_query_info_.firstQuery = first;
@@ -1831,8 +1832,7 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
         }
     }
 
-    VideoEncodeInfo& AddReferenceFrameInternal(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource,
-                                               bool back_reference) {
+    VideoEncodeInfo& AddReferenceFrameInternal(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource, bool back_reference) {
         assert(dpb_ != nullptr);
         size_t index = info_.referenceSlotCount++;
 
@@ -1871,29 +1871,29 @@ class VideoEncodeInfo : public VideoOpParams<VkVideoEncodeInfoKHR> {
         return *this;
     }
 
-    void AddReferenceInfoH264(int32_t slot_index, bool L0 = true) {
-        uint8_t& active_minus1 = L0 ? codec_info_.encode_h264.std_ref_lists_info.num_ref_idx_l0_active_minus1
-                                    : codec_info_.encode_h264.std_ref_lists_info.num_ref_idx_l1_active_minus1;
-        uint8_t* ref_pic_list = L0 ? &codec_info_.encode_h264.std_ref_lists_info.RefPicList0[0]
-                                   : &codec_info_.encode_h264.std_ref_lists_info.RefPicList1[0];
+    void AddReferenceInfoH264(i32 slot_index, bool L0 = true) {
+        u8& active_minus1 = L0 ? codec_info_.encode_h264.std_ref_lists_info.num_ref_idx_l0_active_minus1
+                               : codec_info_.encode_h264.std_ref_lists_info.num_ref_idx_l1_active_minus1;
+        u8* ref_pic_list = L0 ? &codec_info_.encode_h264.std_ref_lists_info.RefPicList0[0]
+                              : &codec_info_.encode_h264.std_ref_lists_info.RefPicList1[0];
 
         if (ref_pic_list[0] == STD_VIDEO_H264_NO_REFERENCE_PICTURE) {
-            ref_pic_list[0] = (uint8_t)slot_index;
+            ref_pic_list[0] = (u8)slot_index;
         } else {
-            ref_pic_list[++active_minus1] = (uint8_t)slot_index;
+            ref_pic_list[++active_minus1] = (u8)slot_index;
         }
     }
 
-    void AddReferenceInfoH265(int32_t slot_index, bool L0 = true) {
-        uint8_t& active_minus1 = L0 ? codec_info_.encode_h265.std_ref_lists_info.num_ref_idx_l0_active_minus1
-                                    : codec_info_.encode_h265.std_ref_lists_info.num_ref_idx_l1_active_minus1;
-        uint8_t* ref_pic_list = L0 ? &codec_info_.encode_h265.std_ref_lists_info.RefPicList0[0]
-                                   : &codec_info_.encode_h265.std_ref_lists_info.RefPicList1[0];
+    void AddReferenceInfoH265(i32 slot_index, bool L0 = true) {
+        u8& active_minus1 = L0 ? codec_info_.encode_h265.std_ref_lists_info.num_ref_idx_l0_active_minus1
+                               : codec_info_.encode_h265.std_ref_lists_info.num_ref_idx_l1_active_minus1;
+        u8* ref_pic_list = L0 ? &codec_info_.encode_h265.std_ref_lists_info.RefPicList0[0]
+                              : &codec_info_.encode_h265.std_ref_lists_info.RefPicList1[0];
 
         if (ref_pic_list[0] == STD_VIDEO_H265_NO_REFERENCE_PICTURE) {
-            ref_pic_list[0] = (uint8_t)slot_index;
+            ref_pic_list[0] = (u8)slot_index;
         } else {
-            ref_pic_list[++active_minus1] = (uint8_t)slot_index;
+            ref_pic_list[++active_minus1] = (u8)slot_index;
         }
     }
 
@@ -1947,7 +1947,7 @@ class VideoContext {
     void CreateAndBindSessionMemory() {
         ASSERT_TRUE(session_ != VK_NULL_HANDLE);
 
-        uint32_t mem_req_count = 0;
+        u32 mem_req_count = 0;
         ASSERT_EQ(VK_SUCCESS, vk.GetVideoSessionMemoryRequirementsKHR(device_->handle(), session_, &mem_req_count, nullptr));
         if (mem_req_count == 0) return;
 
@@ -1957,7 +1957,7 @@ class VideoContext {
                   vk.GetVideoSessionMemoryRequirementsKHR(device_->handle(), session_, &mem_req_count, mem_reqs.data()));
 
         std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
-        for (uint32_t i = 0; i < mem_req_count; ++i) {
+        for (u32 i = 0; i < mem_req_count; ++i) {
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
 
             ASSERT_TRUE(device_->phy().set_memory_type(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
@@ -1973,8 +1973,7 @@ class VideoContext {
             bind_info[i].memorySize = mem_reqs[i].memoryRequirements.size;
         }
 
-        ASSERT_EQ(VK_SUCCESS,
-                  vk.BindVideoSessionMemoryKHR(device_->handle(), session_, (uint32_t)bind_info.size(), bind_info.data()));
+        ASSERT_EQ(VK_SUCCESS, vk.BindVideoSessionMemoryKHR(device_->handle(), session_, (u32)bind_info.size(), bind_info.data()));
     }
 
     void CreateResources(bool protected_bitstream = false, bool protected_dpb = false, bool protected_image = false) {
@@ -2004,7 +2003,7 @@ class VideoContext {
         }
     }
 
-    void CreateStatusQueryPool(uint32_t query_count = 1) {
+    void CreateStatusQueryPool(u32 query_count = 1) {
         VkQueryPoolCreateInfo create_info = vku::InitStructHelper();
         create_info.pNext = config_.Profile();
         create_info.queryType = VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR;
@@ -2013,9 +2012,9 @@ class VideoContext {
         ASSERT_EQ(VK_SUCCESS, vk::CreateQueryPool(device_->handle(), &create_info, nullptr, &status_query_pool_));
     }
 
-    void CreateEncodeFeedbackQueryPool(uint32_t query_count = 1, VkVideoEncodeFeedbackFlagsKHR encode_feedback_flags =
-                                                                     VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
-                                                                     VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR) {
+    void CreateEncodeFeedbackQueryPool(u32 query_count = 1, VkVideoEncodeFeedbackFlagsKHR encode_feedback_flags =
+                                                                VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
+                                                                VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR) {
         assert(config_.IsEncode());
 
         auto encode_feedback_info = vku::InitStruct<VkQueryPoolVideoEncodeFeedbackCreateInfoKHR>();
@@ -2029,19 +2028,15 @@ class VideoContext {
         ASSERT_EQ(VK_SUCCESS, vk::CreateQueryPool(device_->handle(), &create_info, nullptr, &encode_feedback_query_pool_));
     }
 
-    StdVideoH264SequenceParameterSet CreateH264SPS(uint8_t sps_id) const { return config_.CreateH264SPS(sps_id); }
+    StdVideoH264SequenceParameterSet CreateH264SPS(u8 sps_id) const { return config_.CreateH264SPS(sps_id); }
 
-    StdVideoH264PictureParameterSet CreateH264PPS(uint8_t sps_id, uint8_t pps_id) const {
-        return config_.CreateH264PPS(sps_id, pps_id);
-    }
+    StdVideoH264PictureParameterSet CreateH264PPS(u8 sps_id, u8 pps_id) const { return config_.CreateH264PPS(sps_id, pps_id); }
 
-    StdVideoH265VideoParameterSet CreateH265VPS(uint8_t vps_id) const { return config_.CreateH265VPS(vps_id); }
+    StdVideoH265VideoParameterSet CreateH265VPS(u8 vps_id) const { return config_.CreateH265VPS(vps_id); }
 
-    StdVideoH265SequenceParameterSet CreateH265SPS(uint8_t vps_id, uint8_t sps_id) const {
-        return config_.CreateH265SPS(vps_id, sps_id);
-    }
+    StdVideoH265SequenceParameterSet CreateH265SPS(u8 vps_id, u8 sps_id) const { return config_.CreateH265SPS(vps_id, sps_id); }
 
-    StdVideoH265PictureParameterSet CreateH265PPS(uint8_t vps_id, uint8_t sps_id, uint8_t pps_id) const {
+    StdVideoH265PictureParameterSet CreateH265PPS(u8 vps_id, u8 sps_id, u8 pps_id) const {
         return config_.CreateH265PPS(vps_id, sps_id, pps_id);
     }
 
@@ -2061,59 +2056,55 @@ class VideoContext {
     VideoCodingControlInfo Control() const { return VideoCodingControlInfo(config_); }
     VideoEndCodingInfo End() const { return VideoEndCodingInfo(config_); }
 
-    VideoDecodeInfo DecodeFrame(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoDecodeInfo DecodeFrame(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Decode(slot_index, resource);
     }
-    VideoDecodeInfo DecodeFrame(int32_t slot_index, int32_t resource_index) {
-        return Decode(slot_index, &Dpb()->Picture(resource_index));
-    }
+    VideoDecodeInfo DecodeFrame(i32 slot_index, i32 resource_index) { return Decode(slot_index, &Dpb()->Picture(resource_index)); }
 
-    VideoDecodeInfo DecodeTopField(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoDecodeInfo DecodeTopField(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Decode(slot_index, resource).SetTopField();
     }
-    VideoDecodeInfo DecodeTopField(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo DecodeTopField(i32 slot_index, i32 resource_index) {
         return Decode(slot_index, &Dpb()->Picture(resource_index)).SetTopField();
     }
 
-    VideoDecodeInfo DecodeBottomField(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoDecodeInfo DecodeBottomField(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Decode(slot_index, resource).SetBottomField();
     }
-    VideoDecodeInfo DecodeBottomField(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo DecodeBottomField(i32 slot_index, i32 resource_index) {
         return Decode(slot_index, &Dpb()->Picture(resource_index)).SetBottomField();
     }
 
-    VideoDecodeInfo DecodeReferenceFrame(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoDecodeInfo DecodeReferenceFrame(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Decode(slot_index, resource, true);
     }
-    VideoDecodeInfo DecodeReferenceFrame(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo DecodeReferenceFrame(i32 slot_index, i32 resource_index) {
         return Decode(slot_index, &Dpb()->Picture(resource_index), true);
     }
 
-    VideoDecodeInfo DecodeReferenceTopField(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoDecodeInfo DecodeReferenceTopField(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Decode(slot_index, resource, true).SetTopField();
     }
-    VideoDecodeInfo DecodeReferenceTopField(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo DecodeReferenceTopField(i32 slot_index, i32 resource_index) {
         return Decode(slot_index, &Dpb()->Picture(resource_index), true).SetTopField();
     }
 
-    VideoDecodeInfo DecodeReferenceBottomField(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoDecodeInfo DecodeReferenceBottomField(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Decode(slot_index, resource, true).SetBottomField();
     }
-    VideoDecodeInfo DecodeReferenceBottomField(int32_t slot_index, int32_t resource_index) {
+    VideoDecodeInfo DecodeReferenceBottomField(i32 slot_index, i32 resource_index) {
         return Decode(slot_index, &Dpb()->Picture(resource_index), true).SetBottomField();
     }
 
-    VideoEncodeInfo EncodeFrame(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoEncodeInfo EncodeFrame(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Encode(slot_index, resource);
     }
-    VideoEncodeInfo EncodeFrame(int32_t slot_index, int32_t resource_index) {
-        return Encode(slot_index, &Dpb()->Picture(resource_index));
-    }
+    VideoEncodeInfo EncodeFrame(i32 slot_index, i32 resource_index) { return Encode(slot_index, &Dpb()->Picture(resource_index)); }
 
-    VideoEncodeInfo EncodeReferenceFrame(int32_t slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
+    VideoEncodeInfo EncodeReferenceFrame(i32 slot_index = -1, const VkVideoPictureResourceInfoKHR* resource = nullptr) {
         return Encode(slot_index, resource, true);
     }
-    VideoEncodeInfo EncodeReferenceFrame(int32_t slot_index, int32_t resource_index) {
+    VideoEncodeInfo EncodeReferenceFrame(i32 slot_index, i32 resource_index) {
         return Encode(slot_index, &Dpb()->Picture(resource_index), true);
     }
 
@@ -2149,10 +2140,10 @@ class VideoContext {
     }
 
   private:
-    VideoDecodeInfo Decode(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false) {
+    VideoDecodeInfo Decode(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false) {
         return VideoDecodeInfo(config_, *bitstream_, dpb_.get(), decode_output_.get(), slot_index, resource, reference);
     }
-    VideoEncodeInfo Encode(int32_t slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false) {
+    VideoEncodeInfo Encode(i32 slot_index, const VkVideoPictureResourceInfoKHR* resource, bool reference = false) {
         return VideoEncodeInfo(config_, *bitstream_, dpb_.get(), encode_input_.get(), slot_index, resource, reference);
     }
 
@@ -2440,13 +2431,13 @@ class VkVideoLayerTest : public VkLayerTest {
             ASSERT_NE(vk.GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR, nullptr);
         }
 
-        uint32_t qf_count;
+        u32 qf_count;
         vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &qf_count, nullptr);
 
         queue_family_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyProperties2>());
         queue_family_video_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyVideoPropertiesKHR>());
         queue_family_query_result_status_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyQueryResultStatusPropertiesKHR>());
-        for (uint32_t i = 0; i < qf_count; ++i) {
+        for (u32 i = 0; i < qf_count; ++i) {
             queue_family_props_[i].pNext = &queue_family_video_props_[i];
             queue_family_video_props_[i].pNext = &queue_family_query_result_status_props_[i];
         }
@@ -2498,11 +2489,11 @@ class VkVideoLayerTest : public VkLayerTest {
         return filtered_configs;
     }
 
-    const std::vector<VideoConfig> GetConfigsWithDpbSlots(const std::vector<VideoConfig>& configs, uint32_t count = 1) const {
+    const std::vector<VideoConfig> GetConfigsWithDpbSlots(const std::vector<VideoConfig>& configs, u32 count = 1) const {
         return FilterConfigs(configs, [count](const VideoConfig& config) { return config.Caps()->maxDpbSlots >= count; });
     }
 
-    const std::vector<VideoConfig> GetConfigsWithReferences(const std::vector<VideoConfig>& configs, uint32_t count = 1) const {
+    const std::vector<VideoConfig> GetConfigsWithReferences(const std::vector<VideoConfig>& configs, u32 count = 1) const {
         return FilterConfigs(configs,
                              [count](const VideoConfig& config) { return config.Caps()->maxActiveReferencePictures >= count; });
     }
@@ -2557,15 +2548,15 @@ class VkVideoLayerTest : public VkLayerTest {
         return default_config_;
     }
 
-    uint32_t QueueFamilyCount() const { return (uint32_t)queue_family_video_props_.size(); }
+    u32 QueueFamilyCount() const { return (u32)queue_family_video_props_.size(); }
 
-    VkQueueFlags QueueFamilyFlags(uint32_t qfi) const { return queue_family_props_[qfi].queueFamilyProperties.queueFlags; }
+    VkQueueFlags QueueFamilyFlags(u32 qfi) const { return queue_family_props_[qfi].queueFamilyProperties.queueFlags; }
 
-    VkVideoCodecOperationFlagsKHR QueueFamilyVideoCodecOps(uint32_t qfi) const {
+    VkVideoCodecOperationFlagsKHR QueueFamilyVideoCodecOps(u32 qfi) const {
         return queue_family_video_props_[qfi].videoCodecOperations;
     }
 
-    bool QueueFamilySupportsResultStatusOnlyQueries(uint32_t qfi) const {
+    bool QueueFamilySupportsResultStatusOnlyQueries(u32 qfi) const {
         return queue_family_query_result_status_props_[qfi].queryResultStatusSupport;
     }
 
@@ -2576,8 +2567,8 @@ class VkVideoLayerTest : public VkLayerTest {
     void setInstancePNext(void* pNext) { instance_pnext_ = pNext; }
 
   private:
-    uint32_t FindQueueFamilySupportingCodecOp(VkVideoCodecOperationFlagBitsKHR codec_op) {
-        uint32_t qfi = VK_QUEUE_FAMILY_IGNORED;
+    u32 FindQueueFamilySupportingCodecOp(VkVideoCodecOperationFlagBitsKHR codec_op) {
+        u32 qfi = VK_QUEUE_FAMILY_IGNORED;
         for (size_t i = 0; i < queue_family_video_props_.size(); ++i) {
             if (queue_family_video_props_[i].videoCodecOperations & codec_op) {
                 qfi = i;
@@ -2604,7 +2595,7 @@ class VkVideoLayerTest : public VkLayerTest {
 
         VkPhysicalDeviceVideoFormatInfoKHR info = vku::InitStructHelper();
         info.pNext = &video_profiles;
-        uint32_t count = 0;
+        u32 count = 0;
 
         VkImageUsageFlags allowed_usages = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -2630,7 +2621,7 @@ class VkVideoLayerTest : public VkLayerTest {
                     return false;
                 }
 
-                for (uint32_t i = 0; i < count; ++i) {
+                for (u32 i = 0; i < count; ++i) {
                     pic_props[i].imageUsageFlags &= allowed_usages;
                 }
 
@@ -2647,7 +2638,7 @@ class VkVideoLayerTest : public VkLayerTest {
                     return false;
                 }
 
-                for (uint32_t i = 0; i < count; ++i) {
+                for (u32 i = 0; i < count; ++i) {
                     dpb_props[i].imageUsageFlags &= allowed_usages;
                 }
 
@@ -2667,7 +2658,7 @@ class VkVideoLayerTest : public VkLayerTest {
                     return false;
                 }
 
-                for (uint32_t i = 0; i < count; ++i) {
+                for (u32 i = 0; i < count; ++i) {
                     dpb_props[i].imageUsageFlags &= allowed_usages;
                 }
 
@@ -2692,7 +2683,7 @@ class VkVideoLayerTest : public VkLayerTest {
                 return false;
             }
 
-            for (uint32_t i = 0; i < count; ++i) {
+            for (u32 i = 0; i < count; ++i) {
                 pic_props[i].imageUsageFlags &= allowed_usages;
             }
 
@@ -2709,7 +2700,7 @@ class VkVideoLayerTest : public VkLayerTest {
                 return false;
             }
 
-            for (uint32_t i = 0; i < count; ++i) {
+            for (u32 i = 0; i < count; ++i) {
                 dpb_props[i].imageUsageFlags &= allowed_usages;
             }
 
@@ -2741,7 +2732,7 @@ class VkVideoLayerTest : public VkLayerTest {
         }
     }
 
-    void InitDecodeH264Configs(uint32_t queueFamilyIndex) {
+    void InitDecodeH264Configs(u32 queueFamilyIndex) {
         const VkVideoDecodeH264PictureLayoutFlagBitsKHR picture_layouts[] = {
             VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_PROGRESSIVE_KHR,
             VK_VIDEO_DECODE_H264_PICTURE_LAYOUT_INTERLACED_INTERLEAVED_LINES_BIT_KHR};
@@ -2803,7 +2794,7 @@ class VkVideoLayerTest : public VkLayerTest {
         }
     }
 
-    void InitDecodeH265Configs(uint32_t queueFamilyIndex) {
+    void InitDecodeH265Configs(u32 queueFamilyIndex) {
         VideoConfig config;
 
         config.SetDecode();
@@ -2862,7 +2853,7 @@ class VkVideoLayerTest : public VkLayerTest {
         configs_.insert(configs_.end(), configs_decode_h265_.begin(), configs_decode_h265_.end());
     }
 
-    void InitDecodeAV1Configs(uint32_t queueFamilyIndex) {
+    void InitDecodeAV1Configs(u32 queueFamilyIndex) {
         for (size_t i = 0; i < 2; ++i) {
             VideoConfig config;
             auto& configs = (i == 0) ? configs_decode_av1_ : configs_decode_av1_film_grain_;
@@ -2906,7 +2897,7 @@ class VkVideoLayerTest : public VkLayerTest {
         }
     }
 
-    void InitEncodeH264Configs(uint32_t queueFamilyIndex) {
+    void InitEncodeH264Configs(u32 queueFamilyIndex) {
         VideoConfig config;
 
         config.SetEncode();
@@ -2960,7 +2951,7 @@ class VkVideoLayerTest : public VkLayerTest {
         configs_.insert(configs_.end(), configs_encode_h264_.begin(), configs_encode_h264_.end());
     }
 
-    void InitEncodeH265Configs(uint32_t queueFamilyIndex) {
+    void InitEncodeH265Configs(u32 queueFamilyIndex) {
         VideoConfig config;
 
         config.SetEncode();
@@ -3056,7 +3047,7 @@ class VkVideoLayerTest : public VkLayerTest {
     void InitConfigs() {
         default_config_ = VideoConfig();
 
-        uint32_t qfi = VK_QUEUE_FAMILY_IGNORED;
+        u32 qfi = VK_QUEUE_FAMILY_IGNORED;
 
         qfi = FindQueueFamilySupportingCodecOp(VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR);
         if (qfi != VK_QUEUE_FAMILY_IGNORED) {

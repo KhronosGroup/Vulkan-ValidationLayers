@@ -289,7 +289,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             VkDescriptorSetVariableDescriptorCountAllocateInfoEXT count_alloc_info = vku::InitStructHelper();
             count_alloc_info.descriptorSetCount = 1;
             // Set variable count larger than what was in the descriptor binding
-            uint32_t variable_count = 2;
+            u32 variable_count = 2;
             count_alloc_info.pDescriptorCounts = &variable_count;
 
             VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&count_alloc_info);
@@ -310,7 +310,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
 
             VkDescriptorSetVariableDescriptorCountAllocateInfoEXT count_alloc_info = vku::InitStructHelper();
             count_alloc_info.descriptorSetCount = 1;
-            uint32_t variable_count = 2;
+            u32 variable_count = 2;
             count_alloc_info.pDescriptorCounts = &variable_count;
 
             VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&count_alloc_info);

@@ -113,13 +113,13 @@ class Pipeline : public StateObject {
     // create_info_shaders + linking_shaders
     const VkShaderStageFlags active_shaders = 0;
 
-    const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
+    const vvl::unordered_set<u32> fragmentShader_writable_output_location_list;
 
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
     const ActiveSlotMap active_slots;
-    const uint32_t max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
+    const u32 max_active_slot = 0;  // the highest set number in active_slots for pipeline layout compatibility checks
 
     // Which state is dynamic from pipeline creation, factors in GPL sub state as well
     CBDynamicFlags dynamic_state;
@@ -202,7 +202,7 @@ class Pipeline : public StateObject {
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
     static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,
                                                                           const VkPipelineLibraryCreateInfoKHR &link_info) {
-        for (uint32_t i = 0; i < link_info.libraryCount; ++i) {
+        for (u32 i = 0; i < link_info.libraryCount; ++i) {
             const auto lib_state = state.Get<vvl::Pipeline>(link_info.pLibraries[i]);
             if (lib_state && ((lib_state->graphics_lib_type & type_flag) != 0)) {
                 return GetSubState<type_flag>(*lib_state);
@@ -341,7 +341,7 @@ class Pipeline : public StateObject {
         return nullptr;
     }
 
-    uint32_t Subpass() const {
+    u32 Subpass() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (pre_raster_state) {
             return pre_raster_state->subpass;
@@ -564,7 +564,7 @@ class Pipeline : public StateObject {
     template <typename CreateInfo>
     static bool EnablesRasterizationStates(const CreateInfo &create_info) {
         if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
-            for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
+            for (u32 i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
                 if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
                     // If RASTERIZER_DISCARD_ENABLE is dynamic, then we must return true (i.e., rasterization is enabled)
                     // NOTE: create_info must contain pre-raster state, otherwise it is an invalid pipeline and will trigger
@@ -660,7 +660,7 @@ struct LastBound {
     std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
 
     struct DescriptorBufferBinding {
-        uint32_t index = 0;
+        u32 index = 0;
         VkDeviceSize offset = 0;
     };
     // Ordered bound set tracking where index is set# that given set is bound to
@@ -669,13 +669,13 @@ struct LastBound {
         std::optional<DescriptorBufferBinding> bound_descriptor_buffer;
 
         // one dynamic offset per dynamic descriptor bound to this CB
-        std::vector<uint32_t> dynamicOffsets;
+        std::vector<u32> dynamicOffsets;
         PipelineLayoutCompatId compat_id_for_set{0};
 
         // Cache most recently validated descriptor state for ValidateActionState/UpdateDrawState
         const vvl::DescriptorSet *validated_set{nullptr};
-        uint64_t validated_set_change_count{~0ULL};
-        uint64_t validated_set_image_layout_change_count{~0ULL};
+        u64 validated_set_change_count{~0ULL};
+        u64 validated_set_image_layout_change_count{~0ULL};
 
         void Reset() {
             bound_descriptor_set.reset();
@@ -701,8 +701,8 @@ struct LastBound {
     VkSampleCountFlagBits GetRasterizationSamples() const;
     bool IsRasterizationDisabled() const;
     bool IsLogicOpEnabled() const;
-    VkColorComponentFlags GetColorWriteMask(uint32_t i) const;
-    bool IsColorWriteEnabled(uint32_t i) const;
+    VkColorComponentFlags GetColorWriteMask(u32 i) const;
+    bool IsColorWriteEnabled(u32 i) const;
     VkPrimitiveTopology GetPrimitiveTopology() const;
     VkCullModeFlags GetCullMode() const;
     VkConservativeRasterizationModeEXT GetConservativeRasterizationMode() const;
@@ -721,15 +721,15 @@ struct LastBound {
     std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
     bool IsAnyGraphicsShaderBound() const;
 
-    bool IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
-    bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
-    std::string DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
-    std::string DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
+    bool IsBoundSetCompatible(u32 set, const vvl::PipelineLayout &pipeline_layout) const;
+    bool IsBoundSetCompatible(u32 set, const vvl::ShaderObject &shader_object_state) const;
+    std::string DescribeNonCompatibleSet(u32 set, const vvl::PipelineLayout &pipeline_layout) const;
+    std::string DescribeNonCompatibleSet(u32 set, const vvl::ShaderObject &shader_object_state) const;
 
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
 };
 
-static inline bool IsPipelineLayoutSetCompat(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
+static inline bool IsPipelineLayoutSetCompat(u32 set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
     if (!a || !b) {
         return false;
     }

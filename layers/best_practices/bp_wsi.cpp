@@ -34,8 +34,8 @@ bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPh
     return skip;
 }
 
-bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                       uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
+bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, u32 planeIndex,
+                                                                       u32* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
 
@@ -45,7 +45,7 @@ bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysica
 }
 
 bool BestPractices::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
-                                                                  uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities,
+                                                                  u32 planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
@@ -133,13 +133,13 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
     return skip;
 }
 
-bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, u32 swapchainCount,
                                                              const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < swapchainCount; i++) {
+    for (u32 i = 0; i < swapchainCount; i++) {
         if ((pCreateInfos[i].queueFamilyIndexCount > 1) && (pCreateInfos[i].imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
             skip |= LogWarning(
                 "BestPractices-vkCreateSharedSwapchainsKHR-sharing-mode-exclusive", device, error_obj.location,
@@ -155,7 +155,7 @@ bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
 
 void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                         const RecordObject& record_obj) {
-    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+    for (u32 i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
         if (swapchains_result == VK_SUBOPTIMAL_KHR) {
             LogPerformanceWarning(
@@ -177,18 +177,18 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                      uint32_t* pSurfaceFormatCount,
-                                                                      VkSurfaceFormatKHR* pSurfaceFormats,
+                                                                      u32* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (!bp_pd_state || !pSurfaceFormats) return skip;
 
     if (pSurfaceFormatCount && *pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
-        skip |= LogWarning(
-            "BestPractices-GetPhysicalDeviceSurfaceFormatsKHR-CountMismatch", physicalDevice, error_obj.location.dot(Field::pSurfaceFormatCount),
-            "(%" PRIu32 ") is greater than the value that was returned when pSurfaceFormatCount was NULL (%" PRIu32 ").",
-            *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
+        skip |=
+            LogWarning("BestPractices-GetPhysicalDeviceSurfaceFormatsKHR-CountMismatch", physicalDevice,
+                       error_obj.location.dot(Field::pSurfaceFormatCount),
+                       "(%" PRIu32 ") is greater than the value that was returned when pSurfaceFormatCount was NULL (%" PRIu32 ").",
+                       *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
     }
     return skip;
 }
@@ -211,8 +211,8 @@ bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     return skip;
 }
 
-bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
+bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, u64 timeout,
+                                                       VkSemaphore semaphore, VkFence fence, u32* pImageIndex,
                                                        const ErrorObject& error_obj) const {
     auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     bool skip = false;
@@ -251,7 +251,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT
 }
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
-                                                                                VkSurfaceKHR surface, uint32_t* pPresentModeCount,
+                                                                                VkSurfaceKHR surface, u32* pPresentModeCount,
                                                                                 VkPresentModeKHR* pPresentModes,
                                                                                 const RecordObject& record_obj) {
     if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
@@ -271,7 +271,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
 }
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                           uint32_t* pSurfaceFormatCount,
+                                                                           u32* pSurfaceFormatCount,
                                                                            VkSurfaceFormatKHR* pSurfaceFormats,
                                                                            const RecordObject& record_obj) {
     if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
@@ -293,7 +293,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhy
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
                                                                             const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                                            uint32_t* pSurfaceFormatCount,
+                                                                            u32* pSurfaceFormatCount,
                                                                             VkSurfaceFormat2KHR* pSurfaceFormats,
                                                                             const RecordObject& record_obj) {
     if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
@@ -312,7 +312,7 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPh
 }
 
 void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                                                   uint32_t* pPropertyCount,
+                                                                                   u32* pPropertyCount,
                                                                                    VkDisplayPlanePropertiesKHR* pProperties,
                                                                                    const RecordObject& record_obj) {
     if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
@@ -329,9 +329,8 @@ void BestPractices::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesK
     }
 }
 
-void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                              uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
-                                                              const RecordObject& record_obj) {
+void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, u32* pSwapchainImageCount,
+                                                              VkImage* pSwapchainImages, const RecordObject& record_obj) {
     auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
     if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
         if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {

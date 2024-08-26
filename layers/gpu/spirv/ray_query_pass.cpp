@@ -27,7 +27,7 @@ static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray
                              "inst_ray_query"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t RayQueryPass::GetLinkFunctionId() {
+u32 RayQueryPass::GetLinkFunctionId() {
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -36,16 +36,16 @@ uint32_t RayQueryPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
-    const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+u32 RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
+    const u32 function_result = module_.TakeNextId();
+    const u32 function_def = GetLinkFunctionId();
+    const u32 bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    const uint32_t ray_flags_id = target_instruction_->Operand(2);
-    const uint32_t ray_origin_id = target_instruction_->Operand(4);
-    const uint32_t ray_tmin_id = target_instruction_->Operand(5);
-    const uint32_t ray_direction_id = target_instruction_->Operand(6);
-    const uint32_t ray_tmax_id = target_instruction_->Operand(7);
+    const u32 ray_flags_id = target_instruction_->Operand(2);
+    const u32 ray_origin_id = target_instruction_->Operand(4);
+    const u32 ray_tmin_id = target_instruction_->Operand(5);
+    const u32 ray_direction_id = target_instruction_->Operand(6);
+    const u32 ray_tmax_id = target_instruction_->Operand(7);
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {bool_type, function_result, function_def, injection_data.inst_position_id,
@@ -59,7 +59,7 @@ void RayQueryPass::Reset() { target_instruction_ = nullptr; }
 
 bool RayQueryPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
     (void)function;
-    const uint32_t opcode = inst.Opcode();
+    const u32 opcode = inst.Opcode();
     if (opcode != spv::OpRayQueryInitializeKHR) {
         return false;
     }

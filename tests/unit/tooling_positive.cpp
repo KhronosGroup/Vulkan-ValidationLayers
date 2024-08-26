@@ -24,7 +24,7 @@ TEST_F(PositiveTooling, InfoExt) {
         GTEST_SKIP() << "Tooling Info not supported by MockICD";
     }
 
-    uint32_t tool_count = 0;
+    u32 tool_count = 0;
     auto result = vk::GetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, nullptr);
 
     if (tool_count <= 0) {
@@ -32,7 +32,7 @@ TEST_F(PositiveTooling, InfoExt) {
     }
 
     std::vector<VkPhysicalDeviceToolPropertiesEXT> tool_properties(tool_count);
-    for (uint32_t i = 0; i < tool_count; i++) {
+    for (u32 i = 0; i < tool_count; i++) {
         tool_properties[i] = vku::InitStructHelper();
     }
 
@@ -41,7 +41,7 @@ TEST_F(PositiveTooling, InfoExt) {
     if (result == VK_SUCCESS) {
         result = vk::GetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, tool_properties.data());
 
-        for (uint32_t i = 0; i < tool_count; i++) {
+        for (u32 i = 0; i < tool_count; i++) {
             if (strcmp(tool_properties[0].name, "Khronos Validation Layer") == 0) {
                 found_validation_layer = true;
                 break;
@@ -62,7 +62,7 @@ TEST_F(PositiveTooling, InfoCore) {
         GTEST_SKIP() << "Tooling Info not supported by MockICD";
     }
 
-    uint32_t tool_count = 0;
+    u32 tool_count = 0;
     auto result = vk::GetPhysicalDeviceToolProperties(gpu(), &tool_count, nullptr);
 
     if (tool_count <= 0) {
@@ -70,7 +70,7 @@ TEST_F(PositiveTooling, InfoCore) {
     }
 
     std::vector<VkPhysicalDeviceToolProperties> tool_properties(tool_count);
-    for (uint32_t i = 0; i < tool_count; i++) {
+    for (u32 i = 0; i < tool_count; i++) {
         tool_properties[i] = vku::InitStructHelper();
     }
 
@@ -79,7 +79,7 @@ TEST_F(PositiveTooling, InfoCore) {
     if (result == VK_SUCCESS) {
         result = vk::GetPhysicalDeviceToolProperties(gpu(), &tool_count, tool_properties.data());
 
-        for (uint32_t i = 0; i < tool_count; i++) {
+        for (u32 i = 0; i < tool_count; i++) {
             if (strcmp(tool_properties[0].name, "Khronos Validation Layer") == 0) {
                 found_validation_layer = true;
                 break;
@@ -108,11 +108,11 @@ TEST_F(PositiveTooling, PrivateDataExt) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    static const u64 data_value = 0x70AD;
+    vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, data_value);
 
-    uint64_t data;
-    vk::GetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    u64 data;
+    vk::GetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, &data);
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
@@ -136,11 +136,11 @@ TEST_F(PositiveTooling, PrivateDataCore) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    static const u64 data_value = 0x70AD;
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, data_value);
 
-    uint64_t data;
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    u64 data;
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, &data);
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
@@ -157,10 +157,10 @@ TEST_F(PositiveTooling, PrivateDataDevice) {
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
-    static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, data_value);
-    uint64_t data;
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, &data);
+    static const u64 data_value = 0x70AD;
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (u64)device(), data_slot, data_value);
+    u64 data;
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (u64)device(), data_slot, &data);
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
 }

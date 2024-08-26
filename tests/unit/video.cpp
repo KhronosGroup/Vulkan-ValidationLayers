@@ -289,7 +289,7 @@ TEST_F(NegativeVideo, VideoFormatQueryMissingProfile) {
 
     auto format_info = vku::InitStruct<VkPhysicalDeviceVideoFormatInfoKHR>();
     format_info.imageUsage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
-    uint32_t format_count = 0;
+    u32 format_count = 0;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812");
     vk.GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &format_info, &format_count, nullptr);
@@ -808,7 +808,7 @@ TEST_F(NegativeVideo, CreateSessionEncodeH264InvalidMaxLevel) {
     h264_create_info.pNext = create_info.pNext;
     create_info.pNext = &h264_create_info;
 
-    auto unsupported_level = static_cast<int32_t>(config.EncodeCapsH264()->maxLevelIdc) + 1;
+    auto unsupported_level = static_cast<i32>(config.EncodeCapsH264()->maxLevelIdc) + 1;
     h264_create_info.maxLevelIdc = static_cast<StdVideoH264LevelIdc>(unsupported_level);
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-08251");
@@ -837,7 +837,7 @@ TEST_F(NegativeVideo, CreateSessionEncodeH265InvalidMaxLevel) {
     h265_create_info.pNext = create_info.pNext;
     create_info.pNext = &h265_create_info;
 
-    auto unsupported_level = static_cast<int32_t>(config.EncodeCapsH265()->maxLevelIdc) + 1;
+    auto unsupported_level = static_cast<i32>(config.EncodeCapsH265()->maxLevelIdc) + 1;
     h265_create_info.maxLevelIdc = static_cast<StdVideoH265LevelIdc>(unsupported_level);
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-08252");
@@ -857,19 +857,20 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
 
     VideoContext context(m_device, config);
 
-    uint32_t mem_req_count;
+    u32 mem_req_count;
     ASSERT_EQ(VK_SUCCESS, context.vk.GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, nullptr));
     if (mem_req_count == 0) {
         GTEST_SKIP() << "Test can only run if video session needs memory bindings";
     }
 
-    std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count, vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
+    std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count,
+                                                              vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
     ASSERT_EQ(VK_SUCCESS,
               context.vk.GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, mem_reqs.data()));
 
     std::vector<VkDeviceMemory> session_memory;
     std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
-    for (uint32_t i = 0; i < mem_req_count; ++i) {
+    for (u32 i = 0; i < mem_req_count; ++i) {
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         ASSERT_TRUE(m_device->phy().set_memory_type(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size * 2;
@@ -896,8 +897,8 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     }
 
     // Invalid memoryBindIndex
-    uint32_t invalid_bind_index = vvl::kU32Max;
-    for (uint32_t i = 0; i < mem_req_count; ++i) {
+    u32 invalid_bind_index = vvl::kU32Max;
+    for (u32 i = 0; i < mem_req_count; ++i) {
         if (mem_reqs[i].memoryBindIndex < vvl::kU32Max) {
             invalid_bind_index = mem_reqs[i].memoryBindIndex + 1;
         }
@@ -913,12 +914,12 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     }
 
     // Incompatible memory type
-    uint32_t invalid_mem_type_index = vvl::kU32Max;
-    uint32_t invalid_mem_type_req_index = vvl::kU32Max;
+    u32 invalid_mem_type_index = vvl::kU32Max;
+    u32 invalid_mem_type_req_index = vvl::kU32Max;
     auto mem_props = m_device->phy().memory_properties_;
-    for (uint32_t i = 0; i < mem_req_count; ++i) {
-        uint32_t mem_type_bits = mem_reqs[i].memoryRequirements.memoryTypeBits;
-        for (uint32_t mem_type_index = 0; mem_type_index < mem_props.memoryTypeCount; ++mem_type_index) {
+    for (u32 i = 0; i < mem_req_count; ++i) {
+        u32 mem_type_bits = mem_reqs[i].memoryRequirements.memoryTypeBits;
+        for (u32 mem_type_index = 0; mem_type_index < mem_props.memoryTypeCount; ++mem_type_index) {
             if ((mem_type_bits & (1 << mem_type_index)) == 0) {
                 invalid_mem_type_index = mem_type_index;
                 invalid_mem_type_req_index = i;
@@ -949,8 +950,8 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     }
 
     // Incorrectly aligned memoryOffset
-    uint32_t invalid_offset_align_index = vvl::kU32Max;
-    for (uint32_t i = 0; i < mem_req_count; ++i) {
+    u32 invalid_offset_align_index = vvl::kU32Max;
+    for (u32 i = 0; i < mem_req_count; ++i) {
         if (mem_reqs[i].memoryRequirements.alignment > 1) {
             invalid_offset_align_index = i;
             break;
@@ -992,7 +993,7 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
 
     // Out-of-bounds memoryOffset + memorySize
     {
-        uint32_t index = mem_req_count / 2;
+        u32 index = mem_req_count / 2;
 
         m_errorMonitor->SetDesiredError("VUID-VkBindVideoSessionMemoryInfoKHR-memorySize-07202");
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07199");
@@ -1006,7 +1007,7 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
 
     // Already bound
     {
-        uint32_t first_bind_count = mem_req_count / 2;
+        u32 first_bind_count = mem_req_count / 2;
         if (first_bind_count == 0) {
             first_bind_count = 1;
         }
@@ -1250,9 +1251,9 @@ TEST_F(NegativeVideo, CreateSessionParamsDecodeH264ExceededCapacity) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-07204");
@@ -1345,11 +1346,11 @@ TEST_F(NegativeVideo, CreateSessionParamsDecodeH265ExceededCapacity) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-07207");
@@ -1492,9 +1493,9 @@ TEST_F(NegativeVideo, CreateSessionParamsEncodeH264ExceededCapacity) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-04839");
@@ -1587,11 +1588,11 @@ TEST_F(NegativeVideo, CreateSessionParamsEncodeH265ExceededCapacity) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSession-04841");
@@ -1704,31 +1705,31 @@ TEST_F(NegativeVideo, CreateUpdateSessionParamsEncodeH265InvalidTileColumnsRows)
 
     h265_ci.maxStdVPSCount = 1;
     h265_ci.maxStdSPSCount = 1;
-    h265_ci.maxStdPPSCount = (uint32_t)h265_pps_list.size();
+    h265_ci.maxStdPPSCount = (u32)h265_pps_list.size();
 
     // Configure some of the PPS entries with various out-of-bounds tile row/column counts
 
     // Let PPS #2 have out-of-bounds num_tile_columns_minus1
-    h265_pps_list[1].num_tile_columns_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.width;
-    h265_pps_list[1].num_tile_rows_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.height / 2;
+    h265_pps_list[1].num_tile_columns_minus1 = (u8)config.EncodeCapsH265()->maxTiles.width;
+    h265_pps_list[1].num_tile_rows_minus1 = (u8)config.EncodeCapsH265()->maxTiles.height / 2;
 
     // Let PPS #3 use the max limits
-    h265_pps_list[2].num_tile_columns_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.width - 1;
-    h265_pps_list[2].num_tile_rows_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.height - 1;
+    h265_pps_list[2].num_tile_columns_minus1 = (u8)config.EncodeCapsH265()->maxTiles.width - 1;
+    h265_pps_list[2].num_tile_rows_minus1 = (u8)config.EncodeCapsH265()->maxTiles.height - 1;
 
     // Let PPS #5 have out-of-bounds num_tile_rows_minus1
-    h265_pps_list[4].num_tile_columns_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.width / 2;
-    h265_pps_list[4].num_tile_rows_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.height;
+    h265_pps_list[4].num_tile_columns_minus1 = (u8)config.EncodeCapsH265()->maxTiles.width / 2;
+    h265_pps_list[4].num_tile_rows_minus1 = (u8)config.EncodeCapsH265()->maxTiles.height;
 
     // Let PPS #6 have out-of-bounds num_tile_columns_minus1 and num_tile_rows_minus1
-    h265_pps_list[5].num_tile_columns_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.width;
-    h265_pps_list[5].num_tile_rows_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.height;
+    h265_pps_list[5].num_tile_columns_minus1 = (u8)config.EncodeCapsH265()->maxTiles.width;
+    h265_pps_list[5].num_tile_rows_minus1 = (u8)config.EncodeCapsH265()->maxTiles.height;
 
     h265_ai.stdVPSCount = 1;
     h265_ai.pStdVPSs = &h265_vps;
     h265_ai.stdSPSCount = 1;
     h265_ai.pStdSPSs = &h265_sps;
-    h265_ai.stdPPSCount = (uint32_t)h265_pps_list.size();
+    h265_ai.stdPPSCount = (u32)h265_pps_list.size();
     h265_ai.pStdPPSs = h265_pps_list.data();
 
     // Try first all of them together
@@ -1825,9 +1826,9 @@ TEST_F(NegativeVideo, DecodeH264ParametersAddInfoUniqueness) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoDecodeH264SessionParametersAddInfoKHR-None-04825");
@@ -1907,11 +1908,11 @@ TEST_F(NegativeVideo, DecodeH265ParametersAddInfoUniqueness) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoDecodeH265SessionParametersAddInfoKHR-None-04833");
@@ -1991,9 +1992,9 @@ TEST_F(NegativeVideo, EncodeH264ParametersAddInfoUniqueness) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeH264SessionParametersAddInfoKHR-None-04837");
@@ -2073,11 +2074,11 @@ TEST_F(NegativeVideo, EncodeH265ParametersAddInfoUniqueness) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeH265SessionParametersAddInfoKHR-None-06438");
@@ -2192,9 +2193,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ConflictingKeys) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2204,9 +2205,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ConflictingKeys) {
     std::vector<StdVideoH264PictureParameterSet> pps_list2{context.CreateH264PPS(1, 3), context.CreateH264PPS(3, 2),
                                                            context.CreateH264PPS(4, 1), context.CreateH264PPS(5, 2)};
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list2.size();
+    h264_ai.stdSPSCount = (u32)sps_list2.size();
     h264_ai.pStdSPSs = sps_list2.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list2.size();
+    h264_ai.stdPPSCount = (u32)pps_list2.size();
     h264_ai.pStdPPSs = pps_list2.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-07216");
@@ -2271,11 +2272,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ConflictingKeys) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2287,11 +2288,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ConflictingKeys) {
     std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
                                                            context.CreateH265PPS(3, 1, 2)};
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
+    h265_ai.stdVPSCount = (u32)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list2.size();
+    h265_ai.stdSPSCount = (u32)sps_list2.size();
     h265_ai.pStdSPSs = sps_list2.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list2.size();
+    h265_ai.stdPPSCount = (u32)pps_list2.size();
     h265_ai.pStdPPSs = pps_list2.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-07220");
@@ -2369,9 +2370,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ConflictingKeys) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2381,9 +2382,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ConflictingKeys) {
     std::vector<StdVideoH264PictureParameterSet> pps_list2{context.CreateH264PPS(1, 3), context.CreateH264PPS(3, 2),
                                                            context.CreateH264PPS(4, 1), context.CreateH264PPS(5, 2)};
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list2.size();
+    h264_ai.stdSPSCount = (u32)sps_list2.size();
     h264_ai.pStdSPSs = sps_list2.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list2.size();
+    h264_ai.stdPPSCount = (u32)pps_list2.size();
     h264_ai.pStdPPSs = pps_list2.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-07226");
@@ -2448,11 +2449,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ConflictingKeys) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2464,11 +2465,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ConflictingKeys) {
     std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
                                                            context.CreateH265PPS(3, 1, 2)};
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
+    h265_ai.stdVPSCount = (u32)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list2.size();
+    h265_ai.stdSPSCount = (u32)sps_list2.size();
     h265_ai.pStdSPSs = sps_list2.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list2.size();
+    h265_ai.stdPPSCount = (u32)pps_list2.size();
     h265_ai.pStdPPSs = pps_list2.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-07228");
@@ -2527,9 +2528,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ExceededCapacity) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2604,11 +2605,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ExceededCapacity) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2620,11 +2621,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ExceededCapacity) {
     std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
                                                            context.CreateH265PPS(3, 1, 2)};
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
+    h265_ai.stdVPSCount = (u32)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list2.size();
+    h265_ai.stdSPSCount = (u32)sps_list2.size();
     h265_ai.pStdSPSs = sps_list2.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list2.size();
+    h265_ai.stdPPSCount = (u32)pps_list2.size();
     h265_ai.pStdPPSs = pps_list2.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-07221");
@@ -2686,9 +2687,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ExceededCapacity) {
         context.CreateH264PPS(2, 2), context.CreateH264PPS(3, 1), context.CreateH264PPS(3, 3),
     };
 
-    h264_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h264_ai.stdSPSCount = (u32)sps_list.size();
     h264_ai.pStdSPSs = sps_list.data();
-    h264_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h264_ai.stdPPSCount = (u32)pps_list.size();
     h264_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2763,11 +2764,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ExceededCapacity) {
         context.CreateH265PPS(2, 3, 3),
     };
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list.size();
+    h265_ai.stdVPSCount = (u32)vps_list.size();
     h265_ai.pStdVPSs = vps_list.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list.size();
+    h265_ai.stdSPSCount = (u32)sps_list.size();
     h265_ai.pStdSPSs = sps_list.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list.size();
+    h265_ai.stdPPSCount = (u32)pps_list.size();
     h265_ai.pStdPPSs = pps_list.data();
 
     ASSERT_EQ(VK_SUCCESS, context.vk.CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
@@ -2779,11 +2780,11 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ExceededCapacity) {
     std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
                                                            context.CreateH265PPS(3, 1, 2)};
 
-    h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
+    h265_ai.stdVPSCount = (u32)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
-    h265_ai.stdSPSCount = (uint32_t)sps_list2.size();
+    h265_ai.stdSPSCount = (u32)sps_list2.size();
     h265_ai.pStdSPSs = sps_list2.data();
-    h265_ai.stdPPSCount = (uint32_t)pps_list2.size();
+    h265_ai.stdPPSCount = (u32)pps_list2.size();
     h265_ai.pStdPPSs = pps_list2.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-06443");
@@ -3027,8 +3028,8 @@ TEST_F(NegativeVideo, BeginCodingUnsupportedCodecOp) {
         GTEST_SKIP() << "Test requires video support";
     }
 
-    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
-    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+    u32 queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (u32 qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
         if ((QueueFamilyFlags(qfi) & (VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_VIDEO_ENCODE_BIT_KHR)) &&
             ((QueueFamilyVideoCodecOps(qfi) & config.Profile()->videoCodecOperation) == 0)) {
             queue_family_index = qfi;
@@ -3181,7 +3182,7 @@ TEST_F(NegativeVideo, BeginCodingSessionMemoryNotBound) {
 
     VideoContext context(m_device, config);
 
-    uint32_t mem_req_count;
+    u32 mem_req_count;
     context.vk.GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, nullptr);
     if (mem_req_count == 0) {
         GTEST_SKIP() << "Test requires video session to need memory bindings";
@@ -3192,7 +3193,7 @@ TEST_F(NegativeVideo, BeginCodingSessionMemoryNotBound) {
     context.vk.GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, mem_reqs.data());
 
     std::vector<VkDeviceMemory> session_memory;
-    for (uint32_t i = 0; i < mem_req_count; ++i) {
+    for (u32 i = 0; i < mem_req_count; ++i) {
         // Skip binding one of the memory bindings
         if (i == mem_req_count / 2) continue;
 
@@ -3386,8 +3387,8 @@ TEST_F(NegativeVideo, BeginCodingIncompatRefPicProfile) {
 
     VideoConfig configs[2] = {};
     const auto& all_configs = GetConfigs();
-    for (uint32_t i = 0; i < all_configs.size(); ++i) {
-        for (uint32_t j = i + 1; j < all_configs.size(); ++j) {
+    for (u32 i = 0; i < all_configs.size(); ++i) {
+        for (u32 j = i + 1; j < all_configs.size(); ++j) {
             const auto& coded_extent1 = all_configs[i].SessionCreateInfo()->maxCodedExtent;
             const auto& coded_extent2 = all_configs[j].SessionCreateInfo()->maxCodedExtent;
             const auto& dpb_format1 = *all_configs[i].DpbFormatProps();
@@ -3404,7 +3405,7 @@ TEST_F(NegativeVideo, BeginCodingIncompatRefPicProfile) {
         GTEST_SKIP() << "Test requires two video profiles with matching DPB format/size";
     }
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         configs[i].SessionCreateInfo()->maxDpbSlots = 1;
         configs[i].SessionCreateInfo()->maxActiveReferencePictures = 1;
     }
@@ -3613,7 +3614,7 @@ TEST_F(NegativeVideo, BeginCodingReferenceFormatMismatch) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t alt_ref_format_index = 0;
+    u32 alt_ref_format_index = 0;
     VideoConfig config =
         GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigs()), [&alt_ref_format_index](const VideoConfig& config) {
             const auto& format_props = config.SupportedDpbFormatProps();
@@ -4327,7 +4328,7 @@ TEST_F(NegativeVideo, EncodeRateControlUnsupportedMode) {
 
     auto rc_info = VideoEncodeRateControlInfo(config);
     rc_info->rateControlMode =
-        static_cast<VkVideoEncodeRateControlModeFlagBitsKHR>(1 << static_cast<uint32_t>(log2(unsupported_rc_modes)));
+        static_cast<VkVideoEncodeRateControlModeFlagBitsKHR>(1 << static_cast<u32>(log2(unsupported_rc_modes)));
     if (rc_info->rateControlMode != VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR) {
         rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
     }
@@ -4365,7 +4366,7 @@ TEST_F(NegativeVideo, EncodeRateControlTooManyLayers) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
-    for (uint32_t i = 0; i <= config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i <= config.EncodeCaps()->maxRateControlLayers; ++i) {
         rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
     }
 
@@ -4495,18 +4496,18 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrate) {
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
     }
 
-    const uint32_t layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
+    const u32 layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.begin();
     cb.BeginVideoCoding(context.Begin());
 
-    uint64_t orig_bitrate = rc_info.Layer(layer_index)->averageBitrate;
+    u64 orig_bitrate = rc_info.Layer(layer_index)->averageBitrate;
 
     // averageBitrate must be greater than 0
     rc_info.Layer(layer_index)->averageBitrate = 0;
@@ -4568,11 +4569,11 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateCBR) {
 
     auto rc_info = VideoEncodeRateControlInfo(config);
     rc_info->rateControlMode = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR;
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
     }
 
-    const uint32_t layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
+    const u32 layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
@@ -4610,11 +4611,11 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateVBR) {
 
     auto rc_info = VideoEncodeRateControlInfo(config);
     rc_info->rateControlMode = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR;
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
     }
 
-    const uint32_t layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
+    const u32 layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
@@ -4645,11 +4646,11 @@ TEST_F(NegativeVideo, EncodeRateControlLayerFrameRate) {
     context.CreateAndBindSessionMemory();
 
     auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
     }
 
-    const uint32_t layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
+    const u32 layer_index = config.EncodeCaps()->maxRateControlLayers / 2;
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
@@ -5927,7 +5928,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatch) {
     rc_info->virtualBufferSizeInMs = 3000;
     rc_info->initialVirtualBufferSizeInMs = 1000;
 
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         auto rc_layer = VideoEncodeRateControlLayerInfo(config);
 
         rc_layer->averageBitrate = 32000 / (i + 1);
@@ -5957,27 +5958,27 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatch) {
 
     // layerCount mismatch
     if (rc_info->layerCount > 1) {
-        uint32_t layer_count = rc_info->layerCount - 1;
+        u32 layer_count = rc_info->layerCount - 1;
         std::swap(rc_info->layerCount, layer_count);
         rc_test_utils.TestRateControlStateMismatch(rc_info);
         std::swap(rc_info->layerCount, layer_count);
     }
 
     // virtualBufferSizeInMs mismatch
-    uint32_t vb_size = 2500;
+    u32 vb_size = 2500;
     std::swap(rc_info->virtualBufferSizeInMs, vb_size);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info->virtualBufferSizeInMs, vb_size);
 
     // initialVirtualBufferSizeInMs mismatch
-    uint32_t init_vb_size = 500;
+    u32 init_vb_size = 500;
     std::swap(rc_info->initialVirtualBufferSizeInMs, init_vb_size);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info->initialVirtualBufferSizeInMs, init_vb_size);
 
     // Layer averageBitrate/maxBitrate mismatch
-    uint64_t max_bitrate = 23456;
-    uint64_t avg_bitrate = 7891;
+    u64 max_bitrate = 23456;
+    u64 avg_bitrate = 7891;
     std::swap(rc_info.Layer(0)->averageBitrate, avg_bitrate);
     std::swap(rc_info.Layer(0)->maxBitrate, max_bitrate);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
@@ -5985,8 +5986,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatch) {
     std::swap(rc_info.Layer(0)->maxBitrate, max_bitrate);
 
     // Layer frameRateNumerator/Denominator mismatch
-    uint32_t fr_num = 30000;
-    uint32_t fr_den = 1001;
+    u32 fr_num = 30000;
+    u32 fr_den = 1001;
     std::swap(rc_info.Layer(0)->frameRateNumerator, fr_num);
     std::swap(rc_info.Layer(0)->frameRateDenominator, fr_den);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
@@ -6028,7 +6029,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
     rc_info.CodecInfo().encode_h264.consecutiveBFrameCount = 2;
     rc_info.CodecInfo().encode_h264.temporalLayerCount = config.EncodeCaps()->maxRateControlLayers;
 
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         auto rc_layer = VideoEncodeRateControlLayerInfo(config, include_codec_info);
 
         rc_layer->averageBitrate = 32000 / (i + 1);
@@ -6072,19 +6073,19 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
     std::swap(rc_info.CodecInfo().encode_h264.flags, flags);
 
     // gopFrameCount mismatch
-    uint32_t gop_frame_count = 12;
+    u32 gop_frame_count = 12;
     std::swap(rc_info.CodecInfo().encode_h264.gopFrameCount, gop_frame_count);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h264.gopFrameCount, gop_frame_count);
 
     // idrPeriod mismatch
-    uint32_t idr_period = 30;
+    u32 idr_period = 30;
     std::swap(rc_info.CodecInfo().encode_h264.idrPeriod, idr_period);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h264.idrPeriod, idr_period);
 
     // consecutiveBFrameCount mismatch
-    uint32_t cons_b_frames = 4;
+    u32 cons_b_frames = 4;
     std::swap(rc_info.CodecInfo().encode_h264.consecutiveBFrameCount, cons_b_frames);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h264.consecutiveBFrameCount, cons_b_frames);
@@ -6122,7 +6123,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
     rc_info.Layer(0).CodecInfo().encode_h264.useMaxFrameSize = VK_TRUE;
 
     // Layer maxFrameSize.frameISize mismatch
-    uint32_t max_frame_i_size = 12345;
+    u32 max_frame_i_size = 12345;
     std::swap(rc_info.Layer(0).CodecInfo().encode_h264.maxFrameSize.frameISize, max_frame_i_size);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.Layer(0).CodecInfo().encode_h264.maxFrameSize.frameISize, max_frame_i_size);
@@ -6162,7 +6163,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
     rc_info.CodecInfo().encode_h265.consecutiveBFrameCount = 2;
     rc_info.CodecInfo().encode_h265.subLayerCount = config.EncodeCaps()->maxRateControlLayers;
 
-    for (uint32_t i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
+    for (u32 i = 0; i < config.EncodeCaps()->maxRateControlLayers; ++i) {
         auto rc_layer = VideoEncodeRateControlLayerInfo(config, include_codec_info);
 
         rc_layer->averageBitrate = 32000 / (i + 1);
@@ -6206,19 +6207,19 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
     std::swap(rc_info.CodecInfo().encode_h265.flags, flags);
 
     // gopFrameCount mismatch
-    uint32_t gop_frame_count = 12;
+    u32 gop_frame_count = 12;
     std::swap(rc_info.CodecInfo().encode_h265.gopFrameCount, gop_frame_count);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h265.gopFrameCount, gop_frame_count);
 
     // idrPeriod mismatch
-    uint32_t idr_period = 30;
+    u32 idr_period = 30;
     std::swap(rc_info.CodecInfo().encode_h265.idrPeriod, idr_period);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h265.idrPeriod, idr_period);
 
     // consecutiveBFrameCount mismatch
-    uint32_t cons_b_frames = 4;
+    u32 cons_b_frames = 4;
     std::swap(rc_info.CodecInfo().encode_h265.consecutiveBFrameCount, cons_b_frames);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h265.consecutiveBFrameCount, cons_b_frames);
@@ -6256,7 +6257,7 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
     rc_info.Layer(0).CodecInfo().encode_h265.useMaxFrameSize = VK_TRUE;
 
     // Layer maxFrameSize.frameISize mismatch
-    uint32_t max_frame_i_size = 12345;
+    u32 max_frame_i_size = 12345;
     std::swap(rc_info.Layer(0).CodecInfo().encode_h265.maxFrameSize.frameISize, max_frame_i_size);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.Layer(0).CodecInfo().encode_h265.maxFrameSize.frameISize, max_frame_i_size);
@@ -7664,8 +7665,8 @@ TEST_F(NegativeVideo, DecodeIncompatOutputPicProfile) {
 
     VideoConfig configs[2] = {};
     const auto& all_configs = GetConfigsDecode();
-    for (uint32_t i = 0; i < all_configs.size(); ++i) {
-        for (uint32_t j = i + 1; j < all_configs.size(); ++j) {
+    for (u32 i = 0; i < all_configs.size(); ++i) {
+        for (u32 j = i + 1; j < all_configs.size(); ++j) {
             const auto& coded_extent1 = all_configs[i].SessionCreateInfo()->maxCodedExtent;
             const auto& coded_extent2 = all_configs[j].SessionCreateInfo()->maxCodedExtent;
             const auto& pic_format1 = *all_configs[i].DpbFormatProps();
@@ -7709,8 +7710,8 @@ TEST_F(NegativeVideo, EncodeIncompatInputPicProfile) {
 
     VideoConfig configs[2] = {};
     const auto& all_configs = GetConfigsEncode();
-    for (uint32_t i = 0; i < all_configs.size(); ++i) {
-        for (uint32_t j = i + 1; j < all_configs.size(); ++j) {
+    for (u32 i = 0; i < all_configs.size(); ++i) {
+        for (u32 j = i + 1; j < all_configs.size(); ++j) {
             const auto& coded_extent1 = all_configs[i].SessionCreateInfo()->maxCodedExtent;
             const auto& coded_extent2 = all_configs[j].SessionCreateInfo()->maxCodedExtent;
             const auto& pic_format1 = *all_configs[i].DpbFormatProps();
@@ -7752,7 +7753,7 @@ TEST_F(NegativeVideo, DecodeOutputFormatMismatch) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t alt_pic_format_index = 0;
+    u32 alt_pic_format_index = 0;
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsDecode(), [&alt_pic_format_index](const VideoConfig& config) {
         const auto& format_props = config.SupportedPictureFormatProps();
         for (size_t i = 0; i < format_props.size(); ++i) {
@@ -7793,7 +7794,7 @@ TEST_F(NegativeVideo, EncodeInputFormatMismatch) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t alt_pic_format_index = 0;
+    u32 alt_pic_format_index = 0;
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncode(), [&alt_pic_format_index](const VideoConfig& config) {
         const auto& format_props = config.SupportedPictureFormatProps();
         for (size_t i = 0; i < format_props.size(); ++i) {
@@ -9042,7 +9043,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH264) {
 
     StdVideoDecodeH264PictureInfo std_picture_info{};
     auto picture_info = vku::InitStruct<VkVideoDecodeH264PictureInfoKHR>();
-    uint32_t slice_offset = 0;
+    u32 slice_offset = 0;
     picture_info.pStdPictureInfo = &std_picture_info;
     picture_info.sliceCount = 1;
     picture_info.pSliceOffsets = &slice_offset;
@@ -9079,7 +9080,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH264) {
         decode_info->pNext = &picture_info;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pSliceOffsets-07153");
-        slice_offset = (uint32_t)decode_info->srcBufferRange;
+        slice_offset = (u32)decode_info->srcBufferRange;
         cb.DecodeVideo(decode_info);
         slice_offset = 0;
         m_errorMonitor->VerifyFound();
@@ -9251,7 +9252,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH265) {
 
     StdVideoDecodeH265PictureInfo std_picture_info{};
     auto picture_info = vku::InitStruct<VkVideoDecodeH265PictureInfoKHR>();
-    uint32_t slice_segment_offset = 0;
+    u32 slice_segment_offset = 0;
     picture_info.pStdPictureInfo = &std_picture_info;
     picture_info.sliceSegmentCount = 1;
     picture_info.pSliceSegmentOffsets = &slice_segment_offset;
@@ -9275,7 +9276,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH265) {
         decode_info->pNext = &picture_info;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pSliceSegmentOffsets-07159");
-        slice_segment_offset = (uint32_t)decode_info->srcBufferRange;
+        slice_segment_offset = (u32)decode_info->srcBufferRange;
         cb.DecodeVideo(decode_info);
         slice_segment_offset = 0;
         m_errorMonitor->VerifyFound();
@@ -9369,11 +9370,11 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoAV1) {
 
     StdVideoDecodeAV1PictureInfo std_picture_info{};
     auto picture_info = vku::InitStruct<VkVideoDecodeAV1PictureInfoKHR>();
-    uint32_t tile_offset = 0;
-    uint32_t tile_size = (uint32_t)decode_info->srcBufferRange;
+    u32 tile_offset = 0;
+    u32 tile_size = (u32)decode_info->srcBufferRange;
     picture_info.pStdPictureInfo = &std_picture_info;
 
-    for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
+    for (u32 i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
         picture_info.referenceNameSlotIndices[i] = -1;
     }
 
@@ -9400,7 +9401,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoAV1) {
         decode_info->pNext = &picture_info;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-frameHeaderOffset-09251");
-        picture_info.frameHeaderOffset = (uint32_t)decode_info->srcBufferRange;
+        picture_info.frameHeaderOffset = (u32)decode_info->srcBufferRange;
         cb.DecodeVideo(decode_info);
         picture_info.frameHeaderOffset = 0;
         m_errorMonitor->VerifyFound();
@@ -9413,7 +9414,7 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoAV1) {
 
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09253");
-        tile_offset = (uint32_t)decode_info->srcBufferRange;
+        tile_offset = (u32)decode_info->srcBufferRange;
         cb.DecodeVideo(decode_info);
         tile_offset = 0;
         m_errorMonitor->VerifyFound();
@@ -9425,18 +9426,18 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoAV1) {
         decode_info->pNext = &picture_info;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252");
-        tile_size = (uint32_t)decode_info->srcBufferRange + 1;
+        tile_size = (u32)decode_info->srcBufferRange + 1;
         cb.DecodeVideo(decode_info);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pTileOffsets-09252");
         tile_offset = 1;
-        tile_size = (uint32_t)decode_info->srcBufferRange;
+        tile_size = (u32)decode_info->srcBufferRange;
         cb.DecodeVideo(decode_info);
         m_errorMonitor->VerifyFound();
 
         tile_offset = 0;
-        tile_size = (uint32_t)decode_info->srcBufferRange;
+        tile_size = (u32)decode_info->srcBufferRange;
     }
 
     // Film grain cannot be used if the video profile did not enable support for it
@@ -9800,8 +9801,8 @@ TEST_F(NegativeVideo, DecodeInlineQueryIncompatibleQueueFamily) {
         GTEST_SKIP() << "Test requires videoMaintenance1";
     }
 
-    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
-    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+    u32 queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (u32 qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
         if (!QueueFamilySupportsResultStatusOnlyQueries(qfi)) {
             queue_family_index = qfi;
             break;
@@ -10066,8 +10067,8 @@ TEST_F(NegativeVideo, EncodeInlineQueryIncompatibleQueueFamily) {
         GTEST_SKIP() << "Test requires videoMaintenance1";
     }
 
-    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
-    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+    u32 queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (u32 qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
         if (!QueueFamilySupportsResultStatusOnlyQueries(qfi)) {
             queue_family_index = qfi;
             break;
@@ -10151,7 +10152,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MaxSliceCount) {
     // so that we don't just check a config with only a single slice supported if possible
     auto configs = GetConfigsEncodeH264();
     VideoConfig config;
-    uint32_t max_slice_count = 0;
+    u32 max_slice_count = 0;
     for (auto& cfg : configs) {
         if (cfg.EncodeCapsH264()->maxSliceCount > max_slice_count) {
             config = cfg;
@@ -10173,7 +10174,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MaxSliceCount) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_count = max_slice_count + 1;
+    const u32 slice_count = max_slice_count + 1;
     std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
     encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
     encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
@@ -10199,7 +10200,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBs) {
     // so that we don't just check a config with only a single slice supported if possible
     auto configs = GetConfigsEncodeH264();
     VideoConfig config;
-    uint32_t max_slice_count = 0;
+    u32 max_slice_count = 0;
     for (auto& cfg : configs) {
         if ((cfg.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR) != 0 &&
             cfg.EncodeCapsH264()->maxSliceCount > max_slice_count) {
@@ -10222,7 +10223,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBs) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_count = config.MaxEncodeH264MBCount() + 1;
+    const u32 slice_count = config.MaxEncodeH264MBCount() + 1;
     std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
     encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
     encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
@@ -10249,7 +10250,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBRows) {
     // so that we don't just check a config with only a single slice supported if possible
     auto configs = GetConfigsEncodeH264();
     VideoConfig config;
-    uint32_t max_slice_count = 0;
+    u32 max_slice_count = 0;
     for (auto& cfg : configs) {
         if ((cfg.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR) == 0 &&
             cfg.EncodeCapsH264()->maxSliceCount > max_slice_count) {
@@ -10272,7 +10273,7 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBRows) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_count = config.MaxEncodeH264MBRowCount() + 1;
+    const u32 slice_count = config.MaxEncodeH264MBRowCount() + 1;
     std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
     encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
     encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
@@ -10312,7 +10313,7 @@ TEST_F(NegativeVideo, EncodeCapsH264DifferentSliceTypes) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_count = 2;
+    const u32 slice_count = 2;
     std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
     std::vector<StdVideoEncodeH264SliceHeader> slice_headers(slice_count, encode_info.CodecInfo().encode_h264.std_slice_header);
     encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
@@ -10357,7 +10358,7 @@ TEST_F(NegativeVideo, EncodeCapsH265DifferentSliceSegmentTypes) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_segment_count = 2;
+    const u32 slice_segment_count = 2;
     std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
                                                                          encode_info.CodecInfo().encode_h265.slice_segment_info);
     std::vector<StdVideoEncodeH265SliceSegmentHeader> slice_segment_headers(
@@ -10396,8 +10397,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleTilesPerSliceSegment) {
     }
 
     auto pps = config.EncodeH265PPS();
-    pps->num_tile_columns_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.width - 1;
-    pps->num_tile_rows_minus1 = (uint8_t)config.EncodeCapsH265()->maxTiles.height - 1;
+    pps->num_tile_columns_minus1 = (u8)config.EncodeCapsH265()->maxTiles.width - 1;
+    pps->num_tile_rows_minus1 = (u8)config.EncodeCapsH265()->maxTiles.height - 1;
 
     VideoContext context(m_device, config);
     context.CreateAndBindSessionMemory();
@@ -10441,7 +10442,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleSliceSegmentsPerTile) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_segment_count = 2;
+    const u32 slice_segment_count = 2;
     std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
                                                                          encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
@@ -10466,7 +10467,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MaxSliceSegmentCount) {
     // so that we don't just check a config with only a single slice segment supported if possible
     auto configs = GetConfigsEncodeH265();
     VideoConfig config;
-    uint32_t max_slice_segment_count = 0;
+    u32 max_slice_segment_count = 0;
     for (auto& cfg : configs) {
         if (cfg.EncodeCapsH265()->maxSliceSegmentCount > max_slice_segment_count) {
             config = cfg;
@@ -10488,7 +10489,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MaxSliceSegmentCount) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_segment_count = max_slice_segment_count + 1;
+    const u32 slice_segment_count = max_slice_segment_count + 1;
     std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
                                                                          encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
@@ -10516,7 +10517,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBs) {
     // so that we don't just check a config with only a single slice segment supported if possible
     auto configs = GetConfigsEncodeH265();
     VideoConfig config;
-    uint32_t max_slice_segment_count = 0;
+    u32 max_slice_segment_count = 0;
     for (auto& cfg : configs) {
         if ((cfg.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR) != 0 &&
             cfg.EncodeCapsH265()->maxSliceSegmentCount > max_slice_segment_count) {
@@ -10539,7 +10540,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBs) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_segment_count = config.MaxEncodeH265CTBCount() + 1;
+    const u32 slice_segment_count = config.MaxEncodeH265CTBCount() + 1;
     std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
                                                                          encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
@@ -10568,7 +10569,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBRows) {
     // so that we don't just check a config with only a single slice segment supported if possible
     auto configs = GetConfigsEncodeH265();
     VideoConfig config;
-    uint32_t max_slice_segment_count = 0;
+    u32 max_slice_segment_count = 0;
     for (auto& cfg : configs) {
         if ((cfg.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR) == 0 &&
             cfg.EncodeCapsH265()->maxSliceSegmentCount > max_slice_segment_count) {
@@ -10591,7 +10592,7 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBRows) {
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
-    const uint32_t slice_segment_count = config.MaxEncodeH265CTBRowCount() + 1;
+    const u32 slice_segment_count = config.MaxEncodeH265CTBRowCount() + 1;
     std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
                                                                          encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
@@ -11209,7 +11210,7 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoH264) {
     picture_info.pNaluSliceEntries = &slice_info;
     slice_info.pStdSliceHeader = &std_slice_header;
 
-    for (uint32_t i = 0; i < STD_VIDEO_H264_MAX_NUM_LIST_REF; ++i) {
+    for (u32 i = 0; i < STD_VIDEO_H264_MAX_NUM_LIST_REF; ++i) {
         std_ref_lists.RefPicList0[i] = STD_VIDEO_H264_NO_REFERENCE_PICTURE;
         std_ref_lists.RefPicList1[i] = STD_VIDEO_H264_NO_REFERENCE_PICTURE;
     }
@@ -11381,7 +11382,7 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoH265) {
     picture_info.pNaluSliceSegmentEntries = &slice_segment_info;
     slice_segment_info.pStdSliceSegmentHeader = &std_slice_segment_header;
 
-    for (uint32_t i = 0; i < STD_VIDEO_H265_MAX_NUM_LIST_REF; ++i) {
+    for (u32 i = 0; i < STD_VIDEO_H265_MAX_NUM_LIST_REF; ++i) {
         std_ref_lists.RefPicList0[i] = STD_VIDEO_H265_NO_REFERENCE_PICTURE;
         std_ref_lists.RefPicList1[i] = STD_VIDEO_H265_NO_REFERENCE_PICTURE;
     }
@@ -12075,8 +12076,8 @@ TEST_F(NegativeVideo, BeginQueryIncompatibleQueueFamily) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
-    for (uint32_t qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
+    u32 queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    for (u32 qfi = 0; qfi < QueueFamilyCount(); ++qfi) {
         if (!QueueFamilySupportsResultStatusOnlyQueries(qfi)) {
             queue_family_index = qfi;
             break;
@@ -12298,60 +12299,60 @@ TEST_F(NegativeVideo, GetQueryPoolResultsVideoQueryDataSize) {
 
     auto feedback_flags = config.EncodeCaps()->supportedEncodeFeedbackFlags;
     auto feedback_flag_count = GetBitSetCount(feedback_flags);
-    uint32_t total_query_count = 4;
+    u32 total_query_count = 4;
 
     VideoContext context(m_device, config);
     context.CreateEncodeFeedbackQueryPool(total_query_count, feedback_flags);
 
     auto query_pool = context.EncodeFeedbackQueryPool();
-    std::vector<uint64_t> results(feedback_flag_count + 1);
+    std::vector<u64> results(feedback_flag_count + 1);
 
-    for (uint32_t query_count = 1; query_count <= total_query_count; query_count++) {
+    for (u32 query_count = 1; query_count <= total_query_count; query_count++) {
         size_t total_feedback_count = feedback_flag_count * query_count;
 
         // Test 32-bit no availability/status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint32_t) * (total_feedback_count - 1), results.data(),
-                                sizeof(uint32_t) * (total_feedback_count - 1), 0);
+        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(u32) * (total_feedback_count - 1), results.data(),
+                                sizeof(u32) * (total_feedback_count - 1), 0);
         m_errorMonitor->VerifyFound();
 
         // Test 32-bit with availability
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint32_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint32_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(u32) * (total_feedback_count + query_count - 1),
+                                results.data(), sizeof(u32) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
 
         // Test 32-bit with status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint32_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint32_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(u32) * (total_feedback_count + query_count - 1),
+                                results.data(), sizeof(u32) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
         m_errorMonitor->VerifyFound();
 
         // Test 64-bit no availability/status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint64_t) * (total_feedback_count - 1), results.data(),
-                                sizeof(uint64_t) * (total_feedback_count - 1), VK_QUERY_RESULT_64_BIT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(u64) * (total_feedback_count - 1), results.data(),
+                                sizeof(u64) * (total_feedback_count - 1), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
 
         // Test 64-bit with availability
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint64_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint64_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(u64) * (total_feedback_count + query_count - 1),
+                                results.data(), sizeof(u64) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
 
         // Test 64-bit with status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint64_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint64_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(u64) * (total_feedback_count + query_count - 1),
+                                results.data(), sizeof(u64) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
         m_errorMonitor->VerifyFound();
     }
@@ -12368,7 +12369,7 @@ TEST_F(NegativeVideo, GetQueryPoolResultsStatusBit) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR, 1);
 
-    uint32_t status;
+    u32 status;
     VkQueryResultFlags flags;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09442");
@@ -12395,18 +12396,18 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBit) {
 
     VkQueryResultFlags flags;
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09442");
     flags = 0;
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(u32), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-09443");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(u32), flags);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -12792,7 +12793,7 @@ TEST_F(NegativeVideoBestPractices, GetVideoSessionMemoryRequirements) {
     VideoContext context(m_device, config);
 
     auto mem_req = vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>();
-    uint32_t mem_req_count = 1;
+    u32 mem_req_count = 1;
 
     m_errorMonitor->SetDesiredWarning("BestPractices-vkGetVideoSessionMemoryRequirementsKHR-count-not-retrieved");
     context.vk.GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, &mem_req);
@@ -12814,7 +12815,7 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
     // Create a buffer to get non-video-related memory requirements
     VkBufferCreateInfo buffer_create_info =
         vku::InitStruct<VkBufferCreateInfo>(nullptr, static_cast<VkBufferCreateFlags>(0), static_cast<VkDeviceSize>(4096),
-                                          static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
+                                            static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
     vkt::Buffer buffer(*m_device, buffer_create_info);
     VkMemoryRequirements buf_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &buf_mem_reqs);
@@ -12835,7 +12836,7 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
     context.vk.BindVideoSessionMemoryKHR(device(), context.Session(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
-    uint32_t mem_req_count = 0;
+    u32 mem_req_count = 0;
     context.vk.GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, nullptr);
 
     if (mem_req_count > 0) {

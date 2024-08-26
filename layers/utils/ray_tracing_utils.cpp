@@ -29,7 +29,7 @@ static VkAccelerationStructureBuildSizesInfoKHR ComputeBuildSizes(const VkDevice
                                                                   const VkAccelerationStructureBuildTypeKHR build_type,
                                                                   const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
                                                                   const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
-    std::vector<uint32_t> primitive_counts(build_info.geometryCount);
+    std::vector<u32> primitive_counts(build_info.geometryCount);
     for (const auto [i, build_range] : vvl::enumerate(range_infos, build_info.geometryCount)) {
         primitive_counts[i] = build_range->primitiveCount;
     }

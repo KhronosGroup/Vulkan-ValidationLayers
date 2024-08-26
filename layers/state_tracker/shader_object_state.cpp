@@ -22,14 +22,14 @@ namespace vvl {
 static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
     ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
-    for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo.setLayoutCount; ++i) {
         set_layouts[i] = dev_data.Get<vvl::DescriptorSetLayout>(pCreateInfo.pSetLayouts[i]);
     }
     return set_layouts;
 }
 
 ShaderObject::ShaderObject(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
-                           std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders)
+                           std::shared_ptr<spirv::Module> &spirv_module, u32 createInfoCount, VkShaderEXT *pShaders)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
       safe_create_info(&create_info_i),
       create_info(*safe_create_info.ptr()),
@@ -41,7 +41,7 @@ ShaderObject::ShaderObject(ValidationStateTracker &dev_data, const VkShaderCreat
       push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
     if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
-        for (uint32_t i = 0; i < createInfoCount; ++i) {
+        for (u32 i = 0; i < createInfoCount; ++i) {
             if (pShaders[i] != handle) {
                 linked_shaders.push_back(pShaders[i]);
             }

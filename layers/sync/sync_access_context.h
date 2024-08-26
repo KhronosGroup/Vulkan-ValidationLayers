@@ -249,11 +249,7 @@ class AccessContext {
     using ImageState = syncval_state::ImageState;
     using ImageViewState = syncval_state::ImageViewState;
     using ScopeMap = ResourceAccessRangeMap;
-    enum DetectOptions : uint32_t {
-        kDetectPrevious = 1U << 0,
-        kDetectAsync = 1U << 1,
-        kDetectAll = (kDetectPrevious | kDetectAsync)
-    };
+    enum DetectOptions : u32 { kDetectPrevious = 1U << 0, kDetectAsync = 1U << 1, kDetectAll = (kDetectPrevious | kDetectAsync) };
 
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
 
@@ -336,7 +332,7 @@ class AccessContext {
     template <typename Action>
     void ApplyToContext(const Action &barrier_action);
 
-    AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
+    AccessContext(u32 subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, const AccessContext *external_context);
 
     AccessContext() { Reset(); }
@@ -347,7 +343,7 @@ class AccessContext {
 
     ResourceAccessRangeMap &GetAccessStateMap() { return access_state_map_; }
     const ResourceAccessRangeMap &GetAccessStateMap() const { return access_state_map_; }
-    const TrackBack *GetTrackBackFromSubpass(uint32_t subpass) const {
+    const TrackBack *GetTrackBackFromSubpass(u32 subpass) const {
         if (subpass == VK_SUBPASS_EXTERNAL) {
             return src_external_;
         } else {
@@ -657,7 +653,7 @@ HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, Rang
     HazardResult hazard;
 
     // Do this before range_gen is incremented s.t. the copies used will be correct
-    if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
+    if (static_cast<u32>(options) & DetectOptions::kDetectAsync) {
         // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
         // so we'll check these first
         for (const auto &async_ref : async_) {
@@ -666,7 +662,7 @@ HazardResult AccessContext::DetectHazardGeneratedRanges(Detector &detector, Rang
         }
     }
 
-    const bool detect_prev = (static_cast<uint32_t>(options) & DetectOptions::kDetectPrevious) != 0;
+    const bool detect_prev = (static_cast<u32>(options) & DetectOptions::kDetectPrevious) != 0;
 
     using RangeType = typename RangeGen::RangeType;
     using ConstIterator = ResourceAccessRangeMap::const_iterator;

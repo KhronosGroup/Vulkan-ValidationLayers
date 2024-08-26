@@ -54,7 +54,7 @@ std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler handle, co
 
 std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
                                                                    const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
-                                                                   uint32_t variable_count) {
+                                                                   u32 variable_count) {
     return std::static_pointer_cast<vvl::DescriptorSet>(
         std::make_shared<DescriptorSet>(handle, pool, layout, variable_count, this));
 }
@@ -149,7 +149,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);
         DispatchGetPhysicalDeviceProperties2Helper(physical_device, &props2);
 
-        uint32_t num_descs = desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools;
+        u32 num_descs = desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools;
         if (num_descs == 0 || num_descs > glsl::kDebugInputBindlessMaxDescriptors) {
             num_descs = glsl::kDebugInputBindlessMaxDescriptors;
         }
@@ -162,7 +162,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    uint32_t mem_type_index;
+    u32 mem_type_index;
     VkResult result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &alloc_create_info, &mem_type_index);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "Unable to find memory type index.", true);
@@ -195,14 +195,14 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             char inst_shader_hash[sizeof(shader_cache_hash)];
             file_stream.read(inst_shader_hash, sizeof(inst_shader_hash));
             if (std::memcmp(inst_shader_hash, reinterpret_cast<char *>(&shader_cache_hash), sizeof(shader_cache_hash)) == 0) {
-                uint32_t num_shaders = 0;
-                file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
-                for (uint32_t i = 0; i < num_shaders; ++i) {
-                    uint32_t hash;
-                    uint32_t spirv_dwords_count;
-                    std::vector<uint32_t> shader_code;
-                    file_stream.read(reinterpret_cast<char *>(&hash), sizeof(uint32_t));
-                    file_stream.read(reinterpret_cast<char *>(&spirv_dwords_count), sizeof(uint32_t));
+                u32 num_shaders = 0;
+                file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(u32));
+                for (u32 i = 0; i < num_shaders; ++i) {
+                    u32 hash;
+                    u32 spirv_dwords_count;
+                    std::vector<u32> shader_code;
+                    file_stream.read(reinterpret_cast<char *>(&hash), sizeof(u32));
+                    file_stream.read(reinterpret_cast<char *>(&spirv_dwords_count), sizeof(u32));
                     shader_code.resize(spirv_dwords_count);
                     file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * spirv_dwords_count);
                     instrumented_shaders_cache_.Add(hash, std::move(shader_code));
@@ -214,7 +214,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
 
     // Create command indices buffer
     {
-        indices_buffer_alignment_ = sizeof(uint32_t) * static_cast<uint32_t>(phys_dev_props.limits.minStorageBufferOffsetAlignment);
+        indices_buffer_alignment_ = sizeof(u32) * static_cast<u32>(phys_dev_props.limits.minStorageBufferOffsetAlignment);
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         buffer_info.size = cst::indices_count * indices_buffer_alignment_;
@@ -229,15 +229,15 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             return;
         }
 
-        uint32_t *indices_ptr = nullptr;
+        u32 *indices_ptr = nullptr;
         result = vmaMapMemory(vma_allocator_, indices_buffer_.allocation, reinterpret_cast<void **>(&indices_ptr));
         if (result != VK_SUCCESS) {
             InternalError(device, loc, "Unable to map device memory for command indices buffer.", true);
             return;
         }
 
-        for (uint32_t i = 0; i < buffer_info.size / sizeof(uint32_t); ++i) {
-            indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));
+        for (u32 i = 0; i < buffer_info.size / sizeof(u32); ++i) {
+            indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(u32));
         }
 
         vmaUnmapMemory(vma_allocator_, indices_buffer_.allocation);
@@ -287,7 +287,7 @@ void Validator::InitSettings(const Location &loc) {
         }
     }
 
-    // copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
+    // copy_buffer_to_image.comp relies on u8 buffers to perform validation
     if (gpuav_settings.validate_buffer_copies) {
         if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
             gpuav_settings.validate_buffer_copies = false;
@@ -305,7 +305,7 @@ void Validator::InitSettings(const Location &loc) {
     }
 
     if (gpuav_settings.IsBufferValidationEnabled()) {
-        if (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(uint32_t)) {
+        if (phys_dev_props.limits.maxPushConstantsSize < 4 * sizeof(u32)) {
             gpuav_settings.SetBufferValidationEnabled(false);
             InternalWarning(
                 device, loc,

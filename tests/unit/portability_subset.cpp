@@ -30,7 +30,7 @@ TEST_F(NegativePortabilitySubset, Device) {
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t j = 0; j < queue_info.size(); ++j) {
+    for (u32 j = 0; j < queue_info.size(); ++j) {
         if (qci[j].queueCount) {
             create_queue_infos.push_back(qci[j]);
         }
@@ -622,7 +622,7 @@ TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
     if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
         std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
                                                         VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-        ici.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
+        ici.enabledExtensionCount = static_cast<u32>(enabled_extensions.size());
         ici.ppEnabledExtensionNames = enabled_extensions.data();
 
         ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
@@ -645,7 +645,7 @@ TEST_F(VkPortabilitySubsetTest, FeatureWithoutExtension) {
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    for (u32 i = 0; i < queue_info.size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }

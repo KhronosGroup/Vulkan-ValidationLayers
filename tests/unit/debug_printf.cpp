@@ -931,7 +931,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(u32));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
@@ -990,7 +990,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
+    u16 *ptr = static_cast<u16 *>(buffer.memory().map());
     ptr[0] = 0;
     ptr[1] = 1;
     ptr[2] = 2;
@@ -1099,7 +1099,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(u32));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
@@ -1180,7 +1180,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
     // Two error messages have to be last in the vector
     messages.emplace_back("First printf with a % and no value");
     messages.emplace_back("Second printf with a value -135");
-    for (uint32_t i = 0; i < messages.size(); i++) {
+    for (u32 i = 0; i < messages.size(); i++) {
         VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.memory().map();
         data[0] = i;
         buffer_in.memory().unmap();
@@ -1211,7 +1211,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(u32));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
@@ -1264,7 +1264,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
+    u16 *ptr = static_cast<u16 *>(buffer.memory().map());
     ptr[0] = 0;
     ptr[1] = 1;
     ptr[2] = 2;
@@ -1304,7 +1304,7 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(u32));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source_int64 = R"glsl(
@@ -1395,16 +1395,14 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     fragment_set.UpdateDescriptorSets();
 
     {
-        vvl::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
-                                      static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
+        vvl::span<u32> vert_data(static_cast<u32 *>(vs_buffer.memory().map()), static_cast<u32>(buffer_size) / sizeof(u32));
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
         vs_buffer.memory().unmap();
     }
     {
-        vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
-                                      static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
+        vvl::span<u32> frag_data(static_cast<u32 *>(fs_buffer.memory().map()), static_cast<u32>(buffer_size) / sizeof(u32));
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
@@ -1449,7 +1447,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -1493,16 +1491,14 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     fragment_set.UpdateDescriptorSets();
 
     {
-        vvl::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
-                                      static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
+        vvl::span<u32> vert_data(static_cast<u32 *>(vs_buffer.memory().map()), static_cast<u32>(buffer_size) / sizeof(u32));
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
         vs_buffer.memory().unmap();
     }
     {
-        vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
-                                      static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
+        vvl::span<u32> frag_data(static_cast<u32 *>(fs_buffer.memory().map()), static_cast<u32>(buffer_size) / sizeof(u32));
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
@@ -1585,7 +1581,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -1776,7 +1772,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
+    u16 *ptr = static_cast<u16 *>(buffer.memory().map());
     ptr[0] = 0;
     ptr[1] = 1;
     ptr[2] = 2;
@@ -2215,16 +2211,16 @@ TEST_F(NegativeDebugPrintf, LocalSizeId) {
                OpFunctionEnd
     )";
 
-    uint32_t workgroup_size[3] = {32, 32, 1};
+    u32 workgroup_size[3] = {32, 32, 1};
     VkSpecializationMapEntry entries[3];
-    entries[0] = {0, 0, sizeof(uint32_t)};
-    entries[1] = {1, sizeof(uint32_t), sizeof(uint32_t)};
-    entries[2] = {2, sizeof(uint32_t) * 2, sizeof(uint32_t)};
+    entries[0] = {0, 0, sizeof(u32)};
+    entries[1] = {1, sizeof(u32), sizeof(u32)};
+    entries[2] = {2, sizeof(u32) * 2, sizeof(u32)};
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 3;
     specialization_info.pMapEntries = entries;
-    specialization_info.dataSize = sizeof(uint32_t) * 3;
+    specialization_info.dataSize = sizeof(u32) * 3;
     specialization_info.pData = workgroup_size;
 
     CreateComputePipelineHelper pipe(*this);
@@ -2260,12 +2256,12 @@ TEST_F(NegativeDebugPrintf, Maintenance5) {
         }
     )glsl";
 
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_COMPUTE_BIT, shader_source, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -2305,7 +2301,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
     )glsl";
 
     // Add one to use the descriptor slot we tried to reserve
-    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets + 1;
+    const u32 set_limit = m_device->phy().limits_.maxBoundDescriptorSets + 1;
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     // First try to use too many sets in the pipeline layout
     {
@@ -2313,7 +2309,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
         std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit);
-        for (uint32_t i = 0; i < set_limit; i++) {
+        for (u32 i = 0; i < set_limit; i++) {
             layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
@@ -2337,7 +2333,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
     // Reduce by one (so there is room now) and print something
     {
         std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
-        for (uint32_t i = 0; i < set_limit - 1; i++) {
+        for (u32 i = 0; i < set_limit - 1; i++) {
             layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
@@ -2374,7 +2370,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
         }
     )glsl";
 
-    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
+    const u32 set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     // First try to use too many sets in the pipeline layout
     {
@@ -2382,7 +2378,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
             "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
             "pipelines created with it");
         std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit);
-        for (uint32_t i = 0; i < set_limit; i++) {
+        for (u32 i = 0; i < set_limit; i++) {
             layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
@@ -2406,7 +2402,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
     // Reduce by one (so there is room now) and print something
     {
         std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
-        for (uint32_t i = 0; i < set_limit - 1; i++) {
+        for (u32 i = 0; i < set_limit - 1; i++) {
             layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
@@ -2448,10 +2444,10 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
     auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source);
 
     // Add one to use the descriptor slot we tried to reserve
-    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets + 1;
+    const u32 set_limit = m_device->phy().limits_.maxBoundDescriptorSets + 1;
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     std::vector<VkDescriptorSetLayout> layouts;
-    for (uint32_t i = 0; i < set_limit; i++) {
+    for (u32 i = 0; i < set_limit; i++) {
         layouts.push_back(descriptor_set.layout_.handle());
     }
 
@@ -2511,10 +2507,10 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
     )glsl";
     auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source);
 
-    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
+    const u32 set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     std::vector<VkDescriptorSetLayout> layouts;
-    for (uint32_t i = 0; i < set_limit; i++) {
+    for (u32 i = 0; i < set_limit; i++) {
         layouts.push_back(descriptor_set.layout_.handle());
     }
 
@@ -2604,7 +2600,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
     }
 }

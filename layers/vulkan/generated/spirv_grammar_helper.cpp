@@ -27,7 +27,7 @@
 #include "containers/custom_containers.h"
 #include "spirv_grammar_helper.h"
 
-const char* string_SpvOpcode(uint32_t opcode) {
+const char* string_SpvOpcode(u32 opcode) {
     switch (opcode) {
         case spv::OpNop:
             return "OpNop";
@@ -961,7 +961,7 @@ const char* string_SpvOpcode(uint32_t opcode) {
     }
 }
 
-const char* string_SpvStorageClass(uint32_t storage_class) {
+const char* string_SpvStorageClass(u32 storage_class) {
     switch (storage_class) {
         case spv::StorageClassUniformConstant:
             return "UniformConstant";
@@ -1025,7 +1025,7 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
     }
 }
 
-const char* string_SpvExecutionModel(uint32_t execution_model) {
+const char* string_SpvExecutionModel(u32 execution_model) {
     switch (execution_model) {
         case spv::ExecutionModelVertex:
             return "Vertex";
@@ -1067,7 +1067,7 @@ const char* string_SpvExecutionModel(uint32_t execution_model) {
     }
 }
 
-const char* string_SpvExecutionMode(uint32_t execution_mode) {
+const char* string_SpvExecutionMode(u32 execution_mode) {
     switch (execution_mode) {
         case spv::ExecutionModeInvocations:
             return "Invocations";
@@ -1259,7 +1259,7 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
     }
 }
 
-const char* string_SpvDecoration(uint32_t decoration) {
+const char* string_SpvDecoration(u32 decoration) {
     switch (decoration) {
         case spv::DecorationRelaxedPrecision:
             return "RelaxedPrecision";
@@ -1543,7 +1543,7 @@ const char* string_SpvDecoration(uint32_t decoration) {
     }
 }
 
-const char* string_SpvBuiltIn(uint32_t built_in) {
+const char* string_SpvBuiltIn(u32 built_in) {
     switch (built_in) {
         case spv::BuiltInPosition:
             return "Position";
@@ -1783,7 +1783,7 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
     }
 }
 
-const char* string_SpvDim(uint32_t dim) {
+const char* string_SpvDim(u32 dim) {
     switch (dim) {
         case spv::Dim1D:
             return "1D";
@@ -1827,7 +1827,7 @@ static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatri
     }
 }
 
-std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
+std::string string_SpvCooperativeMatrixOperands(u32 mask) {
     std::string ret;
     while (mask) {
         if (mask & 1) {
@@ -1840,8 +1840,8 @@ std::string string_SpvCooperativeMatrixOperands(uint32_t mask) {
     return ret;
 }
 
-const OperandInfo& GetOperandInfo(uint32_t opcode) {
-    static const vvl::unordered_map<uint32_t, OperandInfo> kOperandTable{
+const OperandInfo& GetOperandInfo(u32 opcode) {
+    static const vvl::unordered_map<u32, OperandInfo> kOperandTable{
         // clang-format off
         {spv::OpNop, {{}}},
         {spv::OpUndef, {{}}},

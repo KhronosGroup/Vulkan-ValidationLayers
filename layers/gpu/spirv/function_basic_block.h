@@ -39,9 +39,9 @@ struct BasicBlock {
     BasicBlock(std::unique_ptr<Instruction> label, Function& function);
     BasicBlock(Module& module, Function& function);
 
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<u32>& out);
 
-    uint32_t GetLabelId();
+    u32 GetLabelId();
 
     // "All OpVariable instructions in a function must be the first instructions in the first block"
     // So need to get the first valid location in block.
@@ -51,7 +51,7 @@ struct BasicBlock {
 
     // Creates instruction and inserts it before the Instruction, updates poistion after new instruciton.
     // If no InstructionIt is provided, it will add it to the end of the block.
-    void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it = nullptr);
+    void CreateInstruction(spv::Op opcode, const std::vector<u32>& words, InstructionIt* inst_it = nullptr);
 
     InstructionList instructions_;
     Function& function_;
@@ -66,16 +66,16 @@ struct Function {
     Function(Module& module, std::unique_ptr<Instruction> function_inst);
     Function(Module& module) : module_(module) {}
 
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<u32>& out);
 
     const Instruction& GetDef() { return *pre_block_inst_[0].get(); }
     BasicBlock& GetFirstBlock() { return *blocks_[0]; }
 
     // Adds a new block after and returns reference to it
     BasicBlockIt InsertNewBlock(BasicBlockIt it);
-    void InitBlocks(uint32_t count);
+    void InitBlocks(u32 count);
 
-    void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
+    void ReplaceAllUsesWith(u32 old_word, u32 new_word);
 
     Module& module_;
     // OpFunction and parameters
@@ -85,21 +85,21 @@ struct Function {
     // normally just OpFunctionEnd, but could be non-semantic
     InstructionList post_block_inst_;
 
-    vvl::unordered_map<uint32_t, const Instruction*> inst_map_;
-    const Instruction* FindInstruction(uint32_t id) const;
+    vvl::unordered_map<u32, const Instruction*> inst_map_;
+    const Instruction* FindInstruction(u32 id) const;
 
     // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject the
     // instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally instructions should
     // be added as you go forward only.
-    void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id);
+    void CreateInstruction(spv::Op opcode, const std::vector<u32>& words, u32 id);
 
     // This is the uvec4 most consumers will need
-    uint32_t stage_info_id_ = 0;
+    u32 stage_info_id_ = 0;
     // The individual IDs making up the uvec4
-    uint32_t stage_info_x_id_ = 0;
-    uint32_t stage_info_y_id_ = 0;
-    uint32_t stage_info_z_id_ = 0;
-    uint32_t stage_info_w_id_ = 0;
+    u32 stage_info_x_id_ = 0;
+    u32 stage_info_y_id_ = 0;
+    u32 stage_info_z_id_ = 0;
+    u32 stage_info_w_id_ = 0;
 };
 
 using FunctionList = std::vector<std::unique_ptr<Function>>;

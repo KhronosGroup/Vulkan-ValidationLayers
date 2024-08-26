@@ -51,7 +51,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ArrayOOBBuffer) {
     VkDescriptorBufferInfo buffer_info[7] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     for (int i = 1; i < 7; i++) {
         buffer_info[i].buffer = buffer1.handle();
@@ -119,7 +119,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ArrayOOBBuffer) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
-        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        u32 *data = (u32 *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
 
@@ -129,7 +129,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ArrayOOBBuffer) {
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
-        data = (uint32_t *)buffer0.memory().map();
+        data = (u32 *)buffer0.memory().map();
         data[0] = 5;
         buffer0.memory().unmap();
 
@@ -176,7 +176,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[6] = {};
     for (int i = 0; i < 6; i++) {
@@ -240,7 +240,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
 
@@ -286,7 +286,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[6] = {};
     for (int i = 0; i < 6; i++) {
@@ -352,7 +352,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
 
@@ -390,7 +390,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
                                        &layout_createinfo_binding_flags, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    uint32_t desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
+    u32 desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     variable_count.descriptorSetCount = 1;
@@ -412,7 +412,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[6] = {};
     for (int i = 0; i < 6; i++) {
@@ -481,7 +481,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
 
@@ -492,7 +492,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    data = (uint32_t *)buffer0.memory().map();
+    data = (u32 *)buffer0.memory().map();
     data[0] = 5;
     buffer0.memory().unmap();
 
@@ -523,7 +523,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     layout_createinfo_binding_flags.bindingCount = 2;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
-    uint32_t desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
+    u32 desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     variable_count.descriptorSetCount = 1;
     variable_count.pDescriptorCounts = &desc_counts;
@@ -544,7 +544,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[6] = {};
     for (int i = 0; i < 6; i++) {
@@ -610,7 +610,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 6;
     buffer0.memory().unmap();
 
@@ -621,7 +621,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    data = (uint32_t *)buffer0.memory().map();
+    data = (u32 *)buffer0.memory().map();
     data[0] = 5;
     buffer0.memory().unmap();
 
@@ -669,7 +669,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     VkDescriptorBufferInfo buffer_info[7] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     for (int i = 1; i < 7; i++) {
         buffer_info[i].buffer = buffer1.handle();
@@ -730,7 +730,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
 
@@ -740,7 +740,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    data = (uint32_t *)buffer0.memory().map();
+    data = (u32 *)buffer0.memory().map();
     data[0] = 5;
     buffer0.memory().unmap();
 
@@ -787,7 +787,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     VkDescriptorBufferInfo buffer_info[7] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     for (int i = 1; i < 7; i++) {
         buffer_info[i].buffer = buffer1.handle();
@@ -848,7 +848,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 25;
     buffer0.memory().unmap();
 
@@ -858,7 +858,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    data = (uint32_t *)buffer0.memory().map();
+    data = (u32 *)buffer0.memory().map();
     data[0] = 5;
     buffer0.memory().unmap();
 
@@ -901,7 +901,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
     VkDescriptorBufferInfo buffer_info[7] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     for (int i = 1; i < 7; i++) {
         buffer_info[i].buffer = buffer1.handle();
@@ -950,7 +950,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
 
     {
         SCOPED_TRACE("Uninitialized");
-        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        u32 *data = (u32 *)buffer0.memory().map();
         data[0] = 5;
         buffer0.memory().unmap();
         // Invalid read
@@ -962,7 +962,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
 
     {
         SCOPED_TRACE("Out of Bounds");
-        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        u32 *data = (u32 *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
         // Invalid read and invalid write
@@ -988,7 +988,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     layout_createinfo_binding_flags.bindingCount = 2;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
-    const uint32_t kDescCount = 2;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 2
+    const u32 kDescCount = 2;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 2
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     variable_count.descriptorSetCount = 1;
     variable_count.pDescriptorCounts = &kDescCount;
@@ -1009,7 +1009,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     VkDescriptorBufferInfo buffer_info[kDescCount] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[kDescCount] = {};
     for (int i = 0; i < kDescCount; i++) {
@@ -1076,7 +1076,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 1;
     buffer0.memory().unmap();
 
@@ -1110,7 +1110,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     layout_createinfo_binding_flags.bindingCount = 2;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
-    const uint32_t kDescCount = 2;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 2
+    const u32 kDescCount = 2;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 2
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     variable_count.descriptorSetCount = 1;
     variable_count.pDescriptorCounts = &kDescCount;
@@ -1131,7 +1131,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     VkDescriptorBufferInfo buffer_info[kDescCount] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[kDescCount] = {};
     for (int i = 0; i < kDescCount; i++) {
@@ -1199,7 +1199,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 1;
     buffer0.memory().unmap();
 
@@ -1235,7 +1235,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
     layout_createinfo_binding_flags.bindingCount = 2;
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
 
-    const uint32_t kDescCount = 40;
+    const u32 kDescCount = 40;
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     variable_count.descriptorSetCount = 1;
     variable_count.pDescriptorCounts = &kDescCount;
@@ -1256,7 +1256,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
     VkDescriptorBufferInfo buffer_info[kDescCount] = {};
     buffer_info[0].buffer = buffer0.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
 
     VkDescriptorImageInfo image_info[kDescCount] = {};
     for (int i = 0; i < kDescCount; i++) {
@@ -1326,7 +1326,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 35;
     buffer0.memory().unmap();
 
@@ -1543,7 +1543,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_BindPipelineAfterBindingDescrip
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     *data = 0;
     buffer.memory().unmap();
 
@@ -1589,7 +1589,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSL) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 5;  // go past textures[4]
     buffer.memory().unmap();
 
@@ -1709,7 +1709,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
     // send index to select in image array
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 7;
     buffer.memory().unmap();
 
@@ -1833,7 +1833,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, PushConstant) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4, VK_SHADER_STAGE_ALL, nullptr},
                                        });
-    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)}};
+    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(u32)}};
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, push_constant_ranges);
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -1866,9 +1866,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, PushConstant) {
 
     m_commandBuffer->begin();
 
-    uint32_t index = 8;
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t),
-                         &index);
+    u32 index = 8;
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(u32), &index);
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
@@ -1890,7 +1889,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
     // send index to select in image array
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 3;
     data[1] = 0;  // valid
     data[2] = 5;
@@ -1993,7 +1992,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
         VkDescriptorBufferInfo buffer_info[1] = {};
         buffer_info[0].buffer = buffer0.handle();
         buffer_info[0].offset = 0;
-        buffer_info[0].range = sizeof(uint32_t);
+        buffer_info[0].range = sizeof(u32);
 
         VkDescriptorImageInfo image_info[6] = {};
         for (int i = 0; i < 6; i++) {
@@ -2061,7 +2060,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     cb_1.EndRenderPass();
     cb_1.end();
     {
-        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        u32 *data = (u32 *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
     }
@@ -2096,7 +2095,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
 
         buffer_info_cb_2[0].buffer = buffer0_cb_2.handle();
         buffer_info_cb_2[0].offset = 0;
-        buffer_info_cb_2[0].range = sizeof(uint32_t);
+        buffer_info_cb_2[0].range = sizeof(u32);
 
         for (int i = 1; i < 7; i++) {
             buffer_info_cb_2[i].buffer = buffer1_cb_2.handle();
@@ -2146,7 +2145,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     vk::CmdDispatch(cb_2.handle(), 1, 1, 1);
     cb_2.end();
     {
-        uint32_t *data = (uint32_t *)buffer0_cb_2.memory().map();
+        u32 *data = (u32 *)buffer0_cb_2.memory().map();
         data[0] = 25;
         buffer0_cb_2.memory().unmap();
     }
@@ -2203,7 +2202,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
         VkDescriptorBufferInfo buffer_info[1] = {};
         buffer_info[0].buffer = buffer0.handle();
         buffer_info[0].offset = 0;
-        buffer_info[0].range = sizeof(uint32_t);
+        buffer_info[0].range = sizeof(u32);
 
         VkDescriptorImageInfo image_info[6] = {};
         for (int i = 0; i < 6; i++) {
@@ -2270,7 +2269,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
     vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     {
-        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        u32 *data = (u32 *)buffer0.memory().map();
         data[0] = 25;
         buffer0.memory().unmap();
     }
@@ -2300,7 +2299,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
 
         buffer_info_cb_2[0].buffer = buffer0_cb_2.handle();
         buffer_info_cb_2[0].offset = 0;
-        buffer_info_cb_2[0].range = sizeof(uint32_t);
+        buffer_info_cb_2[0].range = sizeof(u32);
 
         for (int i = 1; i < 7; i++) {
             buffer_info_cb_2[i].buffer = buffer1_cb_2.handle();
@@ -2349,7 +2348,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
     {
-        uint32_t *data = (uint32_t *)buffer0_cb_2.memory().map();
+        u32 *data = (u32 *)buffer0_cb_2.memory().map();
         data[0] = 25;
         buffer0_cb_2.memory().unmap();
     }
@@ -2397,7 +2396,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MixingProtectedResources) {
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 1;  // access protected
     buffer.memory().unmap();
 
@@ -2413,7 +2412,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MixingProtectedResources) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(u32));
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     descriptor_set.WriteDescriptorImageInfo(1, image_view_protected, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

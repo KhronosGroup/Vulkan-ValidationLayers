@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (C) 2015-2023 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -42,7 +42,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     // Need to check for external format conversion first as it allows for non-UNORM format
-    const uint64_t external_format = GetExternalFormat(pCreateInfo->pNext);
+    const u64 external_format = GetExternalFormat(pCreateInfo->pNext);
     if (external_format != 0) {
         if (VK_FORMAT_UNDEFINED != conversion_format) {
             return LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01904", device, create_info_loc.dot(Field::format),

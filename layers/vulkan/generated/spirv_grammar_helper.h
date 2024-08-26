@@ -30,16 +30,16 @@
 #include <vector>
 #include <spirv/unified1/spirv.hpp>
 
-const char* string_SpvOpcode(uint32_t opcode);
-const char* string_SpvStorageClass(uint32_t storage_class);
-const char* string_SpvExecutionModel(uint32_t execution_model);
-const char* string_SpvExecutionMode(uint32_t execution_mode);
-const char* string_SpvDecoration(uint32_t decoration);
-const char* string_SpvBuiltIn(uint32_t built_in);
-const char* string_SpvDim(uint32_t dim);
-std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
+const char* string_SpvOpcode(u32 opcode);
+const char* string_SpvStorageClass(u32 storage_class);
+const char* string_SpvExecutionModel(u32 execution_model);
+const char* string_SpvExecutionMode(u32 execution_mode);
+const char* string_SpvDecoration(u32 decoration);
+const char* string_SpvBuiltIn(u32 built_in);
+const char* string_SpvDim(u32 dim);
+std::string string_SpvCooperativeMatrixOperands(u32 mask);
 
-static constexpr bool OpcodeHasType(uint32_t opcode) {
+static constexpr bool OpcodeHasType(u32 opcode) {
     switch (opcode) {
         case spv::OpUndef:
         case spv::OpExtInst:
@@ -401,7 +401,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
     }
 }
 
-static constexpr bool OpcodeHasResult(uint32_t opcode) {
+static constexpr bool OpcodeHasResult(u32 opcode) {
     switch (opcode) {
         case spv::OpUndef:
         case spv::OpString:
@@ -788,7 +788,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
 }
 
 // Any non supported operation will be covered with other VUs
-static constexpr bool AtomicOperation(uint32_t opcode) {
+static constexpr bool AtomicOperation(u32 opcode) {
     switch (opcode) {
         case spv::OpAtomicLoad:
         case spv::OpAtomicStore:
@@ -815,7 +815,7 @@ static constexpr bool AtomicOperation(uint32_t opcode) {
 }
 
 // Any non supported operation will be covered with other VUs
-static constexpr bool GroupOperation(uint32_t opcode) {
+static constexpr bool GroupOperation(u32 opcode) {
     switch (opcode) {
         case spv::OpGroupNonUniformElect:
         case spv::OpGroupNonUniformAll:
@@ -860,7 +860,7 @@ static constexpr bool GroupOperation(uint32_t opcode) {
     }
 }
 
-static constexpr bool ImageGatherOperation(uint32_t opcode) {
+static constexpr bool ImageGatherOperation(u32 opcode) {
     switch (opcode) {
         case spv::OpImageGather:
         case spv::OpImageDrefGather:
@@ -874,7 +874,7 @@ static constexpr bool ImageGatherOperation(uint32_t opcode) {
     }
 }
 
-static constexpr bool ImageFetchOperation(uint32_t opcode) {
+static constexpr bool ImageFetchOperation(u32 opcode) {
     switch (opcode) {
         case spv::OpImageFetch:
             return true;
@@ -883,7 +883,7 @@ static constexpr bool ImageFetchOperation(uint32_t opcode) {
     }
 }
 
-static constexpr bool ImageSampleOperation(uint32_t opcode) {
+static constexpr bool ImageSampleOperation(u32 opcode) {
     switch (opcode) {
         case spv::OpImageSampleImplicitLod:
         case spv::OpImageSampleExplicitLod:
@@ -902,8 +902,8 @@ static constexpr bool ImageSampleOperation(uint32_t opcode) {
 }
 
 // Return number of optional parameter from ImageOperands
-static constexpr uint32_t ImageOperandsParamCount(uint32_t image_operand) {
-    uint32_t count = 0;
+static constexpr u32 ImageOperandsParamCount(u32 image_operand) {
+    u32 count = 0;
     switch (image_operand) {
         case spv::ImageOperandsMaskNone:
         case spv::ImageOperandsNonPrivateTexelMask:
@@ -933,8 +933,8 @@ static constexpr uint32_t ImageOperandsParamCount(uint32_t image_operand) {
 }
 
 // Return operand position of Memory Scope <ID> or zero if there is none
-static constexpr uint32_t OpcodeMemoryScopePosition(uint32_t opcode) {
-    uint32_t position = 0;
+static constexpr u32 OpcodeMemoryScopePosition(u32 opcode) {
+    u32 position = 0;
     switch (opcode) {
         case spv::OpMemoryBarrier:
             return 1;
@@ -967,8 +967,8 @@ static constexpr uint32_t OpcodeMemoryScopePosition(uint32_t opcode) {
 }
 
 // Return operand position of Execution Scope <ID> or zero if there is none
-static constexpr uint32_t OpcodeExecutionScopePosition(uint32_t opcode) {
-    uint32_t position = 0;
+static constexpr u32 OpcodeExecutionScopePosition(u32 opcode) {
+    u32 position = 0;
     switch (opcode) {
         case spv::OpControlBarrier:
             return 1;
@@ -1046,8 +1046,8 @@ static constexpr uint32_t OpcodeExecutionScopePosition(uint32_t opcode) {
 }
 
 // Return operand position of Image Operands <ID> or zero if there is none
-static constexpr uint32_t OpcodeImageOperandsPosition(uint32_t opcode) {
-    uint32_t position = 0;
+static constexpr u32 OpcodeImageOperandsPosition(u32 opcode) {
+    u32 position = 0;
     switch (opcode) {
         case spv::OpImageWrite:
             return 4;
@@ -1087,8 +1087,8 @@ static constexpr uint32_t OpcodeImageOperandsPosition(uint32_t opcode) {
 }
 
 // Return operand position of 'Image' or 'Sampled Image' IdRef or zero if there is none.
-static constexpr uint32_t OpcodeImageAccessPosition(uint32_t opcode) {
-    uint32_t position = 0;
+static constexpr u32 OpcodeImageAccessPosition(u32 opcode) {
+    u32 position = 0;
     switch (opcode) {
         case spv::OpImageWrite:
             return 1;
@@ -1160,7 +1160,7 @@ enum class SpvType {
     kCooperativeMatrixNV,
 };
 
-static constexpr SpvType GetSpvType(uint32_t opcode) {
+static constexpr SpvType GetSpvType(u32 opcode) {
     switch (opcode) {
         case spv::OpTypeVoid:
             return SpvType::kVoid;
@@ -1224,6 +1224,6 @@ struct OperandInfo {
     std::vector<OperandKind> types;
 };
 
-const OperandInfo& GetOperandInfo(uint32_t opcode);
+const OperandInfo& GetOperandInfo(u32 opcode);
 
 // NOLINTEND

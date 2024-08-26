@@ -28,7 +28,7 @@ inline bool IsTransferOp(const Barrier &barrier) {
     return barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex;
 }
 
-static inline bool IsQueueFamilyExternal(const uint32_t queue_family_index) {
+static inline bool IsQueueFamilyExternal(const u32 queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
@@ -37,11 +37,11 @@ template <typename Handle>
 struct QFOTransferBarrierBase {
     using HandleType = Handle;
     Handle handle = VK_NULL_HANDLE;
-    uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    u32 srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    u32 dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     QFOTransferBarrierBase() = default;
-    QFOTransferBarrierBase(const Handle &resource_handle, uint32_t src, uint32_t dst)
+    QFOTransferBarrierBase(const Handle &resource_handle, u32 src, u32 dst)
         : handle(resource_handle), srcQueueFamilyIndex(src), dstQueueFamilyIndex(dst) {}
 
     hash_util::HashCombiner base_hash_combiner() const {

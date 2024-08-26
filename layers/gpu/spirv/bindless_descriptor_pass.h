@@ -31,23 +31,23 @@ class BindlessDescriptorPass : public InjectConditionalFunctionPass {
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
+    u32 CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
-    uint32_t link_function_id = 0;
-    uint32_t GetLinkFunctionId();
+    u32 link_function_id = 0;
+    u32 GetLinkFunctionId();
 
     const Instruction* access_chain_inst_ = nullptr;
     const Instruction* var_inst_ = nullptr;
     const Instruction* image_inst_ = nullptr;
 
-    uint32_t descriptor_set_ = 0;
-    uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;
-    uint32_t descriptor_offset_id_ = 0;
+    u32 descriptor_set_ = 0;
+    u32 descriptor_binding_ = 0;
+    u32 descriptor_index_id_ = 0;
+    u32 descriptor_offset_id_ = 0;
 
     // < original ID, new CopyObject ID >
-    vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
+    vvl::unordered_map<u32, u32> copy_object_map_;
 };
 
 }  // namespace spirv

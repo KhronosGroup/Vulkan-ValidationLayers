@@ -78,9 +78,9 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
 
     using std::vector;
     struct TestCase {
-        uint32_t div_binding;
-        uint32_t div_divisor;
-        uint32_t desc_binding;
+        u32 div_binding;
+        u32 div_divisor;
+        u32 desc_binding;
         VkVertexInputRate desc_rate;
         vector<std::string> vuids;
     };
@@ -231,9 +231,9 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
 
     using std::vector;
     struct TestCase {
-        uint32_t div_binding;
-        uint32_t div_divisor;
-        uint32_t desc_binding;
+        u32 div_binding;
+        u32 div_divisor;
+        u32 desc_binding;
         VkVertexInputRate desc_rate;
         vector<std::string> vuids;
     };
@@ -439,9 +439,9 @@ TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
 
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
-    const uint32_t maxVertexInputAttributeOffset = device_props.limits.maxVertexInputAttributeOffset;
+    const u32 maxVertexInputAttributeOffset = device_props.limits.maxVertexInputAttributeOffset;
     if (maxVertexInputAttributeOffset == 0xFFFFFFFF) {
-        GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
+        GTEST_SKIP() << "maxVertexInputAttributeOffset is max<u32> already";
     }
     InitRenderTarget();
 
@@ -471,10 +471,10 @@ TEST_F(NegativeVertexInput, BindingDescriptions) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t binding_count = m_device->phy().limits_.maxVertexInputBindings + 1;
+    const u32 binding_count = m_device->phy().limits_.maxVertexInputBindings + 1;
 
     std::vector<VkVertexInputBindingDescription> input_bindings(binding_count);
-    for (uint32_t i = 0; i < binding_count; ++i) {
+    for (u32 i = 0; i < binding_count; ++i) {
         input_bindings[i].binding = i;
         input_bindings[i].stride = 4;
         input_bindings[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -514,9 +514,9 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
     input_binding.stride = 4;
     input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    const uint32_t attribute_count = m_device->phy().limits_.maxVertexInputAttributes + 1;
+    const u32 attribute_count = m_device->phy().limits_.maxVertexInputAttributes + 1;
     std::vector<VkVertexInputAttributeDescription> input_attribs(attribute_count);
-    for (uint32_t i = 0; i < attribute_count; ++i) {
+    for (u32 i = 0; i < attribute_count; ++i) {
         input_attribs[i].binding = 0;
         input_attribs[i].location = i;
         input_attribs[i].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -750,8 +750,8 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
     const vkt::PipelineLayout pipeline_layout(*m_device);
 
     struct VboEntry {
-        uint16_t input0[2];
-        uint32_t input1;
+        u16 input0[2];
+        u32 input1;
         float input2[4];
     };
 
@@ -1061,7 +1061,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     m_errorMonitor->VerifyFound();
 
     // flip order around
-    binding.stride = static_cast<uint32_t>(bad_stride);
+    binding.stride = static_cast<u32>(bad_stride);
     vk::CmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), &offset, nullptr, &good_stride);
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");

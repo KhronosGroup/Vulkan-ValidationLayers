@@ -99,14 +99,13 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
                                                   VkInstance* pInstance, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (IsDeviceExtension(extension)) {
             skip |= LogWarning("BestPractices-vkCreateInstance-extension-mismatch", instance, error_obj.location,
                                "Attempting to enable Device Extension %s at CreateInstance time.", String(extension));
         }
-        uint32_t specified_version =
-            (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+        u32 specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
         skip |= ValidateDeprecatedExtensions(error_obj.location, extension, specified_version);
         skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
@@ -136,7 +135,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
     std::vector<std::string> extensions;
     {
-        uint32_t property_count = 0;
+        u32 property_count = 0;
         if (DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &property_count, nullptr) == VK_SUCCESS) {
             std::vector<VkExtensionProperties> property_list(property_count);
             if (DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &property_count, property_list.data()) ==
@@ -149,7 +148,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         }
     }
 
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         const char* extension_name = pCreateInfo->ppEnabledExtensionNames[i];
 
         APIVersion extension_api_version = std::min(api_version, APIVersion(device_api_version));
@@ -197,7 +196,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& bp_pd_state,
-                                                                         uint32_t requested_queue_family_property_count,
+                                                                         u32 requested_queue_family_property_count,
                                                                          const CALL_STATE call_state, const Location& loc) const {
     bool skip = false;
     if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
@@ -214,7 +213,7 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const v
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t* pQueueFamilyPropertyCount,
+                                                                          u32* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties* pQueueFamilyProperties,
                                                                           const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
@@ -227,7 +226,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                           uint32_t* pQueueFamilyPropertyCount,
+                                                                           u32* pQueueFamilyPropertyCount,
                                                                            VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                            const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
@@ -240,7 +239,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
 }
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                              uint32_t* pQueueFamilyPropertyCount,
+                                                                              u32* pQueueFamilyPropertyCount,
                                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                               const ErrorObject& error_obj) const {
     return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
@@ -258,7 +257,7 @@ void BestPractices::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(C
 }
 
 void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                         uint32_t* pQueueFamilyPropertyCount,
+                                                                         u32* pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties,
                                                                          const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
@@ -270,7 +269,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysi
 }
 
 void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t* pQueueFamilyPropertyCount,
+                                                                          u32* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                           const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
@@ -282,7 +281,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhys
 }
 
 void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                             uint32_t* pQueueFamilyPropertyCount,
+                                                                             u32* pQueueFamilyPropertyCount,
                                                                              VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                              const RecordObject& record_obj) {
     PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
@@ -311,14 +310,14 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice
     PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
 }
 
-void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                              const RecordObject& record_obj) {
     ValidationStateTracker::PreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
 
     auto queue_state = Get<vvl::Queue>(queue);
-    for (uint32_t submit = 0; submit < submitCount; submit++) {
+    for (u32 submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
-        for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
+        for (u32 cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
             auto cb = GetWrite<bp_state::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
             for (auto& func : cb->queue_submit_functions) {
                 func(*this, *queue_state, *cb);
@@ -365,14 +364,14 @@ struct EventValidator {
 };
 }  // namespace
 
-bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                                const ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
 
-    for (uint32_t submit = 0; submit < submitCount; submit++) {
+    for (u32 submit = 0; submit < submitCount; submit++) {
         const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
-        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreCount; semaphore++) {
+        for (u32 semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreCount; semaphore++) {
             skip |= CheckPipelineStageFlags(queue, submit_loc.dot(Field::pWaitDstStageMask, semaphore),
                                             pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
@@ -384,7 +383,7 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
             LogInfo("BestPractices-WaitSemaphores-SemaphoreCount", queue, submit_loc.dot(Field::pWaitSemaphores),
                     "is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit);
         }
-        for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
+        for (u32 cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
             if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
                 const Location cb_loc = submit_loc.dot(vvl::Field::pCommandBuffers, cb_index);
                 skip |= event_validator.ValidateSubmittedCbSignalingState(*cb_state, cb_loc);
@@ -395,24 +394,24 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     return skip;
 }
 
-bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                                   VkFence fence, const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                                   const ErrorObject& error_obj) const {
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, u32 submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
 
-    for (uint32_t submit = 0; submit < submitCount; submit++) {
+    for (u32 submit = 0; submit < submitCount; submit++) {
         const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
-        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
+        for (u32 semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
             const Location semaphore_loc = submit_loc.dot(Field::pWaitSemaphoreInfos, semaphore);
             skip |= CheckPipelineStageFlags(queue, semaphore_loc.dot(Field::stageMask),
                                             pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
         }
-        for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferInfoCount; cb_index++) {
+        for (u32 cb_index = 0; cb_index < pSubmits[submit].commandBufferInfoCount; cb_index++) {
             if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBufferInfos[cb_index].commandBuffer)) {
                 const Location infos_loc = submit_loc.dot(vvl::Field::pCommandBufferInfos, cb_index);
                 const Location cb_loc = infos_loc.dot(vvl::Field::commandBuffer);
@@ -424,11 +423,11 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
     return skip;
 }
 
-bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, u32 bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                    VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
+    for (u32 bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
         // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
         vvl::unordered_set<const vvl::Image*> sparse_images;
@@ -436,7 +435,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
         // in RecordQueueBindSparse.
         vvl::unordered_set<const vvl::Image*> sparse_images_with_metadata;
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
-        for (uint32_t i = 0; i < bind_info.imageBindCount; ++i) {
+        for (u32 i = 0; i < bind_info.imageBindCount; ++i) {
             const auto& image_bind = bind_info.pImageBinds[i];
             auto image_state = Get<vvl::Image>(image_bind.image);
             if (!image_state) {
@@ -461,7 +460,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                                    FormatHandle(image_state->Handle()).c_str());
             }
         }
-        for (uint32_t i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
+        for (u32 i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
             const auto& image_opaque_bind = bind_info.pImageOpaqueBinds[i];
             auto image_state = Get<vvl::Image>(bind_info.pImageOpaqueBinds[i].image);
             if (!image_state) {
@@ -486,7 +485,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
                                    FormatHandle(image_state->Handle()).c_str());
             }
-            for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
+            for (u32 j = 0; j < image_opaque_bind.bindCount; ++j) {
                 if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
                     sparse_images_with_metadata.insert(image_state.get());
                 }
@@ -519,21 +518,21 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     return skip;
 }
 
-void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, u32 bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                         VkFence fence, const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
 
-    for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
+    for (u32 bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {
         const VkBindSparseInfo& bind_info = pBindInfo[bind_idx];
-        for (uint32_t i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
+        for (u32 i = 0; i < bind_info.imageOpaqueBindCount; ++i) {
             const auto& image_opaque_bind = bind_info.pImageOpaqueBinds[i];
             auto image_state = Get<vvl::Image>(bind_info.pImageOpaqueBinds[i].image);
             if (!image_state) {
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             }
-            for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
+            for (u32 j = 0; j < image_opaque_bind.bindCount; ++j) {
                 if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
                     image_state->sparse_metadata_bound = true;
                 }
@@ -542,8 +541,8 @@ void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t 
     }
 }
 
-void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
-                                                    VkFence fence, const RecordObject& record_obj) {
+void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                                    const RecordObject& record_obj) {
     // AMD best practice
     num_queue_submissions_ += submitCount;
 }

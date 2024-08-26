@@ -29,7 +29,7 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
     InitRenderTarget();
 
     // create 1 more than the warning limit for pipeline objects
-    const uint32_t warn_limit = 5001;
+    const u32 warn_limit = 5001;
     VkPipeline pipeline_Array[warn_limit + 1] = {};
 
     for (int i = 0; i <= warn_limit; i++) {
@@ -64,20 +64,20 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
 
     // create a colot attachment image with mutable bit set
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+                                  nullptr,
+                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                  VK_IMAGE_TYPE_1D,
+                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                  {1, 1, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  0,
+                                  nullptr,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
     VkImage test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
@@ -107,20 +107,20 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
     // create a storage image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-               VK_IMAGE_TYPE_1D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               1,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_STORAGE_BIT,
-               VK_SHARING_MODE_EXCLUSIVE,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
+                nullptr,
+                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                VK_IMAGE_TYPE_1D,
+                VK_FORMAT_R8G8B8A8_UNORM,
+                {1, 1, 1},
+                1,
+                1,
+                VK_SAMPLE_COUNT_1_BIT,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_STORAGE_BIT,
+                VK_SHARING_MODE_EXCLUSIVE,
+                0,
+                nullptr,
+                VK_IMAGE_LAYOUT_UNDEFINED};
     test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
@@ -136,7 +136,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
         GTEST_SKIP() << "Test not supported by a single queue family device";
     }
 
-    std::vector<uint32_t> queueFamilies(m_device->phy().queue_properties_.size());
+    std::vector<u32> queueFamilies(m_device->phy().queue_properties_.size());
     for (size_t i = 0; i < m_device->phy().queue_properties_.size(); i++) {
         queueFamilies[i] = i;
     }
@@ -156,7 +156,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
                                   VK_IMAGE_TILING_OPTIMAL,
                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                   VK_SHARING_MODE_CONCURRENT,
-                                  (uint32_t)queueFamilies.size(),
+                                  (u32)queueFamilies.size(),
                                   queueFamilies.data(),
                                   VK_IMAGE_LAYOUT_UNDEFINED};
     VkImage test_image = VK_NULL_HANDLE;
@@ -178,7 +178,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VK_SHARING_MODE_CONCURRENT,
-                (uint32_t)queueFamilies.size(),
+                (u32)queueFamilies.size(),
                 queueFamilies.data(),
                 VK_IMAGE_LAYOUT_UNDEFINED};
     test_image = VK_NULL_HANDLE;
@@ -196,20 +196,20 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
 
     // create a render target image with mutable bit set
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 0,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+                                  nullptr,
+                                  0,
+                                  VK_IMAGE_TYPE_1D,
+                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                  {1, 1, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  0,
+                                  nullptr,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
     VkImage test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
@@ -241,7 +241,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
     // fill the dynamic array with the first 8 types in the enum
     // imitates a case where the user have set most dynamic states unnecessarily
     VkDynamicState dynamic_states_array[8] = {};
-    for (uint32_t i = 0; i < 8; i++) {
+    for (u32 i = 0; i < 8; i++) {
         dynamic_states_array[i] = (VkDynamicState)i;
     }
 
@@ -269,7 +269,7 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     // create a layout of 15 DWORDS (40 bytes push constants (10 DWORDS), a descriptor set (1 DWORD), and 2 dynamic buffers (4
     // DWORDS)
 
-    uint32_t push_size_dwords = 10;
+    u32 push_size_dwords = 10;
     VkPushConstantRange push_range = {};
     push_range.stageFlags = VK_SHADER_STAGE_ALL;
     push_range.offset = 0;
@@ -576,8 +576,8 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryBarrier-oldLayout-01197");
 
     // check total number of barriers warning
-    uint32_t warn_Limit = 250;
-    for (uint32_t i = 0; i < warn_Limit; i++) {
+    u32 warn_Limit = 250;
+    for (u32 i = 0; i < warn_Limit; i++) {
         image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     }
@@ -599,30 +599,30 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     InitRenderTarget();
 
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+                                  nullptr,
+                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                  VK_IMAGE_TYPE_1D,
+                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                  {1, 1, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  0,
+                                  nullptr,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
     vkt::Image image_1D(*m_device, img_info);
 
-    uint32_t warn_limit = 11;
+    u32 warn_limit = 11;
 
-    for (uint32_t i = 0; i < warn_limit; i++) {
+    for (u32 i = 0; i < warn_limit; i++) {
         image_1D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         image_1D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     }
 
-    uint32_t current_buffer;
+    u32 current_buffer;
     vkt::Semaphore image_acquired(*m_device);
     ASSERT_TRUE(image_acquired.initialized());
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired.handle(), VK_NULL_HANDLE, &current_buffer);

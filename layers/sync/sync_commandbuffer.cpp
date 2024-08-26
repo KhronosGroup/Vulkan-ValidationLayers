@@ -97,7 +97,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     reset_count_ = from.reset_count_;
 
     handles_ = from.handles_;
-    sync_state_->stats.AddHandleRecord((uint32_t)from.handles_.size());
+    sync_state_->stats.AddHandleRecord((u32)from.handles_.size());
 
     const auto *from_context = from.GetCurrentAccessContext();
     assert(from_context);
@@ -115,7 +115,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
 
 CommandBufferAccessContext::~CommandBufferAccessContext() {
     sync_state_->stats.RemoveCommandBufferContext();
-    sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size());
+    sync_state_->stats.RemoveHandleRecord((u32)handles_.size());
 }
 
 void CommandBufferAccessContext::Reset() {
@@ -129,7 +129,7 @@ void CommandBufferAccessContext::Reset() {
     subcommand_number_ = 0;
     reset_count_++;
 
-    sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size());
+    sync_state_->stats.RemoveHandleRecord((u32)handles_.size());
     handles_.clear();
 
     current_command_tag_ = vvl::kNoIndex32;
@@ -171,8 +171,8 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     HazardResult hazard;
 
     // Need to hazard detect load operations vs. the attachment views
-    const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-    for (uint32_t i = 0; i < attachment_count; i++) {
+    const u32 attachment_count = static_cast<u32>(info.attachments.size());
+    for (u32 i = 0; i < attachment_count; i++) {
         const auto &attachment = info.attachments[i];
         const SyncStageAccessIndex load_index = attachment.GetLoadUsage();
         if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
@@ -199,8 +199,8 @@ void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRender
 
     // Only load if not resuming
     if (0 == (info.info.flags & VK_RENDERING_RESUMING_BIT)) {
-        const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-        for (uint32_t i = 0; i < attachment_count; i++) {
+        const u32 attachment_count = static_cast<u32>(info.attachments.size());
+        for (u32 i = 0; i < attachment_count; i++) {
             const Attachment &attachment = info.attachments[i];
             const SyncStageAccessIndex load_index = attachment.GetLoadUsage();
             if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
@@ -217,7 +217,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
     if (dynamic_rendering_info_ && (0 == (dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT))) {
         // Only validate resolve and store if not suspending (as specified by BeginRendering)
         const syncval_state::DynamicRenderingInfo &info = *dynamic_rendering_info_;
-        const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
+        const u32 attachment_count = static_cast<u32>(info.attachments.size());
         const AccessContext *access_context = GetCurrentAccessContext();
         assert(access_context);
         auto report_resolve_hazard = [this](const HazardResult &hazard, const Location &loc, const VulkanTypedHandle image_handle,
@@ -229,7 +229,7 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
                                          string_VkResolveModeFlagBits(resolve_mode), FormatHazard(hazard).c_str());
         };
 
-        for (uint32_t i = 0; i < attachment_count && !skip; i++) {
+        for (u32 i = 0; i < attachment_count && !skip; i++) {
             const auto &attachment = info.attachments[i];
             if (attachment.resolve_gen) {
                 const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
@@ -276,9 +276,9 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
         auto store_tag = NextCommandTag(record_obj.location.function, ResourceUsageRecord::SubcommandType::kStoreOp);
 
         const syncval_state::DynamicRenderingInfo &info = *dynamic_rendering_info_;
-        const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
+        const u32 attachment_count = static_cast<u32>(info.attachments.size());
         AccessContext *access_context = GetCurrentAccessContext();
-        for (uint32_t i = 0; i < attachment_count; i++) {
+        for (u32 i = 0; i < attachment_count; i++) {
             const auto &attachment = info.attachments[i];
             if (attachment.resolve_gen) {
                 const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
@@ -343,7 +343,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                 continue;
             }
 
-            for (uint32_t index = 0; index < binding->count; index++) {
+            for (u32 index = 0; index < binding->count; index++) {
                 const auto *descriptor = binding->GetDescriptor(index);
                 switch (descriptor->GetClass()) {
                     case DescriptorClass::ImageSampler:
@@ -420,16 +420,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         }
                         VkDeviceSize offset = buffer_descriptor->GetOffset();
                         if (vvl::IsDynamicDescriptor(descriptor_type)) {
-                            const uint32_t dynamic_offset_index =
-                                descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
+                            const u32 dynamic_offset_index = descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
                             if (dynamic_offset_index >= per_set.dynamicOffsets.size()) {
                                 continue;  // core validation error
                             }
                             offset += per_set.dynamicOffsets[dynamic_offset_index];
                         }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
-                        const ResourceAccessRange range =
-                            MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
+                        const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
                             skip |= sync_state_->LogError(
@@ -496,7 +494,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                 continue;
             }
 
-            for (uint32_t i = 0; i < binding->count; i++) {
+            for (u32 i = 0; i < binding->count; i++) {
                 const auto *descriptor = binding->GetDescriptor(i);
                 switch (descriptor->GetClass()) {
                     case DescriptorClass::ImageSampler:
@@ -544,8 +542,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         }
                         VkDeviceSize offset = buffer_descriptor->GetOffset();
                         if (vvl::IsDynamicDescriptor(descriptor_type)) {
-                            const uint32_t dynamic_offset_index =
-                                descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
+                            const u32 dynamic_offset_index = descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
                             if (dynamic_offset_index >= per_set.dynamicOffsets.size()) {
                                 continue;  // core validation error
                             }
@@ -566,7 +563,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     }
 }
 
-bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
+bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<u32> &vertexCount, u32 firstVertex,
                                                     const Location &loc) const {
     bool skip = false;
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -598,7 +595,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
+void CommandBufferAccessContext::RecordDrawVertex(const std::optional<u32> &vertexCount, u32 firstVertex,
                                                   const ResourceUsageTag tag) {
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
@@ -623,7 +620,7 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
     }
 }
 
-bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uint32_t> &index_count, uint32_t firstIndex,
+bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<u32> &index_count, u32 firstIndex,
                                                          const Location &loc) const {
     bool skip = false;
     const auto &index_binding = cb_state_->index_buffer_binding;
@@ -643,11 +640,11 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    skip |= ValidateDrawVertex(std::optional<uint32_t>(), 0, loc);
+    skip |= ValidateDrawVertex(std::optional<u32>(), 0, loc);
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex,
+void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<u32> &indexCount, u32 firstIndex,
                                                        const ResourceUsageTag tag) {
     const auto &index_binding = cb_state_->index_buffer_binding;
     const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
@@ -660,7 +657,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint3
 
     // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
     //       We will detect more accurate range in the future.
-    RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
+    RecordDrawVertex(std::optional<u32>(), 0, tag);
 }
 
 bool CommandBufferAccessContext::ValidateDrawAttachment(const Location &loc) const {
@@ -705,8 +702,8 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
 
-    const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-    for (uint32_t i = info.info.colorAttachmentCount; i < attachment_count; i++) {
+    const u32 attachment_count = static_cast<u32>(info.attachments.size());
+    for (u32 i = info.info.colorAttachmentCount; i < attachment_count; i++) {
         const auto &attachment = info.attachments[i];
         bool writeable = attachment.IsWriteable(last_bound_state);
 
@@ -760,8 +757,8 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
     // PHASE1 TODO: Read operations for both depth and stencil are possible in the future.
     // PHASE1 TODO: Add EARLY stage detection based on ExecutionMode.
 
-    const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-    for (uint32_t i = info.info.colorAttachmentCount; i < attachment_count; i++) {
+    const u32 attachment_count = static_cast<u32>(info.attachments.size());
+    for (u32 i = info.info.colorAttachmentCount; i < attachment_count; i++) {
         const auto &attachment = info.attachments[i];
         bool writeable = attachment.IsWriteable(last_bound_state);
 
@@ -886,7 +883,7 @@ void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAcce
     const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
     if (!label_commands.empty()) {
         assert(label_commands.size() >= recorded_label_commands.size());
-        const uint32_t command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_commands.size());
+        const u32 command_offset = static_cast<u32>(label_commands.size() - recorded_label_commands.size());
         for (size_t i = 0; i < recorded_context.access_log_->size(); i++) {
             size_t index = (access_log_->size() - 1) - i;
             assert((*access_log_)[index].label_command_index != vvl::kU32Max);
@@ -903,7 +900,7 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, R
     auto &record = access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
 
     if (!cb_state_->GetLabelCommands().empty()) {
-        record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
+        record.label_command_index = static_cast<u32>(cb_state_->GetLabelCommands().size() - 1);
     }
     CheckCommandTagDebugCheckpoint();
     return current_command_tag_;
@@ -921,22 +918,22 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command
     record.handle_count = main_command_record.handle_count;
 
     if (!cb_state_->GetLabelCommands().empty()) {
-        record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
+        record.label_command_index = static_cast<u32>(cb_state_->GetLabelCommands().size() - 1);
     }
     return tag;
 }
 
-uint32_t CommandBufferAccessContext::AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index) {
-    const uint32_t handle_index = static_cast<uint32_t>(handles_.size());
+u32 CommandBufferAccessContext::AddHandle(const VulkanTypedHandle &typed_handle, u32 index) {
+    const u32 handle_index = static_cast<u32>(handles_.size());
     handles_.emplace_back(HandleRecord(typed_handle, index));
     sync_state_->stats.AddHandleRecord();
     return handle_index;
 }
 
 ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
-                                                                uint32_t index) {
+                                                                u32 index) {
     assert(tag < access_log_->size());
-    const uint32_t handle_index = AddHandle(typed_handle, index);
+    const u32 handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
     if (tag < access_log_->size()) {
         auto &record = (*access_log_)[tag];
@@ -952,9 +949,9 @@ ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag
     return {tag, handle_index};
 }
 
-void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
+void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, u32 index) {
     assert(tag < access_log_->size());
-    const uint32_t handle_index = AddHandle(typed_handle, index);
+    const u32 handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
     if (tag < access_log_->size()) {
         auto &record = (*access_log_)[tag];
@@ -1060,7 +1057,7 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
 // VK_SYNCVAL_DEBUG_RESET_COUNT: (optional, default value is 1) command buffer reset count
 // VK_SYNCVAL_DEBUG_CMDBUF_PATTERN: (optional, empty string by default) pattern to match command buffer debug name
 void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
-    auto get_cmdbuf_name = [](const DebugReport &debug_report, uint64_t cmdbuf_handle) {
+    auto get_cmdbuf_name = [](const DebugReport &debug_report, u64 cmdbuf_handle) {
         std::unique_lock<std::mutex> lock(debug_report.debug_output_mutex);
         std::string object_name = debug_report.GetUtilsObjectNameNoLock(cmdbuf_handle);
         if (object_name.empty()) {

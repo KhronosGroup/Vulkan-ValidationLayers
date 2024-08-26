@@ -19,21 +19,21 @@
 
 namespace spirv {
 
-Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
+Instruction::Instruction(std::vector<u32>::const_iterator it) {
     words_.emplace_back(*it++);
     words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
+    for (u32 i = 1; i < Length(); i++) {
         words_.emplace_back(*it++);
     }
     SetResultTypeIndex();
     UpdateDebugInfo();
 }
 
-Instruction::Instruction(const uint32_t* it) {
+Instruction::Instruction(const u32* it) {
     words_.emplace_back(*it);
     it++;
     words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
+    for (u32 i = 1; i < Length(); i++) {
         words_.emplace_back(*it);
         it++;
     }
@@ -59,7 +59,7 @@ void Instruction::UpdateDebugInfo() {
     d_length_ = Length();
     d_result_id_ = ResultId();
     d_type_id_ = TypeId();
-    for (uint32_t i = 0; i < d_length_ && i < 12; i++) {
+    for (u32 i = 0; i < d_length_ && i < 12; i++) {
         d_words_[i] = words_[i];
     }
 #endif
@@ -67,11 +67,11 @@ void Instruction::UpdateDebugInfo() {
 
 std::string Instruction::Describe() const {
     std::ostringstream ss;
-    const uint32_t opcode = Opcode();
-    const uint32_t length = Length();
+    const u32 opcode = Opcode();
+    const u32 length = Length();
     const bool has_result = ResultId() != 0;
     const bool has_type = TypeId() != 0;
-    uint32_t operand_offset = 1;  // where to start printing operands
+    u32 operand_offset = 1;  // where to start printing operands
     // common disassembled for SPIR-V is
     // %result = Opcode %result_type %operands
     if (has_result) {
@@ -91,9 +91,9 @@ std::string Instruction::Describe() const {
         ss << " " << string_SpvExecutionModel(Word(1)) << " %" << Word(2) << " [Unknown]";
     } else {
         const OperandInfo& info = GetOperandInfo(opcode);
-        const uint32_t operands = static_cast<uint32_t>(info.types.size());
-        const uint32_t remaining_words = length - operand_offset;
-        for (uint32_t i = 0; i < remaining_words; i++) {
+        const u32 operands = static_cast<u32>(info.types.size());
+        const u32 remaining_words = length - operand_offset;
+        for (u32 i = 0; i < remaining_words; i++) {
             OperandKind kind = (i < operands) ? info.types[i] : info.types.back();
             if (kind == OperandKind::LiteralString) {
                 ss << " [string]";
@@ -111,8 +111,8 @@ std::string Instruction::Describe() const {
 // The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge making sure they
 // are scalar ints. It is also not valid for any of these use cases to have a negative value. While it is valid SPIR-V to use 64-bit
 // int, found writting test there is no way to create something valid that also calls this function. So until a use-case is found,
-// we can safely assume returning a uint32_t is ok.
-uint32_t Instruction::GetConstantValue() const {
+// we can safely assume returning a u32 is ok.
+u32 Instruction::GetConstantValue() const {
     // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
     // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
     // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
@@ -122,9 +122,9 @@ uint32_t Instruction::GetConstantValue() const {
 
 // The idea of this function is to not have to constantly lookup which operand for the width
 // inst.Word(2) -> inst.GetBitWidth()
-uint32_t Instruction::GetBitWidth() const {
-    const uint32_t opcode = Opcode();
-    uint32_t bit_width = 0;
+u32 Instruction::GetBitWidth() const {
+    const u32 opcode = Opcode();
+    u32 bit_width = 0;
     switch (opcode) {
         case spv::Op::OpTypeFloat:
         case spv::Op::OpTypeInt:

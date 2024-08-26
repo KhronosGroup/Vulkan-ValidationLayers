@@ -1504,7 +1504,7 @@ TEST_F(NegativeExternalMemorySync, D3D12FenceSubmitInfo) {
 
     // VkD3D12FenceSubmitInfoKHR::waitSemaphoreValuesCount == 1 is different from VkSubmitInfo::waitSemaphoreCount == 0
     {
-        const uint64_t waitSemaphoreValues = 0;
+        const u64 waitSemaphoreValues = 0;
         VkD3D12FenceSubmitInfoKHR d3d12_fence_submit_info = vku::InitStructHelper();
         d3d12_fence_submit_info.waitSemaphoreValuesCount = 1;
         d3d12_fence_submit_info.pWaitSemaphoreValues = &waitSemaphoreValues;
@@ -1628,7 +1628,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromFdHandle) {
 
     vkt::DeviceMemory memory;
     VkDeviceSize payload_size = 0;
-    uint32_t payload_memory_type = 0;
+    u32 payload_memory_type = 0;
     {
         const bool dedicated_allocation = (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
         VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
@@ -1792,7 +1792,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
 
     vkt::DeviceMemory memory;
     VkDeviceSize payload_size = 0;
-    uint32_t payload_memory_type = 0;
+    u32 payload_memory_type = 0;
     {
         const bool dedicated_allocation = (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
         VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
@@ -2591,8 +2591,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostMemoryIndex) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&import_info);
     alloc_info.allocationSize = alloc_size;
 
-    uint32_t unsupported_mem_type =
-        ((1 << m_device->phy().memory_properties_.memoryTypeCount) - 1) & ~host_pointer_props.memoryTypeBits;
+    u32 unsupported_mem_type = ((1 << m_device->phy().memory_properties_.memoryTypeCount) - 1) & ~host_pointer_props.memoryTypeBits;
     bool found_type = m_device->phy().set_memory_type(unsupported_mem_type, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (unsupported_mem_type == 0 || !found_type) {
         free(host_memory);

@@ -51,15 +51,15 @@ void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
     AddRequiredFeature(vkt::Feature::cooperativeMatrix);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
-    uint32_t props_count = 0;
+    u32 props_count = 0;
     vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, nullptr);
-    for (uint32_t i = 0; i < props_count; i++) {
+    for (u32 i = 0; i < props_count; i++) {
         coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
     }
     vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, coop_matrix_props.data());
 }
 
-bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {
+bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, u32 m, u32 n, u32 k, VkComponentTypeKHR type) {
     bool found_a = false;
     bool found_b = false;
     bool found_c = false;
@@ -123,13 +123,13 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
         }
     )glsl";
 
-    const uint32_t specData[] = {
+    const u32 specData[] = {
         16,
         8,
     };
     VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        {0, sizeof(u32) * 0, sizeof(u32)},
+        {1, sizeof(u32) * 1, sizeof(u32)},
     };
 
     VkSpecializationInfo specInfo = {

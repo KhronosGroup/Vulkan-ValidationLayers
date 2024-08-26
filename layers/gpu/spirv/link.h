@@ -14,7 +14,7 @@
  */
 #pragma once
 
-#include <stdint.h>
+#include "utils/numerical_types.h"
 
 namespace gpu {
 namespace spirv {
@@ -30,12 +30,12 @@ enum class LinkFunctions {
 
 struct LinkInfo {
     // SPIR-V module to link in
-    const uint32_t* words;
-    const uint32_t word_count;
+    const u32* words;
+    const u32 word_count;
 
     // Information about the function it has
     LinkFunctions function;
-    uint32_t function_id;
+    u32 function_id;
 
     // used for debugging
     const char* opname;

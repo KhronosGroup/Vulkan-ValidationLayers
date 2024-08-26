@@ -230,8 +230,8 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     // Create test buffers and fill input buffer
     vkt::Buffer buffer_input(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto input_mem = (uint8_t *)buffer_input.memory().map();
-    for (uint32_t i = 0; i < buffer_size; i++) {
+    auto input_mem = (u8*)buffer_input.memory().map();
+    for (u32 i = 0; i < buffer_size; i++) {
         input_mem[i] = (i & 0xFF);
     }
     buffer_input.memory().unmap();

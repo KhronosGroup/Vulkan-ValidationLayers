@@ -21,18 +21,18 @@
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 
-VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {
-    constexpr uint32_t graphicsStagesCount = 5;
-    constexpr uint32_t meshStagesCount = 3;
+VkShaderStageFlags FindNextStage(u32 createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {
+    constexpr u32 graphicsStagesCount = 5;
+    constexpr u32 meshStagesCount = 3;
     const VkShaderStageFlagBits graphicsStages[graphicsStagesCount] = {
         VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
         VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderStageFlagBits meshStages[meshStagesCount] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
                                                                VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    uint32_t graphicsIndex = graphicsStagesCount;
-    uint32_t meshIndex = meshStagesCount;
-    for (uint32_t i = 0; i < graphicsStagesCount; ++i) {
+    u32 graphicsIndex = graphicsStagesCount;
+    u32 meshIndex = meshStagesCount;
+    for (u32 i = 0; i < graphicsStagesCount; ++i) {
         if (graphicsStages[i] == stage) {
             graphicsIndex = i;
             break;
@@ -45,7 +45,7 @@ VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateI
 
     if (graphicsIndex < graphicsStagesCount) {
         while (++graphicsIndex < graphicsStagesCount) {
-            for (uint32_t i = 0; i < createInfoCount; ++i) {
+            for (u32 i = 0; i < createInfoCount; ++i) {
                 if (pCreateInfos[i].stage == graphicsStages[graphicsIndex]) {
                     return graphicsStages[graphicsIndex];
                 }
@@ -53,7 +53,7 @@ VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateI
         }
     } else {
         while (++meshIndex < meshStagesCount) {
-            for (uint32_t i = 0; i < createInfoCount; ++i) {
+            for (u32 i = 0; i < createInfoCount; ++i) {
                 if (pCreateInfos[i].stage == meshStages[meshIndex]) {
                     return meshStages[meshIndex];
                 }
@@ -64,21 +64,21 @@ VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateI
     return 0;
 }
 
-bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+bool CoreChecks::ValidateCreateShadersLinking(u32 createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                               const Location& loc) const {
     bool skip = false;
 
-    const uint32_t invalid = createInfoCount;
-    uint32_t linked_stage = invalid;
-    uint32_t non_linked_graphics_stage = invalid;
-    uint32_t non_linked_task_mesh_stage = invalid;
-    uint32_t linked_task_mesh_stage = invalid;
-    uint32_t linked_vert_stage = invalid;
-    uint32_t linked_task_stage = invalid;
-    uint32_t linked_mesh_no_task_stage = invalid;
-    uint32_t linked_spirv_index = invalid;
-    uint32_t linked_binary_index = invalid;
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    const u32 invalid = createInfoCount;
+    u32 linked_stage = invalid;
+    u32 non_linked_graphics_stage = invalid;
+    u32 non_linked_task_mesh_stage = invalid;
+    u32 linked_task_mesh_stage = invalid;
+    u32 linked_vert_stage = invalid;
+    u32 linked_task_stage = invalid;
+    u32 linked_mesh_no_task_stage = invalid;
+    u32 linked_spirv_index = invalid;
+    u32 linked_binary_index = invalid;
+    for (u32 i = 0; i < createInfoCount; ++i) {
         const Location create_info_loc = loc.dot(Field::pCreateInfos, i);
         const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
         if (create_info.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
@@ -128,7 +128,7 @@ bool CoreChecks::ValidateCreateShadersLinking(uint32_t createInfoCount, const Vk
                                  string_VkShaderStageFlags(create_info.nextStage).c_str(),
                                  string_VkShaderStageFlags(nextStage).c_str());
             }
-            for (uint32_t j = i; j < createInfoCount; ++j) {
+            for (u32 j = i; j < createInfoCount; ++j) {
                 if (i != j && create_info.stage == pCreateInfos[j].stage) {
                     skip |= LogError("VUID-vkCreateShadersEXT-pCreateInfos-08410", device, create_info_loc,
                                      "and pCreateInfos[%" PRIu32
@@ -270,14 +270,14 @@ bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_i
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                 const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                                 VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, u32 createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                                 const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
+                                                 const ErrorObject& error_obj) const {
     bool skip = false;
 
     // the spec clarifies that VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT works on VK_EXT_shader_object as well
     if (disabled[shader_validation]) {
-        return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+        return skip;  // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
     }
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
@@ -288,30 +288,30 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 
     skip |= ValidateCreateShadersLinking(createInfoCount, pCreateInfos, error_obj.location);
 
-    uint32_t tesc_linked_subdivision = 0u;
-    uint32_t tese_linked_subdivision = 0u;
-    uint32_t tesc_linked_orientation = 0u;
-    uint32_t tese_linked_orientation = 0u;
+    u32 tesc_linked_subdivision = 0u;
+    u32 tese_linked_subdivision = 0u;
+    u32 tesc_linked_orientation = 0u;
+    u32 tese_linked_orientation = 0u;
     bool tesc_linked_point_mode = false;
     bool tese_linked_point_mode = false;
-    uint32_t tesc_linked_spacing = 0u;
-    uint32_t tese_linked_spacing = 0u;
+    u32 tesc_linked_spacing = 0u;
+    u32 tese_linked_spacing = 0u;
 
     // Currently we don't provide a way for apps to supply their own cache for shader object
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3570
     ValidationCache* cache = CastFromHandle<ValidationCache*>(core_validation_cache);
 
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         const VkShaderCreateInfoEXT& create_info = pCreateInfos[i];
         if (create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
         }
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
 
-        spv_const_binary_t binary{static_cast<const uint32_t*>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)};
+        spv_const_binary_t binary{static_cast<const u32*>(create_info.pCode), create_info.codeSize / sizeof(u32)};
         skip |= RunSpirvValidation(binary, create_info_loc, cache);
 
-        const auto spirv = std::make_shared<spirv::Module>(create_info.codeSize, static_cast<const uint32_t*>(create_info.pCode));
+        const auto spirv = std::make_shared<spirv::Module>(create_info.codeSize, static_cast<const u32*>(create_info.pCode));
         vku::safe_VkShaderCreateInfoEXT safe_create_info = vku::safe_VkShaderCreateInfoEXT(&pCreateInfos[i]);
         const ShaderStageState stage_state(nullptr, &safe_create_info, nullptr, spirv);
         skip |= ValidateShaderStage(stage_state, nullptr, create_info_loc);
@@ -407,7 +407,7 @@ bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT sh
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
+bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, u32 stageCount,
                                                   const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders,
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
@@ -419,15 +419,15 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                          "the shaderObject feature was not enabled.");
     }
 
-    uint32_t vertexStageIndex = stageCount;
-    uint32_t taskStageIndex = stageCount;
-    uint32_t meshStageIndex = stageCount;
-    for (uint32_t i = 0; i < stageCount; ++i) {
+    u32 vertexStageIndex = stageCount;
+    u32 taskStageIndex = stageCount;
+    u32 meshStageIndex = stageCount;
+    for (u32 i = 0; i < stageCount; ++i) {
         const Location stage_loc = error_obj.location.dot(Field::pStages, i);
         const VkShaderStageFlagBits& stage = pStages[i];
         VkShaderEXT shader = pShaders ? pShaders[i] : VK_NULL_HANDLE;
 
-        for (uint32_t j = i; j < stageCount; ++j) {
+        for (u32 j = i; j < stageCount; ++j) {
             if (i != j && stage == pStages[j]) {
                 skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08463", commandBuffer, stage_loc,
                                  "and pStages[%" PRIu32 "] are both %s.", j, string_VkShaderStageFlagBits(stage));
@@ -636,14 +636,14 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
-        if (i == static_cast<uint32_t>(ShaderObjectStage::COMPUTE) || !last_bound_state.shader_object_states[i]) {
+    for (u32 i = 0; i < kShaderObjectStageCount; ++i) {
+        if (i == static_cast<u32>(ShaderObjectStage::COMPUTE) || !last_bound_state.shader_object_states[i]) {
             continue;
         }
 
         for (const auto& linked_shader : last_bound_state.shader_object_states[i]->linked_shaders) {
             bool found = false;
-            for (uint32_t j = 0; j < kShaderObjectStageCount; ++j) {
+            for (u32 j = 0; j < kShaderObjectStageCount; ++j) {
                 if (linked_shader == last_bound_state.GetShader(static_cast<ShaderObjectStage>(j))) {
                     found = true;
                     break;
@@ -713,8 +713,8 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
             first->create_info.pushConstantRangeCount != shader_state->create_info.pushConstantRangeCount;
         if (!push_constant_different) {
             bool found = false;  // find duplicate push constant ranges
-            for (uint32_t i = 0; i < shader_state->create_info.pushConstantRangeCount; ++i) {
-                for (uint32_t j = 0; j < first->create_info.pushConstantRangeCount; ++j) {
+            for (u32 i = 0; i < shader_state->create_info.pushConstantRangeCount; ++i) {
+                for (u32 j = 0; j < first->create_info.pushConstantRangeCount; ++j) {
                     if (shader_state->create_info.pPushConstantRanges[i] == first->create_info.pPushConstantRanges[j]) {
                         found = true;
                         break;
@@ -736,8 +736,8 @@ bool CoreChecks::ValidateDrawShaderObjectPushConstantAndLayout(const LastBound& 
         bool descriptor_layouts_different = first->create_info.setLayoutCount != shader_state->create_info.setLayoutCount;
         if (!descriptor_layouts_different) {
             bool found = false;  // find duplicate set layouts
-            for (uint32_t i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
-                for (uint32_t j = 0; j < first->create_info.setLayoutCount; ++j) {
+            for (u32 i = 0; i < shader_state->create_info.setLayoutCount; ++i) {
+                for (u32 j = 0; j < first->create_info.setLayoutCount; ++j) {
                     if (shader_state->create_info.pSetLayouts[i] == first->create_info.pSetLayouts[j]) {
                         found = true;
                         break;

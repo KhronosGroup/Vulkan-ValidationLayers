@@ -24,7 +24,7 @@ CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, Vk
                              const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
     : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
 
-Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
+Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, u32 family_index, u32 queue_index,
              VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
     : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
       shader_instrumentor_(shader_instrumentor),
@@ -59,7 +59,7 @@ Queue::~Queue() {
 
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
+void Queue::SubmitBarrier(const Location &loc, u64 seq) {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 

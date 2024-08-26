@@ -44,9 +44,9 @@ struct CreateShaderModule {
 
 struct ShaderObjectInstrumentationData {
     // Need to hold this in memory between the PreCallRecord and the Dispatch
-    std::vector<uint32_t> instrumented_spirv;
+    std::vector<u32> instrumented_spirv;
     // Need to hold this in memory between the PreCallRecord and the PostCallRecord
-    uint32_t unique_shader_id;
+    u32 unique_shader_id;
 
     std::vector<VkDescriptorSetLayout> new_layouts;
 };
@@ -65,7 +65,7 @@ struct ShaderObject {
     // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
     std::vector<ShaderObjectInstrumentationData> instrumentations_data;
 
-    ShaderObject(uint32_t createInfoCount, const VkShaderCreateInfoEXT* create_info) {
+    ShaderObject(u32 createInfoCount, const VkShaderCreateInfoEXT* create_info) {
         pCreateInfos = create_info;
         module_states.resize(createInfoCount);
         stateless_data.resize(createInfoCount);
@@ -75,7 +75,7 @@ struct ShaderObject {
 struct ShaderInstrumentationMetadata {
     // Holds a unique shader id for each VkGraphicsPipelineCreateInfo::pStages[i]
     // Unique shader ids are used to map SPIR-V to a specific VkShaderModule/VkPipeline/etc handle
-    std::vector<uint32_t> spirv_unique_id_map;
+    std::vector<u32> spirv_unique_id_map;
 
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;

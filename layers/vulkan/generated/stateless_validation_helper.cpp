@@ -127,7 +127,7 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_1) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(
                         pnext_vuid, instance, loc.dot(Field::pNext),
                         "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES) "
@@ -175,7 +175,7 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_1) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                      "includes a pointer to a VkStructureType "
                                      "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES) which was added in "
@@ -198,7 +198,7 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_2) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |=
                         LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES) "
@@ -245,7 +245,7 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_2) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |=
                         LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) "
@@ -766,7 +766,7 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_3) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |=
                         LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES) "
@@ -4227,7 +4227,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_1) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |=
                         LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                  "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES) "
@@ -4272,7 +4272,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_1) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(
                         pnext_vuid, instance, loc.dot(Field::pNext),
                         "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES) "
@@ -4318,7 +4318,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_2) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(
                         pnext_vuid, instance, loc.dot(Field::pNext),
                         "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES) which "
@@ -4337,7 +4337,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_2) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(
                         pnext_vuid, instance, loc.dot(Field::pNext),
                         "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES) which "
@@ -4433,7 +4433,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_3) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(
                         pnext_vuid, instance, loc.dot(Field::pNext),
                         "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES) which "
@@ -4587,7 +4587,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                     "VUID-VkPhysicalDeviceLayeredApiPropertiesListKHR-pLayeredApis-parameter", kVUIDUndefined);
 
                 if (structure->pLayeredApis != nullptr) {
-                    for (uint32_t layeredApiIndex = 0; layeredApiIndex < structure->layeredApiCount; ++layeredApiIndex) {
+                    for (u32 layeredApiIndex = 0; layeredApiIndex < structure->layeredApiCount; ++layeredApiIndex) {
                         [[maybe_unused]] const Location pLayeredApis_loc = pNext_loc.dot(Field::pLayeredApis, layeredApiIndex);
                     }
                 }
@@ -4923,7 +4923,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                         false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                     if (structure->stage.pSpecializationInfo->pMapEntries != nullptr) {
-                        for (uint32_t mapEntryIndex = 0; mapEntryIndex < structure->stage.pSpecializationInfo->mapEntryCount;
+                        for (u32 mapEntryIndex = 0; mapEntryIndex < structure->stage.pSpecializationInfo->mapEntryCount;
                              ++mapEntryIndex) {
                             [[maybe_unused]] const Location pMapEntries_loc =
                                 pSpecializationInfo_loc.dot(Field::pMapEntries, mapEntryIndex);
@@ -4978,7 +4978,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       kVUIDUndefined, "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-parameter");
 
                 if (structure->pPushConstantRanges != nullptr) {
-                    for (uint32_t pushConstantRangeIndex = 0; pushConstantRangeIndex < structure->pushConstantRangeCount;
+                    for (u32 pushConstantRangeIndex = 0; pushConstantRangeIndex < structure->pushConstantRangeCount;
                          ++pushConstantRangeIndex) {
                         [[maybe_unused]] const Location pPushConstantRanges_loc =
                             pNext_loc.dot(Field::pPushConstantRanges, pushConstantRangeIndex);
@@ -5061,7 +5061,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkDeviceGroupRenderPassBeginInfo-pDeviceRenderAreas-parameter");
 
                 if (structure->pDeviceRenderAreas != nullptr) {
-                    for (uint32_t deviceRenderAreaIndex = 0; deviceRenderAreaIndex < structure->deviceRenderAreaCount;
+                    for (u32 deviceRenderAreaIndex = 0; deviceRenderAreaIndex < structure->deviceRenderAreaCount;
                          ++deviceRenderAreaIndex) {
                         [[maybe_unused]] const Location pDeviceRenderAreas_loc =
                             pNext_loc.dot(Field::pDeviceRenderAreas, deviceRenderAreaIndex);
@@ -5177,7 +5177,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkBindImageMemoryDeviceGroupInfo-pSplitInstanceBindRegions-parameter");
 
                 if (structure->pSplitInstanceBindRegions != nullptr) {
-                    for (uint32_t splitInstanceBindRegionIndex = 0;
+                    for (u32 splitInstanceBindRegionIndex = 0;
                          splitInstanceBindRegionIndex < structure->splitInstanceBindRegionCount; ++splitInstanceBindRegionIndex) {
                         [[maybe_unused]] const Location pSplitInstanceBindRegions_loc =
                             pNext_loc.dot(Field::pSplitInstanceBindRegions, splitInstanceBindRegionIndex);
@@ -5367,7 +5367,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkRenderPassInputAttachmentAspectCreateInfo-pAspectReferences-parameter");
 
                 if (structure->pAspectReferences != nullptr) {
-                    for (uint32_t aspectReferenceIndex = 0; aspectReferenceIndex < structure->aspectReferenceCount;
+                    for (u32 aspectReferenceIndex = 0; aspectReferenceIndex < structure->aspectReferenceCount;
                          ++aspectReferenceIndex) {
                         [[maybe_unused]] const Location pAspectReferences_loc =
                             pNext_loc.dot(Field::pAspectReferences, aspectReferenceIndex);
@@ -5467,7 +5467,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 VkPhysicalDeviceProperties device_properties = {};
                 DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                 if (device_properties.apiVersion < VK_API_VERSION_1_1) {
-                    APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                    APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                     skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
                                      "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO) which was "
                                      "added in VK_API_VERSION_1_1 but the "
@@ -5904,7 +5904,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     "VUID-VkFramebufferAttachmentsCreateInfo-pAttachmentImageInfos-parameter", kVUIDUndefined);
 
                 if (structure->pAttachmentImageInfos != nullptr) {
-                    for (uint32_t attachmentImageInfoIndex = 0; attachmentImageInfoIndex < structure->attachmentImageInfoCount;
+                    for (u32 attachmentImageInfoIndex = 0; attachmentImageInfoIndex < structure->attachmentImageInfoCount;
                          ++attachmentImageInfoIndex) {
                         [[maybe_unused]] const Location pAttachmentImageInfos_loc =
                             pNext_loc.dot(Field::pAttachmentImageInfos, attachmentImageInfoIndex);
@@ -6095,7 +6095,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     kVUIDUndefined, "VUID-VkPipelineCreationFeedbackCreateInfo-pPipelineStageCreationFeedbacks-parameter");
 
                 if (structure->pPipelineStageCreationFeedbacks != nullptr) {
-                    for (uint32_t pipelineStageCreationFeedbackIndex = 0;
+                    for (u32 pipelineStageCreationFeedbackIndex = 0;
                          pipelineStageCreationFeedbackIndex < structure->pipelineStageCreationFeedbackCount;
                          ++pipelineStageCreationFeedbackIndex) {
                         [[maybe_unused]] const Location pPipelineStageCreationFeedbacks_loc =
@@ -6379,7 +6379,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     "VUID-VkVideoProfileInfoKHR-sType-sType", "VUID-VkVideoProfileListInfoKHR-pProfiles-parameter", kVUIDUndefined);
 
                 if (structure->pProfiles != nullptr) {
-                    for (uint32_t profileIndex = 0; profileIndex < structure->profileCount; ++profileIndex) {
+                    for (u32 profileIndex = 0; profileIndex < structure->profileCount; ++profileIndex) {
                         [[maybe_unused]] const Location pProfiles_loc = pNext_loc.dot(Field::pProfiles, profileIndex);
                         skip |= ValidateFlags(
                             pProfiles_loc.dot(Field::videoCodecOperation), vvl::FlagBitmask::VkVideoCodecOperationFlagBitsKHR,
@@ -6487,8 +6487,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkVideoEncodeH264PictureInfoKHR-naluSliceEntryCount-arraylength");
 
                 if (structure->pNaluSliceEntries != nullptr) {
-                    for (uint32_t naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount;
-                         ++naluSliceEntryIndex) {
+                    for (u32 naluSliceEntryIndex = 0; naluSliceEntryIndex < structure->naluSliceEntryCount; ++naluSliceEntryIndex) {
                         [[maybe_unused]] const Location pNaluSliceEntries_loc =
                             pNext_loc.dot(Field::pNaluSliceEntries, naluSliceEntryIndex);
                         skip |= ValidateRequiredPointer(pNaluSliceEntries_loc.dot(Field::pStdSliceHeader),
@@ -6621,8 +6620,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkVideoEncodeH265PictureInfoKHR-naluSliceSegmentEntryCount-arraylength");
 
                 if (structure->pNaluSliceSegmentEntries != nullptr) {
-                    for (uint32_t naluSliceSegmentEntryIndex = 0;
-                         naluSliceSegmentEntryIndex < structure->naluSliceSegmentEntryCount; ++naluSliceSegmentEntryIndex) {
+                    for (u32 naluSliceSegmentEntryIndex = 0; naluSliceSegmentEntryIndex < structure->naluSliceSegmentEntryCount;
+                         ++naluSliceSegmentEntryIndex) {
                         [[maybe_unused]] const Location pNaluSliceSegmentEntries_loc =
                             pNext_loc.dot(Field::pNaluSliceSegmentEntries, naluSliceSegmentEntryIndex);
                         skip |= ValidateRequiredPointer(
@@ -6920,10 +6919,10 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                   "VUID-VkPresentRegionsKHR-pRegions-parameter");
 
                 if (structure->pRegions != nullptr) {
-                    for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex) {
+                    for (u32 swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex) {
                         [[maybe_unused]] const Location pRegions_loc = pNext_loc.dot(Field::pRegions, swapchainIndex);
                         if (structure->pRegions[swapchainIndex].pRectangles != nullptr) {
-                            for (uint32_t rectangleIndex = 0; rectangleIndex < structure->pRegions[swapchainIndex].rectangleCount;
+                            for (u32 rectangleIndex = 0; rectangleIndex < structure->pRegions[swapchainIndex].rectangleCount;
                                  ++rectangleIndex) {
                                 [[maybe_unused]] const Location pRectangles_loc =
                                     pRegions_loc.dot(Field::pRectangles, rectangleIndex);
@@ -7187,7 +7186,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                             "VUID-VkVideoEncodeRateControlInfoKHR-pLayers-parameter", kVUIDUndefined);
 
                 if (structure->pLayers != nullptr) {
-                    for (uint32_t layerIndex = 0; layerIndex < structure->layerCount; ++layerIndex) {
+                    for (u32 layerIndex = 0; layerIndex < structure->layerCount; ++layerIndex) {
                         [[maybe_unused]] const Location pLayers_loc = pNext_loc.dot(Field::pLayers, layerIndex);
                     }
                 }
@@ -7335,7 +7334,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkPipelineVertexInputDivisorStateCreateInfoKHR-pVertexBindingDivisors-parameter");
 
                 if (structure->pVertexBindingDivisors != nullptr) {
-                    for (uint32_t vertexBindingDivisorIndex = 0; vertexBindingDivisorIndex < structure->vertexBindingDivisorCount;
+                    for (u32 vertexBindingDivisorIndex = 0; vertexBindingDivisorIndex < structure->vertexBindingDivisorCount;
                          ++vertexBindingDivisorIndex) {
                         [[maybe_unused]] const Location pVertexBindingDivisors_loc =
                             pNext_loc.dot(Field::pVertexBindingDivisors, vertexBindingDivisorIndex);
@@ -7662,7 +7661,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkPresentTimesInfoGOOGLE-pTimes-parameter");
 
                 if (structure->pTimes != nullptr) {
-                    for (uint32_t swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex) {
+                    for (u32 swapchainIndex = 0; swapchainIndex < structure->swapchainCount; ++swapchainIndex) {
                         [[maybe_unused]] const Location pTimes_loc = pNext_loc.dot(Field::pTimes, swapchainIndex);
                     }
                 }
@@ -7688,7 +7687,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-pViewportSwizzles-parameter");
 
                 if (structure->pViewportSwizzles != nullptr) {
-                    for (uint32_t viewportIndex = 0; viewportIndex < structure->viewportCount; ++viewportIndex) {
+                    for (u32 viewportIndex = 0; viewportIndex < structure->viewportCount; ++viewportIndex) {
                         [[maybe_unused]] const Location pViewportSwizzles_loc =
                             pNext_loc.dot(Field::pViewportSwizzles, viewportIndex);
                         skip |= ValidateRangedEnum(pViewportSwizzles_loc.dot(Field::x), vvl::Enum::VkViewportCoordinateSwizzleNV,
@@ -7852,7 +7851,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                             "VUID-VkExecutionGraphPipelineCreateInfoAMDX-pStages-parameter", kVUIDUndefined);
 
                 if (structure->pStages != nullptr) {
-                    for (uint32_t stageIndex = 0; stageIndex < structure->stageCount; ++stageIndex) {
+                    for (u32 stageIndex = 0; stageIndex < structure->stageCount; ++stageIndex) {
                         [[maybe_unused]] const Location pStages_loc = pNext_loc.dot(Field::pStages, stageIndex);
                         skip |= ValidateFlags(pStages_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineShaderStageCreateFlagBits,
                                               AllVkPipelineShaderStageCreateFlagBits, structure->pStages[stageIndex].flags,
@@ -7875,7 +7874,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                   kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                             if (structure->pStages[stageIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                                for (uint32_t mapEntryIndex = 0;
+                                for (u32 mapEntryIndex = 0;
                                      mapEntryIndex < structure->pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                      ++mapEntryIndex) {
                                     [[maybe_unused]] const Location pMapEntries_loc =
@@ -7926,7 +7925,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
 
                 if (structure->pSampleLocations != nullptr) {
-                    for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsCount;
+                    for (u32 sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsCount;
                          ++sampleLocationsIndex) {
                         [[maybe_unused]] const Location pSampleLocations_loc =
                             pNext_loc.dot(Field::pSampleLocations, sampleLocationsIndex);
@@ -7952,7 +7951,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkRenderPassSampleLocationsBeginInfoEXT-pAttachmentInitialSampleLocations-parameter");
 
                 if (structure->pAttachmentInitialSampleLocations != nullptr) {
-                    for (uint32_t attachmentInitialSampleLocationsIndex = 0;
+                    for (u32 attachmentInitialSampleLocationsIndex = 0;
                          attachmentInitialSampleLocationsIndex < structure->attachmentInitialSampleLocationsCount;
                          ++attachmentInitialSampleLocationsIndex) {
                         [[maybe_unused]] const Location pAttachmentInitialSampleLocations_loc =
@@ -7975,7 +7974,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
                         if (structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex]
                                 .sampleLocationsInfo.pSampleLocations != nullptr) {
-                            for (uint32_t sampleLocationsIndex = 0;
+                            for (u32 sampleLocationsIndex = 0;
                                  sampleLocationsIndex <
                                  structure->pAttachmentInitialSampleLocations[attachmentInitialSampleLocationsIndex]
                                      .sampleLocationsInfo.sampleLocationsCount;
@@ -7993,7 +7992,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkRenderPassSampleLocationsBeginInfoEXT-pPostSubpassSampleLocations-parameter");
 
                 if (structure->pPostSubpassSampleLocations != nullptr) {
-                    for (uint32_t postSubpassSampleLocationsIndex = 0;
+                    for (u32 postSubpassSampleLocationsIndex = 0;
                          postSubpassSampleLocationsIndex < structure->postSubpassSampleLocationsCount;
                          ++postSubpassSampleLocationsIndex) {
                         [[maybe_unused]] const Location pPostSubpassSampleLocations_loc =
@@ -8015,7 +8014,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
                         if (structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex]
                                 .sampleLocationsInfo.pSampleLocations != nullptr) {
-                            for (uint32_t sampleLocationsIndex = 0;
+                            for (u32 sampleLocationsIndex = 0;
                                  sampleLocationsIndex < structure->pPostSubpassSampleLocations[postSubpassSampleLocationsIndex]
                                                             .sampleLocationsInfo.sampleLocationsCount;
                                  ++sampleLocationsIndex) {
@@ -8050,8 +8049,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
 
                 if (structure->sampleLocationsInfo.pSampleLocations != nullptr) {
-                    for (uint32_t sampleLocationsIndex = 0;
-                         sampleLocationsIndex < structure->sampleLocationsInfo.sampleLocationsCount; ++sampleLocationsIndex) {
+                    for (u32 sampleLocationsIndex = 0; sampleLocationsIndex < structure->sampleLocationsInfo.sampleLocationsCount;
+                         ++sampleLocationsIndex) {
                         [[maybe_unused]] const Location pSampleLocations_loc =
                             pNext_loc.dot(Field::pSampleLocations, sampleLocationsIndex);
                     }
@@ -8169,8 +8168,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-pPlaneLayouts-parameter");
 
                 if (structure->pPlaneLayouts != nullptr) {
-                    for (uint32_t drmFormatModifierPlaneIndex = 0;
-                         drmFormatModifierPlaneIndex < structure->drmFormatModifierPlaneCount; ++drmFormatModifierPlaneIndex) {
+                    for (u32 drmFormatModifierPlaneIndex = 0; drmFormatModifierPlaneIndex < structure->drmFormatModifierPlaneCount;
+                         ++drmFormatModifierPlaneIndex) {
                         [[maybe_unused]] const Location pPlaneLayouts_loc =
                             pNext_loc.dot(Field::pPlaneLayouts, drmFormatModifierPlaneIndex);
                     }
@@ -8231,7 +8230,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                   "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-pCustomSampleOrders-parameter");
 
                 if (structure->pCustomSampleOrders != nullptr) {
-                    for (uint32_t customSampleOrderIndex = 0; customSampleOrderIndex < structure->customSampleOrderCount;
+                    for (u32 customSampleOrderIndex = 0; customSampleOrderIndex < structure->customSampleOrderCount;
                          ++customSampleOrderIndex) {
                         [[maybe_unused]] const Location pCustomSampleOrders_loc =
                             pNext_loc.dot(Field::pCustomSampleOrders, customSampleOrderIndex);
@@ -8248,7 +8247,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                               "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-parameter");
 
                         if (structure->pCustomSampleOrders[customSampleOrderIndex].pSampleLocations != nullptr) {
-                            for (uint32_t sampleLocationIndex = 0;
+                            for (u32 sampleLocationIndex = 0;
                                  sampleLocationIndex < structure->pCustomSampleOrders[customSampleOrderIndex].sampleLocationCount;
                                  ++sampleLocationIndex) {
                                 [[maybe_unused]] const Location pSampleLocations_loc =
@@ -8275,7 +8274,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     "VUID-VkRayTracingPipelineCreateInfoNV-stageCount-arraylength");
 
                 if (structure->pStages != nullptr) {
-                    for (uint32_t stageIndex = 0; stageIndex < structure->stageCount; ++stageIndex) {
+                    for (u32 stageIndex = 0; stageIndex < structure->stageCount; ++stageIndex) {
                         [[maybe_unused]] const Location pStages_loc = pNext_loc.dot(Field::pStages, stageIndex);
                         skip |= ValidateFlags(pStages_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineShaderStageCreateFlagBits,
                                               AllVkPipelineShaderStageCreateFlagBits, structure->pStages[stageIndex].flags,
@@ -8298,7 +8297,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                   kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                             if (structure->pStages[stageIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                                for (uint32_t mapEntryIndex = 0;
+                                for (u32 mapEntryIndex = 0;
                                      mapEntryIndex < structure->pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                      ++mapEntryIndex) {
                                     [[maybe_unused]] const Location pMapEntries_loc =
@@ -8323,7 +8322,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                             "VUID-VkRayTracingPipelineCreateInfoNV-groupCount-arraylength");
 
                 if (structure->pGroups != nullptr) {
-                    for (uint32_t groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
+                    for (u32 groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
                         [[maybe_unused]] const Location pGroups_loc = pNext_loc.dot(Field::pGroups, groupIndex);
                         skip |= ValidateRangedEnum(pGroups_loc.dot(Field::type), vvl::Enum::VkRayTracingShaderGroupTypeKHR,
                                                    structure->pGroups[groupIndex].type,
@@ -8700,7 +8699,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                             "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-parameter", kVUIDUndefined);
 
                 if (structure->pGroups != nullptr) {
-                    for (uint32_t groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
+                    for (u32 groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
                         [[maybe_unused]] const Location pGroups_loc = pNext_loc.dot(Field::pGroups, groupIndex);
                         skip |= ValidateStructTypeArray(pGroups_loc.dot(Field::stageCount), pGroups_loc.dot(Field::pStages),
                                                         structure->pGroups[groupIndex].stageCount,
@@ -8711,7 +8710,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                         "VUID-VkGraphicsShaderGroupCreateInfoNV-stageCount-arraylength");
 
                         if (structure->pGroups[groupIndex].pStages != nullptr) {
-                            for (uint32_t stageIndex = 0; stageIndex < structure->pGroups[groupIndex].stageCount; ++stageIndex) {
+                            for (u32 stageIndex = 0; stageIndex < structure->pGroups[groupIndex].stageCount; ++stageIndex) {
                                 [[maybe_unused]] const Location pStages_loc = pGroups_loc.dot(Field::pStages, stageIndex);
                                 skip |= ValidateFlags(pStages_loc.dot(Field::flags),
                                                       vvl::FlagBitmask::VkPipelineShaderStageCreateFlagBits,
@@ -8741,7 +8740,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
                                     if (structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries !=
                                         nullptr) {
-                                        for (uint32_t mapEntryIndex = 0;
+                                        for (u32 mapEntryIndex = 0;
                                              mapEntryIndex <
                                              structure->pGroups[groupIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                              ++mapEntryIndex) {
@@ -9088,7 +9087,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkMutableDescriptorTypeCreateInfoEXT-pMutableDescriptorTypeLists-parameter");
 
                 if (structure->pMutableDescriptorTypeLists != nullptr) {
-                    for (uint32_t mutableDescriptorTypeListIndex = 0;
+                    for (u32 mutableDescriptorTypeListIndex = 0;
                          mutableDescriptorTypeListIndex < structure->mutableDescriptorTypeListCount;
                          ++mutableDescriptorTypeListIndex) {
                         [[maybe_unused]] const Location pMutableDescriptorTypeLists_loc =
@@ -9284,13 +9283,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                            "VUID-VkAccelerationStructureTrianglesOpacityMicromapEXT-indexType-parameter");
 
                 if (structure->pUsageCounts != nullptr) {
-                    for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
+                    for (u32 usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
                         [[maybe_unused]] const Location pUsageCounts_loc = pNext_loc.dot(Field::pUsageCounts, usageIndexsIndex);
                     }
                 }
 
                 if (structure->ppUsageCounts != nullptr) {
-                    for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
+                    for (u32 usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
                         [[maybe_unused]] const Location ppUsageCounts_loc = pNext_loc.dot(Field::ppUsageCounts, usageIndexsIndex);
                     }
                 }
@@ -9323,13 +9322,13 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                            "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-indexType-parameter");
 
                 if (structure->pUsageCounts != nullptr) {
-                    for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
+                    for (u32 usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
                         [[maybe_unused]] const Location pUsageCounts_loc = pNext_loc.dot(Field::pUsageCounts, usageIndexsIndex);
                     }
                 }
 
                 if (structure->ppUsageCounts != nullptr) {
-                    for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
+                    for (u32 usageIndexsIndex = 0; usageIndexsIndex < structure->usageCountsCount; ++usageIndexsIndex) {
                         [[maybe_unused]] const Location ppUsageCounts_loc = pNext_loc.dot(Field::ppUsageCounts, usageIndexsIndex);
                     }
                 }
@@ -9402,7 +9401,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     "VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-arraylength");
 
                 if (structure->pStripeInfos != nullptr) {
-                    for (uint32_t stripeInfoIndex = 0; stripeInfoIndex < structure->stripeInfoCount; ++stripeInfoIndex) {
+                    for (u32 stripeInfoIndex = 0; stripeInfoIndex < structure->stripeInfoCount; ++stripeInfoIndex) {
                         [[maybe_unused]] const Location pStripeInfos_loc = pNext_loc.dot(Field::pStripeInfos, stripeInfoIndex);
                     }
                 }
@@ -9426,7 +9425,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkRenderPassStripeSubmitInfoARM-stripeSemaphoreInfoCount-arraylength");
 
                 if (structure->pStripeSemaphoreInfos != nullptr) {
-                    for (uint32_t stripeSemaphoreInfoIndex = 0; stripeSemaphoreInfoIndex < structure->stripeSemaphoreInfoCount;
+                    for (u32 stripeSemaphoreInfoIndex = 0; stripeSemaphoreInfoIndex < structure->stripeSemaphoreInfoCount;
                          ++stripeSemaphoreInfoIndex) {
                         [[maybe_unused]] const Location pStripeSemaphoreInfos_loc =
                             pNext_loc.dot(Field::pStripeSemaphoreInfos, stripeSemaphoreInfoIndex);
@@ -9458,8 +9457,8 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                       "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pFragmentDensityOffsets-parameter");
 
                 if (structure->pFragmentDensityOffsets != nullptr) {
-                    for (uint32_t fragmentDensityOffsetIndex = 0;
-                         fragmentDensityOffsetIndex < structure->fragmentDensityOffsetCount; ++fragmentDensityOffsetIndex) {
+                    for (u32 fragmentDensityOffsetIndex = 0; fragmentDensityOffsetIndex < structure->fragmentDensityOffsetCount;
+                         ++fragmentDensityOffsetIndex) {
                         [[maybe_unused]] const Location pFragmentDensityOffsets_loc =
                             pNext_loc.dot(Field::pFragmentDensityOffsets, fragmentDensityOffsetIndex);
                     }
@@ -9553,7 +9552,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     "VUID-VkDirectDriverLoadingListLUNARG-driverCount-arraylength");
 
                 if (structure->pDrivers != nullptr) {
-                    for (uint32_t driverIndex = 0; driverIndex < structure->driverCount; ++driverIndex) {
+                    for (u32 driverIndex = 0; driverIndex < structure->driverCount; ++driverIndex) {
                         [[maybe_unused]] const Location pDrivers_loc = pNext_loc.dot(Field::pDrivers, driverIndex);
                         skip |= ValidateReservedFlags(pDrivers_loc.dot(Field::flags), structure->pDrivers[driverIndex].flags,
                                                       "VUID-VkDirectDriverLoadingInfoLUNARG-flags-zerobitmask");
@@ -9651,7 +9650,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                   "VUID-VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM-pPerViewRenderAreas-parameter");
 
                 if (structure->pPerViewRenderAreas != nullptr) {
-                    for (uint32_t perViewRenderAreaIndex = 0; perViewRenderAreaIndex < structure->perViewRenderAreaCount;
+                    for (u32 perViewRenderAreaIndex = 0; perViewRenderAreaIndex < structure->perViewRenderAreaCount;
                          ++perViewRenderAreaIndex) {
                         [[maybe_unused]] const Location pPerViewRenderAreas_loc =
                             pNext_loc.dot(Field::pPerViewRenderAreas, perViewRenderAreaIndex);
@@ -9770,7 +9769,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pStages-parameter", kVUIDUndefined);
 
                 if (structure->pStages != nullptr) {
-                    for (uint32_t stageIndex = 0; stageIndex < structure->stageCount; ++stageIndex) {
+                    for (u32 stageIndex = 0; stageIndex < structure->stageCount; ++stageIndex) {
                         [[maybe_unused]] const Location pStages_loc = pNext_loc.dot(Field::pStages, stageIndex);
                         skip |= ValidateFlags(pStages_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineShaderStageCreateFlagBits,
                                               AllVkPipelineShaderStageCreateFlagBits, structure->pStages[stageIndex].flags,
@@ -9793,7 +9792,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                   kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                             if (structure->pStages[stageIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                                for (uint32_t mapEntryIndex = 0;
+                                for (u32 mapEntryIndex = 0;
                                      mapEntryIndex < structure->pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                      ++mapEntryIndex) {
                                     [[maybe_unused]] const Location pMapEntries_loc =
@@ -9817,7 +9816,7 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pGroups-parameter", kVUIDUndefined);
 
                 if (structure->pGroups != nullptr) {
-                    for (uint32_t groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
+                    for (u32 groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
                         [[maybe_unused]] const Location pGroups_loc = pNext_loc.dot(Field::pGroups, groupIndex);
                         skip |= ValidateRangedEnum(pGroups_loc.dot(Field::type), vvl::Enum::VkRayTracingShaderGroupTypeKHR,
                                                    structure->pGroups[groupIndex].type,
@@ -10031,7 +10030,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(
                                  "VUID-vkGetPhysicalDeviceQueueFamilyProperties-pQueueFamilyPropertyCount-parameter",
                                  kVUIDUndefined, "VUID-vkGetPhysicalDeviceQueueFamilyProperties-pQueueFamilyProperties-parameter");
     if (pQueueFamilyProperties != nullptr) {
-        for (uint32_t pQueueFamilyPropertyIndex = 0; pQueueFamilyPropertyIndex < *pQueueFamilyPropertyCount;
+        for (u32 pQueueFamilyPropertyIndex = 0; pQueueFamilyPropertyIndex < *pQueueFamilyPropertyCount;
              ++pQueueFamilyPropertyIndex) {
             [[maybe_unused]] const Location pQueueFamilyProperties_loc =
                 loc.dot(Field::pQueueFamilyProperties, pQueueFamilyPropertyIndex);
@@ -10284,8 +10283,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             "VUID-VkDeviceCreateInfo-queueCreateInfoCount-arraylength");
 
         if (pCreateInfo->pQueueCreateInfos != nullptr) {
-            for (uint32_t queueCreateInfoIndex = 0; queueCreateInfoIndex < pCreateInfo->queueCreateInfoCount;
-                 ++queueCreateInfoIndex) {
+            for (u32 queueCreateInfoIndex = 0; queueCreateInfoIndex < pCreateInfo->queueCreateInfoCount; ++queueCreateInfoIndex) {
                 [[maybe_unused]] const Location pQueueCreateInfos_loc =
                     pCreateInfo_loc.dot(Field::pQueueCreateInfos, queueCreateInfoIndex);
                 constexpr std::array allowed_structs_VkDeviceQueueCreateInfo = {
@@ -10509,7 +10507,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(VkQueue queue, uint32_t sub
                                     VK_STRUCTURE_TYPE_SUBMIT_INFO, false, true, "VUID-VkSubmitInfo-sType-sType",
                                     "VUID-vkQueueSubmit-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != nullptr) {
-        for (uint32_t submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
+        for (u32 submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
             [[maybe_unused]] const Location pSubmits_loc = loc.dot(Field::pSubmits, submitIndex);
             constexpr std::array allowed_structs_VkSubmitInfo = {VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC,
                                                                  VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR,
@@ -10643,7 +10641,7 @@ bool StatelessValidation::PreCallValidateFlushMappedMemoryRanges(VkDevice device
         VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, true, true, "VUID-VkMappedMemoryRange-sType-sType",
         "VUID-vkFlushMappedMemoryRanges-pMemoryRanges-parameter", "VUID-vkFlushMappedMemoryRanges-memoryRangeCount-arraylength");
     if (pMemoryRanges != nullptr) {
-        for (uint32_t memoryRangeIndex = 0; memoryRangeIndex < memoryRangeCount; ++memoryRangeIndex) {
+        for (u32 memoryRangeIndex = 0; memoryRangeIndex < memoryRangeCount; ++memoryRangeIndex) {
             [[maybe_unused]] const Location pMemoryRanges_loc = loc.dot(Field::pMemoryRanges, memoryRangeIndex);
             skip |= ValidateStructPnext(pMemoryRanges_loc, pMemoryRanges[memoryRangeIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkMappedMemoryRange-pNext-pNext", kVUIDUndefined,
@@ -10666,7 +10664,7 @@ bool StatelessValidation::PreCallValidateInvalidateMappedMemoryRanges(VkDevice d
                                 "VUID-vkInvalidateMappedMemoryRanges-pMemoryRanges-parameter",
                                 "VUID-vkInvalidateMappedMemoryRanges-memoryRangeCount-arraylength");
     if (pMemoryRanges != nullptr) {
-        for (uint32_t memoryRangeIndex = 0; memoryRangeIndex < memoryRangeCount; ++memoryRangeIndex) {
+        for (u32 memoryRangeIndex = 0; memoryRangeIndex < memoryRangeCount; ++memoryRangeIndex) {
             [[maybe_unused]] const Location pMemoryRanges_loc = loc.dot(Field::pMemoryRanges, memoryRangeIndex);
             skip |= ValidateStructPnext(pMemoryRanges_loc, pMemoryRanges[memoryRangeIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkMappedMemoryRange-pNext-pNext", kVUIDUndefined,
@@ -10748,7 +10746,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements(
                                  "VUID-vkGetImageSparseMemoryRequirements-pSparseMemoryRequirementCount-parameter", kVUIDUndefined,
                                  "VUID-vkGetImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter");
     if (pSparseMemoryRequirements != nullptr) {
-        for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
+        for (u32 pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
              ++pSparseMemoryRequirementIndex) {
             [[maybe_unused]] const Location pSparseMemoryRequirements_loc =
                 loc.dot(Field::pSparseMemoryRequirements, pSparseMemoryRequirementIndex);
@@ -10780,7 +10778,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
                                  false, false, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-pPropertyCount-parameter",
                                  kVUIDUndefined, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-pProperties-parameter");
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             // No xml-driven validation
         }
@@ -10796,7 +10794,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                     VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, false, true, "VUID-VkBindSparseInfo-sType-sType",
                                     "VUID-vkQueueBindSparse-pBindInfo-parameter", kVUIDUndefined);
     if (pBindInfo != nullptr) {
-        for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
+        for (u32 bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
             [[maybe_unused]] const Location pBindInfo_loc = loc.dot(Field::pBindInfo, bindInfoIndex);
             constexpr std::array allowed_structs_VkBindSparseInfo = {VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO,
                                                                      VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
@@ -10816,7 +10814,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                   kVUIDUndefined, "VUID-VkBindSparseInfo-pBufferBinds-parameter");
 
             if (pBindInfo[bindInfoIndex].pBufferBinds != nullptr) {
-                for (uint32_t bufferBindIndex = 0; bufferBindIndex < pBindInfo[bindInfoIndex].bufferBindCount; ++bufferBindIndex) {
+                for (u32 bufferBindIndex = 0; bufferBindIndex < pBindInfo[bindInfoIndex].bufferBindCount; ++bufferBindIndex) {
                     [[maybe_unused]] const Location pBufferBinds_loc = pBindInfo_loc.dot(Field::pBufferBinds, bufferBindIndex);
                     skip |= ValidateRequiredHandle(pBufferBinds_loc.dot(Field::buffer),
                                                    pBindInfo[bindInfoIndex].pBufferBinds[bufferBindIndex].buffer);
@@ -10828,7 +10826,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                           "VUID-VkSparseBufferMemoryBindInfo-pBinds-parameter");
 
                     if (pBindInfo[bindInfoIndex].pBufferBinds[bufferBindIndex].pBinds != nullptr) {
-                        for (uint32_t bindIndex = 0; bindIndex < pBindInfo[bindInfoIndex].pBufferBinds[bufferBindIndex].bindCount;
+                        for (u32 bindIndex = 0; bindIndex < pBindInfo[bindInfoIndex].pBufferBinds[bufferBindIndex].bindCount;
                              ++bindIndex) {
                             [[maybe_unused]] const Location pBinds_loc = pBufferBinds_loc.dot(Field::pBinds, bindIndex);
                             skip |= ValidateFlags(pBinds_loc.dot(Field::flags), vvl::FlagBitmask::VkSparseMemoryBindFlagBits,
@@ -10845,7 +10843,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                   true, kVUIDUndefined, "VUID-VkBindSparseInfo-pImageOpaqueBinds-parameter");
 
             if (pBindInfo[bindInfoIndex].pImageOpaqueBinds != nullptr) {
-                for (uint32_t imageOpaqueBindIndex = 0; imageOpaqueBindIndex < pBindInfo[bindInfoIndex].imageOpaqueBindCount;
+                for (u32 imageOpaqueBindIndex = 0; imageOpaqueBindIndex < pBindInfo[bindInfoIndex].imageOpaqueBindCount;
                      ++imageOpaqueBindIndex) {
                     [[maybe_unused]] const Location pImageOpaqueBinds_loc =
                         pBindInfo_loc.dot(Field::pImageOpaqueBinds, imageOpaqueBindIndex);
@@ -10859,7 +10857,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                           "VUID-VkSparseImageOpaqueMemoryBindInfo-pBinds-parameter");
 
                     if (pBindInfo[bindInfoIndex].pImageOpaqueBinds[imageOpaqueBindIndex].pBinds != nullptr) {
-                        for (uint32_t bindIndex = 0;
+                        for (u32 bindIndex = 0;
                              bindIndex < pBindInfo[bindInfoIndex].pImageOpaqueBinds[imageOpaqueBindIndex].bindCount; ++bindIndex) {
                             [[maybe_unused]] const Location pBinds_loc = pImageOpaqueBinds_loc.dot(Field::pBinds, bindIndex);
                             skip |= ValidateFlags(
@@ -10877,7 +10875,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                   kVUIDUndefined, "VUID-VkBindSparseInfo-pImageBinds-parameter");
 
             if (pBindInfo[bindInfoIndex].pImageBinds != nullptr) {
-                for (uint32_t imageBindIndex = 0; imageBindIndex < pBindInfo[bindInfoIndex].imageBindCount; ++imageBindIndex) {
+                for (u32 imageBindIndex = 0; imageBindIndex < pBindInfo[bindInfoIndex].imageBindCount; ++imageBindIndex) {
                     [[maybe_unused]] const Location pImageBinds_loc = pBindInfo_loc.dot(Field::pImageBinds, imageBindIndex);
                     skip |= ValidateRequiredHandle(pImageBinds_loc.dot(Field::image),
                                                    pBindInfo[bindInfoIndex].pImageBinds[imageBindIndex].image);
@@ -10889,7 +10887,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t
                                           "VUID-VkSparseImageMemoryBindInfo-pBinds-parameter");
 
                     if (pBindInfo[bindInfoIndex].pImageBinds[imageBindIndex].pBinds != nullptr) {
-                        for (uint32_t bindIndex = 0; bindIndex < pBindInfo[bindInfoIndex].pImageBinds[imageBindIndex].bindCount;
+                        for (u32 bindIndex = 0; bindIndex < pBindInfo[bindInfoIndex].pImageBinds[imageBindIndex].bindCount;
                              ++bindIndex) {
                             [[maybe_unused]] const Location pBinds_loc = pImageBinds_loc.dot(Field::pBinds, bindIndex);
                             skip |= ValidateFlags(
@@ -11545,7 +11543,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(VkDevice device
         VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, true, true, "VUID-VkGraphicsPipelineCreateInfo-sType-sType",
         "VUID-vkCreateGraphicsPipelines-pCreateInfos-parameter", "VUID-vkCreateGraphicsPipelines-createInfoCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+        for (u32 createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkGraphicsPipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
@@ -11620,7 +11618,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(VkDevice device,
         VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO, true, true, "VUID-VkComputePipelineCreateInfo-sType-sType",
         "VUID-vkCreateComputePipelines-pCreateInfos-parameter", "VUID-vkCreateComputePipelines-createInfoCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+        for (u32 createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkComputePipelineCreateInfo = {
                 VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_INDIRECT_BUFFER_INFO_NV,
@@ -11676,7 +11674,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(VkDevice device,
                                       kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                 if (pCreateInfos[createInfoIndex].stage.pSpecializationInfo->pMapEntries != nullptr) {
-                    for (uint32_t mapEntryIndex = 0;
+                    for (u32 mapEntryIndex = 0;
                          mapEntryIndex < pCreateInfos[createInfoIndex].stage.pSpecializationInfo->mapEntryCount; ++mapEntryIndex) {
                         [[maybe_unused]] const Location pMapEntries_loc =
                             pSpecializationInfo_loc.dot(Field::pMapEntries, mapEntryIndex);
@@ -11740,7 +11738,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(VkDevice device, c
                               "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-parameter");
 
         if (pCreateInfo->pPushConstantRanges != nullptr) {
-            for (uint32_t pushConstantRangeIndex = 0; pushConstantRangeIndex < pCreateInfo->pushConstantRangeCount;
+            for (u32 pushConstantRangeIndex = 0; pushConstantRangeIndex < pCreateInfo->pushConstantRangeCount;
                  ++pushConstantRangeIndex) {
                 [[maybe_unused]] const Location pPushConstantRanges_loc =
                     pCreateInfo_loc.dot(Field::pPushConstantRanges, pushConstantRangeIndex);
@@ -11874,7 +11872,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(VkDevice devi
                               "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-parameter");
 
         if (pCreateInfo->pBindings != nullptr) {
-            for (uint32_t bindingIndex = 0; bindingIndex < pCreateInfo->bindingCount; ++bindingIndex) {
+            for (u32 bindingIndex = 0; bindingIndex < pCreateInfo->bindingCount; ++bindingIndex) {
                 [[maybe_unused]] const Location pBindings_loc = pCreateInfo_loc.dot(Field::pBindings, bindingIndex);
                 skip |= ValidateRangedEnum(pBindings_loc.dot(Field::descriptorType), vvl::Enum::VkDescriptorType,
                                            pCreateInfo->pBindings[bindingIndex].descriptorType,
@@ -11932,7 +11930,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(VkDevice device, c
                               "VUID-VkDescriptorPoolCreateInfo-pPoolSizes-parameter");
 
         if (pCreateInfo->pPoolSizes != nullptr) {
-            for (uint32_t poolSizeIndex = 0; poolSizeIndex < pCreateInfo->poolSizeCount; ++poolSizeIndex) {
+            for (u32 poolSizeIndex = 0; poolSizeIndex < pCreateInfo->poolSizeCount; ++poolSizeIndex) {
                 [[maybe_unused]] const Location pPoolSizes_loc = pCreateInfo_loc.dot(Field::pPoolSizes, poolSizeIndex);
                 skip |= ValidateRangedEnum(pPoolSizes_loc.dot(Field::type), vvl::Enum::VkDescriptorType,
                                            pCreateInfo->pPoolSizes[poolSizeIndex].type, "VUID-VkDescriptorPoolSize-type-parameter");
@@ -12028,7 +12026,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(VkDevice device, u
                                     "VUID-VkWriteDescriptorSet-sType-sType",
                                     "VUID-vkUpdateDescriptorSets-pDescriptorWrites-parameter", kVUIDUndefined);
     if (pDescriptorWrites != nullptr) {
-        for (uint32_t descriptorWriteIndex = 0; descriptorWriteIndex < descriptorWriteCount; ++descriptorWriteIndex) {
+        for (u32 descriptorWriteIndex = 0; descriptorWriteIndex < descriptorWriteCount; ++descriptorWriteIndex) {
             [[maybe_unused]] const Location pDescriptorWrites_loc = loc.dot(Field::pDescriptorWrites, descriptorWriteIndex);
             constexpr std::array allowed_structs_VkWriteDescriptorSet = {
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
@@ -12055,7 +12053,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(VkDevice device, u
                                     "VUID-VkCopyDescriptorSet-sType-sType",
                                     "VUID-vkUpdateDescriptorSets-pDescriptorCopies-parameter", kVUIDUndefined);
     if (pDescriptorCopies != nullptr) {
-        for (uint32_t descriptorCopyIndex = 0; descriptorCopyIndex < descriptorCopyCount; ++descriptorCopyIndex) {
+        for (u32 descriptorCopyIndex = 0; descriptorCopyIndex < descriptorCopyCount; ++descriptorCopyIndex) {
             [[maybe_unused]] const Location pDescriptorCopies_loc = loc.dot(Field::pDescriptorCopies, descriptorCopyIndex);
             skip |= ValidateStructPnext(pDescriptorCopies_loc, pDescriptorCopies[descriptorCopyIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkCopyDescriptorSet-pNext-pNext", kVUIDUndefined,
@@ -12142,7 +12140,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                               "VUID-VkRenderPassCreateInfo-pAttachments-parameter");
 
         if (pCreateInfo->pAttachments != nullptr) {
-            for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
+            for (u32 attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
                 [[maybe_unused]] const Location pAttachments_loc = pCreateInfo_loc.dot(Field::pAttachments, attachmentIndex);
                 skip |= ValidateFlags(pAttachments_loc.dot(Field::flags), vvl::FlagBitmask::VkAttachmentDescriptionFlagBits,
                                       AllVkAttachmentDescriptionFlagBits, pCreateInfo->pAttachments[attachmentIndex].flags,
@@ -12189,7 +12187,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                               "VUID-VkRenderPassCreateInfo-pSubpasses-parameter");
 
         if (pCreateInfo->pSubpasses != nullptr) {
-            for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex) {
+            for (u32 subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex) {
                 [[maybe_unused]] const Location pSubpasses_loc = pCreateInfo_loc.dot(Field::pSubpasses, subpassIndex);
                 skip |= ValidateFlags(pSubpasses_loc.dot(Field::flags), vvl::FlagBitmask::VkSubpassDescriptionFlagBits,
                                       AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags,
@@ -12205,7 +12203,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                                       "VUID-VkSubpassDescription-pInputAttachments-parameter");
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pInputAttachments != nullptr) {
-                    for (uint32_t inputAttachmentIndex = 0;
+                    for (u32 inputAttachmentIndex = 0;
                          inputAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].inputAttachmentCount;
                          ++inputAttachmentIndex) {
                         [[maybe_unused]] const Location pInputAttachments_loc =
@@ -12223,7 +12221,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                                       "VUID-VkSubpassDescription-pColorAttachments-parameter");
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pColorAttachments != nullptr) {
-                    for (uint32_t colorAttachmentIndex = 0;
+                    for (u32 colorAttachmentIndex = 0;
                          colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount;
                          ++colorAttachmentIndex) {
                         [[maybe_unused]] const Location pColorAttachments_loc =
@@ -12236,7 +12234,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                 }
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments != nullptr) {
-                    for (uint32_t colorAttachmentIndex = 0;
+                    for (u32 colorAttachmentIndex = 0;
                          colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount;
                          ++colorAttachmentIndex) {
                         [[maybe_unused]] const Location pResolveAttachments_loc =
@@ -12269,7 +12267,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                               "VUID-VkRenderPassCreateInfo-pDependencies-parameter");
 
         if (pCreateInfo->pDependencies != nullptr) {
-            for (uint32_t dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex) {
+            for (u32 dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex) {
                 [[maybe_unused]] const Location pDependencies_loc = pCreateInfo_loc.dot(Field::pDependencies, dependencyIndex);
                 skip |= ValidateFlags(pDependencies_loc.dot(Field::srcStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits,
                                       AllVkPipelineStageFlagBits, pCreateInfo->pDependencies[dependencyIndex].srcStageMask,
@@ -12468,7 +12466,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewport(VkCommandBuffer commandB
     skip |= ValidateArray(loc.dot(Field::viewportCount), loc.dot(Field::pViewports), viewportCount, &pViewports, true, true,
                           "VUID-vkCmdSetViewport-viewportCount-arraylength", "VUID-vkCmdSetViewport-pViewports-parameter");
     if (pViewports != nullptr) {
-        for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
+        for (u32 viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
             [[maybe_unused]] const Location pViewports_loc = loc.dot(Field::pViewports, viewportIndex);
             // No xml-driven validation
         }
@@ -12484,7 +12482,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissor(VkCommandBuffer commandBu
     skip |= ValidateArray(loc.dot(Field::scissorCount), loc.dot(Field::pScissors), scissorCount, &pScissors, true, true,
                           "VUID-vkCmdSetScissor-scissorCount-arraylength", "VUID-vkCmdSetScissor-pScissors-parameter");
     if (pScissors != nullptr) {
-        for (uint32_t scissorIndex = 0; scissorIndex < scissorCount; ++scissorIndex) {
+        for (u32 scissorIndex = 0; scissorIndex < scissorCount; ++scissorIndex) {
             [[maybe_unused]] const Location pScissors_loc = loc.dot(Field::pScissors, scissorIndex);
             // No xml-driven validation
 
@@ -12662,7 +12660,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBu
     skip |= ValidateArray(loc.dot(Field::regionCount), loc.dot(Field::pRegions), regionCount, &pRegions, true, true,
                           "VUID-vkCmdCopyBuffer-regionCount-arraylength", "VUID-vkCmdCopyBuffer-pRegions-parameter");
     if (pRegions != nullptr) {
-        for (uint32_t regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
+        for (u32 regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
             [[maybe_unused]] const Location pRegions_loc = loc.dot(Field::pRegions, regionIndex);
             // No xml-driven validation
         }
@@ -12685,7 +12683,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuf
     skip |= ValidateArray(loc.dot(Field::regionCount), loc.dot(Field::pRegions), regionCount, &pRegions, true, true,
                           "VUID-vkCmdCopyImage-regionCount-arraylength", "VUID-vkCmdCopyImage-pRegions-parameter");
     if (pRegions != nullptr) {
-        for (uint32_t regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
+        for (u32 regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
             [[maybe_unused]] const Location pRegions_loc = loc.dot(Field::pRegions, regionIndex);
             skip |= ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
                                   AllVkImageAspectFlagBits, pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags,
@@ -12722,7 +12720,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuf
     skip |= ValidateArray(loc.dot(Field::regionCount), loc.dot(Field::pRegions), regionCount, &pRegions, true, true,
                           "VUID-vkCmdBlitImage-regionCount-arraylength", "VUID-vkCmdBlitImage-pRegions-parameter");
     if (pRegions != nullptr) {
-        for (uint32_t regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
+        for (u32 regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
             [[maybe_unused]] const Location pRegions_loc = loc.dot(Field::pRegions, regionIndex);
             skip |= ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
                                   AllVkImageAspectFlagBits, pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags,
@@ -12752,7 +12750,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer co
     skip |= ValidateArray(loc.dot(Field::regionCount), loc.dot(Field::pRegions), regionCount, &pRegions, true, true,
                           "VUID-vkCmdCopyBufferToImage-regionCount-arraylength", "VUID-vkCmdCopyBufferToImage-pRegions-parameter");
     if (pRegions != nullptr) {
-        for (uint32_t regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
+        for (u32 regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
             [[maybe_unused]] const Location pRegions_loc = loc.dot(Field::pRegions, regionIndex);
             skip |= ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
                                   AllVkImageAspectFlagBits, pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags,
@@ -12780,7 +12778,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer co
     skip |= ValidateArray(loc.dot(Field::regionCount), loc.dot(Field::pRegions), regionCount, &pRegions, true, true,
                           "VUID-vkCmdCopyImageToBuffer-regionCount-arraylength", "VUID-vkCmdCopyImageToBuffer-pRegions-parameter");
     if (pRegions != nullptr) {
-        for (uint32_t regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
+        for (u32 regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
             [[maybe_unused]] const Location pRegions_loc = loc.dot(Field::pRegions, regionIndex);
             skip |= ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
                                   AllVkImageAspectFlagBits, pRegions[regionIndex].imageSubresource.aspectMask, kRequiredFlags,
@@ -12828,7 +12826,7 @@ bool StatelessValidation::PreCallValidateCmdClearColorImage(VkCommandBuffer comm
     skip |= ValidateArray(loc.dot(Field::rangeCount), loc.dot(Field::pRanges), rangeCount, &pRanges, true, true,
                           "VUID-vkCmdClearColorImage-rangeCount-arraylength", "VUID-vkCmdClearColorImage-pRanges-parameter");
     if (pRanges != nullptr) {
-        for (uint32_t rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
+        for (u32 rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
             [[maybe_unused]] const Location pRanges_loc = loc.dot(Field::pRanges, rangeIndex);
             skip |=
                 ValidateFlags(pRanges_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits, AllVkImageAspectFlagBits,
@@ -12861,7 +12859,7 @@ bool StatelessValidation::PreCallValidateCmdClearDepthStencilImage(VkCommandBuff
                           "VUID-vkCmdClearDepthStencilImage-rangeCount-arraylength",
                           "VUID-vkCmdClearDepthStencilImage-pRanges-parameter");
     if (pRanges != nullptr) {
-        for (uint32_t rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
+        for (u32 rangeIndex = 0; rangeIndex < rangeCount; ++rangeIndex) {
             [[maybe_unused]] const Location pRanges_loc = loc.dot(Field::pRanges, rangeIndex);
             skip |=
                 ValidateFlags(pRanges_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits, AllVkImageAspectFlagBits,
@@ -12881,7 +12879,7 @@ bool StatelessValidation::PreCallValidateCmdClearAttachments(VkCommandBuffer com
                           "VUID-vkCmdClearAttachments-attachmentCount-arraylength",
                           "VUID-vkCmdClearAttachments-pAttachments-parameter");
     if (pAttachments != nullptr) {
-        for (uint32_t attachmentIndex = 0; attachmentIndex < attachmentCount; ++attachmentIndex) {
+        for (u32 attachmentIndex = 0; attachmentIndex < attachmentCount; ++attachmentIndex) {
             [[maybe_unused]] const Location pAttachments_loc = loc.dot(Field::pAttachments, attachmentIndex);
             skip |=
                 ValidateFlags(pAttachments_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
@@ -12892,7 +12890,7 @@ bool StatelessValidation::PreCallValidateCmdClearAttachments(VkCommandBuffer com
     skip |= ValidateArray(loc.dot(Field::rectCount), loc.dot(Field::pRects), rectCount, &pRects, true, true,
                           "VUID-vkCmdClearAttachments-rectCount-arraylength", "VUID-vkCmdClearAttachments-pRects-parameter");
     if (pRects != nullptr) {
-        for (uint32_t rectIndex = 0; rectIndex < rectCount; ++rectIndex) {
+        for (u32 rectIndex = 0; rectIndex < rectCount; ++rectIndex) {
             [[maybe_unused]] const Location pRects_loc = loc.dot(Field::pRects, rectIndex);
             // No xml-driven validation
 
@@ -12920,7 +12918,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage(VkCommandBuffer command
     skip |= ValidateArray(loc.dot(Field::regionCount), loc.dot(Field::pRegions), regionCount, &pRegions, true, true,
                           "VUID-vkCmdResolveImage-regionCount-arraylength", "VUID-vkCmdResolveImage-pRegions-parameter");
     if (pRegions != nullptr) {
-        for (uint32_t regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
+        for (u32 regionIndex = 0; regionIndex < regionCount; ++regionIndex) {
             [[maybe_unused]] const Location pRegions_loc = loc.dot(Field::pRegions, regionIndex);
             skip |= ValidateFlags(pRegions_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
                                   AllVkImageAspectFlagBits, pRegions[regionIndex].srcSubresource.aspectMask, kRequiredFlags,
@@ -12980,7 +12978,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
                                 pMemoryBarriers, VK_STRUCTURE_TYPE_MEMORY_BARRIER, false, true, "VUID-VkMemoryBarrier-sType-sType",
                                 "VUID-vkCmdWaitEvents-pMemoryBarriers-parameter", kVUIDUndefined);
     if (pMemoryBarriers != nullptr) {
-        for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < memoryBarrierCount; ++memoryBarrierIndex) {
+        for (u32 memoryBarrierIndex = 0; memoryBarrierIndex < memoryBarrierCount; ++memoryBarrierIndex) {
             [[maybe_unused]] const Location pMemoryBarriers_loc = loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
             skip |= ValidateStructPnext(pMemoryBarriers_loc, pMemoryBarriers[memoryBarrierIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkMemoryBarrier-pNext-pNext", kVUIDUndefined,
@@ -13000,8 +12998,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
                                     true, "VUID-VkBufferMemoryBarrier-sType-sType",
                                     "VUID-vkCmdWaitEvents-pBufferMemoryBarriers-parameter", kVUIDUndefined);
     if (pBufferMemoryBarriers != nullptr) {
-        for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < bufferMemoryBarrierCount;
-             ++bufferMemoryBarrierIndex) {
+        for (u32 bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex) {
             [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                 loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
             constexpr std::array allowed_structs_VkBufferMemoryBarrier = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT};
@@ -13020,7 +13017,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
                                     true, "VUID-VkImageMemoryBarrier-sType-sType",
                                     "VUID-vkCmdWaitEvents-pImageMemoryBarriers-parameter", kVUIDUndefined);
     if (pImageMemoryBarriers != nullptr) {
-        for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < imageMemoryBarrierCount; ++imageMemoryBarrierIndex) {
+        for (u32 imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < imageMemoryBarrierCount; ++imageMemoryBarrierIndex) {
             [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                 loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
             constexpr std::array allowed_structs_VkImageMemoryBarrier = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT,
@@ -13069,7 +13066,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
                                 pMemoryBarriers, VK_STRUCTURE_TYPE_MEMORY_BARRIER, false, true, "VUID-VkMemoryBarrier-sType-sType",
                                 "VUID-vkCmdPipelineBarrier-pMemoryBarriers-parameter", kVUIDUndefined);
     if (pMemoryBarriers != nullptr) {
-        for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < memoryBarrierCount; ++memoryBarrierIndex) {
+        for (u32 memoryBarrierIndex = 0; memoryBarrierIndex < memoryBarrierCount; ++memoryBarrierIndex) {
             [[maybe_unused]] const Location pMemoryBarriers_loc = loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
             skip |= ValidateStructPnext(pMemoryBarriers_loc, pMemoryBarriers[memoryBarrierIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkMemoryBarrier-pNext-pNext", kVUIDUndefined,
@@ -13089,8 +13086,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
                                     true, "VUID-VkBufferMemoryBarrier-sType-sType",
                                     "VUID-vkCmdPipelineBarrier-pBufferMemoryBarriers-parameter", kVUIDUndefined);
     if (pBufferMemoryBarriers != nullptr) {
-        for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < bufferMemoryBarrierCount;
-             ++bufferMemoryBarrierIndex) {
+        for (u32 bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex) {
             [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                 loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
             constexpr std::array allowed_structs_VkBufferMemoryBarrier = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT};
@@ -13109,7 +13105,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
                                     true, "VUID-VkImageMemoryBarrier-sType-sType",
                                     "VUID-vkCmdPipelineBarrier-pImageMemoryBarriers-parameter", kVUIDUndefined);
     if (pImageMemoryBarriers != nullptr) {
-        for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < imageMemoryBarrierCount; ++imageMemoryBarrierIndex) {
+        for (u32 imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < imageMemoryBarrierCount; ++imageMemoryBarrierIndex) {
             [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                 loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
             constexpr std::array allowed_structs_VkImageMemoryBarrier = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT,
@@ -13279,7 +13275,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2(VkDevice device, uint
                                     "VUID-VkBindBufferMemoryInfo-sType-sType", "VUID-vkBindBufferMemory2-pBindInfos-parameter",
                                     "VUID-vkBindBufferMemory2-bindInfoCount-arraylength");
     if (pBindInfos != nullptr) {
-        for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
+        for (u32 bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
             [[maybe_unused]] const Location pBindInfos_loc = loc.dot(Field::pBindInfos, bindInfoIndex);
             constexpr std::array allowed_structs_VkBindBufferMemoryInfo = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO,
                                                                            VK_STRUCTURE_TYPE_BIND_MEMORY_STATUS_KHR};
@@ -13307,7 +13303,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2(VkDevice device, uint3
                                     "VUID-vkBindImageMemory2-pBindInfos-parameter",
                                     "VUID-vkBindImageMemory2-bindInfoCount-arraylength");
     if (pBindInfos != nullptr) {
-        for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
+        for (u32 bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
             [[maybe_unused]] const Location pBindInfos_loc = loc.dot(Field::pBindInfos, bindInfoIndex);
             constexpr std::array allowed_structs_VkBindImageMemoryInfo = {
                 VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_DEVICE_GROUP_INFO, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR,
@@ -13367,7 +13363,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
                                     "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter",
                                     "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupCount-parameter", kVUIDUndefined);
     if (pPhysicalDeviceGroupProperties != nullptr) {
-        for (uint32_t pPhysicalDeviceGroupIndex = 0; pPhysicalDeviceGroupIndex < *pPhysicalDeviceGroupCount;
+        for (u32 pPhysicalDeviceGroupIndex = 0; pPhysicalDeviceGroupIndex < *pPhysicalDeviceGroupCount;
              ++pPhysicalDeviceGroupIndex) {
             [[maybe_unused]] const Location pPhysicalDeviceGroupProperties_loc =
                 loc.dot(Field::pPhysicalDeviceGroupProperties, pPhysicalDeviceGroupIndex);
@@ -13467,7 +13463,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
         "VUID-vkGetImageSparseMemoryRequirements2-pSparseMemoryRequirements-parameter",
         "VUID-vkGetImageSparseMemoryRequirements2-pSparseMemoryRequirementCount-parameter", kVUIDUndefined);
     if (pSparseMemoryRequirements != nullptr) {
-        for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
+        for (u32 pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
              ++pSparseMemoryRequirementIndex) {
             [[maybe_unused]] const Location pSparseMemoryRequirements_loc =
                 loc.dot(Field::pSparseMemoryRequirements, pSparseMemoryRequirementIndex);
@@ -13729,7 +13725,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
                                     "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyPropertyCount-parameter",
                                     kVUIDUndefined);
     if (pQueueFamilyProperties != nullptr) {
-        for (uint32_t pQueueFamilyPropertyIndex = 0; pQueueFamilyPropertyIndex < *pQueueFamilyPropertyCount;
+        for (u32 pQueueFamilyPropertyIndex = 0; pQueueFamilyPropertyIndex < *pQueueFamilyPropertyCount;
              ++pQueueFamilyPropertyIndex) {
             [[maybe_unused]] const Location pQueueFamilyProperties_loc =
                 loc.dot(Field::pQueueFamilyProperties, pQueueFamilyPropertyIndex);
@@ -13817,7 +13813,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
         "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pProperties-parameter",
         "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -13956,7 +13952,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice
                               "VUID-VkDescriptorUpdateTemplateCreateInfo-pDescriptorUpdateEntries-parameter");
 
         if (pCreateInfo->pDescriptorUpdateEntries != nullptr) {
-            for (uint32_t descriptorUpdateEntryIndex = 0; descriptorUpdateEntryIndex < pCreateInfo->descriptorUpdateEntryCount;
+            for (u32 descriptorUpdateEntryIndex = 0; descriptorUpdateEntryIndex < pCreateInfo->descriptorUpdateEntryCount;
                  ++descriptorUpdateEntryIndex) {
                 [[maybe_unused]] const Location pDescriptorUpdateEntries_loc =
                     pCreateInfo_loc.dot(Field::pDescriptorUpdateEntries, descriptorUpdateEntryIndex);
@@ -14154,7 +14150,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice 
                               "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-parameter");
 
         if (pCreateInfo->pBindings != nullptr) {
-            for (uint32_t bindingIndex = 0; bindingIndex < pCreateInfo->bindingCount; ++bindingIndex) {
+            for (u32 bindingIndex = 0; bindingIndex < pCreateInfo->bindingCount; ++bindingIndex) {
                 [[maybe_unused]] const Location pBindings_loc = pCreateInfo_loc.dot(Field::pBindings, bindingIndex);
                 skip |= ValidateRangedEnum(pBindings_loc.dot(Field::descriptorType), vvl::Enum::VkDescriptorType,
                                            pCreateInfo->pBindings[bindingIndex].descriptorType,
@@ -14229,7 +14225,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
             "VUID-VkAttachmentDescription2-sType-sType", "VUID-VkRenderPassCreateInfo2-pAttachments-parameter", kVUIDUndefined);
 
         if (pCreateInfo->pAttachments != nullptr) {
-            for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
+            for (u32 attachmentIndex = 0; attachmentIndex < pCreateInfo->attachmentCount; ++attachmentIndex) {
                 [[maybe_unused]] const Location pAttachments_loc = pCreateInfo_loc.dot(Field::pAttachments, attachmentIndex);
                 constexpr std::array allowed_structs_VkAttachmentDescription2 = {
                     VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT, VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID};
@@ -14285,7 +14281,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
             "VUID-VkRenderPassCreateInfo2-pSubpasses-parameter", "VUID-VkRenderPassCreateInfo2-subpassCount-arraylength");
 
         if (pCreateInfo->pSubpasses != nullptr) {
-            for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex) {
+            for (u32 subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex) {
                 [[maybe_unused]] const Location pSubpasses_loc = pCreateInfo_loc.dot(Field::pSubpasses, subpassIndex);
                 constexpr std::array allowed_structs_VkSubpassDescription2 = {
                     VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR,
@@ -14315,7 +14311,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
                     kVUIDUndefined);
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pInputAttachments != nullptr) {
-                    for (uint32_t inputAttachmentIndex = 0;
+                    for (u32 inputAttachmentIndex = 0;
                          inputAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].inputAttachmentCount;
                          ++inputAttachmentIndex) {
                         [[maybe_unused]] const Location pInputAttachments_loc =
@@ -14345,7 +14341,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
                     kVUIDUndefined);
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pColorAttachments != nullptr) {
-                    for (uint32_t colorAttachmentIndex = 0;
+                    for (u32 colorAttachmentIndex = 0;
                          colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount;
                          ++colorAttachmentIndex) {
                         [[maybe_unused]] const Location pColorAttachments_loc =
@@ -14375,7 +14371,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
                     kVUIDUndefined);
 
                 if (pCreateInfo->pSubpasses[subpassIndex].pResolveAttachments != nullptr) {
-                    for (uint32_t colorAttachmentIndex = 0;
+                    for (u32 colorAttachmentIndex = 0;
                          colorAttachmentIndex < pCreateInfo->pSubpasses[subpassIndex].colorAttachmentCount;
                          ++colorAttachmentIndex) {
                         [[maybe_unused]] const Location pResolveAttachments_loc =
@@ -14433,7 +14429,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
             "VUID-VkSubpassDependency2-sType-sType", "VUID-VkRenderPassCreateInfo2-pDependencies-parameter", kVUIDUndefined);
 
         if (pCreateInfo->pDependencies != nullptr) {
-            for (uint32_t dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex) {
+            for (u32 dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex) {
                 [[maybe_unused]] const Location pDependencies_loc = pCreateInfo_loc.dot(Field::pDependencies, dependencyIndex);
                 constexpr std::array allowed_structs_VkSubpassDependency2 = {VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};
 
@@ -14705,7 +14701,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceToolProperties(VkPhysi
                                     "VUID-vkGetPhysicalDeviceToolProperties-pToolProperties-parameter",
                                     "VUID-vkGetPhysicalDeviceToolProperties-pToolCount-parameter", kVUIDUndefined);
     if (pToolProperties != nullptr) {
-        for (uint32_t pToolIndex = 0; pToolIndex < *pToolCount; ++pToolIndex) {
+        for (u32 pToolIndex = 0; pToolIndex < *pToolCount; ++pToolIndex) {
             [[maybe_unused]] const Location pToolProperties_loc = loc.dot(Field::pToolProperties, pToolIndex);
             skip |= ValidateStructPnext(pToolProperties_loc, pToolProperties[pToolIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceToolProperties-pNext-pNext",
@@ -14798,7 +14794,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
             "VUID-VkMemoryBarrier2-sType-sType", "VUID-VkDependencyInfo-pMemoryBarriers-parameter", kVUIDUndefined);
 
         if (pDependencyInfo->pMemoryBarriers != nullptr) {
-            for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex) {
+            for (u32 memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex) {
                 [[maybe_unused]] const Location pMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
                 skip |=
@@ -14832,7 +14828,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
             "VUID-VkDependencyInfo-pBufferMemoryBarriers-parameter", kVUIDUndefined);
 
         if (pDependencyInfo->pBufferMemoryBarriers != nullptr) {
-            for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfo->bufferMemoryBarrierCount;
+            for (u32 bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfo->bufferMemoryBarrierCount;
                  ++bufferMemoryBarrierIndex) {
                 [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
@@ -14877,7 +14873,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
             "VUID-VkDependencyInfo-pImageMemoryBarriers-parameter", kVUIDUndefined);
 
         if (pDependencyInfo->pImageMemoryBarriers != nullptr) {
-            for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount;
+            for (u32 imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount;
                  ++imageMemoryBarrierIndex) {
                 [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
@@ -14954,7 +14950,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                                 VK_STRUCTURE_TYPE_DEPENDENCY_INFO, true, true, "VUID-VkDependencyInfo-sType-sType",
                                 "VUID-vkCmdWaitEvents2-pDependencyInfos-parameter", "VUID-vkCmdWaitEvents2-eventCount-arraylength");
     if (pDependencyInfos != nullptr) {
-        for (uint32_t eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
+        for (u32 eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
             [[maybe_unused]] const Location pDependencyInfos_loc = loc.dot(Field::pDependencyInfos, eventIndex);
             skip |= ValidateStructPnext(pDependencyInfos_loc, pDependencyInfos[eventIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfo-pNext-pNext", kVUIDUndefined,
@@ -14971,7 +14967,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                 "VUID-VkDependencyInfo-pMemoryBarriers-parameter", kVUIDUndefined);
 
             if (pDependencyInfos[eventIndex].pMemoryBarriers != nullptr) {
-                for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfos[eventIndex].memoryBarrierCount;
+                for (u32 memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfos[eventIndex].memoryBarrierCount;
                      ++memoryBarrierIndex) {
                     [[maybe_unused]] const Location pMemoryBarriers_loc =
                         pDependencyInfos_loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
@@ -15008,7 +15004,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                 "VUID-VkDependencyInfo-pBufferMemoryBarriers-parameter", kVUIDUndefined);
 
             if (pDependencyInfos[eventIndex].pBufferMemoryBarriers != nullptr) {
-                for (uint32_t bufferMemoryBarrierIndex = 0;
+                for (u32 bufferMemoryBarrierIndex = 0;
                      bufferMemoryBarrierIndex < pDependencyInfos[eventIndex].bufferMemoryBarrierCount; ++bufferMemoryBarrierIndex) {
                     [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                         pDependencyInfos_loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
@@ -15057,7 +15053,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                 "VUID-VkDependencyInfo-pImageMemoryBarriers-parameter", kVUIDUndefined);
 
             if (pDependencyInfos[eventIndex].pImageMemoryBarriers != nullptr) {
-                for (uint32_t imageMemoryBarrierIndex = 0;
+                for (u32 imageMemoryBarrierIndex = 0;
                      imageMemoryBarrierIndex < pDependencyInfos[eventIndex].imageMemoryBarrierCount; ++imageMemoryBarrierIndex) {
                     [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                         pDependencyInfos_loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
@@ -15136,7 +15132,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer com
             "VUID-VkMemoryBarrier2-sType-sType", "VUID-VkDependencyInfo-pMemoryBarriers-parameter", kVUIDUndefined);
 
         if (pDependencyInfo->pMemoryBarriers != nullptr) {
-            for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex) {
+            for (u32 memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex) {
                 [[maybe_unused]] const Location pMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
                 skip |=
@@ -15170,7 +15166,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer com
             "VUID-VkDependencyInfo-pBufferMemoryBarriers-parameter", kVUIDUndefined);
 
         if (pDependencyInfo->pBufferMemoryBarriers != nullptr) {
-            for (uint32_t bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfo->bufferMemoryBarrierCount;
+            for (u32 bufferMemoryBarrierIndex = 0; bufferMemoryBarrierIndex < pDependencyInfo->bufferMemoryBarrierCount;
                  ++bufferMemoryBarrierIndex) {
                 [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
@@ -15215,7 +15211,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer com
             "VUID-VkDependencyInfo-pImageMemoryBarriers-parameter", kVUIDUndefined);
 
         if (pDependencyInfo->pImageMemoryBarriers != nullptr) {
-            for (uint32_t imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount;
+            for (u32 imageMemoryBarrierIndex = 0; imageMemoryBarrierIndex < pDependencyInfo->imageMemoryBarrierCount;
                  ++imageMemoryBarrierIndex) {
                 [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
@@ -15289,7 +15285,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
                                     VK_STRUCTURE_TYPE_SUBMIT_INFO_2, false, true, "VUID-VkSubmitInfo2-sType-sType",
                                     "VUID-vkQueueSubmit2-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != nullptr) {
-        for (uint32_t submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
+        for (u32 submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
             [[maybe_unused]] const Location pSubmits_loc = loc.dot(Field::pSubmits, submitIndex);
             constexpr std::array allowed_structs_VkSubmitInfo2 = {
                 VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT, VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
@@ -15310,7 +15306,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
                 "VUID-VkSubmitInfo2-pWaitSemaphoreInfos-parameter", kVUIDUndefined);
 
             if (pSubmits[submitIndex].pWaitSemaphoreInfos != nullptr) {
-                for (uint32_t waitSemaphoreInfoIndex = 0; waitSemaphoreInfoIndex < pSubmits[submitIndex].waitSemaphoreInfoCount;
+                for (u32 waitSemaphoreInfoIndex = 0; waitSemaphoreInfoIndex < pSubmits[submitIndex].waitSemaphoreInfoCount;
                      ++waitSemaphoreInfoIndex) {
                     [[maybe_unused]] const Location pWaitSemaphoreInfos_loc =
                         pSubmits_loc.dot(Field::pWaitSemaphoreInfos, waitSemaphoreInfoIndex);
@@ -15336,7 +15332,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
                 "VUID-VkSubmitInfo2-pCommandBufferInfos-parameter", kVUIDUndefined);
 
             if (pSubmits[submitIndex].pCommandBufferInfos != nullptr) {
-                for (uint32_t commandBufferInfoIndex = 0; commandBufferInfoIndex < pSubmits[submitIndex].commandBufferInfoCount;
+                for (u32 commandBufferInfoIndex = 0; commandBufferInfoIndex < pSubmits[submitIndex].commandBufferInfoCount;
                      ++commandBufferInfoIndex) {
                     [[maybe_unused]] const Location pCommandBufferInfos_loc =
                         pSubmits_loc.dot(Field::pCommandBufferInfos, commandBufferInfoIndex);
@@ -15361,8 +15357,8 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
                 "VUID-VkSubmitInfo2-pSignalSemaphoreInfos-parameter", kVUIDUndefined);
 
             if (pSubmits[submitIndex].pSignalSemaphoreInfos != nullptr) {
-                for (uint32_t signalSemaphoreInfoIndex = 0;
-                     signalSemaphoreInfoIndex < pSubmits[submitIndex].signalSemaphoreInfoCount; ++signalSemaphoreInfoIndex) {
+                for (u32 signalSemaphoreInfoIndex = 0; signalSemaphoreInfoIndex < pSubmits[submitIndex].signalSemaphoreInfoCount;
+                     ++signalSemaphoreInfoIndex) {
                     [[maybe_unused]] const Location pSignalSemaphoreInfos_loc =
                         pSubmits_loc.dot(Field::pSignalSemaphoreInfos, signalSemaphoreInfoIndex);
                     skip |= ValidateStructPnext(pSignalSemaphoreInfos_loc,
@@ -15405,7 +15401,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandB
                                         "VUID-VkCopyBufferInfo2-regionCount-arraylength");
 
         if (pCopyBufferInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyBufferInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyBufferInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyBufferInfo_loc.dot(Field::pRegions, regionIndex);
                 skip |= ValidateStructPnext(pRegions_loc, pCopyBufferInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkBufferCopy2-pNext-pNext", kVUIDUndefined,
@@ -15444,7 +15440,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBu
                                         "VUID-VkCopyImageInfo2-regionCount-arraylength");
 
         if (pCopyImageInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyImageInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyImageInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyImageInfo_loc.dot(Field::pRegions, regionIndex);
                 skip |= ValidateStructPnext(pRegions_loc, pCopyImageInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkImageCopy2-pNext-pNext", kVUIDUndefined,
@@ -15500,7 +15496,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer c
                                         "VUID-VkCopyBufferToImageInfo2-regionCount-arraylength");
 
         if (pCopyBufferToImageInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyBufferToImageInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyBufferToImageInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyBufferToImageInfo_loc.dot(Field::pRegions, regionIndex);
                 constexpr std::array allowed_structs_VkBufferImageCopy2 = {VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM};
 
@@ -15553,7 +15549,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer c
                                         "VUID-VkCopyImageToBufferInfo2-regionCount-arraylength");
 
         if (pCopyImageToBufferInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyImageToBufferInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyImageToBufferInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyImageToBufferInfo_loc.dot(Field::pRegions, regionIndex);
                 constexpr std::array allowed_structs_VkBufferImageCopy2 = {VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM};
 
@@ -15608,7 +15604,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBu
                                         "VUID-VkBlitImageInfo2-regionCount-arraylength");
 
         if (pBlitImageInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pBlitImageInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pBlitImageInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pBlitImageInfo_loc.dot(Field::pRegions, regionIndex);
                 constexpr std::array allowed_structs_VkImageBlit2 = {VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCOM};
 
@@ -15664,7 +15660,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2(VkCommandBuffer comman
                                     "VUID-VkResolveImageInfo2-regionCount-arraylength");
 
         if (pResolveImageInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pResolveImageInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pResolveImageInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pResolveImageInfo_loc.dot(Field::pRegions, regionIndex);
                 skip |= ValidateStructPnext(pRegions_loc, pResolveImageInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkImageResolve2-pNext-pNext", kVUIDUndefined,
@@ -15726,7 +15722,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(VkCommandBuffer comma
                                         "VUID-VkRenderingInfo-pColorAttachments-parameter", kVUIDUndefined);
 
         if (pRenderingInfo->pColorAttachments != nullptr) {
-            for (uint32_t colorAttachmentIndex = 0; colorAttachmentIndex < pRenderingInfo->colorAttachmentCount;
+            for (u32 colorAttachmentIndex = 0; colorAttachmentIndex < pRenderingInfo->colorAttachmentCount;
                  ++colorAttachmentIndex) {
                 [[maybe_unused]] const Location pColorAttachments_loc =
                     pRenderingInfo_loc.dot(Field::pColorAttachments, colorAttachmentIndex);
@@ -15871,7 +15867,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer
                           "VUID-vkCmdSetViewportWithCount-viewportCount-arraylength",
                           "VUID-vkCmdSetViewportWithCount-pViewports-parameter");
     if (pViewports != nullptr) {
-        for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
+        for (u32 viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
             [[maybe_unused]] const Location pViewports_loc = loc.dot(Field::pViewports, viewportIndex);
             // No xml-driven validation
         }
@@ -15888,7 +15884,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer 
                           "VUID-vkCmdSetScissorWithCount-scissorCount-arraylength",
                           "VUID-vkCmdSetScissorWithCount-pScissors-parameter");
     if (pScissors != nullptr) {
-        for (uint32_t scissorIndex = 0; scissorIndex < scissorCount; ++scissorIndex) {
+        for (u32 scissorIndex = 0; scissorIndex < scissorCount; ++scissorIndex) {
             [[maybe_unused]] const Location pScissors_loc = loc.dot(Field::pScissors, scissorIndex);
             // No xml-driven validation
 
@@ -16234,7 +16230,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
         "VUID-vkGetDeviceImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter",
         "VUID-vkGetDeviceImageSparseMemoryRequirements-pSparseMemoryRequirementCount-parameter", kVUIDUndefined);
     if (pSparseMemoryRequirements != nullptr) {
-        for (uint32_t pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
+        for (u32 pSparseMemoryRequirementIndex = 0; pSparseMemoryRequirementIndex < *pSparseMemoryRequirementCount;
              ++pSparseMemoryRequirementIndex) {
             [[maybe_unused]] const Location pSparseMemoryRequirements_loc =
                 loc.dot(Field::pSparseMemoryRequirements, pSparseMemoryRequirementIndex);
@@ -16305,7 +16301,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPh
                                  "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormatCount-parameter", kVUIDUndefined,
                                  "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormats-parameter");
     if (pSurfaceFormats != nullptr) {
-        for (uint32_t pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex) {
+        for (u32 pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex) {
             [[maybe_unused]] const Location pSurfaceFormats_loc = loc.dot(Field::pSurfaceFormats, pSurfaceFormatIndex);
             // No xml-driven validation
         }
@@ -16566,7 +16562,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(V
                                  false, false, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pPropertyCount-parameter",
                                  kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pProperties-parameter");
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             // No xml-driven validation
         }
@@ -16585,7 +16581,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
                                  false, false, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pPropertyCount-parameter",
                                  kVUIDUndefined, "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pProperties-parameter");
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             // No xml-driven validation
         }
@@ -16617,7 +16613,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalD
                                  false, false, "VUID-vkGetDisplayModePropertiesKHR-pPropertyCount-parameter", kVUIDUndefined,
                                  "VUID-vkGetDisplayModePropertiesKHR-pProperties-parameter");
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             // No xml-driven validation
         }
@@ -16726,7 +16722,7 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(VkDevice devi
         VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, true, true, "VUID-VkSwapchainCreateInfoKHR-sType-sType",
         "VUID-vkCreateSharedSwapchainsKHR-pCreateInfos-parameter", "VUID-vkCreateSharedSwapchainsKHR-swapchainCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex) {
+        for (u32 swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, swapchainIndex);
             constexpr std::array allowed_structs_VkSwapchainCreateInfoKHR = {
                 VK_STRUCTURE_TYPE_DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHR,
@@ -17087,7 +17083,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesK
         "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatProperties-parameter",
         "VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pVideoFormatPropertyCount-parameter", kVUIDUndefined);
     if (pVideoFormatProperties != nullptr) {
-        for (uint32_t pVideoFormatPropertyIndex = 0; pVideoFormatPropertyIndex < *pVideoFormatPropertyCount;
+        for (u32 pVideoFormatPropertyIndex = 0; pVideoFormatPropertyIndex < *pVideoFormatPropertyCount;
              ++pVideoFormatPropertyIndex) {
             [[maybe_unused]] const Location pVideoFormatProperties_loc =
                 loc.dot(Field::pVideoFormatProperties, pVideoFormatPropertyIndex);
@@ -17219,8 +17215,7 @@ bool StatelessValidation::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
         "VUID-vkGetVideoSessionMemoryRequirementsKHR-pMemoryRequirements-parameter",
         "VUID-vkGetVideoSessionMemoryRequirementsKHR-pMemoryRequirementsCount-parameter", kVUIDUndefined);
     if (pMemoryRequirements != nullptr) {
-        for (uint32_t pMemoryRequirementsIndex = 0; pMemoryRequirementsIndex < *pMemoryRequirementsCount;
-             ++pMemoryRequirementsIndex) {
+        for (u32 pMemoryRequirementsIndex = 0; pMemoryRequirementsIndex < *pMemoryRequirementsCount; ++pMemoryRequirementsIndex) {
             [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements, pMemoryRequirementsIndex);
             skip |= ValidateStructPnext(pMemoryRequirements_loc, pMemoryRequirements[pMemoryRequirementsIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkVideoSessionMemoryRequirementsKHR-pNext-pNext",
@@ -17245,7 +17240,7 @@ bool StatelessValidation::PreCallValidateBindVideoSessionMemoryKHR(VkDevice devi
         "VUID-VkBindVideoSessionMemoryInfoKHR-sType-sType", "VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-parameter",
         "VUID-vkBindVideoSessionMemoryKHR-bindSessionMemoryInfoCount-arraylength");
     if (pBindSessionMemoryInfos != nullptr) {
-        for (uint32_t bindSessionMemoryInfoIndex = 0; bindSessionMemoryInfoIndex < bindSessionMemoryInfoCount;
+        for (u32 bindSessionMemoryInfoIndex = 0; bindSessionMemoryInfoIndex < bindSessionMemoryInfoCount;
              ++bindSessionMemoryInfoIndex) {
             [[maybe_unused]] const Location pBindSessionMemoryInfos_loc =
                 loc.dot(Field::pBindSessionMemoryInfos, bindSessionMemoryInfoIndex);
@@ -17380,7 +17375,7 @@ bool StatelessValidation::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer 
                                         "VUID-VkVideoBeginCodingInfoKHR-pReferenceSlots-parameter", kVUIDUndefined);
 
         if (pBeginInfo->pReferenceSlots != nullptr) {
-            for (uint32_t referenceSlotIndex = 0; referenceSlotIndex < pBeginInfo->referenceSlotCount; ++referenceSlotIndex) {
+            for (u32 referenceSlotIndex = 0; referenceSlotIndex < pBeginInfo->referenceSlotCount; ++referenceSlotIndex) {
                 [[maybe_unused]] const Location pReferenceSlots_loc =
                     pBeginInfo_loc.dot(Field::pReferenceSlots, referenceSlotIndex);
                 constexpr std::array allowed_structs_VkVideoReferenceSlotInfoKHR = {
@@ -17554,7 +17549,7 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer comma
                                         "VUID-VkVideoDecodeInfoKHR-pReferenceSlots-parameter", kVUIDUndefined);
 
         if (pDecodeInfo->pReferenceSlots != nullptr) {
-            for (uint32_t referenceSlotIndex = 0; referenceSlotIndex < pDecodeInfo->referenceSlotCount; ++referenceSlotIndex) {
+            for (u32 referenceSlotIndex = 0; referenceSlotIndex < pDecodeInfo->referenceSlotCount; ++referenceSlotIndex) {
                 [[maybe_unused]] const Location pReferenceSlots_loc =
                     pDecodeInfo_loc.dot(Field::pReferenceSlots, referenceSlotIndex);
                 constexpr std::array allowed_structs_VkVideoReferenceSlotInfoKHR = {
@@ -18010,7 +18005,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer
                                     "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-parameter",
                                     "VUID-vkCmdPushDescriptorSetKHR-descriptorWriteCount-arraylength");
     if (pDescriptorWrites != nullptr) {
-        for (uint32_t descriptorWriteIndex = 0; descriptorWriteIndex < descriptorWriteCount; ++descriptorWriteIndex) {
+        for (u32 descriptorWriteIndex = 0; descriptorWriteIndex < descriptorWriteCount; ++descriptorWriteIndex) {
             [[maybe_unused]] const Location pDescriptorWrites_loc = loc.dot(Field::pDescriptorWrites, descriptorWriteIndex);
             constexpr std::array allowed_structs_VkWriteDescriptorSet = {
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
@@ -18277,7 +18272,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerfo
         "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounters-parameter",
         "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterCount-parameter", kVUIDUndefined);
     if (pCounters != nullptr) {
-        for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
+        for (u32 pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
             [[maybe_unused]] const Location pCounters_loc = loc.dot(Field::pCounters, pIndexerIndex);
             skip |= ValidateStructPnext(pCounters_loc, pCounters[pIndexerIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkPerformanceCounterKHR-pNext-pNext", kVUIDUndefined, physicalDevice, false);
@@ -18290,7 +18285,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerfo
         "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterDescriptions-parameter",
         "VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR-pCounterCount-parameter", kVUIDUndefined);
     if (pCounterDescriptions != nullptr) {
-        for (uint32_t pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
+        for (u32 pIndexerIndex = 0; pIndexerIndex < *pCounterCount; ++pIndexerIndex) {
             [[maybe_unused]] const Location pCounterDescriptions_loc = loc.dot(Field::pCounterDescriptions, pIndexerIndex);
             skip |= ValidateStructPnext(pCounterDescriptions_loc, pCounterDescriptions[pIndexerIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkPerformanceCounterDescriptionKHR-pNext-pNext",
@@ -18430,7 +18425,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkP
                                     "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceFormats-parameter",
                                     "VUID-vkGetPhysicalDeviceSurfaceFormats2KHR-pSurfaceFormatCount-parameter", kVUIDUndefined);
     if (pSurfaceFormats != nullptr) {
-        for (uint32_t pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex) {
+        for (u32 pSurfaceFormatIndex = 0; pSurfaceFormatIndex < *pSurfaceFormatCount; ++pSurfaceFormatIndex) {
             [[maybe_unused]] const Location pSurfaceFormats_loc = loc.dot(Field::pSurfaceFormats, pSurfaceFormatIndex);
             constexpr std::array allowed_structs_VkSurfaceFormat2KHR = {VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT};
 
@@ -18460,7 +18455,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
                                     "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-pProperties-parameter",
                                     "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -18484,7 +18479,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
                                     "VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-pProperties-parameter",
                                     "VUID-vkGetPhysicalDeviceDisplayPlaneProperties2KHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -18509,7 +18504,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(VkPhysical
                                     "VUID-vkGetDisplayModeProperties2KHR-pProperties-parameter",
                                     "VUID-vkGetDisplayModeProperties2KHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -18710,7 +18705,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFragmentShadingRatesKH
         "VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-pFragmentShadingRates-parameter",
         "VUID-vkGetPhysicalDeviceFragmentShadingRatesKHR-pFragmentShadingRateCount-parameter", kVUIDUndefined);
     if (pFragmentShadingRates != nullptr) {
-        for (uint32_t pFragmentShadingRateIndex = 0; pFragmentShadingRateIndex < *pFragmentShadingRateCount;
+        for (u32 pFragmentShadingRateIndex = 0; pFragmentShadingRateIndex < *pFragmentShadingRateCount;
              ++pFragmentShadingRateIndex) {
             [[maybe_unused]] const Location pFragmentShadingRates_loc =
                 loc.dot(Field::pFragmentShadingRates, pFragmentShadingRateIndex);
@@ -18904,7 +18899,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDe
                                     "VUID-vkGetPipelineExecutablePropertiesKHR-pProperties-parameter",
                                     "VUID-vkGetPipelineExecutablePropertiesKHR-pExecutableCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pExecutableIndex = 0; pExecutableIndex < *pExecutableCount; ++pExecutableIndex) {
+        for (u32 pExecutableIndex = 0; pExecutableIndex < *pExecutableCount; ++pExecutableIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pExecutableIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pExecutableIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -18939,7 +18934,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDe
                                     "VUID-vkGetPipelineExecutableStatisticsKHR-pStatistics-parameter",
                                     "VUID-vkGetPipelineExecutableStatisticsKHR-pStatisticCount-parameter", kVUIDUndefined);
     if (pStatistics != nullptr) {
-        for (uint32_t pStatisticIndex = 0; pStatisticIndex < *pStatisticCount; ++pStatisticIndex) {
+        for (u32 pStatisticIndex = 0; pStatisticIndex < *pStatisticCount; ++pStatisticIndex) {
             [[maybe_unused]] const Location pStatistics_loc = loc.dot(Field::pStatistics, pStatisticIndex);
             skip |=
                 ValidateStructPnext(pStatistics_loc, pStatistics[pStatisticIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -18973,7 +18968,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
         "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pInternalRepresentations-parameter",
         "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pInternalRepresentationCount-parameter", kVUIDUndefined);
     if (pInternalRepresentations != nullptr) {
-        for (uint32_t pInternalRepresentationIndex = 0; pInternalRepresentationIndex < *pInternalRepresentationCount;
+        for (u32 pInternalRepresentationIndex = 0; pInternalRepresentationIndex < *pInternalRepresentationCount;
              ++pInternalRepresentationIndex) {
             [[maybe_unused]] const Location pInternalRepresentations_loc =
                 loc.dot(Field::pInternalRepresentations, pInternalRepresentationIndex);
@@ -19241,7 +19236,7 @@ bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer comma
                                         "VUID-VkVideoEncodeInfoKHR-pReferenceSlots-parameter", kVUIDUndefined);
 
         if (pEncodeInfo->pReferenceSlots != nullptr) {
-            for (uint32_t referenceSlotIndex = 0; referenceSlotIndex < pEncodeInfo->referenceSlotCount; ++referenceSlotIndex) {
+            for (u32 referenceSlotIndex = 0; referenceSlotIndex < pEncodeInfo->referenceSlotCount; ++referenceSlotIndex) {
                 [[maybe_unused]] const Location pReferenceSlots_loc =
                     pEncodeInfo_loc.dot(Field::pReferenceSlots, referenceSlotIndex);
                 constexpr std::array allowed_structs_VkVideoReferenceSlotInfoKHR = {
@@ -19372,7 +19367,7 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue
                                     "VUID-vkGetQueueCheckpointData2NV-pCheckpointData-parameter",
                                     "VUID-vkGetQueueCheckpointData2NV-pCheckpointDataCount-parameter", kVUIDUndefined);
     if (pCheckpointData != nullptr) {
-        for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
+        for (u32 pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
             [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
             skip |= ValidateStructPnext(pCheckpointData_loc, pCheckpointData[pCheckpointDataIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkCheckpointData2NV-pNext-pNext", kVUIDUndefined,
@@ -19701,7 +19696,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineBinariesKHR(VkDevice devi
                 "VUID-VkPipelineBinaryKeysAndDataKHR-binaryCount-arraylength");
 
             if (pCreateInfo->pKeysAndDataInfo->pPipelineBinaryKeys != nullptr) {
-                for (uint32_t binaryIndex = 0; binaryIndex < pCreateInfo->pKeysAndDataInfo->binaryCount; ++binaryIndex) {
+                for (u32 binaryIndex = 0; binaryIndex < pCreateInfo->pKeysAndDataInfo->binaryCount; ++binaryIndex) {
                     [[maybe_unused]] const Location pPipelineBinaryKeys_loc =
                         pKeysAndDataInfo_loc.dot(Field::pPipelineBinaryKeys, binaryIndex);
                     skip |= ValidateStructPnext(pPipelineBinaryKeys_loc,
@@ -19718,7 +19713,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineBinariesKHR(VkDevice devi
                               "VUID-VkPipelineBinaryKeysAndDataKHR-pPipelineBinaryData-parameter");
 
             if (pCreateInfo->pKeysAndDataInfo->pPipelineBinaryData != nullptr) {
-                for (uint32_t binaryIndex = 0; binaryIndex < pCreateInfo->pKeysAndDataInfo->binaryCount; ++binaryIndex) {
+                for (u32 binaryIndex = 0; binaryIndex < pCreateInfo->pKeysAndDataInfo->binaryCount; ++binaryIndex) {
                     [[maybe_unused]] const Location pPipelineBinaryData_loc =
                         pKeysAndDataInfo_loc.dot(Field::pPipelineBinaryData, binaryIndex);
                     skip |= ValidateArray(pPipelineBinaryData_loc.dot(Field::dataSize), pPipelineBinaryData_loc.dot(Field::pData),
@@ -19847,7 +19842,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
                                 "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-pProperties-parameter",
                                 "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -19895,7 +19890,7 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsKHR(VkDevice dev
                                     "VUID-vkGetCalibratedTimestampsKHR-pTimestampInfos-parameter",
                                     "VUID-vkGetCalibratedTimestampsKHR-timestampCount-arraylength");
     if (pTimestampInfos != nullptr) {
-        for (uint32_t timestampIndex = 0; timestampIndex < timestampCount; ++timestampIndex) {
+        for (u32 timestampIndex = 0; timestampIndex < timestampCount; ++timestampIndex) {
             [[maybe_unused]] const Location pTimestampInfos_loc = loc.dot(Field::pTimestampInfos, timestampIndex);
             skip |= ValidateStructPnext(pTimestampInfos_loc, pTimestampInfos[timestampIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkCalibratedTimestampInfoKHR-pNext-pNext",
@@ -20011,7 +20006,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffe
                                         "VUID-VkPushDescriptorSetInfoKHR-descriptorWriteCount-arraylength");
 
         if (pPushDescriptorSetInfo->pDescriptorWrites != nullptr) {
-            for (uint32_t descriptorWriteIndex = 0; descriptorWriteIndex < pPushDescriptorSetInfo->descriptorWriteCount;
+            for (u32 descriptorWriteIndex = 0; descriptorWriteIndex < pPushDescriptorSetInfo->descriptorWriteCount;
                  ++descriptorWriteIndex) {
                 [[maybe_unused]] const Location pDescriptorWrites_loc =
                     pPushDescriptorSetInfo_loc.dot(Field::pDescriptorWrites, descriptorWriteIndex);
@@ -20756,7 +20751,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffe
                           true, true, "VUID-vkCmdSetViewportWScalingNV-viewportCount-arraylength",
                           "VUID-vkCmdSetViewportWScalingNV-pViewportWScalings-parameter");
     if (pViewportWScalings != nullptr) {
-        for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
+        for (u32 viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
             [[maybe_unused]] const Location pViewportWScalings_loc = loc.dot(Field::pViewportWScalings, viewportIndex);
             // No xml-driven validation
         }
@@ -20944,8 +20939,7 @@ bool StatelessValidation::PreCallValidateGetPastPresentationTimingGOOGLE(VkDevic
                                  "VUID-vkGetPastPresentationTimingGOOGLE-pPresentationTimingCount-parameter", kVUIDUndefined,
                                  "VUID-vkGetPastPresentationTimingGOOGLE-pPresentationTimings-parameter");
     if (pPresentationTimings != nullptr) {
-        for (uint32_t pPresentationTimingIndex = 0; pPresentationTimingIndex < *pPresentationTimingCount;
-             ++pPresentationTimingIndex) {
+        for (u32 pPresentationTimingIndex = 0; pPresentationTimingIndex < *pPresentationTimingCount; ++pPresentationTimingIndex) {
             [[maybe_unused]] const Location pPresentationTimings_loc =
                 loc.dot(Field::pPresentationTimings, pPresentationTimingIndex);
             // No xml-driven validation
@@ -20966,7 +20960,7 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuff
                           &pDiscardRectangles, true, true, "VUID-vkCmdSetDiscardRectangleEXT-discardRectangleCount-arraylength",
                           "VUID-vkCmdSetDiscardRectangleEXT-pDiscardRectangles-parameter");
     if (pDiscardRectangles != nullptr) {
-        for (uint32_t discardRectangleIndex = 0; discardRectangleIndex < discardRectangleCount; ++discardRectangleIndex) {
+        for (u32 discardRectangleIndex = 0; discardRectangleIndex < discardRectangleCount; ++discardRectangleIndex) {
             [[maybe_unused]] const Location pDiscardRectangles_loc = loc.dot(Field::pDiscardRectangles, discardRectangleIndex);
             // No xml-driven validation
 
@@ -21018,7 +21012,7 @@ bool StatelessValidation::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint
                                     "VUID-vkSetHdrMetadataEXT-pMetadata-parameter",
                                     "VUID-vkSetHdrMetadataEXT-swapchainCount-arraylength");
     if (pMetadata != nullptr) {
-        for (uint32_t swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex) {
+        for (u32 swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex) {
             [[maybe_unused]] const Location pMetadata_loc = loc.dot(Field::pMetadata, swapchainIndex);
             skip |= ValidateStructPnext(pMetadata_loc, pMetadata[swapchainIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkHdrMetadataEXT-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
@@ -21324,7 +21318,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance i
                                     "VUID-VkDebugUtilsMessengerCallbackDataEXT-pQueueLabels-parameter", kVUIDUndefined);
 
         if (pCallbackData->pQueueLabels != nullptr) {
-            for (uint32_t queueLabelIndex = 0; queueLabelIndex < pCallbackData->queueLabelCount; ++queueLabelIndex) {
+            for (u32 queueLabelIndex = 0; queueLabelIndex < pCallbackData->queueLabelCount; ++queueLabelIndex) {
                 [[maybe_unused]] const Location pQueueLabels_loc = pCallbackData_loc.dot(Field::pQueueLabels, queueLabelIndex);
                 skip |= ValidateStructPnext(pQueueLabels_loc, pCallbackData->pQueueLabels[queueLabelIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined,
@@ -21343,7 +21337,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance i
                                     "VUID-VkDebugUtilsMessengerCallbackDataEXT-pCmdBufLabels-parameter", kVUIDUndefined);
 
         if (pCallbackData->pCmdBufLabels != nullptr) {
-            for (uint32_t cmdBufLabelIndex = 0; cmdBufLabelIndex < pCallbackData->cmdBufLabelCount; ++cmdBufLabelIndex) {
+            for (u32 cmdBufLabelIndex = 0; cmdBufLabelIndex < pCallbackData->cmdBufLabelCount; ++cmdBufLabelIndex) {
                 [[maybe_unused]] const Location pCmdBufLabels_loc = pCallbackData_loc.dot(Field::pCmdBufLabels, cmdBufLabelIndex);
                 skip |= ValidateStructPnext(pCmdBufLabels_loc, pCallbackData->pCmdBufLabels[cmdBufLabelIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsLabelEXT-pNext-pNext", kVUIDUndefined,
@@ -21362,7 +21356,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance i
                                         "VUID-VkDebugUtilsMessengerCallbackDataEXT-pObjects-parameter", kVUIDUndefined);
 
         if (pCallbackData->pObjects != nullptr) {
-            for (uint32_t objectIndex = 0; objectIndex < pCallbackData->objectCount; ++objectIndex) {
+            for (u32 objectIndex = 0; objectIndex < pCallbackData->objectCount; ++objectIndex) {
                 [[maybe_unused]] const Location pObjects_loc = pCallbackData_loc.dot(Field::pObjects, objectIndex);
                 skip |= ValidateStructPnext(pObjects_loc, pCallbackData->pObjects[objectIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
@@ -21445,7 +21439,7 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
                                     "VUID-vkCreateExecutionGraphPipelinesAMDX-pCreateInfos-parameter",
                                     "VUID-vkCreateExecutionGraphPipelinesAMDX-createInfoCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+        for (u32 createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkExecutionGraphPipelineCreateInfoAMDX = {
                 VK_STRUCTURE_TYPE_PIPELINE_COMPILER_CONTROL_CREATE_INFO_AMD,
@@ -21463,7 +21457,7 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
                                             "VUID-VkExecutionGraphPipelineCreateInfoAMDX-pStages-parameter", kVUIDUndefined);
 
             if (pCreateInfos[createInfoIndex].pStages != nullptr) {
-                for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
+                for (u32 stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
                     [[maybe_unused]] const Location pStages_loc = pCreateInfos_loc.dot(Field::pStages, stageIndex);
                     constexpr std::array allowed_structs_VkPipelineShaderStageCreateInfo = {
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
@@ -21503,7 +21497,7 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
                                               false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                         if (pCreateInfos[createInfoIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                            for (uint32_t mapEntryIndex = 0;
+                            for (u32 mapEntryIndex = 0;
                                  mapEntryIndex <
                                  pCreateInfos[createInfoIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                  ++mapEntryIndex) {
@@ -21662,7 +21656,7 @@ bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffe
                               "VUID-VkSampleLocationsInfoEXT-pSampleLocations-parameter");
 
         if (pSampleLocationsInfo->pSampleLocations != nullptr) {
-            for (uint32_t sampleLocationsIndex = 0; sampleLocationsIndex < pSampleLocationsInfo->sampleLocationsCount;
+            for (u32 sampleLocationsIndex = 0; sampleLocationsIndex < pSampleLocationsInfo->sampleLocationsCount;
                  ++sampleLocationsIndex) {
                 [[maybe_unused]] const Location pSampleLocations_loc =
                     pSampleLocationsInfo_loc.dot(Field::pSampleLocations, sampleLocationsIndex);
@@ -21811,7 +21805,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCo
                           true, true, "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-arraylength",
                           "VUID-vkCmdSetViewportShadingRatePaletteNV-pShadingRatePalettes-parameter");
     if (pShadingRatePalettes != nullptr) {
-        for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
+        for (u32 viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
             [[maybe_unused]] const Location pShadingRatePalettes_loc = loc.dot(Field::pShadingRatePalettes, viewportIndex);
             skip |= ValidateRangedEnumArray(pShadingRatePalettes_loc.dot(Field::shadingRatePaletteEntryCount),
                                             pShadingRatePalettes_loc.dot(Field::pShadingRatePaletteEntries),
@@ -21843,7 +21837,7 @@ bool StatelessValidation::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuff
                           &pCustomSampleOrders, false, true, kVUIDUndefined,
                           "VUID-vkCmdSetCoarseSampleOrderNV-pCustomSampleOrders-parameter");
     if (pCustomSampleOrders != nullptr) {
-        for (uint32_t customSampleOrderIndex = 0; customSampleOrderIndex < customSampleOrderCount; ++customSampleOrderIndex) {
+        for (u32 customSampleOrderIndex = 0; customSampleOrderIndex < customSampleOrderCount; ++customSampleOrderIndex) {
             [[maybe_unused]] const Location pCustomSampleOrders_loc = loc.dot(Field::pCustomSampleOrders, customSampleOrderIndex);
             skip |= ValidateRangedEnum(pCustomSampleOrders_loc.dot(Field::shadingRate), vvl::Enum::VkShadingRatePaletteEntryNV,
                                        pCustomSampleOrders[customSampleOrderIndex].shadingRate,
@@ -21857,7 +21851,7 @@ bool StatelessValidation::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuff
                                   "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-parameter");
 
             if (pCustomSampleOrders[customSampleOrderIndex].pSampleLocations != nullptr) {
-                for (uint32_t sampleLocationIndex = 0;
+                for (u32 sampleLocationIndex = 0;
                      sampleLocationIndex < pCustomSampleOrders[customSampleOrderIndex].sampleLocationCount; ++sampleLocationIndex) {
                     [[maybe_unused]] const Location pSampleLocations_loc =
                         pCustomSampleOrders_loc.dot(Field::pSampleLocations, sampleLocationIndex);
@@ -21906,7 +21900,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(VkDevice 
                                         "VUID-VkAccelerationStructureInfoNV-pGeometries-parameter", kVUIDUndefined);
 
         if (pCreateInfo->info.pGeometries != nullptr) {
-            for (uint32_t geometryIndex = 0; geometryIndex < pCreateInfo->info.geometryCount; ++geometryIndex) {
+            for (u32 geometryIndex = 0; geometryIndex < pCreateInfo->info.geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location pGeometries_loc = pCreateInfo_loc.dot(Field::pGeometries, geometryIndex);
                 skip |= ValidateStructPnext(pGeometries_loc, pCreateInfo->info.pGeometries[geometryIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkGeometryNV-pNext-pNext", kVUIDUndefined,
@@ -22009,7 +22003,7 @@ bool StatelessValidation::PreCallValidateBindAccelerationStructureMemoryNV(
                                     "VUID-vkBindAccelerationStructureMemoryNV-pBindInfos-parameter",
                                     "VUID-vkBindAccelerationStructureMemoryNV-bindInfoCount-arraylength");
     if (pBindInfos != nullptr) {
-        for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
+        for (u32 bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
             [[maybe_unused]] const Location pBindInfos_loc = loc.dot(Field::pBindInfos, bindInfoIndex);
             skip |= ValidateStructPnext(pBindInfos_loc, pBindInfos[bindInfoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkBindAccelerationStructureMemoryInfoNV-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE,
@@ -22049,7 +22043,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
                                     "VUID-VkAccelerationStructureInfoNV-pGeometries-parameter", kVUIDUndefined);
 
         if (pInfo->pGeometries != nullptr) {
-            for (uint32_t geometryIndex = 0; geometryIndex < pInfo->geometryCount; ++geometryIndex) {
+            for (u32 geometryIndex = 0; geometryIndex < pInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location pGeometries_loc = pInfo_loc.dot(Field::pGeometries, geometryIndex);
                 skip |= ValidateStructPnext(pGeometries_loc, pInfo->pGeometries[geometryIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkGeometryNV-pNext-pNext", kVUIDUndefined,
@@ -22140,7 +22134,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
                                     "VUID-vkCreateRayTracingPipelinesNV-pCreateInfos-parameter",
                                     "VUID-vkCreateRayTracingPipelinesNV-createInfoCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+        for (u32 createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkRayTracingPipelineCreateInfoNV = {
                 VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR,
@@ -22159,7 +22153,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
                                             "VUID-VkRayTracingPipelineCreateInfoNV-stageCount-arraylength");
 
             if (pCreateInfos[createInfoIndex].pStages != nullptr) {
-                for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
+                for (u32 stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
                     [[maybe_unused]] const Location pStages_loc = pCreateInfos_loc.dot(Field::pStages, stageIndex);
                     constexpr std::array allowed_structs_VkPipelineShaderStageCreateInfo = {
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
@@ -22199,7 +22193,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
                                               false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                         if (pCreateInfos[createInfoIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                            for (uint32_t mapEntryIndex = 0;
+                            for (u32 mapEntryIndex = 0;
                                  mapEntryIndex <
                                  pCreateInfos[createInfoIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                  ++mapEntryIndex) {
@@ -22226,7 +22220,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
                                             "VUID-VkRayTracingPipelineCreateInfoNV-groupCount-arraylength");
 
             if (pCreateInfos[createInfoIndex].pGroups != nullptr) {
-                for (uint32_t groupIndex = 0; groupIndex < pCreateInfos[createInfoIndex].groupCount; ++groupIndex) {
+                for (u32 groupIndex = 0; groupIndex < pCreateInfos[createInfoIndex].groupCount; ++groupIndex) {
                     [[maybe_unused]] const Location pGroups_loc = pCreateInfos_loc.dot(Field::pGroups, groupIndex);
                     skip |=
                         ValidateStructPnext(pGroups_loc, pCreateInfos[createInfoIndex].pGroups[groupIndex].pNext, 0, nullptr,
@@ -22453,7 +22447,7 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffe
                           &pExclusiveScissors, true, true, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-arraylength",
                           "VUID-vkCmdSetExclusiveScissorNV-pExclusiveScissors-parameter");
     if (pExclusiveScissors != nullptr) {
-        for (uint32_t exclusiveScissorIndex = 0; exclusiveScissorIndex < exclusiveScissorCount; ++exclusiveScissorIndex) {
+        for (u32 exclusiveScissorIndex = 0; exclusiveScissorIndex < exclusiveScissorCount; ++exclusiveScissorIndex) {
             [[maybe_unused]] const Location pExclusiveScissors_loc = loc.dot(Field::pExclusiveScissors, exclusiveScissorIndex);
             // No xml-driven validation
 
@@ -22489,7 +22483,7 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(VkQueue queue,
                                 "VUID-VkCheckpointDataNV-sType-sType", "VUID-vkGetQueueCheckpointDataNV-pCheckpointData-parameter",
                                 "VUID-vkGetQueueCheckpointDataNV-pCheckpointDataCount-parameter", kVUIDUndefined);
     if (pCheckpointData != nullptr) {
-        for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
+        for (u32 pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
             [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
             skip |= ValidateStructPnext(pCheckpointData_loc, pCheckpointData[pCheckpointDataIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkCheckpointDataNV-pNext-pNext", kVUIDUndefined,
@@ -22747,7 +22741,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
         "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-pProperties-parameter",
         "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-pPropertyCount-parameter", kVUIDUndefined);
     if (pProperties != nullptr) {
-        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+        for (u32 pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
             [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
             skip |=
                 ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -22769,7 +22763,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSupportedFramebufferMi
         "VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-pCombinations-parameter",
         "VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-pCombinationCount-parameter", kVUIDUndefined);
     if (pCombinations != nullptr) {
-        for (uint32_t pCombinationIndex = 0; pCombinationIndex < *pCombinationCount; ++pCombinationIndex) {
+        for (u32 pCombinationIndex = 0; pCombinationIndex < *pCombinationCount; ++pCombinationIndex) {
             [[maybe_unused]] const Location pCombinations_loc = loc.dot(Field::pCombinations, pCombinationIndex);
             skip |= ValidateStructPnext(pCombinations_loc, pCombinations[pCombinationIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkFramebufferMixedSamplesCombinationNV-pNext-pNext",
@@ -23038,7 +23032,7 @@ bool StatelessValidation::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
             "VUID-VkCopyMemoryToImageInfoEXT-regionCount-arraylength");
 
         if (pCopyMemoryToImageInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyMemoryToImageInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyMemoryToImageInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyMemoryToImageInfo_loc.dot(Field::pRegions, regionIndex);
                 skip |= ValidateStructPnext(pRegions_loc, pCopyMemoryToImageInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkMemoryToImageCopyEXT-pNext-pNext", kVUIDUndefined,
@@ -23096,7 +23090,7 @@ bool StatelessValidation::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
             "VUID-VkCopyImageToMemoryInfoEXT-regionCount-arraylength");
 
         if (pCopyImageToMemoryInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyImageToMemoryInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyImageToMemoryInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyImageToMemoryInfo_loc.dot(Field::pRegions, regionIndex);
                 skip |= ValidateStructPnext(pRegions_loc, pCopyImageToMemoryInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkImageToMemoryCopyEXT-pNext-pNext", kVUIDUndefined,
@@ -23160,7 +23154,7 @@ bool StatelessValidation::PreCallValidateCopyImageToImageEXT(VkDevice device,
                                         "VUID-VkCopyImageToImageInfoEXT-regionCount-arraylength");
 
         if (pCopyImageToImageInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pCopyImageToImageInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pCopyImageToImageInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pCopyImageToImageInfo_loc.dot(Field::pRegions, regionIndex);
                 skip |= ValidateStructPnext(pRegions_loc, pCopyImageToImageInfo->pRegions[regionIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkImageCopy2-pNext-pNext", kVUIDUndefined,
@@ -23201,7 +23195,7 @@ bool StatelessValidation::PreCallValidateTransitionImageLayoutEXT(VkDevice devic
         VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT, true, true, "VUID-VkHostImageLayoutTransitionInfoEXT-sType-sType",
         "VUID-vkTransitionImageLayoutEXT-pTransitions-parameter", "VUID-vkTransitionImageLayoutEXT-transitionCount-arraylength");
     if (pTransitions != nullptr) {
-        for (uint32_t transitionIndex = 0; transitionIndex < transitionCount; ++transitionIndex) {
+        for (u32 transitionIndex = 0; transitionIndex < transitionCount; ++transitionIndex) {
             [[maybe_unused]] const Location pTransitions_loc = loc.dot(Field::pTransitions, transitionIndex);
             skip |=
                 ValidateStructPnext(pTransitions_loc, pTransitions[transitionIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
@@ -23331,7 +23325,7 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkComm
                               "VUID-VkGeneratedCommandsInfoNV-pStreams-parameter");
 
         if (pGeneratedCommandsInfo->pStreams != nullptr) {
-            for (uint32_t streamIndex = 0; streamIndex < pGeneratedCommandsInfo->streamCount; ++streamIndex) {
+            for (u32 streamIndex = 0; streamIndex < pGeneratedCommandsInfo->streamCount; ++streamIndex) {
                 [[maybe_unused]] const Location pStreams_loc = pGeneratedCommandsInfo_loc.dot(Field::pStreams, streamIndex);
                 skip |=
                     ValidateRequiredHandle(pStreams_loc.dot(Field::buffer), pGeneratedCommandsInfo->pStreams[streamIndex].buffer);
@@ -23374,7 +23368,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommand
                               "VUID-VkGeneratedCommandsInfoNV-pStreams-parameter");
 
         if (pGeneratedCommandsInfo->pStreams != nullptr) {
-            for (uint32_t streamIndex = 0; streamIndex < pGeneratedCommandsInfo->streamCount; ++streamIndex) {
+            for (u32 streamIndex = 0; streamIndex < pGeneratedCommandsInfo->streamCount; ++streamIndex) {
                 [[maybe_unused]] const Location pStreams_loc = pGeneratedCommandsInfo_loc.dot(Field::pStreams, streamIndex);
                 skip |=
                     ValidateRequiredHandle(pStreams_loc.dot(Field::buffer), pGeneratedCommandsInfo->pStreams[streamIndex].buffer);
@@ -23432,7 +23426,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice
             "VUID-VkIndirectCommandsLayoutCreateInfoNV-tokenCount-arraylength");
 
         if (pCreateInfo->pTokens != nullptr) {
-            for (uint32_t tokenIndex = 0; tokenIndex < pCreateInfo->tokenCount; ++tokenIndex) {
+            for (u32 tokenIndex = 0; tokenIndex < pCreateInfo->tokenCount; ++tokenIndex) {
                 [[maybe_unused]] const Location pTokens_loc = pCreateInfo_loc.dot(Field::pTokens, tokenIndex);
                 skip |= ValidateStructPnext(pTokens_loc, pCreateInfo->pTokens[tokenIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkIndirectCommandsLayoutTokenNV-pNext-pNext",
@@ -23770,7 +23764,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBu
         VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT, true, true, "VUID-VkDescriptorBufferBindingInfoEXT-sType-sType",
         "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-parameter", "VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-arraylength");
     if (pBindingInfos != nullptr) {
-        for (uint32_t bufferIndex = 0; bufferIndex < bufferCount; ++bufferIndex) {
+        for (u32 bufferIndex = 0; bufferIndex < bufferCount; ++bufferIndex) {
             [[maybe_unused]] const Location pBindingInfos_loc = loc.dot(Field::pBindingInfos, bufferIndex);
             constexpr std::array allowed_structs_VkDescriptorBufferBindingInfoEXT = {
                 VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR,
@@ -24036,7 +24030,7 @@ bool StatelessValidation::PreCallValidateCmdSetVertexInputEXT(
                                     "VUID-VkVertexInputBindingDescription2EXT-sType-sType",
                                     "VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-parameter", kVUIDUndefined);
     if (pVertexBindingDescriptions != nullptr) {
-        for (uint32_t vertexBindingDescriptionIndex = 0; vertexBindingDescriptionIndex < vertexBindingDescriptionCount;
+        for (u32 vertexBindingDescriptionIndex = 0; vertexBindingDescriptionIndex < vertexBindingDescriptionCount;
              ++vertexBindingDescriptionIndex) {
             [[maybe_unused]] const Location pVertexBindingDescriptions_loc =
                 loc.dot(Field::pVertexBindingDescriptions, vertexBindingDescriptionIndex);
@@ -24051,7 +24045,7 @@ bool StatelessValidation::PreCallValidateCmdSetVertexInputEXT(
                                     "VUID-VkVertexInputAttributeDescription2EXT-sType-sType",
                                     "VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-parameter", kVUIDUndefined);
     if (pVertexAttributeDescriptions != nullptr) {
-        for (uint32_t vertexAttributeDescriptionIndex = 0; vertexAttributeDescriptionIndex < vertexAttributeDescriptionCount;
+        for (u32 vertexAttributeDescriptionIndex = 0; vertexAttributeDescriptionIndex < vertexAttributeDescriptionCount;
              ++vertexAttributeDescriptionIndex) {
             [[maybe_unused]] const Location pVertexAttributeDescriptions_loc =
                 loc.dot(Field::pVertexAttributeDescriptions, vertexAttributeDescriptionIndex);
@@ -24235,7 +24229,7 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCH
                                         "VUID-VkImageConstraintsInfoFUCHSIA-formatConstraintsCount-arraylength");
 
         if (pImageConstraintsInfo->pFormatConstraints != nullptr) {
-            for (uint32_t formatConstraintsIndex = 0; formatConstraintsIndex < pImageConstraintsInfo->formatConstraintsCount;
+            for (u32 formatConstraintsIndex = 0; formatConstraintsIndex < pImageConstraintsInfo->formatConstraintsCount;
                  ++formatConstraintsIndex) {
                 [[maybe_unused]] const Location pFormatConstraints_loc =
                     pImageConstraintsInfo_loc.dot(Field::pFormatConstraints, formatConstraintsIndex);
@@ -24335,7 +24329,7 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCH
                     "VUID-VkImageFormatConstraintsInfoFUCHSIA-colorSpaceCount-arraylength");
 
                 if (pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].pColorSpaces != nullptr) {
-                    for (uint32_t colorSpaceIndex = 0;
+                    for (u32 colorSpaceIndex = 0;
                          colorSpaceIndex < pImageConstraintsInfo->pFormatConstraints[formatConstraintsIndex].colorSpaceCount;
                          ++colorSpaceIndex) {
                         [[maybe_unused]] const Location pColorSpaces_loc =
@@ -24724,7 +24718,7 @@ bool StatelessValidation::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer co
                                     "VUID-VkMicromapBuildInfoEXT-sType-sType", "VUID-vkCmdBuildMicromapsEXT-pInfos-parameter",
                                     "VUID-vkCmdBuildMicromapsEXT-infoCount-arraylength");
     if (pInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location pInfos_loc = loc.dot(Field::pInfos, infoIndex);
             skip |= ValidateStructPnext(pInfos_loc, pInfos[infoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkMicromapBuildInfoEXT-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
@@ -24737,14 +24731,14 @@ bool StatelessValidation::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer co
                                   "VUID-VkMicromapBuildInfoEXT-flags-parameter");
 
             if (pInfos[infoIndex].pUsageCounts != nullptr) {
-                for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
+                for (u32 usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
                     [[maybe_unused]] const Location pUsageCounts_loc = pInfos_loc.dot(Field::pUsageCounts, usageIndexsIndex);
                     // No xml-driven validation
                 }
             }
 
             if (pInfos[infoIndex].ppUsageCounts != nullptr) {
-                for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
+                for (u32 usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
                     [[maybe_unused]] const Location ppUsageCounts_loc = pInfos_loc.dot(Field::ppUsageCounts, usageIndexsIndex);
                     // No xml-driven validation
                 }
@@ -24766,7 +24760,7 @@ bool StatelessValidation::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDe
                                 VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT, true, true, "VUID-VkMicromapBuildInfoEXT-sType-sType",
                                 "VUID-vkBuildMicromapsEXT-pInfos-parameter", "VUID-vkBuildMicromapsEXT-infoCount-arraylength");
     if (pInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location pInfos_loc = loc.dot(Field::pInfos, infoIndex);
             skip |= ValidateStructPnext(pInfos_loc, pInfos[infoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkMicromapBuildInfoEXT-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
@@ -24779,14 +24773,14 @@ bool StatelessValidation::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDe
                                   "VUID-VkMicromapBuildInfoEXT-flags-parameter");
 
             if (pInfos[infoIndex].pUsageCounts != nullptr) {
-                for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
+                for (u32 usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
                     [[maybe_unused]] const Location pUsageCounts_loc = pInfos_loc.dot(Field::pUsageCounts, usageIndexsIndex);
                     // No xml-driven validation
                 }
             }
 
             if (pInfos[infoIndex].ppUsageCounts != nullptr) {
-                for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
+                for (u32 usageIndexsIndex = 0; usageIndexsIndex < pInfos[infoIndex].usageCountsCount; ++usageIndexsIndex) {
                     [[maybe_unused]] const Location ppUsageCounts_loc = pInfos_loc.dot(Field::ppUsageCounts, usageIndexsIndex);
                     // No xml-driven validation
                 }
@@ -25015,14 +25009,14 @@ bool StatelessValidation::PreCallValidateGetMicromapBuildSizesEXT(VkDevice devic
                               "VUID-VkMicromapBuildInfoEXT-flags-parameter");
 
         if (pBuildInfo->pUsageCounts != nullptr) {
-            for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < pBuildInfo->usageCountsCount; ++usageIndexsIndex) {
+            for (u32 usageIndexsIndex = 0; usageIndexsIndex < pBuildInfo->usageCountsCount; ++usageIndexsIndex) {
                 [[maybe_unused]] const Location pUsageCounts_loc = pBuildInfo_loc.dot(Field::pUsageCounts, usageIndexsIndex);
                 // No xml-driven validation
             }
         }
 
         if (pBuildInfo->ppUsageCounts != nullptr) {
-            for (uint32_t usageIndexsIndex = 0; usageIndexsIndex < pBuildInfo->usageCountsCount; ++usageIndexsIndex) {
+            for (u32 usageIndexsIndex = 0; usageIndexsIndex < pBuildInfo->usageCountsCount; ++usageIndexsIndex) {
                 [[maybe_unused]] const Location ppUsageCounts_loc = pBuildInfo_loc.dot(Field::ppUsageCounts, usageIndexsIndex);
                 // No xml-driven validation
             }
@@ -25128,7 +25122,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToImageIndirectNV(
                           "VUID-vkCmdCopyMemoryToImageIndirectNV-copyCount-arraylength",
                           "VUID-vkCmdCopyMemoryToImageIndirectNV-pImageSubresources-parameter");
     if (pImageSubresources != nullptr) {
-        for (uint32_t copyIndex = 0; copyIndex < copyCount; ++copyIndex) {
+        for (u32 copyIndex = 0; copyIndex < copyCount; ++copyIndex) {
             [[maybe_unused]] const Location pImageSubresources_loc = loc.dot(Field::pImageSubresources, copyIndex);
             skip |= ValidateFlags(pImageSubresources_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
                                   AllVkImageAspectFlagBits, pImageSubresources[copyIndex].aspectMask, kRequiredFlags,
@@ -25150,7 +25144,7 @@ bool StatelessValidation::PreCallValidateCmdDecompressMemoryNV(VkCommandBuffer c
                           &pDecompressMemoryRegions, true, true, "VUID-vkCmdDecompressMemoryNV-decompressRegionCount-arraylength",
                           "VUID-vkCmdDecompressMemoryNV-pDecompressMemoryRegions-parameter");
     if (pDecompressMemoryRegions != nullptr) {
-        for (uint32_t decompressRegionIndex = 0; decompressRegionIndex < decompressRegionCount; ++decompressRegionIndex) {
+        for (u32 decompressRegionIndex = 0; decompressRegionIndex < decompressRegionCount; ++decompressRegionIndex) {
             [[maybe_unused]] const Location pDecompressMemoryRegions_loc =
                 loc.dot(Field::pDecompressMemoryRegions, decompressRegionIndex);
             skip |= ValidateFlags(pDecompressMemoryRegions_loc.dot(Field::decompressionMethod),
@@ -25236,7 +25230,7 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectMemoryRequirementsNV
                 true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
             if (pCreateInfo->stage.pSpecializationInfo->pMapEntries != nullptr) {
-                for (uint32_t mapEntryIndex = 0; mapEntryIndex < pCreateInfo->stage.pSpecializationInfo->mapEntryCount;
+                for (u32 mapEntryIndex = 0; mapEntryIndex < pCreateInfo->stage.pSpecializationInfo->mapEntryCount;
                      ++mapEntryIndex) {
                     [[maybe_unused]] const Location pMapEntries_loc =
                         pSpecializationInfo_loc.dot(Field::pMapEntries, mapEntryIndex);
@@ -25409,7 +25403,7 @@ bool StatelessValidation::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBu
                           &pColorBlendEquations, true, true, "VUID-vkCmdSetColorBlendEquationEXT-attachmentCount-arraylength",
                           "VUID-vkCmdSetColorBlendEquationEXT-pColorBlendEquations-parameter");
     if (pColorBlendEquations != nullptr) {
-        for (uint32_t attachmentIndex = 0; attachmentIndex < attachmentCount; ++attachmentIndex) {
+        for (u32 attachmentIndex = 0; attachmentIndex < attachmentCount; ++attachmentIndex) {
             [[maybe_unused]] const Location pColorBlendEquations_loc = loc.dot(Field::pColorBlendEquations, attachmentIndex);
             skip |= ValidateRangedEnum(pColorBlendEquations_loc.dot(Field::srcColorBlendFactor), vvl::Enum::VkBlendFactor,
                                        pColorBlendEquations[attachmentIndex].srcColorBlendFactor,
@@ -25533,7 +25527,7 @@ bool StatelessValidation::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBu
                           &pColorBlendAdvanced, true, true, "VUID-vkCmdSetColorBlendAdvancedEXT-attachmentCount-arraylength",
                           "VUID-vkCmdSetColorBlendAdvancedEXT-pColorBlendAdvanced-parameter");
     if (pColorBlendAdvanced != nullptr) {
-        for (uint32_t attachmentIndex = 0; attachmentIndex < attachmentCount; ++attachmentIndex) {
+        for (u32 attachmentIndex = 0; attachmentIndex < attachmentCount; ++attachmentIndex) {
             [[maybe_unused]] const Location pColorBlendAdvanced_loc = loc.dot(Field::pColorBlendAdvanced, attachmentIndex);
             skip |= ValidateRangedEnum(pColorBlendAdvanced_loc.dot(Field::advancedBlendOp), vvl::Enum::VkBlendOp,
                                        pColorBlendAdvanced[attachmentIndex].advancedBlendOp,
@@ -25623,7 +25617,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer
                           true, "VUID-vkCmdSetViewportSwizzleNV-viewportCount-arraylength",
                           "VUID-vkCmdSetViewportSwizzleNV-pViewportSwizzles-parameter");
     if (pViewportSwizzles != nullptr) {
-        for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
+        for (u32 viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
             [[maybe_unused]] const Location pViewportSwizzles_loc = loc.dot(Field::pViewportSwizzles, viewportIndex);
             skip |= ValidateRangedEnum(pViewportSwizzles_loc.dot(Field::x), vvl::Enum::VkViewportCoordinateSwizzleNV,
                                        pViewportSwizzles[viewportIndex].x, "VUID-VkViewportSwizzleNV-x-parameter");
@@ -25810,7 +25804,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceOpticalFlowImageFormat
                                     "VUID-vkGetPhysicalDeviceOpticalFlowImageFormatsNV-pImageFormatProperties-parameter",
                                     "VUID-vkGetPhysicalDeviceOpticalFlowImageFormatsNV-pFormatCount-parameter", kVUIDUndefined);
     if (pImageFormatProperties != nullptr) {
-        for (uint32_t pFormatIndex = 0; pFormatIndex < *pFormatCount; ++pFormatIndex) {
+        for (u32 pFormatIndex = 0; pFormatIndex < *pFormatCount; ++pFormatIndex) {
             [[maybe_unused]] const Location pImageFormatProperties_loc = loc.dot(Field::pImageFormatProperties, pFormatIndex);
             skip |= ValidateStructPnext(pImageFormatProperties_loc, pImageFormatProperties[pFormatIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkOpticalFlowImageFormatPropertiesNV-pNext-pNext",
@@ -25932,7 +25926,7 @@ bool StatelessValidation::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer
                               "VUID-VkOpticalFlowExecuteInfoNV-pRegions-parameter");
 
         if (pExecuteInfo->pRegions != nullptr) {
-            for (uint32_t regionIndex = 0; regionIndex < pExecuteInfo->regionCount; ++regionIndex) {
+            for (u32 regionIndex = 0; regionIndex < pExecuteInfo->regionCount; ++regionIndex) {
                 [[maybe_unused]] const Location pRegions_loc = pExecuteInfo_loc.dot(Field::pRegions, regionIndex);
                 // No xml-driven validation
 
@@ -25981,7 +25975,7 @@ bool StatelessValidation::PreCallValidateCreateShadersEXT(VkDevice device, uint3
                                     "VUID-vkCreateShadersEXT-pCreateInfos-parameter",
                                     "VUID-vkCreateShadersEXT-createInfoCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+        for (u32 createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkShaderCreateInfoEXT = {
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
@@ -26012,8 +26006,8 @@ bool StatelessValidation::PreCallValidateCreateShadersEXT(VkDevice device, uint3
                                   "VUID-VkShaderCreateInfoEXT-codeSize-arraylength", "VUID-VkShaderCreateInfoEXT-pCode-parameter");
 
             if (pCreateInfos[createInfoIndex].pPushConstantRanges != nullptr) {
-                for (uint32_t pushConstantRangeIndex = 0;
-                     pushConstantRangeIndex < pCreateInfos[createInfoIndex].pushConstantRangeCount; ++pushConstantRangeIndex) {
+                for (u32 pushConstantRangeIndex = 0; pushConstantRangeIndex < pCreateInfos[createInfoIndex].pushConstantRangeCount;
+                     ++pushConstantRangeIndex) {
                     [[maybe_unused]] const Location pPushConstantRanges_loc =
                         pCreateInfos_loc.dot(Field::pPushConstantRanges, pushConstantRangeIndex);
                     skip |= ValidateFlags(pPushConstantRanges_loc.dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
@@ -26033,8 +26027,8 @@ bool StatelessValidation::PreCallValidateCreateShadersEXT(VkDevice device, uint3
                                       "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                 if (pCreateInfos[createInfoIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                    for (uint32_t mapEntryIndex = 0;
-                         mapEntryIndex < pCreateInfos[createInfoIndex].pSpecializationInfo->mapEntryCount; ++mapEntryIndex) {
+                    for (u32 mapEntryIndex = 0; mapEntryIndex < pCreateInfos[createInfoIndex].pSpecializationInfo->mapEntryCount;
+                         ++mapEntryIndex) {
                         [[maybe_unused]] const Location pMapEntries_loc =
                             pSpecializationInfo_loc.dot(Field::pMapEntries, mapEntryIndex);
                         // No xml-driven validation
@@ -26158,7 +26152,7 @@ bool StatelessValidation::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(V
                                         "VUID-VkRenderingInfo-pColorAttachments-parameter", kVUIDUndefined);
 
         if (pRenderingInfo->pColorAttachments != nullptr) {
-            for (uint32_t colorAttachmentIndex = 0; colorAttachmentIndex < pRenderingInfo->colorAttachmentCount;
+            for (u32 colorAttachmentIndex = 0; colorAttachmentIndex < pRenderingInfo->colorAttachmentCount;
                  ++colorAttachmentIndex) {
                 [[maybe_unused]] const Location pColorAttachments_loc =
                     pRenderingInfo_loc.dot(Field::pColorAttachments, colorAttachmentIndex);
@@ -26460,7 +26454,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                     "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-parameter",
                                     "VUID-vkCmdBuildAccelerationStructuresKHR-infoCount-arraylength");
     if (pInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location pInfos_loc = loc.dot(Field::pInfos, infoIndex);
             skip |= ValidateStructPnext(pInfos_loc, pInfos[infoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined,
@@ -26480,7 +26474,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-parameter", kVUIDUndefined);
 
             if (pInfos[infoIndex].pGeometries != nullptr) {
-                for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
+                for (u32 geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
                     skip |= ValidateStructPnext(pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -26503,7 +26497,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 "VUID-VkAccelerationStructureBuildGeometryInfoKHR-ppGeometries-parameter", kVUIDUndefined);
 
             if (pInfos[infoIndex].ppGeometries != nullptr) {
-                for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
+                for (u32 geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
                     skip |= ValidateStructPnext(ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -26524,7 +26518,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
                           "VUID-vkCmdBuildAccelerationStructuresKHR-infoCount-arraylength",
                           "VUID-vkCmdBuildAccelerationStructuresKHR-ppBuildRangeInfos-parameter");
     if (ppBuildRangeInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location ppBuildRangeInfos_loc = loc.dot(Field::ppBuildRangeInfos, infoIndex);
             // No xml-driven validation
         }
@@ -26549,7 +26543,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
                                     "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-parameter",
                                     "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-infoCount-arraylength");
     if (pInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location pInfos_loc = loc.dot(Field::pInfos, infoIndex);
             skip |= ValidateStructPnext(pInfos_loc, pInfos[infoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined,
@@ -26569,7 +26563,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
                 "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-parameter", kVUIDUndefined);
 
             if (pInfos[infoIndex].pGeometries != nullptr) {
-                for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
+                for (u32 geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
                     skip |= ValidateStructPnext(pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -26592,7 +26586,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
                 "VUID-VkAccelerationStructureBuildGeometryInfoKHR-ppGeometries-parameter", kVUIDUndefined);
 
             if (pInfos[infoIndex].ppGeometries != nullptr) {
-                for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
+                for (u32 geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
                     skip |= ValidateStructPnext(ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -26638,7 +26632,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
                                     "VUID-vkBuildAccelerationStructuresKHR-pInfos-parameter",
                                     "VUID-vkBuildAccelerationStructuresKHR-infoCount-arraylength");
     if (pInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location pInfos_loc = loc.dot(Field::pInfos, infoIndex);
             skip |= ValidateStructPnext(pInfos_loc, pInfos[infoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                                         "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pNext-pNext", kVUIDUndefined,
@@ -26658,7 +26652,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
                 "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-parameter", kVUIDUndefined);
 
             if (pInfos[infoIndex].pGeometries != nullptr) {
-                for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
+                for (u32 geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
                     skip |= ValidateStructPnext(pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -26681,7 +26675,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
                 "VUID-VkAccelerationStructureBuildGeometryInfoKHR-ppGeometries-parameter", kVUIDUndefined);
 
             if (pInfos[infoIndex].ppGeometries != nullptr) {
-                for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
+                for (u32 geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
                     skip |= ValidateStructPnext(ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, nullptr,
                                                 GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -26702,7 +26696,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
                           "VUID-vkBuildAccelerationStructuresKHR-infoCount-arraylength",
                           "VUID-vkBuildAccelerationStructuresKHR-ppBuildRangeInfos-parameter");
     if (ppBuildRangeInfos != nullptr) {
-        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+        for (u32 infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
             [[maybe_unused]] const Location ppBuildRangeInfos_loc = loc.dot(Field::ppBuildRangeInfos, infoIndex);
             // No xml-driven validation
         }
@@ -26983,7 +26977,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
                                         "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-parameter", kVUIDUndefined);
 
         if (pBuildInfo->pGeometries != nullptr) {
-            for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
+            for (u32 geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location pGeometries_loc = pBuildInfo_loc.dot(Field::pGeometries, geometryIndex);
                 skip |= ValidateStructPnext(pGeometries_loc, pBuildInfo->pGeometries[geometryIndex].pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -27006,7 +27000,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
             "VUID-VkAccelerationStructureBuildGeometryInfoKHR-ppGeometries-parameter", kVUIDUndefined);
 
         if (pBuildInfo->ppGeometries != nullptr) {
-            for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
+            for (u32 geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location ppGeometries_loc = pBuildInfo_loc.dot(Field::ppGeometries, geometryIndex);
                 skip |= ValidateStructPnext(ppGeometries_loc, pBuildInfo->ppGeometries[geometryIndex]->pNext, 0, nullptr,
                                             GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
@@ -27094,7 +27088,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                                     "VUID-vkCreateRayTracingPipelinesKHR-pCreateInfos-parameter",
                                     "VUID-vkCreateRayTracingPipelinesKHR-createInfoCount-arraylength");
     if (pCreateInfos != nullptr) {
-        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+        for (u32 createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkRayTracingPipelineCreateInfoKHR = {
                 VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR, VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR,
@@ -27112,7 +27106,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pStages-parameter", kVUIDUndefined);
 
             if (pCreateInfos[createInfoIndex].pStages != nullptr) {
-                for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
+                for (u32 stageIndex = 0; stageIndex < pCreateInfos[createInfoIndex].stageCount; ++stageIndex) {
                     [[maybe_unused]] const Location pStages_loc = pCreateInfos_loc.dot(Field::pStages, stageIndex);
                     constexpr std::array allowed_structs_VkPipelineShaderStageCreateInfo = {
                         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
@@ -27152,7 +27146,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                                               false, true, kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
                         if (pCreateInfos[createInfoIndex].pStages[stageIndex].pSpecializationInfo->pMapEntries != nullptr) {
-                            for (uint32_t mapEntryIndex = 0;
+                            for (u32 mapEntryIndex = 0;
                                  mapEntryIndex <
                                  pCreateInfos[createInfoIndex].pStages[stageIndex].pSpecializationInfo->mapEntryCount;
                                  ++mapEntryIndex) {
@@ -27178,7 +27172,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                                             "VUID-VkRayTracingPipelineCreateInfoKHR-pGroups-parameter", kVUIDUndefined);
 
             if (pCreateInfos[createInfoIndex].pGroups != nullptr) {
-                for (uint32_t groupIndex = 0; groupIndex < pCreateInfos[createInfoIndex].groupCount; ++groupIndex) {
+                for (u32 groupIndex = 0; groupIndex < pCreateInfos[createInfoIndex].groupCount; ++groupIndex) {
                     [[maybe_unused]] const Location pGroups_loc = pCreateInfos_loc.dot(Field::pGroups, groupIndex);
                     skip |=
                         ValidateStructPnext(pGroups_loc, pCreateInfos[createInfoIndex].pGroups[groupIndex].pNext, 0, nullptr,
@@ -27439,7 +27433,7 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
                           "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
 
     if (info.pVertexBindingDescriptions != nullptr) {
-        for (uint32_t vertexBindingDescriptionIndex = 0; vertexBindingDescriptionIndex < info.vertexBindingDescriptionCount;
+        for (u32 vertexBindingDescriptionIndex = 0; vertexBindingDescriptionIndex < info.vertexBindingDescriptionCount;
              ++vertexBindingDescriptionIndex) {
             [[maybe_unused]] const Location pVertexBindingDescriptions_loc =
                 loc.dot(Field::pVertexBindingDescriptions, vertexBindingDescriptionIndex);
@@ -27454,7 +27448,7 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
                           "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
 
     if (info.pVertexAttributeDescriptions != nullptr) {
-        for (uint32_t vertexAttributeDescriptionIndex = 0; vertexAttributeDescriptionIndex < info.vertexAttributeDescriptionCount;
+        for (u32 vertexAttributeDescriptionIndex = 0; vertexAttributeDescriptionIndex < info.vertexAttributeDescriptionCount;
              ++vertexAttributeDescriptionIndex) {
             [[maybe_unused]] const Location pVertexAttributeDescriptions_loc =
                 loc.dot(Field::pVertexAttributeDescriptions, vertexAttributeDescriptionIndex);
@@ -27522,7 +27516,7 @@ bool StatelessValidation::ValidatePipelineColorBlendStateCreateInfo(const VkPipe
     skip |= ValidateBool32(loc.dot(Field::logicOpEnable), info.logicOpEnable);
 
     if (info.pAttachments != nullptr) {
-        for (uint32_t attachmentIndex = 0; attachmentIndex < info.attachmentCount; ++attachmentIndex) {
+        for (u32 attachmentIndex = 0; attachmentIndex < info.attachmentCount; ++attachmentIndex) {
             [[maybe_unused]] const Location pAttachments_loc = loc.dot(Field::pAttachments, attachmentIndex);
             skip |= ValidateBool32(pAttachments_loc.dot(Field::blendEnable), info.pAttachments[attachmentIndex].blendEnable);
 
@@ -27697,7 +27691,7 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipeline
                               kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
 
         if (info.pSpecializationInfo->pMapEntries != nullptr) {
-            for (uint32_t mapEntryIndex = 0; mapEntryIndex < info.pSpecializationInfo->mapEntryCount; ++mapEntryIndex) {
+            for (u32 mapEntryIndex = 0; mapEntryIndex < info.pSpecializationInfo->mapEntryCount; ++mapEntryIndex) {
                 [[maybe_unused]] const Location pMapEntries_loc = pSpecializationInfo_loc.dot(Field::pMapEntries, mapEntryIndex);
                 // No xml-driven validation
             }

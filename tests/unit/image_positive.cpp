@@ -205,10 +205,10 @@ TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
             {img_xfer_dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,             VK_IMAGE_LAYOUT_GENERAL},
             // clang-format on
         };
-        const uint32_t layout_count = sizeof(buffer_layouts) / sizeof(buffer_layouts[0]);
+        const u32 layout_count = sizeof(buffer_layouts) / sizeof(buffer_layouts[0]);
 
         m_commandBuffer->begin();
-        for (uint32_t i = 0; i < layout_count; ++i) {
+        for (u32 i = 0; i < layout_count; ++i) {
             img_barrier.image = buffer_layouts[i].image_obj.handle();
             const VkImageUsageFlags usage = buffer_layouts[i].image_obj.usage();
             img_barrier.subresourceRange.aspectMask = (usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
@@ -391,13 +391,11 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures =
-        vku::InitStructHelper();
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures = vku::InitStructHelper();
     physicalDeviceImagelessFramebufferFeatures.imagelessFramebuffer = VK_TRUE;
-    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 =
-        vku::InitStructHelper(&physicalDeviceImagelessFramebufferFeatures);
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = vku::InitStructHelper(&physicalDeviceImagelessFramebufferFeatures);
 
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
@@ -414,8 +412,8 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
 
-    uint32_t attachmentWidth = m_surface_capabilities.minImageExtent.width;
-    uint32_t attachmentHeight = m_surface_capabilities.minImageExtent.height;
+    u32 attachmentWidth = m_surface_capabilities.minImageExtent.width;
+    u32 attachmentHeight = m_surface_capabilities.minImageExtent.height;
     VkFormat attachmentFormat = m_surface_formats[0].format;
 
     RenderPassSingleSubpass rp(*this);
@@ -446,7 +444,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
 
     VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = vku::InitStructHelper();
     bind_devicegroup_info.deviceIndexCount = physical_device_group[0].physicalDeviceCount;
-    std::array<uint32_t, 8> deviceIndices = {{0}};
+    std::array<u32, 8> deviceIndices = {{0}};
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
@@ -462,12 +460,12 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
 
     vk::BindImageMemory2(device(), 1, &bind_info);
 
-    uint32_t swapchain_images_count = 0;
+    u32 swapchain_images_count = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
     std::vector<VkImage> swapchain_images;
     swapchain_images.resize(swapchain_images_count);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
-    uint32_t current_buffer;
+    u32 current_buffer;
     vkt::Semaphore image_acquired(*m_device);
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
@@ -634,7 +632,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
     if (compression_properties.imageCompressionFixedRateFlags != VK_IMAGE_COMPRESSION_FIXED_RATE_NONE_EXT) {
         VkImageCompressionFixedRateFlagsEXT supported_compression_fixed_rate = VK_IMAGE_COMPRESSION_FIXED_RATE_NONE_EXT;
 
-        for (uint32_t index = 0; index < 32; index++) {
+        for (u32 index = 0; index < 32; index++) {
             if ((compression_properties.imageCompressionFixedRateFlags & (1 << index)) != 0) {
                 supported_compression_fixed_rate = (1 << index);
                 break;
@@ -705,7 +703,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.layerCount = 1;
 
-    auto get_effective_depth = [&]() -> uint32_t {
+    auto get_effective_depth = [&]() -> u32 {
         return GetEffectiveExtent(ci, ivci.subresourceRange.aspectMask, ivci.subresourceRange.baseMipLevel).depth;
     };
 
@@ -898,8 +896,8 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     auto usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    static const uint32_t kWidth = 128;
-    static const uint32_t kHeight = 128;
+    static const u32 kWidth = 128;
+    static const u32 kHeight = 128;
 
     VkImageCreateInfo image_ci_3d = vku::InitStructHelper();
     image_ci_3d.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
@@ -953,7 +951,7 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     };
 
     VkSubpassDescription subpass = {
-        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, (uint32_t)color.size(), color.data(), nullptr, nullptr, 0, nullptr};
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, (u32)color.size(), color.data(), nullptr, nullptr, 0, nullptr};
 
     std::vector<VkSubpassDependency> deps = {
         {VK_SUBPASS_EXTERNAL, 0,
@@ -973,11 +971,11 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                    nullptr,
                                    0,
-                                   (uint32_t)attachments.size(),
+                                   (u32)attachments.size(),
                                    attachments.data(),
                                    1,
                                    &subpass,
-                                   (uint32_t)deps.size(),
+                                   (u32)deps.size(),
                                    deps.data()};
     // Create Sampler
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -1142,7 +1140,7 @@ TEST_F(PositiveImage, ImageAlignmentControl) {
     AddRequiredFeature(vkt::Feature::imageAlignmentControl);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t alignment = 0x1;
+    const u32 alignment = 0x1;
     VkPhysicalDeviceImageAlignmentControlPropertiesMESA props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props);
     if (!(props.supportedImageAlignmentMask & alignment)) {

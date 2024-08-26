@@ -55,7 +55,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     std::thread thread1(AddToCommandBuffer, &data);
     // Make non-conflicting calls from this thread at the same time.
     for (int i = 0; i < 80000; i++) {
-        uint32_t count;
+        u32 count;
         vk::EnumeratePhysicalDevices(instance(), &count, NULL);
     }
     thread1.join();

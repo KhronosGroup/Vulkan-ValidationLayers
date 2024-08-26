@@ -40,7 +40,7 @@ class SyncValidator;
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
 // The resource tag index is relative to the command buffer or queue in which it's found
-using QueueId = uint32_t;
+using QueueId = u32;
 constexpr static QueueId kQueueIdInvalid = QueueId(vvl::kU32Max);
 constexpr static QueueId kQueueAny = kQueueIdInvalid - 1;
 
@@ -55,7 +55,7 @@ using ResourceAccessRange = sparse_container::range<ResourceAddress>;
 // Usage tag extended with resource handle information
 struct ResourceUsageTagEx {
     ResourceUsageTag tag = kInvalidTag;
-    uint32_t handle_index = vvl::kNoIndex32;
+    u32 handle_index = vvl::kNoIndex32;
 };
 
 template <typename T>
@@ -65,11 +65,11 @@ ResourceAccessRange MakeRange(const T &has_offset_and_size) {
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
 ResourceAccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
 ResourceAccessRange MakeRange(const vvl::BufferView &buf_view_state);
-ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride);
-ResourceAccessRange MakeRange(const vvl::VertexBufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
-                              uint32_t stride);
-ResourceAccessRange MakeRange(const vvl::IndexBufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
-                              uint32_t index_size);
+ResourceAccessRange MakeRange(VkDeviceSize offset, u32 first_index, u32 count, u32 stride);
+ResourceAccessRange MakeRange(const vvl::VertexBufferBinding &binding, u32 first_index, const std::optional<u32> &count,
+                              u32 stride);
+ResourceAccessRange MakeRange(const vvl::IndexBufferBinding &binding, u32 first_index, const std::optional<u32> &count,
+                              u32 index_size);
 
 extern const ResourceAccessRange kFullRange;
 
@@ -79,18 +79,17 @@ constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | 
 
 class SyncValidationInfo {
   public:
-    SyncValidationInfo(const SyncValidator* sync_validator) : sync_state_(sync_validator) {}
-    const SyncValidator& GetSyncState() const {
+    SyncValidationInfo(const SyncValidator *sync_validator) : sync_state_(sync_validator) {}
+    const SyncValidator &GetSyncState() const {
         assert(sync_state_);
         return *sync_state_;
     }
-    std::string FormatHazard(const HazardResult& hazard) const;
+    std::string FormatHazard(const HazardResult &hazard) const;
     virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
 
   protected:
-    const SyncValidator* sync_state_;
+    const SyncValidator *sync_state_;
 };
-
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {

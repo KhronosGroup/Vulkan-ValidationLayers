@@ -23,8 +23,8 @@
 
 #pragma once
 
-#include <cstdint>
+#include "utils/numerical_types.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-extern const uint32_t instrumentation_bindless_descriptor_comp_size;
-extern const uint32_t instrumentation_bindless_descriptor_comp[];
+extern const u32 instrumentation_bindless_descriptor_comp_size;
+extern const u32 instrumentation_bindless_descriptor_comp[];

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 The Khronos Group Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,18 +41,16 @@ struct OneOffDescriptorSet {
     bool Initialized();
     void Clear();
     void WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uint32_t arrayElement = 0);
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, u32 arrayElement = 0);
     void WriteDescriptorBufferView(int binding, VkBufferView buffer_view,
-                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                                   uint32_t arrayElement = 0);
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, u32 arrayElement = 0);
     void WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, uint32_t arrayElement = 0);
-    void WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
-                                    const VkAccelerationStructureKHR *pAccelerationStructures, uint32_t arrayElement = 0);
+                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, u32 arrayElement = 0);
+    void WriteDescriptorAccelStruct(int binding, u32 accelerationStructureCount,
+                                    const VkAccelerationStructureKHR *pAccelerationStructures, u32 arrayElement = 0);
     void UpdateDescriptorSets();
 
   private:
-    void AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type,
-                            uint32_t descriptor_count = 1);
+    void AddDescriptorWrite(u32 binding, u32 array_element, VkDescriptorType descriptor_type, u32 descriptor_count = 1);
 };

@@ -165,7 +165,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
     pipeline.descriptor_set_->WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.memory().map());
+    auto uniform_buffer_ptr = static_cast<u32 *>(uniform_buffer.memory().map());
     uniform_buffer_ptr[0] = 0x100 | 0x200;  // SkipTrianglesKHR and SkipAABBsKHR
     uniform_buffer.memory().unmap();
 
@@ -216,7 +216,7 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
     pipeline.descriptor_set_->WriteDescriptorBufferInfo(1, uniform_buffer, 0, VK_WHOLE_SIZE);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.memory().map());
+    auto uniform_buffer_ptr = static_cast<u32 *>(uniform_buffer.memory().map());
     uniform_buffer_ptr[0] = 0x1 | 0x2;  // OpaqueKHR and NoOpaqueKHR
     uniform_buffer.memory().unmap();
 

@@ -27,14 +27,15 @@
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
 
 // VkDescriptorSetLayoutBinding
-static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding &lhs, const vku::safe_VkDescriptorSetLayoutBinding &rhs) {
+static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding &lhs,
+                              const vku::safe_VkDescriptorSetLayoutBinding &rhs) {
     if ((lhs.binding != rhs.binding) || (lhs.descriptorType != rhs.descriptorType) ||
         (lhs.descriptorCount != rhs.descriptorCount) || (lhs.stageFlags != rhs.stageFlags) ||
         !hash_util::SimilarForNullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
         return false;
     }
     if (lhs.pImmutableSamplers) {  // either one will do as they *are* similar for nullity (i.e. either both null or both non-null)
-        for (uint32_t samp = 0; samp < lhs.descriptorCount; samp++) {
+        for (u32 samp = 0; samp < lhs.descriptorCount; samp++) {
             if (lhs.pImmutableSamplers[samp] != rhs.pImmutableSamplers[samp]) {
                 return false;
             }
@@ -50,7 +51,7 @@ struct hash<vku::safe_VkDescriptorSetLayoutBinding> {
         hash_util::HashCombiner hc;
         hc << value.binding << value.descriptorType << value.descriptorCount << value.stageFlags;
         if (value.pImmutableSamplers) {
-            for (uint32_t samp = 0; samp < value.descriptorCount; samp++) {
+            for (u32 samp = 0; samp < value.descriptorCount; samp++) {
                 hc << value.pImmutableSamplers[samp];
             }
         }
@@ -103,7 +104,7 @@ struct hash<const ExtEnabled DeviceExtensions::*> {
   public:
     size_t operator()(const ExtEnabled DeviceExtensions::*const &p) const noexcept {
         static DeviceExtensions dummy_de;
-        static std::hash<uint8_t> h;
+        static std::hash<u8> h;
         return h(dummy_de.*p);
     }
 };
@@ -113,8 +114,8 @@ static inline bool operator==(const VkShaderModuleIdentifierEXT &a, const VkShad
     if (a.identifierSize != b.identifierSize) {
         return false;
     }
-    const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, a.identifierSize);
-    for (uint32_t i = 0u; i < copy_size; ++i) {
+    const u32 copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, a.identifierSize);
+    for (u32 i = 0u; i < copy_size; ++i) {
         if (a.identifier[i] != b.identifier[i]) {
             return false;
         }

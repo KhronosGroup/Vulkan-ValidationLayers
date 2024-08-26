@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 
 // Not in public NDK headers, only AOSP headers, but NDK will allow it for usage of camera apps and we use for AHB tests
-constexpr uint32_t AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED = 0x22;
-constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_WRITE = 0x20000;
-constexpr uint64_t AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000;
+constexpr u32 AHARDWAREBUFFER_FORMAT_IMPLEMENTATION_DEFINED = 0x22;
+constexpr u64 AHARDWAREBUFFER_USAGE_CAMERA_WRITE = 0x20000;
+constexpr u64 AHARDWAREBUFFER_USAGE_CAMERA_READ = 0x40000;
 
 // Helper to get the memory type index for AHB object that are being imported
 // returns false if can't set the values correctly
@@ -31,7 +31,7 @@ inline bool SetAllocationInfoImportAHB(vkt::Device *device, VkAndroidHardwareBuf
     // AHB object hold the real allocationSize needed
     info.allocationSize = ahb_props.allocationSize;
     info.memoryTypeIndex = mem_props.memoryTypeCount + 1;
-    for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
+    for (u32 i = 0; i < mem_props.memoryTypeCount; i++) {
         if ((ahb_props.memoryTypeBits & (1 << i)) && ((mem_props.memoryTypes[i].propertyFlags & property) == property)) {
             info.memoryTypeIndex = i;
             break;
@@ -44,7 +44,7 @@ namespace vkt {
 class AHB {
   public:
     AHB(const AHardwareBuffer_Desc *ahb_desc) { init(ahb_desc); }
-    AHB(uint32_t format, uint64_t usage, uint32_t width, uint32_t height = 1, uint32_t layers = 1, uint32_t stride = 1) {
+    AHB(u32 format, u64 usage, u32 width, u32 height = 1, u32 layers = 1, u32 stride = 1) {
         AHardwareBuffer_Desc ahb_desc = {};
         ahb_desc.format = format;
         ahb_desc.usage = usage;
@@ -57,7 +57,7 @@ class AHB {
 
     void init(const AHardwareBuffer_Desc *ahb_desc) { AHardwareBuffer_allocate(ahb_desc, &ahb); }
 
-    uint64_t GetExternalFormat(const Device &dev, void *pNext = nullptr) const {
+    u64 GetExternalFormat(const Device &dev, void *pNext = nullptr) const {
         VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper(pNext);
         VkAndroidHardwareBufferPropertiesANDROID ahb_props = vku::InitStructHelper(&ahb_fmt_props);
         vk::GetAndroidHardwareBufferPropertiesANDROID(dev.handle(), ahb, &ahb_props);
@@ -71,9 +71,7 @@ class AHB {
         }
     }
 
-    struct AHardwareBuffer *handle() {
-        return ahb;
-    }
+    struct AHardwareBuffer *handle() { return ahb; }
 
   private:
     AHardwareBuffer *ahb = nullptr;

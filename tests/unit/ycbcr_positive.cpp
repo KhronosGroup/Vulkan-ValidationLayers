@@ -230,7 +230,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     // Plane 0
     image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
     vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
-    uint32_t mem_type = 0;
+    u32 mem_type = 0;
     auto phys_mem_props2 = vku::InitStruct<VkPhysicalDeviceMemoryProperties2>();
     vk::GetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
     for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {

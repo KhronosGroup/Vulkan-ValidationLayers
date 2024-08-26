@@ -39,11 +39,11 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectBuffer) {
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    const char* object_name = "buffer_object";
+    const char *object_name = "buffer_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    name_info.objectHandle = (uint64_t)buffer.handle();
+    name_info.objectHandle = (u64)buffer.handle();
     name_info.pObjectName = object_name;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
@@ -75,11 +75,11 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectDevice) {
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
-    const char* object_name = "device_object";
+    const char *object_name = "device_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
-    name_info.objectHandle = (uint64_t)device();
+    name_info.objectHandle = (u64)device();
     name_info.pObjectName = object_name;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
@@ -190,14 +190,14 @@ TEST_F(PositiveDebugExtensions, SwapchainImagesDebugMarker) {
     VkSwapchainKHR swapchain;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
-    uint32_t imageCount;
+    u32 imageCount;
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
     std::vector<VkImage> images(imageCount);
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
 
     {
         VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
-        name_info.object = (uint64_t)images[0];
+        name_info.object = (u64)images[0];
         name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT;
         std::string image_name = "swapchain [0]";
         name_info.pObjectName = image_name.c_str();
@@ -207,7 +207,7 @@ TEST_F(PositiveDebugExtensions, SwapchainImagesDebugMarker) {
     {
         int tags[2] = {1, 2};
         VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
-        name_info.object = (uint64_t)images[0];
+        name_info.object = (u64)images[0];
         name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT;
         name_info.tagName = 1;
         name_info.tagSize = 2;

@@ -22,8 +22,8 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachment_width = 512;
-    uint32_t attachment_height = 512;
+    u32 attachment_width = 512;
+    u32 attachment_height = 512;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Create a renderPass with a single attachment
@@ -51,7 +51,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     fb_ci.renderPass = rp.Handle();
     fb_ci.attachmentCount = 1;
 
-    fb_ci.pAttachments  = nullptr;
+    fb_ci.pAttachments = nullptr;
     vkt::Framebuffer framebuffer_null(*m_device, fb_ci);
 
     vkt::ImageView rt_view = m_renderTargets[0]->CreateView();
@@ -146,8 +146,8 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachment_width = 512;
-    uint32_t attachment_height = 512;
+    u32 attachment_width = 512;
+    u32 attachment_height = 512;
     VkFormat format = FindSupportedDepthOnlyFormat(gpu());
 
     // Create a renderPass with a single attachment

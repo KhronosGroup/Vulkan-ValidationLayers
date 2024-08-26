@@ -31,8 +31,8 @@ class ViewportInheritanceTestData {
     VkFramebuffer m_framebuffer{};
 
     // Do-nothing vertex and fragment programs.
-    static const uint32_t kVertexSpirV[166];
-    static const uint32_t kFragmentSpirV[83];
+    static const u32 kVertexSpirV[166];
+    static const u32 kFragmentSpirV[83];
     std::array<VkPipelineShaderStageCreateInfo, 2> m_shaderStages{};
 
     // Do-nothing graphics pipelines.
@@ -198,8 +198,7 @@ class ViewportInheritanceTestData {
                           bool inheritedViewportScissor2D, bool extended_dynamic_state_multi_viewport,
                           bool disable_multi_viewport = false) {
         VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext = vku::InitStructHelper();
-        VkPhysicalDeviceInheritedViewportScissorFeaturesNV nv =
-            vku::InitStructHelper(&ext);
+        VkPhysicalDeviceInheritedViewportScissorFeaturesNV nv = vku::InitStructHelper(&ext);
         VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&nv);
         VkPhysicalDevice gpu = p_framework->gpu();
 
@@ -273,7 +272,7 @@ class ViewportInheritanceTestData {
     // Get the graphics pipeline with the specified viewport/scissor state configuration, creating it if needed.
     // viewport_scissor_count == 0 and dynamic_viewport_scissor == true indicates EXT viewport/scissor with count dynamic state.
     // All pipelines are destroyed when the class is destroyed.
-    VkPipeline GetGraphicsPipeline(bool dynamic_viewport_scissor, uint32_t viewport_scissor_count) {
+    VkPipeline GetGraphicsPipeline(bool dynamic_viewport_scissor, u32 viewport_scissor_count) {
         assert(dynamic_viewport_scissor || viewport_scissor_count != 0);
         assert(size_t(viewport_scissor_count) < m_dynamicStatePipelines.size());
         VkPipeline* p_pipeline =
@@ -285,9 +284,9 @@ class ViewportInheritanceTestData {
         // Need some static viewport/scissors if no dynamic state. Their values don't really matter; the only purpose
         // of static viewport/scissor pipelines is to test messing up the dynamic state.
         std::vector<VkViewport> static_viewports;
-        std::vector<VkRect2D>   static_scissors;
+        std::vector<VkRect2D> static_scissors;
         if (!dynamic_viewport_scissor) {
-            VkViewport viewport { 0, 0, 128, 128, 0, 1 };
+            VkViewport viewport{0, 0, 128, 128, 0, 1};
             static_viewports = std::vector<VkViewport>(viewport_scissor_count, viewport);
             static_scissors.resize(viewport_scissor_count);
         }
@@ -298,13 +297,14 @@ class ViewportInheritanceTestData {
                                                             static_viewports.data(),
                                                             viewport_scissor_count,
                                                             static_scissors.data()};
-        const VkPipelineDynamicStateCreateInfo& dynamic_state =
-            dynamic_viewport_scissor == false ? kStaticState : viewport_scissor_count == 0 ? kDynamicStateWithCount : kDynamicState;
+        const VkPipelineDynamicStateCreateInfo& dynamic_state = dynamic_viewport_scissor == false ? kStaticState
+                                                                : viewport_scissor_count == 0     ? kDynamicStateWithCount
+                                                                                                  : kDynamicState;
 
         VkGraphicsPipelineCreateInfo info = {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                              nullptr,
                                              0,
-                                             uint32_t(m_shaderStages.size()),
+                                             u32(m_shaderStages.size()),
                                              m_shaderStages.data(),
                                              &kVertexInputState,
                                              &kInputAssemblyState,
@@ -324,7 +324,7 @@ class ViewportInheritanceTestData {
     }
 
     // Bind the graphics pipeline with the specified viewport/scissor state configuration.
-    void BindGraphicsPipeline(VkCommandBuffer cmd, bool dynamic_viewport_scissor, uint32_t viewport_scissor_count) {
+    void BindGraphicsPipeline(VkCommandBuffer cmd, bool dynamic_viewport_scissor, u32 viewport_scissor_count) {
         VkPipeline pipeline = GetGraphicsPipeline(dynamic_viewport_scissor, viewport_scissor_count);
         if (pipeline) vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
@@ -347,8 +347,8 @@ class ViewportInheritanceTestData {
 
     // Begin the render pass, with subpass contents provided by secondary command buffers.
     void BeginRenderPass(VkCommandBuffer cmd) const {
-        VkRenderPassBeginInfo info =
-            vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
+        VkRenderPassBeginInfo info = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer,
+                                                                            VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
         vk::CmdBeginRenderPass(cmd, &info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     }
 
@@ -374,7 +374,7 @@ class ViewportInheritanceTestData {
     // Make a subpass secondary command buffer (for the class's render pass) and begin recording.
     // If a nonzero array of viewports is given, this enabled viewport/scissor inheritance and
     // passes the list of expected viewport depths.
-    VkCommandBuffer MakeBeginSubpassCommandBuffer(VkCommandPool pool, uint32_t inherited_viewport_count,
+    VkCommandBuffer MakeBeginSubpassCommandBuffer(VkCommandPool pool, u32 inherited_viewport_count,
                                                   const VkViewport* p_viewport_depths) const {
         VkCommandBufferAllocateInfo info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, pool,
                                             VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1};
@@ -385,13 +385,13 @@ class ViewportInheritanceTestData {
     }
 
     // Same as above, but recycle the given secondary command buffer.
-    VkResult BeginSubpassCommandBuffer(VkCommandBuffer cmd, uint32_t inherited_viewport_count,
+    VkResult BeginSubpassCommandBuffer(VkCommandBuffer cmd, u32 inherited_viewport_count,
                                        const VkViewport* p_viewport_depths) const {
         VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor = {
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV, nullptr,
-            inherited_viewport_count != 0, inherited_viewport_count, p_viewport_depths };
-        VkCommandBufferInheritanceInfo inheritance = {
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, &viewport_scissor, m_renderPass, 0, m_framebuffer };
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV, nullptr, inherited_viewport_count != 0,
+            inherited_viewport_count, p_viewport_depths};
+        VkCommandBufferInheritanceInfo inheritance = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, &viewport_scissor,
+                                                      m_renderPass, 0, m_framebuffer};
         VkCommandBufferBeginInfo info = {
             VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
             VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inheritance};
@@ -544,7 +544,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     // Check that the validation layers DON'T report mismatched viewport depth when the secondary command buffer does not actually
     // consume the viewport in drawing commands (weird corner case).
     VkCommandBuffer no_draw_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportDepthOnlyArray);
-    test_data.BindGraphicsPipeline(no_draw_cmd, true, 1); // but no subsequent draw call.
+    test_data.BindGraphicsPipeline(no_draw_cmd, true, 1);  // but no subsequent draw call.
     vk::EndCommandBuffer(no_draw_cmd);
 
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
@@ -590,8 +590,8 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
         } else {
         }
         VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor = {
-            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV, nullptr, should_fail ? VK_TRUE : VK_FALSE,
-            0, test_data.kViewportArray /* avoid null pointer crash still */ };
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV, nullptr, should_fail ? VK_TRUE : VK_FALSE, 0,
+            test_data.kViewportArray /* avoid null pointer crash still */};
         VkCommandBuffer cmd =
             test_data.MakeBeginSecondaryCommandBuffer(pool, VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &viewport_scissor);
         // vk::EndCommandBuffer(cmd); // seg faults.
@@ -692,7 +692,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     vk::EndCommandBuffer(draw_cmd);
 
     VkCommandBuffer primary_cmd = test_data.MakeBeginPrimaryCommandBuffer(pool);
-    vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportArray); // inadequate, needs with count
+    vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportArray);  // inadequate, needs with count
     vk::CmdSetScissor(primary_cmd, 0, 1, test_data.kScissorArray);
     test_data.BeginRenderPass(primary_cmd);
     vk::CmdExecuteCommands(primary_cmd, 1, &draw_cmd);
@@ -706,7 +706,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         if (should_fail) m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
 
         test_data.BeginSubpassCommandBuffer(draw_cmd, should_fail ? 1 : 2, test_data.kViewportDepthOnlyArray);
-        test_data.BindGraphicsPipeline(draw_cmd, true, 2); // Uses 2 viewports
+        test_data.BindGraphicsPipeline(draw_cmd, true, 2);  // Uses 2 viewports
         vk::CmdDraw(draw_cmd, 3, 1, 0, 0);
         if (i & 2) {
             // Uses only 1 viewport, should not cause us to "forget" the earlier need for 2 viewports.
@@ -763,7 +763,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
 
         VkCommandBuffer set_state_cmd = use_with_count ? set_state_with_count_cmd : set_state_fixed_count_cmd;
         VkCommandBuffer secondaries[3];
-        uint32_t secondaries_count;
+        u32 secondaries_count;
 
         switch (i % 4) {
             case 0:
@@ -779,12 +779,13 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
             case 2:
                 secondaries[0] = set_state_cmd;
                 secondaries[1] = draw_cmd;
-                secondaries[2] = static_state_cmd; // Okay as it's after the drawing commands.
+                secondaries[2] = static_state_cmd;  // Okay as it's after the drawing commands.
                 secondaries_count = 3;
                 break;
-            case 3: default:
+            case 3:
+            default:
                 secondaries[0] = set_state_cmd;
-                secondaries[1] = static_state_cmd; // Trashes the dynamic state
+                secondaries[1] = static_state_cmd;  // Trashes the dynamic state
                 secondaries[2] = draw_cmd;
                 secondaries_count = 3;
                 break;
@@ -816,7 +817,8 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         vk::EndCommandBuffer(draw_cmd);
 
         test_data.BeginSubpassCommandBuffer(set_state_fixed_count_cmd, 0, nullptr);
-        vk::CmdSetViewport(set_state_fixed_count_cmd, 1, 1, i == 2 ? &test_data.kViewportArray[1] : &test_data.kViewportAlternateDepthArray[1]);
+        vk::CmdSetViewport(set_state_fixed_count_cmd, 1, 1,
+                           i == 2 ? &test_data.kViewportArray[1] : &test_data.kViewportAlternateDepthArray[1]);
         vk::CmdSetScissor(set_state_fixed_count_cmd, 1, 1, &test_data.kScissorArray[1]);
         vk::EndCommandBuffer(set_state_fixed_count_cmd);
 
@@ -846,12 +848,11 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         viewports[1] = test_data.kViewportArray[1];
         if (inherited_incorrect_depth) {
             viewports[2] = test_data.kViewportAlternateDepthArray[2];  // Will be a problem only when using all 3 viewports.
-        }
-        else {
+        } else {
             viewports[2] = test_data.kViewportArray[2];
         }
 
-        uint32_t inherited_count = should_fail && !inherited_incorrect_depth ? 2 : 3;
+        u32 inherited_count = should_fail && !inherited_incorrect_depth ? 2 : 3;
         test_data.BeginSubpassCommandBuffer(draw_cmd, inherited_count, test_data.kViewportDepthOnlyArray);
         test_data.BindGraphicsPipeline(draw_cmd, true, 0);
         vk::CmdDraw(draw_cmd, 3, 1, 0, 0);
@@ -867,11 +868,10 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         if (state_in_secondary) {
             set_state_cmd = set_state_with_count_cmd;
             test_data.BeginSubpassCommandBuffer(set_state_cmd, 0, nullptr);
-        }
-        else {
+        } else {
             set_state_cmd = primary_cmd;
         }
-        uint32_t count = should_fail ? 3 : 2;
+        u32 count = should_fail ? 3 : 2;
         vk::CmdSetViewportWithCountEXT(set_state_cmd, count, viewports);
         vk::CmdSetScissorWithCountEXT(set_state_cmd, count, test_data.kScissorArray);
         if (state_in_secondary) {
@@ -882,8 +882,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
         if (state_in_secondary) {
             VkCommandBuffer secondaries[] = {set_state_cmd, draw_cmd};
             vk::CmdExecuteCommands(primary_cmd, 2, secondaries);
-        }
-        else {
+        } else {
             vk::CmdExecuteCommands(primary_cmd, 1, &draw_cmd);
         }
         vk::CmdEndRenderPass(primary_cmd);
@@ -950,8 +949,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
 
-    VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor =
-        vku::InitStructHelper();
+    VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor = vku::InitStructHelper();
     viewport_scissor.viewportScissor2D = VK_TRUE;
     viewport_scissor.viewportDepthCount = 1;
     viewport_scissor.pViewportDepths = test_data.kViewportArray;
@@ -1000,7 +998,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
 
 // #version 460
 // void main() { gl_Position = vec4(1); }
-const uint32_t ViewportInheritanceTestData::kVertexSpirV[166] = {
+const u32 ViewportInheritanceTestData::kVertexSpirV[166] = {
     0x07230203, 0x00010000, 0x0008000a, 0x00000014, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47,
     0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001, 0x0006000f, 0x00000000, 0x00000004, 0x6e69616d,
     0x00000000, 0x0000000d, 0x00030003, 0x00000002, 0x000001cc, 0x00040005, 0x00000004, 0x6e69616d, 0x00000000, 0x00060005,
@@ -1022,7 +1020,7 @@ const uint32_t ViewportInheritanceTestData::kVertexSpirV[166] = {
 // #version 460
 // layout(location = 0) out vec4 color;
 // void main() { color = vec4(1); }
-const uint32_t ViewportInheritanceTestData::kFragmentSpirV[83] = {
+const u32 ViewportInheritanceTestData::kFragmentSpirV[83] = {
     0x07230203, 0x00010000, 0x0008000a, 0x0000000c, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47,
     0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001, 0x0006000f, 0x00000004, 0x00000004, 0x6e69616d,
     0x00000000, 0x00000009, 0x00030010, 0x00000004, 0x00000007, 0x00030003, 0x00000002, 0x000001cc, 0x00040005, 0x00000004,
@@ -1057,8 +1055,7 @@ const VkPipelineMultisampleStateCreateInfo ViewportInheritanceTestData::kMultisa
     VK_SAMPLE_COUNT_1_BIT,
 };
 
-const VkPipelineDepthStencilStateCreateInfo ViewportInheritanceTestData::kDepthStencilState =
-    vku::InitStructHelper();
+const VkPipelineDepthStencilStateCreateInfo ViewportInheritanceTestData::kDepthStencilState = vku::InitStructHelper();
 
 const VkPipelineColorBlendAttachmentState ViewportInheritanceTestData::kBlendAttachmentState = {
     VK_FALSE,
@@ -1085,14 +1082,14 @@ const VkPipelineDynamicStateCreateInfo ViewportInheritanceTestData::kStaticState
 
 static const std::array<VkDynamicState, 2> kDynamicStateArray = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 const VkPipelineDynamicStateCreateInfo ViewportInheritanceTestData::kDynamicState = {
-    VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0,
-    static_cast<uint32_t>(kDynamicStateArray.size()), kDynamicStateArray.data()};
+    VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, static_cast<u32>(kDynamicStateArray.size()),
+    kDynamicStateArray.data()};
 
 static const std::array<VkDynamicState, 2> kDynamicStateWithCountArray = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,
                                                                           VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
 const VkPipelineDynamicStateCreateInfo ViewportInheritanceTestData::kDynamicStateWithCount = {
-    VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0,
-    static_cast<uint32_t>(kDynamicStateWithCountArray.size()), kDynamicStateWithCountArray.data()};
+    VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, static_cast<u32>(kDynamicStateWithCountArray.size()),
+    kDynamicStateWithCountArray.data()};
 
 const VkViewport ViewportInheritanceTestData::kViewportArray[32] = {
     {0.0f, 0.0f, 128.0f, 128.0f, 0.00f, 1.00f}, {0.0f, 0.0f, 128.0f, 128.0f, 0.01f, 0.99f},

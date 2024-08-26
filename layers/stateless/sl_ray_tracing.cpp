@@ -30,7 +30,7 @@ bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesN
         triangles.vertexFormat != VK_FORMAT_R16G16_SFLOAT && triangles.vertexFormat != VK_FORMAT_R16G16_SNORM) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-vertexFormat-02430", object_handle, loc, "is invalid.");
     } else {
-        uint32_t vertex_component_size = 0;
+        u32 vertex_component_size = 0;
         if (triangles.vertexFormat == VK_FORMAT_R32G32B32_SFLOAT || triangles.vertexFormat == VK_FORMAT_R32G32_SFLOAT) {
             vertex_component_size = 4;
         } else if (triangles.vertexFormat == VK_FORMAT_R16G16B16_SFLOAT || triangles.vertexFormat == VK_FORMAT_R16G16B16_SNORM ||
@@ -46,7 +46,7 @@ bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesN
         triangles.indexType != VK_INDEX_TYPE_NONE_NV) {
         skip |= LogError("VUID-VkGeometryTrianglesNV-indexType-02433", object_handle, loc, "is invalid.");
     } else {
-        const uint32_t index_element_size = GetIndexAlignment(triangles.indexType);
+        const u32 index_element_size = GetIndexAlignment(triangles.indexType);
         if (index_element_size > 0 && SafeModulo(triangles.indexOffset, index_element_size) != 0) {
             skip |= LogError("VUID-VkGeometryTrianglesNV-indexOffset-02432", object_handle, loc, "is invalid.");
         }
@@ -130,8 +130,8 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxInstanceCount.");
     }
     if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV && info.geometryCount > 0) {
-        uint64_t total_triangle_count = 0;
-        for (uint32_t i = 0; i < info.geometryCount; i++) {
+        u64 total_triangle_count = 0;
+        for (u32 i = 0; i < info.geometryCount; i++) {
             const VkGeometryNV &geometry = info.pGeometries[i];
 
             skip |= ValidateGeometryNV(geometry, object_handle, loc);
@@ -149,7 +149,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
     }
     if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV && info.geometryCount > 1) {
         const VkGeometryTypeNV first_geometry_type = info.pGeometries[0].geometryType;
-        for (uint32_t i = 1; i < info.geometryCount; i++) {
+        for (u32 i = 1; i < info.geometryCount; i++) {
             const VkGeometryNV &geometry = info.pGeometries[i];
             if (geometry.geometryType != first_geometry_type) {
                 skip |= LogError("VUID-VkAccelerationStructureInfoNV-type-02786", object_handle, loc,
@@ -160,7 +160,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
             }
         }
     }
-    for (uint32_t geometry_index = 0; geometry_index < info.geometryCount; ++geometry_index) {
+    for (u32 geometry_index = 0; geometry_index < info.geometryCount; ++geometry_index) {
         if (!(info.pGeometries[geometry_index].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV ||
               info.pGeometries[geometry_index].geometryType == VK_GEOMETRY_TYPE_AABBS_NV)) {
             skip |= LogError("VUID-VkGeometryNV-geometryType-03503", object_handle, loc,
@@ -286,8 +286,8 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
-    VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureNV *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &error_obj) const {
+    VkCommandBuffer commandBuffer, u32 accelerationStructureCount, const VkAccelerationStructureNV *pAccelerationStructures,
+    VkQueryType queryType, VkQueryPool queryPool, u32 firstQuery, const ErrorObject &error_obj) const {
     bool skip = false;
     if (queryType != VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
         skip |= LogError("VUID-vkCmdWriteAccelerationStructuresPropertiesNV-queryType-06216", device, error_obj.location,
@@ -353,15 +353,15 @@ bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsNV(const VkPipel
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+    VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < createInfoCount; i++) {
+    for (u32 i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkRayTracingPipelineCreateInfoNV &create_info = pCreateInfos[i];
 
-        for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
+        for (u32 stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
             skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.pStages[stage_index],
                                                                 create_info_loc.dot(Field::pStages, stage_index));
         }
@@ -404,14 +404,14 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
                                      create_info_loc.dot(Field::basePipelineHandle).Fields().c_str(),
                                      FormatHandle(create_info.basePipelineHandle).c_str());
                 }
-                if (create_info.basePipelineIndex > static_cast<int32_t>(i)) {
+                if (create_info.basePipelineIndex > static_cast<i32>(i)) {
                     skip |= LogError("VUID-vkCreateRayTracingPipelinesNV-flags-03415", device, flags_loc,
                                      "is %s, but %s is %" PRId32 ".", string_VkPipelineCreateFlags2KHR(flags).c_str(),
                                      create_info_loc.dot(Field::basePipelineIndex).Fields().c_str(), create_info.basePipelineIndex);
                 }
             }
             if (create_info.basePipelineHandle == VK_NULL_HANDLE) {
-                if (static_cast<uint32_t>(create_info.basePipelineIndex) >= createInfoCount) {
+                if (static_cast<u32>(create_info.basePipelineIndex) >= createInfoCount) {
                     skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-flags-07985", device,
                                      create_info_loc.dot(Field::basePipelineHandle), "is VK_NULL_HANDLE, but %s is %s.",
                                      flags_loc.Fields().c_str(), string_VkPipelineCreateFlags2KHR(flags).c_str());
@@ -463,7 +463,7 @@ bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipe
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, u32 createInfoCount,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
     const ErrorObject &error_obj) const {
     bool skip = false;
@@ -471,7 +471,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         skip |= LogError("VUID-vkCreateRayTracingPipelinesKHR-rayTracingPipeline-03586", device, error_obj.location,
                          "The rayTracingPipeline feature was not enabled.");
     }
-    for (uint32_t i = 0; i < createInfoCount; i++) {
+    for (u32 i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkRayTracingPipelineCreateInfoKHR &create_info = pCreateInfos[i];
 
@@ -486,7 +486,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
         skip |= ValidateCreateRayTracingPipelinesFlagsKHR(flags, flags_loc);
 
-        for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
+        for (u32 stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
             const Location stage_loc = create_info_loc.dot(Field::pStages, stage_index);
             skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.pStages[stage_index], stage_loc);
 
@@ -516,7 +516,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             }
         }
 
-        for (uint32_t group_index = 0; group_index < create_info.groupCount; ++group_index) {
+        for (u32 group_index = 0; group_index < create_info.groupCount; ++group_index) {
             const Location group_loc = create_info_loc.dot(Field::pGroups, group_index);
             if ((create_info.pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) ||
                 (create_info.pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR)) {
@@ -550,14 +550,14 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                                      create_info_loc.dot(Field::basePipelineIndex),
                                      "is %" PRId32 " and basePipelineHandle is not VK_NULL_HANDLE.", create_info.basePipelineIndex);
                 }
-                if (create_info.basePipelineIndex > static_cast<int32_t>(i)) {
+                if (create_info.basePipelineIndex > static_cast<i32>(i)) {
                     skip |=
                         LogError("VUID-vkCreateRayTracingPipelinesKHR-flags-03415", device,
                                  create_info_loc.dot(Field::basePipelineIndex), "is %" PRId32 ".", create_info.basePipelineIndex);
                 }
             }
             if (create_info.basePipelineHandle == VK_NULL_HANDLE) {
-                if (create_info.basePipelineIndex < 0 || static_cast<uint32_t>(create_info.basePipelineIndex) >= createInfoCount) {
+                if (create_info.basePipelineIndex < 0 || static_cast<u32>(create_info.basePipelineIndex) >= createInfoCount) {
                     skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07985", device, flags_loc,
                                      "is %s but basePipelineIndex has invalid index value %" PRId32 ".",
                                      string_VkPipelineCreateFlags2KHR(flags).c_str(), create_info.basePipelineIndex);
@@ -637,7 +637,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
 
         if (create_info.pDynamicState) {
-            for (uint32_t j = 0; j < create_info.pDynamicState->dynamicStateCount; ++j) {
+            for (u32 j = 0; j < create_info.pDynamicState->dynamicStateCount; ++j) {
                 if (create_info.pDynamicState->pDynamicStates[j] != VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) {
                     skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pDynamicStates-03602", device,
                                      create_info_loc.dot(Field::pDynamicState).dot(Field::pDynamicStates, j), "is %s.",
@@ -789,8 +789,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStruc
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject &error_obj) const {
+    VkCommandBuffer commandBuffer, u32 accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
+    VkQueryType queryType, VkQueryPool queryPool, u32 firstQuery, const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (!enabled_features.accelerationStructure) {
@@ -809,7 +809,7 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
 }
 
 bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(
-    VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
+    VkDevice device, u32 accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, size_t dataSize, void *pData, size_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
     if (!enabled_features.accelerationStructureHostCommands) {
@@ -887,7 +887,7 @@ bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPrope
 }
 
 bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
-    VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData,
+    VkDevice device, VkPipeline pipeline, u32 firstGroup, u32 groupCount, size_t dataSize, void *pData,
     const ErrorObject &error_obj) const {
     bool skip = false;
     if (!enabled_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
@@ -909,7 +909,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
     return skip;
 }
 
-bool StatelessValidation::ValidateTotalPrimitivesCount(uint64_t total_triangles_count, uint64_t total_aabbs_count,
+bool StatelessValidation::ValidateTotalPrimitivesCount(u64 total_triangles_count, u64 total_aabbs_count,
                                                        const VulkanTypedHandle &handle, const Location &loc) const {
     bool skip = false;
 
@@ -970,7 +970,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
         return skip;
     }
 
-    for (uint32_t geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
+    for (u32 geom_i = 0; geom_i < info.geometryCount; ++geom_i) {
         const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(info, geom_i);
 
         const Location geometry_loc = info_loc.dot(info.pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
@@ -1069,10 +1069,10 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
     return skip;
 }
 
-static void ComputeTotalPrimitiveCountWithBuildRanges(uint32_t info_count,
+static void ComputeTotalPrimitiveCountWithBuildRanges(u32 info_count,
                                                       const VkAccelerationStructureBuildGeometryInfoKHR *build_geometry_infos,
                                                       const VkAccelerationStructureBuildRangeInfoKHR *const *build_ranges,
-                                                      uint64_t *out_total_triangles_count, uint64_t *out_total_aabbs_count) {
+                                                      u64 *out_total_triangles_count, u64 *out_total_aabbs_count) {
     *out_total_triangles_count = 0;
     *out_total_aabbs_count = 0;
 
@@ -1083,7 +1083,7 @@ static void ComputeTotalPrimitiveCountWithBuildRanges(uint32_t info_count,
             return;
         }
 
-        for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
+        for (u32 geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
             const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(*info, geom_i);
             switch (geom.geometryType) {
                 case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
@@ -1102,8 +1102,8 @@ static void ComputeTotalPrimitiveCountWithBuildRanges(uint32_t info_count,
 }
 
 static void ComputeTotalPrimitiveCountWithMaxPrimitivesCount(
-    uint32_t info_count, const VkAccelerationStructureBuildGeometryInfoKHR *build_geometry_infos,
-    const uint32_t *const *max_primitives, uint64_t *out_total_triangles_count, uint64_t *out_total_aabbs_count) {
+    u32 info_count, const VkAccelerationStructureBuildGeometryInfoKHR *build_geometry_infos, const u32 *const *max_primitives,
+    u64 *out_total_triangles_count, u64 *out_total_aabbs_count) {
     *out_total_triangles_count = 0;
     *out_total_aabbs_count = 0;
 
@@ -1114,7 +1114,7 @@ static void ComputeTotalPrimitiveCountWithMaxPrimitivesCount(
             return;
         }
 
-        for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
+        for (u32 geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
             const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(*info, geom_i);
             switch (geom.geometryType) {
                 case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
@@ -1133,7 +1133,7 @@ static void ComputeTotalPrimitiveCountWithMaxPrimitivesCount(
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    VkCommandBuffer commandBuffer, u32 infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -1142,8 +1142,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
                          "accelerationStructure feature was not enabled.");
     }
 
-    uint64_t total_triangles_count = 0;
-    uint64_t total_aabbs_count = 0;
+    u64 total_triangles_count = 0;
+    u64 total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithBuildRanges(infoCount, pInfos, ppBuildRangeInfos, &total_triangles_count, &total_aabbs_count);
     skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
 
@@ -1187,83 +1187,81 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
             }
         }
 
-            for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
-                const VkAccelerationStructureGeometryKHR &as_geometry = rt::GetGeometry(*info, geom_i);
-                const Location p_geom_loc = info_loc.dot(info->pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
-                const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
-                switch (as_geometry.geometryType) {
-                    case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
-                        const VkDeviceSize index_buffer_alignment = GetIndexAlignment(as_geometry.geometry.triangles.indexType);
-                        if (SafeModulo(as_geometry.geometry.triangles.indexData.deviceAddress, index_buffer_alignment) != 0) {
-                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", commandBuffer,
-                                             p_geom_geom_loc.dot(Field::triangles).dot(Field::indexData).dot(Field::deviceAddress),
-                                             "(0x%" PRIx64
-                                             ") is not aligned to the size in bytes of its corresponding index type (%s).",
-                                             as_geometry.geometry.triangles.indexData.deviceAddress,
-                                             string_VkIndexType(as_geometry.geometry.triangles.indexType));
-                        }
-
-                        if (SafeModulo(as_geometry.geometry.triangles.transformData.deviceAddress, 16) != 0) {
-                            skip |= LogError(
-                                "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810", commandBuffer,
-                                p_geom_geom_loc.dot(Field::triangles).dot(Field::transformData).dot(Field::deviceAddress),
-                                "(%" PRIu64 ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR.",
-                                as_geometry.geometry.triangles.transformData.deviceAddress);
-                        }
-
-                        break;
+        for (u32 geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
+            const VkAccelerationStructureGeometryKHR &as_geometry = rt::GetGeometry(*info, geom_i);
+            const Location p_geom_loc = info_loc.dot(info->pGeometries ? Field::pGeometries : Field::ppGeometries, geom_i);
+            const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
+            switch (as_geometry.geometryType) {
+                case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
+                    const VkDeviceSize index_buffer_alignment = GetIndexAlignment(as_geometry.geometry.triangles.indexType);
+                    if (SafeModulo(as_geometry.geometry.triangles.indexData.deviceAddress, index_buffer_alignment) != 0) {
+                        skip |=
+                            LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03712", commandBuffer,
+                                     p_geom_geom_loc.dot(Field::triangles).dot(Field::indexData).dot(Field::deviceAddress),
+                                     "(0x%" PRIx64 ") is not aligned to the size in bytes of its corresponding index type (%s).",
+                                     as_geometry.geometry.triangles.indexData.deviceAddress,
+                                     string_VkIndexType(as_geometry.geometry.triangles.indexType));
                     }
-                    case VK_GEOMETRY_TYPE_AABBS_KHR: {
-                        if (SafeModulo(as_geometry.geometry.aabbs.data.deviceAddress, 8) != 0) {
-                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03714", commandBuffer,
-                                             p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
-                                             "(0x%" PRIx64
-                                             ") must be aligned to 8 bytes when geometryType is VK_GEOMETRY_TYPE_AABBS_KHR.",
-                                             as_geometry.geometry.aabbs.data.deviceAddress);
-                        }
-                        break;
+
+                    if (SafeModulo(as_geometry.geometry.triangles.transformData.deviceAddress, 16) != 0) {
+                        skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03810", commandBuffer,
+                                         p_geom_geom_loc.dot(Field::triangles).dot(Field::transformData).dot(Field::deviceAddress),
+                                         "(%" PRIu64
+                                         ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR.",
+                                         as_geometry.geometry.triangles.transformData.deviceAddress);
                     }
-                    case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
-                        if (as_geometry.geometry.instances.arrayOfPointers == VK_TRUE) {
-                            if (SafeModulo(as_geometry.geometry.instances.data.deviceAddress, 8) != 0) {
-                                skip |=
-                                    LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03716", commandBuffer,
+
+                    break;
+                }
+                case VK_GEOMETRY_TYPE_AABBS_KHR: {
+                    if (SafeModulo(as_geometry.geometry.aabbs.data.deviceAddress, 8) != 0) {
+                        skip |=
+                            LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03714", commandBuffer,
+                                     p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
+                                     "(0x%" PRIx64 ") must be aligned to 8 bytes when geometryType is VK_GEOMETRY_TYPE_AABBS_KHR.",
+                                     as_geometry.geometry.aabbs.data.deviceAddress);
+                    }
+                    break;
+                }
+                case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
+                    if (as_geometry.geometry.instances.arrayOfPointers == VK_TRUE) {
+                        if (SafeModulo(as_geometry.geometry.instances.data.deviceAddress, 8) != 0) {
+                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03716", commandBuffer,
                                              p_geom_geom_loc.dot(Field::instances).dot(Field::data).dot(Field::deviceAddress),
                                              "(%" PRIu64
                                              ") must be aligned to 8 bytes when geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR and "
                                              "geometry.instances.arrayOfPointers is "
                                              "VK_TRUE.",
                                              as_geometry.geometry.instances.data.deviceAddress);
-                            }
-                        } else {
-                            if (SafeModulo(as_geometry.geometry.instances.data.deviceAddress, 16) != 0) {
-                                skip |= LogError(
-                                    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03715", commandBuffer,
-                                    p_geom_geom_loc.dot(Field::instances).dot(Field::data).dot(Field::deviceAddress),
-                                    "(%" PRIu64
-                                    ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR and "
-                                    "geometry.instances.arrayOfPointers is VK_FALSE.",
-                                    as_geometry.geometry.instances.data.deviceAddress);
-                            }
                         }
-                        const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
-                        for (const auto [build_range_i, build_range] :
-                             vvl::enumerate(ppBuildRangeInfos[geom_i], info->geometryCount)) {
-                            if (build_range->primitiveCount > phys_dev_ext_props.acc_structure_props.maxInstanceCount) {
-                                skip |= LogError(
-                                    "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03801", commandBuffer, p_build_range_loc,
-                                    "[%" PRIu32 "].primitiveCount (%" PRIu32
-                                    ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
-                                    "(%" PRIu64 ").",
-                                    build_range_i, build_range->primitiveCount,
-                                    phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
-                            }
+                    } else {
+                        if (SafeModulo(as_geometry.geometry.instances.data.deviceAddress, 16) != 0) {
+                            skip |=
+                                LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03715", commandBuffer,
+                                         p_geom_geom_loc.dot(Field::instances).dot(Field::data).dot(Field::deviceAddress),
+                                         "(%" PRIu64
+                                         ") must be aligned to 16 bytes when geometryType is VK_GEOMETRY_TYPE_INSTANCES_KHR and "
+                                         "geometry.instances.arrayOfPointers is VK_FALSE.",
+                                         as_geometry.geometry.instances.data.deviceAddress);
                         }
-                        break;
                     }
-                    default:
-                        break;
+                    const Location p_build_range_loc = error_obj.location.dot(Field::ppBuildRangeInfos, info_i);
+                    for (const auto [build_range_i, build_range] : vvl::enumerate(ppBuildRangeInfos[geom_i], info->geometryCount)) {
+                        if (build_range->primitiveCount > phys_dev_ext_props.acc_structure_props.maxInstanceCount) {
+                            skip |=
+                                LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03801", commandBuffer, p_build_range_loc,
+                                         "[%" PRIu32 "].primitiveCount (%" PRIu32
+                                         ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxInstanceCount "
+                                         "(%" PRIu64 ").",
+                                         build_range_i, build_range->primitiveCount,
+                                         phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
+                        }
+                    }
+                    break;
                 }
+                default:
+                    break;
+            }
         }
         skip |= ValidateArray(info_loc.dot(Field::geometryCount), error_obj.location.dot(Field::ppBuildRangeInfos, info_i),
                               info->geometryCount, &ppBuildRangeInfos[info_i], false, true, kVUIDUndefined,
@@ -1274,8 +1272,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkDeviceAddress *pIndirectDeviceAddresses, const uint32_t *pIndirectStrides, const uint32_t *const *ppMaxPrimitiveCounts,
+    VkCommandBuffer commandBuffer, u32 infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkDeviceAddress *pIndirectDeviceAddresses, const u32 *pIndirectStrides, const u32 *const *ppMaxPrimitiveCounts,
     const ErrorObject &error_obj) const {
     bool skip = false;
     if (!enabled_features.accelerationStructureIndirectBuild) {
@@ -1283,8 +1281,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                          error_obj.location, "the accelerationStructureIndirectBuild feature was not enabled.");
     }
 
-    uint64_t total_triangles_count = 0;
-    uint64_t total_aabbs_count = 0;
+    u64 total_triangles_count = 0;
+    u64 total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithMaxPrimitivesCount(infoCount, pInfos, ppMaxPrimitiveCounts, &total_triangles_count,
                                                      &total_aabbs_count);
     skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
@@ -1311,7 +1309,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                          "is VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, but srcAccelerationStructure is VK_NULL_HANDLE.");
         }
 
-        for (uint32_t info_k = 0; info_k < infoCount; ++info_k) {
+        for (u32 info_k = 0; info_k < infoCount; ++info_k) {
             if (info_i == info_k) continue;
             if (info->dstAccelerationStructure == pInfos[info_k].dstAccelerationStructure) {
                 const LogObjectList objlist(commandBuffer, info->dstAccelerationStructure);
@@ -1330,7 +1328,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
                 break;
             }
         }
-        for (uint32_t j = 0; j < info->geometryCount; ++j) {
+        for (u32 j = 0; j < info->geometryCount; ++j) {
             if (info->pGeometries) {
                 const VkAccelerationStructureGeometryKHR &as_geometry = info->pGeometries[j];
                 const Location geometry_loc = error_obj.location.dot(Field::pGeometries, j);
@@ -1455,7 +1453,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
 }
 
 bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+    VkDevice device, VkDeferredOperationKHR deferredOperation, u32 infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1464,8 +1462,8 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
                          error_obj.location, "accelerationStructureHostCommands feature was not enabled.");
     }
 
-    uint64_t total_triangles_count = 0;
-    uint64_t total_aabbs_count = 0;
+    u64 total_triangles_count = 0;
+    u64 total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithBuildRanges(infoCount, pInfos, ppBuildRangeInfos, &total_triangles_count, &total_aabbs_count);
     skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
 
@@ -1499,7 +1497,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
             }
         }
 
-        for (uint32_t geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
+        for (u32 geom_i = 0; geom_i < info->geometryCount; ++geom_i) {
             const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(*info, geom_i);
             switch (geom.geometryType) {
                 case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
@@ -1536,7 +1534,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
             }
         }
 
-        for (uint32_t info_k = 0; info_k < infoCount; ++info_k) {
+        for (u32 info_k = 0; info_k < infoCount; ++info_k) {
             if (info_i == info_k) continue;
             if (info->dstAccelerationStructure == pInfos[info_k].dstAccelerationStructure) {
                 skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-dstAccelerationStructure-03698", device,
@@ -1559,11 +1557,11 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
 
 bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo,
-    const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo, const ErrorObject &error_obj) const {
+    const u32 *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    uint64_t total_triangles_count = 0;
-    uint64_t total_aabbs_count = 0;
+    u64 total_triangles_count = 0;
+    u64 total_aabbs_count = 0;
     ComputeTotalPrimitiveCountWithMaxPrimitivesCount(1, pBuildInfo, &pMaxPrimitiveCounts, &total_triangles_count,
                                                      &total_aabbs_count);
     skip |= ValidateTotalPrimitivesCount(total_triangles_count, total_aabbs_count, error_obj.handle, error_obj.location);
@@ -1582,7 +1580,7 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
         }
 
         if (pMaxPrimitiveCounts && (pBuildInfo->pGeometries || pBuildInfo->ppGeometries)) {
-            for (uint32_t geom_i = 0; geom_i < pBuildInfo->geometryCount; ++geom_i) {
+            for (u32 geom_i = 0; geom_i < pBuildInfo->geometryCount; ++geom_i) {
                 const VkAccelerationStructureGeometryKHR &geom = rt::GetGeometry(*pBuildInfo, geom_i);
                 switch (geom.geometryType) {
                     case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
@@ -1752,7 +1750,7 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer 
                                                                 const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                                uint32_t width, uint32_t height, uint32_t depth,
+                                                                u32 width, u32 height, u32 depth,
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     if (pRaygenShaderBindingTable) {

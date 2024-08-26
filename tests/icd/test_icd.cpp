@@ -39,8 +39,8 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInst
 #define EXPORT
 #endif
 
-void SetBoolArrayTrue(VkBool32* bool_array, uint32_t num_bools) {
-    for (uint32_t i = 0; i < num_bools; ++i) {
+void SetBoolArrayTrue(VkBool32* bool_array, u32 num_bools) {
+    for (u32 i = 0; i < num_bools; ++i) {
         bool_array[i] = VK_TRUE;
     }
 }
@@ -191,7 +191,7 @@ EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(
     return icd::GetPhysicalDeviceProcAddr(instance, pName);
 }
 
-EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
+EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(u32* pSupportedVersion) {
     icd::negotiate_loader_icd_interface_called = true;
     icd::loader_interface_version = *pSupportedVersion;
     if (*pSupportedVersion > icd::SUPPORTED_LOADER_ICD_INTERFACE_VERSION) {
@@ -205,9 +205,8 @@ EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroySurfaceKHR(VkInstance instance, VkSur
     icd::DestroySurfaceKHR(instance, surface, pAllocator);
 }
 
-EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                           uint32_t queueFamilyIndex, VkSurfaceKHR surface,
-                                                                           VkBool32* pSupported) {
+EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, u32 queueFamilyIndex,
+                                                                           VkSurfaceKHR surface, VkBool32* pSupported) {
     return icd::GetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
 }
 
@@ -218,13 +217,13 @@ EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
 }
 
 EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                           uint32_t* pSurfaceFormatCount,
+                                                                           u32* pSurfaceFormatCount,
                                                                            VkSurfaceFormatKHR* pSurfaceFormats) {
     return icd::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
 }
 
 EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
-                                                                                VkSurfaceKHR surface, uint32_t* pPresentModeCount,
+                                                                                VkSurfaceKHR surface, u32* pPresentModeCount,
                                                                                 VkPresentModeKHR* pPresentModes) {
     return icd::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
 }
@@ -284,7 +283,7 @@ EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceGroupSurfacePresentModesKHR(VkD
 }
 
 EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                              uint32_t* pRectCount, VkRect2D* pRects) {
+                                                                              u32* pRectCount, VkRect2D* pRects) {
     return icd::GetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
 }
 
@@ -346,12 +345,12 @@ static VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkA
     }
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, u32* pPhysicalDeviceCount,
                                                                VkPhysicalDevice* pPhysicalDevices) {
     VkResult result_code = VK_SUCCESS;
     if (pPhysicalDevices) {
         const auto return_count = (std::min)(*pPhysicalDeviceCount, icd_physical_device_count);
-        for (uint32_t i = 0; i < return_count; ++i) pPhysicalDevices[i] = physical_device_map.at(instance)[i];
+        for (u32 i = 0; i < return_count; ++i) pPhysicalDevices[i] = physical_device_map.at(instance)[i];
         if (return_count < icd_physical_device_count) result_code = VK_INCOMPLETE;
         *pPhysicalDeviceCount = return_count;
     } else {
@@ -361,7 +360,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instan
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
-    uint32_t num_bools = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
+    u32 num_bools = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
     VkBool32* bool_array = &pFeatures->robustBufferAccess;
     SetBoolArrayTrue(bool_array, num_bools);
 }
@@ -433,13 +432,13 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice p
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                         uint32_t* pQueueFamilyPropertyCount,
+                                                                         u32* pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
     if (pQueueFamilyProperties) {
         std::vector<VkQueueFamilyProperties2> props2(*pQueueFamilyPropertyCount,
                                                      {VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, nullptr, {}});
         GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, props2.data());
-        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; ++i) {
+        for (u32 i = 0; i < *pQueueFamilyPropertyCount; ++i) {
             pQueueFamilyProperties[i] = props2[i].queueFamilyProperties;
         }
     } else {
@@ -523,14 +522,14 @@ static VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocat
     DestroyDispObjHandle((void*)device);
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
+static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char* pLayerName, u32* pPropertyCount,
                                                                            VkExtensionProperties* pProperties) {
     // If requesting number of extensions, return that
     if (!pLayerName) {
         if (!pProperties) {
-            *pPropertyCount = (uint32_t)instance_extension_map.size();
+            *pPropertyCount = (u32)instance_extension_map.size();
         } else {
-            uint32_t i = 0;
+            u32 i = 0;
             for (const auto& name_ver_pair : instance_extension_map) {
                 if (i == *pPropertyCount) {
                     break;
@@ -549,14 +548,13 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
-                                                                         uint32_t* pPropertyCount,
-                                                                         VkExtensionProperties* pProperties) {
+                                                                         u32* pPropertyCount, VkExtensionProperties* pProperties) {
     // If requesting number of extensions, return that
     if (!pLayerName) {
         if (!pProperties) {
-            *pPropertyCount = (uint32_t)device_extension_map.size();
+            *pPropertyCount = (u32)device_extension_map.size();
         } else {
-            uint32_t i = 0;
+            u32 i = 0;
             for (const auto& name_ver_pair : device_extension_map) {
                 if (i == *pPropertyCount) {
                     break;
@@ -574,16 +572,16 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysi
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties) {
+static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(u32* pPropertyCount, VkLayerProperties* pProperties) {
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+static VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                      VkLayerProperties* pProperties) {
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
+static VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, u32 queueFamilyIndex, u32 queueIndex, VkQueue* pQueue) {
     unique_lock_t lock(global_lock);
     auto queue = queue_map[device][queueFamilyIndex][queueIndex];
     if (queue) {
@@ -594,8 +592,7 @@ static VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queue
     return;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
-                                                  VkFence fence) {
+static VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
     // Special way to cause DEVICE_LOST
     // Picked VkExportFenceCreateInfo because needed some struct that wouldn't get cleared by validation Safe Struct
     // ... TODO - It would be MUCH nicer to have a layer or other setting control when this occured
@@ -680,7 +677,7 @@ static VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, Vk
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image,
-                                                                   uint32_t* pSparseMemoryRequirementCount,
+                                                                   u32* pSparseMemoryRequirementCount,
                                                                    VkSparseImageMemoryRequirements* pSparseMemoryRequirements) {
     if (!pSparseMemoryRequirements) {
         *pSparseMemoryRequirementCount = 1;
@@ -701,7 +698,7 @@ static VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice devi
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                                VkImageType type, VkSampleCountFlagBits samples,
                                                                                VkImageUsageFlags usage, VkImageTiling tiling,
-                                                                               uint32_t* pPropertyCount,
+                                                                               u32* pPropertyCount,
                                                                                VkSparseImageFormatProperties* pProperties) {
     if (!pProperties) {
         *pPropertyCount = 1;
@@ -737,7 +734,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBuff
     buffer_map[device][*pBuffer] = {pCreateInfo->size, current_available_address};
     current_available_address += pCreateInfo->size;
     // Always align to next 64-bit pointer
-    const uint64_t alignment = current_available_address % 64;
+    const u64 alignment = current_available_address % 64;
     if (alignment != 0) {
         current_available_address += (64 - alignment);
     }
@@ -798,14 +795,14 @@ static VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandP
 static VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                              VkCommandBuffer* pCommandBuffers) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; ++i) {
+    for (u32 i = 0; i < pAllocateInfo->commandBufferCount; ++i) {
         pCommandBuffers[i] = (VkCommandBuffer)CreateDispObjHandle();
         command_pool_buffer_map[pAllocateInfo->commandPool].push_back(pCommandBuffers[i]);
     }
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+static VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, u32 commandBufferCount,
                                                      const VkCommandBuffer* pCommandBuffers) {
     unique_lock_t lock(global_lock);
     for (auto i = 0u; i < commandBufferCount; ++i) {
@@ -825,7 +822,7 @@ static VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandP
     }
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceVersion(uint32_t* pApiVersion) {
+static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceVersion(u32* pApiVersion) {
     *pApiVersion = VK_HEADER_VERSION_COMPLETE;
     return VK_SUCCESS;
 }
@@ -842,7 +839,7 @@ static VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, 
 
 static VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device,
                                                                     const VkImageSparseMemoryRequirementsInfo2* pInfo,
-                                                                    uint32_t* pSparseMemoryRequirementCount,
+                                                                    u32* pSparseMemoryRequirementCount,
                                                                     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) {
     if (pSparseMemoryRequirementCount && pSparseMemoryRequirements) {
         GetImageSparseMemoryRequirements(device, pInfo->image, pSparseMemoryRequirementCount,
@@ -934,7 +931,7 @@ static VKAPI_ATTR void VKAPI_CALL GetDeviceImageMemoryRequirements(VkDevice devi
     pMemoryRequirements->memoryRequirements.memoryTypeBits = 0xFFFF & ~(0x1 << 3);
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, u32 queueFamilyIndex,
                                                                          VkSurfaceKHR surface, VkBool32* pSupported) {
     // Currently say that all surface/queue combos are supported
     *pSupported = VK_TRUE;
@@ -969,7 +966,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(Vk
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                         uint32_t* pSurfaceFormatCount,
+                                                                         u32* pSurfaceFormatCount,
                                                                          VkSurfaceFormatKHR* pSurfaceFormats) {
     // Currently always say that RGBA8 & BGRA8 are supported
     if (!pSurfaceFormats) {
@@ -988,7 +985,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysi
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                              uint32_t* pPresentModeCount,
+                                                                              u32* pPresentModeCount,
                                                                               VkPresentModeKHR* pPresentModes) {
     // Currently always say that all present modes are supported
     if (!pPresentModes) {
@@ -1008,7 +1005,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const 
                                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     unique_lock_t lock(global_lock);
     *pSwapchain = (VkSwapchainKHR)global_unique_handle++;
-    for (uint32_t i = 0; i < icd_swapchain_image_count; ++i) {
+    for (u32 i = 0; i < icd_swapchain_image_count; ++i) {
         swapchain_image_map[*pSwapchain][i] = (VkImage)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -1020,13 +1017,13 @@ static VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapcha
     swapchain_image_map.clear();
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                            uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
+static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, u32* pSwapchainImageCount,
+                                                            VkImage* pSwapchainImages) {
     if (!pSwapchainImages) {
         *pSwapchainImageCount = icd_swapchain_image_count;
     } else {
         unique_lock_t lock(global_lock);
-        for (uint32_t img_i = 0; img_i < (std::min)(*pSwapchainImageCount, icd_swapchain_image_count); ++img_i) {
+        for (u32 img_i = 0; img_i < (std::min)(*pSwapchainImageCount, icd_swapchain_image_count); ++img_i) {
             pSwapchainImages[img_i] = swapchain_image_map.at(swapchain)[img_i];
         }
 
@@ -1038,20 +1035,19 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkS
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                          VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
+static VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, u64 timeout,
+                                                          VkSemaphore semaphore, VkFence fence, u32* pImageIndex) {
     *pImageIndex = 0;
     return VK_SUCCESS;
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
-                                                           uint32_t* pImageIndex) {
+                                                           u32* pImageIndex) {
     *pImageIndex = 0;
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                                            uint32_t* pPropertyCount,
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                             VkDisplayPropertiesKHR* pProperties) {
     if (!pProperties) {
         *pPropertyCount = 1;
@@ -1432,8 +1428,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
-    uint32_t* pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR* pVideoFormatProperties) {
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo, u32* pVideoFormatPropertyCount,
+    VkVideoFormatPropertiesKHR* pVideoFormatProperties) {
     // We include some reasonable set of format combinations to cover a wide range of use cases
     auto profile_list = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pVideoFormatInfo->pNext);
     if (profile_list->profileCount != 1) {
@@ -1546,16 +1542,16 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(
     }
 
     if (pVideoFormatProperties != nullptr) {
-        for (uint32_t i = 0; i < (std::min)(*pVideoFormatPropertyCount, (uint32_t)filtered_props.size()); ++i) {
+        for (u32 i = 0; i < (std::min)(*pVideoFormatPropertyCount, (u32)filtered_props.size()); ++i) {
             pVideoFormatProperties[i] = filtered_props[i];
         }
     }
-    *pVideoFormatPropertyCount = (uint32_t)filtered_props.size();
+    *pVideoFormatPropertyCount = (u32)filtered_props.size();
     return VK_SUCCESS;
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL
-GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession, uint32_t* pMemoryRequirementsCount,
+GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession, u32* pMemoryRequirementsCount,
                                      VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) {
     if (!pMemoryRequirements) {
         *pMemoryRequirementsCount = 1;
@@ -1572,7 +1568,7 @@ GetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSes
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceFeatures2* pFeatures) {
     GetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
-    uint32_t num_bools = 0;  // Count number of VkBool32s in extension structs
+    u32 num_bools = 0;  // Count number of VkBool32s in extension structs
     VkBool32* feat_bools = nullptr;
     auto vk_1_1_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pFeatures->pNext);
     if (vk_1_1_features) {
@@ -1711,7 +1707,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         fragment_density_map2_props->maxDescriptorSetSubsampledSamplers = 1;
     }
 
-    const uint32_t num_copy_layouts = 5;
+    const u32 num_copy_layouts = 5;
     const VkImageLayout HostCopyLayouts[]{
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        VK_IMAGE_LAYOUT_GENERAL,
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
@@ -1723,16 +1719,16 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         if (host_image_copy_props->pCopyDstLayouts == nullptr)
             host_image_copy_props->copyDstLayoutCount = num_copy_layouts;
         else {
-            uint32_t num_layouts = (std::min)(host_image_copy_props->copyDstLayoutCount, num_copy_layouts);
-            for (uint32_t i = 0; i < num_layouts; i++) {
+            u32 num_layouts = (std::min)(host_image_copy_props->copyDstLayoutCount, num_copy_layouts);
+            for (u32 i = 0; i < num_layouts; i++) {
                 host_image_copy_props->pCopyDstLayouts[i] = HostCopyLayouts[i];
             }
         }
         if (host_image_copy_props->pCopySrcLayouts == nullptr)
             host_image_copy_props->copySrcLayoutCount = num_copy_layouts;
         else {
-            uint32_t num_layouts = (std::min)(host_image_copy_props->copySrcLayoutCount, num_copy_layouts);
-            for (uint32_t i = 0; i < num_layouts; i++) {
+            u32 num_layouts = (std::min)(host_image_copy_props->copySrcLayoutCount, num_copy_layouts);
+            for (u32 i = 0; i < num_layouts; i++) {
                 host_image_copy_props->pCopySrcLayouts[i] = HostCopyLayouts[i];
             }
         }
@@ -1779,7 +1775,7 @@ GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice, const V
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t* pQueueFamilyPropertyCount,
+                                                                          u32* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) {
     if (pQueueFamilyProperties) {
         if (*pQueueFamilyPropertyCount >= 1) {
@@ -1841,7 +1837,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalD
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, u32* pPropertyCount,
     VkSparseImageFormatProperties2* pProperties) {
     if (pPropertyCount && pProperties) {
         GetPhysicalDeviceSparseImageFormatProperties(physicalDevice, pFormatInfo->format, pFormatInfo->type, pFormatInfo->samples,
@@ -1854,7 +1850,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
+    VkInstance instance, u32* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
     if (!pPhysicalDeviceGroupProperties) {
         *pPhysicalDeviceGroupCount = 1;
     } else {
@@ -1897,7 +1893,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFen
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
-    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
+    VkPhysicalDevice physicalDevice, u32 queueFamilyIndex, u32* pCounterCount, VkPerformanceCounterKHR* pCounters,
     VkPerformanceCounterDescriptionKHR* pCounterDescriptions) {
     if (!pCounters) {
         *pCounterCount = 3;
@@ -1930,7 +1926,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerforma
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
-    VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, uint32_t* pNumPasses) {
+    VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, u32* pNumPasses) {
     if (pNumPasses) {
         // arbitrary
         *pNumPasses = 1;
@@ -1959,7 +1955,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(V
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
                                                                           const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                                          uint32_t* pSurfaceFormatCount,
+                                                                          u32* pSurfaceFormatCount,
                                                                           VkSurfaceFormat2KHR* pSurfaceFormats) {
     // Currently always say that RGBA8 & BGRA8 are supported
     if (!pSurfaceFormats) {
@@ -1980,7 +1976,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhys
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL
-GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount,
+GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, u32* pFragmentShadingRateCount,
                                          VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates) {
     if (!pFragmentShadingRates) {
         *pFragmentShadingRateCount = 1;
@@ -2002,7 +1998,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkM
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
-    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties) {
+    VkPhysicalDevice physicalDevice, u32* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties) {
     if (!pProperties) {
         *pPropertyCount = 2;
     } else {
@@ -2024,7 +2020,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperti
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
-                                                                                   uint32_t* pTimeDomainCount,
+                                                                                   u32* pTimeDomainCount,
                                                                                    VkTimeDomainKHR* pTimeDomains) {
     if (!pTimeDomains) {
         *pTimeDomainCount = 1;
@@ -2106,7 +2102,7 @@ GetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationSt
 
 static VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
-    const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    const u32* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
     // arbitrary
     pSizeInfo->accelerationStructureSize = 4;
     pSizeInfo->updateScratchSize = 4;
@@ -2125,7 +2121,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkPipelineBinaryHandlesInfoKHR* pBinaries) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < pBinaries->pipelineBinaryCount; ++i) {
+    for (u32 i = 0; i < pBinaries->pipelineBinaryCount; ++i) {
         pBinaries->pPipelineBinaries[i] = (VkPipelineBinaryKHR)global_unique_handle++;
     }
     return VK_SUCCESS;

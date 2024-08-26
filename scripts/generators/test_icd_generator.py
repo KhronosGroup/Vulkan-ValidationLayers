@@ -168,7 +168,7 @@ class TestIcdGenerator(BaseGenerator):
         # Needed because things like VK_KHR_get_physical_device_properties2 profile layer checks in driver
         out.append('''
             // Map of instance extension name to version
-            static const std::unordered_map<std::string, uint32_t> instance_extension_map = {
+            static const std::unordered_map<std::string, u32> instance_extension_map = {
             ''')
         for extension in [x for x in self.vk.extensions.values() if x.instance]:
             out.extend(guard_helper.add_guard(extension.protect))
@@ -178,7 +178,7 @@ class TestIcdGenerator(BaseGenerator):
 
         out.append('''
             // Map of device extension name to version
-            static const std::unordered_map<std::string, uint32_t> device_extension_map = {
+            static const std::unordered_map<std::string, u32> device_extension_map = {
             ''')
         for extension in [x for x in self.vk.extensions.values() if not x.instance]:
             out.extend(guard_helper.add_guard(extension.protect))
@@ -222,7 +222,7 @@ class TestIcdGenerator(BaseGenerator):
                 last_param = command.params[-1]
                 out.append('unique_lock_t lock(global_lock);\n')
                 if (last_param.length):
-                    out.append(f'for (uint32_t i = 0; i < {last_param.length}; ++i) {{\n')
+                    out.append(f'for (u32 i = 0; i < {last_param.length}; ++i) {{\n')
                     out.append(f'{last_param.name}[i] = ({last_param.type})global_unique_handle++;\n')
                     out.append('}\n')
                 else:

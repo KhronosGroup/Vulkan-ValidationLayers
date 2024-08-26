@@ -27,7 +27,7 @@ class Validator;
 void DestroyRenderPassMappedResources(Validator &gpuav, VkRenderPass render_pass);
 
 void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
-                                  VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
-                                  VkDeviceSize count_buffer_offset, uint32_t stride);
+                                  VkDeviceSize indirect_offset, u32 draw_count, VkBuffer count_buffer,
+                                  VkDeviceSize count_buffer_offset, u32 stride);
 
 }  // namespace gpuav

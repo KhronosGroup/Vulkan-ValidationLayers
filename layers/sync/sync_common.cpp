@@ -60,22 +60,22 @@ ResourceAccessRange MakeRange(const vvl::BufferView& buf_view_state) {
     return MakeRange(*buf_view_state.buffer_state.get(), buf_view_state.create_info.offset, buf_view_state.create_info.range);
 }
 
-ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride) {
+ResourceAccessRange MakeRange(VkDeviceSize offset, u32 first_index, u32 count, u32 stride) {
     const VkDeviceSize range_start = offset + (first_index * stride);
     const VkDeviceSize range_size = count * stride;
     return MakeRange(range_start, range_size);
 }
 
-ResourceAccessRange MakeRange(const vvl::VertexBufferBinding& binding, uint32_t first_index, const std::optional<uint32_t>& count,
-                              uint32_t stride) {
+ResourceAccessRange MakeRange(const vvl::VertexBufferBinding& binding, u32 first_index, const std::optional<u32>& count,
+                              u32 stride) {
     if (count) {
         return MakeRange(binding.offset, first_index, count.value(), stride);
     }
     return MakeRange(binding);
 }
 
-ResourceAccessRange MakeRange(const vvl::IndexBufferBinding& binding, uint32_t first_index, const std::optional<uint32_t>& count,
-                              uint32_t index_size) {
+ResourceAccessRange MakeRange(const vvl::IndexBufferBinding& binding, u32 first_index, const std::optional<u32>& count,
+                              u32 index_size) {
     if (count) {
         return MakeRange(binding.offset, first_index, count.value(), index_size);
     }

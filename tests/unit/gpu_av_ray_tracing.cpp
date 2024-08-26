@@ -67,7 +67,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = vku::InitStructHelper();
     raytracing_pipeline_ci.flags = 0;
-    raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
+    raytracing_pipeline_ci.stageCount = static_cast<u32>(shader_stages.size());
     raytracing_pipeline_ci.pStages = shader_stages.data();
     raytracing_pipeline_ci.pGroups = shader_groups.data();
     raytracing_pipeline_ci.groupCount = shader_groups.size();
@@ -113,7 +113,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     VkTraceRaysIndirectCommandKHR ray_query_dimensions{vvl::kU32Max, 1, 1};
 
-    uint8_t *ray_query_dimensions_buffer_1_ptr = (uint8_t *)ray_query_dimensions_buffer_1.memory().map();
+    u8 *ray_query_dimensions_buffer_1_ptr = (u8 *)ray_query_dimensions_buffer_1.memory().map();
     std::memcpy(ray_query_dimensions_buffer_1_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
     ray_query_dimensions_buffer_1.memory().unmap();
 
@@ -123,7 +123,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
         *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)ray_query_dimensions_buffer_2.memory().map();
+    u8 *ray_query_dimensions_buffer_2_ptr = (u8 *)ray_query_dimensions_buffer_2.memory().map();
     std::memcpy(ray_query_dimensions_buffer_2_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
     ray_query_dimensions_buffer_2.memory().unmap();
 
@@ -133,7 +133,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
         *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)ray_query_dimensions_buffer_3.memory().map();
+    u8 *ray_query_dimensions_buffer_3_ptr = (u8 *)ray_query_dimensions_buffer_3.memory().map();
     std::memcpy(ray_query_dimensions_buffer_3_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
     ray_query_dimensions_buffer_3.memory().unmap();
 
@@ -156,16 +156,16 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     m_commandBuffer->end();
 
-    if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[0]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[0]) <
-        uint64_t(vvl::kU32Max)) {
+    if (u64(physDevProps().limits.maxComputeWorkGroupCount[0]) * u64(physDevProps().limits.maxComputeWorkGroupSize[0]) <
+        u64(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03638");
     }
-    if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[1]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[1]) <
-        uint64_t(vvl::kU32Max)) {
+    if (u64(physDevProps().limits.maxComputeWorkGroupCount[1]) * u64(physDevProps().limits.maxComputeWorkGroupSize[1]) <
+        u64(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-height-03639");
     }
-    if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[2]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[2]) <
-        uint64_t(vvl::kU32Max)) {
+    if (u64(physDevProps().limits.maxComputeWorkGroupCount[2]) * u64(physDevProps().limits.maxComputeWorkGroupSize[2]) <
+        u64(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
     }
     m_default_queue->Submit(*m_commandBuffer);

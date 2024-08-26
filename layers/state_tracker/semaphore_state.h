@@ -47,19 +47,18 @@ class Semaphore : public RefcountedStateObject {
 
     struct SemOp {
         OpType op_type;
-        uint64_t payload;
+        u64 payload;
         SubmissionReference submit;
         std::optional<Func> acquire_command;
 
-        SemOp(OpType op_type, const SubmissionReference &submit, uint64_t payload)
+        SemOp(OpType op_type, const SubmissionReference &submit, u64 payload)
             : op_type(op_type), payload(payload), submit(submit) {}
-        SemOp(Func acquire_command, uint64_t payload)
-            : op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
+        SemOp(Func acquire_command, u64 payload) : op_type(kBinaryAcquire), payload(payload), acquire_command(acquire_command) {}
     };
 
     struct TimePoint {
         std::optional<SubmissionReference> signal_submit;
-        small_vector<SubmissionReference, 1, uint32_t> wait_submits;
+        small_vector<SubmissionReference, 1, u32> wait_submits;
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
@@ -78,21 +77,20 @@ class Semaphore : public RefcountedStateObject {
 
     // Enqueue a semaphore operation. For binary semaphores, the payload value is generated and
     // returned, so that every semaphore operation has a unique value.
-    void EnqueueSignal(const SubmissionReference &signal_submit, uint64_t &payload);
-    void EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload);
+    void EnqueueSignal(const SubmissionReference &signal_submit, u64 &payload);
+    void EnqueueWait(const SubmissionReference &wait_submit, u64 &payload);
 
     // Enqueue binary semaphore signal from swapchain image acquire command
     void EnqueueAcquire(Func acquire_command);
 
     // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
-    void NotifyAndWait(const Location &loc, uint64_t payload);
+    void NotifyAndWait(const Location &loc, u64 payload);
 
     // Remove completed operations and signal any waiters. This should only be called by Queue
-    void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
+    void Retire(Queue *current_queue, const Location &loc, u64 payload);
 
     // Look for most recent / highest payload operation that matches
-    std::optional<SemOp> LastOp(
-        const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter = nullptr) const;
+    std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, u64 payload, bool is_pending)> &filter = nullptr) const;
 
     // Returns pending queue submission that signals this binary semaphore.
     std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
@@ -102,7 +100,7 @@ class Semaphore : public RefcountedStateObject {
 
     // Current payload value.
     // If a queue submission command is pending execution, then the returned value may immediately be out of date.
-    uint64_t CurrentPayload() const;
+    u64 CurrentPayload() const;
 
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
@@ -127,9 +125,9 @@ class Semaphore : public RefcountedStateObject {
     VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo);
 
     // Signal queue(s) that need to retire because a wait on this payload has finished
-    void Notify(uint64_t payload);
+    void Notify(u64 payload);
 
-    std::shared_future<void> Wait(uint64_t payload);
+    std::shared_future<void> Wait(u64 payload);
 
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
@@ -141,12 +139,12 @@ class Semaphore : public RefcountedStateObject {
     // the most recently completed operation
     SemOp completed_;
     // next payload value for binary semaphore operations
-    uint64_t next_payload_;
+    u64 next_payload_;
 
     // Set of pending operations ordered by payload.
     // Timeline operations can be added in any order and multiple wait operations
     // can use the same payload value.
-    std::map<uint64_t, TimePoint> timeline_;
+    std::map<u64, TimePoint> timeline_;
     mutable std::shared_mutex lock_;
     ValidationStateTracker &dev_data_;
 };
@@ -176,8 +174,8 @@ struct SemaphoreSubmitState {
     vvl::unordered_map<VkSemaphore, bool> binary_signaling_state;
 
     vvl::unordered_set<VkSemaphore> internal_semaphores;
-    vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
-    vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
+    vvl::unordered_map<VkSemaphore, u64> timeline_signals;
+    vvl::unordered_map<VkSemaphore, u64> timeline_waits;
 
     SemaphoreSubmitState(const CoreChecks &core_, VkQueue q_, VkQueueFlags queue_flags_)
         : core(core_), queue(q_), queue_flags(queue_flags_) {}
@@ -187,11 +185,11 @@ struct SemaphoreSubmitState {
     VkQueue AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const;
 
     bool ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state);
-    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
-    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, const vvl::Semaphore &semaphore_state, u64 value);
+    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, const vvl::Semaphore &semaphore_state, u64 value);
 
     bool CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_command) const;
 
-    bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-                             std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func);
+    bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, u64 &bad_value,
+                             std::function<bool(const vvl::Semaphore::OpType, u64, bool is_pending)> compare_func);
 };

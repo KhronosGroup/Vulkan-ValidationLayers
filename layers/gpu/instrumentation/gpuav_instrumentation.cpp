@@ -76,7 +76,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
         // Buffer holding action command index in command buffer
         VkDescriptorBufferInfo indices_desc_buffer_info = {};
         {
-            indices_desc_buffer_info.range = sizeof(uint32_t);
+            indices_desc_buffer_info.range = sizeof(u32);
             indices_desc_buffer_info.buffer = gpuav.indices_buffer_.buffer;
             indices_desc_buffer_info.offset = 0;
 
@@ -148,7 +148,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
             desc_writes.emplace_back(wds);
         }
 
-        DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
+        DispatchUpdateDescriptorSets(gpuav.device, static_cast<u32>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
 
     auto pipeline_layout = pipeline_state ? pipeline_state->PipelineLayoutState()
@@ -169,7 +169,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
         pipeline_layout = gpuav.Get<vvl::PipelineLayout>(pipeline_layout_handle);
     }
 
-    uint32_t operation_index = 0;
+    u32 operation_index = 0;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
         operation_index = cb_state.draw_index++;
     else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
@@ -179,15 +179,15 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
 
     // TODO: Using cb_state.per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
     // parameter
-    const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
-    const std::array<uint32_t, 2> dynamic_offsets = {
+    const u32 error_logger_i = static_cast<u32>(cb_state.per_command_error_loggers.size());
+    const std::array<u32, 2> dynamic_offsets = {
         {operation_index * gpuav.indices_buffer_alignment_, error_logger_i * gpuav.indices_buffer_alignment_}};
     if (pipeline_layout && pipeline_layout_handle != VK_NULL_HANDLE) {
         // If we were unable to use the layout because it overlaps with the instrumented set, don't dispatch anything or we will
         // disturb the original bound set
         if (pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) {
             DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
-                                          &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
+                                          &instrumentation_desc_set, static_cast<u32>(dynamic_offsets.size()),
                                           dynamic_offsets.data());
         } else {
             // Cannot setup instrumentation descriptor set, abort for this command
@@ -197,7 +197,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, and no push constants, bind
         // the debug pipeline layout
         DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, gpuav.GetDebugPipelineLayout(), gpuav.desc_set_bind_index_,
-                                      1, &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
+                                      1, &instrumentation_desc_set, static_cast<u32>(dynamic_offsets.size()),
                                       dynamic_offsets.data());
     }
 
@@ -207,17 +207,16 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     }
 
     // It is possible to have no descriptor sets bound, for example if using push constants.
-    const uint32_t desc_binding_index =
-        !cb_state.di_input_buffer_list.empty() ? uint32_t(cb_state.di_input_buffer_list.size()) - 1 : vvl::kU32Max;
+    const u32 desc_binding_index =
+        !cb_state.di_input_buffer_list.empty() ? u32(cb_state.di_input_buffer_list.size()) - 1 : vvl::kU32Max;
 
     const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
                                   (pipeline_state && pipeline_state->uses_pipeline_robustness));
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, desc_binding_index, desc_binding_list = &cb_state.di_input_buffer_list,
                                                    cb_state_handle = cb_state.VkHandle(), bind_point, operation_index,
-                                                   uses_shader_object = pipeline_state == nullptr,
-                                                   uses_robustness](Validator &gpuav, const uint32_t *error_record,
-                                                                    const LogObjectList &objlist) {
+                                                   uses_shader_object = pipeline_state == nullptr, uses_robustness](
+                                                      Validator &gpuav, const u32 *error_record, const LogObjectList &objlist) {
         bool skip = false;
 
         const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
@@ -230,7 +229,7 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     cb_state.per_command_error_loggers.emplace_back(error_logger);
 }
 
-bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
+bool LogMessageInstBindlessDescriptor(Validator &gpuav, const u32 *error_record, std::string &out_error_msg,
                                       std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets,
                                       const Location &loc, bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
@@ -269,11 +268,11 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorOOB: {
-            const uint32_t set_num = error_record[kInstBindlessBuffOOBDescSetOffset];
-            const uint32_t binding_num = error_record[kInstBindlessBuffOOBDescBindingOffset];
-            const uint32_t desc_index = error_record[kInstBindlessBuffOOBDescIndexOffset];
-            const uint32_t size = error_record[kInstBindlessBuffOOBBuffSizeOffset];
-            const uint32_t offset = error_record[kInstBindlessBuffOOBBuffOffOffset];
+            const u32 set_num = error_record[kInstBindlessBuffOOBDescSetOffset];
+            const u32 binding_num = error_record[kInstBindlessBuffOOBDescBindingOffset];
+            const u32 desc_index = error_record[kInstBindlessBuffOOBDescIndexOffset];
+            const u32 size = error_record[kInstBindlessBuffOOBBuffSizeOffset];
+            const u32 offset = error_record[kInstBindlessBuffOOBBuffOffOffset];
             const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
             assert(binding_state);
             if (size == 0) {
@@ -333,23 +332,23 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
     return error_found;
 }
 
-bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
-                                  std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets, const Location &loc,
-                                  bool uses_shader_object, bool &out_oob_access) {
+bool LogMessageInstNonBindlessOOB(Validator &gpuav, const u32 *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
+                                  const std::vector<DescSetState> &descriptor_sets, const Location &loc, bool uses_shader_object,
+                                  bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
     out_oob_access = true;
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
 
-    const uint32_t set_num = error_record[kInstNonBindlessOOBDescSetOffset];
-    const uint32_t binding_num = error_record[kInstNonBindlessOOBDescBindingOffset];
-    const uint32_t desc_index = error_record[kInstNonBindlessOOBDescIndexOffset];
+    const u32 set_num = error_record[kInstNonBindlessOOBDescSetOffset];
+    const u32 binding_num = error_record[kInstNonBindlessOOBDescBindingOffset];
+    const u32 desc_index = error_record[kInstNonBindlessOOBDescIndexOffset];
 
     strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeNonBindlessOOBBufferArrays: {
-            const uint32_t desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
+            const u32 desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
             strm << " access out of bounds. The descriptor buffer array is " << desc_array_size
                  << " large, but as accessed at index [" << desc_index << "]";
             out_vuid_msg = "UNASSIGNED-Descriptor Buffer index out of bounds";
@@ -360,8 +359,8 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
             const vvl::Buffer *buffer_state =
                 static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
             assert(buffer_state);
-            const uint32_t byte_offset = error_record[kInstNonBindlessOOBParamOffset0];
-            const uint32_t resource_size = error_record[kInstNonBindlessOOBParamOffset1];
+            const u32 byte_offset = error_record[kInstNonBindlessOOBParamOffset0];
+            const u32 resource_size = error_record[kInstNonBindlessOOBParamOffset1];
 
             strm << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle()) << ") size is "
                  << buffer_state->create_info.size << " bytes, " << resource_size
@@ -376,7 +375,7 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
         } break;
 
         case kErrorSubCodeNonBindlessOOBTexelBufferArrays: {
-            const uint32_t desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
+            const u32 desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
             strm << " access out of bounds. The descriptor texel buffer array is " << desc_array_size
                  << " large, but as accessed at index [" << desc_index << "]";
             out_vuid_msg = "UNASSIGNED-Descriptor Texel Buffer index out of bounds";
@@ -387,8 +386,8 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
             const vvl::BufferView *buffer_view_state =
                 static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
             assert(buffer_view_state);
-            const uint32_t byte_offset = error_record[kInstNonBindlessOOBParamOffset0];
-            const uint32_t resource_size = error_record[kInstNonBindlessOOBParamOffset1];
+            const u32 byte_offset = error_record[kInstNonBindlessOOBParamOffset0];
+            const u32 resource_size = error_record[kInstNonBindlessOOBParamOffset1];
 
             strm << " access out of bounds. The descriptor texel buffer (" << gpuav.FormatHandle(buffer_view_state->Handle())
                  << ") size is " << resource_size << " texels and the highest out of bounds access was at [" << byte_offset
@@ -408,7 +407,7 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
     return error_found;
 }
 
-bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
+bool LogMessageInstBufferDeviceAddress(const u32 *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
                                        bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
@@ -417,7 +416,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
             out_oob_access = true;
             const char *access_type = error_record[kInstBuffAddrAccessInstructionOffset] == spv::OpStore ? "written" : "read";
-            uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
+            u64 address = *reinterpret_cast<const u64 *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Out of bounds access: " << error_record[kInstBuffAddrAccessByteSizeOffset] << " bytes " << access_type
                  << " at buffer device address 0x" << std::hex << address << '.';
             out_vuid_msg = "UNASSIGNED-Device address out of bounds";
@@ -430,7 +429,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     return error_found;
 }
 
-bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg) {
+bool LogMessageInstRayQuery(const u32 *error_record, std::string &out_error_msg, std::string &out_vuid_msg) {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -473,17 +472,17 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
             out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06348";
         } break;
         case kErrorSubCodeRayQueryBothSkip: {
-            const uint32_t value = error_record[kInstRayQueryParamOffset_0];
+            const u32 value = error_record[kInstRayQueryParamOffset_0];
             strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
             out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06889";
         } break;
         case kErrorSubCodeRayQuerySkipCull: {
-            const uint32_t value = error_record[kInstRayQueryParamOffset_0];
+            const u32 value = error_record[kInstRayQueryParamOffset_0];
             strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
             out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06890";
         } break;
         case kErrorSubCodeRayQueryOpaque: {
-            const uint32_t value = error_record[kInstRayQueryParamOffset_0];
+            const u32 value = error_record[kInstRayQueryParamOffset_0];
             strm << "OpRayQueryInitializeKHR operand Ray Flags is 0x" << std::hex << value << ". ";
             out_vuid_msg = "VUID-RuntimeSpirv-OpRayQueryInitializeKHR-06891";
         } break;
@@ -502,8 +501,8 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist, uint32_t operation_index,
-                             const uint32_t *error_record, const std::vector<DescSetState> &descriptor_sets,
+bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist, u32 operation_index,
+                             const u32 *error_record, const std::vector<DescSetState> &descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have
@@ -543,7 +542,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
         const gpu::GpuAssistedShaderTracker *tracker_info = nullptr;
-        const uint32_t shader_id = error_record[glsl::kHeaderShaderIdOffset];
+        const u32 shader_id = error_record[glsl::kHeaderShaderIdOffset];
         auto it = gpuav.shader_map_.find(shader_id);
         if (it != gpuav.shader_map_.end()) {
             tracker_info = &it->second;

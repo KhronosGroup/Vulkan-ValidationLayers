@@ -114,7 +114,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    for (u32 i = 0; i < queue_info.size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }
@@ -282,8 +282,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups");
 
 #ifdef __linux__
-    if (std::getenv("NODEVICE_SELECT") == nullptr)
-    {
+    if (std::getenv("NODEVICE_SELECT") == nullptr) {
         // Currently due to a bug in MESA this test will fail.
         // https://gitlab.freedesktop.org/mesa/mesa/-/commit/4588453815c58ec848b0ff6f18a08836e70f55df
         //
@@ -310,7 +309,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     ErrorMonitor monitor = ErrorMonitor(false);
     monitor.CreateCallback(test_instance);
 
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(test_instance, &physical_device_group_count, nullptr);
     std::vector<VkPhysicalDeviceGroupProperties> device_groups(physical_device_group_count,
                                                                vku::InitStruct<VkPhysicalDeviceGroupProperties>());
@@ -319,7 +318,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     if (physical_device_group_count > 0) {
         VkPhysicalDevice physicalDevice = device_groups[0].physicalDevices[0];
 
-        uint32_t queueFamilyPropertyCount = 0;
+        u32 queueFamilyPropertyCount = 0;
         vk::GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamilyPropertyCount, nullptr);
     }
 
@@ -483,7 +482,7 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
-    uint32_t propertyCount = 0u;
+    u32 propertyCount = 0u;
     vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, nullptr);
     std::vector<VkExtensionProperties> properties(propertyCount);
     vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, properties.data());
@@ -513,7 +512,7 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestamps) {
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t count = 0;
+    u32 count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
     if (count < 2) {
         GTEST_SKIP() << "only 1 TimeDomain supported";
@@ -527,8 +526,8 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestamps) {
     timestamp_infos[1] = vku::InitStructHelper();
     timestamp_infos[1].timeDomain = time_domains[1];
 
-    uint64_t timestamps[2];
-    uint64_t max_deviation;
+    u64 timestamps[2];
+    u64 max_deviation;
     vk::GetCalibratedTimestampsEXT(device(), 2, timestamp_infos, timestamps, &max_deviation);
 }
 
@@ -538,7 +537,7 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestampsKHR) {
     AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t count = 0;
+    u32 count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, nullptr);
     if (count < 2) {
         GTEST_SKIP() << "only 1 TimeDomain supported";
@@ -552,8 +551,8 @@ TEST_F(VkPositiveLayerTest, GetCalibratedTimestampsKHR) {
     timestamp_infos[1] = vku::InitStructHelper();
     timestamp_infos[1].timeDomain = time_domains[1];
 
-    uint64_t timestamps[2];
-    uint64_t max_deviation;
+    u64 timestamps[2];
+    u64 max_deviation;
     vk::GetCalibratedTimestampsKHR(device(), 2, timestamp_infos, timestamps, &max_deviation);
 }
 

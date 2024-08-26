@@ -20,8 +20,8 @@ void ImageDrmTest::InitBasicImageDrm() {
     RETURN_IF_SKIP(Init());
 }
 
-std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {
-    std::vector<uint64_t> mods;
+std::vector<u64> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, u32 plane_count) {
+    std::vector<u64> mods;
     VkDrmFormatModifierPropertiesListEXT mod_props = vku::InitStructHelper();
     VkFormatProperties2 format_props = vku::InitStructHelper(&mod_props);
     vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
@@ -33,7 +33,7 @@ std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatF
     mod_props.pDrmFormatModifierProperties = mod_props_length.data();
     vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
 
-    for (uint32_t i = 0; i < mod_props.drmFormatModifierCount; ++i) {
+    for (u32 i = 0; i < mod_props.drmFormatModifierCount; ++i) {
         auto &mod = mod_props.pDrmFormatModifierProperties[i];
         if (((mod.drmFormatModifierTilingFeatures & features) == features) && (plane_count == mod.drmFormatModifierPlaneCount)) {
             mods.push_back(mod.drmFormatModifier);
@@ -60,8 +60,7 @@ TEST_F(PositiveImageDrm, Basic) {
     };
 
     for (auto format : format_list) {
-        std::vector<uint64_t> mods =
-            GetFormatModifier(format, VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+        std::vector<u64> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_TRANSFER_DST_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
         if (mods.empty()) {
             continue;
         }
@@ -97,7 +96,7 @@ TEST_F(PositiveImageDrm, Basic) {
         VkDeviceMemory mem_obj = VK_NULL_HANDLE;
         VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
+        for (u32 type = 0; type < phys_mem_props.memoryTypeCount; type++) {
             if ((mem_reqs.memoryTypeBits & (1 << type)) &&
                 ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
                 VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
@@ -143,7 +142,7 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
+    std::vector<u64> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -205,7 +204,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    std::vector<uint64_t> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
+    std::vector<u64> mods = GetFormatModifier(format, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, 2);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -225,7 +224,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
     create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    for (uint64_t mod : mods) {
+    for (u64 mod : mods) {
         VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
         drm_format_modifier.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         drm_format_modifier.drmFormatModifier = mod;
@@ -256,7 +255,7 @@ TEST_F(PositiveImageDrm, MutableFormat) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT with no VkImageFormatListCreateInfo .");
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    std::vector<u64> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -289,7 +288,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
     TEST_DESCRIPTION("Use vkGetImageDrmFormatModifierPropertiesEXT");
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    std::vector<u64> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (mods.empty()) {
         GTEST_SKIP() << "No valid Format Modifier found";
     }
@@ -344,7 +343,7 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoConcurrent) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicImageDrm());
 
-    uint32_t queue_family_property_count = 0;
+    u32 queue_family_property_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);
     if (queue_family_property_count < 2) {
         GTEST_SKIP() << "pQueueFamilyPropertyCount is not 2 or more";
@@ -355,7 +354,7 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoConcurrent) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
     drm_format_modifier.queueFamilyIndexCount = 2;
-    uint32_t queue_family_indices[2] = {0, 1};
+    u32 queue_family_indices[2] = {0, 1};
     drm_format_modifier.pQueueFamilyIndices = queue_family_indices;
 
     VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper(&drm_format_modifier);

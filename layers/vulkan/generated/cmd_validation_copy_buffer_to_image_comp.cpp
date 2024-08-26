@@ -24,8 +24,8 @@
 #include "cmd_validation_copy_buffer_to_image_comp.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t cmd_validation_copy_buffer_to_image_comp_size = 2200;
-[[maybe_unused]] const uint32_t cmd_validation_copy_buffer_to_image_comp[2200] = {
+[[maybe_unused]] const u32 cmd_validation_copy_buffer_to_image_comp_size = 2200;
+[[maybe_unused]] const u32 cmd_validation_copy_buffer_to_image_comp[2200] = {
     0x07230203, 0x00010000, 0x0008000b, 0x00000178, 0x00000000, 0x00020011, 0x00000001, 0x00020011, 0x00001161, 0x0007000a,
     0x5f565053, 0x5f52484b, 0x74696238, 0x6f74735f, 0x65676172, 0x00000000, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e,
     0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001, 0x0006000f, 0x00000005, 0x00000004, 0x6e69616d, 0x00000000,

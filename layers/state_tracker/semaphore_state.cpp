@@ -51,7 +51,7 @@ enum vvl::Semaphore::Scope vvl::Semaphore::Scope() const {
     return scope_;
 }
 
-void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uint64_t &payload) {
+void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, u64 &payload) {
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         payload = next_payload_++;
@@ -62,7 +62,7 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
     timeline_[payload].signal_submit.emplace(signal_submit);
 }
 
-void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload) {
+void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, u64 &payload) {
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         // Timeline can be empty for the binary wait operation if the semaphore was imported.
@@ -90,12 +90,12 @@ void vvl::Semaphore::EnqueueAcquire(vvl::Func acquire_command) {
     timeline_[payload].acquire_command.emplace(acquire_command);
 }
 
-std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<bool(OpType, uint64_t, bool)> &filter) const {
+std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<bool(OpType, u64, bool)> &filter) const {
     auto guard = ReadLock();
     std::optional<SemOp> result;
 
     for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
-        uint64_t payload = pos->first;
+        u64 payload = pos->first;
         auto &timepoint = pos->second;
         for (auto &op : timepoint.wait_submits) {
             if (!filter || filter(kWait, payload, true)) {
@@ -154,7 +154,7 @@ std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinaryWaitSubm
     return timepoint.wait_submits[0];
 }
 
-uint64_t vvl::Semaphore::CurrentPayload() const {
+u64 vvl::Semaphore::CurrentPayload() const {
     auto guard = ReadLock();
     return completed_.payload;
 }
@@ -185,7 +185,7 @@ bool vvl::Semaphore::CanBinaryBeWaited() const {
     return !timeline_.rbegin()->second.HasWaiters();
 }
 
-void vvl::Semaphore::Notify(uint64_t payload) {
+void vvl::Semaphore::Notify(u64 payload) {
     auto guard = ReadLock();
     auto pos = timeline_.find(payload);
     if (pos != timeline_.end()) {
@@ -193,7 +193,7 @@ void vvl::Semaphore::Notify(uint64_t payload) {
     }
 }
 
-void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint64_t payload) {
+void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, u64 payload) {
     auto guard = WriteLock();
     if (payload <= completed_.payload) {
         return;
@@ -255,7 +255,7 @@ void vvl::Semaphore::Retire(vvl::Queue *current_queue, const Location &loc, uint
     }
 }
 
-std::shared_future<void> vvl::Semaphore::Wait(uint64_t payload) {
+std::shared_future<void> vvl::Semaphore::Wait(u64 payload) {
     auto guard = WriteLock();
     if (payload <= completed_.payload) {
         std::promise<void> already_done;
@@ -273,7 +273,7 @@ std::shared_future<void> vvl::Semaphore::Wait(uint64_t payload) {
     return timepoint.waiter;
 }
 
-void vvl::Semaphore::NotifyAndWait(const Location &loc, uint64_t payload) {
+void vvl::Semaphore::NotifyAndWait(const Location &loc, u64 payload) {
     if (scope_ == kInternal) {
         Notify(payload);
         auto waiter = Wait(payload);
@@ -339,7 +339,7 @@ void vvl::Semaphore::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
         assert(type == VK_SEMAPHORE_TYPE_BINARY);  // checked by validation phase
         // Exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's
         // payload as executing a semaphore wait operation
-        auto filter = [](const Semaphore::OpType op_type, uint64_t payload, bool is_pending) {
+        auto filter = [](const Semaphore::OpType op_type, u64 payload, bool is_pending) {
             return is_pending && CanWaitBinarySemaphoreAfterOperation(op_type);
         };
         auto last_op = LastOp(filter);
@@ -419,8 +419,8 @@ bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_st
 }
 
 bool SemaphoreSubmitState::CheckSemaphoreValue(
-    const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
-    std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func) {
+    const vvl::Semaphore &semaphore_state, std::string &where, u64 &bad_value,
+    std::function<bool(const vvl::Semaphore::OpType, u64, bool is_pending)> compare_func) {
     auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
     // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
     if (current_signal != timeline_signals.end()) {

@@ -50,10 +50,10 @@ using PushConstantRangesId = PushConstantRangesDict::Id;
 // Note: the "cannonical" data are referenced by Id, not including handle or device specific state
 // Note: hash and equality only consider layout_id entries [0, set] for determining uniqueness
 struct PipelineLayoutCompatDef {
-    uint32_t set;
+    u32 set;
     PushConstantRangesId push_constant_ranges;
     PipelineLayoutSetLayoutsId set_layouts_id;
-    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id)
+    PipelineLayoutCompatDef(const u32 set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id)
         : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id) {}
     size_t hash() const;
 
@@ -65,7 +65,7 @@ struct PipelineLayoutCompatDef {
 using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, hash_util::HasHashMember<PipelineLayoutCompatDef>>;
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
-PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges);
+PushConstantRangesId GetCanonicalId(u32 pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges);
 
 namespace vvl {
 
@@ -88,7 +88,7 @@ class PipelineLayout : public StateObject {
 
     VkPipelineLayout VkHandle() const { return handle_.Cast<VkPipelineLayout>(); }
 
-    std::shared_ptr<vvl::DescriptorSetLayout const> GetDsl(uint32_t set) const {
+    std::shared_ptr<vvl::DescriptorSetLayout const> GetDsl(u32 set) const {
         std::shared_ptr<vvl::DescriptorSetLayout const> dsl = nullptr;
         if (set < set_layouts.size()) {
             dsl = set_layouts[set];
@@ -101,6 +101,5 @@ class PipelineLayout : public StateObject {
 
 }  // namespace vvl
 
-std::vector<PipelineLayoutCompatId> GetCompatForSet(
-    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
-    const PushConstantRangesId &push_constant_ranges);
+std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
+                                                    const PushConstantRangesId &push_constant_ranges);

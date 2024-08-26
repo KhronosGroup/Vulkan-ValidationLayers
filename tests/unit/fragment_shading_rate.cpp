@@ -313,8 +313,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
     // Set wrong VkImageLayout
     ref = {0, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL};
     subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT >(nullptr, ref);
-    rpci = vku::InitStruct<VkRenderPassCreateInfo >(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
+    rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
+    rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", nullptr);
@@ -332,8 +332,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
 
     ref = {0, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
     subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT >(nullptr, ref);
-    rpci = vku::InitStruct<VkRenderPassCreateInfo >(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
+    rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
+    rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", nullptr);
@@ -351,7 +351,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferences) {
 
     ref = {0, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
     subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT >(nullptr, ref);
+    rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref);
     rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpfdmi, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
 
     TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false,
@@ -432,7 +432,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDuplicateReferences) {
 
     {
         // FDM as preserve attachment
-        uint32_t ref_fail[2] = {ref_preserve.attachment, ref_fdm.attachment};
+        u32 ref_fail[2] = {ref_preserve.attachment, ref_fdm.attachment};
         VkSubpassDescription subpass = {
             0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref_input, 1, &ref_color, nullptr, &ref_depth, 2, ref_fail};
         auto rpfdmi = vku::InitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>(nullptr, ref_fdm);
@@ -525,10 +525,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     RETURN_IF_SKIP(InitFramework());
     const bool fdm2Supported = IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
 
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT density_map_features =
-        vku::InitStructHelper();
-    VkPhysicalDeviceFragmentDensityMap2FeaturesEXT density_map2_features =
-        vku::InitStructHelper(&density_map_features);
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT density_map_features = vku::InitStructHelper();
+    VkPhysicalDeviceFragmentDensityMap2FeaturesEXT density_map2_features = vku::InitStructHelper(&density_map_features);
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(density_map2_features);
 
     if (density_map_features.fragmentDensityMapDynamic == VK_FALSE) {
@@ -827,11 +825,9 @@ TEST_F(NegativeFragmentShadingRate, DeviceFeatureCombinations) {
         GTEST_SKIP() << "requires VK_NV_shading_rate_image or VK_EXT_fragment_density_map";
     }
 
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_query_features =
-        vku::InitStructHelper();
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_query_features = vku::InitStructHelper();
     VkPhysicalDeviceShadingRateImageFeaturesNV sri_query_features = vku::InitStructHelper();
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_query_features =
-        vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_query_features = vku::InitStructHelper();
 
     if (fdm_extension) {
         fsr_query_features.pNext = &fdm_query_features;
@@ -1534,8 +1530,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
     const bool vil_extension = IsExtensionsEnabled(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
     const bool va2_extension = IsExtensionsEnabled(VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
 
-    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
-        vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.primitiveFragmentShadingRateWithMultipleViewports) {
@@ -1802,75 +1797,77 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     std::array<VkAttachmentDescription2, 7> attachments = {
         // FDM attachments
         vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, VK_FORMAT_R8G8_UNORM, VK_SAMPLE_COUNT_1_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT),
+                                                  VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                  VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT),
         // input attachments
         vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL),
+                                                  VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                  VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                  VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL),
         // color attachments
-        vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
-        vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+        vku::InitStruct<VkAttachmentDescription2>(
+            nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+        vku::InitStruct<VkAttachmentDescription2>(
+            nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
         // depth attachment
-        vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, ds_format, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
+        vku::InitStruct<VkAttachmentDescription2>(
+            nullptr, 0u, ds_format, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
         // resolve attachment
-        vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+        vku::InitStruct<VkAttachmentDescription2>(
+            nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
         // preserve attachments
-        vku::InitStruct<VkAttachmentDescription2>(nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
+        vku::InitStruct<VkAttachmentDescription2>(
+            nullptr, 0u, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
     };
 
     /* TODO
     std::array<VkAttachmentReference2, 1> fdm = {
-        vku::InitStruct<VkAttachmentReference2>(nullptr, 0u, VK_IMAGE_LAYOUT_GENERAL, VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
+        vku::InitStruct<VkAttachmentReference2>(nullptr, 0u, VK_IMAGE_LAYOUT_GENERAL,
+    VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
     };
     */
 
     std::array<VkAttachmentReference2, 1> input = {
-        vku::InitStruct<VkAttachmentReference2>(nullptr, 1u, VK_IMAGE_LAYOUT_GENERAL, VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
+        vku::InitStruct<VkAttachmentReference2>(nullptr, 1u, VK_IMAGE_LAYOUT_GENERAL,
+                                                VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
     };
 
     std::array<VkAttachmentReference2, 2> color = {
         vku::InitStruct<VkAttachmentReference2>(nullptr, 2u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
+                                                VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
         vku::InitStruct<VkAttachmentReference2>(nullptr, 3u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
+                                                VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
     };
     auto depth = vku::InitStruct<VkAttachmentReference2>(nullptr, 4u, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                       VkImageAspectFlags{VK_IMAGE_ASPECT_DEPTH_BIT});
+                                                         VkImageAspectFlags{VK_IMAGE_ASPECT_DEPTH_BIT});
     std::vector<VkAttachmentReference2> resolve = {
         vku::InitStruct<VkAttachmentReference2>(nullptr, 5u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                              VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
+                                                VkImageAspectFlags{VK_IMAGE_ASPECT_COLOR_BIT}),
         vku::InitStruct<VkAttachmentReference2>(nullptr, VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0u),
     };
-    std::vector<uint32_t> preserve = {6};
+    std::vector<u32> preserve = {6};
 
     auto subpass = vku::InitStruct<VkSubpassDescription2>(nullptr, 0u, VK_PIPELINE_BIND_POINT_GRAPHICS, 0u, size32(input),
-                                                        input.data(), size32(color), color.data(), resolve.data(), &depth,
-                                                        size32(preserve), preserve.data());
+                                                          input.data(), size32(color), color.data(), resolve.data(), &depth,
+                                                          size32(preserve), preserve.data());
 
     // Create a renderPass with a single color attachment for fragment density map
     VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_create_info = vku::InitStructHelper();
     fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_GENERAL;
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo2>(&fragment_density_map_create_info, 0u, size32(attachments),
-                                                       attachments.data(), 1u, &subpass, 0u, nullptr, 0u, nullptr);
+                                                         attachments.data(), 1u, &subpass, 0u, nullptr, 0u, nullptr);
 
     // Create rp2[0] without Multiview (zero viewMask), rp2[1] with Multiview
     vkt::RenderPass rp2[2];
@@ -2289,7 +2286,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         }
 
         for (const auto &test_case : test_cases) {
-            for (uint32_t i = 0; i < test_case.vuids.size(); ++i) {
+            for (u32 i = 0; i < test_case.vuids.size(); ++i) {
                 m_errorMonitor->SetDesiredError(test_case.vuids[i].c_str());
             }
             vk::CmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
@@ -2651,11 +2648,11 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
     if (!push_fragment_density_support || !imageless_framebuffer_support) {
         printf("VK_EXT_fragment_density_map or VK_KHR_imageless_framebuffer extension not supported, skipping tests\n");
     } else {
-        uint32_t attachment_width = 512;
-        uint32_t attachment_height = 512;
+        u32 attachment_width = 512;
+        u32 attachment_height = 512;
         VkFormat attachment_format = VK_FORMAT_R8G8_UNORM;
-        uint32_t frame_width = 512;
-        uint32_t frame_height = 512;
+        u32 frame_width = 512;
+        u32 frame_height = 512;
 
         // Create a renderPass with a single color attachment for fragment density map
         VkAttachmentDescription attach_desc_fragment_density_map = {};
@@ -2764,7 +2761,7 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
         printf("VK_KHR_Multiview Extension not supported, skipping tests\n");
     } else {
         // Test multiview renderpass with more than 1 layer
-        uint32_t viewMasks[] = {0x3u};
+        u32 viewMasks[] = {0x3u};
         auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, viewMasks, 0u, nullptr, 0u, nullptr);
         auto rpci_mv = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
@@ -2890,7 +2887,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapNonSubsampledImages) {
 
     VkFormat attachment_format = VK_FORMAT_R8G8_UNORM;
     // Just use the same values for both height and width
-    uint32_t frame_size = 512;
+    u32 frame_size = 512;
 
     // Create a render pass with a color attachment and fragment density map attachment
     VkAttachmentDescription attach[2] = {};

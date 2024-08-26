@@ -1143,7 +1143,7 @@ struct VulkanObjectTypeInfo<kVulkanObjectTypeShaderEXT> {
 #endif  // TYPESAFE_NONDISPATCHABLE_HANDLES
 
 struct VulkanTypedHandle {
-    uint64_t handle;
+    u64 handle;
     VulkanObjectType type;
     template <typename Handle>
     VulkanTypedHandle(Handle handle_, VulkanObjectType type_) : handle(CastToUint64(handle_)), type(type_) {

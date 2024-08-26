@@ -99,14 +99,14 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
         if (file_stream) {
             ShaderCacheHash shader_cache_hash(gpuav_settings.shader_instrumentation);
             file_stream.write(reinterpret_cast<const char *>(&shader_cache_hash), sizeof(shader_cache_hash));
-            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders_cache_.spirv_shaders_.size());
-            file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
+            u32 datasize = static_cast<u32>(instrumented_shaders_cache_.spirv_shaders_.size());
+            file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(u32));
             for (auto &record : instrumented_shaders_cache_.spirv_shaders_) {
                 // Hash of shader
-                file_stream.write(reinterpret_cast<const char *>(&record.first), sizeof(uint32_t));
+                file_stream.write(reinterpret_cast<const char *>(&record.first), sizeof(u32));
                 const size_t spirv_dwords_count = record.second.size();
-                file_stream.write(reinterpret_cast<const char *>(&spirv_dwords_count), sizeof(uint32_t));
-                file_stream.write(reinterpret_cast<const char *>(record.second.data()), spirv_dwords_count * sizeof(uint32_t));
+                file_stream.write(reinterpret_cast<const char *>(&spirv_dwords_count), sizeof(u32));
+                file_stream.write(reinterpret_cast<const char *>(record.second.data()), spirv_dwords_count * sizeof(u32));
             }
             file_stream.close();
         }
@@ -203,9 +203,9 @@ void Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkP
 }
 
 void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                    VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
-                                                    const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                    const uint32_t *pDynamicOffsets, const RecordObject &record_obj) {
+                                                    VkPipelineLayout layout, u32 firstSet, u32 descriptorSetCount,
+                                                    const VkDescriptorSet *pDescriptorSets, u32 dynamicOffsetCount,
+                                                    const u32 *pDynamicOffsets, const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount,
                                                    pDescriptorSets, dynamicOffsetCount, pDynamicOffsets, record_obj);
 
@@ -239,7 +239,7 @@ void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandB
 }
 
 void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                     VkPipelineLayout layout, u32 set, u32 descriptorWriteCount,
                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                      const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
@@ -274,7 +274,7 @@ void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuf
     }
 }
 
-void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, u32 bufferCount,
                                                          const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                          const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos, record_obj);
@@ -283,7 +283,7 @@ void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer command
 
 void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
                                                                         VkPipelineBindPoint pipelineBindPoint,
-                                                                        VkPipelineLayout layout, uint32_t set,
+                                                                        VkPipelineLayout layout, u32 set,
                                                                         const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set, record_obj);
     gpuav_settings.shader_instrumentation.bindless_descriptor = false;
@@ -297,8 +297,8 @@ void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     gpuav_settings.shader_instrumentation.bindless_descriptor = false;
 }
 
-void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                     uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex,
+                                     u32 firstInstance, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -310,9 +310,8 @@ void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t ver
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                             const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount, uint32_t firstInstance,
-                                             uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u32 drawCount, const VkMultiDrawInfoEXT *pVertexInfo,
+                                             u32 instanceCount, u32 firstInstance, u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMultiEXT(commandBuffer, drawCount, pVertexInfo, instanceCount, firstInstance, stride,
                                             record_obj);
 
@@ -322,14 +321,13 @@ void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint
         return;
     }
 
-    for (uint32_t i = 0; i < drawCount; i++) {
+    for (u32 i = 0; i < drawCount; i++) {
         SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     }
 }
 
-void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                            uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                            const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex,
+                                            i32 vertexOffset, u32 firstInstance, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                            record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -340,9 +338,9 @@ void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint3
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                                    const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
-                                                    uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset,
+void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, u32 drawCount,
+                                                    const VkMultiDrawIndexedInfoEXT *pIndexInfo, u32 instanceCount,
+                                                    u32 firstInstance, u32 stride, const i32 *pVertexOffset,
                                                     const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMultiIndexedEXT(commandBuffer, drawCount, pIndexInfo, instanceCount, firstInstance, stride,
                                                    pVertexOffset, record_obj);
@@ -351,14 +349,14 @@ void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffe
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    for (uint32_t i = 0; i < drawCount; i++) {
+    for (u32 i = 0; i < drawCount; i++) {
         // #ARNO_TODO calling Setup drawCount times seems weird...
         SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     }
 }
 
-void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                             uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 count,
+                                             u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, count, stride, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -371,8 +369,8 @@ void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBu
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                    uint32_t count, uint32_t stride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 count,
+                                                    u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -386,15 +384,15 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
 }
 
 void Validator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride, const RecordObject &record_obj) {
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                     u32 stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                       record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                  uint32_t stride, const RecordObject &record_obj) {
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                  u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                  stride, record_obj);
 
@@ -408,10 +406,9 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
-                                                         uint32_t firstInstance, VkBuffer counterBuffer,
-                                                         VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                         uint32_t vertexStride, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, u32 instanceCount, u32 firstInstance,
+                                                         VkBuffer counterBuffer, VkDeviceSize counterBufferOffset,
+                                                         u32 counterOffset, u32 vertexStride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer,
                                                         counterBufferOffset, counterOffset, vertexStride, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -423,16 +420,15 @@ void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer command
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                            uint32_t maxDrawCount, uint32_t stride,
-                                                            const RecordObject &record_obj) {
+                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                            u32 stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                              record_obj);
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                         uint32_t maxDrawCount, uint32_t stride, const RecordObject &record_obj) {
+                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                         u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                         stride, record_obj);
 
@@ -446,7 +442,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u32 taskCount, u32 firstTask,
                                                 const RecordObject &record_obj) {
     ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -458,7 +454,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
+                                                        u32 drawCount, u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -471,9 +467,8 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandB
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                             uint32_t maxDrawCount, uint32_t stride,
-                                                             const RecordObject &record_obj) {
+                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                             u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                             maxDrawCount, stride, record_obj);
 
@@ -487,8 +482,8 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer com
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                                 uint32_t groupCountZ, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, u32 groupCountX, u32 groupCountY, u32 groupCountZ,
+                                                 const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_state) {
@@ -499,7 +494,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, 
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
+                                                         u32 drawCount, u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -513,8 +508,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer command
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                              uint32_t maxDrawCount, uint32_t stride,
-                                                              const RecordObject &record_obj) {
+                                                              u32 maxDrawCount, u32 stride, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                              maxDrawCount, stride, record_obj);
 
@@ -528,8 +522,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
-                                         const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, u32 x, u32 y, u32 z, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDispatch(commandBuffer, x, y, z, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -553,9 +546,8 @@ void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, 
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                             uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
-                                             const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, u32 baseGroupX, u32 baseGroupY, u32 baseGroupZ,
+                                             u32 groupCountX, u32 groupCountY, u32 groupCountZ, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
                                             groupCountZ, record_obj);
 
@@ -567,9 +559,8 @@ void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
-                                                uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                uint32_t groupCountZ, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u32 baseGroupX, u32 baseGroupY, u32 baseGroupZ,
+                                                u32 groupCountX, u32 groupCountY, u32 groupCountZ, const RecordObject &record_obj) {
     PreCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                  record_obj);
 }
@@ -580,7 +571,7 @@ void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuf
                                             VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                             VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                             VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                            uint32_t width, uint32_t height, uint32_t depth, const RecordObject &record_obj) {
+                                            u32 width, u32 height, u32 depth, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset,
                                            missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride,
                                            hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride,
@@ -599,8 +590,8 @@ void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                              const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
                                              const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                              const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                             const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
-                                             uint32_t height, uint32_t depth, const RecordObject &record_obj) {
+                                             const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, u32 width,
+                                             u32 height, u32 depth, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                             pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth, record_obj);
 

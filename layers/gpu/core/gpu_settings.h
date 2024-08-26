@@ -20,7 +20,7 @@
 
 struct GpuAVSettings {
     bool warn_on_robust_oob = true;
-    uint32_t max_bda_in_use = 10000;
+    u32 max_bda_in_use = 10000;
     bool cache_instrumented_shaders = true;
     bool select_instrumented_shaders = false;
 
@@ -34,7 +34,7 @@ struct GpuAVSettings {
 
     bool debug_validate_instrumented_shaders = false;
     bool debug_dump_instrumented_shaders = false;
-    uint32_t debug_max_instrumented_count = 0;  // zero is same as "unlimited"
+    u32 debug_max_instrumented_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
 
     bool shader_instrumentation_enabled = true;
@@ -72,5 +72,5 @@ struct GpuAVSettings {
 struct DebugPrintfSettings {
     bool to_stdout = false;
     bool verbose = false;
-    uint32_t buffer_size = 1024;
+    u32 buffer_size = 1024;
 };

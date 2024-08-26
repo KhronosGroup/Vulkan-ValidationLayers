@@ -68,7 +68,7 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    const uint32_t index = 0;
+    const u32 index = 0;
     const VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();
@@ -107,7 +107,7 @@ TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    const uint32_t index = 0;
+    const u32 index = 0;
     const VkDeviceSize offset = 0;
 
     m_commandBuffer->begin();

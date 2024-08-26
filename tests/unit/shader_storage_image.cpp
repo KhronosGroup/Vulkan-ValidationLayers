@@ -160,7 +160,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     bool has_without_format_test = false, has_with_format_test = false;
 
     // Find storage formats with & without read without format support
-    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
+    for (u32 fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
 
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
@@ -309,7 +309,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     bool has_without_format_test = false, has_with_format_test = false;
 
     // Find storage formats with & without write without format support
-    for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
+    for (u32 fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
 
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
@@ -709,15 +709,15 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
 
-    uint32_t data = 2;
+    u32 data = 2;
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {

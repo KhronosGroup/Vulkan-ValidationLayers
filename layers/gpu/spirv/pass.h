@@ -27,8 +27,8 @@ struct BasicBlock;
 
 // Info we know is the same regardless what pass is consuming the CreateFunctionCall()
 struct InjectionData {
-    uint32_t stage_info_id;
-    uint32_t inst_position_id;
+    u32 stage_info_id;
+    u32 inst_position_id;
 };
 
 // Common helpers for all passes
@@ -40,20 +40,19 @@ class Pass {
     virtual void PrintDebugInfo() {}
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
-    const Variable& GetBuiltinVariable(uint32_t built_in);
+    const Variable& GetBuiltinVariable(u32 built_in);
 
     // Returns the ID for OpCompositeConstruct it creates
-    uint32_t GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it);
+    u32 GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it);
 
-    const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration);
-    const Instruction* GetMemeberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration);
+    const Instruction* GetDecoration(u32 id, spv::Decoration decoration);
+    const Instruction* GetMemeberDecoration(u32 id, u32 member_index, spv::Decoration decoration);
 
-    uint32_t GetLastByte(const Instruction& var_inst, const Instruction& access_chain_inst, BasicBlock& block,
-                         InstructionIt* inst_it);
-    // Generate SPIR-V needed to help convert things to be uniformly uint32_t
+    u32 GetLastByte(const Instruction& var_inst, const Instruction& access_chain_inst, BasicBlock& block, InstructionIt* inst_it);
+    // Generate SPIR-V needed to help convert things to be uniformly u32
     // If no inst_it is passed in, any new instructions will be added to end of the Block
-    uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);
-    uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);
+    u32 ConvertTo32(u32 id, BasicBlock& block, InstructionIt* inst_it);
+    u32 CastToUint32(u32 id, BasicBlock& block, InstructionIt* inst_it);
 
   protected:
     Pass(Module& module) : module_(module) {}
@@ -67,7 +66,7 @@ class Pass {
     const Instruction* target_instruction_ = nullptr;
     InstructionIt FindTargetInstruction(BasicBlock& block) const;
 
-    uint32_t instrumented_count_ = 0;
+    u32 instrumented_count_ = 0;
 };
 
 }  // namespace spirv

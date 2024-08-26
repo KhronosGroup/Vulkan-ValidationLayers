@@ -235,7 +235,7 @@ SupportedVideoProfiles VideoProfileDesc::Cache::Get(VkPhysicalDevice physical_de
     SupportedVideoProfiles supported_profiles{};
     if (profile_list) {
         std::unique_lock<std::mutex> lock(mutex_);
-        for (uint32_t i = 0; i < profile_list->profileCount; ++i) {
+        for (u32 i = 0; i < profile_list->profileCount; ++i) {
             auto profile_desc = GetOrCreate(physical_device, &profile_list->pProfiles[i]);
             if (profile_desc) {
                 supported_profiles.insert(std::move(profile_desc));
@@ -261,7 +261,7 @@ VideoPictureResource::VideoPictureResource(const ValidationStateTracker &dev_dat
       coded_offset(res.codedOffset),
       coded_extent(res.codedExtent) {}
 
-VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(ImageView const *image_view_state, uint32_t layer) {
+VkImageSubresourceRange VideoPictureResource::GetImageSubresourceRange(ImageView const *image_view_state, u32 layer) {
     VkImageSubresourceRange range{};
     if (image_view_state) {
         range = image_view_state->normalized_subresource_range;
@@ -336,10 +336,10 @@ void VideoSessionDeviceState::Reset() {
     encode_.rate_control_state = VideoEncodeRateControlState();
 }
 
-void VideoSessionDeviceState::Activate(int32_t slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) {
+void VideoSessionDeviceState::Activate(i32 slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) {
     assert(!picture_id.IsBothFields());
 
-    if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+    if (slot_index < 0 || static_cast<u32>(slot_index) >= is_active_.size()) {
         // Out-of-bounds slot index
         return;
     }
@@ -362,10 +362,10 @@ void VideoSessionDeviceState::Activate(int32_t slot_index, const VideoPictureID 
     pictures_per_id_[slot_index][picture_id] = res;
 }
 
-void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureID &picture_id) {
+void VideoSessionDeviceState::Invalidate(i32 slot_index, const VideoPictureID &picture_id) {
     assert(!picture_id.IsBothFields());
 
-    if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+    if (slot_index < 0 || static_cast<u32>(slot_index) >= is_active_.size()) {
         // Out-of-bounds slot index
         return;
     }
@@ -398,8 +398,8 @@ void VideoSessionDeviceState::Invalidate(int32_t slot_index, const VideoPictureI
     }
 }
 
-void VideoSessionDeviceState::Deactivate(int32_t slot_index) {
-    if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+void VideoSessionDeviceState::Deactivate(i32 slot_index) {
+    if (slot_index < 0 || static_cast<u32>(slot_index) >= is_active_.size()) {
         // Out-of-bounds slot index
         return;
     }
@@ -427,14 +427,14 @@ class RateControlStateMismatchRecorder {
     }
 
     template <typename T>
-    void RecordLayer(uint32_t layer_idx, const char *where, T actual, T expected) {
+    void RecordLayer(u32 layer_idx, const char *where, T actual, T expected) {
         has_mismatch_ = true;
         stream_ << where << " (" << actual << ") in VkVideoEncodeRateControlLayerInfoKHR::pLayers[" << layer_idx
                 << "] does not match current device state (" << expected << ")." << std::endl;
     }
 
     template <typename T>
-    void RecordLayerDefault(uint32_t layer_idx, const char *missing_struct, const char *member, T expected) {
+    void RecordLayerDefault(u32 layer_idx, const char *missing_struct, const char *member, T expected) {
         has_mismatch_ = true;
         stream_ << missing_struct << " is not in the pNext chain of VkVideoEncodeRateControlLayerInfoKHR::pLayers[" << layer_idx
                 << "] but the current device state for its " << member << " member is set (" << expected << ")." << std::endl;
@@ -492,19 +492,19 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
     }
 
         CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, rateControlMode, string_VkVideoEncodeRateControlModeFlagBitsKHR);
-        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, layerCount, uint32_t);
-        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, virtualBufferSizeInMs, uint32_t);
-        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, initialVirtualBufferSizeInMs, uint32_t);
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, layerCount, u32);
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, virtualBufferSizeInMs, u32);
+        CHECK_RC_INFO(base, VkVideoEncodeRateControlInfoKHR, initialVirtualBufferSizeInMs, u32);
 
         switch (vs_state->GetCodecOp()) {
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
                 auto rc_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264RateControlInfoKHR>(begin_info.pNext);
                 const auto &ref_h264 = encode_.rate_control_state.h264;
                 CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, flags, string_VkVideoEncodeH264RateControlFlagsKHR);
-                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, gopFrameCount, uint32_t);
-                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, idrPeriod, uint32_t);
-                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, consecutiveBFrameCount, uint32_t);
-                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, temporalLayerCount, uint32_t);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, gopFrameCount, u32);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, idrPeriod, u32);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, consecutiveBFrameCount, u32);
+                CHECK_RC_INFO(h264, VkVideoEncodeH264RateControlInfoKHR, temporalLayerCount, u32);
                 break;
             }
 
@@ -512,10 +512,10 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
                 auto rc_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265RateControlInfoKHR>(begin_info.pNext);
                 const auto &ref_h265 = encode_.rate_control_state.h265;
                 CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, flags, string_VkVideoEncodeH265RateControlFlagsKHR);
-                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, gopFrameCount, uint32_t);
-                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, idrPeriod, uint32_t);
-                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, consecutiveBFrameCount, uint32_t);
-                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, subLayerCount, uint32_t);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, gopFrameCount, u32);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, idrPeriod, u32);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, consecutiveBFrameCount, u32);
+                CHECK_RC_INFO(h265, VkVideoEncodeH265RateControlInfoKHR, subLayerCount, u32);
                 break;
             }
 
@@ -524,14 +524,14 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
                 break;
         }
 
-        for (uint32_t layer_idx = 0; layer_idx < std::min(rc_base->layerCount, ref_base.layerCount); ++layer_idx) {
+        for (u32 layer_idx = 0; layer_idx < std::min(rc_base->layerCount, ref_base.layerCount); ++layer_idx) {
             const auto rc_layer_base = &rc_base->pLayers[layer_idx];
             const auto &ref_layer_base = encode_.rate_control_state.layers[layer_idx].base;
 
-            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, averageBitrate, uint64_t);
-            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, maxBitrate, uint64_t);
-            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, frameRateNumerator, uint32_t);
-            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, frameRateDenominator, uint32_t);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, averageBitrate, u64);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, maxBitrate, u64);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, frameRateNumerator, u32);
+            CHECK_RC_LAYER_INFO(base, VkVideoEncodeRateControlLayerInfoKHR, frameRateDenominator, u32);
 
             switch (vs_state->GetCodecOp()) {
                 case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
@@ -539,17 +539,17 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
                         vku::FindStructInPNextChain<VkVideoEncodeH264RateControlLayerInfoKHR>(rc_layer_base->pNext);
                     const auto &ref_layer_h264 = encode_.rate_control_state.layers[layer_idx].h264;
                     CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, useMinQp, string_bool);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpI, int32_t);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpP, int32_t);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpI, i32);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpP, i32);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, minQp.qpB, i32);
                     CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, useMaxQp, string_bool);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpI, int32_t);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpP, int32_t);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpI, i32);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpP, i32);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxQp.qpB, i32);
                     CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, useMaxFrameSize, string_bool);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.frameISize, uint32_t);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.framePSize, uint32_t);
-                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.frameBSize, uint32_t);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.frameISize, u32);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.framePSize, u32);
+                    CHECK_RC_LAYER_INFO(h264, VkVideoEncodeH264RateControlLayerInfoKHR, maxFrameSize.frameBSize, u32);
                     break;
                 }
 
@@ -558,17 +558,17 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
                         vku::FindStructInPNextChain<VkVideoEncodeH265RateControlLayerInfoKHR>(rc_layer_base->pNext);
                     const auto &ref_layer_h265 = encode_.rate_control_state.layers[layer_idx].h265;
                     CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, useMinQp, string_bool);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpI, int32_t);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpP, int32_t);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpI, i32);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpP, i32);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, minQp.qpB, i32);
                     CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, useMaxQp, string_bool);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpI, int32_t);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpP, int32_t);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpB, int32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpI, i32);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpP, i32);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxQp.qpB, i32);
                     CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, useMaxFrameSize, string_bool);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameISize, uint32_t);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.framePSize, uint32_t);
-                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameBSize, uint32_t);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameISize, u32);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.framePSize, u32);
+                    CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameBSize, u32);
                     break;
                 }
 
@@ -611,12 +611,12 @@ VideoSession::VideoSession(const ValidationStateTracker &dev_data, VkVideoSessio
       memory_binding_count_queried(false),
       memory_bindings_queried(0),
       memory_bindings_(GetMemoryBindings(dev_data, handle)),
-      unbound_memory_binding_count_(static_cast<uint32_t>(memory_bindings_.size())),
+      unbound_memory_binding_count_(static_cast<u32>(memory_bindings_.size())),
       device_state_mutex_(),
       device_state_(pCreateInfo->maxDpbSlots) {}
 
 VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(const ValidationStateTracker &dev_data, VkVideoSessionKHR vs) {
-    uint32_t memory_requirement_count;
+    u32 memory_requirement_count;
     DispatchGetVideoSessionMemoryRequirementsKHR(dev_data.device, vs, &memory_requirement_count, nullptr);
 
     std::vector<VkVideoSessionMemoryRequirementsKHR> memory_requirements(memory_requirement_count,
@@ -624,7 +624,7 @@ VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(const ValidationS
     DispatchGetVideoSessionMemoryRequirementsKHR(dev_data.device, vs, &memory_requirement_count, memory_requirements.data());
 
     MemoryBindingMap memory_bindings;
-    for (uint32_t i = 0; i < memory_requirement_count; ++i) {
+    for (u32 i = 0; i < memory_requirement_count; ++i) {
         memory_bindings[memory_requirements[i].memoryBindIndex].requirements = memory_requirements[i].memoryRequirements;
     }
 
@@ -828,52 +828,52 @@ void VideoSessionParameters::Update(VkVideoSessionParametersUpdateInfoKHR const 
 }
 
 void VideoSessionParameters::AddDecodeH264(VkVideoDecodeH264SessionParametersAddInfoKHR const *info) {
-    for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
+    for (u32 i = 0; i < info->stdSPSCount; ++i) {
         const auto &entry = info->pStdSPSs[i];
         data_.h264.sps[GetH264SPSKey(entry)] = entry;
     }
-    for (uint32_t i = 0; i < info->stdPPSCount; ++i) {
+    for (u32 i = 0; i < info->stdPPSCount; ++i) {
         const auto &entry = info->pStdPPSs[i];
         data_.h264.pps[GetH264PPSKey(entry)] = entry;
     }
 }
 
 void VideoSessionParameters::AddDecodeH265(VkVideoDecodeH265SessionParametersAddInfoKHR const *info) {
-    for (uint32_t i = 0; i < info->stdVPSCount; ++i) {
+    for (u32 i = 0; i < info->stdVPSCount; ++i) {
         const auto &entry = info->pStdVPSs[i];
         data_.h265.vps[GetH265VPSKey(entry)] = entry;
     }
-    for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
+    for (u32 i = 0; i < info->stdSPSCount; ++i) {
         const auto &entry = info->pStdSPSs[i];
         data_.h265.sps[GetH265SPSKey(entry)] = entry;
     }
-    for (uint32_t i = 0; i < info->stdPPSCount; ++i) {
+    for (u32 i = 0; i < info->stdPPSCount; ++i) {
         const auto &entry = info->pStdPPSs[i];
         data_.h265.pps[GetH265PPSKey(entry)] = entry;
     }
 }
 
 void VideoSessionParameters::AddEncodeH264(VkVideoEncodeH264SessionParametersAddInfoKHR const *info) {
-    for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
+    for (u32 i = 0; i < info->stdSPSCount; ++i) {
         const auto &entry = info->pStdSPSs[i];
         data_.h264.sps[GetH264SPSKey(entry)] = entry;
     }
-    for (uint32_t i = 0; i < info->stdPPSCount; ++i) {
+    for (u32 i = 0; i < info->stdPPSCount; ++i) {
         const auto &entry = info->pStdPPSs[i];
         data_.h264.pps[GetH264PPSKey(entry)] = entry;
     }
 }
 
 void VideoSessionParameters::AddEncodeH265(VkVideoEncodeH265SessionParametersAddInfoKHR const *info) {
-    for (uint32_t i = 0; i < info->stdVPSCount; ++i) {
+    for (u32 i = 0; i < info->stdVPSCount; ++i) {
         const auto &entry = info->pStdVPSs[i];
         data_.h265.vps[GetH265VPSKey(entry)] = entry;
     }
-    for (uint32_t i = 0; i < info->stdSPSCount; ++i) {
+    for (u32 i = 0; i < info->stdSPSCount; ++i) {
         const auto &entry = info->pStdSPSs[i];
         data_.h265.sps[GetH265SPSKey(entry)] = entry;
     }
-    for (uint32_t i = 0; i < info->stdPPSCount; ++i) {
+    for (u32 i = 0; i < info->stdPPSCount; ++i) {
         const auto &entry = info->pStdPPSs[i];
         data_.h265.pps[GetH265PPSKey(entry)] = entry;
     }

@@ -17,8 +17,8 @@
 
 #include "module.h"
 
-static constexpr uint32_t kDefaultShaderId = 23;
-static constexpr uint32_t kInstDefaultDescriptorSet = 3;
+static constexpr u32 kDefaultShaderId = 23;
+static constexpr u32 kInstDefaultDescriptorSet = 3;
 
 static bool timer = false;
 static bool print_debug_info = false;
@@ -129,10 +129,10 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::vector<uint32_t> spirv_data;
+    std::vector<u32> spirv_data;
     const int buf_size = 1024;
-    uint32_t buf[buf_size];
-    while (size_t len = fread(buf, sizeof(uint32_t), buf_size, fp)) {
+    u32 buf[buf_size];
+    while (size_t len = fread(buf, sizeof(u32), buf_size, fp)) {
         spirv_data.insert(spirv_data.end(), buf, buf + len);
     }
     fclose(fp);
@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    fwrite(spirv_data.data(), sizeof(uint32_t), spirv_data.size(), fp);
+    fwrite(spirv_data.data(), sizeof(u32), spirv_data.size(), fp);
     fclose(fp);
 
     return 0;

@@ -28,11 +28,11 @@ class RayQueryPass : public InjectConditionalFunctionPass {
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
+    u32 CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
-    uint32_t link_function_id = 0;
-    uint32_t GetLinkFunctionId();
+    u32 link_function_id = 0;
+    u32 GetLinkFunctionId();
 };
 
 }  // namespace spirv

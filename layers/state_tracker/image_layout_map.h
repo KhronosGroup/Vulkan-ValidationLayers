@@ -108,7 +108,7 @@ class ImageSubresourceLayoutMap {
             }
         };
     };
-    using InitialLayoutStates = small_vector<InitialLayoutState, 2, uint32_t>;
+    using InitialLayoutStates = small_vector<InitialLayoutState, 2, u32>;
     using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using RangeType = LayoutMap::key_type;
 

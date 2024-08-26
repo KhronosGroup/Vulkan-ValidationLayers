@@ -18,7 +18,7 @@
 
 #include <string>
 
-[[maybe_unused]] static std::string string_Attachment(uint32_t attachment) {
+[[maybe_unused]] static std::string string_Attachment(u32 attachment) {
     if (attachment == VK_ATTACHMENT_UNUSED) {
         return "VK_ATTACHMENT_UNUSED";
     } else {
@@ -60,7 +60,7 @@
 [[maybe_unused]] static std::string string_LevelCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
     std::stringstream ss;
     if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
-        const uint32_t level_count = ci.mipLevels - range.baseMipLevel;
+        const u32 level_count = ci.mipLevels - range.baseMipLevel;
         ss << "VK_REMAINING_MIP_LEVELS [mipLevels (" << ci.mipLevels << ") - baseMipLevel (" << range.baseMipLevel
            << ") = " << level_count << "]";
     } else {
@@ -72,7 +72,7 @@
 [[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
     std::stringstream ss;
     if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        const uint32_t layer_count = ci.arrayLayers - range.baseArrayLayer;
+        const u32 layer_count = ci.arrayLayers - range.baseArrayLayer;
         ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer (" << range.baseArrayLayer
            << ") = " << layer_count << "]";
     } else {

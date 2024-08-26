@@ -46,13 +46,13 @@ TEST_F(NegativeTooling, PrivateDataSetNonDevice) {
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
-    static const uint64_t data_value = 0x70AD;
+    static const u64 data_value = 0x70AD;
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t)gpu(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (u64)gpu(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (uint64_t)gpu(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (u64)gpu(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -68,10 +68,10 @@ TEST_F(NegativeTooling, PrivateDataSetBadHandle) {
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
-    static const uint64_t data_value = 0x70AD;
+    static const u64 data_value = 0x70AD;
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04017");
     // valid handle, but not a vkSample
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)device(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)device(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -90,14 +90,14 @@ TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
-    static const uint64_t data_value = 0x70AD;
+    static const u64 data_value = 0x70AD;
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)second_device.handle(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (u64)second_device.handle(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vkt::Sampler sampler(second_device, SafeSaneSamplerCreateInfo());
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -117,13 +117,13 @@ TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
     data_create_info.flags = 0;
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, nullptr, &data_slot);
 
-    uint64_t data;
+    u64 data;
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectType-04018");
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t)gpu(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (u64)gpu(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectType-04018");
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (uint64_t)gpu(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (u64)gpu(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -138,10 +138,10 @@ TEST_F(NegativeTooling, PrivateDataGetBadHandle) {
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
-    uint64_t data;
+    u64 data;
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectHandle-09498");
     // valid handle, but not a vkSample
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)device(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)device(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -157,10 +157,10 @@ TEST_F(NegativeTooling, PrivateDataGetDestroyedHandle) {
     vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    uint64_t bad_handle = (uint64_t)sampler.handle();
+    u64 bad_handle = (u64)sampler.handle();
     sampler.destroy();
 
-    uint64_t data;
+    u64 data;
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectHandle-09498");
     // valid handle, but not a vkSample
     vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, bad_handle, data_slot, &data);
@@ -175,7 +175,7 @@ TEST_F(NegativeTooling, ValidateNVDeviceDiagnosticCheckpoints) {
     AddRequiredExtensions(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t data = 100;
+    u32 data = 100;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
     vk::CmdSetCheckpointNV(m_commandBuffer->handle(), &data);
     m_errorMonitor->VerifyFound();
@@ -197,17 +197,17 @@ TEST_F(NegativeTooling, PrivateDataDestroyHandle) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    static const u64 data_value = 0x70AD;
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, data_value);
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
 
-    uint64_t data;
+    u64 data;
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-privateDataSlot-parameter");
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-privateDataSlot-parameter");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (u64)sampler.handle(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 }

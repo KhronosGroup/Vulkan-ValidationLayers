@@ -56,11 +56,11 @@ bool BestPractices::ValidateMultisampledBlendingArm(const VkGraphicsPipelineCrea
     const auto& subpass = rp_state->create_info.pSubpasses[create_info.subpass];
 
     // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-    uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
+    u32 num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
 
-    for (uint32_t j = 0; j < num_color_attachments; j++) {
+    for (u32 j = 0; j < num_color_attachments; j++) {
         const auto& blend_att = create_info.pColorBlendState->pAttachments[j];
-        uint32_t att = subpass.pColorAttachments[j].attachment;
+        u32 att = subpass.pColorAttachments[j].attachment;
 
         if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
             if (!FormatHasFullThroughputBlendingArm(rp_state->create_info.pAttachments[att].format)) {
@@ -76,8 +76,7 @@ bool BestPractices::ValidateMultisampledBlendingArm(const VkGraphicsPipelineCrea
     return skip;
 }
 
-void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache,
-                                                               uint32_t createInfoCount,
+void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                const RecordObject& record_obj, PipelineStates& pipeline_states,
@@ -91,8 +90,8 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
     bool skip = false;
     if (!(pipeline.active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) && create_info.pVertexInputState) {
         const auto& vertex_input = *create_info.pVertexInputState;
-        uint32_t count = 0;
-        for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
+        u32 count = 0;
+        for (u32 j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
             if (vertex_input.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
                 count++;
             }
@@ -149,7 +148,7 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
     return skip;
 }
 
-bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                            const ErrorObject& error_obj, PipelineStates& pipeline_states,
@@ -169,7 +168,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                   createInfoCount);
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++) {
+    for (u32 i = 0; i < createInfoCount; i++) {
         const auto* pipeline = pipeline_states[i].get();
         ASSERT_AND_CONTINUE(pipeline);
         skip |= ValidateCreateGraphicsPipeline(pCreateInfos[i], *pipeline, error_obj.location.dot(Field::pCreateInfos, i));
@@ -207,10 +206,10 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
     // are only non-null if they are enabled.
     if (create_info.pColorBlendState && !(pipe_state.ignore_color_attachments)) {
         // According to spec, pColorBlendState must be ignored if subpass does not have color attachments.
-        uint32_t num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
-        for (uint32_t j = 0; j < num_color_attachments; j++) {
+        u32 num_color_attachments = std::min(subpass.colorAttachmentCount, create_info.pColorBlendState->attachmentCount);
+        for (u32 j = 0; j < num_color_attachments; j++) {
             if (create_info.pColorBlendState->pAttachments[j].colorWriteMask != 0) {
-                uint32_t attachment = subpass.pColorAttachments[j].attachment;
+                u32 attachment = subpass.pColorAttachments[j].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     result.emplace_back(attachment, VK_IMAGE_ASPECT_COLOR_BIT);
                 }
@@ -221,7 +220,7 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
     if (create_info.pDepthStencilState &&
         (create_info.pDepthStencilState->depthTestEnable || create_info.pDepthStencilState->depthBoundsTestEnable ||
          create_info.pDepthStencilState->stencilTestEnable)) {
-        uint32_t attachment = subpass.pDepthStencilAttachment ? subpass.pDepthStencilAttachment->attachment : VK_ATTACHMENT_UNUSED;
+        u32 attachment = subpass.pDepthStencilAttachment ? subpass.pDepthStencilAttachment->attachment : VK_ATTACHMENT_UNUSED;
         if (attachment != VK_ATTACHMENT_UNUSED) {
             VkImageAspectFlags aspects = 0;
             if (create_info.pDepthStencilState->depthTestEnable || create_info.pDepthStencilState->depthBoundsTestEnable) {
@@ -250,7 +249,7 @@ std::shared_ptr<vvl::Pipeline> BestPractices::CreateGraphicsPipelineState(
         *this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout)));
 }
 
-void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 const RecordObject& record_obj, PipelineStates& pipeline_states,
@@ -259,7 +258,7 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
     pipeline_cache_ = pipelineCache;
 }
 
-bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                           const VkComputePipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                           const ErrorObject& error_obj, PipelineStates& pipeline_states,
@@ -286,7 +285,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         }
     }
 
-    for (uint32_t i = 0; i < createInfoCount; i++) {
+    for (u32 i = 0; i < createInfoCount; i++) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkComputePipelineCreateInfo& create_info = pCreateInfos[i];
         if (VendorCheckEnabled(kBPVendorArm)) {
@@ -324,12 +323,12 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     auto entrypoint = module_state->spirv->FindEntrypoint(create_info.stage.pName, create_info.stage.stage);
     if (!entrypoint) return false;
 
-    uint32_t x = {}, y = {}, z = {};
+    u32 x = {}, y = {}, z = {};
     if (!module_state->spirv->FindLocalSize(*entrypoint, x, y, z)) {
         return false;
     }
 
-    const uint32_t thread_count = x * y * z;
+    const u32 thread_count = x * y * z;
 
     // Generate a priori warnings about work group sizes.
     if (thread_count > kMaxEfficientWorkGroupThreadCountArm) {
@@ -395,12 +394,12 @@ bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCrea
         return false;
     }
 
-    uint32_t x = {}, y = {}, z = {};
+    u32 x = {}, y = {}, z = {};
     if (!module_state->spirv->FindLocalSize(*entrypoint, x, y, z)) {
         return false;
     }
 
-    const uint32_t thread_count = x * y * z;
+    const u32 thread_count = x * y * z;
 
     const bool multiple_64 = ((thread_count % 64) == 0);
 
@@ -503,7 +502,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
     }
 }
 
-void BestPractices::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+void BestPractices::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                          const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                          const RecordObject& record_obj) {
@@ -518,19 +517,19 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        uint32_t descriptor_size = enabled_features.robustBufferAccess ? 4 : 2;
+        u32 descriptor_size = enabled_features.robustBufferAccess ? 4 : 2;
         // Descriptor sets cost 1 DWORD each.
         // Dynamic buffers cost 2 DWORDs each when robust buffer access is OFF.
         // Dynamic buffers cost 4 DWORDs each when robust buffer access is ON.
         // Push constants cost 1 DWORD per 4 bytes in the Push constant range.
-        uint32_t pipeline_size = pCreateInfo->setLayoutCount;  // in DWORDS
-        for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
+        u32 pipeline_size = pCreateInfo->setLayoutCount;  // in DWORDS
+        for (u32 i = 0; i < pCreateInfo->setLayoutCount; i++) {
             auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             if (!descriptor_set_layout_state) continue;
             pipeline_size += descriptor_set_layout_state->GetDynamicDescriptorCount() * descriptor_size;
         }
 
-        for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; i++) {
+        for (u32 i = 0; i < pCreateInfo->pushConstantRangeCount; i++) {
             pipeline_size += pCreateInfo->pPushConstantRanges[i].size / 4;
         }
 
@@ -549,7 +548,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
         bool has_separate_sampler = false;
         size_t fast_space_usage = 0;
 
-        for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
+        for (u32 i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             if (!descriptor_set_layout_state) continue;
             for (const auto& binding : descriptor_set_layout_state->GetBindings()) {

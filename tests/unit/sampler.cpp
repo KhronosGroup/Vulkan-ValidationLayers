@@ -846,11 +846,11 @@ TEST_F(NegativeSampler, CustomBorderColor) {
         if (prop2.properties.limits.maxSamplerAllocationCount <= custom_properties.maxCustomBorderColorSamplers) {
             m_errorMonitor->SetDesiredError("VUID-vkCreateSampler-maxSamplerAllocationCount-04110");
         }
-        for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers; i++) {
+        for (u32 i = 0; i < custom_properties.maxCustomBorderColorSamplers; i++) {
             vk::CreateSampler(device(), &sampler_info, NULL, &samplers[i]);
         }
         m_errorMonitor->VerifyFound();
-        for (uint32_t i = 0; i < custom_properties.maxCustomBorderColorSamplers - 1; i++) {
+        for (u32 i = 0; i < custom_properties.maxCustomBorderColorSamplers - 1; i++) {
             vk::DestroySampler(device(), samplers[i], nullptr);
         }
     }
@@ -1533,8 +1533,7 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     AddRequiredExtensions(VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping =
-        vku::InitStructHelper();
+    VkSamplerBorderColorComponentMappingCreateInfoEXT border_color_component_mapping = vku::InitStructHelper();
     border_color_component_mapping.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 

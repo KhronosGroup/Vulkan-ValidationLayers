@@ -32,7 +32,7 @@ TEST_F(PositiveGpuAVSpirv, LoopPhi) {
     vkt::Buffer buffer_uniform(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
     vkt::Buffer buffer_storage(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
-    uint32_t *data = (uint32_t *)buffer_uniform.memory().map();
+    u32 *data = (u32 *)buffer_uniform.memory().map();
     data[0] = 4;  // Scene.lightCount
     buffer_uniform.memory().unmap();
 
@@ -241,7 +241,7 @@ TEST_F(PositiveGpuAVSpirv, LoopHeaderPhi) {
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 1;  // data[0]
     data[1] = 2;  // data[1]
     data[2] = 3;  // data[2]
@@ -261,7 +261,7 @@ TEST_F(PositiveGpuAVSpirv, LoopHeaderPhi) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)buffer.memory().map();
+    data = (u32 *)buffer.memory().map();
     ASSERT_EQ(4u, data[0]);
     buffer.memory().unmap();
 }
@@ -279,7 +279,7 @@ TEST_F(PositiveGpuAVSpirv, VulkanMemoryModelDeviceScope) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
 
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 1;
     buffer.memory().unmap();
 

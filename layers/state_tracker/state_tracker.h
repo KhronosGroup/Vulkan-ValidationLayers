@@ -147,18 +147,17 @@ static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkForma
 
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
 template <typename RegionType>
-static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format,
-                                                      uint32_t image_layout_count) {
+static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format, u32 image_layout_count) {
     VkDeviceSize buffer_size = 0;
     VkExtent3D copy_extent = region.imageExtent;
     VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
     VkDeviceSize buffer_height = (0 == region.bufferImageHeight ? copy_extent.height : region.bufferImageHeight);
-    uint32_t layer_count = region.imageSubresource.layerCount != VK_REMAINING_ARRAY_LAYERS
-                               ? region.imageSubresource.layerCount
-                               : image_layout_count - region.imageSubresource.baseArrayLayer;
+    u32 layer_count = region.imageSubresource.layerCount != VK_REMAINING_ARRAY_LAYERS
+                          ? region.imageSubresource.layerCount
+                          : image_layout_count - region.imageSubresource.baseArrayLayer;
     // VUID-VkImageCreateInfo-imageType-00961 prevents having both depth and layerCount ever both be greater than 1 together. Take
     // max to logic simple. This is the number of 'slices' to copy.
-    const uint32_t z_copies = std::max(copy_extent.depth, layer_count);
+    const u32 z_copies = std::max(copy_extent.depth, layer_count);
 
     // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
     // to ignore.
@@ -454,7 +453,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, const RecordObject& record_obj) override;
     void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
-        VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
+        VkPhysicalDevice physicalDevice, u32 queueFamilyIndex, u32* pCounterCount, VkPerformanceCounterKHR* pCounters,
         VkPerformanceCounterDescriptionKHR* pCounterDescriptions, const RecordObject& record_obj) override;
     void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
@@ -462,15 +461,15 @@ class ValidationStateTracker : public ValidationObject {
                                                                     const RecordObject& record_obj) override;
 
     void PostCallRecordGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                            uint32_t* pMemoryRequirementsCount,
+                                                            u32* pMemoryRequirementsCount,
                                                             VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
                                                             const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t queue_family_index, uint32_t queue_index,
+    virtual std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, u32 queue_family_index, u32 queue_index,
                                                     VkDeviceQueueCreateFlags flags,
                                                     const VkQueueFamilyProperties& queueFamilyProperties);
 
-    void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
+    void PostCallRecordGetDeviceQueue(VkDevice device, u32 queueFamilyIndex, u32 queueIndex, VkQueue* pQueue,
                                       const RecordObject& record_obj) override;
     void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
                                        const RecordObject& record_obj) override;
@@ -489,31 +488,30 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                       VkMemoryRequirements2* pMemoryRequirements,
                                                       const RecordObject& record_obj) override;
-    void PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
+    void PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image, u32* pSparseMemoryRequirementCount,
                                                         VkSparseImageMemoryRequirements* pSparseMemoryRequirements,
                                                         const RecordObject& record_obj) override;
     void PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
-                                                         uint32_t* pSparseMemoryRequirementCount,
+                                                         u32* pSparseMemoryRequirementCount,
                                                          VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
                                                          const RecordObject& record_obj) override;
     void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
-                                                            uint32_t* pSparseMemoryRequirementCount,
+                                                            u32* pSparseMemoryRequirementCount,
                                                             VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
                                                             const RecordObject& record_obj) override;
-    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                   VkDisplayPlanePropertiesKHR* pProperties,
                                                                   const RecordObject& record_obj) override;
-    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                    VkDisplayPlaneProperties2KHR* pProperties,
                                                                    const RecordObject& record_obj) override;
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, u32* pQueueFamilyPropertyCount,
                                                               VkQueueFamilyProperties* pQueueFamilyProperties,
                                                               const RecordObject& record_obj) override;
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, u32* pQueueFamilyPropertyCount,
                                                                VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                const RecordObject& record_obj) override;
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                  uint32_t* pQueueFamilyPropertyCount,
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, u32* pQueueFamilyPropertyCount,
                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                   const RecordObject& record_obj) override;
     void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
@@ -527,16 +525,16 @@ class ValidationStateTracker : public ValidationObject {
                                                                 VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
                                                                 const RecordObject& record_obj) override;
     void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                          uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                          u32* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
                                                           const RecordObject& record_obj) override;
     void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                           u32* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats,
                                                            const RecordObject& record_obj) override;
     void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                               uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
+                                                               u32* pPresentModeCount, VkPresentModeKHR* pPresentModes,
                                                                const RecordObject& record_obj) override;
-    void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+    void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, u32 queueFamilyIndex,
                                                           VkSurfaceKHR surface, VkBool32* pSupported,
                                                           const RecordObject& record_obj) override;
     void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
@@ -575,24 +573,23 @@ class ValidationStateTracker : public ValidationObject {
                                        const RecordObject& record_obj) override;
 
     // Create/Destroy/Bind
-    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, u32 bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                          const RecordObject& record_obj) override;
-    void PostCallRecordBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                 uint32_t bindSessionMemoryInfoCount,
+    void PostCallRecordBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession, u32 bindSessionMemoryInfoCount,
                                                  const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
                                                  const RecordObject& record_obj) override;
     void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                         const RecordObject& record_obj) override;
-    void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
+    void PostCallRecordBindBufferMemory2(VkDevice device, u32 bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                          const RecordObject& record_obj) override;
-    void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
+    void PostCallRecordBindBufferMemory2KHR(VkDevice device, u32 bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
                                             const RecordObject& record_obj) override;
     void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+    void PostCallRecordBindImageMemory2(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                         const RecordObject& record_obj) override;
-    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+    void PostCallRecordBindImageMemory2KHR(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                            const RecordObject& record_obj) override;
 
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
@@ -620,22 +617,22 @@ class ValidationStateTracker : public ValidationObject {
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureKHR* pAccelerationStructure,
                                                       const RecordObject& record_obj) override;
-    void PostCallRecordBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+    void PostCallRecordBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, u32 infoCount,
                                                       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                       const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                       const RecordObject& record_obj) override;
     void RecordDeviceAccelerationStructureBuildInfo(vvl::CommandBuffer& cb_state,
                                                     const VkAccelerationStructureBuildGeometryInfoKHR& info);
-    void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+    void PostCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, u32 infoCount,
                                                          const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                          const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                          const RecordObject& record_obj) override;
 
-    void PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+    void PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, u32 infoCount,
                                                                  const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                                  const VkDeviceAddress* pIndirectDeviceAddresses,
-                                                                 const uint32_t* pIndirectStrides,
-                                                                 const uint32_t* const* ppMaxPrimitiveCounts,
+                                                                 const u32* pIndirectStrides,
+                                                                 const u32* const* ppMaxPrimitiveCounts,
                                                                  const RecordObject& record_obj) override;
     void PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                       const VkAllocationCallbacks* pAllocator,
@@ -674,7 +671,7 @@ class ValidationStateTracker : public ValidationObject {
                                                                            const VkDescriptorPoolCreateInfo* create_info);
     virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
                                                                     const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
-                                                                    uint32_t variable_count);
+                                                                    u32 variable_count);
 
     void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
@@ -693,12 +690,12 @@ class ValidationStateTracker : public ValidationObject {
                                                                       std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                       std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                       spirv::StatelessData* stateless_data) const;
-    bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                chassis::CreateComputePipelines& chassis_state) const override;
-    void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                               const VkComputePipelineCreateInfo* pCreateInfos,
                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
@@ -728,7 +725,7 @@ class ValidationStateTracker : public ValidationObject {
                                    VkFence* pFence, const RecordObject& record_obj) override;
     void PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
-    void PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
+    void PostCallRecordResetFences(VkDevice device, u32 fenceCount, const VkFence* pFences,
                                    const RecordObject& record_obj) override;
     void PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
@@ -749,12 +746,12 @@ class ValidationStateTracker : public ValidationObject {
         std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
         spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const;
 
-    bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                 const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                 chassis::CreateGraphicsPipelines& chassis_state) const override;
-    void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                const RecordObject& record_obj, PipelineStates& pipeline_states,
@@ -763,7 +760,7 @@ class ValidationStateTracker : public ValidationObject {
     virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
                                                          VkFormatFeatureFlags2 features);
     virtual std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
-                                                         VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                         VkSwapchainKHR swapchain, u32 swapchain_index,
                                                          VkFormatFeatureFlags2 features);
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, const RecordObject& record_obj) override;
@@ -782,12 +779,12 @@ class ValidationStateTracker : public ValidationObject {
 
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
                                       const RecordObject& record_obj) override;
-    void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+    void PostCallRecordCreateShadersEXT(VkDevice device, u32 createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                         const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                         const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
     void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
+    void PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, u32 stageCount, const VkShaderStageFlagBits* pStages,
                                          const VkShaderEXT* pShaders, const RecordObject& record_obj) override;
     void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
@@ -799,21 +796,21 @@ class ValidationStateTracker : public ValidationObject {
                                        const RecordObject& record_obj) override;
     void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+    void PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, u32 firstQuery, u32 queryCount,
                                          const RecordObject& record_obj) override;
-    void PostCallRecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+    void PostCallRecordResetQueryPool(VkDevice device, VkQueryPool queryPool, u32 firstQuery, u32 queryCount,
                                       const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::Pipeline> CreateRayTracingPipelineState(const VkRayTracingPipelineCreateInfoNV* create_info,
                                                                          std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
                                                                          std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                          spirv::StatelessData* stateless_data) const;
-    bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                     chassis::CreateRayTracingPipelinesNV& chassis_state) const override;
-    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                    const RecordObject& record_obj, PipelineStates& pipeline_states,
@@ -823,13 +820,13 @@ class ValidationStateTracker : public ValidationObject {
                                                                          std::shared_ptr<const vvl::PipelineLayout>&& layout,
                                                                          spirv::StatelessData* stateless_data) const;
     bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                     VkPipelineCache pipelineCache, uint32_t count,
+                                                     VkPipelineCache pipelineCache, u32 count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                      const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                      chassis::CreateRayTracingPipelinesKHR& chassis_state) const override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                    VkPipelineCache pipelineCache, uint32_t count,
+                                                    VkPipelineCache pipelineCache, u32 count,
                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     const RecordObject& record_obj, PipelineStates& pipeline_states,
@@ -890,7 +887,7 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) override;
-    void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+    void PreCallRecordCreateShadersEXT(VkDevice device, u32 createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                        const RecordObject& record_obj, chassis::ShaderObject& chassis_state) override;
 
@@ -901,8 +898,7 @@ class ValidationStateTracker : public ValidationObject {
                                           const RecordObject& record_obj) override;
     void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
                                         const RecordObject& record_obj) override;
-    void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
-                                                 const VkSwapchainCreateInfoKHR* pCreateInfos,
+    void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, u32 swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                  const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                  const RecordObject& record_obj) override;
     void PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
@@ -919,27 +915,27 @@ class ValidationStateTracker : public ValidationObject {
                                          const RecordObject& record_obj) override;
     void PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject& record_obj) override;
     void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-    void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
+    void PostCallRecordQueueBindSparse(VkQueue queue, u32 bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                        const RecordObject& record_obj) override;
     void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+    void PostCallRecordQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    const RecordObject& record_obj) override;
     void PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) override;
     void PreCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) override;
-    void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
-                                     uint64_t timeout, const RecordObject& record_obj) override;
-    void PreCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
+    void PostCallRecordWaitForFences(VkDevice device, u32 fenceCount, const VkFence* pFences, VkBool32 waitAll, u64 timeout,
                                      const RecordObject& record_obj) override;
-    void PreCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
+    void PreCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, u64 timeout,
+                                     const RecordObject& record_obj) override;
+    void PreCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, u64 timeout,
                                         const RecordObject& record_obj) override;
-    void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
+    void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, u64 timeout,
                                       const RecordObject& record_obj) override;
-    void PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
+    void PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, u64 timeout,
                                          const RecordObject& record_obj) override;
-    void PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
+    void PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, u64* pValue,
                                                 const RecordObject& record_obj) override;
-    void PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
+    void PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, u64* pValue,
                                                    const RecordObject& record_obj) override;
     void PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo,
                                                const RecordObject& record_obj) override;
@@ -957,18 +953,18 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                       const RecordObject& record_obj) override;
-    void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+    void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, u32 commandBufferCount,
                                          const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) override;
-    void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+    void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, u32 count,
                                          const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) override;
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator,
                                  const RecordObject& record_obj) override;
 
-    void PerformUpdateDescriptorSets(uint32_t, const VkWriteDescriptorSet*, uint32_t, const VkCopyDescriptorSet*);
+    void PerformUpdateDescriptorSets(u32, const VkWriteDescriptorSet*, u32, const VkCopyDescriptorSet*);
 
-    void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                           const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                           const VkCopyDescriptorSet* pDescriptorCopies, const RecordObject& record_obj) override;
+    void PreCallRecordUpdateDescriptorSets(VkDevice device, u32 descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites,
+                                           u32 descriptorCopyCount, const VkCopyDescriptorSet* pDescriptorCopies,
+                                           const RecordObject& record_obj) override;
     void PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                       VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                       const RecordObject& record_obj) override;
@@ -977,8 +973,8 @@ class ValidationStateTracker : public ValidationObject {
                                                          const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(
-        VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_infos, uint64_t fake_address, const VkMemoryType& memory_type,
-        const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count);
+        VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_infos, u64 fake_address, const VkMemoryType& memory_type,
+        const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, u32 physical_device_count);
 
     // Memory mapping
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
@@ -992,10 +988,10 @@ class ValidationStateTracker : public ValidationObject {
     // Recorded Commands
     void PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                  const RecordObject& record_obj) override;
-    void PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkQueryControlFlags flags,
+    void PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 slot, VkQueryControlFlags flags,
                                      const RecordObject& record_obj) override;
-    void PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                               VkQueryControlFlags flags, uint32_t index, const RecordObject& record_obj) override;
+    void PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 query,
+                                               VkQueryControlFlags flags, u32 index, const RecordObject& record_obj) override;
     void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          VkSubpassContents contents, const RecordObject& record_obj) override;
     void PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR* pRenderingInfo,
@@ -1010,13 +1006,11 @@ class ValidationStateTracker : public ValidationObject {
                                              const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo,
                                               const RecordObject& record_obj) override;
-    void PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
-                                                    uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
-                                                    const VkDeviceSize* pCounterBufferOffsets,
+    void PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, u32 firstCounterBuffer, u32 counterBufferCount,
+                                                    const VkBuffer* pCounterBuffers, const VkDeviceSize* pCounterBufferOffsets,
                                                     const RecordObject& record_obj) override;
-    void PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
-                                                  uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
-                                                  const VkDeviceSize* pCounterBufferOffsets,
+    void PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, u32 firstCounterBuffer, u32 counterBufferCount,
+                                                  const VkBuffer* pCounterBuffers, const VkDeviceSize* pCounterBufferOffsets,
                                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                        const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
@@ -1026,9 +1020,9 @@ class ValidationStateTracker : public ValidationObject {
                                                 const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
                                                 const RecordObject& record_obj) override;
     void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                            VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                            const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                            const uint32_t* pDynamicOffsets, const RecordObject& record_obj) override;
+                                            VkPipelineLayout layout, u32 firstSet, u32 setCount,
+                                            const VkDescriptorSet* pDescriptorSets, u32 dynamicOffsetCount,
+                                            const u32* pDynamicOffsets, const RecordObject& record_obj) override;
     void PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType,
                                          const RecordObject& record_obj) override;
     void PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
@@ -1039,11 +1033,11 @@ class ValidationStateTracker : public ValidationObject {
                                        const RecordObject& record_obj) override;
     void PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout,
                                                 const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+    void PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
                                            const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                            const RecordObject& record_obj) override;
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter,
+                                   VkImageLayout dstImageLayout, u32 regionCount, const VkImageBlit* pRegions, VkFilter filter,
                                    const RecordObject& record_obj) override;
     void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
                                        const RecordObject& record_obj) override;
@@ -1055,10 +1049,10 @@ class ValidationStateTracker : public ValidationObject {
                                                        VkBuffer scratch, VkDeviceSize scratchOffset,
                                                        const RecordObject& record_obj) override;
     void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                         const VkClearColorValue* pColor, uint32_t rangeCount,
-                                         const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
+                                         const VkClearColorValue* pColor, u32 rangeCount, const VkImageSubresourceRange* pRanges,
+                                         const RecordObject& record_obj) override;
     void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                const VkClearDepthStencilValue* pDepthStencil, u32 rangeCount,
                                                 const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
     void PostCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                 const VkVideoCodingControlInfoKHR* pCodingControlInfo,
@@ -1066,14 +1060,14 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                       VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode,
                                                       const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, u32 regionCount,
                                     const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
                                         const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                      const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                           VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                           VkImageLayout dstImageLayout, u32 regionCount, const VkBufferImageCopy* pRegions,
                                            const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
@@ -1081,90 +1075,86 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                             const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
+                                   VkImageLayout dstImageLayout, u32 regionCount, const VkImageCopy* pRegions,
                                    const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo,
                                        const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
                                     const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                                           VkBuffer dstBuffer, u32 regionCount, const VkBufferImageCopy* pRegions,
                                            const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
                                                const RecordObject& record_obj) override;
     void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                             const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                               uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
+    void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 firstQuery, u32 queryCount,
+                                               VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
                                                VkQueryResultFlags flags, const RecordObject& record_obj) override;
     void PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                          const RecordObject& record_obj) override;
     void PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                          const RecordObject& record_obj) override;
-    void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
-                                   const RecordObject& record_obj) override;
+    void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, u32 x, u32 y, u32 z, const RecordObject& record_obj) override;
     void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            const RecordObject& record_obj) override;
-    void PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t base_x, uint32_t base_y, uint32_t base_z,
-                                          uint32_t x, uint32_t y, uint32_t z, const RecordObject& record_obj) override;
-    void PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t base_x, uint32_t base_y, uint32_t base_z, uint32_t x,
-                                       uint32_t y, uint32_t z, const RecordObject& record_obj) override;
-    void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                               uint32_t firstInstance, const RecordObject& record_obj) override;
-    void PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
-                                       uint32_t instanceCount, uint32_t firstInstance, uint32_t stride,
+    void PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u32 base_x, u32 base_y, u32 base_z, u32 x, u32 y, u32 z,
+                                          const RecordObject& record_obj) override;
+    void PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, u32 base_x, u32 base_y, u32 base_z, u32 x, u32 y, u32 z,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                      const RecordObject& record_obj) override;
-    void PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
-                                              const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
-                                              uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
-                                              const RecordObject& record_obj) override;
-    void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                              uint32_t stride, const RecordObject& record_obj) override;
-    void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                       uint32_t stride, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex,
+                               u32 firstInstance, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u32 drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
+                                       u32 instanceCount, u32 firstInstance, u32 stride, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex,
+                                      i32 vertexOffset, u32 firstInstance, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, u32 drawCount,
+                                              const VkMultiDrawIndexedInfoEXT* pIndexInfo, u32 instanceCount, u32 firstInstance,
+                                              u32 stride, const i32* pVertexOffset, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 count,
+                                              u32 stride, const RecordObject& record_obj) override;
+    void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 count, u32 stride,
+                                       const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride, const RecordObject& record_obj) override;
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                     u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                  uint32_t stride, const RecordObject& record_obj) override;
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                  u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                              uint32_t stride, const RecordObject& record_obj) override;
+                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                              const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                           uint32_t stride, const RecordObject& record_obj) override;
+                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                           const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                      u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 drawCount,
+                                                 u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u32 taskCount, u32 firstTask,
                                          const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                       uint32_t stride, const RecordObject& record_obj) override;
+                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                       u32 stride, const RecordObject& record_obj) override;
     void PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) override;
-    void PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                          uint32_t groupCountZ, const RecordObject& record_obj) override;
+                                                  u32 drawCount, u32 stride, const RecordObject& record_obj) override;
+    void PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, u32 groupCountX, u32 groupCountY, u32 groupCountZ,
+                                          const RecordObject& record_obj) override;
     void PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                       VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                       VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
                                       VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                       VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                      VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                      uint32_t width, uint32_t height, uint32_t depth, const RecordObject& record_obj) override;
+                                      VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride, u32 width,
+                                      u32 height, u32 depth, const RecordObject& record_obj) override;
     void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                        const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                        const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                        const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
-                                       const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
-                                       uint32_t height, uint32_t depth, const RecordObject& record_obj) override;
+                                       const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, u32 width, u32 height,
+                                       u32 depth, const RecordObject& record_obj) override;
     void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
                                                const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
@@ -1176,9 +1166,9 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-    void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
+    void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 slot,
                                    const RecordObject& record_obj) override;
-    void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index,
+    void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 query, u32 index,
                                              const RecordObject& record_obj) override;
     void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
     void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
@@ -1187,10 +1177,10 @@ class ValidationStateTracker : public ValidationObject {
                                          const RecordObject& record_obj) override;
     void PostCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo,
                                             const RecordObject& record_obj) override;
-    void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
+    void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, u32 commandBuffersCount,
                                          const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) override;
     void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                    uint32_t data, const RecordObject& record_obj) override;
+                                    u32 data, const RecordObject& record_obj) override;
     void PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -1200,7 +1190,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                        const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                              VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                              VkPipelineLayout layout, u32 set, u32 descriptorWriteCount,
                                               const VkWriteDescriptorSet* pDescriptorWrites,
                                               const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
@@ -1211,19 +1201,18 @@ class ValidationStateTracker : public ValidationObject {
         const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                          VkPipelineLayout layout, uint32_t set, const void* pData,
+                                                          VkPipelineLayout layout, u32 set, const void* pData,
                                                           const RecordObject& record_obj) override;
     void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                        uint32_t offset, uint32_t size, const void* pValues,
-                                        const RecordObject& record_obj) override;
+                                        u32 offset, u32 size, const void* pValues, const RecordObject& record_obj) override;
     void PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
                                             const RecordObject& record_obj) override;
     void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                     const RecordObject& record_obj) override;
-    void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                         uint32_t queryCount, const RecordObject& record_obj) override;
+    void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 firstQuery, u32 queryCount,
+                                         const RecordObject& record_obj) override;
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                      VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                       const VkImageResolve* pRegions, const RecordObject& record_obj) override;
     void PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo,
                                           const RecordObject& record_obj) override;
@@ -1239,55 +1228,51 @@ class ValidationStateTracker : public ValidationObject {
                                          const RecordObject& record_obj) override;
     void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                   const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
-                                                uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors,
-                                                const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
-                                                      uint32_t exclusiveScissorCount, const VkBool32* pExclusiveScissorEnables,
+    void PostCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, u32 firstExclusiveScissor, u32 exclusiveScissorCount,
+                                                const VkRect2D* pExclusiveScissors, const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, u32 firstExclusiveScissor,
+                                                      u32 exclusiveScissorCount, const VkBool32* pExclusiveScissorEnables,
                                                       const RecordObject& record_obj) override;
     void PostCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
+    void PostCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, u32 lineStippleFactor, u16 lineStipplePattern,
                                             const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
+    void PostCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, u32 lineStippleFactor, u16 lineStipplePattern,
                                             const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
-                                     const VkRect2D* pScissors, const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask,
+    void PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, u32 firstScissor, u32 scissorCount, const VkRect2D* pScissors,
+                                     const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, u32 compareMask,
                                                 const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference,
+    void PostCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, u32 reference,
                                               const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask,
+    void PostCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, u32 writeMask,
                                               const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+    void PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
                                       const VkViewport* pViewports, const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                          uint32_t viewportCount,
+    void PostCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
                                                           const VkShadingRatePaletteNV* pShadingRatePalettes,
                                                           const RecordObject& record_obj) override;
     void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                        VkDeviceSize dataSize, const void* pData, const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                    VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                    uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                    const RecordObject& record_obj) override;
+    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent* pEvents,
+                                    VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask, u32 memoryBarrierCount,
+                                    const VkMemoryBarrier* pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                                    const VkBufferMemoryBarrier* pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
+                                    const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                         VkQueryPool queryPool, uint32_t slot, const RecordObject& record_obj) override;
-    void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                                   uint32_t accelerationStructureCount,
+                                         VkQueryPool queryPool, u32 slot, const RecordObject& record_obj) override;
+    void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, u32 accelerationStructureCount,
                                                                    const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                                   VkQueryType queryType, VkQueryPool queryPool,
-                                                                   uint32_t firstQuery, const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                                                   VkQueryType queryType, VkQueryPool queryPool, u32 firstQuery,
+                                                                   const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
                                                 const VkViewportWScalingNV* pViewportWScalings,
                                                 const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+    void PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, u32 vertexBindingDescriptionCount,
                                             const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
-                                            uint32_t vertexAttributeDescriptionCount,
+                                            u32 vertexAttributeDescriptionCount,
                                             const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions,
                                             const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+    void PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, u32 attachmentCount,
                                                  const VkBool32* pColorWriteEnables, const RecordObject& record_obj) override;
     void PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask,
                                                              const RecordObject& record_obj) override;
@@ -1313,15 +1298,15 @@ class ValidationStateTracker : public ValidationObject {
                                                  const RecordObject& record_obj) override;
     void PostCallRecordCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable,
                                               const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+    void PostCallRecordCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
                                                  const VkBool32* pColorBlendEnables, const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
-                                                   uint32_t attachmentCount, const VkColorBlendEquationEXT* pColorBlendEquations,
+    void PostCallRecordCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
+                                                   const VkColorBlendEquationEXT* pColorBlendEquations,
                                                    const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+    void PostCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
                                                const VkColorComponentFlags* pColorWriteMasks,
                                                const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
+    void PostCallRecordCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, u32 rasterizationStream,
                                                     const RecordObject& record_obj) override;
     void PostCallRecordCmdSetConservativeRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                               VkConservativeRasterizationModeEXT conservativeRasterizationMode,
@@ -1333,8 +1318,8 @@ class ValidationStateTracker : public ValidationObject {
                                                 const RecordObject& record_obj) override;
     void PostCallRecordCmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable,
                                                       const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
-                                                   uint32_t attachmentCount, const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
+    void PostCallRecordCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
+                                                   const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
                                                    const RecordObject& record_obj) override;
     void PostCallRecordCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer, VkProvokingVertexModeEXT provokingVertexMode,
                                                     const RecordObject& record_obj) override;
@@ -1347,19 +1332,19 @@ class ValidationStateTracker : public ValidationObject {
                                                           const RecordObject& record_obj) override;
     void PostCallRecordCmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable,
                                                       const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+    void PostCallRecordCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
                                                const VkViewportSwizzleNV* pViewportSwizzles,
                                                const RecordObject& record_obj) override;
     void PostCallRecordCmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable,
                                                      const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation,
+    void PostCallRecordCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, u32 coverageToColorLocation,
                                                        const RecordObject& record_obj) override;
     void PostCallRecordCmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
                                                       VkCoverageModulationModeNV coverageModulationMode,
                                                       const RecordObject& record_obj) override;
     void PostCallRecordCmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageModulationTableEnable,
                                                              const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
+    void PostCallRecordCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, u32 coverageModulationTableCount,
                                                        const float* pCoverageModulationTable,
                                                        const RecordObject& record_obj) override;
     void PostCallRecordCmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable,
@@ -1382,9 +1367,9 @@ class ValidationStateTracker : public ValidationObject {
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     // WSI
-    void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                           VkFence fence, uint32_t* pImageIndex, const RecordObject& record_obj) override;
-    void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
+    void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, u64 timeout, VkSemaphore semaphore,
+                                           VkFence fence, u32* pImageIndex, const RecordObject& record_obj) override;
+    void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, u32* pImageIndex,
                                             const RecordObject& record_obj) override;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
@@ -1447,22 +1432,20 @@ class ValidationStateTracker : public ValidationObject {
     VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const;
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
                                                     const vvl::DescriptorUpdateTemplate* template_state, const void* pData);
-    void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                     VkFence fence, uint32_t* pImageIndex, vvl::Func command);
+    void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, u64 timeout, VkSemaphore semaphore, VkFence fence,
+                                     u32* pImageIndex, vvl::Func command);
     virtual std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
                                                                  VkSwapchainKHR handle);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
                                     std::shared_ptr<vvl::Surface>&& surface_state, vvl::Swapchain* old_swapchain_state);
-    void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t queueFamilyIndex, uint32_t* pCounterCount,
-                                                                          VkPerformanceCounterKHR* pCounters);
-    void RecordGetDeviceQueueState(uint32_t queue_family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-                                   VkQueue queue);
+    void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice, u32 queueFamilyIndex,
+                                                                          u32* pCounterCount, VkPerformanceCounterKHR* pCounters);
+    void RecordGetDeviceQueueState(u32 queue_family_index, u32 queue_index, VkDeviceQueueCreateFlags flags, VkQueue queue);
     void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, const Location& loc);
     void RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                     VkSemaphoreImportFlags flags);
-    void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+    void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                             void* pProperties);
     void RecordGetExternalSemaphoreState(vvl::Semaphore& semaphore_state, VkExternalSemaphoreHandleTypeFlagBits handle_type);
     void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
@@ -1496,18 +1479,18 @@ class ValidationStateTracker : public ValidationObject {
                                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
                                                const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                  const VkViewport* pViewports, const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport* pViewports,
+    void PostCallRecordCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, u32 viewportCount, const VkViewport* pViewports,
+                                                  const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetViewportWithCount(VkCommandBuffer commandBuffer, u32 viewportCount, const VkViewport* pViewports,
                                                const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors,
+    void PostCallRecordCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, u32 scissorCount, const VkRect2D* pScissors,
                                                  const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors,
+    void PostCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, u32 scissorCount, const VkRect2D* pScissors,
                                               const RecordObject& record_obj) override;
-    void PostCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+    void PostCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
                                                 const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                 const VkDeviceSize* pStrides, const RecordObject& record_obj) override;
-    void PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+    void PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                              const VkDeviceSize* pStrides, const RecordObject& record_obj) override;
     void PostCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
@@ -1536,8 +1519,8 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                        VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
-                                                 uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
+    void PostCallRecordCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, u32 firstDiscardRectangle,
+                                                 u32 discardRectangleCount, const VkRect2D* pDiscardRectangles,
                                                  const RecordObject& record_obj) override;
     void PostCallRecordCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable,
                                                        const RecordObject& record_obj) override;
@@ -1546,11 +1529,10 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
                                                 const RecordObject& record_obj) override;
     void PostCallRecordCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
-                                                 uint32_t customSampleOrderCount,
-                                                 const VkCoarseSampleOrderCustomNV* pCustomSampleOrders,
+                                                 u32 customSampleOrderCount, const VkCoarseSampleOrderCustomNV* pCustomSampleOrders,
                                                  const RecordObject& record_obj) override;
 
-    void PostCallRecordCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
+    void PostCallRecordCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, u32 patchControlPoints,
                                                    const RecordObject& record_obj) override;
     void PostCallRecordCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp, const RecordObject& record_obj) override;
     void PostCallRecordCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
@@ -1575,14 +1557,14 @@ class ValidationStateTracker : public ValidationObject {
                                                                 const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
                                                                 const RecordObject& record_obj) override;
 
-    void PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize,
+    void PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, u32 pipelineStackSize,
                                                             const RecordObject& record_obj) override;
 
     void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                           VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                          u32 memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                          u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                          u32 imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
                                           const RecordObject& record_obj) override;
 
     void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
@@ -1598,29 +1580,29 @@ class ValidationStateTracker : public ValidationObject {
                                         const RecordObject& record_obj) override;
     void PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                      const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent* pEvents,
                                         const VkDependencyInfoKHR* pDependencyInfos, const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent* pEvents,
                                      const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,
-                                             uint32_t query, const RecordObject& record_obj) override;
+                                             u32 query, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
-                                          uint32_t query, const RecordObject& record_obj) override;
-    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+                                          u32 query, const RecordObject& record_obj) override;
+    void PostCallRecordQueueSubmit2KHR(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) override;
-    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
+    void PostCallRecordQueueSubmit2(VkQueue queue, u32 submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                     const RecordObject& record_obj) override;
 
     void PostCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                      VkDeviceSize* pLayoutSizeInBytes, const RecordObject& record_obj) override;
     void PreCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                       const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
+                                                       VkPipelineLayout layout, u32 firstSet, u32 setCount,
+                                                       const u32* pBufferIndices, const VkDeviceSize* pOffsets,
                                                        const RecordObject& record_obj) override;
     void PreCallRecordCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
                                                         const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
                                                         const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+    void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, u32 bufferCount,
                                                   const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                   const RecordObject& record_obj) override;
 
@@ -1637,13 +1619,12 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                               VkShaderModuleIdentifierEXT* pIdentifier,
                                                               const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
+    void PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, u32 stageCount, const VkShaderStageFlagBits* pStages,
                                         const VkShaderEXT* pShaders, const RecordObject& record_obj) override;
 
-    void PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                          uint32_t bindingCount, const VkBuffer* pBuffers,
-                                                          const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
-                                                          const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, u32 firstBinding, u32 bindingCount,
+                                                          const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
+                                                          const VkDeviceSize* pSizes, const RecordObject& record_obj) override;
 
     template <bool init = true, typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
@@ -1683,7 +1664,7 @@ class ValidationStateTracker : public ValidationObject {
         if (shader_stage_id.pIdentifier) {
             VkShaderModuleIdentifierEXT shader_id = vku::InitStructHelper();
             shader_id.identifierSize = shader_stage_id.identifierSize;
-            const uint32_t copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
+            const u32 copy_size = std::min(VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT, shader_stage_id.identifierSize);
             std::copy(shader_stage_id.pIdentifier, shader_stage_id.pIdentifier + copy_size, shader_id.identifier);
             ReadLockGuard guard(shader_identifier_map_lock_);
             if (const auto itr = shader_identifier_map_.find(shader_id); itr != shader_identifier_map_.cend()) {
@@ -1702,7 +1683,7 @@ class ValidationStateTracker : public ValidationObject {
     struct ExternalOpaqueInfo {
         // External Memory
         VkDeviceSize allocation_size;
-        uint32_t memory_type_index;
+        u32 memory_type_index;
         VkBuffer dedicated_buffer;
         VkImage dedicated_image;
 
@@ -1767,8 +1748,8 @@ class ValidationStateTracker : public ValidationObject {
     VkPhysicalDeviceVulkan12Properties phys_dev_props_core12 = {};
     VkPhysicalDeviceVulkan13Properties phys_dev_props_core13 = {};
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
-    uint32_t physical_device_count;
-    uint32_t custom_border_color_sampler_count = 0;
+    u32 physical_device_count;
+    u32 custom_border_color_sampler_count = 0;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     std::vector<VkExportMetalObjectTypeFlagBitsEXT> export_metal_flags;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -1845,7 +1826,7 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<QueueFamilyExtensionProperties> queue_family_ext_props;
 
     bool performance_lock_acquired = false;
-    uint32_t buffer_device_address_ranges_version = 0;
+    u32 buffer_device_address_ranges_version = 0;
 
     mutable vvl::VideoProfileDesc::Cache video_profile_cache_;
 
@@ -1854,13 +1835,13 @@ class ValidationStateTracker : public ValidationObject {
 
   protected:
     // tracks which queue family index were used when creating the device for quick lookup
-    vvl::unordered_set<uint32_t> queue_family_index_set;
+    vvl::unordered_set<u32> queue_family_index_set;
     // The queue count can different for the same queueFamilyIndex if the create flag are different
     struct DeviceQueueInfo {
-        uint32_t index;  // from VkDeviceCreateInfo
-        uint32_t queue_family_index;
+        u32 index;  // from VkDeviceCreateInfo
+        u32 queue_family_index;
         VkDeviceQueueCreateFlags flags;
-        uint32_t queue_count;
+        u32 queue_count;
     };
     std::vector<DeviceQueueInfo> device_queue_info_list;
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
@@ -1868,9 +1849,9 @@ class ValidationStateTracker : public ValidationObject {
     mutable std::shared_mutex buffer_address_lock_;
 
     // < external format, features >
-    vvl::concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
+    vvl::concurrent_unordered_map<u64, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
     // < external format, colorAttachmentFormat > (VK_ANDROID_external_format_resolve)
-    vvl::concurrent_unordered_map<uint64_t, VkFormat> ahb_ext_resolve_formats_map;
+    vvl::concurrent_unordered_map<u64, VkFormat> ahb_ext_resolve_formats_map;
 
     std::atomic<VkDeviceSize> descriptorBufferAddressSpaceSize = {0u};
     std::atomic<VkDeviceSize> resourceDescriptorBufferAddressSpaceSize = {0u};
@@ -1925,7 +1906,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, vvl::DisplayMode, display_mode_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
 
-    std::atomic<vvl::StateObject::IdType> object_id_{1}; // 0 is an invalid id
+    std::atomic<vvl::StateObject::IdType> object_id_{1};  // 0 is an invalid id
 
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.
     // At 256GB allocated/sec  ( > 8GB at 30Hz), will overflow in just over 2 years

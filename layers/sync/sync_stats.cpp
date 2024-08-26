@@ -25,22 +25,22 @@
 
 namespace syncval_stats {
 
-void Value32::Update(uint32_t new_value) { u32.store(new_value); }
-uint32_t Value32::Add(uint32_t n) { return u32.fetch_add(n); }
-uint32_t Value32::Sub(uint32_t n) { return u32.fetch_sub(n); }
+void Value32::Update(u32 new_value) { u32.store(new_value); }
+u32 Value32::Add(u32 n) { return u32.fetch_add(n); }
+u32 Value32::Sub(u32 n) { return u32.fetch_sub(n); }
 
-void ValueMax32::Update(uint32_t new_value) {
+void ValueMax32::Update(u32 new_value) {
     value.Update(new_value);
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
 
-void ValueMax32::Add(uint32_t n) {
-    uint32_t new_value = value.Add(n);
+void ValueMax32::Add(u32 n) {
+    u32 new_value = value.Add(n);
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
 
-void ValueMax32::Sub(uint32_t n) {
-    uint32_t new_value = value.Sub(n);
+void ValueMax32::Sub(u32 n) {
+    u32 new_value = value.Sub(n);
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
 
@@ -54,26 +54,26 @@ Stats::~Stats() {
 void Stats::AddCommandBufferContext() { command_buffer_context_counter.Add(1); }
 void Stats::RemoveCommandBufferContext() { command_buffer_context_counter.Sub(1); }
 
-void Stats::AddHandleRecord(uint32_t count) { handle_record_counter.Add(count); }
-void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count); }
+void Stats::AddHandleRecord(u32 count) { handle_record_counter.Add(count); }
+void Stats::RemoveHandleRecord(u32 count) { handle_record_counter.Sub(count); }
 
 void Stats::ReportOnDestruction() { report_on_destruction = true; }
 
 std::string Stats::CreateReport() {
     std::ostringstream str;
     {
-        uint32_t cb_contex = command_buffer_context_counter.value.u32;
-        uint32_t cb_context_max = command_buffer_context_counter.max_value.u32;
+        u32 cb_contex = command_buffer_context_counter.value.u32;
+        u32 cb_context_max = command_buffer_context_counter.max_value.u32;
 
         str << "CommandBufferAccessContext:\n";
         str << "\tcount = " << cb_contex << '\n';
         str << "\tmax_count = " << cb_context_max << '\n';
     }
     {
-        uint32_t handle_record = handle_record_counter.value.u32;
-        uint64_t handle_record_memory = handle_record * sizeof(HandleRecord);
-        uint32_t handle_record_max = handle_record_counter.max_value.u32;
-        uint64_t handle_record_max_memory = handle_record_max * sizeof(HandleRecord);
+        u32 handle_record = handle_record_counter.value.u32;
+        u64 handle_record_memory = handle_record * sizeof(HandleRecord);
+        u32 handle_record_max = handle_record_counter.max_value.u32;
+        u64 handle_record_max_memory = handle_record_max * sizeof(HandleRecord);
 
         str << "HandleRecord:\n";
         str << "\tcount = " << handle_record << '\n';

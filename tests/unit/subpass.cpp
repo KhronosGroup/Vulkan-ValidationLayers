@@ -241,8 +241,8 @@ TEST_F(NegativeSubpass, SubpassDependencies) {
                              "VUID-VkRenderPassCreateInfo2-viewMask-03059");
 
         // Enable multiview
-        uint32_t pViewMasks[2] = {0x3u, 0x3u};
-        int32_t pViewOffsets[2] = {0, 0};
+        u32 pViewMasks[2] = {0x3u, 0x3u};
+        i32 pViewOffsets[2] = {0, 0};
         auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, pViewMasks, 0u, nullptr, 0u, nullptr);
         rpci.pNext = &rpmvci;
 
@@ -576,7 +576,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     const std::vector<VkSubpassDescription> subpasses(1u, subpass);
 
     const auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
-                                                            size32(subpasses), subpasses.data(), 0u, nullptr);
+                                                              size32(subpasses), subpasses.data(), 0u, nullptr);
     vkt::RenderPass rp(*m_device, rpci);
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view_input.handle(), 64, 64);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -964,7 +964,7 @@ TEST_F(NegativeSubpass, InputAttachmentLayout) {
     std::vector<VkSubpassDependency> deps = {dep0, dep1, dep2};
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses),
-                                                      subpasses.data(), size32(deps), deps.data());
+                                                        subpasses.data(), size32(deps), deps.data());
 
     // Current setup should be OK -- no attachment is both input and output in same subpass
     PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
@@ -1040,9 +1040,9 @@ TEST_F(NegativeSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
         }
     )glsl";
 
-    uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    u32 data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
+    VkSpecializationMapEntry entry = {0, 0, sizeof(u32)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(u32), &data};
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {

@@ -228,15 +228,15 @@ TEST_F(PositiveShaderStorageImage, WriteSpecConstantMoreComponent) {
     ds.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     ds.UpdateDescriptorSets();
 
-    uint32_t data = 2;
+    u32 data = 2;
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     CreateComputePipelineHelper pipe(*this);

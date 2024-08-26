@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2020 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@
 #include <cstring>
 #include "vk_layer_extension_utils.h"
 
-VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions, uint32_t *pCount,
+VkResult util_GetExtensionProperties(const u32 count, const VkExtensionProperties *layer_extensions, u32 *pCount,
                                      VkExtensionProperties *pProperties) {
     if (pProperties == nullptr || layer_extensions == nullptr) {
         *pCount = count;
         return VK_SUCCESS;
     }
 
-    const uint32_t copy_size = *pCount < count ? *pCount : count;
+    const u32 copy_size = *pCount < count ? *pCount : count;
     std::memcpy(pProperties, layer_extensions, copy_size * sizeof(VkExtensionProperties));
     *pCount = copy_size;
     if (copy_size < count) {
@@ -35,14 +35,14 @@ VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProp
     return VK_SUCCESS;
 }
 
-VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
+VkResult util_GetLayerProperties(const u32 count, const VkLayerProperties *layer_properties, u32 *pCount,
                                  VkLayerProperties *pProperties) {
     if (pProperties == nullptr || layer_properties == nullptr) {
         *pCount = count;
         return VK_SUCCESS;
     }
 
-    const uint32_t copy_size = *pCount < count ? *pCount : count;
+    const u32 copy_size = *pCount < count ? *pCount : count;
     std::memcpy(pProperties, layer_properties, copy_size * sizeof(VkLayerProperties));
     *pCount = copy_size;
     if (copy_size < count) {

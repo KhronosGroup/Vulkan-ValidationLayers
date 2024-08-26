@@ -46,7 +46,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
     // send index to select in image array
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 1;
     buffer.memory().unmap();
 
@@ -62,7 +62,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(u32));
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -108,7 +108,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
     // send index to select in image array
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 1;
     buffer.memory().unmap();
 
@@ -228,7 +228,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
     // send index to select in image array
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 7;
     buffer.memory().unmap();
 
@@ -347,7 +347,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
-    const uint32_t buffer_size = 1024;
+    const u32 buffer_size = 1024;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
     vkt::Buffer buffer0(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
@@ -378,7 +378,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view = image.CreateView();
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer0.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer0.handle(), 0, sizeof(u32));
     descriptor_set.WriteDescriptorImageInfo(2, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.UpdateDescriptorSets();
@@ -428,7 +428,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 1;
     buffer0.memory().unmap();
 
@@ -441,7 +441,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
-    const uint32_t buffer_size = 1024;
+    const u32 buffer_size = 1024;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
     vkt::Buffer buffer0(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
@@ -472,7 +472,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view = image.CreateView();
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer0.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer0.handle(), 0, sizeof(u32));
     descriptor_set.WriteDescriptorImageInfo(2, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.UpdateDescriptorSets();
@@ -527,7 +527,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    u32 *data = (u32 *)buffer0.memory().map();
     data[0] = 1;
     buffer0.memory().unmap();
 
@@ -589,7 +589,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
     pipe_3d.gp_ci_.layout = pipeline_layout.handle();
     pipe_3d.CreateGraphicsPipeline();
 
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -724,7 +724,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     vkt::Buffer storage_buffer(*m_device, 12, 0, vkt::device_address);
-    uint32_t *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    u32 *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     storage_buffer_ptr[0] = 8;  // texture_cube_id
     storage_buffer_ptr[1] = 7;  // texture_2d_id
     storage_buffer_ptr[2] = 0;  // sampler_id
@@ -791,7 +791,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
     // send index to select in image array
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 0;  // index
     buffer.memory().unmap();
 
@@ -807,7 +807,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(u32), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -929,7 +929,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MixingProtectedResources) {
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     data[0] = 0;
     buffer.memory().unmap();
 
@@ -945,7 +945,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MixingProtectedResources) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(u32));
     descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     descriptor_set.WriteDescriptorImageInfo(1, image_view_protected, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

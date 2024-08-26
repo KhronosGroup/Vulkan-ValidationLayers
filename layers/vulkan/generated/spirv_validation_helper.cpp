@@ -46,15 +46,15 @@ struct FeaturePointer {
 
 // Each instance of the struct will only have a singel field non-null
 struct RequiredSpirvInfo {
-    uint32_t version;
+    u32 version;
     FeaturePointer feature;
     ExtEnabled DeviceExtensions::*extension;
     const char *property;  // For human readability and make some capabilities unique
 };
 
-const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites() {
+const std::unordered_multimap<u32, RequiredSpirvInfo> &GetSpirvCapabilites() {
     // clang-format off
-    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {
+    static const std::unordered_multimap<u32, RequiredSpirvInfo> spirv_capabilities = {
         {spv::CapabilityMatrix, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
         {spv::CapabilityShader, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
         {spv::CapabilityInputAttachment, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
@@ -366,7 +366,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo> &GetSpirvExte
     return spirv_extensions;
 }
 
-static inline const char *string_SpvCapability(uint32_t input_value) {
+static inline const char *string_SpvCapability(u32 input_value) {
     switch ((spv::Capability)input_value) {
         case spv::CapabilityMatrix:
             return "Matrix";
@@ -725,7 +725,7 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
 // Note: will return VK_FORMAT_UNDEFINED if non valid input
 // This was in vk_format_utils but the SPIR-V Header dependency was an issue
 //   see https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4647
-VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) const {
+VkFormat CoreChecks::CompatibleSpirvImageFormat(u32 spirv_image_format) const {
     switch (spirv_image_format) {
         case spv::ImageFormatR8:
             return VK_FORMAT_R8_UNORM;
@@ -815,8 +815,8 @@ VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) con
 }
 
 // clang-format off
-static inline const char* SpvCapabilityRequirements(uint32_t capability) {
-    static const vvl::unordered_map<uint32_t, std::string_view> table {
+static inline const char* SpvCapabilityRequirements(u32 capability) {
+    static const vvl::unordered_map<u32, std::string_view> table {
     {spv::CapabilityMatrix, "VK_VERSION_1_0"},
     {spv::CapabilityShader, "VK_VERSION_1_0"},
     {spv::CapabilityInputAttachment, "VK_VERSION_1_0"},

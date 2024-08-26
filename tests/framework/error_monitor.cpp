@@ -22,8 +22,8 @@
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Note. VK_EXT_debug_report is deprecated by the VK_EXT_debug_utils extension.
 // However, we still support this old extension due to CI running old Android devices.
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
-                                                    size_t, int32_t, const char *, const char *message, void *user_data) {
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, u64, size_t,
+                                                    i32, const char *, const char *message, void *user_data) {
     auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
 
     if (message_flags & error_monitor->GetMessageFlags()) {
@@ -175,21 +175,21 @@ void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char
     message_flags_ |= msg_flags;
 }
 
-void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
-    for (uint32_t i = 0; i < count; i++) {
+void ErrorMonitor::SetDesiredError(const char *msg, u32 count) {
+    for (u32 i = 0; i < count; i++) {
         SetDesiredFailureMsg(kErrorBit, msg);
     }
 }
 
-void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
+void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string regex_str, u32 count /*= 1*/) {
     const std::regex regex(regex_str);
-    for (uint32_t i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         SetDesiredFailureMsgRegex(kErrorBit, vuid, regex_str, regex);
     }
 }
 
-void ErrorMonitor::SetDesiredWarning(const char *msg, uint32_t count) {
-    for (uint32_t i = 0; i < count; ++i) {
+void ErrorMonitor::SetDesiredWarning(const char *msg, u32 count) {
+    for (u32 i = 0; i < count; ++i) {
         SetDesiredFailureMsg(kWarningBit, msg);
     }
 }

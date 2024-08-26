@@ -57,8 +57,8 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(uint32_t));
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, sizeof(u32));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(

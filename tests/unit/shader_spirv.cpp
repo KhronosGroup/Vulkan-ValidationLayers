@@ -16,9 +16,9 @@
 #include "../framework/pipeline_helper.h"
 
 struct icd_spv_header {
-    uint32_t magic = 0x07230203;
-    uint32_t version = 99;
-    uint32_t gen_magic = 0;  // Generator's magic number
+    u32 magic = 0x07230203;
+    u32 version = 99;
+    u32 gen_magic = 0;  // Generator's magic number
 };
 
 class NegativeShaderSpirv : public VkLayerTest {};
@@ -46,7 +46,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
 
         constexpr icd_spv_header spv = {};
-        module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
+        module_create_info.pCode = reinterpret_cast<const u32 *>(&spv);
         module_create_info.codeSize = 4;
 
         m_errorMonitor->SetDesiredError("Invalid SPIR-V header");
@@ -55,13 +55,13 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
     }
 
     {
-        std::vector<uint32_t> shader;
+        std::vector<u32> shader;
         VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
         VkShaderModule module;
         this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
         module_create_info.pCode = shader.data();
         // Introduce failure by making codeSize a non-multiple of 4
-        module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
+        module_create_info.codeSize = shader.size() * sizeof(u32) - 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-codeSize-08735");
         vk::CreateShaderModule(m_device->handle(), &module_create_info, nullptr, &module);
@@ -94,11 +94,11 @@ TEST_F(NegativeShaderSpirv, CodeSizeMaintenance5) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
+    module_create_info.codeSize = shader.size() * sizeof(u32) - 1;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-codeSize-08735");
     pipe.CreateGraphicsPipeline();
@@ -130,11 +130,11 @@ TEST_F(NegativeShaderSpirv, CodeSizeMaintenance5Compute) {
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
+    module_create_info.codeSize = shader.size() * sizeof(u32) - 1;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-codeSize-08735");
     pipe.CreateComputePipeline(false);
@@ -148,10 +148,10 @@ TEST_F(NegativeShaderSpirv, Magic) {
     VkShaderModule module;
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
 
-    constexpr uint32_t bad_magic = 4175232508U;
+    constexpr u32 bad_magic = 4175232508U;
     constexpr icd_spv_header spv = {bad_magic};
 
-    module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
+    module_create_info.pCode = reinterpret_cast<const u32 *>(&spv);
     module_create_info.codeSize = sizeof(spv);
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-07912");
@@ -167,11 +167,11 @@ TEST_F(NegativeShaderSpirv, MagicMaintenance5) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    constexpr uint32_t bad_magic = 4175232508U;
+    constexpr u32 bad_magic = 4175232508U;
     constexpr icd_spv_header spv = {bad_magic};
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
-    module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
+    module_create_info.pCode = reinterpret_cast<const u32 *>(&spv);
     module_create_info.codeSize = sizeof(spv);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
@@ -195,11 +195,11 @@ TEST_F(NegativeShaderSpirv, MagicMaintenance5Compute) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    constexpr uint32_t bad_magic = 4175232508U;
+    constexpr u32 bad_magic = 4175232508U;
     constexpr icd_spv_header spv = {bad_magic};
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
-    module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
+    module_create_info.pCode = reinterpret_cast<const u32 *>(&spv);
     module_create_info.codeSize = sizeof(spv);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
@@ -633,12 +633,12 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
             gl_Position = vec4(float(a) * 0.0);
         }
     )glsl";
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, vsSource, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -651,7 +651,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329");  // feature
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740", 2);     // Int8
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740", 2);               // Int8
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1066,7 +1066,7 @@ TEST_F(NegativeShaderSpirv, Storage8and16bitFeatures) {
         // struct {
         //   uint a;
         //   X b;
-        //   uint8_t c;
+        //   u8 c;
         // } Data;
         const char *spv_source = R"(
                OpCapability Shader
@@ -1183,15 +1183,15 @@ TEST_F(NegativeShaderSpirv, SpecializationApplied) {
 
     // Set the specialization constant to 0.
     const VkSpecializationMapEntry entry = {
-        0,                // id
-        0,                // offset
-        sizeof(uint32_t)  // size
+        0,           // id
+        0,           // offset
+        sizeof(u32)  // size
     };
-    uint32_t data = 0;
+    u32 data = 0;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
-        1 * sizeof(uint32_t),
+        1 * sizeof(u32),
         &data,
     };
 
@@ -1219,9 +1219,9 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBounds) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Entry offset is greater than dataSize.
-    const VkSpecializationMapEntry entry = {0, 5, sizeof(uint32_t)};
+    const VkSpecializationMapEntry entry = {0, 5, sizeof(u32)};
 
-    uint32_t data = 1;
+    u32 data = 1;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
@@ -1265,8 +1265,8 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 
     // Entry offset is greater than dataSize.
-    const VkSpecializationMapEntry entry = {0, 5, sizeof(uint32_t)};
-    uint32_t data = 1;
+    const VkSpecializationMapEntry entry = {0, 5, sizeof(u32)};
+    u32 data = 1;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
@@ -1307,9 +1307,9 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeOutOfBounds) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Entry size is greater than dataSize minus offset.
-    const VkSpecializationMapEntry entry = {0, 3, sizeof(uint32_t)};
+    const VkSpecializationMapEntry entry = {0, 3, sizeof(u32)};
 
-    uint32_t data = 1;
+    u32 data = 1;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
@@ -1345,7 +1345,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeZero) {
         0,  // offset
         0,  // size
     };
-    int32_t data = 0;
+    i32 data = 0;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
@@ -1434,7 +1434,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
         {4, 0, sizeof(VkBool32)}   // OpTypeBool
     };
 
-    std::array<int32_t, 4> data;  // enough garbage data to grab from
+    std::array<i32, 4> data;  // enough garbage data to grab from
     VkSpecializationInfo specialization_info = {
         5,
         entries,
@@ -1497,8 +1497,8 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
 
     if (int8_support == true) {
         // #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
-        // layout (constant_id = 0) const int8_t a = int8_t(3);
-        // layout (constant_id = 1) const uint8_t b = uint8_t(3);
+        // layout (constant_id = 0) const i8 a = i8(3);
+        // layout (constant_id = 1) const u8 b = u8(3);
         const char *cs_int8 = R"(
                OpCapability Shader
                OpCapability Int8
@@ -1624,16 +1624,16 @@ TEST_F(NegativeShaderSpirv, DuplicatedSpecializationConstantID) {
     VkSpecializationMapEntry entries[2];
     entries[0].constantID = 0;
     entries[0].offset = 0;
-    entries[0].size = sizeof(uint32_t);
+    entries[0].size = sizeof(u32);
     entries[1].constantID = 0;
     entries[1].offset = 0;
-    entries[1].size = sizeof(uint32_t);
+    entries[1].size = sizeof(u32);
 
-    uint32_t data = 1;
+    u32 data = 1;
     VkSpecializationInfo specialization_info;
     specialization_info.mapEntryCount = 2;
     specialization_info.pMapEntries = entries;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
@@ -2259,9 +2259,9 @@ TEST_F(NegativeShaderSpirv, DISABLED_SpecConstantTextureIndex) {
         }
     )glsl";
 
-    uint32_t data = 2;  // will make textures[2] OOB
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    u32 data = 2;  // will make textures[2] OOB
+    VkSpecializationMapEntry entry = {0, 0, sizeof(u32)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(u32), &data};
     const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                          &specialization_info);
 
@@ -2311,9 +2311,9 @@ TEST_F(NegativeShaderSpirv, DISABLED_DescriptorCountSpecConstant) {
         }
     )glsl";
 
-    uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    u32 data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
+    VkSpecializationMapEntry entry = {0, 0, sizeof(u32)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(u32), &data};
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {

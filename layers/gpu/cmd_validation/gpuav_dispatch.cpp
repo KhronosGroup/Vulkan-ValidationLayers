@@ -25,7 +25,7 @@
 namespace gpuav {
 
 // See gpu/shaders/cmd_validation/dispatch.comp
-constexpr uint32_t kPushConstantDWords = 4u;
+constexpr u32 kPushConstantDWords = 4u;
 
 struct SharedDispatchValidationResources final {
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
@@ -43,7 +43,7 @@ struct SharedDispatchValidationResources final {
         };
 
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-        ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
+        ds_layout_ci.bindingCount = static_cast<u32>(bindings.size());
         ds_layout_ci.pBindings = bindings.data();
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &ds_layout);
         if (result != VK_SUCCESS) {
@@ -54,13 +54,13 @@ struct SharedDispatchValidationResources final {
         VkPushConstantRange push_constant_range = {};
         push_constant_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
         push_constant_range.offset = 0;
-        push_constant_range.size = kPushConstantDWords * sizeof(uint32_t);
+        push_constant_range.size = kPushConstantDWords * sizeof(u32);
 
         std::array<VkDescriptorSetLayout, 2> set_layouts = {{error_output_desc_set, ds_layout}};
         VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.pushConstantRangeCount = 1;
         pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
-        pipeline_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+        pipeline_layout_ci.setLayoutCount = static_cast<u32>(set_layouts.size());
         pipeline_layout_ci.pSetLayouts = set_layouts.data();
         result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &pipeline_layout);
         if (result != VK_SUCCESS) {
@@ -72,7 +72,7 @@ struct SharedDispatchValidationResources final {
             VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
             shader_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
             shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-            shader_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(uint32_t);
+            shader_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(u32);
             shader_ci.pCode = cmd_validation_dispatch_comp;
             shader_ci.pName = "main";
             shader_ci.setLayoutCount = pipeline_layout_ci.setLayoutCount;
@@ -86,7 +86,7 @@ struct SharedDispatchValidationResources final {
             }
         } else {
             VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-            shader_module_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(uint32_t);
+            shader_module_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(u32);
             shader_module_ci.pCode = cmd_validation_dispatch_comp;
             VkShaderModule validation_shader = VK_NULL_HANDLE;
             result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
@@ -198,59 +198,58 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     } else {
         DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline);
     }
-    uint32_t push_constants[kPushConstantDWords] = {};
+    u32 push_constants[kPushConstantDWords] = {};
     push_constants[0] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0];
     push_constants[1] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1];
     push_constants[2] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2];
-    push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
+    push_constants[3] = static_cast<u32>((indirect_offset / sizeof(u32)));
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_dispatch_resources.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                              sizeof(push_constants), push_constants);
     BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
-                                    cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+                                    cb_state.compute_index, static_cast<u32>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &indirect_buffer_desc_set, 0, nullptr);
     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
 
-    CommandBuffer::ErrorLoggerFunc error_logger =
-        [loc](Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist) {
-            bool skip = false;
-            using namespace glsl;
+    CommandBuffer::ErrorLoggerFunc error_logger = [loc](Validator &gpuav, const u32 *error_record, const LogObjectList &objlist) {
+        bool skip = false;
+        using namespace glsl;
 
-            if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
-                return skip;
-            }
-
-            switch (error_record[kHeaderErrorSubCodeOffset]) {
-                case kErrorSubCodePreDispatchCountLimitX: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
-                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc,
-                                           "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
-                                           " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-                    break;
-                }
-                case kErrorSubCodePreDispatchCountLimitY: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
-                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc,
-                                           "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
-                                           " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
-                    break;
-                }
-                case kErrorSubCodePreDispatchCountLimitZ: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
-                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc,
-                                           "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
-                                           " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-                    break;
-                }
-                default:
-                    break;
-            }
-
+        if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
             return skip;
-        };
+        }
+
+        switch (error_record[kHeaderErrorSubCodeOffset]) {
+            case kErrorSubCodePreDispatchCountLimitX: {
+                u32 count = error_record[kPreActionParamOffset_0];
+                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc,
+                                       "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
+                                       " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
+                                       count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                break;
+            }
+            case kErrorSubCodePreDispatchCountLimitY: {
+                u32 count = error_record[kPreActionParamOffset_0];
+                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc,
+                                       "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
+                                       " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
+                                       count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
+                break;
+            }
+            case kErrorSubCodePreDispatchCountLimitZ: {
+                u32 count = error_record[kPreActionParamOffset_0];
+                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc,
+                                       "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
+                                       " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
+                                       count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                break;
+            }
+            default:
+                break;
+        }
+
+        return skip;
+    };
 
     cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
 }

@@ -16,27 +16,27 @@
 class BarrierQueueFamilyBase {
   public:
     struct QueueFamilyObjs {
-        uint32_t index;
+        u32 index;
         // We would use std::unique_ptr, but this triggers a compiler error on older compilers
         vkt::Queue *queue = nullptr;
         vkt::CommandPool *command_pool = nullptr;
         vkt::CommandBuffer *command_buffer = nullptr;
         vkt::CommandBuffer *command_buffer2 = nullptr;
         ~QueueFamilyObjs();
-        void Init(vkt::Device *device, uint32_t qf_index, VkQueue qf_queue, VkCommandPoolCreateFlags cp_flags);
+        void Init(vkt::Device *device, u32 qf_index, VkQueue qf_queue, VkCommandPoolCreateFlags cp_flags);
     };
 
     struct Context {
         VkLayerTest *layer_test;
-        uint32_t default_index;
-        std::unordered_map<uint32_t, QueueFamilyObjs> queue_families;
-        Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices);
+        u32 default_index;
+        std::unordered_map<u32, QueueFamilyObjs> queue_families;
+        Context(VkLayerTest *test, const std::vector<u32> &queue_family_indices);
         void Reset();
     };
 
     BarrierQueueFamilyBase(Context *context) : context_(context) {}
 
-    QueueFamilyObjs *GetQueueFamilyInfo(Context *context, uint32_t qfi);
+    QueueFamilyObjs *GetQueueFamilyInfo(Context *context, u32 qfi);
 
     enum Modifier {
         NONE,
@@ -44,7 +44,7 @@ class BarrierQueueFamilyBase {
         DOUBLE_COMMAND_BUFFER,
     };
 
-    static const uint32_t kInvalidQueueFamily = vvl::kU32Max;
+    static const u32 kInvalidQueueFamily = vvl::kU32Max;
     Context *context_;
     vkt::Image image_;
     vkt::Buffer buffer_;
@@ -54,14 +54,13 @@ class BarrierQueueFamilyTestHelper : public BarrierQueueFamilyBase {
   public:
     BarrierQueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
     // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
+    void Init(std::vector<u32> *families, bool image_memory = true, bool buffer_memory = true);
 
-    void operator()(const std::string &img_err, const std::string &buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,
-                    Modifier mod = Modifier::NONE);
+    void operator()(const std::string &img_err, const std::string &buf_err = "", u32 src = VK_QUEUE_FAMILY_IGNORED,
+                    u32 dst = VK_QUEUE_FAMILY_IGNORED, u32 queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
 
-    void operator()(uint32_t src = VK_QUEUE_FAMILY_IGNORED, uint32_t dst = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
+    void operator()(u32 src = VK_QUEUE_FAMILY_IGNORED, u32 dst = VK_QUEUE_FAMILY_IGNORED,
+                    u32 queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
         (*this)("", "", src, dst, queue_family_index, mod);
     }
 
@@ -74,14 +73,13 @@ class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
   public:
     Barrier2QueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
     // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
+    void Init(std::vector<u32> *families, bool image_memory = true, bool buffer_memory = true);
 
-    void operator()(const std::string &img_err, const std::string &buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,
-                    Modifier mod = Modifier::NONE);
+    void operator()(const std::string &img_err, const std::string &buf_err = "", u32 src = VK_QUEUE_FAMILY_IGNORED,
+                    u32 dst = VK_QUEUE_FAMILY_IGNORED, u32 queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
 
-    void operator()(uint32_t src = VK_QUEUE_FAMILY_IGNORED, uint32_t dst = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
+    void operator()(u32 src = VK_QUEUE_FAMILY_IGNORED, u32 dst = VK_QUEUE_FAMILY_IGNORED,
+                    u32 queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
         (*this)("", "", src, dst, queue_family_index, mod);
     }
 

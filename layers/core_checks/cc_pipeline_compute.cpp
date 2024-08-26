@@ -23,7 +23,7 @@
 #include "core_validation.h"
 #include "chassis/chassis_modification_state.h"
 
-bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        const ErrorObject &error_obj, PipelineStates &pipeline_states,
@@ -32,7 +32,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                                     pPipelines, error_obj, pipeline_states, chassis_state);
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
-    for (uint32_t i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
         ASSERT_AND_CONTINUE(pipeline);
 

@@ -215,7 +215,7 @@ class ObjectTypesOutputGenerator(BaseGenerator):
 
         out.append('''
             struct VulkanTypedHandle {
-                uint64_t handle;
+                u64 handle;
                 VulkanObjectType type;
                 template <typename Handle>
                 VulkanTypedHandle(Handle handle_, VulkanObjectType type_) :

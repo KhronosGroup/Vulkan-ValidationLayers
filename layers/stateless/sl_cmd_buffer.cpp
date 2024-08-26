@@ -64,8 +64,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommand
     return ValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, error_obj.location);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                     uint32_t bindingCount, const VkBuffer *pBuffers,
+bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, u32 firstBinding,
+                                                                     u32 bindingCount, const VkBuffer *pBuffers,
                                                                      const VkDeviceSize *pOffsets,
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
@@ -81,7 +81,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
                          firstBinding, bindingCount, device_limits.maxVertexInputBindings);
     }
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         if (pBuffers == nullptr) {
             skip |= LogError("VUID-vkCmdBindVertexBuffers-pBuffers-parameter", commandBuffer,
                              error_obj.location.dot(Field::pBuffers), "is NULL.");
@@ -103,9 +103,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(
-    VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
-    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes, const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, u32 firstBinding,
+                                                                                   u32 bindingCount, const VkBuffer *pBuffers,
+                                                                                   const VkDeviceSize *pOffsets,
+                                                                                   const VkDeviceSize *pSizes,
+                                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (!enabled_features.transformFeedback) {
@@ -113,7 +115,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
                          "transformFeedback feature was not enabled.");
     }
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         if (pOffsets[i] & 3) {
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02359", commandBuffer,
                              error_obj.location.dot(Field::pOffsets, i), "(%" PRIu64 ") is not a multiple of 4.", pOffsets[i]);
@@ -135,7 +137,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
                          firstBinding, bindingCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         // pSizes is optional and may be nullptr.
         if (pSizes != nullptr) {
             if (pSizes[i] != VK_WHOLE_SIZE &&
@@ -153,9 +155,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
-    VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer, uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
-    const VkDeviceSize *pCounterBufferOffsets, const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, u32 firstCounterBuffer,
+                                                                             u32 counterBufferCount,
+                                                                             const VkBuffer *pCounterBuffers,
+                                                                             const VkDeviceSize *pCounterBufferOffsets,
+                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
     if (!enabled_features.transformFeedback) {
         skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-transformFeedback-02366", commandBuffer, error_obj.location,
@@ -181,9 +185,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
-                                                                           uint32_t firstCounterBuffer, uint32_t counterBufferCount,
-                                                                           const VkBuffer *pCounterBuffers,
+bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, u32 firstCounterBuffer,
+                                                                           u32 counterBufferCount, const VkBuffer *pCounterBuffers,
                                                                            const VkDeviceSize *pCounterBufferOffsets,
                                                                            const ErrorObject &error_obj) const {
     bool skip = false;
@@ -218,8 +221,8 @@ bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCom
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
+bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, u32 firstBinding,
+                                                                      u32 bindingCount, const VkBuffer *pBuffers,
                                                                       const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                       const VkDeviceSize *pStrides,
                                                                       const ErrorObject &error_obj) const {
@@ -265,7 +268,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
                      firstBinding, bindingCount, device_limits.maxVertexInputBindings);
     }
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
+    for (u32 i = 0; i < bindingCount; ++i) {
         if (pBuffers == nullptr) {
             skip |= LogError("VUID-vkCmdBindVertexBuffers2-pBuffers-parameter", commandBuffer,
                              error_obj.location.dot(Field::pBuffers), "is NULL.");
@@ -293,11 +296,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size,
-                                                   const Location &loc) const {
+bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, u32 offset, u32 size, const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdPushConstants;
-    const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
+    const u32 max_push_constants_size = device_limits.maxPushConstantsSize;
     // Check that offset + size don't exceed the max.
     // Prevent arithetic overflow here by avoiding addition and testing in this order.
     if (offset >= max_push_constants_size) {
@@ -326,7 +328,7 @@ bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                                 VkShaderStageFlags stageFlags, u32 offset, u32 size,
                                                                  const void *pValues, const ErrorObject &error_obj) const {
     return ValidateCmdPushConstants(commandBuffer, offset, size, error_obj.location);
 }
@@ -352,7 +354,7 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants2KHR(VkCommandBu
 
 bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
                                                                    VkImageLayout imageLayout, const VkClearColorValue *pColor,
-                                                                   uint32_t rangeCount, const VkImageSubresourceRange *pRanges,
+                                                                   u32 rangeCount, const VkImageSubresourceRange *pRanges,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     if (!pColor) {
@@ -361,8 +363,8 @@ bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
-                                                                    uint32_t queryCount, size_t dataSize, void *pData,
+bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, u32 firstQuery,
+                                                                    u32 queryCount, size_t dataSize, void *pData,
                                                                     VkDeviceSize stride, VkQueryResultFlags flags,
                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
@@ -389,11 +391,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
+bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, u32 attachmentCount,
+                                                                    const VkClearAttachment *pAttachments, u32 rectCount,
                                                                     const VkClearRect *pRects, const ErrorObject &error_obj) const {
     bool skip = false;
-    for (uint32_t rect = 0; rect < rectCount; rect++) {
+    for (u32 rect = 0; rect < rectCount; rect++) {
         const Location rect_loc = error_obj.location.dot(Field::pRects, rect);
         if (pRects[rect].layerCount == 0) {
             skip |=
@@ -412,12 +414,12 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                                              uint32_t regionCount, const VkBufferCopy *pRegions,
+                                                              u32 regionCount, const VkBufferCopy *pRegions,
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pRegions != nullptr) {
-        for (uint32_t i = 0; i < regionCount; i++) {
+        for (u32 i = 0; i < regionCount; i++) {
             if (pRegions[i].size == 0) {
                 skip |= LogError("VUID-VkBufferCopy-size-01988", commandBuffer,
                                  error_obj.location.dot(Field::pRegions, i).dot(Field::size), "is zero");
@@ -433,7 +435,7 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer c
     bool skip = false;
 
     if (pCopyBufferInfo->pRegions != nullptr) {
-        for (uint32_t i = 0; i < pCopyBufferInfo->regionCount; i++) {
+        for (u32 i = 0; i < pCopyBufferInfo->regionCount; i++) {
             if (pCopyBufferInfo->pRegions[i].size == 0) {
                 skip |=
                     LogError("VUID-VkBufferCopy2-size-01988", commandBuffer,
@@ -468,7 +470,7 @@ bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                              VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data,
+                                                              VkDeviceSize dstOffset, VkDeviceSize size, u32 data,
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -492,7 +494,7 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, u32 bufferCount,
                                                                             const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
@@ -501,7 +503,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCo
                          "descriptorBuffer feature was not enabled.");
     }
 
-    for (uint32_t i = 0; i < bufferCount; i++) {
+    for (u32 i = 0; i < bufferCount; i++) {
         if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pBindingInfos[i].pNext)) {
             skip |= ValidateFlags(error_obj.location.dot(Field::pBindingInfos, i).dot(Field::usage),
                                   vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits, pBindingInfos[i].usage,
@@ -528,9 +530,11 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceExternalBufferP
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(
-    VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
-    uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
+                                                                        VkPipelineBindPoint pipelineBindPoint,
+                                                                        VkPipelineLayout layout, u32 set, u32 descriptorWriteCount,
+                                                                        const VkWriteDescriptorSet *pDescriptorWrites,
+                                                                        const ErrorObject &error_obj) const {
     return ValidateWriteDescriptorSet(error_obj.location, descriptorWriteCount, pDescriptorWrites);
 }
 
@@ -558,9 +562,9 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
 
     // Note: for numerical correctness
     //       - float comparisons should expect NaN (comparison always false).
-    //       - VkPhysicalDeviceLimits::maxViewportDimensions is uint32_t, not float -> careful.
+    //       - VkPhysicalDeviceLimits::maxViewportDimensions is u32, not float -> careful.
 
-    const auto f_lte_u32_exact = [](const float v1_f, const uint32_t v2_u32) {
+    const auto f_lte_u32_exact = [](const float v1_f, const u32 v2_u32) {
         if (std::isnan(v1_f)) return false;
         if (v1_f <= 0.0f) return true;
 
@@ -571,7 +575,7 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
         const float u32_max_plus1 = ldexpf(1.0f, 32);  // hopefully exact
         if (intpart >= u32_max_plus1) return false;
 
-        uint32_t v1_u32 = static_cast<uint32_t>(intpart);
+        u32 v1_u32 = static_cast<u32>(intpart);
         if (v1_u32 < v2_u32) {
             return true;
         } else if (v1_u32 == v2_u32 && fract == 0.0f) {
@@ -581,7 +585,7 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
         }
     };
 
-    const auto f_lte_u32_direct = [](const float v1_f, const uint32_t v2_u32) {
+    const auto f_lte_u32_direct = [](const float v1_f, const u32 v2_u32) {
         const float v2_f = static_cast<float>(v2_u32);  // not accurate for > radix^digits; and undefined rounding mode
         return (v1_f <= v2_f);
     };
@@ -682,8 +686,7 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
 }
 
 bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
-                                                                   uint32_t commandBufferCount,
-                                                                   const VkCommandBuffer *pCommandBuffers,
+                                                                   u32 commandBufferCount, const VkCommandBuffer *pCommandBuffers,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -754,7 +757,8 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                           "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
         }
 
-        const auto *conditional_rendering = vku::FindStructInPNextChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
+        const auto *conditional_rendering =
+            vku::FindStructInPNextChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
         if (conditional_rendering) {
             if (!enabled_features.inheritedConditionalRendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
                 skip |= LogError(
@@ -765,7 +769,8 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
             }
         }
 
-        auto p_inherited_viewport_scissor_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
+        auto p_inherited_viewport_scissor_info =
+            vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(info->pNext);
         if (p_inherited_viewport_scissor_info != nullptr && !enabled_features.multiViewport &&
             p_inherited_viewport_scissor_info->viewportScissor2D == VK_TRUE &&
             p_inherited_viewport_scissor_info->viewportDepthCount != 1) {

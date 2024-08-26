@@ -265,17 +265,17 @@ TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
 
     RETURN_IF_SKIP(Init());
 
-    constexpr uint32_t NUM_OBJECTS = 2;
-    constexpr uint32_t NUM_FRAMES = 3;
+    constexpr u32 NUM_OBJECTS = 2;
+    constexpr u32 NUM_FRAMES = 3;
     vkt::CommandBuffer cmd_buffers[NUM_OBJECTS];
     vkt::Fence fences[NUM_OBJECTS];
 
-    for (uint32_t i = 0; i < NUM_OBJECTS; ++i) {
+    for (u32 i = 0; i < NUM_OBJECTS; ++i) {
         cmd_buffers[i].Init(*m_device, m_command_pool);
         fences[i].init(*m_device, vku::InitStruct<VkFenceCreateInfo>());
     }
-    for (uint32_t frame = 0; frame < NUM_FRAMES; ++frame) {
-        for (uint32_t obj = 0; obj < NUM_OBJECTS; ++obj) {
+    for (u32 frame = 0; frame < NUM_FRAMES; ++frame) {
+        for (u32 obj = 0; obj < NUM_OBJECTS; ++obj) {
             // Create empty cmd buffer
             VkCommandBufferBeginInfo cmdBufBeginDesc = vku::InitStructHelper();
             vk::BeginCommandBuffer(cmd_buffers[obj], &cmdBufBeginDesc);
@@ -854,8 +854,8 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     export_semaphore.export_handle(ext_handle, handle_type);
     import_semaphore.import_handle(ext_handle, handle_type);
 
-    uint64_t wait_value = 1;
-    uint64_t signal_value = 12345;
+    u64 wait_value = 1;
+    u64 signal_value = 12345;
 
     // Signal the exported semaphore and wait on the imported semaphore
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -879,7 +879,7 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
 
     m_default_queue->Wait();
 
-    uint64_t import_value{0}, export_value{0};
+    u64 import_value{0}, export_value{0};
 
     vk::GetSemaphoreCounterValueKHR(m_device->handle(), export_semaphore.handle(), &export_value);
     ASSERT_EQ(export_value, signal_value);
@@ -981,7 +981,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     fences[0].init(*m_device, fci);
     fences[1].init(*m_device, fci);
 
-    for (uint32_t i = 0; i < 1000; i++) {
+    for (u32 i = 0; i < 1000; i++) {
         auto submitter = i & 1;
         auto waiter = (~i) & 1;
         fences[submitter].reset();
@@ -1029,7 +1029,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
 
-    for (uint32_t i = 0; i < 1000; i++) {
+    for (u32 i = 0; i < 1000; i++) {
         m_commandBuffer->begin();
         m_commandBuffer->end();
 
@@ -1221,10 +1221,10 @@ TEST_F(PositiveSyncObject, QueueSubmitTimelineSemaphore2Queue) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     // timeline values, Begins will be signaled by host, Ends by the queues
-    constexpr uint64_t kQ0Begin = 1;
-    constexpr uint64_t kQ0End = 2;
-    constexpr uint64_t kQ1Begin = 3;
-    constexpr uint64_t kQ1End = 4;
+    constexpr u64 kQ0Begin = 1;
+    constexpr u64 kQ0End = 2;
+    constexpr u64 kQ1Begin = 3;
+    constexpr u64 kQ1End = 4;
 
     m_default_queue->SubmitWithTimelineSemaphore(cb0, semaphore, kQ0Begin, semaphore, kQ0End);
     m_second_queue->SubmitWithTimelineSemaphore(cb1, semaphore, kQ1Begin, semaphore, kQ1End);
@@ -1288,19 +1288,19 @@ struct FenceSemRaceData {
     VkDevice device{VK_NULL_HANDLE};
     VkSemaphore sem{VK_NULL_HANDLE};
     std::atomic<bool> *bailout{nullptr};
-    uint64_t wait_value{0};
-    uint64_t timeout{kWaitTimeout};
-    uint32_t iterations{100000};
+    u64 wait_value{0};
+    u64 timeout{kWaitTimeout};
+    u32 iterations{100000};
 };
 
 void WaitTimelineSem(FenceSemRaceData *data) {
-    uint64_t wait_value = data->wait_value;
+    u64 wait_value = data->wait_value;
     VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &data->sem;
     wait_info.pValues = &wait_value;
 
-    for (uint32_t i = 0; i < data->iterations; i++, wait_value++) {
+    for (u32 i = 0; i < data->iterations; i++, wait_value++) {
         vk::WaitSemaphoresKHR(data->device, &wait_info, data->timeout);
         if (*data->bailout) {
             break;
@@ -1315,7 +1315,7 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
 
     vkt::Fence fence(*m_device);
     vkt::Semaphore sem(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    uint64_t signal_value = 1;
+    u64 signal_value = 1;
 
     std::atomic<bool> bailout{false};
     FenceSemRaceData data;
@@ -1327,7 +1327,7 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
 
     m_errorMonitor->SetBailout(&bailout);
 
-    for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
+    for (u32 i = 0; i < data.iterations; i++, signal_value++) {
         m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, sem, signal_value, fence);
         fence.wait(data.timeout);
         vk::ResetFences(device(), 1, &fence.handle());
@@ -1342,7 +1342,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    uint32_t image_index, image_count;
+    u32 image_index, image_count;
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
     std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
@@ -1401,9 +1401,9 @@ struct SemBufferRaceData {
 
     vkt::Device &dev;
     vkt::Semaphore sem;
-    uint64_t start_wait_value{0};
-    uint64_t timeout_ns{kWaitTimeout};
-    uint32_t iterations{10000};
+    u64 start_wait_value{0};
+    u64 timeout_ns{kWaitTimeout};
+    u32 iterations{10000};
     std::atomic<bool> bailout{false};
 
     std::unique_ptr<vkt::Buffer> thread_buffer;
@@ -1429,13 +1429,13 @@ struct SemBufferRaceData {
     }
 
     void Run(vkt::CommandPool &command_pool, ErrorMonitor &error_mon) {
-        uint64_t gpu_wait_value, gpu_signal_value;
+        u64 gpu_wait_value, gpu_signal_value;
         VkResult err;
         start_wait_value = 2;
         error_mon.SetBailout(&bailout);
         std::thread thread(&SemBufferRaceData::ThreadFunc, this);
         auto queue = dev.QueuesWithGraphicsCapability()[0];
-        for (uint32_t i = 0; i < iterations; i++) {
+        for (u32 i = 0; i < iterations; i++) {
             vkt::CommandBuffer cb(dev, command_pool);
 
             VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -1450,10 +1450,10 @@ struct SemBufferRaceData {
             // sub thread frees buffer
             // sub thread signals 3
             // main thread waits for 3
-            uint64_t host_signal_value = (i * 3) + 1;
+            u64 host_signal_value = (i * 3) + 1;
             gpu_wait_value = host_signal_value;
             gpu_signal_value = (i * 3) + 2;
-            uint64_t host_wait_value = (i * 3) + 3;
+            u64 host_wait_value = (i * 3) + 3;
 
             cb.begin();
             vk::CmdFillBuffer(cb.handle(), buffer->handle(), 0, 12, 0x11111111);
@@ -1524,7 +1524,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     ASSERT_EQ(VK_SUCCESS, semaphore.export_handle(win32_handle, handle_type));
 
     // Put semaphore to work
-    const uint64_t signal_value = 1;
+    const u64 signal_value = 1;
     VkTimelineSemaphoreSubmitInfo timeline_submit_info = vku::InitStructHelper();
     timeline_submit_info.signalSemaphoreValueCount = 1;
     timeline_submit_info.pSignalSemaphoreValues = &signal_value;
@@ -1539,7 +1539,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &signal_value;
-    ASSERT_EQ(VK_SUCCESS, vk::WaitSemaphores(*m_device, &wait_info, uint64_t(1e10)));
+    ASSERT_EQ(VK_SUCCESS, vk::WaitSemaphores(*m_device, &wait_info, u64(1e10)));
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
@@ -1949,7 +1949,7 @@ TEST_F(PositiveSyncObject, IgnoreAcquireOpSrcStage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    std::optional<u32> transfer_only_family = m_device->TransferOnlyQueueFamily();
     if (!transfer_only_family.has_value()) {
         GTEST_SKIP() << "Transfer-only queue family is required";
     }
@@ -1985,7 +1985,7 @@ TEST_F(PositiveSyncObject, IgnoreReleaseOpDstStage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    std::optional<u32> transfer_only_family = m_device->TransferOnlyQueueFamily();
     if (!transfer_only_family.has_value()) {
         GTEST_SKIP() << "Transfer-only queue family is required";
     }
@@ -2045,7 +2045,7 @@ TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore) {
     // The problem was that GetSemaphoreCounterValue creates temporary signal to make forward progress,
     // but the code path for external semaphore failed to retire that signal. Being stuck that signal
     // conflicted with other signals.
-    uint64_t counter = 0;
+    u64 counter = 0;
     vk::GetSemaphoreCounterValue(device(), semaphore, &counter);
 
     // Test that there are no leftovers from GetSemaphoreCounterValue, this signal should just work.
@@ -2081,7 +2081,7 @@ TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore2) {
 
     // Slight variation of the previous test to ensure that issue was not related to semaphore initial value
     semaphore.Signal(1);
-    uint64_t counter = 0;
+    u64 counter = 0;
     vk::GetSemaphoreCounterValue(device(), semaphore, &counter);
     semaphore.Signal(2);
 }

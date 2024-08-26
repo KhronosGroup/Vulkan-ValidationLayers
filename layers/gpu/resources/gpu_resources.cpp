@@ -23,7 +23,7 @@
 namespace gpu {
 
 // Implementation for Descriptor Set Manager class
-DescriptorSetManager::DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)
+DescriptorSetManager::DescriptorSetManager(VkDevice device, u32 num_bindings_in_set)
     : device(device), num_bindings_in_set(num_bindings_in_set) {}
 
 DescriptorSetManager::~DescriptorSetManager() {
@@ -44,7 +44,7 @@ VkResult DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *out_desc_pool,
     return result;
 }
 
-VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
+VkResult DescriptorSetManager::GetDescriptorSets(u32 count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
                                                  std::vector<VkDescriptorSet> *out_desc_sets) {
     auto guard = Lock();
 
@@ -65,8 +65,8 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         }
     }
     if (desc_pool_to_use == VK_NULL_HANDLE) {
-        constexpr uint32_t kDefaultMaxSetsPerPool = 512;
-        const uint32_t max_sets = std::max(kDefaultMaxSetsPerPool, count);
+        constexpr u32 kDefaultMaxSetsPerPool = 512;
+        const u32 max_sets = std::max(kDefaultMaxSetsPerPool, count);
 
         // TODO: The logic to compute descriptor pool sizes should not be
         // hardcoded like so, should be dynamic depending on the descriptor sets
@@ -84,7 +84,7 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         desc_pool_info.maxSets = max_sets;
-        desc_pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+        desc_pool_info.poolSizeCount = static_cast<u32>(pool_sizes.size());
         desc_pool_info.pPoolSizes = pool_sizes.data();
         result = DispatchCreateDescriptorPool(device, &desc_pool_info, nullptr, &desc_pool_to_use);
         assert(result == VK_SUCCESS);

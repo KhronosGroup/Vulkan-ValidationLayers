@@ -49,20 +49,20 @@
 // AHARDWAREBUFFER_FORMAT_S8_UINT               VK_FORMAT_S8_UINT
 
 // The AHARDWAREBUFFER_FORMAT_* are an enum in the NDK headers, but get passed in to Vulkan
-// as uint32_t. Casting the enums here avoids scattering casts around in the code.
-std::map<uint32_t, VkFormat> ahb_format_map_a2v = {
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM,        VK_FORMAT_R8G8B8A8_UNORM },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM,        VK_FORMAT_R8G8B8A8_UNORM },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM,          VK_FORMAT_R8G8B8_UNORM },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM,          VK_FORMAT_R5G6B5_UNORM_PACK16 },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT,    VK_FORMAT_R16G16B16A16_SFLOAT },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM,     VK_FORMAT_A2B10G10R10_UNORM_PACK32 },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_D16_UNORM,             VK_FORMAT_D16_UNORM },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_D24_UNORM,             VK_FORMAT_X8_D24_UNORM_PACK32 },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT,     VK_FORMAT_D24_UNORM_S8_UINT },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_D32_FLOAT,             VK_FORMAT_D32_SFLOAT },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT,     VK_FORMAT_D32_SFLOAT_S8_UINT },
-    { (uint32_t)AHARDWAREBUFFER_FORMAT_S8_UINT,               VK_FORMAT_S8_UINT }
+// as u32. Casting the enums here avoids scattering casts around in the code.
+std::map<u32, VkFormat> ahb_format_map_a2v = {
+    { (u32)AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM,        VK_FORMAT_R8G8B8A8_UNORM },
+    { (u32)AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM,        VK_FORMAT_R8G8B8A8_UNORM },
+    { (u32)AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM,          VK_FORMAT_R8G8B8_UNORM },
+    { (u32)AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM,          VK_FORMAT_R5G6B5_UNORM_PACK16 },
+    { (u32)AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT,    VK_FORMAT_R16G16B16A16_SFLOAT },
+    { (u32)AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM,     VK_FORMAT_A2B10G10R10_UNORM_PACK32 },
+    { (u32)AHARDWAREBUFFER_FORMAT_D16_UNORM,             VK_FORMAT_D16_UNORM },
+    { (u32)AHARDWAREBUFFER_FORMAT_D24_UNORM,             VK_FORMAT_X8_D24_UNORM_PACK32 },
+    { (u32)AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT,     VK_FORMAT_D24_UNORM_S8_UINT },
+    { (u32)AHARDWAREBUFFER_FORMAT_D32_FLOAT,             VK_FORMAT_D32_SFLOAT },
+    { (u32)AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT,     VK_FORMAT_D32_SFLOAT_S8_UINT },
+    { (u32)AHARDWAREBUFFER_FORMAT_S8_UINT,               VK_FORMAT_S8_UINT }
 };
 
 // AHardwareBuffer Usage                        Vulkan Usage or Creation Flag (Intermixed - Aargh!)
@@ -81,30 +81,30 @@ std::map<uint32_t, VkFormat> ahb_format_map_a2v = {
 // AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER        VK_IMAGE_USAGE_STORAGE_BIT
 
 // Same casting rationale. De-mixing the table to prevent type confusion and aliasing
-std::map<uint64_t, VkImageUsageFlags> ahb_usage_map_a2v = {
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE,    (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER,     (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER,  VK_IMAGE_USAGE_STORAGE_BIT },
+std::map<u64, VkImageUsageFlags> ahb_usage_map_a2v = {
+    { (u64)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE,    (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) },
+    { (u64)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER,     (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) },
+    { (u64)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent
+    { (u64)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER,  VK_IMAGE_USAGE_STORAGE_BIT },
 };
 
-std::map<uint64_t, VkImageCreateFlags> ahb_create_map_a2v = {
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP,         VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT,    VK_IMAGE_CREATE_PROTECTED_BIT },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent
+std::map<u64, VkImageCreateFlags> ahb_create_map_a2v = {
+    { (u64)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP,         VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT },
+    { (u64)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT,    VK_IMAGE_CREATE_PROTECTED_BIT },
+    { (u64)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent
 };
 
-std::map<VkImageUsageFlags, uint64_t> ahb_usage_map_v2a = {
-    { VK_IMAGE_USAGE_SAMPLED_BIT,           (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
-    { VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
-    { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER  },
-    { VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER  },
-    { VK_IMAGE_USAGE_STORAGE_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER  },
+std::map<VkImageUsageFlags, u64> ahb_usage_map_v2a = {
+    { VK_IMAGE_USAGE_SAMPLED_BIT,           (u64)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
+    { VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,  (u64)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
+    { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,  (u64)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER  },
+    { VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,  (u64)AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER  },
+    { VK_IMAGE_USAGE_STORAGE_BIT,  (u64)AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER  },
 };
 
-std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
-    { VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP },
-    { VK_IMAGE_CREATE_PROTECTED_BIT,        (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT },
+std::map<VkImageCreateFlags, u64> ahb_create_map_v2a = {
+    { VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,  (u64)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP },
+    { VK_IMAGE_CREATE_PROTECTED_BIT,        (u64)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT },
 };
 
 // clang-format on
@@ -119,9 +119,9 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevi
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
     AHardwareBuffer_describe(buffer, &ahb_desc);
-    uint32_t required_flags = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
-                              AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
-                              AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
+    u32 required_flags = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
+                         AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
+                         AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
     if (0 == (ahb_desc.usage & required_flags)) {
         skip |= LogError(
             "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884", device, error_obj.location.dot(Field::buffer),
@@ -191,9 +191,9 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
         if ((AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) || (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
             // Otherwise, must be a combination from the AHardwareBuffer Format and Usage Equivalence tables
             // Usage must have at least one bit from the table. It may have additional bits not in the table
-            uint64_t ahb_equiv_usage_bits = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
-                                            AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
-                                            AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
+            u64 ahb_equiv_usage_bits = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
+                                       AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
+                                       AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
             if (0 == (ahb_desc.usage & ahb_equiv_usage_bits)) {
                 skip |= LogError("VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881", device, ahb_loc,
                                  "AHardwareBuffer_Desc's usage (0x%" PRIx64 ") is not compatible with Vulkan. (AHB = %p).",
@@ -265,7 +265,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
 
         // memoryTypeIndex must be one of those returned by vkGetAndroidHardwareBufferPropertiesANDROID for the AHardwareBuffer
         // Note: memoryTypeIndex is an index, memoryTypeBits is a bitmask
-        uint32_t mem_type_bitmask = 1 << allocate_info.memoryTypeIndex;
+        u32 mem_type_bitmask = 1 << allocate_info.memoryTypeIndex;
         if (0 == (mem_type_bitmask & ahb_props.memoryTypeBits)) {
             skip |= LogError(
                 "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385", device, allocate_info_loc.dot(Field::memoryTypeIndex),
@@ -279,7 +279,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
         if ((nullptr == mem_ded_alloc_info) || (VK_NULL_HANDLE == mem_ded_alloc_info->image)) {
             // the Android hardware buffer must have a format of AHARDWAREBUFFER_FORMAT_BLOB and a usage that includes
             // AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER
-            if (((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) ||
+            if (((u64)AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) ||
                 (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
                 skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-02384", device, ahb_loc,
                                  "AHardwareBuffer_Desc's format ( %u ) is not "
@@ -364,7 +364,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
                                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT};
             for (VkImageUsageFlags ubit : usages) {
                 if (ici->usage & ubit) {
-                    uint64_t ahb_usage = ahb_usage_map_v2a[ubit];
+                    u64 ahb_usage = ahb_usage_map_v2a[ubit];
                     if (0 == (ahb_usage & ahb_desc.usage)) {
                         skip |=
                             LogError("VUID-VkMemoryAllocateInfo-pNext-02390", mem_ded_alloc_info->image, dedicated_image_loc,
@@ -569,7 +569,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &cre
 
         // Chain must include a compatible ycbcr conversion
         bool conv_found = false;
-        uint64_t external_format = 0;
+        u64 external_format = 0;
         const VkSamplerYcbcrConversionInfo *ycbcr_conv_info =
             vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
         if (ycbcr_conv_info != nullptr) {

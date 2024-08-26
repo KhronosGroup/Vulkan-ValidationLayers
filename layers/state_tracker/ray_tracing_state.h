@@ -54,7 +54,7 @@ class AccelerationStructureNV : public Bindable {
     const VkMemoryRequirements memory_requirements;
     const VkMemoryRequirements build_scratch_memory_requirements;
     const VkMemoryRequirements update_scratch_memory_requirements;
-    uint64_t opaque_handle = 0;
+    u64 opaque_handle = 0;
     bool memory_requirements_checked = false;
     bool build_scratch_memory_requirements_checked = false;
     bool update_scratch_memory_requirements_checked = false;
@@ -110,7 +110,7 @@ class AccelerationStructureKHR : public StateObject {
         build_info_khr.initialize(pInfo, is_host, build_range_info);
     };
 
-    void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR *p_build_range_infos, uint32_t geometry_count) {
+    void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR *p_build_range_infos, u32 geometry_count) {
         build_range_infos.resize(geometry_count);
         for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count)) {
             build_range_infos[i] = *build_range;
@@ -122,7 +122,7 @@ class AccelerationStructureKHR : public StateObject {
 
     vku::safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr{};
     bool built = false;
-    uint64_t opaque_handle = 0;
+    u64 opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
 };

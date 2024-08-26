@@ -758,7 +758,7 @@ using const_correct_iterator = decltype(std::declval<Container>().begin());
 //
 // Assumes RangeKey::index_type is unsigned (TBD is it useful to generalize to unsigned?)
 // Assumes RangeKey implements begin, end, < and (TBD) from template range above
-template <typename Key, typename T, typename RangeKey = range<Key>, size_t N = 64, typename SmallIndex = uint8_t>
+template <typename Key, typename T, typename RangeKey = range<Key>, size_t N = 64, typename SmallIndex = u8>
 class small_range_map {
     using SmallRange = range<SmallIndex>;
 
@@ -1423,7 +1423,7 @@ class small_range_map {
     //     inuse(begin, end) for all entries  on (begin, end]
     // Used for placement new of T for each range begin.
     struct alignas(alignof(value_type)) BackingStore {
-        uint8_t data[sizeof(value_type)];
+        u8 data[sizeof(value_type)];
     };
 
     SmallIndex size_;
@@ -1888,7 +1888,7 @@ bool splice(DstRangeMap &to, const SrcRangeMap &from, SourceIterator begin, Sour
                     updated |= updater.update(write_it->second, read_it->second);
                 } else {
                     // otherwise we need to split the destination range.
-                    auto value_to_update = write_it->second; // intentional copy
+                    auto value_to_update = write_it->second;  // intentional copy
                     updated |= updater.update(value_to_update, read_it->second);
                     auto intersected_range = write_it->first & range;
                     to.overwrite_range(to_lb->lower_bound, std::make_pair(intersected_range, value_to_update));
@@ -2035,9 +2035,9 @@ void consolidate(RangeMap &map) {
 }  // namespace sparse_container
 
 // Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
-static inline sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    int64_t intersection_min = std::max(x, y);
-    int64_t intersection_max = std::min(x + static_cast<int64_t>(x_size), y + static_cast<int64_t>(y_size));
+static inline sparse_container::range<i64> GetRangeIntersection(i64 x, u64 x_size, i64 y, u64 y_size) {
+    i64 intersection_min = std::max(x, y);
+    i64 intersection_max = std::min(x + static_cast<i64>(x_size), y + static_cast<i64>(y_size));
 
     return {intersection_min, intersection_max};
 }

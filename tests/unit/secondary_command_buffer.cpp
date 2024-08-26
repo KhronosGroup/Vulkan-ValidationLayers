@@ -272,8 +272,8 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteDiffertQueueFlags) {
     }
 
     // First two queue families
-    uint32_t queue_index_a = 0;
-    uint32_t queue_index_b = 1;
+    u32 queue_index_a = 0;
+    u32 queue_index_b = 1;
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.flags = 0;
@@ -413,9 +413,9 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassScope) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_inside_rp.handle());
     m_errorMonitor->VerifyFound();
 
-    VkRenderPassBeginInfo rp_bi = vku::InitStruct<VkRenderPassBeginInfo>(
-        nullptr, m_renderPass, framebuffer(), VkRect2D{{0, 0}, {32u, 32u}}, static_cast<uint32_t>(m_renderPassClearValues.size()),
-        m_renderPassClearValues.data());
+    VkRenderPassBeginInfo rp_bi =
+        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, framebuffer(), VkRect2D{{0, 0}, {32u, 32u}},
+                                               static_cast<u32>(m_renderPassClearValues.size()), m_renderPassClearValues.data());
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00096");

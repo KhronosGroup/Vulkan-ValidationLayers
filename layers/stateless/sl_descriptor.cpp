@@ -25,8 +25,8 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
 
     struct SampleOrderInfo {
         VkShadingRatePaletteEntryNV shadingRate;
-        uint32_t width;
-        uint32_t height;
+        u32 width;
+        u32 height;
     };
 
     // All palette entries with more than one pixel per fragment
@@ -40,7 +40,7 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     };
 
     const SampleOrderInfo *sample_order_info;
-    uint32_t info_idx = 0;
+    u32 info_idx = 0;
     for (sample_order_info = nullptr; info_idx < sample_order_infos.size(); ++info_idx) {
         if (sample_order_infos[info_idx].shadingRate == order.shadingRate) {
             sample_order_info = &sample_order_infos[info_idx];
@@ -89,8 +89,8 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     // guarantee that 64 bits is enough, but practically it's unlikely for an
     // implementation to support more than 32 bits for samplemask.
     assert(phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples <= 64);
-    uint64_t sample_locations_mask = 0;
-    for (uint32_t i = 0; i < order.sampleLocationCount; ++i) {
+    u64 sample_locations_mask = 0;
+    for (u32 i = 0; i < order.sampleLocationCount; ++i) {
         const VkCoarseSampleLocationNV *sample_loc = &order.pSampleLocations[i];
         if (sample_loc->pixelX >= sample_order_info->width) {
             skip |= LogError("VUID-VkCoarseSampleLocationNV-pixelX-02078", device, order_loc,
@@ -104,12 +104,11 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
             skip |= LogError("VUID-VkCoarseSampleLocationNV-sample-02080", device, order_loc,
                              "sample must be less than the number of coverage samples in each pixel belonging to the fragment.");
         }
-        uint32_t idx =
-            sample_loc->sample + order.sampleCount * (sample_loc->pixelX + sample_order_info->width * sample_loc->pixelY);
+        u32 idx = sample_loc->sample + order.sampleCount * (sample_loc->pixelX + sample_order_info->width * sample_loc->pixelY);
         sample_locations_mask |= 1ULL << idx;
     }
 
-    uint64_t expected_mask = (order.sampleLocationCount == 64) ? ~0ULL : ((1ULL << order.sampleLocationCount) - 1);
+    u64 expected_mask = (order.sampleLocationCount == 64) ? ~0ULL : ((1ULL << order.sampleLocationCount) - 1);
     if (sample_locations_mask != expected_mask) {
         skip |= LogError(
             "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077", device, order_loc,
@@ -505,9 +504,9 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
                                                                   const Location &create_info_loc) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
+    for (u32 i = 0; i < create_info.bindingCount; ++i) {
         const Location binding_loc = create_info_loc.dot(Field::pBindings, i);
-        uint32_t mutable_type_count = 0;
+        u32 mutable_type_count = 0;
         if (mutable_create_info.mutableDescriptorTypeListCount > i) {
             mutable_type_count = mutable_create_info.pMutableDescriptorTypeLists[i].descriptorTypeCount;
         }
@@ -530,10 +529,10 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
         }
     }
 
-    for (uint32_t j = 0; j < mutable_create_info.mutableDescriptorTypeListCount; ++j) {
+    for (u32 j = 0; j < mutable_create_info.mutableDescriptorTypeListCount; ++j) {
         const Location mutable_loc =
             create_info_loc.pNext(Struct::VkMutableDescriptorTypeCreateInfoEXT, Field::pMutableDescriptorTypeLists, j);
-        for (uint32_t k = 0; k < mutable_create_info.pMutableDescriptorTypeLists[j].descriptorTypeCount; ++k) {
+        for (u32 k = 0; k < mutable_create_info.pMutableDescriptorTypeLists[j].descriptorTypeCount; ++k) {
             const Location type_loc = mutable_loc.dot(Field::pDescriptorTypes, k);
             switch (mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[k]) {
                 case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
@@ -555,7 +554,7 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
                 default:
                     break;
             }
-            for (uint32_t l = k + 1; l < mutable_create_info.pMutableDescriptorTypeLists[j].descriptorTypeCount; ++l) {
+            for (u32 l = k + 1; l < mutable_create_info.pMutableDescriptorTypeLists[j].descriptorTypeCount; ++l) {
                 if (mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[k] ==
                     mutable_create_info.pMutableDescriptorTypeLists[j].pDescriptorTypes[l]) {
                     skip |=
@@ -577,7 +576,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (create_info.pBindings != nullptr) {
-        for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
+        for (u32 i = 0; i < create_info.bindingCount; ++i) {
             if (create_info.pBindings[i].descriptorCount == 0) {
                 continue;
             }
@@ -707,8 +706,7 @@ bool StatelessValidation::manual_PreCallValidateGetDescriptorSetLayoutSupport(Vk
 }
 
 bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool,
-                                                                   uint32_t descriptorSetCount,
-                                                                   const VkDescriptorSet *pDescriptorSets,
+                                                                   u32 descriptorSetCount, const VkDescriptorSet *pDescriptorSets,
                                                                    const ErrorObject &error_obj) const {
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
@@ -718,7 +716,7 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
                          "VUID-vkFreeDescriptorSets-pDescriptorSets-00310");
 }
 
-bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const uint32_t descriptorWriteCount,
+bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const u32 descriptorWriteCount,
                                                      const VkWriteDescriptorSet *pDescriptorWrites) const {
     bool skip = false;
     if (!pDescriptorWrites) {
@@ -727,7 +725,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
     const bool is_push_descriptor =
         loc.function == Func::vkCmdPushDescriptorSetKHR || loc.function == Func::vkCmdPushDescriptorSet2KHR;
 
-    for (uint32_t i = 0; i < descriptorWriteCount; ++i) {
+    for (u32 i = 0; i < descriptorWriteCount; ++i) {
         const Location writes_loc = loc.dot(Field::pDescriptorWrites, i);
         const auto &descriptor_writes = pDescriptorWrites[i];
         // descriptorCount must be greater than 0
@@ -754,7 +752,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                 skip |= LogError(vuid, device, writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
                                  string_VkDescriptorType(descriptor_type));
             } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
-                for (uint32_t descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
+                for (u32 descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
                     skip |= ValidateRangedEnum(writes_loc.dot(Field::pImageInfo, descriptor_index).dot(Field::imageLayout),
                                                vvl::Enum::VkImageLayout, descriptor_writes.pImageInfo[descriptor_index].imageLayout,
                                                kVUIDUndefined);
@@ -769,7 +767,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                                  "is %s but pBufferInfo is NULL.", string_VkDescriptorType(descriptor_type));
             } else {
                 if (enabled_features.nullDescriptor) {
-                    for (uint32_t descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
+                    for (u32 descriptor_index = 0; descriptor_index < descriptor_writes.descriptorCount; ++descriptor_index) {
                         if (descriptor_writes.pBufferInfo[descriptor_index].buffer == VK_NULL_HANDLE &&
                             (descriptor_writes.pBufferInfo[descriptor_index].offset != 0 ||
                              descriptor_writes.pBufferInfo[descriptor_index].range != VK_WHOLE_SIZE)) {
@@ -792,7 +790,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
         if ((descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
             (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)) {
             VkDeviceSize uniform_alignment = device_limits.minUniformBufferOffsetAlignment;
-            for (uint32_t j = 0; j < descriptor_writes.descriptorCount; j++) {
+            for (u32 j = 0; j < descriptor_writes.descriptorCount; j++) {
                 if (descriptor_writes.pBufferInfo != NULL) {
                     if (SafeModulo(descriptor_writes.pBufferInfo[j].offset, uniform_alignment) != 0) {
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00327", device,
@@ -807,7 +805,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
         } else if ((descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
                    (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
             VkDeviceSize storage_alignment = device_limits.minStorageBufferOffsetAlignment;
-            for (uint32_t j = 0; j < descriptor_writes.descriptorCount; j++) {
+            for (u32 j = 0; j < descriptor_writes.descriptorCount; j++) {
                 if (descriptor_writes.pBufferInfo != NULL) {
                     if (SafeModulo(descriptor_writes.pBufferInfo[j].offset, storage_alignment) != 0) {
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00328", device,
@@ -851,7 +849,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                         "is zero.");
                 }
                 if (!enabled_features.nullDescriptor) {
-                    for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                    for (u32 j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                         if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
                             skip |=
                                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
@@ -887,7 +885,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
                                      device, loc, "accelerationStructureCount must be greater than 0 .");
                 }
                 if (!enabled_features.nullDescriptor) {
-                    for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                    for (u32 j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                         if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
                             skip |= LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749",
                                              device, loc,
@@ -902,15 +900,15 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice device, u32 descriptorWriteCount,
                                                                      const VkWriteDescriptorSet *pDescriptorWrites,
-                                                                     uint32_t descriptorCopyCount,
+                                                                     u32 descriptorCopyCount,
                                                                      const VkCopyDescriptorSet *pDescriptorCopies,
                                                                      const ErrorObject &error_obj) const {
     return ValidateWriteDescriptorSet(error_obj.location, descriptorWriteCount, pDescriptorWrites);
 }
 
-static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {
+static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, u32 i, u32 j) {
     bool partial_overlap = false;
 
     constexpr std::array all_descriptor_types = {
@@ -935,7 +933,7 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         vvl::span<const VkDescriptorType> first_types, second_types;
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > i) {
-            const uint32_t descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
+            const u32 descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
             auto *descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
             first_types = vvl::make_span(descriptor_types, descriptor_type_count);
         } else {
@@ -943,7 +941,7 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         }
 
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > j) {
-            const uint32_t descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
+            const u32 descriptor_type_count = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
             auto *descriptor_types = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
             second_types = vvl::make_span(descriptor_types, descriptor_type_count);
         } else {
@@ -994,7 +992,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
     const bool non_zero_inline_uniform_count = inline_uniform_info && inline_uniform_info->maxInlineUniformBlockBindings != 0;
 
     if (pCreateInfo->pPoolSizes) {
-        for (uint32_t i = 0; i < pCreateInfo->poolSizeCount; ++i) {
+        for (u32 i = 0; i < pCreateInfo->poolSizeCount; ++i) {
             const Location pool_loc = create_info_loc.dot(Field::pPoolSizes, i);
             if (pCreateInfo->pPoolSizes[i].descriptorCount <= 0) {
                 skip |= LogError("VUID-VkDescriptorPoolSize-descriptorCount-00302", device, pool_loc.dot(Field::descriptorCount),
@@ -1019,7 +1017,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                                  ", but mutableDescriptorType feature was not enabled.");
             }
             if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-                for (uint32_t j = i + 1; j < pCreateInfo->poolSizeCount; ++j) {
+                for (u32 j = i + 1; j < pCreateInfo->poolSizeCount; ++j) {
                     if (pCreateInfo->pPoolSizes[j].type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                         if (MutableDescriptorTypePartialOverlap(pCreateInfo, i, j)) {
                             skip |= LogError("VUID-VkDescriptorPoolCreateInfo-pPoolSizes-04787", device, pool_loc.dot(Field::type),
@@ -1199,7 +1197,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkD
         // 2 = no [b,a]
         // 1 = no [g,b,a]
         // depth/stencil = no [g,b,a] (shouldn't ever occur, but no VU preventing it)
-        const uint32_t component_count = (vkuFormatIsDepthOrStencil(format) == true) ? 1 : vkuFormatComponentCount(format);
+        const u32 component_count = (vkuFormatIsDepthOrStencil(format) == true) ? 1 : vkuFormatComponentCount(format);
 
         if ((component_count < 4) && ((components.r == VK_COMPONENT_SWIZZLE_A) || (components.g == VK_COMPONENT_SWIZZLE_A) ||
                                       (components.b == VK_COMPONENT_SWIZZLE_A))) {

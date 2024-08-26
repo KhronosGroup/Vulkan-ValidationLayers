@@ -176,7 +176,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
 
     // Ray query with t_min dynamically set to 0
     {
-        auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.memory().map());
+        auto uniform_buffer_ptr = static_cast<u32 *>(uniform_buffer.memory().map());
         uniform_buffer_ptr[0] = 4u | 16u;  // gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsCullBackFacingTrianglesEXT
         uniform_buffer.memory().unmap();
     }
@@ -231,7 +231,7 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     {
-        auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.memory().map());
+        auto uniform_buffer_ptr = static_cast<u32 *>(uniform_buffer.memory().map());
         uniform_buffer_ptr[0] = 4u | 0x100;  // gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipTrianglesEXT
         uniform_buffer.memory().unmap();
     }

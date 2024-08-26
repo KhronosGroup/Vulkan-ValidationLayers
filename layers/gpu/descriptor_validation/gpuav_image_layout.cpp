@@ -117,18 +117,18 @@ static void RecordTransitionImageLayout(Validator &gpuav, vvl::CommandBuffer &cb
     }
 }
 
-static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, uint32_t barrier_count,
+static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, u32 barrier_count,
                                    const VkImageMemoryBarrier2 *image_barriers) {
-    for (uint32_t i = 0; i < barrier_count; i++) {
+    for (u32 i = 0; i < barrier_count; i++) {
         const sync_utils::ImageBarrier barrier(image_barriers[i]);
         RecordTransitionImageLayout(gpuav, cb_state, barrier);
     }
 }
 
-static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, uint32_t barrier_count,
+static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, u32 barrier_count,
                                    const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
                                    VkPipelineStageFlags dst_stage_mask) {
-    for (uint32_t i = 0; i < barrier_count; i++) {
+    for (u32 i = 0; i < barrier_count; i++) {
         const sync_utils::ImageBarrier barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
         RecordTransitionImageLayout(gpuav, cb_state, barrier);
     }
@@ -219,25 +219,25 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
 
 template <typename RegionType>
 static void RecordCmdBlitImage(Validator &gpuav, VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                               VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount, const RegionType *pRegions,
                                VkFilter filter) {
     auto cb_state_ptr = gpuav.GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = gpuav.Get<vvl::Image>(srcImage);
     auto dst_image_state = gpuav.Get<vvl::Image>(dstImage);
     if (cb_state_ptr && src_image_state && dst_image_state) {
         // Make sure that all image slices are updated to correct layout
-        for (uint32_t i = 0; i < regionCount; ++i) {
+        for (u32 i = 0; i < regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
             cb_state_ptr->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
         }
     }
 }
 
-static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                  const VkDependencyInfo *pDependencyInfos, vvl::Func command) {
     // don't hold read lock during the base class method
     auto cb_state = gpuav.GetWrite<vvl::CommandBuffer>(commandBuffer);
-    for (uint32_t i = 0; i < eventCount; i++) {
+    for (u32 i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
         TransitionImageLayouts(gpuav, *cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
     }
@@ -260,10 +260,10 @@ void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_sta
 
 void TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index) {
     auto const &subpass = render_pass_state.create_info.pSubpasses[subpass_index];
-    for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+    for (u32 j = 0; j < subpass.inputAttachmentCount; ++j) {
         TransitionAttachmentRefLayout(cb_state, subpass.pInputAttachments[j]);
     }
-    for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+    for (u32 j = 0; j < subpass.colorAttachmentCount; ++j) {
         TransitionAttachmentRefLayout(cb_state, subpass.pColorAttachments[j]);
     }
     if (subpass.pDepthStencilAttachment) {
@@ -277,7 +277,7 @@ void TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPas
 void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
     // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state.create_info.ptr();
-    for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
+    for (u32 i = 0; i < rpci->attachmentCount; ++i) {
         auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             vvl::Image *image_state = view_state->image_state.get();
@@ -308,7 +308,7 @@ void TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
     }
 
     const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->create_info.ptr();
-    for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
+    for (u32 i = 0; i < render_pass_info->attachmentCount; ++i) {
         auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
@@ -415,21 +415,21 @@ void Validator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const 
 }
 
 void Validator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                const VkClearColorValue *pColor, u32 rangeCount,
                                                 const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
 
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
-        for (uint32_t i = 0; i < rangeCount; ++i) {
+        for (u32 i = 0; i < rangeCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(image, pRanges[i], imageLayout);
         }
     }
 }
 
 void Validator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                       const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                       const VkClearDepthStencilValue *pDepthStencil, u32 rangeCount,
                                                        const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
                                                       record_obj);
@@ -437,26 +437,26 @@ void Validator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBu
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
-        for (uint32_t i = 0; i < rangeCount; ++i) {
+        for (u32 i = 0; i < rangeCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(image, pRanges[i], imageLayout);
         }
     }
 }
 
-void Validator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                 const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                 const VkClearRect *pRects, const RecordObject &record_obj) {
+void Validator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, u32 attachmentCount,
+                                                 const VkClearAttachment *pAttachments, u32 rectCount, const VkClearRect *pRects,
+                                                 const RecordObject &record_obj) {
     // TODO???
 }
 
-void Validator::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
+void Validator::PostCallRecordTransitionImageLayoutEXT(VkDevice device, u32 transitionCount,
                                                        const VkHostImageLayoutTransitionInfoEXT *pTransitions,
                                                        const RecordObject &record_obj) {
     BaseClass::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
 
     if (VK_SUCCESS != record_obj.result) return;
 
-    for (uint32_t i = 0; i < transitionCount; ++i) {
+    for (u32 i = 0; i < transitionCount; ++i) {
         auto &transition = pTransitions[i];
         auto image_state = Get<vvl::Image>(transition.image);
         if (!image_state) continue;
@@ -465,7 +465,7 @@ void Validator::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t
 }
 
 void Validator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                          VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                           const VkImageCopy *pRegions, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
                                          record_obj);
@@ -474,7 +474,7 @@ void Validator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage
     auto dst_image_state = Get<vvl::Image>(dstImage);
     if (cb_state_ptr && src_image_state && dst_image_state) {
         // Make sure that all image slices are updated to correct layout
-        for (uint32_t i = 0; i < regionCount; ++i) {
+        for (u32 i = 0; i < regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
             cb_state_ptr->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
         }
@@ -488,7 +488,7 @@ void Validator::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, con
     auto dst_image_state = Get<vvl::Image>(pCopyImageInfo->dstImage);
     if (cb_state_ptr && src_image_state && dst_image_state) {
         // Make sure that all image slices are updated to correct layout
-        for (uint32_t i = 0; i < pCopyImageInfo->regionCount; ++i) {
+        for (u32 i = 0; i < pCopyImageInfo->regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pCopyImageInfo->pRegions[i].srcSubresource,
                                                 pCopyImageInfo->srcImageLayout);
             cb_state_ptr->SetImageInitialLayout(*dst_image_state, pCopyImageInfo->pRegions[i].dstSubresource,
@@ -504,7 +504,7 @@ void Validator::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const 
     auto dst_image_state = Get<vvl::Image>(pCopyImageInfo->dstImage);
     if (cb_state_ptr && src_image_state && dst_image_state) {
         // Make sure that all image slices are updated to correct layout
-        for (uint32_t i = 0; i < pCopyImageInfo->regionCount; ++i) {
+        for (u32 i = 0; i < pCopyImageInfo->regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pCopyImageInfo->pRegions[i].srcSubresource,
                                                 pCopyImageInfo->srcImageLayout);
             cb_state_ptr->SetImageInitialLayout(*dst_image_state, pCopyImageInfo->pRegions[i].dstSubresource,
@@ -514,7 +514,7 @@ void Validator::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const 
 }
 
 void Validator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                  VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
+                                                  VkBuffer dstBuffer, u32 regionCount, const VkBufferImageCopy *pRegions,
                                                   const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                                  record_obj);
@@ -523,7 +523,7 @@ void Validator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer,
     auto src_image_state = Get<vvl::Image>(srcImage);
     if (cb_state_ptr && src_image_state) {
         // Make sure that all image slices record referenced layout
-        for (uint32_t i = 0; i < regionCount; ++i) {
+        for (u32 i = 0; i < regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pRegions[i].imageSubresource, srcImageLayout);
         }
     }
@@ -538,7 +538,7 @@ void Validator::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuf
     auto src_image_state = Get<vvl::Image>(pCopyImageToBufferInfo->srcImage);
     if (cb_state_ptr && src_image_state) {
         // Make sure that all image slices record referenced layout
-        for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
+        for (u32 i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pCopyImageToBufferInfo->pRegions[i].imageSubresource,
                                                 pCopyImageToBufferInfo->srcImageLayout);
         }
@@ -554,7 +554,7 @@ void Validator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer
     auto src_image_state = Get<vvl::Image>(pCopyImageToBufferInfo->srcImage);
     if (cb_state_ptr && src_image_state) {
         // Make sure that all image slices record referenced layout
-        for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
+        for (u32 i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
             cb_state_ptr->SetImageInitialLayout(*src_image_state, pCopyImageToBufferInfo->pRegions[i].imageSubresource,
                                                 pCopyImageToBufferInfo->srcImageLayout);
         }
@@ -562,8 +562,8 @@ void Validator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer
 }
 
 void Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                  VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                  const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
+                                                  VkImageLayout dstImageLayout, u32 regionCount, const VkBufferImageCopy *pRegions,
+                                                  const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                                  record_obj);
 
@@ -571,7 +571,7 @@ void Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer,
 
     if (auto dst_image_state = Get<vvl::Image>(dstImage)) {
         // Make sure that all image slices are record referenced layout
-        for (uint32_t i = 0; i < regionCount; ++i) {
+        for (u32 i = 0; i < regionCount; ++i) {
             cb_state->SetImageInitialLayout(*dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
         }
     }
@@ -611,7 +611,7 @@ void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer
 
     if (auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo->dstImage)) {
         // Make sure that all image slices are record referenced layout
-        for (uint32_t i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
+        for (u32 i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
             cb_state->SetImageInitialLayout(*dst_image_state, pCopyBufferToImageInfo->pRegions[i].imageSubresource,
                                             pCopyBufferToImageInfo->dstImageLayout);
         }
@@ -621,7 +621,7 @@ void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer
 }
 
 void Validator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                          VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                           const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
                                          filter, record_obj);
@@ -654,35 +654,35 @@ void Validator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, Vk
     }
 }
 
-void Validator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+void Validator::PostCallRecordBindImageMemory2(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
+    for (u32 i = 0; i < bindInfoCount; i++) {
         if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
             image_state->SetInitialLayoutMap();
         }
     }
 }
 
-void Validator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+void Validator::PostCallRecordBindImageMemory2KHR(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                   const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     BaseClass::PostCallRecordBindImageMemory2KHR(device, bindInfoCount, pBindInfos, record_obj);
 
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
+    for (u32 i = 0; i < bindInfoCount; i++) {
         if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
             image_state->SetInitialLayoutMap();
         }
     }
 }
 
-void Validator::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+void Validator::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                            VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                           uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                           uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                           uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                           u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                           u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                           u32 imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                            const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
@@ -691,13 +691,13 @@ void Validator::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32
     TransitionImageLayouts(*this, *cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
 }
 
-void Validator::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+void Validator::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     RecordCmdWaitEvents2(*this, commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2KHR);
 }
 
-void Validator::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+void Validator::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                             const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     RecordCmdWaitEvents2(*this, commandBuffer, eventCount, pEvents, pDependencyInfos, Func::vkCmdWaitEvents2);
@@ -705,10 +705,9 @@ void Validator::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint3
 
 void Validator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                 VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                                uint32_t bufferMemoryBarrierCount,
-                                                const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                                u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                u32 imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                                 const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
                                                pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,

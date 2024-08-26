@@ -342,13 +342,13 @@ void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
     // Merge the read states
     const auto pre_merge_count = last_reads.size();
     const auto pre_merge_stages = last_read_stages;
-    for (uint32_t other_read_index = 0; other_read_index < other.last_reads.size(); other_read_index++) {
+    for (u32 other_read_index = 0; other_read_index < other.last_reads.size(); other_read_index++) {
         auto &other_read = other.last_reads[other_read_index];
         if (pre_merge_stages & other_read.stage) {
             // Merge in the barriers for read stages that exist in *both* this and other
             // TODO: This is N^2 with stages... perhaps the ReadStates should be sorted by stage index.
             //       but we should wait on profiling data for that.
-            for (uint32_t my_read_index = 0; my_read_index < pre_merge_count; my_read_index++) {
+            for (u32 my_read_index = 0; my_read_index < pre_merge_count; my_read_index++) {
                 auto &my_read = last_reads[my_read_index];
                 if (other_read.stage == my_read.stage) {
                     if (my_read.tag < other_read.tag) {

@@ -34,8 +34,8 @@ class VideoProfileDesc;
 
 class QueryPool : public StateObject {
   public:
-    QueryPool(VkQueryPool handle, const VkQueryPoolCreateInfo *pCreateInfo, uint32_t index_count, uint32_t perf_queue_family_index,
-              uint32_t n_perf_pass, bool has_cb, bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
+    QueryPool(VkQueryPool handle, const VkQueryPoolCreateInfo *pCreateInfo, u32 index_count, u32 perf_queue_family_index,
+              u32 n_perf_pass, bool has_cb, bool has_rb, std::shared_ptr<const vvl::VideoProfileDesc> &&supp_video_profile,
               VkVideoEncodeFeedbackFlagsKHR enabled_video_encode_feedback_flags)
         : StateObject(handle, kVulkanObjectTypeQueryPool),
           safe_create_info(pCreateInfo),
@@ -48,10 +48,10 @@ class QueryPool : public StateObject {
           supported_video_profile(std::move(supp_video_profile)),
           video_encode_feedback_flags(enabled_video_encode_feedback_flags),
           query_states_(pCreateInfo->queryCount) {
-        for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
+        for (u32 i = 0; i < pCreateInfo->queryCount; ++i) {
             auto perf_size = n_perf_pass > 0 ? n_perf_pass : 1;
             query_states_[i].reserve(perf_size);
-            for (uint32_t p = 0; p < perf_size; p++) {
+            for (u32 p = 0; p < perf_size; p++) {
                 query_states_[i].emplace_back(QUERYSTATE_UNKNOWN);
             }
         }
@@ -59,7 +59,7 @@ class QueryPool : public StateObject {
 
     VkQueryPool VkHandle() const { return handle_.Cast<VkQueryPool>(); }
 
-    void SetQueryState(uint32_t query, uint32_t perf_pass, QueryState state) {
+    void SetQueryState(u32 query, u32 perf_pass, QueryState state) {
         auto guard = WriteLock();
         assert(query < query_states_.size());
         assert((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes));
@@ -71,7 +71,7 @@ class QueryPool : public StateObject {
             query_states_[query][perf_pass] = state;
         }
     }
-    QueryState GetQueryState(uint32_t query, uint32_t perf_pass) const {
+    QueryState GetQueryState(u32 query, u32 perf_pass) const {
         auto guard = ReadLock();
         // this method can get called with invalid arguments during validation
         if (query < query_states_.size() && ((n_performance_passes == 0 && perf_pass == 0) || (perf_pass < n_performance_passes))) {
@@ -85,9 +85,9 @@ class QueryPool : public StateObject {
 
     const bool has_perf_scope_command_buffer;
     const bool has_perf_scope_render_pass;
-    const uint32_t n_performance_passes;
-    const uint32_t perf_counter_index_count;
-    const uint32_t perf_counter_queue_family_index;
+    const u32 n_performance_passes;
+    const u32 perf_counter_index_count;
+    const u32 perf_counter_queue_family_index;
 
     std::shared_ptr<const vvl::VideoProfileDesc> supported_video_profile;
     VkVideoEncodeFeedbackFlagsKHR video_encode_feedback_flags;
@@ -96,7 +96,7 @@ class QueryPool : public StateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    std::vector<small_vector<QueryState, 1, uint32_t>> query_states_;
+    std::vector<small_vector<QueryState, 1, u32>> query_states_;
     mutable std::shared_mutex lock_;
 };
 }  // namespace vvl
@@ -104,24 +104,24 @@ class QueryPool : public StateObject {
 // Represents a single Query inside a QueryPool
 struct QueryObject {
     VkQueryPool pool;
-    uint32_t slot;  // use 'slot' as alias to 'query' parameter to help reduce confusing namespace
-    uint32_t perf_pass;
+    u32 slot;  // use 'slot' as alias to 'query' parameter to help reduce confusing namespace
+    u32 perf_pass;
 
     // These below fields are *not* used in hash or comparison, they are effectively a data payload
     VkQueryControlFlags control_flags;
-    mutable uint32_t active_query_index;
-    uint32_t last_activatable_query_index;
-    uint32_t index;  // must be zero if !indexed
+    mutable u32 active_query_index;
+    u32 last_activatable_query_index;
+    u32 index;  // must be zero if !indexed
     bool indexed;
     // Command index in the command buffer where the end of the query was
     // recorded (equal to the number of commands in the command buffer before
     // the end of the query).
-    uint64_t end_command_index = 0;
+    u64 end_command_index = 0;
     bool inside_render_pass = false;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
-    QueryObject(VkQueryPool pool_, uint32_t slot_, VkQueryControlFlags control_flags_ = 0, uint32_t perf_pass_ = 0,
-                bool indexed_ = false, uint32_t index_ = 0)
+    QueryObject(VkQueryPool pool_, u32 slot_, VkQueryControlFlags control_flags_ = 0, u32 perf_pass_ = 0, bool indexed_ = false,
+                u32 index_ = 0)
         : pool(pool_),
           slot(slot_),
           perf_pass(perf_pass_),
@@ -132,7 +132,7 @@ struct QueryObject {
           indexed(indexed_) {}
 
     // This is needed because vvl::CommandBuffer::BeginQuery() and EndQuery() need to make a copy to update
-    QueryObject(const QueryObject &obj, uint32_t perf_pass_)
+    QueryObject(const QueryObject &obj, u32 perf_pass_)
         : pool(obj.pool),
           slot(obj.slot),
           perf_pass(perf_pass_),
@@ -181,8 +181,8 @@ namespace std {
 template <>
 struct hash<QueryObject> {
     size_t operator()(QueryObject query_obj) const throw() {
-        return hash<uint64_t>()((uint64_t)(query_obj.pool)) ^
-               hash<uint64_t>()(static_cast<uint64_t>(query_obj.slot) | (static_cast<uint64_t>(query_obj.perf_pass) << 32));
+        return hash<u64>()((u64)(query_obj.pool)) ^
+               hash<u64>()(static_cast<u64>(query_obj.slot) | (static_cast<u64>(query_obj.perf_pass) << 32));
     }
 };
 

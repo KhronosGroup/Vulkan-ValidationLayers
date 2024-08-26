@@ -21,7 +21,7 @@
 #include "generated/chassis.h"
 
 bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc,
-                                                               const uint32_t promoted_version) const {
+                                                               const u32 promoted_version) const {
     bool skip = false;
     if (api_version < promoted_version) {
         skip |= LogError("UNASSIGNED-API-Version-Violation", instance, loc,
@@ -33,7 +33,7 @@ bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instan
 }
 
 bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc,
-                                                               const uint32_t promoted_version) const {
+                                                               const u32 promoted_version) const {
     bool skip = false;
     const auto &target_pdev = physical_device_properties_map.find(pdev);
     if (target_pdev != physical_device_properties_map.end()) {
@@ -69,14 +69,14 @@ bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device
     return false;
 }
 
-static const uint8_t kUtF8OneByteCode = 0xC0;
-static const uint8_t kUtF8OneByteMask = 0xE0;
-static const uint8_t kUtF8TwoByteCode = 0xE0;
-static const uint8_t kUtF8TwoByteMask = 0xF0;
-static const uint8_t kUtF8ThreeByteCode = 0xF0;
-static const uint8_t kUtF8ThreeByteMask = 0xF8;
-static const uint8_t kUtF8DataByteCode = 0x80;
-static const uint8_t kUtF8DataByteMask = 0xC0;
+static const u8 kUtF8OneByteCode = 0xC0;
+static const u8 kUtF8OneByteMask = 0xE0;
+static const u8 kUtF8TwoByteCode = 0xE0;
+static const u8 kUtF8TwoByteMask = 0xF0;
+static const u8 kUtF8ThreeByteCode = 0xF0;
+static const u8 kUtF8ThreeByteMask = 0xF8;
+static const u8 kUtF8DataByteCode = 0x80;
+static const u8 kUtF8DataByteMask = 0xC0;
 
 static VkStringErrorFlags ValidateVkString(const int max_length, const char *utf8) {
     VkStringErrorFlags result = VK_STRING_ERROR_NONE;
@@ -202,7 +202,7 @@ bool StatelessValidation::ValidateAllocationCallbacks(const VkAllocationCallback
  * @param arrayRequired The 'array' parameter may not be NULL when true.
  * @return Boolean value indicating that the call should be skipped.
  */
-bool StatelessValidation::ValidateStringArray(const Location &count_loc, const Location &array_loc, uint32_t count,
+bool StatelessValidation::ValidateStringArray(const Location &count_loc, const Location &array_loc, u32 count,
                                               const char *const *array, bool countRequired, bool arrayRequired,
                                               const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
@@ -212,7 +212,7 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
                               array_required_vuid);
     } else {
         // Verify that strings in the array are not NULL
-        for (uint32_t i = 0; i < count; ++i) {
+        for (u32 i = 0; i < count; ++i) {
             if (array[i] == nullptr) {
                 skip |= LogError(array_required_vuid, device, array_loc.dot(i), "is NULL.");
             }
@@ -237,7 +237,7 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
-                                              const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
+                                              const VkStructureType *allowed_types, u32 header_version, const char *pnext_vuid,
                                               const char *stype_vuid, VkPhysicalDevice caller_physical_device,
                                               const bool is_const_param) const {
     bool skip = false;
@@ -351,7 +351,7 @@ bool StatelessValidation::ValidateBool32(const Location &loc, VkBool32 value) co
  * @param arrayRequired The 'array' parameter may not be NULL when true.
  * @return Boolean value indicating that the call should be skipped.
  */
-bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const Location &array_loc, uint32_t count,
+bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const Location &array_loc, u32 count,
                                               const VkBool32 *array, bool countRequired, bool arrayRequired,
                                               const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
@@ -360,7 +360,7 @@ bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const L
         skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
                               array_required_vuid);
     } else {
-        for (uint32_t i = 0; i < count; ++i) {
+        for (u32 i = 0; i < count; ++i) {
             if ((array[i] != VK_TRUE) && (array[i] != VK_FALSE)) {
                 skip |= LogError(array_required_vuid, device, array_loc.dot(i),
                                  "(%" PRIu32
@@ -511,7 +511,7 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask,
-                                             VkFlags all_flags, uint32_t count, const VkFlags *array, bool count_required,
+                                             VkFlags all_flags, u32 count, const VkFlags *array, bool count_required,
                                              const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
@@ -520,7 +520,7 @@ bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Lo
         skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, true, count_required_vuid, array_required_vuid);
     } else {
         // Verify that all VkFlags values in the array
-        for (uint32_t i = 0; i < count; ++i) {
+        for (u32 i = 0; i < count; ++i) {
             if ((array[i] & (~all_flags)) != 0) {
                 skip |= LogError(array_required_vuid, device, array_loc.dot(i),
                                  "contains flag bits that are not recognized members of %s.", String(flag_bitmask));

@@ -97,8 +97,8 @@ struct FenceSyncState {
 
 struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
-    uint32_t image_index;
-    uint32_t present_index;
+    u32 image_index;
+    u32 present_index;
     std::weak_ptr<const syncval_state::Swapchain> swapchain_state;
     std::shared_ptr<const syncval_state::ImageState> image;
 };
@@ -110,12 +110,12 @@ struct PresentedImage : public PresentedImageRecord {
     PresentedImage() = default;
     void UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
     PresentedImage(const SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
-                   uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
+                   u32 image_index, u32 present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
-    PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index);
+    PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, u32 at_index);
     bool Invalid() const;
     void ExportToSwapchain(SyncValidator &);
-    void SetImage(uint32_t at_index);
+    void SetImage(u32 at_index);
 };
 using PresentedImages = std::vector<PresentedImage>;
 
@@ -124,9 +124,9 @@ class BatchAccessLog {
   public:
     struct BatchRecord {
         const QueueSyncState *queue = nullptr;
-        uint64_t submit_index = 0;
-        uint32_t batch_index = 0;
-        uint32_t cb_index = 0;
+        u64 submit_index = 0;
+        u32 batch_index = 0;
+        u32 cb_index = 0;
         ResourceUsageTag base_tag = 0;
     };
 
@@ -220,9 +220,9 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     using ConstPtr = std::shared_ptr<const QueueBatchContext>;
 
     struct CommandBufferInfo {
-        uint32_t index = 0;
+        u32 index = 0;
         std::shared_ptr<const syncval_state::CommandBuffer> cb_state;
-        CommandBufferInfo(uint32_t index, std::shared_ptr<const syncval_state::CommandBuffer> &&cb_state)
+        CommandBufferInfo(u32 index, std::shared_ptr<const syncval_state::CommandBuffer> &&cb_state)
             : index(index), cb_state(std::move(cb_state)) {}
     };
 
@@ -241,14 +241,14 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     QueueId GetQueueId() const override;
     ExecutionType Type() const override { return kSubmitted; }
 
-    ResourceUsageTag SetupBatchTags(uint32_t tag_count);
+    ResourceUsageTag SetupBatchTags(u32 tag_count);
     void ResetEventsContext() { events_context_.Clear(); }
 
     // For Submit
     std::vector<ConstPtr> ResolveSubmitDependencies(vvl::span<const VkSemaphoreSubmitInfo> wait_semaphores,
                                                     const QueueBatchContext::ConstPtr &last_batch,
                                                     SignaledSemaphoresUpdate &signaled_semaphores_update);
-    bool ValidateSubmit(const VkSubmitInfo2 &submit, uint64_t submit_index, uint32_t batch_index,
+    bool ValidateSubmit(const VkSubmitInfo2 &submit, u64 submit_index, u32 batch_index,
                         std::vector<std::string> &current_label_stack, const ErrorObject &error_obj);
     std::vector<CommandBufferInfo> GetCommandBuffers(const VkSubmitInfo2 &submit_info);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
@@ -260,7 +260,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
                                                      SignaledSemaphoresUpdate &signaled_semaphores_update);
     bool DoQueuePresentValidate(const Location &loc, const PresentedImages &presented_images);
     void DoPresentOperations(const PresentedImages &presented_images);
-    void LogPresentOperations(const PresentedImages &presented_images, uint64_t submit_index);
+    void LogPresentOperations(const PresentedImages &presented_images, u64 submit_index);
 
     // For Acquire
     void SetupAccessContext(const PresentedImage &presented);
@@ -309,7 +309,7 @@ class QueueSyncState {
     QueueId GetQueueId() const { return id_; }
 
     // Method is const but updates mutable sumbit_index atomically.
-    uint64_t ReserveSubmitId() const;
+    u64 ReserveSubmitId() const;
 
     // Method is const but updates mutable pending_last_batch and relies on the queue external synchronization
     void SetPendingLastBatch(QueueBatchContext::Ptr &&last) const;
@@ -320,7 +320,7 @@ class QueueSyncState {
     const QueueId id_;
     std::shared_ptr<vvl::Queue> queue_state_;
 
-    mutable std::atomic<uint64_t> submit_index_ = 0;
+    mutable std::atomic<u64> submit_index_ = 0;
 
     mutable QueueBatchContext::Ptr pending_last_batch_;
     QueueBatchContext::Ptr last_batch_;

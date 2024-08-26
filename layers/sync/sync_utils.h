@@ -118,8 +118,8 @@ enum class OwnershipTransferOp { none, release, acquire };
 // This type (and also MemoryBarrier) can be used by the functionality that does not need
 // buffer/image specific information.
 struct QueueFamilyBarrier : MemoryBarrier {
-    uint32_t srcQueueFamilyIndex;
-    uint32_t dstQueueFamilyIndex;
+    u32 srcQueueFamilyIndex;
+    u32 dstQueueFamilyIndex;
 
     QueueFamilyBarrier(const VkBufferMemoryBarrier2& barrier)
         : MemoryBarrier(barrier),
@@ -140,7 +140,7 @@ struct QueueFamilyBarrier : MemoryBarrier {
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
 
-    OwnershipTransferOp TransferOp(uint32_t command_pool_queue_family) const {
+    OwnershipTransferOp TransferOp(u32 command_pool_queue_family) const {
         if (srcQueueFamilyIndex != dstQueueFamilyIndex) {
             if (command_pool_queue_family == srcQueueFamilyIndex) {
                 return OwnershipTransferOp::release;

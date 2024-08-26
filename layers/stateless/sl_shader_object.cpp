@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Nintendo
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2024 Nintendo
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device, u32 createInfoCount,
                                                                  const VkShaderCreateInfoEXT *pCreateInfos,
                                                                  const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkShaderCreateInfoEXT &createInfo = pCreateInfos[i];
         if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT && SafeModulo(createInfo.codeSize, 4) != 0) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                             "(%" PRIu64 ") is not a multiple of 4.", static_cast<uint64_t>(createInfo.codeSize));
+                             "(%" PRIu64 ") is not a multiple of 4.", static_cast<u64>(createInfo.codeSize));
         }
 
         auto pCode = reinterpret_cast<std::uintptr_t>(createInfo.pCode);

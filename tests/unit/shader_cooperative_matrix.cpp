@@ -51,13 +51,13 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
         }
     )glsl";
 
-    const uint32_t specData[] = {
+    const u32 specData[] = {
         63,
         65,
     };
     VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        {0, sizeof(u32) * 0, sizeof(u32)},
+        {1, sizeof(u32) * 1, sizeof(u32)},
     };
 
     VkSpecializationInfo specInfo = {
@@ -226,11 +226,11 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
         }
     )glsl";
 
-    const uint32_t specData[] = {
+    const u32 specData[] = {
         31,
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        {0, sizeof(u32) * 0, sizeof(u32)},
     };
     const VkSpecializationInfo specInfo = {
         1,
@@ -280,13 +280,13 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
         }
     )glsl";
 
-    const uint32_t specData[] = {
-        3, // gl_ScopeSubgroup
-        4, // gl_ScopeInvocation
+    const u32 specData[] = {
+        3,  // gl_ScopeSubgroup
+        4,  // gl_ScopeInvocation
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        {0, sizeof(u32) * 0, sizeof(u32)},
+        {1, sizeof(u32) * 1, sizeof(u32)},
     };
     const VkSpecializationInfo specInfo = {
         2,
@@ -433,7 +433,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         {"|MatrixResultSignedComponentsKHR", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
     };
 
-    for (const auto &x: subtests) {
+    for (const auto &x : subtests) {
         const std::string csSourceStr = remove_str(csSourceTemplate, std::string(x.remove));
         const char *css = csSourceStr.c_str();
         CreateComputePipelineHelper pipe(*this);

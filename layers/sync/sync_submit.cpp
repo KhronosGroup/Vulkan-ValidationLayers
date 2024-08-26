@@ -88,7 +88,7 @@ syncval_state::Swapchain::Swapchain(ValidationStateTracker& dev_data, const VkSw
 
 void syncval_state::Swapchain::RecordPresentedImage(PresentedImage&& presented_image) {
     // All presented images are stored within the swapchain until the are reaquired.
-    const uint32_t image_index = presented_image.image_index;
+    const u32 image_index = presented_image.image_index;
     if (image_index >= presented.size()) presented.resize(image_index + 1);
 
     // Use move semantics to avoid atomic operations on the contained shared_ptrs
@@ -96,7 +96,7 @@ void syncval_state::Swapchain::RecordPresentedImage(PresentedImage&& presented_i
 }
 
 // We move from the presented images array 1) so we don't copy shared_ptr, and 2) to mark it acquired
-PresentedImage syncval_state::Swapchain::MovePresentedImage(uint32_t image_index) {
+PresentedImage syncval_state::Swapchain::MovePresentedImage(u32 image_index) {
     if (presented.size() <= image_index) presented.resize(image_index + 1);
     PresentedImage ret_val = std::move(presented[image_index]);
     if (ret_val.Invalid()) {
@@ -385,7 +385,7 @@ void QueueBatchContext::DoPresentOperations(const PresentedImages& presented_ima
     }
 }
 
-void QueueBatchContext::LogPresentOperations(const PresentedImages& presented_images, uint64_t submit_index) {
+void QueueBatchContext::LogPresentOperations(const PresentedImages& presented_images, u64 submit_index) {
     if (tag_range_.size()) {
         auto access_log = std::make_shared<AccessLog>();
         BatchAccessLog::BatchRecord batch{queue_state_};
@@ -445,7 +445,7 @@ std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::RegisterAsyncContext
 std::vector<QueueBatchContext::CommandBufferInfo> QueueBatchContext::GetCommandBuffers(const VkSubmitInfo2& submit_info) {
     std::vector<CommandBufferInfo> command_buffers;
     command_buffers.reserve(submit_info.commandBufferInfoCount);
-    for (uint32_t i = 0; i < submit_info.commandBufferInfoCount; i++) {
+    for (u32 i = 0; i < submit_info.commandBufferInfoCount; i++) {
         VkCommandBuffer cbuf = submit_info.pCommandBufferInfos[i].commandBuffer;
         if (auto cb_state = sync_state_->Get<syncval_state::CommandBuffer>(cbuf)) {
             command_buffers.emplace_back(i, std::move(cb_state));
@@ -481,7 +481,7 @@ QueueId QueueBatchContext::GetQueueId() const {
     return id;
 }
 
-ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
+ResourceUsageTag QueueBatchContext::SetupBatchTags(u32 tag_count) {
     tag_range_ = sync_state_->ReserveGlobalTagRange(tag_count);
     access_context_.SetStartTag(tag_range_.begin);
 
@@ -522,15 +522,15 @@ std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::ResolveSubmitDepende
     return batches_resolved;
 }
 
-bool QueueBatchContext::ValidateSubmit(const VkSubmitInfo2& submit, uint64_t submit_index, uint32_t batch_index,
+bool QueueBatchContext::ValidateSubmit(const VkSubmitInfo2& submit, u64 submit_index, u32 batch_index,
                                        std::vector<std::string>& current_label_stack, const ErrorObject& error_obj) {
     bool skip = false;
     const std::vector<CommandBufferInfo> command_buffers = GetCommandBuffers(submit);
 
     BatchAccessLog::BatchRecord batch{queue_state_, submit_index, batch_index};
-    uint32_t tag_count = 0;
+    u32 tag_count = 0;
     for (const auto& cb : command_buffers) {
-        tag_count += static_cast<uint32_t>(cb.cb_state->access_context.GetTagCount());
+        tag_count += static_cast<u32>(cb.cb_state->access_context.GetTagCount());
     }
     if (tag_count) {
         batch.base_tag = SetupBatchTags(tag_count);
@@ -624,7 +624,7 @@ std::vector<QueueBatchContext::Ptr> SyncValidator::GetLastBatches(std::function<
 // scope state.
 // Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
 // atomic... but as the ops are per submit, the performance cost is negible for the peace of mind.
-uint64_t QueueSyncState::ReserveSubmitId() const { return submit_index_.fetch_add(1); }
+u64 QueueSyncState::ReserveSubmitId() const { return submit_index_.fetch_add(1); }
 
 void QueueSyncState::SetPendingLastBatch(QueueBatchContext::Ptr&& last) const { pending_last_batch_ = std::move(last); }
 
@@ -738,13 +738,13 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const Command
 }
 
 PresentedImage::PresentedImage(const SyncValidator& sync_state, QueueBatchContext::Ptr batch_, VkSwapchainKHR swapchain,
-                               uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)
+                               u32 image_index_, u32 present_index_, ResourceUsageTag tag_)
     : PresentedImageRecord{tag_, image_index_, present_index_, sync_state.Get<syncval_state::Swapchain>(swapchain), {}},
       batch(std::move(batch_)) {
     SetImage(image_index_);
 }
 
-PresentedImage::PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index) : PresentedImage() {
+PresentedImage::PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, u32 at_index) : PresentedImage() {
     swapchain_state = std::move(swapchain);
     tag = kInvalidTag;
     SetImage(at_index);
@@ -761,7 +761,7 @@ void PresentedImage::ExportToSwapchain(SyncValidator&) {  // Include this argume
     swap->RecordPresentedImage(std::move(*this));
 }
 
-void PresentedImage::SetImage(uint32_t at_index) {
+void PresentedImage::SetImage(u32 at_index) {
     image_index = at_index;
 
     auto swap_lock = swapchain_state.lock();

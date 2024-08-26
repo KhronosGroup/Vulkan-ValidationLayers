@@ -22,8 +22,8 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimit) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
@@ -48,9 +48,9 @@ TEST_F(NegativeShaderCompute, SharedMemoryBooleanOverLimit) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
-    const uint32_t max_shared_bools = max_shared_memory_size / 4;
+    const u32 max_shared_bools = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
@@ -88,8 +88,8 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported";
     }
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     csSource << R"glsl(
@@ -125,8 +125,8 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantDefault) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream cs_source;
     cs_source << R"glsl(
@@ -152,8 +152,8 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream cs_source;
     cs_source << R"glsl(
@@ -168,17 +168,17 @@ TEST_F(NegativeShaderCompute, SharedMemorySpecConstantSet) {
         void main(){}
     )glsl";
 
-    uint32_t data = 1;  // set Condition
+    u32 data = 1;  // set Condition
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
@@ -204,12 +204,12 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     VkSpecializationMapEntry entries[2];
     entries[0].constantID = 3;
     entries[0].offset = 0;
-    entries[0].size = sizeof(uint32_t);
+    entries[0].size = sizeof(u32);
     entries[1].constantID = 4;
-    entries[1].offset = sizeof(uint32_t);
-    entries[1].size = sizeof(uint32_t);
+    entries[1].offset = sizeof(u32);
+    entries[1].size = sizeof(u32);
 
-    uint32_t data[2] = {
+    u32 data[2] = {
         1,
         limits.maxComputeWorkGroupSize[1] + 1,  // Invalid
     };
@@ -217,7 +217,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstant) {
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 2;
     specialization_info.pMapEntries = entries;
-    specialization_info.dataSize = sizeof(uint32_t) * 2;
+    specialization_info.dataSize = sizeof(u32) * 2;
     specialization_info.pData = data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
@@ -244,7 +244,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeConstantDefault) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -283,7 +283,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -328,7 +328,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     RETURN_IF_SKIP(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -369,7 +369,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     RETURN_IF_SKIP(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
@@ -415,7 +415,7 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     RETURN_IF_SKIP(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
@@ -441,17 +441,17 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
                OpFunctionEnd
         )";
 
-    uint32_t data = x_size_limit + 1;
+    u32 data = x_size_limit + 1;
 
     VkSpecializationMapEntry entry;
     entry.constantID = 18;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
@@ -711,12 +711,12 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionModeMaintenance5) {
                OpReturn
                OpFunctionEnd
         )";
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     ASMtoSPV(SPV_ENV_UNIVERSAL_1_6, 0, source, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -741,16 +741,16 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     RETURN_IF_SKIP(Init());
     const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
-    uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
-    uint32_t y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
-    uint32_t z_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[2];
+    u32 x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
+    u32 y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
+    u32 z_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[2];
     if (std::max({x_count_limit, y_count_limit, z_count_limit}) == vvl::kU32Max) {
         GTEST_SKIP() << "device maxComputeWorkGroupCount limit reports UINT32_MAX";
     }
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
-    uint32_t y_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[1];
-    uint32_t z_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[2];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 y_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[1];
+    u32 z_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[2];
 
     std::string spv_source = R"(
         OpCapability Shader
@@ -783,7 +783,7 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     y_size_limit = (y_size_limit > 1024) ? 1024 : y_size_limit;
     z_size_limit = (z_size_limit > 64) ? 64 : z_size_limit;
 
-    uint32_t invocations_limit = m_device->phy().limits_.maxComputeWorkGroupInvocations;
+    u32 invocations_limit = m_device->phy().limits_.maxComputeWorkGroupInvocations;
     x_size_limit = (x_size_limit > invocations_limit) ? invocations_limit : x_size_limit;
     invocations_limit /= x_size_limit;
     y_size_limit = (y_size_limit > invocations_limit) ? invocations_limit : y_size_limit;
@@ -833,9 +833,9 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
         m_errorMonitor->VerifyFound();
 
         // (Base + count) exceeds limit
-        uint32_t x_base = x_count_limit / 2;
-        uint32_t y_base = y_count_limit / 2;
-        uint32_t z_base = z_count_limit / 2;
+        u32 x_base = x_count_limit / 2;
+        u32 y_base = y_count_limit / 2;
+        u32 z_base = z_count_limit / 2;
         x_count_limit -= x_base;
         y_count_limit -= y_base;
         z_count_limit -= z_base;

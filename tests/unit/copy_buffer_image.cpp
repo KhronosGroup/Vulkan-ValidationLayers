@@ -644,7 +644,7 @@ TEST_F(NegativeCopyBufferImage, ImageLayerCountMismatch) {
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {1, 1, 1};
 
-    const char *vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-08793" : "VUID-VkImageCopy-apiVersion-07941";
+    const char* vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-08793" : "VUID-VkImageCopy-apiVersion-07941";
     m_errorMonitor->SetDesiredError(vuid);
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
@@ -2191,7 +2191,7 @@ TEST_F(NegativeCopyBufferImage, DepthStencilImageCopyNoGraphicsQueueFlags) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> no_gfx = m_device->NonGraphicsQueueFamily();
+    const std::optional<u32> no_gfx = m_device->NonGraphicsQueueFamily();
     if (!no_gfx) {
         GTEST_SKIP() << "Non-graphics queue family not found";
     }
@@ -2234,7 +2234,7 @@ TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
+    const std::optional<u32> transfer_qfi = m_device->TransferOnlyQueueFamily();
     if (!transfer_qfi) {
         GTEST_SKIP() << "Transfer-only queue family not found";
     }
@@ -2494,7 +2494,7 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    const uint32_t buffer_size = 32 * 32 * 4;
+    const u32 buffer_size = 32 * 32 * 4;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy buffer_copy{};

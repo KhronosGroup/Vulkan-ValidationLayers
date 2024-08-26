@@ -372,9 +372,9 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind) {
 
 namespace vkt {
 
-GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage) : spv(spv) {
+GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const u32> spv, VkShaderStageFlagBits stage) : spv(spv) {
     shader_ci = vku::InitStructHelper();
-    shader_ci.codeSize = spv.size() * sizeof(uint32_t);
+    shader_ci.codeSize = spv.size() * sizeof(u32);
     shader_ci.pCode = spv.data();
 
     stage_ci = vku::InitStructHelper(&shader_ci);

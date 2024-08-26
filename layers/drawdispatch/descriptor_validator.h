@@ -39,56 +39,53 @@ class DescriptorSet;
 //   layout(set = 0, binding = 2) uniform sampler3D tex3d[];
 //   layout(set = 0, binding = 2) uniform sampler2D tex[];
 // And we need a DescriptorRequirement for each OpVariable
-using DescriptorBindingInfo = std::pair<uint32_t, std::vector<DescriptorRequirement>>;
+using DescriptorBindingInfo = std::pair<u32, std::vector<DescriptorRequirement>>;
 
 class DescriptorValidator {
- public:
-   DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb, vvl::DescriptorSet& set, uint32_t set_index,
-                       VkFramebuffer fb, const Location& l);
+  public:
+    DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb, vvl::DescriptorSet& set, u32 set_index,
+                        VkFramebuffer fb, const Location& l);
 
-   template <typename T>
-   std::string FormatHandle(T&& h) const {
-       return dev_state.FormatHandle(std::forward<T>(h));
+    template <typename T>
+    std::string FormatHandle(T&& h) const {
+        return dev_state.FormatHandle(std::forward<T>(h));
     }
 
     bool ValidateBinding(const DescriptorBindingInfo& binding_info, const vvl::DescriptorBinding& binding) const;
-    bool ValidateBinding(const DescriptorBindingInfo& binding_info, const std::vector<uint32_t> &indices);
+    bool ValidateBinding(const DescriptorBindingInfo& binding_info, const std::vector<u32>& indices);
 
- private:
+  private:
     template <typename T>
     bool ValidateDescriptors(const DescriptorBindingInfo& binding_info, const T& binding) const;
 
     template <typename T>
-    bool ValidateDescriptors(const DescriptorBindingInfo& binding_info, const T& binding, const std::vector<uint32_t>& indices);
+    bool ValidateDescriptors(const DescriptorBindingInfo& binding_info, const T& binding, const std::vector<u32>& indices);
 
-
-    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index,
-                            VkDescriptorType descriptor_type, const vvl::BufferDescriptor& descriptor) const;
-    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index,
-                            VkDescriptorType descriptor_type, const vvl::ImageDescriptor& descriptor) const;
-    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index,
-                            VkDescriptorType descriptor_type, const vvl::ImageSamplerDescriptor& descriptor) const;
-    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index,
-                            VkDescriptorType descriptor_type, const vvl::TexelDescriptor& descriptor) const;
-    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index,
-                            VkDescriptorType descriptor_type,
+    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkDescriptorType descriptor_type,
+                            const vvl::BufferDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkDescriptorType descriptor_type,
+                            const vvl::ImageDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkDescriptorType descriptor_type,
+                            const vvl::ImageSamplerDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkDescriptorType descriptor_type,
+                            const vvl::TexelDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkDescriptorType descriptor_type,
                             const vvl::AccelerationStructureDescriptor& descriptor) const;
-    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index,
-                            VkDescriptorType descriptor_type, const vvl::SamplerDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkDescriptorType descriptor_type,
+                            const vvl::SamplerDescriptor& descriptor) const;
 
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
-    bool ValidateSamplerDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index, VkSampler sampler, bool is_immutable,
+    bool ValidateSamplerDescriptor(const DescriptorBindingInfo& binding_info, u32 index, VkSampler sampler, bool is_immutable,
                                    const vvl::Sampler* sampler_state) const;
 
-    std::string DescribeDescriptor(const DescriptorBindingInfo& binding_info, uint32_t index) const;
+    std::string DescribeDescriptor(const DescriptorBindingInfo& binding_info, u32 index) const;
 
     ValidationStateTracker& dev_state;
     vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
-    const uint32_t set_index;
+    const u32 set_index;
     const VkFramebuffer framebuffer;
     const Location& loc;
     const DrawDispatchVuid& vuids;
-
 };
-}
+}  // namespace vvl

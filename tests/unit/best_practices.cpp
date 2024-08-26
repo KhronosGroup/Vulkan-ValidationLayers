@@ -22,11 +22,11 @@
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
     // Enable the vendor-specific checks spcified by vendor_checks_to_enable
     const char *input_values[] = {vendor_checks_to_enable};
-    const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT,
-                                           static_cast<uint32_t>(std::size(input_values)), input_values}};
+    const VkLayerSettingEXT settings[] = {
+        {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<u32>(std::size(input_values)), input_values}};
 
     const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                                                  static_cast<uint32_t>(std::size(settings)), settings};
+                                                                  static_cast<u32>(std::size(settings)), settings};
 
     features_.pNext = &layer_settings_create_info;
 
@@ -69,7 +69,7 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     }
 
     // Force a non-success success code by only asking for a subset of query results
-    uint32_t format_count;
+    u32 format_count;
     std::vector<VkSurfaceFormatKHR> formats;
     result = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, NULL);
     if (result != VK_SUCCESS || format_count <= 1) {
@@ -406,16 +406,16 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
 
-    uint32_t queue_family_count;
+    u32 queue_family_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
 
     std::vector<VkQueueFamilyProperties> queue_family_props;
     queue_family_props.resize(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_family_props.data());
 
-    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    u32 queue_family_index = VK_QUEUE_FAMILY_IGNORED;
     const VkQueueFlags sec_cmd_buf_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
-    for (uint32_t i = 0; i < queue_family_count; ++i) {
+    for (u32 i = 0; i < queue_family_count; ++i) {
         if ((queue_family_props[i].queueFlags & sec_cmd_buf_queue_flags) == 0) {
             queue_family_index = i;
             break;
@@ -473,13 +473,13 @@ TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkPhysicalDeviceMemoryProperties dev_mem_props = m_device->phy().memory_properties_;
 
-    uint32_t mem_type_index = 0;
+    u32 mem_type_index = 0;
     for (mem_type_index = 0; mem_type_index < dev_mem_props.memoryTypeCount; ++mem_type_index) {
         if (mem_props == (mem_props & dev_mem_props.memoryTypes[mem_type_index].propertyFlags)) break;
     }
     EXPECT_LT(mem_type_index, dev_mem_props.memoryTypeCount) << "Could not find a suitable memory type.";
 
-    const uint32_t kSmallAllocationSize = 1024;
+    const u32 kSmallAllocationSize = 1024;
 
     VkMemoryAllocateInfo alloc_info{};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -626,9 +626,9 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
 
     VkPipelineVertexInputStateCreateInfo vi_state_ci{};
     vi_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vi_state_ci.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+    vi_state_ci.vertexBindingDescriptionCount = static_cast<u32>(bindings.size());
     vi_state_ci.pVertexBindingDescriptions = bindings.data();
-    vi_state_ci.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+    vi_state_ci.vertexAttributeDescriptionCount = static_cast<u32>(attributes.size());
     vi_state_ci.pVertexAttributeDescriptions = attributes.data();
 
     CreatePipelineHelper pipe(*this);
@@ -914,7 +914,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     // the present mode is VK_PRESENT_MODE_FIFO_KHR
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &m_surface_capabilities);
 
-    uint32_t format_count;
+    u32 format_count;
     vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, nullptr);
     if (format_count != 0) {
         m_surface_formats.resize(format_count);
@@ -957,7 +957,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     std::vector<VkQueueFamilyProperties> queue_family_props;
 
     // Ensure we can find a graphics queue family.
-    uint32_t queue_count = 0;
+    u32 queue_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, nullptr);
 
     queue_family_props.resize(queue_count);
@@ -968,7 +968,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, nullptr);
 
     queue_family_props2.resize(queue_count);
-    for (uint32_t i = 0; i < queue_count; i++) {
+    for (u32 i = 0; i < queue_count; i++) {
         queue_family_props2[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
     }
     vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
@@ -989,7 +989,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     const vkt::PhysicalDevice phys_device_obj(gpu_);
 
     std::vector<VkQueueFamilyProperties> queue_family_props(1);
-    uint32_t queue_count = static_cast<uint32_t>(queue_family_props.size());
+    u32 queue_count = static_cast<u32>(queue_family_props.size());
 
     // might only be a queue_count of 1, so check and then do "real" test to make sure error is detected
     m_errorMonitor->SetUnexpectedError("BestPractices-GetPhysicalDeviceQueueFamilyProperties-CountMismatch");
@@ -1007,7 +1007,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t j = 0; j < queue_info.size(); ++j) {
+    for (u32 j = 0; j < queue_info.size(); ++j) {
         if (qci[j].queueCount) {
             create_queue_infos.push_back(qci[j]);
         }
@@ -1172,7 +1172,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = (uint32_t)flags.size();
+    flags_create_info.bindingCount = (u32)flags.size();
     flags_create_info.pBindingFlags = flags.data();
 
     OneOffDescriptorSet normal_descriptor_set(m_device,
@@ -1591,7 +1591,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     vkt::Queue *graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
 
     vkt::Queue *compute_queue = nullptr;
-    for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
+    for (u32 i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
         auto cqi = m_device->QueuesWithComputeCapability()[i];
         if (cqi->family_index != graphics_queue->family_index) {
             compute_queue = cqi;
@@ -1945,9 +1945,9 @@ TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    uint32_t data = 0u;
+    u32 data = 0u;
     m_errorMonitor->SetDesiredWarning("BestPractices-QueryPool-Unavailable");
-    vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(uint32_t), &data, sizeof(uint32_t), 0u);
+    vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(u32), &data, sizeof(u32), 0u);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2028,7 +2028,7 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    uint32_t data[2] = {1u, 2u};
+    u32 data[2] = {1u, 2u};
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(data)};
 
     CreatePipelineHelper pipe(*this);
@@ -2039,15 +2039,15 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t),
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(u32),
                          data);
 
     m_errorMonitor->SetDesiredWarning("BestPractices-PushConstants");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(uint32_t),
-                         sizeof(uint32_t), &data[1]);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(u32),
+                         sizeof(u32), &data[1]);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -2076,8 +2076,8 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    uint32_t data = 1u;
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t) * 3};
+    u32 data = 1u;
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(u32) * 3};
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -2087,10 +2087,10 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t),
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(u32),
                          &data);
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT,
-                         sizeof(uint32_t) * 2, sizeof(uint32_t), &data);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, sizeof(u32) * 2,
+                         sizeof(u32), &data);
 
     m_errorMonitor->SetDesiredWarning("BestPractices-PushConstants");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);

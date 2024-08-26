@@ -54,7 +54,7 @@ enum SyncHazard {
     PRESENT_AFTER_WRITE,
 };
 
-enum class SyncOrdering : uint8_t {
+enum class SyncOrdering : u8 {
     kOrderingNone = 0,
     kNonAttachment = kOrderingNone,
     kColorAttachment = 1,
@@ -73,7 +73,7 @@ class HazardResult {
         SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
         SyncStageAccessFlags prior_access;
         ResourceUsageTag tag = ResourceUsageTag();
-        uint32_t handle_index = vvl::kNoIndex32;
+        u32 handle_index = vvl::kNoIndex32;
         SyncHazard hazard = NONE;
         HazardState(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
                     const SyncStageAccessFlags &prior, ResourceUsageTagEx tag_ex);
@@ -173,7 +173,7 @@ struct SyncBarrier {
 struct ResourceFirstAccess {
     const SyncStageAccessInfoType *usage_info;
     ResourceUsageTag tag;
-    uint32_t handle_index;
+    u32 handle_index;
     SyncOrdering ordering_rule;
 
     ResourceFirstAccess(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule)
@@ -184,7 +184,7 @@ struct ResourceFirstAccess {
     ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
 };
 
-using QueueId = uint32_t;
+using QueueId = u32;
 struct OrderingBarrier {
     VkPipelineStageFlags2KHR exec_scope;
     SyncStageAccessFlags access_scope;
@@ -250,7 +250,7 @@ class ResourceAccessWriteState {
     const SyncStageAccessInfoType *access_;
     SyncStageAccessFlags barriers_;  // union of applicable barrier masks since last write
     ResourceUsageTag tag_;
-    uint32_t handle_index_;
+    u32 handle_index_;
     QueueId queue_;
     // intially zero, but accumulating the dstStages of barriers if they chain.
     VkPipelineStageFlags2KHR dependency_chain_;
@@ -280,7 +280,7 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags2KHR barriers;     // all applicable barriered stages
         VkPipelineStageFlags2KHR sync_stages;  // reads known to have happened after this
         ResourceUsageTag tag;
-        uint32_t handle_index;
+        u32 handle_index;
         QueueId queue;
         VkPipelineStageFlags2KHR pending_dep_chain;  // Should be zero except during barrier application
                                                      // Excluded from comparison
@@ -509,7 +509,7 @@ class ResourceAccessState : public SyncStageAccess {
 
     VkPipelineStageFlags2KHR last_read_stages;
     VkPipelineStageFlags2KHR read_execution_barriers;
-    using ReadStates = small_vector<ReadState, 3, uint32_t>;
+    using ReadStates = small_vector<ReadState, 3, u32>;
     ReadStates last_reads;
 
     // TODO Input Attachment cleanup for multiple reads in a given stage
@@ -598,7 +598,7 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
 
     // Now that we know the reads directly in scopejust need to go over the list again to pick up the "known earlier" stages.
     // NOTE: sync_stages is "deep" catching all stages synchronized after it because we forward barriers
-    uint32_t unsync_count = 0;
+    u32 unsync_count = 0;
     for (auto &read_access : last_reads) {
         if (0 != ((read_access.stage | read_access.sync_stages) & sync_reads)) {
             // This is redundant in the "stage" case, but avoids a second branch to get an accurate count

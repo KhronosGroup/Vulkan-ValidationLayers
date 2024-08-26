@@ -90,12 +90,12 @@ class Image : public Bindable {
     const VkImageCreateInfo &create_info;
     bool shared_presentable;                   // True for a front-buffered swapchain image
     bool layout_locked;                        // A front-buffered image that has been presented can never have layout transitioned
-    const uint64_t ahb_format;                 // External Android format, if provided
+    const u64 ahb_format;                      // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
     const VkSwapchainKHR create_from_swapchain;
     const bool owned_by_swapchain;
     std::shared_ptr<vvl::Swapchain> bind_swapchain;
-    uint32_t swapchain_image_index;
+    u32 swapchain_image_index;
     const VkFormatFeatureFlags2KHR format_features;
     // Need to memory requirments for each plane if image is disjoint
     const bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
@@ -128,7 +128,7 @@ class Image : public Bindable {
     Image(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
           VkFormatFeatureFlags2KHR features);
     Image(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-          uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
+          u32 swapchain_index, VkFormatFeatureFlags2KHR features);
     Image(Image const &rh_obj) = delete;
     std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Image> shared_from_this() { return SharedFromThisImpl(this); }
@@ -192,7 +192,7 @@ class Image : public Bindable {
         }
     }
 
-    void SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index);
+    void SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, u32 swapchain_index);
 
     void Destroy() override;
 
@@ -269,7 +269,7 @@ class ImageView : public StateObject {
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
-    const uint32_t descriptor_format_bits;
+    const u32 descriptor_format_bits;
     const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;
@@ -303,7 +303,7 @@ class ImageView : public StateObject {
 
     bool IsDepthSliced() const { return is_depth_sliced; }
 
-    uint32_t GetAttachmentLayerCount() const;
+    u32 GetAttachmentLayerCount() const;
 
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
 };
@@ -329,12 +329,12 @@ class Swapchain : public StateObject {
     bool retired = false;
     bool exclusive_full_screen_access;
     const bool shared_presentable;
-    uint64_t max_present_id = 0;
+    u64 max_present_id = 0;
     const vku::safe_VkImageCreateInfo image_create_info;
 
     std::shared_ptr<vvl::Surface> surface;
     ValidationStateTracker &dev_data;
-    uint32_t acquired_images = 0;
+    u32 acquired_images = 0;
 
     Swapchain(ValidationStateTracker &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 
@@ -346,16 +346,16 @@ class Swapchain : public StateObject {
 
     VkSwapchainKHR VkHandle() const { return handle_.Cast<VkSwapchainKHR>(); }
 
-    void PresentImage(uint32_t image_index, uint64_t present_id);
+    void PresentImage(u32 image_index, u64 present_id);
 
-    void AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
+    void AcquireImage(u32 image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
                       const std::shared_ptr<vvl::Fence> &fence_state);
 
     void Destroy() override;
 
-    SwapchainImage GetSwapChainImage(uint32_t index) const;
+    SwapchainImage GetSwapChainImage(u32 index) const;
 
-    std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
+    std::shared_ptr<const vvl::Image> GetSwapChainImageShared(u32 index) const;
 
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
@@ -365,7 +365,7 @@ class Swapchain : public StateObject {
 
 struct GpuQueue {
     VkPhysicalDevice gpu;
-    uint32_t queue_family_index;
+    u32 queue_family_index;
 };
 
 inline bool operator==(GpuQueue const &lhs, GpuQueue const &rhs) {
@@ -375,9 +375,7 @@ inline bool operator==(GpuQueue const &lhs, GpuQueue const &rhs) {
 namespace std {
 template <>
 struct hash<GpuQueue> {
-    size_t operator()(GpuQueue gq) const throw() {
-        return hash<uint64_t>()((uint64_t)(gq.gpu)) ^ hash<uint32_t>()(gq.queue_family_index);
-    }
+    size_t operator()(GpuQueue gq) const throw() { return hash<u64>()((u64)(gq.gpu)) ^ hash<u32>()(gq.queue_family_index); }
 };
 }  // namespace std
 
@@ -403,8 +401,8 @@ class Surface : public StateObject {
 
     void RemoveParent(StateObject *parent_node) override;
 
-    void SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported);
-    bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
+    void SetQueueSupport(VkPhysicalDevice phys_dev, u32 qfi, bool supported);
+    bool GetQueueSupport(VkPhysicalDevice phys_dev, u32 qfi) const;
 
     void SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes);
     std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,

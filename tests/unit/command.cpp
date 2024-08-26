@@ -276,7 +276,7 @@ TEST_F(NegativeCommand, PushConstants) {
         char const *msg;
     };
 
-    const uint32_t too_big = m_device->phy().limits_.maxPushConstantsSize + 0x4;
+    const u32 too_big = m_device->phy().limits_.maxPushConstantsSize + 0x4;
     const std::array<PipelineLayoutTestCase, 10> range_tests = {{
         {{VK_SHADER_STAGE_VERTEX_BIT, 0, 0}, "VUID-VkPushConstantRange-size-00296"},
         {{VK_SHADER_STAGE_VERTEX_BIT, 0, 1}, "VUID-VkPushConstantRange-size-00297"},
@@ -311,7 +311,7 @@ TEST_F(NegativeCommand, PushConstants) {
     // to the push constant range that has that shader's stage flag set.
     // The shader's stage flag can only appear once in all the ranges, so the
     // implementation can find the one and only range to map it to.
-    const uint32_t ranges_per_test = 5;
+    const u32 ranges_per_test = 5;
     struct DuplicateStageFlagsTestCase {
         VkPushConstantRange const ranges[ranges_per_test];
         std::vector<char const *> const msg;
@@ -367,7 +367,7 @@ TEST_F(NegativeCommand, PushConstants) {
                                                         {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 32}};
     const vkt::PipelineLayout pipeline_layout_obj(*m_device, {}, pc_range2);
 
-    const uint8_t dummy_values[100] = {};
+    const u8 dummy_values[100] = {};
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -1378,7 +1378,7 @@ TEST_F(NegativeCommand, ResolveImageImageType) {
     image_create_info.extent.height = 1;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 4;  // more than 1 to not trip other validation
+    image_create_info.arrayLayers = 4;                  // more than 1 to not trip other validation
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;  // guarantee support from sampledImageColorSampleCounts
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage =
@@ -1545,10 +1545,10 @@ TEST_F(NegativeCommand, ClearImage) {
 
     // Color image
     VkClearColorValue clear_color;
-    memset(clear_color.uint32, 0, sizeof(uint32_t) * 4);
+    memset(clear_color.uint32, 0, sizeof(u32) * 4);
     const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t img_width = 32;
-    const int32_t img_height = 32;
+    const i32 img_width = 32;
+    const i32 img_height = 32;
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = color_format;
@@ -1630,7 +1630,7 @@ TEST_F(NegativeCommand, CommandQueueFlags) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!queueFamilyIndex) {
         GTEST_SKIP() << "Non-graphics queue family not found";
     }
@@ -1721,7 +1721,7 @@ TEST_F(NegativeCommand, MultiDraw) {
     m_errorMonitor->VerifyFound();
 
     if (multi_draw_properties.maxMultiDrawCount < vvl::kU32Max) {
-        uint32_t draw_count = multi_draw_properties.maxMultiDrawCount + 1;
+        u32 draw_count = multi_draw_properties.maxMultiDrawCount + 1;
         std::vector<VkMultiDrawInfoEXT> max_multi_draws(draw_count);
         std::vector<VkMultiDrawIndexedInfoEXT> max_multi_indexed_draws(draw_count);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-drawCount-04934");
@@ -1888,7 +1888,7 @@ TEST_F(NegativeCommand, IndirectDraw) {
 
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vkt::Buffer draw_buffer_correct(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-buffer-02709");
@@ -1932,7 +1932,7 @@ TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
     vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawIndirectCommand) * 3, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -1955,7 +1955,7 @@ TEST_F(NegativeCommand, StrideMultiDrawIndirect) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t buffer_size = 128;
+    const u32 buffer_size = 128;
     vkt::Buffer buffer(*m_device, buffer_size,
                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
@@ -2112,7 +2112,7 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
     vkt::Buffer count_buffer(*m_device, count_buffer_create_info);
 
     VkBufferCreateInfo index_buffer_create_info = vku::InitStructHelper();
-    index_buffer_create_info.size = sizeof(uint32_t);
+    index_buffer_create_info.size = sizeof(u32);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer index_buffer(*m_device, index_buffer_create_info);
 
@@ -2182,9 +2182,9 @@ TEST_F(NegativeCommand, DrawIndirectCountFeature) {
     vkt::Buffer indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer count_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -2239,11 +2239,11 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
 
         using std::vector;
         struct TestCase {
-            uint32_t viewport_count;
+            u32 viewport_count;
             VkViewport *viewports;
-            uint32_t scissor_count;
+            u32 scissor_count;
             VkRect2D *scissors;
-            uint32_t exclusive_scissor_count;
+            u32 exclusive_scissor_count;
             VkRect2D *exclusive_scissors;
 
             vector<std::string> vuids;
@@ -2271,8 +2271,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
         };
 
         for (const auto &test_case : test_cases) {
-            VkPipelineViewportExclusiveScissorStateCreateInfoNV exc =
-                vku::InitStructHelper();
+            VkPipelineViewportExclusiveScissorStateCreateInfoNV exc = vku::InitStructHelper();
 
             const auto break_vp = [&test_case, &exc](CreatePipelineHelper &helper) {
                 helper.vp_state_ci_.viewportCount = test_case.viewport_count;
@@ -2331,10 +2330,10 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
             {{{0, -1}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
             {{{1, 0}, {vvl::kI32Max, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
             {{{vvl::kI32Max, 0}, {1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-            {{{0, 0}, {uint32_t{vvl::kI32Max} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{0, 0}, {u32{vvl::kI32Max} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
             {{{0, 1}, {16, vvl::kI32Max}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
             {{{0, vvl::kI32Max}, {16, 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
-            {{{0, 0}, {16, uint32_t{vvl::kI32Max} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
+            {{{0, 0}, {16, u32{vvl::kI32Max} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
 
         for (const auto &test_case : test_cases) {
             m_errorMonitor->SetDesiredError(test_case.vuid.c_str());
@@ -2384,7 +2383,7 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     constexpr std::array scale = {VkViewportWScalingNV{-0.2f, -0.2f}, VkViewportWScalingNV{0.2f, -0.2f},
                                   VkViewportWScalingNV{-0.2f, 0.2f}, VkViewportWScalingNV{0.2f, 0.2f}};
 
-    const uint32_t vp_count = static_cast<uint32_t>(vp.size());
+    const u32 vp_count = static_cast<u32>(vp.size());
 
     VkPipelineViewportWScalingStateCreateInfoNV vpsi = vku::InitStructHelper();
     vpsi.viewportWScalingEnable = VK_TRUE;
@@ -2613,13 +2612,13 @@ TEST_F(NegativeCommand, CmdUpdateBufferSize) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t update_data[4] = {0, 0, 0, 0};
-    VkDeviceSize dataSize = sizeof(uint32_t) * 4;
+    u32 update_data[4] = {0, 0, 0, 0};
+    VkDeviceSize dataSize = sizeof(u32) * 4;
     vkt::Buffer buffer(*m_device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dataSize-00033");
     m_commandBuffer->begin();
-    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(uint32_t), dataSize, (void *)update_data);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(u32), dataSize, (void *)update_data);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
 }
@@ -2629,13 +2628,13 @@ TEST_F(NegativeCommand, CmdUpdateBufferDstOffset) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t update_data[4] = {0, 0, 0, 0};
-    VkDeviceSize dataSize = sizeof(uint32_t) * 4;
+    u32 update_data[4] = {0, 0, 0, 0};
+    VkDeviceSize dataSize = sizeof(u32) * 4;
     vkt::Buffer buffer(*m_device, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dstOffset-00032");
     m_commandBuffer->begin();
-    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(uint32_t) * 8, dataSize, (void *)update_data);
+    vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer.handle(), sizeof(u32) * 8, dataSize, (void *)update_data);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
 }
@@ -2646,7 +2645,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPoint) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (!compute_qfi) {
         GTEST_SKIP() << "No compute-only queue family, skipping bindpoint and queue tests.";
     }
@@ -2673,7 +2672,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     AddRequiredFeature(vkt::Feature::maintenance6);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (!compute_qfi) {
         GTEST_SKIP() << "No compute-only queue family, skipping bindpoint and queue tests.";
     }
@@ -3332,10 +3331,10 @@ TEST_F(NegativeCommand, ClearColorImageWithinRenderPass) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     VkClearColorValue clear_color;
-    memset(clear_color.uint32, 0, sizeof(uint32_t) * 4);
+    memset(clear_color.uint32, 0, sizeof(u32) * 4);
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
+    const i32 tex_width = 32;
+    const i32 tex_height = 32;
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
@@ -3458,8 +3457,8 @@ TEST_F(NegativeCommand, ClearColorImageImageLayout) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
+    const i32 tex_width = 32;
+    const i32 tex_height = 32;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -3500,8 +3499,8 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
 
     VkImageFormatProperties image_format_properties{};
     ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), m_renderTargets[0]->format(),
-                                                                 VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                                                 m_renderTargets[0]->usage(), 0, &image_format_properties));
+                                                                     VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                                     m_renderTargets[0]->usage(), 0, &image_format_properties));
     if (image_format_properties.maxArrayLayers < 4) {
         GTEST_SKIP() << "Test needs to create image 2D array of 4 image view, but VkImageFormatProperties::maxArrayLayers is < 4. "
                         "Skipping test.";
@@ -3644,7 +3643,7 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
     RETURN_IF_SKIP(Init());
 
     VkClearColorValue clear_color;
-    memset(clear_color.uint32, 0, sizeof(uint32_t) * 4);
+    memset(clear_color.uint32, 0, sizeof(u32) * 4);
     const VkImageSubresourceRange color_range = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -3662,7 +3661,7 @@ TEST_F(NegativeCommand, RenderPassContinueNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
 
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
@@ -3746,7 +3745,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
 
     RETURN_IF_SKIP(Init());
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         bool missing_depth = i == 0;
         auto format = missing_depth ? FindSupportedStencilOnlyFormat(m_device->phy().handle())
                                     : FindSupportedDepthOnlyFormat(m_device->phy().handle());

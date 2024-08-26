@@ -27,7 +27,7 @@ TEST_F(PositiveThreading, DisplayObjects) {
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t prop_count = 0;
+    u32 prop_count = 0;
     vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count == 0) {
         GTEST_SKIP() << "No VkDisplayKHR properties to query";
@@ -50,7 +50,7 @@ TEST_F(PositiveThreading, DisplayPlaneObjects) {
     AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t prop_count = 0;
+    u32 prop_count = 0;
     vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count != 0) {
         // only grab first plane property
@@ -77,7 +77,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = (uint32_t)flags.size();
+    flags_create_info.bindingCount = (u32)flags.size();
     flags_create_info.pBindingFlags = flags.data();
 
     OneOffDescriptorSet normal_descriptor_set(m_device,
@@ -141,7 +141,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    constexpr uint32_t count = 10000u;
+    constexpr u32 count = 10000u;
 
     VkDescriptorPoolSize pool_size;
     pool_size.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -176,7 +176,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     allocate_info.pSetLayouts = &set_layout.handle();
 
     VkDescriptorSet descriptor_sets[count];
-    for (uint32_t i = 0; i < count; ++i) {
+    for (u32 i = 0; i < count; ++i) {
         vk::AllocateDescriptorSets(*m_device, &allocate_info, &descriptor_sets[i]);
     }
 
@@ -196,7 +196,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     descriptor_write.pBufferInfo = &buffer_info;
     descriptor_write.pTexelBufferView = nullptr;
 
-    for (uint32_t i = 0; i < count; ++i) {
+    for (u32 i = 0; i < count; ++i) {
         descriptor_write.dstSet = descriptor_sets[i];
         vk::UpdateDescriptorSets(*m_device, 1u, &descriptor_write, 0u, nullptr);
     }
@@ -206,15 +206,15 @@ TEST_F(PositiveThreading, DebugObjectNames) {
 
     std::atomic<bool> bailout{false};
 
-    for (uint32_t i = 0; i < count; ++i) {
+    for (u32 i = 0; i < count; ++i) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
     }
 
     m_errorMonitor->SetBailout(&bailout);
     const auto set_name = [&]() {
-        for (uint32_t i = 0; i < count; ++i) {
+        for (u32 i = 0; i < count; ++i) {
             std::string name = "handle" + std::to_string(i);
-            name_info.objectHandle = (uint64_t)descriptor_sets[i];
+            name_info.objectHandle = (u64)descriptor_sets[i];
             name_info.pObjectName = name.c_str();
             vk::SetDebugUtilsObjectNameEXT(*m_device, &name_info);
             if (i % 3 == 0) {
@@ -225,7 +225,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     };
     const auto bind_descriptor = [&]() {
         m_commandBuffer->begin();
-        for (uint32_t i = 0; i < count; ++i) {
+        for (u32 i = 0; i < count; ++i) {
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
                                       &descriptor_sets[i], 0u, nullptr);
         }
@@ -258,7 +258,7 @@ TEST_F(PositiveThreading, Queue) {
     RETURN_IF_SKIP(Init());
 
     const auto queue_family = m_device->QueuesWithGraphicsCapability()[0]->family_index;
-    constexpr uint32_t queue_index = 0;
+    constexpr u32 queue_index = 0;
     vkt::CommandPool command_pool(*m_device, queue_family);
 
     const VkDevice device_h = device();

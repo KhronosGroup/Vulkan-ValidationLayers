@@ -20,7 +20,8 @@
 class NegativeDynamicRenderingLocalRead : public DynamicRenderingTest {};
 
 TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLayout) {
-    TEST_DESCRIPTION("Feature is disabled, but attachment descriptor and/or reference uses VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR");
+    TEST_DESCRIPTION(
+        "Feature is disabled, but attachment descriptor and/or reference uses VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR");
 
     // Add extention, but keep feature disabled
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
@@ -53,8 +54,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLayout) {
 
     attach->initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach->finalLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR;
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true,
-                         "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09545",
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09545",
                          "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09545");
 }
 
@@ -63,7 +63,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorLocation) {
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
-    uint32_t locations[] = {1, 0, 2};
+    u32 locations[] = {1, 0, 2};
 
     VkRenderingAttachmentLocationInfoKHR pipeline_location_info = vku::InitStructHelper();
     pipeline_location_info.colorAttachmentCount = 2;
@@ -113,8 +113,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdDrawColorIndex) {
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
     VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
-    uint32_t locations[] = {0, 1};
-    uint32_t inputs[] = {0, 1, 0};
+    u32 locations[] = {0, 1};
+    u32 inputs[] = {0, 1, 0};
 
     VkRenderingInputAttachmentIndexInfoKHR inputs_info = vku::InitStructHelper();
     inputs_info.colorAttachmentCount = 2;
@@ -196,7 +196,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdClearAttachments) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t location = VK_ATTACHMENT_UNUSED;
+    u32 location = VK_ATTACHMENT_UNUSED;
     VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 1;
     location_info.pColorAttachmentLocations = &location;
@@ -294,7 +294,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
-    TEST_DESCRIPTION("Test setting image memory barrier transferring ownership without dynamic rendering local read features enabled.");
+    TEST_DESCRIPTION(
+        "Test setting image memory barrier transferring ownership without dynamic rendering local read features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
@@ -352,7 +353,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
-    TEST_DESCRIPTION("Test setting image memory barrier within BeginRenderning without dynamic rendering local read features enabled.");
+    TEST_DESCRIPTION(
+        "Test setting image memory barrier within BeginRenderning without dynamic rendering local read features enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
@@ -453,8 +455,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierFramebufferStagesOnly) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-09556");
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &barrier, 0, nullptr, 0,
-                           nullptr);
+                           VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 1, &barrier, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRendering();
@@ -572,7 +573,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    for (uint32_t i = 0; i < 3; i++) {
+    for (u32 i = 0; i < 3; i++) {
         vector<VkAttachmentReference> color_references;
         vector<VkAttachmentDescription> attachment_descriptions;
         std::shared_ptr<vkt::Framebuffer> framebuffer;
@@ -701,13 +702,13 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCou
     TEST_DESCRIPTION("colorAttachmentCount in Inputs Info must be less than maxColorAttachments");
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    std::vector<uint32_t> input_attachment_indices(m_device->phy().limits_.maxColorAttachments + 1);
+    std::vector<u32> input_attachment_indices(m_device->phy().limits_.maxColorAttachments + 1);
     for (size_t i = 0; i < input_attachment_indices.size(); i++) {
-        input_attachment_indices[i] = static_cast<uint32_t>(i);
+        input_attachment_indices[i] = static_cast<u32>(i);
     }
 
     VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
-    input_info.colorAttachmentCount = static_cast<uint32_t>(input_attachment_indices.size());
+    input_info.colorAttachmentCount = static_cast<u32>(input_attachment_indices.size());
     input_info.pColorAttachmentInputIndices = input_attachment_indices.data();
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -770,7 +771,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndicesColorAttachment
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t locations[] = {0};
+    u32 locations[] = {0};
     VkRenderingInputAttachmentIndexInfoKHR input_info = vku::InitStructHelper();
     input_info.colorAttachmentCount = 1;
     input_info.pColorAttachmentInputIndices = locations;
@@ -832,18 +833,17 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexSetToUnused) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t locations[] = {0};
-    uint32_t unused = VK_ATTACHMENT_UNUSED;
+    u32 locations[] = {0};
+    u32 unused = VK_ATTACHMENT_UNUSED;
     VkRenderingInputAttachmentIndexInfoKHR input_info[3] = {
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &locations[0], nullptr, nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &unused, &locations[0], nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &unused, nullptr, &locations[0]}};
-    const char *vuids[] = {
-        "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09519",
-        "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09520",
-        "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09521"};
+    const char *vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09519",
+                           "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09520",
+                           "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09521"};
 
-    for (uint32_t i = 0; i < 3; i++) {
+    for (u32 i = 0; i < 3; i++) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516");
         m_errorMonitor->SetDesiredError(vuids[i]);
         vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info[i]);
@@ -877,8 +877,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t locations_bad[] = {0, 0};
-    uint32_t locations_good[] = {0, 1};
+    u32 locations_bad[] = {0, 0};
+    u32 locations_good[] = {0, 1};
     VkRenderingInputAttachmentIndexInfoKHR input_info[3] = {
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_bad[0], nullptr, nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_good[0], &locations_bad[0], nullptr},
@@ -887,7 +887,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
                            "VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09523",
                            "VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09524"};
 
-    for (uint32_t i = 0; i < 3; i++) {
+    for (u32 i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredError(vuids[i]);
         vk::CmdSetRenderingInputAttachmentIndicesKHR(m_commandBuffer->handle(), &input_info[i]);
         m_errorMonitor->VerifyFound();
@@ -922,7 +922,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachme
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t locations[] = {0};
+    u32 locations[] = {0};
     VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 1;
     location_info.pColorAttachmentLocations = locations;
@@ -1029,7 +1029,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsValidity) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t color_attachment_locations[2] = {1, 1};
+    u32 color_attachment_locations[2] = {1, 1};
     VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = color_attachment_locations;
@@ -1064,13 +1064,13 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    std::vector<uint32_t> color_attachment_locations(m_device->phy().limits_.maxColorAttachments + 1);
+    std::vector<u32> color_attachment_locations(m_device->phy().limits_.maxColorAttachments + 1);
     for (size_t i = 0; i < color_attachment_locations.size(); i++) {
-        color_attachment_locations[i] = static_cast<uint32_t>(i);
+        color_attachment_locations[i] = static_cast<u32>(i);
     }
 
     VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
-    location_info.colorAttachmentCount = static_cast<uint32_t>(color_attachment_locations.size());
+    location_info.colorAttachmentCount = static_cast<u32>(color_attachment_locations.size());
     location_info.pColorAttachmentLocations = color_attachment_locations.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfoKHR-colorAttachmentCount-09514");
@@ -1177,8 +1177,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, RenderingAttachmentLocationInfoMismatc
 
     vkt::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
 
-    uint32_t color_attachment_locations[1] = {0};
-    uint32_t invalid_attachment_locations[1] = {1};
+    u32 color_attachment_locations[1] = {0};
+    u32 invalid_attachment_locations[1] = {1};
 
     VkRenderingAttachmentLocationInfoKHR rendering_attachment_location_info = vku::InitStructHelper{};
     rendering_attachment_location_info.colorAttachmentCount = 1;
@@ -1266,13 +1266,13 @@ TEST_F(NegativeDynamicRenderingLocalRead, RenderingInputAttachmentIndexInfoMisma
 
     vkt::CommandBuffer secondary_cmd_buffer(*m_device, secondary_cmd_buffer_alloc_info);
 
-    uint32_t color_attachment_indices[1] = {1};
-    uint32_t invalid_color_attachment_indices[1] = {0};
+    u32 color_attachment_indices[1] = {1};
+    u32 invalid_color_attachment_indices[1] = {0};
 
-    const uint32_t depth_attachment_index = VK_ATTACHMENT_UNUSED;
-    const uint32_t stencil_attachment_index = VK_ATTACHMENT_UNUSED;
-    const uint32_t invalid_depth_attachment_index = 0;
-    const uint32_t invalid_stencil_attachment_index = 0;
+    const u32 depth_attachment_index = VK_ATTACHMENT_UNUSED;
+    const u32 stencil_attachment_index = VK_ATTACHMENT_UNUSED;
+    const u32 invalid_depth_attachment_index = 0;
+    const u32 invalid_stencil_attachment_index = 0;
 
     VkRenderingInputAttachmentIndexInfoKHR rendering_input_attachment_index_info = vku::InitStructHelper{};
     rendering_input_attachment_index_info.colorAttachmentCount = 1;

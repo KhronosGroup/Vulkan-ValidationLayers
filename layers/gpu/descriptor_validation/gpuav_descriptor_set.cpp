@@ -68,13 +68,13 @@ void AddressBuffer::CreateBuffer(const Location &loc, const VkBufferCreateInfo *
 void AddressBuffer::DestroyBuffer() { vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation); }
 
 // Returns the number of bytes to hold 32 bit aligned array of bits.
-static uint32_t BitBufferSize(uint32_t num_bits) {
-    static constexpr uint32_t kBitsPerWord = 32;
-    return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1)) / kBitsPerWord) * sizeof(uint32_t);
+static u32 BitBufferSize(u32 num_bits) {
+    static constexpr u32 kBitsPerWord = 32;
+    return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1)) / kBitsPerWord) * sizeof(u32);
 }
 
 DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool,
-                             const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
+                             const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, u32 variable_count,
                              ValidationStateTracker *state_data)
     : vvl::DescriptorSet(handle, pool, layout, variable_count, state_data), layout_(*static_cast<Validator *>(state_data)) {}
 
@@ -88,7 +88,7 @@ VkDeviceAddress DescriptorSet::GetLayoutState(Validator &gpuav, const Location &
     if (layout_.device_addr != 0) {
         return layout_.device_addr;
     }
-    uint32_t num_bindings = (GetBindingCount() > 0) ? GetLayout()->GetMaxBinding() + 1 : 0;
+    u32 num_bindings = (GetBindingCount() > 0) ? GetLayout()->GetMaxBinding() + 1 : 0;
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
     // 1 uvec2 to store num_bindings and 1 for each binding's data
     buffer_info.size = (1 + num_bindings) * sizeof(glsl::BindingLayout);
@@ -124,7 +124,7 @@ VkDeviceAddress DescriptorSet::GetLayoutState(Validator &gpuav, const Location &
     // 7 = start of init data for binding 2 = 0 (ignored)
     // 8 = number of descriptors in binding 3 = 2
     // 9 = start of init data for binding 3 =  5
-    uint32_t state_start = 0;
+    u32 state_start = 0;
     for (size_t i = 0; i < bindings_.size(); i++) {
         auto &binding = bindings_[i];
         if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == binding->type) {
@@ -146,7 +146,7 @@ static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
     if (!buffer_state) {
         return glsl::DescriptorState(DescriptorClass::GeneralBuffer, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
     }
-    return glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id, static_cast<uint32_t>(desc.GetEffectiveRange()));
+    return glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id, static_cast<u32>(desc.GetEffectiveRange()));
 }
 
 static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
@@ -155,7 +155,7 @@ static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
         return glsl::DescriptorState(DescriptorClass::TexelBuffer, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
     }
     auto view_size = buffer_view_state->Size();
-    uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
+    u32 res_size = static_cast<u32>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
     return glsl::DescriptorState(DescriptorClass::TexelBuffer, buffer_view_state->id, res_size);
 }
 
@@ -177,7 +177,7 @@ static glsl::DescriptorState GetInData(const vvl::ImageSamplerDescriptor &desc) 
 }
 
 static glsl::DescriptorState GetInData(const vvl::AccelerationStructureDescriptor &ac) {
-    uint32_t id;
+    u32 id;
     if (ac.is_khr()) {
         auto ac_state = static_cast<const AccelerationStructureKHR *>(ac.GetAccelerationStructureStateKHR());
         id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
@@ -196,7 +196,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             if (!buffer_state) {
                 return glsl::DescriptorState(desc_class, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
             }
-            return glsl::DescriptorState(desc_class, buffer_state->id, static_cast<uint32_t>(buffer_state->create_info.size));
+            return glsl::DescriptorState(desc_class, buffer_state->id, static_cast<u32>(buffer_state->create_info.size));
         }
         case DescriptorClass::TexelBuffer: {
             auto buffer_view_state = std::static_pointer_cast<const BufferView>(desc.GetSharedBufferViewState());
@@ -204,7 +204,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
                 return glsl::DescriptorState(desc_class, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
             }
             auto view_size = buffer_view_state->Size();
-            uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
+            u32 res_size = static_cast<u32>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
             return glsl::DescriptorState(desc_class, buffer_view_state->id, res_size);
         }
         case DescriptorClass::PlainSampler: {
@@ -223,7 +223,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             return glsl::DescriptorState(desc_class, image_state ? image_state->id : glsl::kDebugInputBindlessSkipId);
         }
         case DescriptorClass::AccelerationStructure: {
-            uint32_t id;
+            u32 id;
             if (desc.IsAccelerationStructureKHR()) {
                 auto ac_state = static_cast<const AccelerationStructureKHR *>(desc.GetAccelerationStructureStateKHR());
                 id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
@@ -241,8 +241,8 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
 }
 
 template <typename Binding>
-void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, uint32_t &index) {
-    for (uint32_t di = 0; di < binding.count; di++) {
+void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, u32 &index) {
+    for (u32 di = 0; di < binding.count; di++) {
         if (!binding.updated[di]) {
             data[index++] = glsl::DescriptorState();
         } else {
@@ -253,19 +253,19 @@ void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, uint
 
 // Inline Uniforms are currently treated as a single descriptor. Writes to any offsets cause the whole range to be valid.
 template <>
-void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::DescriptorState *data, uint32_t &index) {
+void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::DescriptorState *data, u32 &index) {
     data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
 }
 
 std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    uint32_t cur_version = current_version_.load();
+    u32 cur_version = current_version_.load();
     if (last_used_state_ && last_used_state_->version == cur_version) {
         return last_used_state_;
     }
     auto next_state = std::make_shared<State>(VkHandle(), cur_version, gpuav);
 
-    uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
+    u32 descriptor_count = 0;  // Number of descriptors, including all array elements
     if (GetBindingCount() > 0) {
         for (const auto &binding : *this) {
             // Shader instrumentation is tracking inline uniform blocks as scalars. Don't try to validate inline uniform
@@ -296,8 +296,8 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
     glsl::DescriptorState *data{nullptr};
     next_state->buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
 
-    uint32_t index = 0;
-    for (uint32_t i = 0; i < bindings_.size(); i++) {
+    u32 index = 0;
+    for (u32 i = 0; i < bindings_.size(); i++) {
         const auto &binding = *bindings_[i];
         switch (binding.descriptor_class) {
             case DescriptorClass::InlineUniform:
@@ -339,13 +339,13 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
 
 std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    uint32_t cur_version = current_version_.load();
+    u32 cur_version = current_version_.load();
     if (output_state_) {
         return output_state_;
     }
     auto next_state = std::make_shared<State>(VkHandle(), cur_version, gpuav);
 
-    uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
+    u32 descriptor_count = 0;  // Number of descriptors, including all array elements
     for (const auto &binding : *this) {
         // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
         // blocks
@@ -362,7 +362,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = descriptor_count * sizeof(uint32_t);
+    buffer_info.size = descriptor_count * sizeof(u32);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
@@ -371,7 +371,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     next_state->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    uint32_t *data = nullptr;
+    u32 *data = nullptr;
     next_state->buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
@@ -383,9 +383,9 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     return next_state;
 }
 
-std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::State::UsedDescriptors(const Location &loc, const DescriptorSet &set,
-                                                                                uint32_t shader_set) const {
-    std::map<uint32_t, std::vector<uint32_t>> used_descs;
+std::map<u32, std::vector<u32>> DescriptorSet::State::UsedDescriptors(const Location &loc, const DescriptorSet &set,
+                                                                      u32 shader_set) const {
+    std::map<u32, std::vector<u32>> used_descs;
     if (!buffer.allocation) {
         return used_descs;
     }
@@ -393,18 +393,18 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::State::UsedDescriptors(
     glsl::BindingLayout *layout_data = nullptr;
     set.layout_.MapMemory(loc, reinterpret_cast<void **>(&layout_data));
 
-    uint32_t *data = nullptr;
+    u32 *data = nullptr;
     buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
     buffer.InvalidateAllocation(loc);
 
-    uint32_t max_binding = layout_data[0].count;
-    for (uint32_t binding = 0; binding < max_binding; binding++) {
-        uint32_t count = layout_data[binding + 1].count;
-        uint32_t start = layout_data[binding + 1].state_start;
-        for (uint32_t i = 0; i < count; i++) {
-            uint32_t pos = start + i;
+    u32 max_binding = layout_data[0].count;
+    for (u32 binding = 0; binding < max_binding; binding++) {
+        u32 count = layout_data[binding + 1].count;
+        u32 start = layout_data[binding + 1].state_start;
+        for (u32 i = 0; i < count; i++) {
+            u32 pos = start + i;
             if (data[pos] == shader_set) {
-                auto map_result = used_descs.emplace(binding, std::vector<uint32_t>());
+                auto map_result = used_descs.emplace(binding, std::vector<u32>());
                 map_result.first->second.emplace_back(i);
             }
         }
@@ -417,7 +417,7 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::State::UsedDescriptors(
 
 DescriptorSet::State::~State() { buffer.DestroyBuffer(); }
 
-void DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {
+void DescriptorSet::PerformPushDescriptorsUpdate(u32 write_count, const VkWriteDescriptorSet *write_descs) {
     vvl::DescriptorSet::PerformPushDescriptorsUpdate(write_count, write_descs);
     current_version_++;
 }
@@ -432,7 +432,7 @@ void DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &copy_desc, cons
     current_version_++;
 }
 
-DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc)
+DescriptorHeap::DescriptorHeap(Validator &gpuav, u32 max_descriptors, const Location &loc)
     : max_descriptors_(max_descriptors), buffer_(gpuav) {
     // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
     // support calls into this class as no-ops if this happens.

@@ -58,7 +58,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties = vku::InitStructHelper();
     auto properties2 = GetPhysicalDeviceProperties2(density_map2_properties);
 
-    uint32_t max_subsampled_samplers = density_map2_properties.maxDescriptorSetSubsampledSamplers;
+    u32 max_subsampled_samplers = density_map2_properties.maxDescriptorSetSubsampledSamplers;
 
     // Note: Adding this check in case mock ICDs don't initialize min-max values correctly
     if (max_subsampled_samplers == 0) {
@@ -85,7 +85,7 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     // just make all the immutable samplers point to the same sampler
     std::vector<VkSampler> immutableSamplers;
     immutableSamplers.resize(max_subsampled_samplers);
-    for (uint32_t sampler_idx = 0; sampler_idx < max_subsampled_samplers; sampler_idx++) {
+    for (u32 sampler_idx = 0; sampler_idx < max_subsampled_samplers; sampler_idx++) {
         immutableSamplers[sampler_idx] = sampler.handle();
     }
 
@@ -127,25 +127,24 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     bool descriptor_indexing =
         IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
-    uint32_t max_uniform_buffers = m_device->phy().limits_.maxPerStageDescriptorUniformBuffers;
-    uint32_t max_storage_buffers = m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
-    uint32_t max_sampled_images = m_device->phy().limits_.maxPerStageDescriptorSampledImages;
-    uint32_t max_storage_images = m_device->phy().limits_.maxPerStageDescriptorStorageImages;
-    uint32_t max_samplers = m_device->phy().limits_.maxPerStageDescriptorSamplers;
-    uint32_t max_combined = std::min(max_samplers, max_sampled_images);
-    uint32_t max_input_attachments = m_device->phy().limits_.maxPerStageDescriptorInputAttachments;
+    u32 max_uniform_buffers = m_device->phy().limits_.maxPerStageDescriptorUniformBuffers;
+    u32 max_storage_buffers = m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
+    u32 max_sampled_images = m_device->phy().limits_.maxPerStageDescriptorSampledImages;
+    u32 max_storage_images = m_device->phy().limits_.maxPerStageDescriptorStorageImages;
+    u32 max_samplers = m_device->phy().limits_.maxPerStageDescriptorSamplers;
+    u32 max_combined = std::min(max_samplers, max_sampled_images);
+    u32 max_input_attachments = m_device->phy().limits_.maxPerStageDescriptorInputAttachments;
 
-    uint32_t sum_dyn_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffersDynamic;
-    uint32_t sum_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffers;
-    uint32_t sum_dyn_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffersDynamic;
-    uint32_t sum_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffers;
-    uint32_t sum_sampled_images = m_device->phy().limits_.maxDescriptorSetSampledImages;
-    uint32_t sum_storage_images = m_device->phy().limits_.maxDescriptorSetStorageImages;
-    uint32_t sum_samplers = m_device->phy().limits_.maxDescriptorSetSamplers;
-    uint32_t sum_input_attachments = m_device->phy().limits_.maxDescriptorSetInputAttachments;
+    u32 sum_dyn_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffersDynamic;
+    u32 sum_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffers;
+    u32 sum_dyn_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffersDynamic;
+    u32 sum_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffers;
+    u32 sum_sampled_images = m_device->phy().limits_.maxDescriptorSetSampledImages;
+    u32 sum_storage_images = m_device->phy().limits_.maxDescriptorSetStorageImages;
+    u32 sum_samplers = m_device->phy().limits_.maxDescriptorSetSamplers;
+    u32 sum_input_attachments = m_device->phy().limits_.maxDescriptorSetInputAttachments;
 
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties = vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
@@ -276,7 +275,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     if (dslb.descriptorCount > sum_dyn_storage_buffers) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03032");  // expect all-stages sum too
     }
-    const uint32_t storage_buffer_count = dslb_vec[0].descriptorCount + dslb_vec[2].descriptorCount;
+    const u32 storage_buffer_count = dslb_vec[0].descriptorCount + dslb_vec[2].descriptorCount;
     if (storage_buffer_count > sum_storage_buffers) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03031");  // expect all-stages sum too
     }
@@ -319,7 +318,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");
-    const uint32_t sampled_image_count = max_combined + 2 * max_sampled_images;
+    const u32 sampled_image_count = max_combined + 2 * max_sampled_images;
     if (sampled_image_count > sum_sampled_images) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // expect all-stages sum too
     }
@@ -364,7 +363,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");
-    const uint32_t storage_image_count = 2 * dslb.descriptorCount;
+    const u32 storage_image_count = 2 * dslb.descriptorCount;
     if (storage_image_count > sum_storage_images) {
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");  // expect all-stages sum too
     }
@@ -423,24 +422,23 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     RETURN_IF_SKIP(Init());
     const bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
-    uint32_t max_uniform_buffers = m_device->phy().limits_.maxPerStageDescriptorUniformBuffers;
-    uint32_t max_storage_buffers = m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
-    uint32_t max_sampled_images = m_device->phy().limits_.maxPerStageDescriptorSampledImages;
-    uint32_t max_storage_images = m_device->phy().limits_.maxPerStageDescriptorStorageImages;
-    uint32_t max_samplers = m_device->phy().limits_.maxPerStageDescriptorSamplers;
-    uint32_t max_input_attachments = m_device->phy().limits_.maxPerStageDescriptorInputAttachments;
+    u32 max_uniform_buffers = m_device->phy().limits_.maxPerStageDescriptorUniformBuffers;
+    u32 max_storage_buffers = m_device->phy().limits_.maxPerStageDescriptorStorageBuffers;
+    u32 max_sampled_images = m_device->phy().limits_.maxPerStageDescriptorSampledImages;
+    u32 max_storage_images = m_device->phy().limits_.maxPerStageDescriptorStorageImages;
+    u32 max_samplers = m_device->phy().limits_.maxPerStageDescriptorSamplers;
+    u32 max_input_attachments = m_device->phy().limits_.maxPerStageDescriptorInputAttachments;
 
-    uint32_t sum_dyn_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffersDynamic;
-    uint32_t sum_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffers;
-    uint32_t sum_dyn_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffersDynamic;
-    uint32_t sum_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffers;
-    uint32_t sum_sampled_images = m_device->phy().limits_.maxDescriptorSetSampledImages;
-    uint32_t sum_storage_images = m_device->phy().limits_.maxDescriptorSetStorageImages;
-    uint32_t sum_samplers = m_device->phy().limits_.maxDescriptorSetSamplers;
-    uint32_t sum_input_attachments = m_device->phy().limits_.maxDescriptorSetInputAttachments;
+    u32 sum_dyn_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffersDynamic;
+    u32 sum_uniform_buffers = m_device->phy().limits_.maxDescriptorSetUniformBuffers;
+    u32 sum_dyn_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffersDynamic;
+    u32 sum_storage_buffers = m_device->phy().limits_.maxDescriptorSetStorageBuffers;
+    u32 sum_sampled_images = m_device->phy().limits_.maxDescriptorSetSampledImages;
+    u32 sum_storage_images = m_device->phy().limits_.maxDescriptorSetStorageImages;
+    u32 sum_samplers = m_device->phy().limits_.maxDescriptorSetSamplers;
+    u32 sum_input_attachments = m_device->phy().limits_.maxDescriptorSetInputAttachments;
 
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties = vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
@@ -652,7 +650,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     dslb.binding = 1;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     // revisit: not robust to odd limits.
-    uint32_t remaining = (max_samplers > sum_sampled_images ? 0 : (sum_sampled_images - max_samplers) / 2);
+    u32 remaining = (max_samplers > sum_sampled_images ? 0 : (sum_sampled_images - max_samplers) / 2);
     dslb.descriptorCount = 1 + remaining;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
@@ -968,7 +966,7 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
 
     const unsigned int descriptor_set_layout_count = 2;
     std::vector<vkt::DescriptorSetLayout> ds_layouts;
-    for (uint32_t i = 0; i < descriptor_set_layout_count; ++i) {
+    for (u32 i = 0; i < descriptor_set_layout_count; ++i) {
         dsl_binding.binding = i;
         ds_layouts.emplace_back(*m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);

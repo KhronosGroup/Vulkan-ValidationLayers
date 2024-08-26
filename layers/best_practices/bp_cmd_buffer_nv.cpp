@@ -20,8 +20,8 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 
-static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearColorValue& clear_value) {
-    std::array<uint32_t, 4> raw_color{};
+static std::array<u32, 4> GetRawClearColor(VkFormat format, const VkClearColorValue& clear_value) {
+    std::array<u32, 4> raw_color{};
     std::copy_n(clear_value.uint32, raw_color.size(), raw_color.data());
 
     // Zero out unused components to avoid polluting the cache with garbage
@@ -33,12 +33,12 @@ static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearCo
     return raw_color;
 }
 
-static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4> clear_color) {
-    static_assert(sizeof(float) == sizeof(uint32_t), "Mismatching float <-> uint32 sizes");
+static bool IsClearColorZeroOrOne(VkFormat format, const std::array<u32, 4> clear_color) {
+    static_assert(sizeof(float) == sizeof(u32), "Mismatching float <-> uint32 sizes");
     const float one = 1.0f;
     const float zero = 0.0f;
-    uint32_t raw_one{};
-    uint32_t raw_zero{};
+    u32 raw_one{};
+    u32 raw_zero{};
     memcpy(&raw_one, &one, sizeof(one));
     memcpy(&raw_zero, &zero, sizeof(zero));
 
@@ -89,8 +89,8 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
     auto image_state = Get<vvl::Image>(depth_attachment);
     ASSERT_AND_RETURN(image_state);
 
-    const uint32_t mip_levels = image_state->create_info.mipLevels;
-    const uint32_t array_layers = image_state->create_info.arrayLayers;
+    const u32 mip_levels = image_state->create_info.mipLevels;
+    const u32 array_layers = image_state->create_info.arrayLayers;
 
     auto& tree = cmd_state.nv.zcull_per_image[depth_attachment];
     if (tree.states.empty()) {
@@ -119,15 +119,15 @@ void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_
 
 template <typename Func>
 static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
-    const uint32_t layer_count =
+    const u32 layer_count =
         (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
-    const uint32_t level_count =
+    const u32 level_count =
         (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
 
-    for (uint32_t i = 0; i < layer_count; ++i) {
-        const uint32_t layer = range.baseArrayLayer + i;
-        for (uint32_t j = 0; j < level_count; ++j) {
-            const uint32_t level = range.baseMipLevel + j;
+    for (u32 i = 0; i < layer_count; ++i) {
+        const u32 layer = range.baseArrayLayer + i;
+        for (u32 j = 0; j < level_count; ++j) {
+            const u32 level = range.baseMipLevel + j;
             func(layer, level);
         }
     }
@@ -148,7 +148,7 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
     auto image = Get<vvl::Image>(depth_image);
     ASSERT_AND_RETURN(image);
 
-    ForEachSubresource(*image, subresource_range, [&tree](uint32_t layer, uint32_t level) {
+    ForEachSubresource(*image, subresource_range, [&tree](u32 layer, u32 level) {
         auto& subresource = tree.GetState(layer, level);
         subresource.num_less_draws = 0;
         subresource.num_greater_draws = 0;
@@ -175,7 +175,7 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, 
     auto image = Get<vvl::Image>(depth_image);
     ASSERT_AND_RETURN(image);
 
-    ForEachSubresource(*image, subresource_range, [&tree, &cmd_state](uint32_t layer, uint32_t level) {
+    ForEachSubresource(*image, subresource_range, [&tree, &cmd_state](u32 layer, u32 level) {
         tree.GetState(layer, level).direction = cmd_state.nv.zcull_direction;
     });
 }
@@ -189,7 +189,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     auto image = Get<vvl::Image>(scope.image);
     if (!image) return;
 
-    ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
+    ForEachSubresource(*image, scope.range, [&scope](u32 layer, u32 level) {
         auto& subresource = scope.tree->GetState(layer, level);
 
         switch (subresource.direction) {
@@ -237,18 +237,18 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
     auto image_state = Get<vvl::Image>(image);
     ASSERT_AND_RETURN_SKIP(image_state);
 
-    ForEachSubresource(*image_state, subresource_range, [&](uint32_t layer, uint32_t level) {
+    ForEachSubresource(*image_state, subresource_range, [&](u32 layer, u32 level) {
         if (is_balanced) {
             return;
         }
         const auto& resource = tree.GetState(layer, level);
-        const uint64_t num_draws = resource.num_less_draws + resource.num_greater_draws;
+        const u64 num_draws = resource.num_less_draws + resource.num_greater_draws;
 
         if (num_draws == 0) {
             return;
         }
-        const uint64_t less_ratio = (resource.num_less_draws * 100) / num_draws;
-        const uint64_t greater_ratio = (resource.num_greater_draws * 100) / num_draws;
+        const u64 less_ratio = (resource.num_less_draws * 100) / num_draws;
+        const u64 greater_ratio = (resource.num_greater_draws * 100) / num_draws;
 
         if ((less_ratio > kZcullDirectionBalanceRatioNVIDIA) && (greater_ratio > kZcullDirectionBalanceRatioNVIDIA)) {
             is_balanced = true;
@@ -286,7 +286,7 @@ static constexpr std::array<VkFormat, 12> kCustomClearColorCompressedFormatsNVID
 void BestPractices::RecordClearColor(VkFormat format, const VkClearColorValue& clear_value) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    const std::array<uint32_t, 4> raw_color = GetRawClearColor(format, clear_value);
+    const std::array<u32, 4> raw_color = GetRawClearColor(format, clear_value);
     if (IsClearColorZeroOrOne(format, raw_color)) {
         // These colors are always compressed
         return;
@@ -312,7 +312,7 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
 
     bool skip = false;
 
-    const std::array<uint32_t, 4> raw_color = GetRawClearColor(format, clear_value);
+    const std::array<u32, 4> raw_color = GetRawClearColor(format, clear_value);
     if (IsClearColorZeroOrOne(format, raw_color)) {
         return skip;
     }

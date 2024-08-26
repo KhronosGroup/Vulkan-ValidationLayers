@@ -31,7 +31,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     CommandBuffer(CoreChecks& core, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const vvl::CommandPool* cmd_pool);
 
-    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
+    void RecordWaitEvents(vvl::Func command, u32 eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
 

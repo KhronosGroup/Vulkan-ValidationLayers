@@ -437,7 +437,7 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         {4, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
-    std::vector<uint32_t> preserve = {5};
+    std::vector<u32> preserve = {5};
     std::vector<VkAttachmentReference> depth_1bit = {
         {6, VK_IMAGE_LAYOUT_GENERAL},
         {6, VK_IMAGE_LAYOUT_GENERAL},
@@ -458,8 +458,8 @@ TEST_F(NegativeRenderPass, AttachmentsMisc) {
         vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 1u, &subpass, 0u, nullptr);
 
     // Test too many color attachments
-    const uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments;
-    const uint32_t too_big_max_attachments = 65536 + 1;  // let's say this is too much to allocate
+    const u32 max_color_attachments = m_device->phy().limits_.maxColorAttachments;
+    const u32 too_big_max_attachments = 65536 + 1;  // let's say this is too much to allocate
     if (max_color_attachments >= too_big_max_attachments) {
         printf("VkPhysicalDeviceLimits::maxColorAttachments is too large to practically test against -- skipping part of test.\n");
     } else {
@@ -711,8 +711,8 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayout) {
         VkSubpassDescription{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr},
     };
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, static_cast<uint32_t>(attachments.size()), attachments.data(),
-                                                        static_cast<uint32_t>(subpasses.size()), subpasses.data(), 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, static_cast<u32>(attachments.size()), attachments.data(),
+                                                        static_cast<u32>(subpasses.size()), subpasses.data(), 0u, nullptr);
 
     // Use UNDEFINED layout
     refs[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -810,8 +810,8 @@ TEST_F(NegativeRenderPass, AttachmentReferenceLayoutSeparateDepthStencilLayoutsF
         VkSubpassDescription{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr},
     };
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, static_cast<uint32_t>(attachments.size()), attachments.data(),
-                                                        static_cast<uint32_t>(subpasses.size()), subpasses.data(), 0u, nullptr);
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, static_cast<u32>(attachments.size()), attachments.data(),
+                                                        static_cast<u32>(subpasses.size()), subpasses.data(), 0u, nullptr);
 
     // Use UNDEFINED layout
     refs[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1319,8 +1319,8 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         rp.AddInputAttachment(0);
         rp.CreateRenderPass();
 
-        const uint32_t fb_width = input_image.width();
-        const uint32_t fb_height = input_image.height();
+        const u32 fb_width = input_image.width();
+        const u32 fb_height = input_image.height();
         vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &input_view.handle(), fb_width, fb_height);
 
         // Begin render pass and trigger errors
@@ -1535,8 +1535,8 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
 
     RenderPass2SingleSubpass rp(*this);
@@ -2377,8 +2377,8 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t width = 32;
-    const uint32_t height = 32;
+    const u32 width = 32;
+    const u32 height = 32;
     const VkFormat format = FindSupportedDepthStencilFormat(gpu());
 
     RenderPassSingleSubpass rp(*this);
@@ -2579,7 +2579,7 @@ TEST_F(NegativeRenderPass, AllViewMasksZero) {
     vk::CreateRenderPass(device(), &render_pass_ci, nullptr, &render_pass);
     m_errorMonitor->VerifyFound();
 
-    uint32_t correlation_mask = 0x1;
+    u32 correlation_mask = 0x1;
     render_pass_ci.dependencyCount = 0;
     render_pass_multiview_ci.correlationMaskCount = 1;
     render_pass_multiview_ci.pCorrelationMasks = &correlation_mask;
@@ -3092,8 +3092,8 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t width = 32;
-    const uint32_t height = 32;
+    const u32 width = 32;
+    const u32 height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference attach_ref = {};
@@ -3173,8 +3173,8 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    const uint32_t width = 32;
-    const uint32_t height = 32;
+    const u32 width = 32;
+    const u32 height = 32;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference2 attach_ref = vku::InitStructHelper();
@@ -3206,7 +3206,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
                                        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                        VK_DEPENDENCY_BY_REGION_BIT};
 
-    uint32_t correlated_view_mask = 0x1;
+    u32 correlated_view_mask = 0x1;
     VkRenderPassCreateInfo2 rpci = vku::InitStructHelper();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
@@ -3350,7 +3350,7 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayout) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                    nullptr,
                                    0,
-                                   static_cast<uint32_t>(attachments.size()),
+                                   static_cast<u32>(attachments.size()),
                                    attachments.data(),
                                    1,
                                    &subpass,
@@ -3436,7 +3436,7 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutMaintenance2) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                    nullptr,
                                    0,
-                                   static_cast<uint32_t>(attachments.size()),
+                                   static_cast<u32>(attachments.size()),
                                    attachments.data(),
                                    1,
                                    &subpass,
@@ -3500,7 +3500,7 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSynchronization2) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                    nullptr,
                                    0,
-                                   static_cast<uint32_t>(attachments.size()),
+                                   static_cast<u32>(attachments.size()),
                                    attachments.data(),
                                    1,
                                    &subpass,
@@ -3568,7 +3568,7 @@ TEST_F(NegativeRenderPass, SubpassAttachmentImageLayoutSeparateDepthStencil) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                    nullptr,
                                    0,
-                                   static_cast<uint32_t>(attachments.size()),
+                                   static_cast<u32>(attachments.size()),
                                    attachments.data(),
                                    1,
                                    &subpass,
@@ -3913,7 +3913,7 @@ TEST_F(NegativeRenderPass, ViewMaskWithoutFeature) {
     attachment_description.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachment_description.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    uint32_t view_mask = 0x1;
+    u32 view_mask = 0x1;
 
     VkRenderPassMultiviewCreateInfo render_pass_multiview_ci = vku::InitStructHelper();
     render_pass_multiview_ci.subpassCount = 1u;
@@ -3977,8 +3977,8 @@ TEST_F(NegativeRenderPass, ImageSubresourceOverlapBetweenCurrentRenderPassAndDes
     m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
 
-    const uint32_t width = 16;
-    const uint32_t height = 16;
+    const u32 width = 16;
+    const u32 height = 16;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     VkAttachmentReference attach_ref = {};
@@ -4027,12 +4027,12 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rp_striped_props);
 
-    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width;
-    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+    const u32 stripe_width = rp_striped_props.renderPassStripeGranularity.width;
+    const u32 stripe_height = rp_striped_props.renderPassStripeGranularity.height;
 
-    uint32_t stripe_count = rp_striped_props.maxRenderPassStripes + 1;
+    u32 stripe_count = rp_striped_props.maxRenderPassStripes + 1;
     std::vector<VkRenderPassStripeInfoARM> stripe_infos(rp_striped_props.maxRenderPassStripes + 1);
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
@@ -4058,7 +4058,7 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     rp_stripe_info.pStripeInfos = stripe_infos.data();
     rp_stripe_info.stripeInfoCount = stripe_count;
     m_renderPassBeginInfo.renderArea.extent = {stripe_width * stripe_count, stripe_height};
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = i > 1 && i <= 4 ? (stripe_width * (i - 1) / 2) : stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
         stripe_infos[i].stripeArea.extent.width = stripe_width;
@@ -4073,8 +4073,8 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    const uint32_t half_stripe_width = stripe_width / 2;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    const u32 half_stripe_width = stripe_width / 2;
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = (i == 1 ? half_stripe_width : stripe_width) * i;
         stripe_infos[i].stripeArea.offset.y = 0;
         stripe_infos[i].stripeArea.extent.width = i == 2 ? half_stripe_width : stripe_width;
@@ -4089,9 +4089,9 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    const uint32_t non_align_stripe_width = stripe_width - 12;
+    const u32 non_align_stripe_width = stripe_width - 12;
     m_renderPassBeginInfo.renderArea.extent.width = (stripe_width * (stripe_count - 1)) + non_align_stripe_width + 4;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
         stripe_infos[i].stripeArea.extent.width = i == 7 ? non_align_stripe_width : stripe_width;
@@ -4106,8 +4106,8 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_commandBuffer->end();
 
     m_renderPassBeginInfo.renderArea.extent = {stripe_width, stripe_height * stripe_count};
-    const uint32_t half_stripe_height = stripe_height / 2;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    const u32 half_stripe_height = stripe_height / 2;
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = 0;
         stripe_infos[i].stripeArea.offset.y = (i == 1 ? half_stripe_height : stripe_height) * i;
         stripe_infos[i].stripeArea.extent.width = stripe_width;
@@ -4122,9 +4122,9 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
 
-    const uint32_t non_align_stripe_height = stripe_height - 12;
+    const u32 non_align_stripe_height = stripe_height - 12;
     m_renderPassBeginInfo.renderArea.extent.height = (stripe_height * (stripe_count - 1)) + non_align_stripe_height + 4;
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = 0;
         stripe_infos[i].stripeArea.offset.y = stripe_height * i;
         stripe_infos[i].stripeArea.extent.width = stripe_width;
@@ -4153,12 +4153,12 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rp_striped_props);
 
-    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width;
-    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+    const u32 stripe_width = rp_striped_props.renderPassStripeGranularity.width;
+    const u32 stripe_height = rp_striped_props.renderPassStripeGranularity.height;
 
-    const uint32_t stripe_count = 4;
+    const u32 stripe_count = 4;
     std::vector<VkRenderPassStripeInfoARM> stripe_infos(stripe_count);
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
@@ -4201,7 +4201,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
     vkt::Semaphore semaphore[stripe_count + 1];
     VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count + 1];
 
-    for (uint32_t i = 0; i < stripe_count + 1; ++i) {
+    for (u32 i = 0; i < stripe_count + 1; ++i) {
         VkSemaphoreCreateInfo create_info = i == 4 ? semaphore_timeline_create_info : semaphore_create_info;
         semaphore[i].init(*m_device, create_info);
 

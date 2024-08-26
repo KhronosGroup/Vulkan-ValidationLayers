@@ -41,7 +41,7 @@ bool InjectFunctionPass::Run() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->position_index_;
+                const u32 inst_position = target_instruction_->position_index_;
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 

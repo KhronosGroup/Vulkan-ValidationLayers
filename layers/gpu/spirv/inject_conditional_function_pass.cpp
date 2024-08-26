@@ -35,10 +35,10 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
     // All the remaining block instructions after targeted instruction
     BasicBlock& merge_block = **block_it;
 
-    const uint32_t original_label = original_block.GetLabelId();
-    const uint32_t valid_block_label = valid_block.GetLabelId();
-    const uint32_t invalid_block_label = invalid_block.GetLabelId();
-    const uint32_t merge_block_label = merge_block.GetLabelId();
+    const u32 original_label = original_block.GetLabelId();
+    const u32 valid_block_label = valid_block.GetLabelId();
+    const u32 invalid_block_label = invalid_block.GetLabelId();
+    const u32 merge_block_label = merge_block.GetLabelId();
 
     // need to preserve the control-flow of how things, like a OpPhi, are accessed from a predecessor block
     function->ReplaceAllUsesWith(original_label, merge_block_label);
@@ -50,15 +50,15 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
 
     // If thre is a result, we need to create an additional BasicBlock to hold the |else| case, then after we create a Phi node to
     // hold the result
-    const uint32_t target_inst_id = target_inst.ResultId();
+    const u32 target_inst_id = target_inst.ResultId();
     if (target_inst_id != 0) {
-        const uint32_t phi_id = module_.TakeNextId();
+        const u32 phi_id = module_.TakeNextId();
         const Type& phi_type = *module_.type_manager_.FindTypeById(target_inst.TypeId());
-        uint32_t null_id = 0;
+        u32 null_id = 0;
         // Can't create ConstantNull of pointer type, so convert uint64 zero to pointer
         if (phi_type.spv_type_ == SpvType::kPointer) {
-            const Type& uint64_type = module_.type_manager_.GetTypeInt(64, false);
-            const Constant& null_constant = module_.type_manager_.GetConstantNull(uint64_type);
+            const Type& u64ype = module_.type_manager_.GetTypeInt(64, false);
+            const Constant& null_constant = module_.type_manager_.GetConstantNull(u64ype);
             null_id = module_.TakeNextId();
             // We need to put any intermittent instructions here so Phi is first in the merge block
             invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
@@ -88,9 +88,9 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
     // When skipping some instructions, we need something valid to replace it
     if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
         // Currently assume the RayQuery and AS object were valid already
-        const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
-        const uint32_t float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
-        const uint32_t vec3_0_id = module_.type_manager_.GetConstantZeroVec3().Id();
+        const u32 uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
+        const u32 float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
+        const u32 vec3_0_id = module_.type_manager_.GetConstantZeroVec3().Id();
         invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR,
                                         {target_inst.Operand(0), target_inst.Operand(1), uint32_0_id, uint32_0_id, vec3_0_id,
                                          float32_0_id, vec3_0_id, float32_0_id});
@@ -104,7 +104,7 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
     original_block.instructions_.erase(inst_it, original_block.instructions_.end());
 
     // Go back to original Block and add function call and branch from the bool result
-    const uint32_t function_result = CreateFunctionCall(original_block, nullptr, injection_data);
+    const u32 function_result = CreateFunctionCall(original_block, nullptr, injection_data);
 
     original_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label, spv::SelectionControlMaskNone});
     original_block.CreateInstruction(spv::OpBranchConditional, {function_result, valid_block_label, invalid_block_label});
@@ -134,9 +134,9 @@ bool InjectConditionalFunctionPass::Run() {
                     // and we get an error "All OpSampledImage instructions must be in the same block in which their Result <id> are
                     // consumed" to get around this we inject a OpCopyObject right after the OpSampledImage
                     if ((*inst_it)->Opcode() == spv::OpSampledImage) {
-                        const uint32_t result_id = (*inst_it)->ResultId();
-                        const uint32_t type_id = (*inst_it)->TypeId();
-                        const uint32_t copy_id = module_.TakeNextId();
+                        const u32 result_id = (*inst_it)->ResultId();
+                        const u32 type_id = (*inst_it)->TypeId();
+                        const u32 copy_id = module_.TakeNextId();
                         function->ReplaceAllUsesWith(result_id, copy_id);
                         inst_it++;
                         (*block_it)->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, result_id}, &inst_it);
@@ -153,7 +153,7 @@ bool InjectConditionalFunctionPass::Run() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->position_index_;
+                const u32 inst_position = target_instruction_->position_index_;
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 

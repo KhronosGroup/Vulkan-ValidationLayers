@@ -25,7 +25,7 @@
 #include "generated/cmd_validation_draw_vert.h"
 
 // See gpu/shaders/cmd_validation/draw.vert
-constexpr uint32_t kPushConstantDWords = 11u;
+constexpr u32 kPushConstantDWords = 11u;
 
 namespace gpuav {
 
@@ -48,7 +48,7 @@ struct SharedDrawValidationResources final {
         };
 
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-        ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
+        ds_layout_ci.bindingCount = static_cast<u32>(bindings.size());
         ds_layout_ci.pBindings = bindings.data();
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &ds_layout);
         if (result != VK_SUCCESS) {
@@ -59,13 +59,13 @@ struct SharedDrawValidationResources final {
         VkPushConstantRange push_constant_range = {};
         push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         push_constant_range.offset = 0;
-        push_constant_range.size = kPushConstantDWords * sizeof(uint32_t);
+        push_constant_range.size = kPushConstantDWords * sizeof(u32);
 
         std::array<VkDescriptorSetLayout, 2> set_layouts = {{error_output_desc_set_layout, ds_layout}};
         VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.pushConstantRangeCount = 1;
         pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
-        pipeline_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+        pipeline_layout_ci.setLayoutCount = static_cast<u32>(set_layouts.size());
         pipeline_layout_ci.pSetLayouts = set_layouts.data();
         result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &pipeline_layout);
         if (result != VK_SUCCESS) {
@@ -77,10 +77,10 @@ struct SharedDrawValidationResources final {
             VkShaderCreateInfoEXT shader_ci = vku::InitStructHelper();
             shader_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
             shader_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-            shader_ci.codeSize = cmd_validation_draw_vert_size * sizeof(uint32_t);
+            shader_ci.codeSize = cmd_validation_draw_vert_size * sizeof(u32);
             shader_ci.pCode = cmd_validation_draw_vert;
             shader_ci.pName = "main";
-            shader_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+            shader_ci.setLayoutCount = static_cast<u32>(set_layouts.size());
             shader_ci.pSetLayouts = set_layouts.data();
             shader_ci.pushConstantRangeCount = 1;
             shader_ci.pPushConstantRanges = &push_constant_range;
@@ -91,7 +91,7 @@ struct SharedDrawValidationResources final {
             }
         } else {
             VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-            shader_module_ci.codeSize = cmd_validation_draw_vert_size * sizeof(uint32_t);
+            shader_module_ci.codeSize = cmd_validation_draw_vert_size * sizeof(u32);
             shader_module_ci.pCode = cmd_validation_draw_vert;
             result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &shader_module);
             if (result != VK_SUCCESS) {
@@ -189,8 +189,8 @@ void DestroyRenderPassMappedResources(Validator &gpuav, VkRenderPass render_pass
 }
 
 void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
-                                  VkDeviceSize indirect_offset, uint32_t draw_count, VkBuffer count_buffer,
-                                  VkDeviceSize count_buffer_offset, uint32_t stride) {
+                                  VkDeviceSize indirect_offset, u32 draw_count, VkBuffer count_buffer,
+                                  VkDeviceSize count_buffer_offset, u32 stride) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
@@ -235,13 +235,13 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
     for (size_t i = 0; i < buffer_infos.size(); ++i) {
         VkWriteDescriptorSet &desc_write = desc_writes.emplace_back();
         desc_write = vku::InitStructHelper();
-        desc_write.dstBinding = uint32_t(i);
+        desc_write.dstBinding = u32(i);
         desc_write.descriptorCount = 1;
         desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         desc_write.pBufferInfo = &buffer_infos[i];
         desc_write.dstSet = draw_validation_desc_set;
     }
-    DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, NULL);
+    DispatchUpdateDescriptorSets(gpuav.device, static_cast<u32>(desc_writes.size()), desc_writes.data(), 0, NULL);
 
     // Insert a draw that can examine some device memory right before the draw we're validating (Pre Draw Validation)
     //
@@ -261,18 +261,18 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
          command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR ||
          command == Func::vkCmdDrawMeshTasksIndirectCountEXT || command == Func::vkCmdDrawMeshTasksIndirectCountNV);
 
-    uint32_t push_constants[kPushConstantDWords] = {};
+    u32 push_constants[kPushConstantDWords] = {};
     VkDeviceSize indirect_buffer_size = 0;
     if (is_count_call) {
         // Validate count buffer
-        if (count_buffer_offset > std::numeric_limits<uint32_t>::max()) {
+        if (count_buffer_offset > std::numeric_limits<u32>::max()) {
             gpuav.InternalError(cb_state.VkHandle(), loc,
                                 "Count buffer offset is larger than can be contained in an unsigned int.");
             return;
         }
 
         // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndirectCommand))
-        uint32_t struct_size;
+        u32 struct_size;
         if (command == Func::vkCmdDrawIndirectCount || command == Func::vkCmdDrawIndirectCountKHR) {
             struct_size = sizeof(VkDrawIndirectCommand);
         } else if (command == Func::vkCmdDrawIndexedIndirectCount || command == Func::vkCmdDrawIndexedIndirectCountKHR) {
@@ -283,19 +283,19 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
         }
         auto indirect_buffer_state = gpuav.Get<vvl::Buffer>(indirect_buffer);
         indirect_buffer_size = indirect_buffer_state->create_info.size;
-        const uint64_t first_command_bytes = struct_size + indirect_offset;
-        uint32_t max_count;
+        const u64 first_command_bytes = struct_size + indirect_offset;
+        u32 max_count;
         if (first_command_bytes > indirect_buffer_size) {
             max_count = 0;
         } else {
-            max_count = 1 + static_cast<uint32_t>(std::floor(((indirect_buffer_size - first_command_bytes) / stride)));
+            max_count = 1 + static_cast<u32>(std::floor(((indirect_buffer_size - first_command_bytes) / stride)));
         }
 
         assert(gpuav.phys_dev_props.limits.maxDrawIndirectCount > 0);
         push_constants[0] = (is_mesh_call) ? glsl::kPreDrawSelectMeshCountBuffer : glsl::kPreDrawSelectCountBuffer;
         push_constants[1] = gpuav.phys_dev_props.limits.maxDrawIndirectCount;
         push_constants[2] = max_count;
-        push_constants[3] = static_cast<uint32_t>((count_buffer_offset / sizeof(uint32_t)));
+        push_constants[3] = static_cast<u32>((count_buffer_offset / sizeof(u32)));
     } else if ((command == Func::vkCmdDrawIndirect || command == Func::vkCmdDrawIndexedIndirect) &&
                !gpuav.enabled_features.drawIndirectFirstInstance) {
         // Validate buffer for firstInstance check instead of count buffer check
@@ -303,25 +303,25 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
         push_constants[1] = draw_count;
         if (command == Func::vkCmdDrawIndirect) {
             push_constants[2] =
-                static_cast<uint32_t>((indirect_offset + offsetof(struct VkDrawIndirectCommand, firstInstance)) / sizeof(uint32_t));
+                static_cast<u32>((indirect_offset + offsetof(struct VkDrawIndirectCommand, firstInstance)) / sizeof(u32));
         } else {
             assert(command == Func::vkCmdDrawIndexedIndirect);
-            push_constants[2] = static_cast<uint32_t>(
-                (indirect_offset + offsetof(struct VkDrawIndexedIndirectCommand, firstInstance)) / sizeof(uint32_t));
+            push_constants[2] =
+                static_cast<u32>((indirect_offset + offsetof(struct VkDrawIndexedIndirectCommand, firstInstance)) / sizeof(u32));
         }
-        push_constants[3] = stride / sizeof(uint32_t);
+        push_constants[3] = stride / sizeof(u32);
     }
 
     bool emit_task_error = false;
-    if (is_mesh_call && gpuav.phys_dev_props.limits.maxPushConstantsSize >= kPushConstantDWords * sizeof(uint32_t)) {
+    if (is_mesh_call && gpuav.phys_dev_props.limits.maxPushConstantsSize >= kPushConstantDWords * sizeof(u32)) {
         if (!is_count_call) {
             // Select was set in count check for count call
             push_constants[0] = glsl::kPreDrawSelectMeshNoCount;
         }
         const VkShaderStageFlags stages = pipeline_state->create_info_shaders;
-        push_constants[4] = static_cast<uint32_t>(indirect_offset / sizeof(uint32_t));
+        push_constants[4] = static_cast<u32>(indirect_offset / sizeof(u32));
         push_constants[5] = is_count_call ? 0 : draw_count;
-        push_constants[6] = stride / sizeof(uint32_t);
+        push_constants[6] = stride / sizeof(u32);
         if (stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
             emit_task_error = true;
             push_constants[7] = gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0];
@@ -348,21 +348,21 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
             VK_NULL_HANDLE,
             VK_NULL_HANDLE,
         }};
-        DispatchCmdBindShadersEXT(cb_state.VkHandle(), static_cast<uint32_t>(stages.size()), stages.data(), shaders.data());
+        DispatchCmdBindShadersEXT(cb_state.VkHandle(), static_cast<u32>(stages.size()), stages.data(), shaders.data());
     } else {
         DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, validation_pipeline);
     }
     static_assert(sizeof(push_constants) <= 128, "push_constants buffer size >128, need to consider maxPushConstantsSize.");
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_draw_resources.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                             static_cast<uint32_t>(sizeof(push_constants)), push_constants);
+                             static_cast<u32>(sizeof(push_constants)), push_constants);
     BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
-                                    cb_state.draw_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+                                    cb_state.draw_index, static_cast<u32>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &draw_validation_desc_set, 0, nullptr);
     DispatchCmdDraw(cb_state.VkHandle(), 3, 1, 0, 0);  // TODO: this 3 assumes triangles I think, probably could be 1?
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, indirect_buffer, indirect_offset, stride, indirect_buffer_size,
-                                                   emit_task_error](Validator &gpuav, const uint32_t *error_record,
+                                                   emit_task_error](Validator &gpuav, const u32 *error_record,
                                                                     const LogObjectList &objlist) {
         bool skip = false;
 
@@ -378,10 +378,10 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
         switch (error_record[kHeaderErrorSubCodeOffset]) {
             case kErrorSubCodePreDrawBufferSize: {
                 // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
-                const uint32_t count = error_record[kPreActionParamOffset_0];
-                const uint32_t offset = static_cast<uint32_t>(indirect_offset);  // TODO: why cast to uin32_t? If it is changed,
-                                                                                 // think about also doing it in the error message
-                const uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
+                const u32 count = error_record[kPreActionParamOffset_0];
+                const u32 offset = static_cast<u32>(indirect_offset);  // TODO: why cast to uin32_t? If it is changed,
+                                                                       // think about also doing it in the error message
+                const u32 draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
 
                 const char *vuid = nullptr;
                 if (count == 1) {
@@ -399,14 +399,14 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
                 break;
             }
             case kErrorSubCodePreDrawCountLimit: {
-                const uint32_t count = error_record[kPreActionParamOffset_0];
+                const u32 count = error_record[kPreActionParamOffset_0];
                 skip |= gpuav.LogError(vuids.count_exceeds_device_limit, objlist, loc,
                                        "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".",
                                        count, gpuav.phys_dev_props.limits.maxDrawIndirectCount);
                 break;
             }
             case kErrorSubCodePreDrawFirstInstance: {
-                const uint32_t index = error_record[kPreActionParamOffset_0];
+                const u32 index = error_record[kPreActionParamOffset_0];
                 gpuav.LogError(
                     vuids.first_instance_not_zero, objlist, loc,
                     "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
@@ -417,11 +417,11 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
             case kErrorSubCodePreDrawGroupCountX:
             case kErrorSubCodePreDrawGroupCountY:
             case kErrorSubCodePreDrawGroupCountZ: {
-                const uint32_t group_count = error_record[kPreActionParamOffset_0];
-                const uint32_t draw_number = error_record[kPreActionParamOffset_1];
+                const u32 group_count = error_record[kPreActionParamOffset_0];
+                const u32 draw_number = error_record[kPreActionParamOffset_1];
                 const char *count_label;
-                uint32_t index;
-                uint32_t limit;
+                u32 index;
+                u32 limit;
                 const char *vuid;
                 if (error_record[kHeaderErrorSubCodeOffset] == kErrorSubCodePreDrawGroupCountX) {
                     count_label = "groupCountX";
@@ -449,8 +449,8 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
                 break;
             }
             case kErrorSubCodePreDrawGroupCountTotal: {
-                const uint32_t total_count = error_record[kPreActionParamOffset_0];
-                const uint32_t draw_number = error_record[kPreActionParamOffset_1];
+                const u32 total_count = error_record[kPreActionParamOffset_0];
+                const u32 draw_number = error_record[kPreActionParamOffset_1];
                 auto vuid = emit_task_error ? vuids.task_group_count_exceeds_max_total : vuids.mesh_group_count_exceeds_max_total;
                 skip |= gpuav.LogError(
                     vuid, objlist, loc,

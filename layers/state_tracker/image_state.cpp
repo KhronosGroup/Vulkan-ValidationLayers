@@ -103,7 +103,7 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker
         if (disjoint == false) {
             DispatchGetImageMemoryRequirements(dev_data.device, img, &result[0]);
         } else {
-            uint32_t plane_count = vkuFormatPlaneCount(create_info->format);
+            u32 plane_count = vkuFormatPlaneCount(create_info->format);
             static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
                                                                       VK_IMAGE_ASPECT_PLANE_2_BIT};
             assert(plane_count <= aspects.size());
@@ -111,7 +111,7 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker
             VkImageMemoryRequirementsInfo2 mem_req_info2 = vku::InitStructHelper(&image_plane_req);
             mem_req_info2.image = img;
 
-            for (uint32_t i = 0; i < plane_count; i++) {
+            for (u32 i = 0; i < plane_count; i++) {
                 VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
 
                 image_plane_req.planeAspect = aspects[i];
@@ -137,7 +137,7 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker
 static vvl::Image::SparseReqs GetSparseRequirements(const ValidationStateTracker &dev_data, VkImage img, bool sparse_residency) {
     vvl::Image::SparseReqs result;
     if (sparse_residency) {
-        uint32_t count = 0;
+        u32 count = 0;
         DispatchGetImageSparseMemoryRequirements(dev_data.device, img, &count, nullptr);
         result.resize(count);
         DispatchGetImageSparseMemoryRequirements(dev_data.device, img, &count, result.data());
@@ -215,7 +215,7 @@ Image::Image(const ValidationStateTracker &dev_data, VkImage img, const VkImageC
 }
 
 Image::Image(const ValidationStateTracker &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-             uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
+             u32 swapchain_index, VkFormatFeatureFlags2KHR ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -364,7 +364,7 @@ void Image::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout l
     }
 }
 
-void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, uint32_t swapchain_index) {
+void Image::SetSwapchain(std::shared_ptr<vvl::Swapchain> &swapchain, u32 swapchain_index) {
     assert(IsSwapchainImage());
     bind_swapchain = swapchain;
     swapchain_image_index = swapchain_index;
@@ -377,7 +377,7 @@ bool Image::CompareCreateInfo(const Image &other) const {
         if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
             valid_queue_family = false;
         } else {
-            for (uint32_t i = 0; i < create_info.queueFamilyIndexCount; i++) {
+            for (u32 i = 0; i < create_info.queueFamilyIndexCount; i++) {
                 if (create_info.pQueueFamilyIndices[i] != other.create_info.pQueueFamilyIndices[i]) {
                     valid_queue_family = false;
                     break;
@@ -444,8 +444,7 @@ ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView handle, 
       // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
       // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter. As a Sampler Ycbcr
       // conversion must be used the shader type is always float.
-      descriptor_format_bits(im->HasAHBFormat() ? static_cast<uint32_t>(spirv::NumericTypeFloat)
-                                                : spirv::GetFormatType(ci->format)),
+      descriptor_format_bits(im->HasAHBFormat() ? static_cast<u32>(spirv::NumericTypeFloat) : spirv::GetFormatType(ci->format)),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
       min_lod(GetImageViewMinLod(ci)),
@@ -466,7 +465,7 @@ void ImageView::Destroy() {
     StateObject::Destroy();
 }
 
-uint32_t ImageView::GetAttachmentLayerCount() const {
+u32 ImageView::GetAttachmentLayerCount() const {
     if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !IsDepthSliced()) {
         return image_state->create_info.arrayLayers;
     }
@@ -568,7 +567,7 @@ Swapchain::Swapchain(ValidationStateTracker &dev_data_, const VkSwapchainCreateI
       image_create_info(GetImageCreateInfo(pCreateInfo)),
       dev_data(dev_data_) {}
 
-void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
+void Swapchain::PresentImage(u32 image_index, u64 present_id) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
     if (!shared_presentable) {
@@ -584,7 +583,7 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
     }
 }
 
-void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
+void Swapchain::AcquireImage(u32 image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
                              const std::shared_ptr<vvl::Fence> &fence_state) {
     acquired_images++;
     images[image_index].acquired = true;
@@ -616,14 +615,14 @@ void Swapchain::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, boo
     }
 }
 
-SwapchainImage Swapchain::GetSwapChainImage(uint32_t index) const {
+SwapchainImage Swapchain::GetSwapChainImage(u32 index) const {
     if (index < images.size()) {
         return images[index];
     }
     return SwapchainImage();
 }
 
-std::shared_ptr<const vvl::Image> Swapchain::GetSwapChainImageShared(uint32_t index) const {
+std::shared_ptr<const vvl::Image> Swapchain::GetSwapChainImageShared(u32 index) const {
     const SwapchainImage swapchain_image(GetSwapChainImage(index));
     if (swapchain_image.image_state) {
         return swapchain_image.image_state->shared_from_this();
@@ -645,14 +644,14 @@ void Surface::RemoveParent(StateObject *parent_node) {
     StateObject::RemoveParent(parent_node);
 }
 
-void Surface::SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported) {
+void Surface::SetQueueSupport(VkPhysicalDevice phys_dev, u32 qfi, bool supported) {
     auto guard = Lock();
     assert(phys_dev);
     GpuQueue key{phys_dev, qfi};
     gpu_queue_support_[key] = supported;
 }
 
-bool Surface::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const {
+bool Surface::GetQueueSupport(VkPhysicalDevice phys_dev, u32 qfi) const {
     auto guard = Lock();
     assert(phys_dev);
     GpuQueue key{phys_dev, qfi};
@@ -680,7 +679,7 @@ std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice phys_dev
             return cache->present_modes.value();
         }
     }
-    uint32_t count = 0;
+    u32 count = 0;
     if (DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, VkHandle(), &count, nullptr) != VK_SUCCESS) {
         return {};
     }
@@ -712,7 +711,7 @@ vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surf
         VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper();
         surface_info2.pNext = surface_info2_pnext;
         surface_info2.surface = VkHandle();
-        uint32_t count = 0;
+        u32 count = 0;
         if (DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, nullptr) != VK_SUCCESS) {
             return {};
         }
@@ -722,13 +721,13 @@ vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surf
             result.clear();
         } else {
             result.resize(count);
-            for (uint32_t surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
+            for (u32 surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
                 result.emplace_back(&formats2[surface_format_index]);
             }
         }
     } else {
         std::vector<VkSurfaceFormatKHR> formats;
-        uint32_t count = 0;
+        u32 count = 0;
         if (DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, VkHandle(), &count, nullptr) != VK_SUCCESS) {
             return {};
         }

@@ -392,7 +392,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.memory().map());
+    auto uniform_buffer_ptr = static_cast<u32*>(uniform_buffer.memory().map());
     uniform_buffer_ptr[0] = 16;  // gl_RayFlagsCullBackFacingTrianglesEXT
     uniform_buffer.memory().unmap();
 
@@ -507,7 +507,7 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.memory().map());
+    auto uniform_buffer_ptr = static_cast<u32*>(uniform_buffer.memory().map());
     uniform_buffer_ptr[0] = 0x100;  // gl_RayFlagsSkipTrianglesEXT, or RayFlagsSkipTrianglesKHRMask in SPIR-V
     uniform_buffer.memory().unmap();
 

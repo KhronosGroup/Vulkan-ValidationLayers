@@ -27,7 +27,7 @@ static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrum
                              LinkFunctions::inst_buffer_device_address, 0, "inst_buffer_device_address"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
+u32 BufferDeviceAddressPass::GetLinkFunctionId() {
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -36,20 +36,19 @@ uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                     const InjectionData& injection_data) {
+u32 BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
     // Convert reference pointer to uint64
-    const uint32_t pointer_id = target_instruction_->Operand(0);
-    const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
-    const uint32_t convert_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
+    const u32 pointer_id = target_instruction_->Operand(0);
+    const Type& u64ype = module_.type_manager_.GetTypeInt(64, 0);
+    const u32 convert_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpConvertPtrToU, {u64ype.Id(), convert_id, pointer_id}, inst_it);
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(type_length_);
     const Constant& access_opcode = module_.type_manager_.GetConstantUInt32(access_opcode_);
 
-    const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const u32 function_result = module_.TakeNextId();
+    const u32 function_def = GetLinkFunctionId();
+    const u32 bool_type = module_.type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {bool_type, function_result, function_def, injection_data.inst_position_id,
@@ -66,7 +65,7 @@ void BufferDeviceAddressPass::Reset() {
 }
 
 bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
-    const uint32_t opcode = inst.Opcode();
+    const u32 opcode = inst.Opcode();
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
         return false;
     }
@@ -85,7 +84,7 @@ bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const
     }
 
     // The OpTypePointer's type
-    uint32_t accessed_type_id = op_type_pointer->inst_.Operand(1);
+    u32 accessed_type_id = op_type_pointer->inst_.Operand(1);
     const Type* accessed_type = module_.type_manager_.FindTypeById(accessed_type_id);
 
     // Most common case we will just spot the access directly using the PhysicalStorageBuffer pointer

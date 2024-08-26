@@ -28,7 +28,6 @@ static const std::array syncval_disables = {
     VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
     VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
-
 void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings) {
     std::vector<VkLayerSettingEXT> settings;
 
@@ -91,9 +90,9 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    const uint32_t width = 256;
-    const uint32_t height = 128;
-    const uint32_t layers = 2;
+    const u32 width = 256;
+    const u32 height = 128;
+    const u32 layers = 2;
     const VkFormat rt_format = VK_FORMAT_B8G8R8A8_UNORM;
     const auto transfer_usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     const auto rt_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | transfer_usage;
@@ -182,8 +181,8 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    constexpr uint32_t width = 256;
-    constexpr uint32_t height = 128;
+    constexpr u32 width = 256;
+    constexpr u32 height = 128;
     constexpr VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
 
     vkt::Buffer buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -228,7 +227,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr uint64_t max_signal_value = 10'000;
+    constexpr u64 max_signal_value = 10'000;
 
     VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -240,7 +239,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
 
     // Send signals
     auto signaling_thread = std::thread{[&] {
-        uint64_t last_signalled_value = 0;
+        u64 last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
             signal_info.semaphore = semaphore;
@@ -252,7 +251,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
         }
     }};
     // Wait for each signal
-    uint64_t wait_value = 1;
+    u64 wait_value = 1;
     while (wait_value <= max_signal_value) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.flags = VK_SEMAPHORE_WAIT_ANY_BIT;
@@ -282,7 +281,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr uint64_t max_signal_value = 1'000;
+    constexpr u64 max_signal_value = 1'000;
 
     VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -294,7 +293,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
 
     // Send signals
     auto signaling_thread = std::thread{[&] {
-        uint64_t last_signalled_value = 0;
+        u64 last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
             signal_info.semaphore = semaphore;
@@ -306,7 +305,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
         }
     }};
     // Spin until semaphore payload value equals maximum signaled value
-    uint64_t counter = 0;
+    u64 counter = 0;
     while (counter != max_signal_value) {
         ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
         if (bailout.load()) {
@@ -327,7 +326,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr uint64_t max_signal_value = 15'000;
+    constexpr u64 max_signal_value = 15'000;
 
     VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
     semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -343,7 +342,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     // Start a bunch of waiter threads
     auto waiting_thread = [&]() {
         auto timeout_guard = timeout_helper.ThreadGuard();
-        uint64_t counter = 0;
+        u64 counter = 0;
         while (counter != max_signal_value) {
             ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
             if (bailout.load()) {
@@ -358,7 +357,7 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
     // The signaling thread advances semaphore's payload value
     auto signaling_thread = std::thread([&] {
         auto timeout_guard = timeout_helper.ThreadGuard();
-        uint64_t last_signalled_value = 0;
+        u64 last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
             signal_info.semaphore = semaphore;
@@ -950,8 +949,8 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
 
-    const uint32_t width = 64;
-    const uint32_t height = 64;
+    const u32 width = 64;
+    const u32 height = 64;
     const VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -1004,8 +1003,8 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
         GTEST_SKIP() << "VK_RESOLVE_MODE_MIN_BIT not supported";
     }
 
-    const uint32_t width = 64;
-    const uint32_t height = 64;
+    const u32 width = 64;
+    const u32 height = 64;
     const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
@@ -1087,7 +1086,7 @@ TEST_F(PositiveSyncVal, UpdateBuffer) {
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    std::array<uint8_t, size> data = {};
+    std::array<u8, size> data = {};
 
     VkBufferCopy region{};
     region.size = size;
@@ -1560,7 +1559,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
     RETURN_IF_SKIP(InitState());
 
     // 32 bytes
-    const VkDeviceSize uniform_data_size = 8 * sizeof(uint32_t);
+    const VkDeviceSize uniform_data_size = 8 * sizeof(u32);
     // 128 bytes or more (depending on minUniformBufferOffsetAlignment)
     const VkDeviceSize copy_dst_area_size = std::max((VkDeviceSize)128, m_device->phy().limits_.minUniformBufferOffsetAlignment);
     // 160 bytes or more (depending on minUniformBufferOffsetAlignment)
@@ -1614,7 +1613,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
     RETURN_IF_SKIP(InitState());
 
     // 32 bytes
-    const VkDeviceSize uniform_data_size = 8 * sizeof(uint32_t);
+    const VkDeviceSize uniform_data_size = 8 * sizeof(u32);
     // 128 bytes or more (depending on minUniformBufferOffsetAlignment)
     const VkDeviceSize copy_dst_area_size = std::max((VkDeviceSize)128, m_device->phy().limits_.minUniformBufferOffsetAlignment);
     // 160 bytes or more (depending on minUniformBufferOffsetAlignment)
@@ -1647,7 +1646,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
     pipe.CreateComputePipeline();
 
     // this ensures copy region does not overlap with uniform data region
-    uint32_t dynamic_offset = static_cast<uint32_t>(copy_dst_area_size);
+    u32 dynamic_offset = static_cast<u32>(copy_dst_area_size);
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -1673,7 +1672,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
     RETURN_IF_SKIP(InitState());
 
     // 32 bytes
-    const VkDeviceSize uniform_data_size = 8 * sizeof(uint32_t);
+    const VkDeviceSize uniform_data_size = 8 * sizeof(u32);
     // 128 bytes or more (depending on minUniformBufferOffsetAlignment)
     const VkDeviceSize copy_dst_area_size = std::max((VkDeviceSize)128, m_device->phy().limits_.minUniformBufferOffsetAlignment);
     // 160 bytes or more (depending on minUniformBufferOffsetAlignment)
@@ -1706,7 +1705,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
     pipe.CreateComputePipeline();
 
     // this ensures copy region does not overlap with uniform data region
-    uint32_t dynamic_offset = static_cast<uint32_t>(copy_dst_area_size);
+    u32 dynamic_offset = static_cast<u32>(copy_dst_area_size);
 
     m_commandBuffer->begin();
     vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());

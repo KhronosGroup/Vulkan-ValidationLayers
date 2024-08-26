@@ -20,13 +20,13 @@
 namespace gpu {
 namespace spirv {
 
-void BasicBlock::ToBinary(std::vector<uint32_t>& out) {
+void BasicBlock::ToBinary(std::vector<u32>& out) {
     for (const auto& inst : instructions_) {
         inst->ToBinary(out);
     }
 }
 
-void Function::ToBinary(std::vector<uint32_t>& out) {
+void Function::ToBinary(std::vector<u32>& out) {
     for (const auto& inst : pre_block_inst_) {
         inst->ToBinary(out);
     }
@@ -44,11 +44,11 @@ BasicBlock::BasicBlock(std::unique_ptr<Instruction> label, Function& function) :
 }
 
 BasicBlock::BasicBlock(Module& module, Function& function) : function_(function) {
-    uint32_t new_label_id = module.TakeNextId();
+    u32 new_label_id = module.TakeNextId();
     CreateInstruction(spv::OpLabel, {new_label_id});
 }
 
-uint32_t BasicBlock::GetLabelId() { return (*(instructions_[0])).ResultId(); }
+u32 BasicBlock::GetLabelId() { return (*(instructions_[0])).ResultId(); }
 
 InstructionIt BasicBlock::GetFirstInjectableInstrution() {
     InstructionIt inst_it;
@@ -80,7 +80,7 @@ InstructionIt BasicBlock::GetLastInjectableInstrution() {
     return instructions_.end();
 }
 
-void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it) {
+void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<u32>& words, InstructionIt* inst_it) {
     const bool add_to_end = inst_it == nullptr;
     InstructionIt last_inst = instructions_.end();
     if (add_to_end) {
@@ -88,10 +88,10 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
     }
 
     // Add 1 as we need to reserve the first word for the opcode/length
-    auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), opcode);
+    auto new_inst = std::make_unique<Instruction>((u32)(words.size() + 1), opcode);
     new_inst->Fill(words);
 
-    const uint32_t result_id = new_inst->ResultId();
+    const u32 result_id = new_inst->ResultId();
     if (result_id != 0) {
         function_.inst_map_[result_id] = new_inst.get();
     }
@@ -117,20 +117,20 @@ BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {
     return new_block_it;
 }
 
-void Function::InitBlocks(uint32_t count) {
+void Function::InitBlocks(u32 count) {
     blocks_.reserve(blocks_.size() + count);
-    for (uint32_t i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         auto new_block = std::make_unique<BasicBlock>(module_, *this);
         blocks_.emplace_back(std::move(new_block));
     }
 }
 
-const Instruction* Function::FindInstruction(uint32_t id) const {
+const Instruction* Function::FindInstruction(u32 id) const {
     auto it = inst_map_.find(id);
     return (it == inst_map_.end()) ? nullptr : it->second;
 }
 
-void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id) {
+void Function::CreateInstruction(spv::Op opcode, const std::vector<u32>& words, u32 id) {
     for (auto& block : blocks_) {
         for (auto inst_it = block->instructions_.begin(); inst_it != block->instructions_.end(); ++inst_it) {
             if ((*inst_it)->ResultId() == id) {
@@ -143,7 +143,7 @@ void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& wo
 }
 
 // Will not touch control flow logic
-void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
+void Function::ReplaceAllUsesWith(u32 old_word, u32 new_word) {
     // Shouldn't have to replace anything outside the IDs in function blocks.
     //
     // This call only needed at a Function block level when not dealing with OpVariable as other instructions won't have to worry

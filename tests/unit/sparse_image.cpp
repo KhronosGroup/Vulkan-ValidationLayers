@@ -322,7 +322,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    const uint32_t mem_types_mask = (1u << m_device->phy().memory_properties_.memoryTypeCount) - 1;
+    const u32 mem_types_mask = (1u << m_device->phy().memory_properties_.memoryTypeCount) - 1;
 
     /// Create buffer whose memory has an incompatible type
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -339,7 +339,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
     buffer_mem_alloc.memoryTypeIndex = vvl::kU32Max;
     // Try to pick incompatible memory type
-    for (uint32_t memory_type_i = 0; memory_type_i < m_device->phy().memory_properties_.memoryTypeCount; ++memory_type_i) {
+    for (u32 memory_type_i = 0; memory_type_i < m_device->phy().memory_properties_.memoryTypeCount; ++memory_type_i) {
         if (m_device->phy().memory_properties_.memoryTypes[memory_type_i].propertyFlags &
             VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
             continue;
@@ -388,7 +388,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     image_mem_alloc.allocationSize = image_mem_reqs.size;
     image_mem_alloc.memoryTypeIndex = vvl::kU32Max;
     // Try to pick incompatible memory type
-    for (uint32_t memory_type_i = 0; memory_type_i < m_device->phy().memory_properties_.memoryTypeCount; ++memory_type_i) {
+    for (u32 memory_type_i = 0; memory_type_i < m_device->phy().memory_properties_.memoryTypeCount; ++memory_type_i) {
         if (m_device->phy().memory_properties_.memoryTypes[memory_type_i].propertyFlags &
             VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
             continue;
@@ -496,8 +496,8 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    uint32_t lazily_allocated_index = m_device->phy().memory_properties_.memoryTypeCount;  // Set to an invalid value just in case
-    for (uint32_t i = 0; i < m_device->phy().memory_properties_.memoryTypeCount; ++i) {
+    u32 lazily_allocated_index = m_device->phy().memory_properties_.memoryTypeCount;  // Set to an invalid value just in case
+    for (u32 i = 0; i < m_device->phy().memory_properties_.memoryTypeCount; ++i) {
         if ((m_device->phy().memory_properties_.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0) {
             lazily_allocated_index = i;
             break;
@@ -967,7 +967,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
 
-    uint32_t requirements_count = 0u;
+    u32 requirements_count = 0u;
     vk::GetImageSparseMemoryRequirements(m_device->handle(), image.handle(), &requirements_count, nullptr);
 
     if (requirements_count == 0u) {
@@ -1088,7 +1088,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
 
-    uint32_t requirements_count = 0u;
+    u32 requirements_count = 0u;
     vk::GetImageSparseMemoryRequirements(m_device->handle(), image.handle(), &requirements_count, nullptr);
 
     if (requirements_count == 0u) {

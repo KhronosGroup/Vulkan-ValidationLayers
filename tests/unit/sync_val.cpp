@@ -290,8 +290,8 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
 struct ClearAttachmentHazardHelper {
     static constexpr VkImageUsageFlags kTransferUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    const uint32_t width = 256;
-    const uint32_t height = 128;
+    const u32 width = 256;
+    const u32 height = 128;
     const VkFormat rt_format = VK_FORMAT_B8G8R8A8_UNORM;
     const VkImageUsageFlags transfer_usage = kTransferUsage;
     const VkImageUsageFlags rt_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | kTransferUsage;
@@ -1716,12 +1716,13 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, 2048);
     descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_GENERAL);
-    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.WriteDescriptorBufferView(3, bufferview.handle());
     descriptor_set.UpdateDescriptorSets();
 
     // Dispatch
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform foo { float x; } ub0;
         layout(set=0, binding=1) uniform sampler2D cis1;
@@ -2020,8 +2021,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
         {
             buffer_usage =
                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            vkt::Buffer buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
-            vkt::Buffer buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+            vkt::Buffer buffer_count(*m_device, sizeof(u32), buffer_usage, mem_prop);
+            vkt::Buffer buffer_count2(*m_device, sizeof(u32), buffer_usage, mem_prop);
 
             m_commandBuffer->reset();
             m_commandBuffer->begin();
@@ -2039,7 +2040,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
             m_commandBuffer->reset();
             m_commandBuffer->begin();
 
-            buffer_region = {0, 0, sizeof(uint32_t)};
+            buffer_region = {0, 0, sizeof(u32)};
             vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
 
             m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -2061,8 +2062,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
         {
             buffer_usage =
                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            vkt::Buffer buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
-            vkt::Buffer buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+            vkt::Buffer buffer_count(*m_device, sizeof(u32), buffer_usage, mem_prop);
+            vkt::Buffer buffer_count2(*m_device, sizeof(u32), buffer_usage, mem_prop);
 
             m_commandBuffer->reset();
             m_commandBuffer->begin();
@@ -2081,7 +2082,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
             m_commandBuffer->reset();
             m_commandBuffer->begin();
 
-            buffer_region = {0, 0, sizeof(uint32_t)};
+            buffer_region = {0, 0, sizeof(u32)};
             vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
 
             m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -2187,7 +2188,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     if ((m_device->phy().queue_properties_.empty()) || (m_device->phy().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
-    uint32_t queue_count;
+    u32 queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
@@ -2520,7 +2521,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     const VkRenderPassCreateInfo renderPassInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                                    0,
                                                    (VkRenderPassCreateFlags)0,
-                                                   (uint32_t)attachmentDescriptions.size(),
+                                                   (u32)attachmentDescriptions.size(),
                                                    &attachmentDescriptions[0],
                                                    1u,
                                                    &subpassDescription,
@@ -2560,7 +2561,7 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
 
     m_commandBuffer->begin();
     VkClearValue clear = {};
-    std::array<VkClearValue, 2> clear_values = { {clear, clear} };
+    std::array<VkClearValue, 2> clear_values = {{clear, clear}};
     m_renderPassBeginInfo.pClearValues = clear_values.data();
     m_renderPassBeginInfo.clearValueCount = clear_values.size();
     m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
@@ -2583,7 +2584,7 @@ struct CreateRenderPassHelper {
     class SubpassDescriptionStore {
       public:
         using AttachRefVec = std::vector<VkAttachmentReference>;
-        using PreserveVec = std::vector<uint32_t>;
+        using PreserveVec = std::vector<u32>;
 
         SubpassDescriptionStore() = default;
         SubpassDescriptionStore(const AttachRefVec& input, const AttachRefVec& color) : input_store(input), color_store(color) {}
@@ -2594,13 +2595,13 @@ struct CreateRenderPassHelper {
         VkSubpassDescription operator*() const {
             VkSubpassDescription desc = {0u,
                                          VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                         static_cast<uint32_t>(input_store.size()),
+                                         static_cast<u32>(input_store.size()),
                                          vvl::DataOrNull(input_store),
-                                         static_cast<uint32_t>(color_store.size()),
+                                         static_cast<u32>(color_store.size()),
                                          vvl::DataOrNull(color_store),
                                          vvl::DataOrNull(resolve_store),
                                          vvl::DataOrNull(ds_store),
-                                         static_cast<uint32_t>(preserve_store.size()),
+                                         static_cast<u32>(preserve_store.size()),
                                          vvl::DataOrNull(preserve_store)};
             return desc;
         }
@@ -2621,9 +2622,9 @@ struct CreateRenderPassHelper {
     VkClearColorValue ccv = {};
 
     vkt::Device* dev;
-    const static uint32_t kDefaultImageSize = 64;
-    uint32_t width = kDefaultImageSize;
-    uint32_t height = kDefaultImageSize;
+    const static u32 kDefaultImageSize = 64;
+    u32 width = kDefaultImageSize;
+    u32 height = kDefaultImageSize;
     std::shared_ptr<vkt::Image> image_color;
     std::shared_ptr<vkt::Image> image_input;
     vkt::ImageView view_input;
@@ -2757,7 +2758,7 @@ struct CreateRenderPassHelper {
 
     // Create a subpass description with all the attachments preserved
     void AddPreserveInputColorSubpassDescription() {
-        std::vector<uint32_t> preserve;
+        std::vector<u32> preserve;
         preserve.reserve(input_attachments.size() + color_attachments.size());
         for (const auto& att : input_attachments) {
             preserve.push_back(att.attachment);
@@ -2790,11 +2791,11 @@ struct CreateRenderPassHelper {
         render_pass_create_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                                    nullptr,
                                    0u,
-                                   static_cast<uint32_t>(attachment_descs.size()),
+                                   static_cast<u32>(attachment_descs.size()),
                                    attachment_descs.data(),
-                                   static_cast<uint32_t>(subpasses.size()),
+                                   static_cast<u32>(subpasses.size()),
                                    subpasses.data(),
-                                   static_cast<uint32_t>(subpass_dep.size()),
+                                   static_cast<u32>(subpass_dep.size()),
                                    subpass_dep.data()};
     }
 
@@ -2813,7 +2814,7 @@ struct CreateRenderPassHelper {
                                         0,
                                         0u,
                                         render_pass->handle(),
-                                        static_cast<uint32_t>(attachments.size()),
+                                        static_cast<u32>(attachments.size()),
                                         attachments.data(),
                                         width,
                                         height,
@@ -2834,7 +2835,7 @@ struct CreateRenderPassHelper {
         for (size_t i = clear_colors.size(); i < attachments.size(); ++i) {
             clear_colors.push_back(fill_in);
         }
-        render_pass_begin.clearValueCount = static_cast<uint32_t>(clear_colors.size());
+        render_pass_begin.clearValueCount = static_cast<u32>(clear_colors.size());
         render_pass_begin.pClearValues = clear_colors.data();
     }
 
@@ -3127,8 +3128,8 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     // race with the reads in the other subpasses.
 
     constexpr VkFormat kFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    constexpr uint32_t kWidth = 32, kHeight = 32;
-    constexpr uint32_t kNumImages = 4;
+    constexpr u32 kWidth = 32, kHeight = 32;
+    constexpr u32 kNumImages = 4;
 
     VkImageCreateInfo src_img_info = vku::InitStructHelper();
     src_img_info.flags = 0;
@@ -3154,7 +3155,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     std::vector<std::unique_ptr<vkt::Image>> images;
     images.emplace_back(std::make_unique<vkt::Image>(*m_device, src_img_info));
-    for (uint32_t i = 1; i < kNumImages; i++) {
+    for (u32 i = 1; i < kNumImages; i++) {
         images.emplace_back(std::make_unique<vkt::Image>(*m_device, dst_img_info));
     }
 
@@ -3164,7 +3165,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     std::array<VkAttachmentReference, kNumImages> color_refs{};
     std::array<VkImageMemoryBarrier, kNumImages> img_barriers{};
 
-    for (uint32_t i = 0; i < attachments.size(); i++) {
+    for (u32 i = 0; i < attachments.size(); i++) {
         attachment_wrappers[i] = images[i]->CreateView();
         attachments[i] = attachment_wrappers[i].handle();
         attachment_descriptions[i] = {};
@@ -3194,7 +3195,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     const VkAttachmentReference input_ref{0u, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 
-    std::array<std::array<uint32_t, 2>, kNumImages - 1> preserve_subpass{{{2, 3}, {1, 3}, {1, 2}}};
+    std::array<std::array<u32, 2>, kNumImages - 1> preserve_subpass{{{2, 3}, {1, 3}, {1, 2}}};
 
     std::array<VkSubpassDescription, kNumImages> subpasses{};
 
@@ -3204,7 +3205,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     subpasses[0].colorAttachmentCount = 1;
     subpasses[0].pColorAttachments = &color_refs[0];
 
-    for (uint32_t i = 1; i < subpasses.size(); i++) {
+    for (u32 i = 1; i < subpasses.size(); i++) {
         subpasses[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpasses[i].inputAttachmentCount = 1;
         subpasses[i].pInputAttachments = &input_ref;
@@ -3255,7 +3256,8 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
         }
 
-        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(),
+                                                            VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
 
         m_commandBuffer->begin();
@@ -3280,7 +3282,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-        for (uint32_t i = 1; i < subpasses.size(); i++) {
+        for (u32 i = 1; i < subpasses.size(); i++) {
             // we're racing the writes from subpass 0 with our layout transitions... (from initial)
             m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
             m_commandBuffer->NextSubpass();
@@ -3301,7 +3303,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     // add dependencies from subpass 0 to the others, which are necessary but not sufficient
     std::vector<VkSubpassDependency> subpass_dependencies;
-    for (uint32_t i = 1; i < subpasses.size(); i++) {
+    for (u32 i = 1; i < subpasses.size(); i++) {
         VkSubpassDependency dep{0,
                                 i,
                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -3335,7 +3337,8 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
         }
 
-        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(),
+                                                            VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
 
         m_commandBuffer->begin();
@@ -3359,7 +3362,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-        for (uint32_t i = 1; i < subpasses.size(); i++) {
+        for (u32 i = 1; i < subpasses.size(); i++) {
             if (i > 1) {
                 // We've fixed the dependency with 0, but 2 and 3 still fight with 1
                 m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
@@ -3423,7 +3426,8 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
         }
 
-        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(),
+                                                            VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
 
         m_commandBuffer->begin();
@@ -3446,7 +3450,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-        for (uint32_t i = 1; i < subpasses.size(); i++) {
+        for (u32 i = 1; i < subpasses.size(); i++) {
             m_commandBuffer->NextSubpass();
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -3807,7 +3811,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
 
     bool timestamp = false;
 
-    uint32_t queue_count;
+    u32 queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
@@ -3877,12 +3881,11 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     InitRenderTarget();
 
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags =
-        vku::InitStructHelper();
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = vku::InitStructHelper();
     constexpr size_t kNumDescriptors = 6;
 
     std::array<VkDescriptorBindingFlagsEXT, kNumDescriptors> ds_binding_flags;
-    for (auto &elem : ds_binding_flags) {
+    for (auto& elem : ds_binding_flags) {
         elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
     }
 
@@ -3913,10 +3916,10 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     VkDescriptorBufferInfo buffer_info[2] = {};
     buffer_info[0].buffer = doit_buffer.handle();
     buffer_info[0].offset = 0;
-    buffer_info[0].range = sizeof(uint32_t);
+    buffer_info[0].range = sizeof(u32);
     buffer_info[1].buffer = buffer->handle();
     buffer_info[1].offset = 0;
-    buffer_info[1].range = sizeof(uint32_t);
+    buffer_info[1].range = sizeof(u32);
 
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
     vkt::Buffer texel_buffer(*m_device, buffer_create_info);
@@ -3930,7 +3933,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     auto texel_bufferview = std::make_unique<vkt::BufferView>();
     texel_bufferview->init(*m_device, bvci);
 
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -4005,7 +4008,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::UpdateDescriptorSets(device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 
     // only descriptor 0 is used, the rest are going to get destroyed
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform foo_0 { int val; } doit;
         layout(set = 0, binding = 1) uniform foo_1 { int val; } readit;
@@ -4544,7 +4547,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyVsFence) {
     test.RecordCopy(cbd, test.buffer_a, test.buffer_c);
 
     // Two copies *better* finish in a second...
-    const uint64_t kFourSeconds = 1U << 30;
+    const u64 kFourSeconds = 1U << 30;
     // Copy A to B
     test.Submit0(test.cba, VK_NULL_HANDLE, 0U, VK_NULL_HANDLE, fence.handle());
     // Copy A to C
@@ -5017,10 +5020,10 @@ TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
     transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     // Create a lot of buffer barriers (> 255) so error reporting will have a lot of objects to report.
-    constexpr uint32_t buffer_count = 300;
+    constexpr u32 buffer_count = 300;
     std::vector<vkt::Buffer> buffers;
     std::vector<VkBufferMemoryBarrier> buffer_barriers(buffer_count);
-    for (uint32_t i = 0; i < buffer_count; i++) {
+    for (u32 i = 0; i < buffer_count; i++) {
         buffers.emplace_back(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         buffer_barriers[i] = vku::InitStructHelper();
         buffer_barriers[i].buffer = buffers[i];
@@ -5887,7 +5890,7 @@ TEST_F(NegativeSyncVal, UpdateBufferMissingBarrier) {
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    std::array<uint8_t, size> data = {};
+    std::array<u8, size> data = {};
 
     VkBufferCopy region{};
     region.size = size;
@@ -5912,7 +5915,7 @@ TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
     vkt::Buffer src_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer dst_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    std::array<uint8_t, size> data = {};
+    std::array<u8, size> data = {};
 
     VkBufferCopy region{};
     region.size = size;

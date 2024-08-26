@@ -31,15 +31,15 @@ VK_DEFINE_NON_DISPATCHABLE_HANDLE(DISTINCT_NONDISPATCHABLE_PHONY_HANDLE)
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
 // If pointers are 64-bit, then there can be separate counters for each
-// NONDISPATCHABLE_HANDLE type.  Otherwise they are all typedef uint64_t.
+// NONDISPATCHABLE_HANDLE type.  Otherwise they are all typedef u64.
 #define DISTINCT_NONDISPATCHABLE_HANDLES
 // Make sure we catch any disagreement between us and the vulkan definition
 static_assert(std::is_pointer<DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::value,
               "Mismatched non-dispatchable handle handle, expected pointer type.");
 #else
 // Make sure we catch any disagreement between us and the vulkan definition
-static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::value,
-              "Mismatched non-dispatchable handle handle, expected uint64_t.");
+static_assert(std::is_same<u64, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::value,
+              "Mismatched non-dispatchable handle handle, expected u64.");
 #endif
 
 // Modern CPUs have 64 or 128-byte cache line sizes (Apple M1 has 128-byte cache line size).
@@ -53,30 +53,30 @@ class alignas(kObjectUserDataAlignment) ObjectUseData {
   public:
     class WriteReadCount {
       public:
-        explicit WriteReadCount(int64_t v) : count(v) {}
+        explicit WriteReadCount(i64 v) : count(v) {}
 
-        int32_t GetReadCount() const { return static_cast<int32_t>(count & 0xFFFFFFFF); }
-        int32_t GetWriteCount() const { return static_cast<int32_t>(count >> 32); }
+        i32 GetReadCount() const { return static_cast<i32>(count & 0xFFFFFFFF); }
+        i32 GetWriteCount() const { return static_cast<i32>(count >> 32); }
 
       private:
-        int64_t count{};
+        i64 count{};
     };
 
     WriteReadCount AddWriter() {
-        int64_t prev = writer_reader_count.fetch_add(1ULL << 32);
+        i64 prev = writer_reader_count.fetch_add(1ULL << 32);
         return WriteReadCount(prev);
     }
     WriteReadCount AddReader() {
-        int64_t prev = writer_reader_count.fetch_add(1ULL);
+        i64 prev = writer_reader_count.fetch_add(1ULL);
         return WriteReadCount(prev);
     }
     WriteReadCount RemoveWriter() {
-        int64_t prev = writer_reader_count.fetch_add(-(1LL << 32));
+        i64 prev = writer_reader_count.fetch_add(-(1LL << 32));
         assert(prev > 0);
         return WriteReadCount(prev);
     }
     WriteReadCount RemoveReader() {
-        int64_t prev = writer_reader_count.fetch_add(-1LL);
+        i64 prev = writer_reader_count.fetch_add(-1LL);
         assert(prev > 0);
         return WriteReadCount(prev);
     }
@@ -93,7 +93,7 @@ class alignas(kObjectUserDataAlignment) ObjectUseData {
 
   private:
     // Need to update write and read counts atomically. Writer in high 32 bits, reader in low 32 bits.
-    std::atomic<int64_t> writer_reader_count{};
+    std::atomic<i64> writer_reader_count{};
 };
 
 template <typename T>
@@ -112,7 +112,7 @@ class counter {
         }
     }
 
-    std::shared_ptr<ObjectUseData> FindObject(T object, const Location& loc) {
+    std::shared_ptr<ObjectUseData> FindObject(T object, const Location &loc) {
         assert(object_table.contains(object));
         auto iter = object_table.find(object);
         if (iter != object_table.end()) {
@@ -121,12 +121,12 @@ class counter {
             object_data->LogError("UNASSIGNED-Threading-Info", object, loc,
                                   "Couldn't find %s Object 0x%" PRIxLEAST64
                                   ". This should not happen and may indicate a bug in the application.",
-                                  string_VulkanObjectType(object_type), (uint64_t)(object));
+                                  string_VulkanObjectType(object_type), (u64)(object));
             return nullptr;
         }
     }
 
-    void StartWrite(T object, const Location& loc) {
+    void StartWrite(T object, const Location &loc) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -164,7 +164,7 @@ class counter {
         }
     }
 
-    void FinishWrite(T object, const Location& loc) {
+    void FinishWrite(T object, const Location &loc) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -175,7 +175,7 @@ class counter {
         use_data->RemoveWriter();
     }
 
-    void StartRead(T object, const Location& loc) {
+    void StartRead(T object, const Location &loc) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -199,7 +199,7 @@ class counter {
         }
     }
 
-    void FinishRead(T object, const Location& loc) {
+    void FinishRead(T object, const Location &loc) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -223,7 +223,7 @@ class counter {
         return err_str.str();
     }
 
-    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location& loc) {
+    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location &loc) {
         const std::thread::id tid = std::this_thread::get_id();
         const std::string error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
         const bool skip =
@@ -239,7 +239,7 @@ class counter {
         }
     }
 
-    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location& loc) {
+    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location &loc) {
         const std::thread::id tid = std::this_thread::get_id();
         // There is a writer of the object.
         const auto error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
@@ -295,9 +295,9 @@ class ThreadSafety : public ValidationObject {
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
     // Special entry to allow tracking of command pool Reset and Destroy
-    counter<uint64_t> c_VkCommandPoolContents;
+    counter<u64> c_VkCommandPoolContents;
 
-    counter<uint64_t> c_uint64_t;
+    counter<u64> c_u64;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
     // If this ThreadSafety is for a VkDevice, then parent_instance points to the
@@ -314,32 +314,32 @@ class ThreadSafety : public ValidationObject {
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 #include "generated/thread_safety_counter_instances.h"
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t(kVulkanObjectTypeUnknown, this),
+          c_u64(kVulkanObjectTypeUnknown, this),
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
           parent_instance(parent) {
         container_type = LayerObjectTypeThreading;
     };
 
-#define WRAPPER(type)                                                                                 \
-    void StartWriteObject(type object, const Location& loc) { c_##type.StartWrite(object, loc); }   \
-    void FinishWriteObject(type object, const Location& loc) { c_##type.FinishWrite(object, loc); } \
-    void StartReadObject(type object, const Location& loc) { c_##type.StartRead(object, loc); }     \
-    void FinishReadObject(type object, const Location& loc) { c_##type.FinishRead(object, loc); }   \
-    void CreateObject(type object) { c_##type.CreateObject(object); }                                 \
+#define WRAPPER(type)                                                                               \
+    void StartWriteObject(type object, const Location &loc) { c_##type.StartWrite(object, loc); }   \
+    void FinishWriteObject(type object, const Location &loc) { c_##type.FinishWrite(object, loc); } \
+    void StartReadObject(type object, const Location &loc) { c_##type.StartRead(object, loc); }     \
+    void FinishReadObject(type object, const Location &loc) { c_##type.FinishRead(object, loc); }   \
+    void CreateObject(type object) { c_##type.CreateObject(object); }                               \
     void DestroyObject(type object) { c_##type.DestroyObject(object); }
 
 #define WRAPPER_PARENT_INSTANCE(type)                                                                                           \
-    void StartWriteObjectParentInstance(type object, const Location& loc) {                                                       \
-        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, loc);                                       \
+    void StartWriteObjectParentInstance(type object, const Location &loc) {                                                     \
+        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, loc);                                           \
     }                                                                                                                           \
-    void FinishWriteObjectParentInstance(type object, const Location& loc) {                                                      \
-        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, loc);                                      \
+    void FinishWriteObjectParentInstance(type object, const Location &loc) {                                                    \
+        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, loc);                                          \
     }                                                                                                                           \
-    void StartReadObjectParentInstance(type object, const Location& loc) {                                                        \
-        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, loc);                                        \
+    void StartReadObjectParentInstance(type object, const Location &loc) {                                                      \
+        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, loc);                                            \
     }                                                                                                                           \
-    void FinishReadObjectParentInstance(type object, const Location& loc) {                                                       \
-        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, loc);                                       \
+    void FinishReadObjectParentInstance(type object, const Location &loc) {                                                     \
+        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, loc);                                           \
     }                                                                                                                           \
     void CreateObjectParentInstance(type object) { (parent_instance ? parent_instance : this)->c_##type.CreateObject(object); } \
     void DestroyObjectParentInstance(type object) { (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object); }
@@ -350,15 +350,15 @@ class ThreadSafety : public ValidationObject {
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 #include "generated/thread_safety_counter_bodies.h"
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-    WRAPPER(uint64_t)
-    WRAPPER_PARENT_INSTANCE(uint64_t)
+    WRAPPER(u64)
+    WRAPPER_PARENT_INSTANCE(u64)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
     void CreateObject(VkCommandBuffer object) { c_VkCommandBuffer.CreateObject(object); }
     void DestroyObject(VkCommandBuffer object) { c_VkCommandBuffer.DestroyObject(object); }
 
     // VkCommandBuffer needs check for implicit use of command pool
-    void StartWriteObject(VkCommandBuffer object, const Location& loc, bool lockPool = true) {
+    void StartWriteObject(VkCommandBuffer object, const Location &loc, bool lockPool = true) {
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
@@ -368,7 +368,7 @@ class ThreadSafety : public ValidationObject {
         }
         c_VkCommandBuffer.StartWrite(object, loc);
     }
-    void FinishWriteObject(VkCommandBuffer object, const Location& loc, bool lockPool = true) {
+    void FinishWriteObject(VkCommandBuffer object, const Location &loc, bool lockPool = true) {
         c_VkCommandBuffer.FinishWrite(object, loc);
         if (lockPool) {
             auto iter = command_pool_map.find(object);
@@ -378,7 +378,7 @@ class ThreadSafety : public ValidationObject {
             }
         }
     }
-    void StartReadObject(VkCommandBuffer object, const Location& loc) {
+    void StartReadObject(VkCommandBuffer object, const Location &loc) {
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
@@ -389,7 +389,7 @@ class ThreadSafety : public ValidationObject {
         }
         c_VkCommandBuffer.StartRead(object, loc);
     }
-    void FinishReadObject(VkCommandBuffer object, const Location& loc) {
+    void FinishReadObject(VkCommandBuffer object, const Location &loc) {
         c_VkCommandBuffer.FinishRead(object, loc);
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
@@ -398,19 +398,19 @@ class ThreadSafety : public ValidationObject {
         }
     }
 
-    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, u32 *pPropertyCount,
                                                                   VkDisplayPlanePropertiesKHR *pProperties,
                                                                   const RecordObject &record_obj) override;
 
-    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, u32 *pPropertyCount,
                                                                    VkDisplayPlaneProperties2KHR *pProperties,
                                                                    const RecordObject &record_obj) override;
 
-    void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+    void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, u32 *pPropertyCount,
                                                              VkDisplayPropertiesKHR *pProperties,
                                                              const RecordObject &record_obj) override;
 
-    void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+    void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, u32 *pPropertyCount,
                                                               VkDisplayProperties2KHR *pProperties,
                                                               const RecordObject &record_obj) override;
 
@@ -431,7 +431,7 @@ class ThreadSafety : public ValidationObject {
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-    void PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR *display,
+    void PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, i32 drmFd, u32 connectorId, VkDisplayKHR *display,
                                         const RecordObject &record_obj) override;
 
 #include "generated/thread_safety_commands.h"

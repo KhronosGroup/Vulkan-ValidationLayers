@@ -346,9 +346,9 @@ TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    std::vector<uint32_t> spv(256);
+    std::vector<u32> spv(256);
 
-    auto ptr = reinterpret_cast<std::uintptr_t>(spv.data()) + sizeof(uint8_t);
+    auto ptr = reinterpret_cast<std::uintptr_t>(spv.data()) + sizeof(u8);
 
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -372,7 +372,7 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
-    auto ptr = reinterpret_cast<std::uintptr_t>(spv.data()) + sizeof(uint8_t);
+    auto ptr = reinterpret_cast<std::uintptr_t>(spv.data()) + sizeof(u8);
 
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -533,7 +533,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    const std::optional<uint32_t> transfer_queue_family_index = m_device->TransferOnlyQueueFamily();
+    const std::optional<u32> transfer_queue_family_index = m_device->TransferOnlyQueueFamily();
     if (!transfer_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
     }
@@ -560,7 +560,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
 
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
@@ -588,7 +588,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
 
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
 
-    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
 
     if (!non_graphics_queue_family_index) {
         GTEST_SKIP() << "No suitable queue found.";
@@ -675,8 +675,8 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
 
     size_t dataSize = 0;
     vk::GetShaderBinaryDataEXT(m_device->handle(), shaderHandle, &dataSize, nullptr);
-    std::vector<uint8_t> data(dataSize + 1u);
-    auto ptr = reinterpret_cast<std::uintptr_t>(data.data()) + sizeof(uint8_t);
+    std::vector<u8> data(dataSize + 1u);
+    auto ptr = reinterpret_cast<std::uintptr_t>(data.data()) + sizeof(u8);
     void* dataPtr = reinterpret_cast<void*>(ptr);
     vk::GetShaderBinaryDataEXT(m_device->handle(), shaderHandle, &dataSize, dataPtr);
 
@@ -930,7 +930,7 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
 
     size_t dataSize = 0u;
     vk::GetShaderBinaryDataEXT(m_device->handle(), shaders[0], &dataSize, nullptr);
-    std::vector<uint8_t> binaryData(dataSize);
+    std::vector<u8> binaryData(dataSize);
     vk::GetShaderBinaryDataEXT(m_device->handle(), shaders[0], &dataSize, binaryData.data());
 
     createInfos[0].codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
@@ -939,7 +939,7 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
 
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
     }
 
@@ -1341,7 +1341,7 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::exclusiveScissor);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    uint32_t count;
+    u32 count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, properties.data());
@@ -1626,7 +1626,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    uint32_t count;
+    u32 count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, properties.data());
@@ -1667,7 +1667,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    uint32_t count;
+    u32 count;
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, nullptr);
     std::vector<VkExtensionProperties> properties(count);
     vk::EnumerateDeviceExtensionProperties(m_device->phy(), nullptr, &count, properties.data());
@@ -3164,7 +3164,7 @@ TEST_F(NegativeShaderObject, MissingLinkedShaderBind) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 
@@ -3202,7 +3202,7 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 
@@ -3220,7 +3220,7 @@ TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
     VkPushConstantRange pushConstRange;
     pushConstRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     pushConstRange.offset = 0u;
-    pushConstRange.size = sizeof(uint32_t);
+    pushConstRange.size = sizeof(u32);
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl),
                                  nullptr, &pushConstRange);
@@ -3916,9 +3916,9 @@ TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
-    uint32_t y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
-    uint32_t z_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[2];
+    u32 x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
+    u32 y_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[1];
+    u32 z_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[2];
 
     const vkt::Shader compShader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl));
@@ -3998,8 +3998,8 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     // Make sure compute pipeline has a compute shader stage set
@@ -4061,7 +4061,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
     VkSpecializationInfo specializationInfo = {};
     specializationInfo.mapEntryCount = 1;
     specializationInfo.pMapEntries = &mapEntry;
-    specializationInfo.dataSize = sizeof(uint32_t);
+    specializationInfo.dataSize = sizeof(u32);
     specializationInfo.pData = &data;
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4100,7 +4100,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
     VkSpecializationInfo specializationInfo = {};
     specializationInfo.mapEntryCount = 1;
     specializationInfo.pMapEntries = &mapEntry;
-    specializationInfo.dataSize = sizeof(uint32_t);
+    specializationInfo.dataSize = sizeof(u32);
     specializationInfo.pData = &data;
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4139,7 +4139,7 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
     VkSpecializationInfo specializationInfo = {};
     specializationInfo.mapEntryCount = 1;
     specializationInfo.pMapEntries = &mapEntry;
-    specializationInfo.dataSize = sizeof(uint32_t) * 2;
+    specializationInfo.dataSize = sizeof(u32) * 2;
     specializationInfo.pData = &data;
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4181,7 +4181,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
     VkSpecializationInfo specializationInfo = {};
     specializationInfo.mapEntryCount = 2;
     specializationInfo.pMapEntries = mapEntries;
-    specializationInfo.dataSize = sizeof(uint32_t);
+    specializationInfo.dataSize = sizeof(u32);
     specializationInfo.pData = &data;
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4248,20 +4248,20 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> fs_spv;
+    std::vector<u32> fs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, fs_src, fs_spv);
 
-    uint32_t data = 0u;
+    u32 data = 0u;
 
     VkSpecializationMapEntry mapEntry = {};
     mapEntry.constantID = 0u;
     mapEntry.offset = 0u;
-    mapEntry.size = sizeof(uint32_t);
+    mapEntry.size = sizeof(u32);
 
     VkSpecializationInfo specializationInfo = {};
     specializationInfo.mapEntryCount = 1;
     specializationInfo.pMapEntries = &mapEntry;
-    specializationInfo.dataSize = sizeof(uint32_t);
+    specializationInfo.dataSize = sizeof(u32);
     specializationInfo.pData = &data;
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -4334,7 +4334,7 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> cs_spv;
+    std::vector<u32> cs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, cs_spv);
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -4415,7 +4415,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> vs_spv;
+    std::vector<u32> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4452,7 +4452,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> vs_spv;
+    std::vector<u32> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vs_src, vs_spv);
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4489,7 +4489,7 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
                    OpReturn
                    OpFunctionEnd)";
 
-    std::vector<uint32_t> cs_spv;
+    std::vector<u32> cs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, cs_spv);
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(cs_spv, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -4597,7 +4597,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
                OpFunctionEnd
         )asm";
 
-    std::vector<uint32_t> gs_spv;
+    std::vector<u32> gs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, gsSource.str().c_str(), gs_spv);
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(gs_spv, VK_SHADER_STAGE_GEOMETRY_BIT);
@@ -4660,7 +4660,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
                OpFunctionEnd
         )asm";
 
-    std::vector<uint32_t> vs_spv;
+    std::vector<u32> vs_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, vsSource.str().c_str(), vs_spv);
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -4704,7 +4704,7 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
                OpFunctionEnd
     )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, mesh_src.c_str(), spv);
 
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -4852,7 +4852,7 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
                OpFunctionEnd
         )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
@@ -4888,7 +4888,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
                OpFunctionEnd
         )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
@@ -4927,7 +4927,7 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
                OpFunctionEnd
         )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_2, 0, cs_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
@@ -4984,7 +4984,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
                OpFunctionEnd
         )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
@@ -5063,7 +5063,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
                OpFunctionEnd
     )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
@@ -5111,7 +5111,7 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
                OpFunctionEnd
         )";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, fs_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
@@ -5128,7 +5128,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    uint32_t x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
+    u32 x_count_limit = m_device->phy().limits_.maxComputeWorkGroupCount[0];
 
     std::string cs_src = R"asm(
                OpCapability Shader
@@ -5161,7 +5161,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
                OpReturn
                OpFunctionEnd)asm";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, cs_src.c_str(), spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
@@ -5820,7 +5820,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
@@ -5896,7 +5896,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, geom_src.c_str(), spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
@@ -6021,7 +6021,7 @@ TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const u32 count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }
@@ -6296,9 +6296,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> tesc_spv;
+    std::vector<u32> tesc_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, tesc_spv);
-    std::vector<uint32_t> tese_spv;
+    std::vector<u32> tese_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
@@ -6424,9 +6424,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> tesc_spv;
+    std::vector<u32> tesc_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, tesc_spv);
-    std::vector<uint32_t> tese_spv;
+    std::vector<u32> tese_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
@@ -6551,9 +6551,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> tesc_spv;
+    std::vector<u32> tesc_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, tesc_spv);
-    std::vector<uint32_t> tese_spv;
+    std::vector<u32> tese_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
@@ -6678,9 +6678,9 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> tesc_spv;
+    std::vector<u32> tesc_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src, tesc_spv);
-    std::vector<uint32_t> tese_spv;
+    std::vector<u32> tese_spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, tese_spv);
 
     VkShaderCreateInfoEXT createInfos[2];
@@ -6853,7 +6853,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
@@ -6919,7 +6919,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationOrientation) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
@@ -6985,7 +6985,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
                OpReturn
                OpFunctionEnd)";
 
-    std::vector<uint32_t> spv;
+    std::vector<u32> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
@@ -6999,7 +6999,7 @@ TEST_F(NegativeShaderObject, TessellationPatchSize) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08453");
 
         std::string tesc_src = R"(
@@ -7057,7 +7057,7 @@ TEST_F(NegativeShaderObject, TessellationPatchSize) {
                OpFunctionEnd
     )";
 
-        std::vector<uint32_t> spv;
+        std::vector<u32> spv;
         ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tesc_src.c_str(), spv);
         VkShaderCreateInfoEXT create_info =
             ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);

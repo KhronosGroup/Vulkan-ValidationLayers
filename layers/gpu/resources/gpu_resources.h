@@ -27,11 +27,11 @@ namespace gpu {
 
 class DescriptorSetManager {
   public:
-    DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
+    DescriptorSetManager(VkDevice device, u32 num_bindings_in_set);
     ~DescriptorSetManager();
 
     VkResult GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *out_desc_sets);
-    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
+    VkResult GetDescriptorSets(u32 count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
                                std::vector<VkDescriptorSet> *out_desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
@@ -39,11 +39,11 @@ class DescriptorSetManager {
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
 
     struct PoolTracker {
-        uint32_t size;
-        uint32_t used;
+        u32 size;
+        u32 used;
     };
     VkDevice device;
-    uint32_t num_bindings_in_set;
+    u32 num_bindings_in_set;
     vvl::unordered_map<VkDescriptorPool, PoolTracker> desc_pool_map_;
     mutable std::mutex lock_;
 };

@@ -81,7 +81,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     }
 
     vkt::Queue *ray_tracing_queue = m_default_queue;
-    uint32_t ray_tracing_queue_family_index = 0;
+    u32 ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
     vkt::Queue *compute_only_queue = m_device->ComputeOnlyQueue();
@@ -98,11 +98,11 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     struct VkGeometryInstanceNV {
         float transform[12];
-        uint32_t instanceCustomIndex : 24;
-        uint32_t mask : 8;
-        uint32_t instanceOffset : 24;
-        uint32_t flags : 8;
-        uint64_t accelerationStructureHandle;
+        u32 instanceCustomIndex : 24;
+        u32 mask : 8;
+        u32 instanceOffset : 24;
+        u32 flags : 8;
+        u64 accelerationStructureHandle;
     };
 
     const VkDeviceSize aabb_buffer_size = sizeof(VkAabbPositionsKHR) * aabbs.size();
@@ -111,8 +111,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
                      {ray_tracing_queue_family_index});
 
-    uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.memory().map();
-    std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
+    u8 *mapped_aabb_buffer_data = (u8 *)aabb_buffer.memory().map();
+    std::memcpy(mapped_aabb_buffer_data, (u8 *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
     aabb_buffer.memory().unmap();
 
     VkGeometryNV geometry = {};
@@ -123,7 +123,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     geometry.geometry.aabbs = {};
     geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
     geometry.geometry.aabbs.aabbData = aabb_buffer.handle();
-    geometry.geometry.aabbs.numAABBs = static_cast<uint32_t>(aabbs.size());
+    geometry.geometry.aabbs.numAABBs = static_cast<u32>(aabbs.size());
     geometry.geometry.aabbs.offset = 0;
     geometry.geometry.aabbs.stride = static_cast<VkDeviceSize>(sizeof(VkAabbPositionsKHR));
     geometry.flags = 0;
@@ -162,8 +162,8 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, nullptr,
                          {ray_tracing_queue_family_index});
 
-    uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
-    std::memcpy(mapped_instance_buffer_data, (uint8_t *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
+    u8 *mapped_instance_buffer_data = (u8 *)instance_buffer.memory().map();
+    std::memcpy(mapped_instance_buffer_data, (u8 *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.memory().unmap();
 
     VkAccelerationStructureInfoNV top_level_as_info = vku::InitStructHelper();
@@ -254,7 +254,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                            layout_create_flags, layout_pnext, pool_create_flags);
 
     VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variable_count = vku::InitStructHelper();
-    uint32_t desc_counts;
+    u32 desc_counts;
     if (descriptor_indexing) {
         layout_create_flags = 0;
         pool_create_flags = 0;
@@ -612,12 +612,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         const std::string &intr_shader_source;
         const std::string &call_shader_source;
         bool variable_length;
-        uint32_t rgen_index;
-        uint32_t ahit_index;
-        uint32_t chit_index;
-        uint32_t miss_index;
-        uint32_t intr_index;
-        uint32_t call_index;
+        u32 rgen_index;
+        u32 ahit_index;
+        u32 chit_index;
+        u32 miss_index;
+        u32 intr_index;
+        u32 call_index;
         const char *expected_error;
     };
 
@@ -763,13 +763,13 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         ASSERT_EQ(VK_SUCCESS,
                   vk::CreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
 
-        std::vector<uint8_t> shader_binding_table_data;
+        std::vector<u8> shader_binding_table_data;
         shader_binding_table_data.resize(static_cast<std::size_t>(shader_binding_table_buffer_size), 0);
         ASSERT_EQ(VK_SUCCESS, vk::GetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
                                                                     static_cast<std::size_t>(shader_binding_table_buffer_size),
                                                                     shader_binding_table_data.data()));
 
-        uint8_t *mapped_shader_binding_table_data = (uint8_t *)shader_binding_table_buffer.memory().map();
+        u8 *mapped_shader_binding_table_data = (u8 *)shader_binding_table_buffer.memory().map();
         std::memcpy(mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
         shader_binding_table_buffer.memory().unmap();
 
@@ -809,7 +809,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
         ray_tracing_command_buffer.end();
         // Update the index of the texture that the shaders should read
-        uint32_t *mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
+        u32 *mapped_storage_buffer_data = (u32 *)storage_buffer.memory().map();
         mapped_storage_buffer_data[0] = test.rgen_index;
         mapped_storage_buffer_data[1] = test.ahit_index;
         mapped_storage_buffer_data[2] = test.chit_index;
@@ -829,7 +829,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         m_errorMonitor->VerifyFound();
 
         if (gpu_assisted) {
-            mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
+            mapped_storage_buffer_data = (u32 *)storage_buffer.memory().map();
             ASSERT_TRUE(mapped_storage_buffer_data[6] == 1);
             ASSERT_TRUE(mapped_storage_buffer_data[7] == 2);
             ASSERT_TRUE(mapped_storage_buffer_data[8] == 3);
@@ -959,7 +959,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
             const auto &limits = m_device->phy().limits_;
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-width-02469");
-            uint32_t invalid_width = limits.maxComputeWorkGroupCount[0] + 1;
+            u32 invalid_width = limits.maxComputeWorkGroupCount[0] + 1;
             vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
                                ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
                                ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
@@ -970,7 +970,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-height-02470");
-            uint32_t invalid_height = limits.maxComputeWorkGroupCount[1] + 1;
+            u32 invalid_height = limits.maxComputeWorkGroupCount[1] + 1;
             vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
                                ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
                                ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
@@ -981,7 +981,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-depth-02471");
-            uint32_t invalid_depth = limits.maxComputeWorkGroupCount[2] + 1;
+            u32 invalid_depth = limits.maxComputeWorkGroupCount[2] + 1;
             vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
                                ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
                                ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
@@ -1014,7 +1014,7 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
 
     RETURN_IF_SKIP(InitState());
 
-    uint32_t maxBlocks = ray_tracing_props.maxDescriptorSetAccelerationStructures;
+    u32 maxBlocks = ray_tracing_props.maxDescriptorSetAccelerationStructures;
     if (maxBlocks > 4096) {
         GTEST_SKIP() << "Too large of a maximum number of descriptor set acceleration structures, skipping tests";
     }
@@ -1028,7 +1028,7 @@ TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
     dslb.descriptorCount = 1;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    for (uint32_t i = 0; i <= maxBlocks; ++i) {
+    for (u32 i = 0; i <= maxBlocks; ++i) {
         dslb.binding = i;
         dslb_vec.push_back(dslb);
     }
@@ -1077,24 +1077,24 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     vkt::Buffer unbound_buffer(*m_device, unbound_buffer_ci, vkt::no_mem);
 
     constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    constexpr std::array<uint32_t, 3> indicies = {0, 1, 2};
+    constexpr std::array<u32, 3> indicies = {0, 1, 2};
     constexpr std::array aabbs = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
     constexpr std::array transforms = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-    uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo.memory().map();
-    std::memcpy(mapped_vbo_buffer_data, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    u8 *mapped_vbo_buffer_data = (u8 *)vbo.memory().map();
+    std::memcpy(mapped_vbo_buffer_data, (u8 *)vertices.data(), sizeof(float) * vertices.size());
     vbo.memory().unmap();
 
-    uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo.memory().map();
-    std::memcpy(mapped_ibo_buffer_data, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    u8 *mapped_ibo_buffer_data = (u8 *)ibo.memory().map();
+    std::memcpy(mapped_ibo_buffer_data, (u8 *)indicies.data(), sizeof(u32) * indicies.size());
     ibo.memory().unmap();
 
-    uint8_t *mapped_tbo_buffer_data = (uint8_t *)tbo.memory().map();
-    std::memcpy(mapped_tbo_buffer_data, (uint8_t *)transforms.data(), sizeof(float) * transforms.size());
+    u8 *mapped_tbo_buffer_data = (u8 *)tbo.memory().map();
+    std::memcpy(mapped_tbo_buffer_data, (u8 *)transforms.data(), sizeof(float) * transforms.size());
     tbo.memory().unmap();
 
-    uint8_t *mapped_aabbbo_buffer_data = (uint8_t *)aabbbo.memory().map();
-    std::memcpy(mapped_aabbbo_buffer_data, (uint8_t *)aabbs.data(), sizeof(float) * aabbs.size());
+    u8 *mapped_aabbbo_buffer_data = (u8 *)aabbbo.memory().map();
+    std::memcpy(mapped_aabbbo_buffer_data, (u8 *)aabbs.data(), sizeof(float) * aabbs.size());
     aabbbo.memory().unmap();
 
     VkGeometryNV valid_geometry_triangles = vku::InitStructHelper();
@@ -1382,7 +1382,7 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
         VkAccelerationStructureCreateInfoNV mix_geometry_types_as_create_info = as_create_info;
         mix_geometry_types_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
         mix_geometry_types_as_create_info.info.instanceCount = 0;
-        mix_geometry_types_as_create_info.info.geometryCount = static_cast<uint32_t>(geometries.size());
+        mix_geometry_types_as_create_info.info.geometryCount = static_cast<u32>(geometries.size());
         mix_geometry_types_as_create_info.info.pGeometries = geometries.data();
         mix_geometry_types_as_create_info.info.flags = 0;
 
@@ -1495,8 +1495,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         VkPhysicalDeviceMemoryProperties memory_properties = {};
         vk::GetPhysicalDeviceMemoryProperties(m_device->phy().handle(), &memory_properties);
 
-        uint32_t supported_memory_type_bits = as_memory_requirements.memoryTypeBits;
-        uint32_t unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~supported_memory_type_bits;
+        u32 supported_memory_type_bits = as_memory_requirements.memoryTypeBits;
+        u32 unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~supported_memory_type_bits;
         if (unsupported_mem_type_bits != 0) {
             VkMemoryAllocateInfo as_memory_alloc_bad_type = as_memory_alloc;
             ASSERT_TRUE(m_device->phy().set_memory_type(unsupported_mem_type_bits, &as_memory_alloc_bad_type, 0));
@@ -1763,9 +1763,9 @@ TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
     {
         vkt::AccelerationStructureNV bot_level_as(*m_device, bot_level_as_create_info);
 
-        uint64_t handle = 0;
+        u64 handle = 0;
         m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureHandleNV-dataSize-02240");
-        vk::GetAccelerationStructureHandleNV(device(), bot_level_as.handle(), sizeof(uint8_t), &handle);
+        vk::GetAccelerationStructureHandleNV(device(), bot_level_as.handle(), sizeof(u8), &handle);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1773,9 +1773,9 @@ TEST_F(NegativeRayTracingNV, ValidateGetAccelerationStructureHandle) {
     {
         vkt::AccelerationStructureNV bot_level_as(*m_device, bot_level_as_create_info, /*init_memory=*/false);
 
-        uint64_t handle = 0;
+        u64 handle = 0;
         m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureHandleNV-accelerationStructure-02787");
-        vk::GetAccelerationStructureHandleNV(device(), bot_level_as.handle(), sizeof(uint64_t), &handle);
+        vk::GetAccelerationStructureHandleNV(device(), bot_level_as.handle(), sizeof(u64), &handle);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1876,8 +1876,8 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     bind_info.memory = host_memory.handle();
     vk::BindAccelerationStructureMemoryNV(*m_device, 1, &bind_info);
 
-    uint64_t handle;
-    vk::GetAccelerationStructureHandleNV(*m_device, dst_as_without_mem.handle(), sizeof(uint64_t), &handle);
+    u64 handle;
+    vk::GetAccelerationStructureHandleNV(*m_device, dst_as_without_mem.handle(), sizeof(u64), &handle);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-buffer-03719");
     vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as_without_mem.handle(), src_as.handle(),

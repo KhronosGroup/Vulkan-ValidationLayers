@@ -317,11 +317,11 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     GetPhysicalDeviceFeatures2(pd_imageless_fb_features);
     RETURN_IF_SKIP(InitState(nullptr, &pd_imageless_fb_features));
 
-    constexpr uint32_t width = 512;
-    constexpr uint32_t height = 1;
+    constexpr u32 width = 512;
+    constexpr u32 height = 1;
     VkFormat formats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
     VkFormat fb_attachments[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
-    constexpr uint32_t base_mip = 1;
+    constexpr u32 base_mip = 1;
 
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
@@ -635,7 +635,7 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
     helper.gp_ci_.renderPass = render_pass.handle();
     helper.CreateGraphicsPipeline();
 
-    const uint32_t data_size = sizeof(float) * 3;
+    const u32 data_size = sizeof(float) * 3;
     vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
@@ -738,8 +738,8 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
     rp.AddColorAttachment(0);
 
-    uint32_t viewMasks[] = {0x3u};
-    uint32_t correlationMasks[] = {0x1u};
+    u32 viewMasks[] = {0x3u};
+    u32 correlationMasks[] = {0x1u};
     VkRenderPassMultiviewCreateInfo rpmvci = vku::InitStructHelper();
     rpmvci.subpassCount = 1;
     rpmvci.pViewMasks = viewMasks;
@@ -1295,12 +1295,12 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rp_striped_props);
 
-    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width;
-    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+    const u32 stripe_width = rp_striped_props.renderPassStripeGranularity.width;
+    const u32 stripe_height = rp_striped_props.renderPassStripeGranularity.height;
 
-    const uint32_t stripe_count = 4;
+    const u32 stripe_count = 4;
     std::vector<VkRenderPassStripeInfoARM> stripe_infos(stripe_count);
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
@@ -1328,7 +1328,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     vkt::Semaphore semaphores[stripe_count];
     VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count];
 
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         semaphores[i].init(*m_device, semaphore_create_info);
         semaphore_submit_infos[i] = vku::InitStructHelper();
         semaphore_submit_infos[i].semaphore = semaphores[i].handle();

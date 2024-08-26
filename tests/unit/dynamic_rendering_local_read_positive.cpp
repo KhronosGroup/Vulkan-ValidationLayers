@@ -41,14 +41,13 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
 
     CreatePipelineHelper pipe1(*this);
     CreatePipelineHelper pipe2(*this);
-    for (uint32_t i = 0; i < 2; i++)
-    {
+    for (u32 i = 0; i < 2; i++) {
         CreatePipelineHelper* pipe = (i == 0) ? &pipe1 : &pipe2;
         VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
 
         // Images mapped differently in pipe1 and pipe2
-        uint32_t locations[] = {i, 1 - i};
-        uint32_t inputs[] = {i, 1 - i};
+        u32 locations[] = {i, 1 - i};
+        u32 inputs[] = {i, 1 - i};
 
         VkRenderingInputAttachmentIndexInfoKHR inputs_info = vku::InitStructHelper();
         inputs_info.colorAttachmentCount = 2;
@@ -106,8 +105,8 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     post_barriers[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     post_barriers[1].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
 
-    vk::CmdPipelineBarrier(*m_commandBuffer, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2, &pre_barriers[0]);
+    vk::CmdPipelineBarrier(*m_commandBuffer, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0,
+                           nullptr, 0, nullptr, 2, &pre_barriers[0]);
 
     m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
@@ -116,7 +115,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2, &post_barriers[0]);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
 
-    uint32_t locations[] = {1, 0};
+    u32 locations[] = {1, 0};
     VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = locations;
@@ -162,7 +161,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
 
     m_commandBuffer->BeginRendering(rendering_info);
 
-    uint32_t locations[2] = {0, VK_ATTACHMENT_UNUSED};
+    u32 locations[2] = {0, VK_ATTACHMENT_UNUSED};
     VkRenderingAttachmentLocationInfoKHR location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = locations;

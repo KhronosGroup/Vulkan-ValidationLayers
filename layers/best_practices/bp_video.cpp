@@ -21,7 +21,7 @@
 #include "best_practices/bp_state.h"
 
 bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                                        uint32_t* pMemoryRequirementsCount,
+                                                                        u32* pMemoryRequirementsCount,
                                                                         VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
@@ -40,7 +40,7 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice
 }
 
 bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                             uint32_t bindSessionMemoryInfoCount,
+                                                             u32 bindSessionMemoryInfoCount,
                                                              const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;

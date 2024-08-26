@@ -16,13 +16,13 @@
 #include "shader_helper.h"
 
 // Assumes VK_SHADER_CODE_TYPE_SPIRV_EXT as that is how must tests will create the shader
-VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
-                                       uint32_t set_layout_count = 0, const VkDescriptorSetLayout* set_layouts = nullptr,
-                                       uint32_t pc_range_count = 0, const VkPushConstantRange* pc_ranges = nullptr,
+VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<u32>& spirv, VkShaderStageFlagBits stage, u32 set_layout_count = 0,
+                                       const VkDescriptorSetLayout* set_layouts = nullptr, u32 pc_range_count = 0,
+                                       const VkPushConstantRange* pc_ranges = nullptr,
                                        const VkSpecializationInfo* specialization_info = nullptr);
 
-VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
+VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<u32>& spirv, VkShaderStageFlagBits stage,
                                            VkShaderCreateFlagsEXT flags);
 
-VkShaderCreateInfoEXT ShaderCreateInfoLink(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
+VkShaderCreateInfoEXT ShaderCreateInfoLink(const std::vector<u32>& spirv, VkShaderStageFlagBits stage,
                                            VkShaderStageFlags next_stage = 0);

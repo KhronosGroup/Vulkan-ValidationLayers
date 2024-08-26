@@ -52,7 +52,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    const u32 uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -74,7 +74,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     m_commandBuffer->end();
 
     // Make another buffer to write to
-    const uint32_t storage_buffer_size = 16 * 4;
+    const u32 storage_buffer_size = 16 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -86,7 +86,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     m_default_queue->Wait();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
@@ -121,7 +121,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    const u32 uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -143,7 +143,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     m_commandBuffer->end();
 
     // Make another buffer to write to
-    const uint32_t storage_buffer_size = 16 * 4;
+    const u32 storage_buffer_size = 16 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     // Create storage buffers for the sake of storing multiple device address ranges
@@ -161,7 +161,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     m_default_queue->Wait();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
@@ -194,7 +194,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    const u32 uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -216,7 +216,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     m_commandBuffer->end();
 
     // Make another buffer to write to
-    const uint32_t storage_buffer_size = 4 * 4;
+    const u32 storage_buffer_size = 4 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -228,7 +228,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     m_default_queue->Wait();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], 42);
     }
@@ -269,7 +269,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address();
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 
@@ -286,8 +286,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    uint8_t *bda_buffer_ptr = (uint8_t *)bda_buffer.memory().map();
-    uint32_t output = *((uint32_t *)(bda_buffer_ptr + 32));
+    u8 *bda_buffer_ptr = (u8 *)bda_buffer.memory().map();
+    u32 output = *((u32 *)(bda_buffer_ptr + 32));
     bda_buffer.memory().unmap();
     ASSERT_TRUE(output == 0xca7);
 }
@@ -309,7 +309,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
             Test test;
         };
 
-        Test GetTest(uint64_t ptr) {
+        Test GetTest(u64 ptr) {
             return TestBuffer(ptr).test;
         }
 
@@ -319,7 +319,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
         } in_buffer;
 
         void main() {
-            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+            in_buffer.x = GetTest(u64(in_buffer.data)).a;
         }
     )glsl";
 
@@ -331,7 +331,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
 
     float expected_output = 0x00EEAADD;
-    uint8_t *block_buffer_ptr = (uint8_t *)block_buffer.memory().map();
+    u8 *block_buffer_ptr = (u8 *)block_buffer.memory().map();
     memcpy(block_buffer_ptr, &expected_output, sizeof(float));
     block_buffer.memory().unmap();
 
@@ -340,7 +340,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
 
     VkDeviceAddress block_ptr = block_buffer.address();
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 
@@ -357,7 +357,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    in_buffer_ptr = (u8 *)in_buffer.memory().map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
     in_buffer.memory().unmap();
     ASSERT_TRUE(output == expected_output);
@@ -376,7 +376,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
 
         struct Test {
         uvec3    pad_1; // Offset 0 Size 12
-        uint64_t pad_2; // Offset 16 Size 8 (alignment requirement)
+        u64 pad_2; // Offset 16 Size 8 (alignment requirement)
         float    a;     // Offset 24 Size 4
         }; // Total Size 28
 
@@ -384,7 +384,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
             Test test;
         };
 
-        float GetTest(uint64_t ptr) {
+        float GetTest(u64 ptr) {
             return TestBuffer(ptr).test.a;
         }
 
@@ -394,7 +394,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
         } in_buffer;
 
         void main() {
-            in_buffer.x = GetTest(uint64_t(in_buffer.data));
+            in_buffer.x = GetTest(u64(in_buffer.data));
         }
     )glsl";
 
@@ -406,7 +406,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     vkt::Buffer block_buffer(*m_device, 32, 0, vkt::device_address);
 
     float expected_output = 0x00EEAADD;
-    uint8_t *block_buffer_ptr = (uint8_t *)block_buffer.memory().map();
+    u8 *block_buffer_ptr = (u8 *)block_buffer.memory().map();
     memcpy(block_buffer_ptr + 24, &expected_output, sizeof(float));
     block_buffer.memory().unmap();
 
@@ -415,7 +415,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
 
     VkDeviceAddress block_ptr = block_buffer.address();
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 
@@ -432,7 +432,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    in_buffer_ptr = (u8 *)in_buffer.memory().map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
     in_buffer.memory().unmap();
     ASSERT_TRUE(output == expected_output);
@@ -476,11 +476,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress block_ptr = block_buffer.address();
-    const uint32_t n_reads = 4;  // uvec3[0] to uvec3[3]
+    const u32 n_reads = 4;  // uvec3[0] to uvec3[3]
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
+    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(u32));
     in_buffer.memory().unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
@@ -541,9 +541,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    uint8_t *buffer_ptr = (uint8_t *)storage_buffer.memory().map();
-    const uint32_t index = 0;
-    memcpy(buffer_ptr, &index, sizeof(uint32_t));
+    u8 *buffer_ptr = (u8 *)storage_buffer.memory().map();
+    const u32 index = 0;
+    memcpy(buffer_ptr, &index, sizeof(u32));
     memcpy(buffer_ptr + (1 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (2 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (3 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
@@ -600,14 +600,14 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     VkDeviceAddress block_a_ptr = buffer_node_a.address();
     VkDeviceAddress block_b_ptr = buffer_node_b.address();
 
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer_node_b.memory().map());
+    auto *buffer_ptr = static_cast<u32 *>(buffer_node_b.memory().map());
     *buffer_ptr = 1234;  // data to pass
     buffer_node_b.memory().unmap();
 
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_a_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &block_b_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
@@ -625,7 +625,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    buffer_ptr = static_cast<uint32_t *>(buffer_node_a.memory().map());
+    buffer_ptr = static_cast<u32 *>(buffer_node_a.memory().map());
     ASSERT_TRUE(*buffer_ptr == 1234);
     buffer_node_a.memory().unmap();
 }
@@ -707,7 +707,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     )";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    const u32 uniform_buffer_size = 8;  // 64 bits pointer
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -727,7 +727,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    const uint32_t storage_buffer_size = 4 * sizeof(float);  // float + vec3
+    const u32 storage_buffer_size = 4 * sizeof(float);  // float + vec3
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -775,7 +775,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     )glsl";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    const u32 uniform_buffer_size = 8;  // 64 bits pointer
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -794,7 +794,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    const uint32_t storage_buffer_size = 4 * sizeof(float);  // float + vec3
+    const u32 storage_buffer_size = 4 * sizeof(float);  // float + vec3
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -818,7 +818,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
+    const u32 uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -866,7 +866,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
     // Make a list of storage buffers, each one holding a Node
     constexpr size_t nodes_count = 3;
-    const uint32_t storage_buffer_size = (4 * sizeof(float)) + sizeof(VkDeviceAddress);
+    const u32 storage_buffer_size = (4 * sizeof(float)) + sizeof(VkDeviceAddress);
     std::vector<vkt::Buffer> storage_buffers;
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
 
@@ -925,7 +925,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     )glsl";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 2 * sizeof(VkDeviceAddress);  // 64 bits pointer
+    const u32 uniform_buffer_size = 2 * sizeof(VkDeviceAddress);  // 64 bits pointer
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -944,10 +944,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    const uint32_t foo_storage_buffer_size = 4 * sizeof(float) + sizeof(float) + sizeof(int32_t);
+    const u32 foo_storage_buffer_size = 4 * sizeof(float) + sizeof(float) + sizeof(i32);
     vkt::Buffer foo_storage_buffer(*m_device, foo_storage_buffer_size, 0, vkt::device_address);
 
-    const uint32_t bar_storage_buffer_size = sizeof(float) + sizeof(int32_t) + 4 * sizeof(float);
+    const u32 bar_storage_buffer_size = sizeof(float) + sizeof(i32) + 4 * sizeof(float);
     vkt::Buffer bar_storage_buffer(*m_device, bar_storage_buffer_size, 0, vkt::device_address);
 
     auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -998,7 +998,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     )glsl";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    const u32 uniform_buffer_size = 8;  // 64 bits pointer
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -1023,7 +1023,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
         float uv[2];
     };
 
-    const uint32_t storage_buffer_size = 3 * sizeof(Vertex);  // float + vec3
+    const u32 storage_buffer_size = 3 * sizeof(Vertex);  // float + vec3
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     // Write vertex 0
@@ -1118,7 +1118,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
     pipe.pipeline_layout_ci_.pPushConstantRanges = &pc;
     pipe.CreateGraphicsPipeline();
 
-    const uint32_t storage_buffer_size = 2 * sizeof(int);
+    const u32 storage_buffer_size = 2 * sizeof(int);
     std::vector<vkt::CommandBuffer> cmd_buffers;
     std::vector<vkt::Buffer> storage_buffers;
     for (int i = 0; i < 64; ++i) {
@@ -1184,7 +1184,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address();
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 

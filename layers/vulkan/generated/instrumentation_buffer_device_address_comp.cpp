@@ -24,8 +24,8 @@
 #include "instrumentation_buffer_device_address_comp.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t instrumentation_buffer_device_address_comp_size = 1375;
-[[maybe_unused]] const uint32_t instrumentation_buffer_device_address_comp[1375] = {
+[[maybe_unused]] const u32 instrumentation_buffer_device_address_comp_size = 1375;
+[[maybe_unused]] const u32 instrumentation_buffer_device_address_comp[1375] = {
     0x07230203, 0x00010300, 0x0008000b, 0x000000e0, 0x00000000, 0x00020011, 0x00000001, 0x00020011, 0x00000005, 0x00020011,
     0x0000000b, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001,
     0x00030003, 0x00000002, 0x000001c2, 0x00070004, 0x415f4c47, 0x675f4252, 0x735f7570, 0x65646168, 0x6e695f72, 0x00343674,

@@ -26,11 +26,11 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    u32 queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
 
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (u32 idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        u32 nCounters;
 
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
@@ -51,8 +51,8 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci = vku::InitStructHelper();
     perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
     perf_query_pool_ci.counterIndexCount = counters.size();
-    std::vector<uint32_t> counterIndices;
-    for (uint32_t c = 0; c < counters.size(); c++) counterIndices.push_back(c);
+    std::vector<u32> counterIndices;
+    for (u32 c = 0; c < counters.size(); c++) counterIndices.push_back(c);
     perf_query_pool_ci.pCounterIndices = &counterIndices[0];
     VkQueryPoolCreateInfo query_pool_ci = vku::InitStructHelper();
     query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
@@ -101,13 +101,13 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    u32 queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
-    std::vector<uint32_t> counterIndices;
+    std::vector<u32> counterIndices;
 
     // Find a single counter with VK_QUERY_SCOPE_COMMAND_BUFFER_KHR scope.
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (u32 idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        u32 nCounters;
 
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
@@ -119,7 +119,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+        for (u32 counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_BUFFER_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
@@ -215,13 +215,13 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    u32 queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
-    std::vector<uint32_t> counterIndices;
+    std::vector<u32> counterIndices;
 
     // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (u32 idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        u32 nCounters;
 
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
@@ -233,7 +233,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+        for (u32 counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_RENDER_PASS_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
@@ -307,13 +307,13 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    u32 queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
-    std::vector<uint32_t> counterIndices;
+    std::vector<u32> counterIndices;
 
     // Find a single counter with VK_QUERY_SCOPE_COMMAND_KHR scope.
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (u32 idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        u32 nCounters;
 
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
@@ -325,7 +325,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+        for (u32 counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
@@ -443,14 +443,14 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     GetPhysicalDeviceProperties2(perf_query_props);
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    u32 queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
-    std::vector<uint32_t> counterIndices;
-    uint32_t nPasses = 0;
+    std::vector<u32> counterIndices;
+    u32 nPasses = 0;
 
     // Find all counters with VK_QUERY_SCOPE_COMMAND_KHR scope.
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (u32 idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        u32 nCounters;
 
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
@@ -462,7 +462,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+        for (u32 counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) counterIndices.push_back(counterIdx);
         }
         if (counterIndices.empty()) continue;  // might not be a scope command
@@ -540,7 +540,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         }
 
         // Leave the last pass out.
-        for (uint32_t passIdx = 0; passIdx < (nPasses - 1); passIdx++) {
+        for (u32 passIdx = 0; passIdx < (nPasses - 1); passIdx++) {
             VkPerformanceQuerySubmitInfoKHR perf_submit_info = vku::InitStructHelper();
             perf_submit_info.counterPassIndex = passIdx;
             VkSubmitInfo submit_info = vku::InitStructHelper(&perf_submit_info);
@@ -668,13 +668,13 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     RETURN_IF_SKIP(Init());
 
     auto queueFamilyProperties = m_device->phy().queue_properties_;
-    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    u32 queueFamilyIndex = queueFamilyProperties.size();
     std::vector<VkPerformanceCounterKHR> counters;
-    std::vector<uint32_t> counterIndices;
+    std::vector<u32> counterIndices;
 
     // Find a single counter with VK_QUERY_SCOPE_COMMAND_KHR scope.
-    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
-        uint32_t nCounters;
+    for (u32 idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        u32 nCounters;
 
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
         if (nCounters == 0) continue;
@@ -686,7 +686,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
         queueFamilyIndex = idx;
 
-        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+        for (u32 counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
             if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
@@ -1028,7 +1028,7 @@ TEST_F(NegativeQuery, Sizes) {
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
     const VkDeviceSize buffer_size = mem_reqs.size;
 
-    const uint32_t query_pool_size = 4;
+    const u32 query_pool_size = 4;
     vkt::QueryPool occlusion_query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, query_pool_size);
 
     m_commandBuffer->begin();
@@ -1093,7 +1093,7 @@ TEST_F(NegativeQuery, Sizes) {
     m_commandBuffer->end();
 
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
 
     // FirstQuery is too large
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-firstQuery-09436");
@@ -1141,7 +1141,7 @@ TEST_F(NegativeQuery, PreciseBit) {
         m_commandBuffer->end();
 
         const size_t out_data_size = 64;
-        uint8_t data[out_data_size];
+        u8 data[out_data_size];
         // The dataSize is too small to return the data
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
         vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 3, 8, &data, 12, 0);
@@ -1197,7 +1197,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     vk::EndCommandBuffer(cmd_buffer);
 
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
     // The dataSize is too small to return the data
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
     vk::GetQueryPoolResults(test_device.handle(), query_pool.handle(), 0, 2, 8, &data, out_data_size / 2, 0);
@@ -1241,9 +1241,9 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
 
     // Attempt to obtain partial results.
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09439");
-    uint32_t data_space[16];
+    u32 data_space[16];
     m_errorMonitor->SetUnexpectedError("Cannot get query results on queryPool");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(uint32_t),
+    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(u32),
                             VK_QUERY_RESULT_PARTIAL_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -1443,7 +1443,7 @@ TEST_F(NegativeQuery, GetResultsFlags) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
 
     VkQueryResultFlags flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
 
@@ -1458,7 +1458,7 @@ TEST_F(NegativeQuery, GetResultsStride) {
     RETURN_IF_SKIP(Init());
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
-    uint8_t data[8];
+    u8 data[8];
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryCount-09438");
     vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 2, 8, data, 0, 0);
@@ -1478,9 +1478,9 @@ TEST_F(NegativeQuery, ResultStatusOnly) {
     }
 
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09442");
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
+    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, &data, sizeof(u32), 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1509,7 +1509,7 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     m_default_queue->Submit(*m_commandBuffer);
 
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
     VkResult res;
     do {
         res = vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data, 4, 0);
@@ -1556,8 +1556,8 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_att;
 
-    uint32_t viewMasks[] = {0x3u};
-    uint32_t correlationMasks[] = {0x1u};
+    u32 viewMasks[] = {0x3u};
+    u32 correlationMasks[] = {0x1u};
     VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
     rpmv_ci.subpassCount = 1;
     rpmv_ci.pViewMasks = viewMasks;
@@ -1607,8 +1607,8 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> decode_queue_family_index = m_device->QueueFamily(VK_QUEUE_VIDEO_DECODE_BIT_KHR);
-    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> decode_queue_family_index = m_device->QueueFamily(VK_QUEUE_VIDEO_DECODE_BIT_KHR);
+    const std::optional<u32> compute_queue_family_index = m_device->ComputeOnlyQueueFamily();
     if (!decode_queue_family_index && !compute_queue_family_index) {
         GTEST_SKIP() << "required queue families not found";
     }
@@ -1658,7 +1658,7 @@ TEST_F(NegativeQuery, TestGetQueryPoolResultsDataAndStride) {
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
     vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, &data, 3, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -1682,7 +1682,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_properties);
 
-    const std::optional<uint32_t> compute_queue_family_index = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> compute_queue_family_index = m_device->ComputeOnlyQueueFamily();
     if (!compute_queue_family_index) {
         GTEST_SKIP() << "required queue family not found, skipping test";
     }
@@ -1972,7 +1972,7 @@ TEST_F(NegativeQuery, GetQueryPoolResultsWithoutQueryPool) {
     RETURN_IF_SKIP(Init());
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
     const size_t out_data_size = 16;
-    uint8_t data[out_data_size];
+    u8 data[out_data_size];
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryPool-parameter");
     vk::GetQueryPoolResults(device(), bad_query_pool, 0, 1, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
@@ -2176,7 +2176,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    uint32_t counterCount = 0u;
+    u32 counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,
                                                                       &counterCount, nullptr, nullptr);
     std::vector<VkPerformanceCounterKHR> counters(counterCount, vku::InitStruct<VkPerformanceCounterKHR>());
@@ -2185,8 +2185,8 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,
                                                                       &counterCount, counters.data(), counterDescriptions.data());
 
-    uint32_t enabledCounter = counterCount;
-    for (uint32_t i = 0; i < counterCount; ++i) {
+    u32 enabledCounter = counterCount;
+    for (u32 i = 0; i < counterCount; ++i) {
         if (counters[i].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) {
             enabledCounter = i;
             break;
@@ -2201,7 +2201,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
     query_pool_performance_ci.counterIndexCount = 1u;
     query_pool_performance_ci.pCounterIndices = &enabledCounter;
 
-    uint32_t num_passes = 0u;
+    u32 num_passes = 0u;
     vk::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(m_device->phy(), &query_pool_performance_ci, &num_passes);
 
     auto query_pool_ci = vku::InitStruct<VkQueryPoolCreateInfo>(&query_pool_performance_ci);
@@ -2211,7 +2211,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
-    acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
+    acquire_profiling_lock_info.timeout = std::numeric_limits<u64>::max();
     vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
 
     {
@@ -2229,7 +2229,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
     vk::CmdEndQuery(command_buffer.handle(), query_pool, 0u);
     command_buffer.end();
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         m_commandBuffer->begin();
         if (i == 0) {
             vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0u, 0u);
@@ -2264,13 +2264,13 @@ TEST_F(NegativeQuery, GetQueryPoolResultsWithoutReset) {
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    uint32_t data = 0u;
+    u32 data = 0u;
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-None-09401");
-    vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(uint32_t), &data, sizeof(uint32_t), 0u);
+    vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(u32), &data, sizeof(u32), 0u);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->begin();
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u, buffer.handle(), 0u, sizeof(uint32_t), 0u);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u, buffer.handle(), 0u, sizeof(u32), 0u);
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-None-09402");
@@ -2372,8 +2372,8 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-    uint32_t viewMasks[] = {0x3u};
-    uint32_t correlationMasks[] = {0x1u};
+    u32 viewMasks[] = {0x3u};
+    u32 correlationMasks[] = {0x1u};
     VkRenderPassMultiviewCreateInfo rpmv_ci = vku::InitStructHelper();
     rpmv_ci.subpassCount = 1;
     rpmv_ci.pViewMasks = viewMasks;
@@ -2416,7 +2416,7 @@ TEST_F(NegativeQuery, Stride) {
     TEST_DESCRIPTION("Validate Stride parameter.");
     RETURN_IF_SKIP(Init());
 
-    uint32_t queue_count;
+    u32 queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
@@ -2487,7 +2487,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     }
     assert(queue0->family_index != queue1_family.value());
 
-    uint32_t counterCount = 0u;
+    u32 counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), 0, &counterCount, nullptr, nullptr);
     std::vector<VkPerformanceCounterKHR> counters(counterCount, vku::InitStruct<VkPerformanceCounterKHR>());
     std::vector<VkPerformanceCounterDescriptionKHR> counterDescriptions(counterCount,
@@ -2495,9 +2495,9 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), 0, &counterCount, counters.data(),
                                                                       counterDescriptions.data());
 
-    std::vector<uint32_t> enabledCounters(128);
-    const uint32_t enabledCounterCount = std::min(counterCount, static_cast<uint32_t>(enabledCounters.size()));
-    for (uint32_t i = 0; i < enabledCounterCount; ++i) {
+    std::vector<u32> enabledCounters(128);
+    const u32 enabledCounterCount = std::min(counterCount, static_cast<u32>(enabledCounters.size()));
+    for (u32 i = 0; i < enabledCounterCount; ++i) {
         enabledCounters[i] = i;
     }
 
@@ -2506,7 +2506,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     query_pool_performance_ci.counterIndexCount = enabledCounterCount;
     query_pool_performance_ci.pCounterIndices = enabledCounters.data();
 
-    uint32_t num_passes = 0;
+    u32 num_passes = 0;
     vk::GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(m_device->phy(), &query_pool_performance_ci, &num_passes);
 
     auto query_pool_ci = vku::InitStruct<VkQueryPoolCreateInfo>(&query_pool_performance_ci);
@@ -2522,7 +2522,7 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vkt::CommandBuffer cb(*m_device, command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     auto acquire_profiling_lock_info = vku::InitStruct<VkAcquireProfilingLockInfoKHR>();
-    acquire_profiling_lock_info.timeout = std::numeric_limits<uint64_t>::max();
+    acquire_profiling_lock_info.timeout = std::numeric_limits<u64>::max();
     vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
 
     cb.begin();

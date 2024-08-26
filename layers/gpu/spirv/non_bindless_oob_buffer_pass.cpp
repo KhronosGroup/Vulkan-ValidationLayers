@@ -30,7 +30,7 @@ static LinkInfo link_info = {instrumentation_non_bindless_oob_buffer_comp, instr
                              LinkFunctions::inst_non_bindless_oob_buffer, 0, "inst_non_bindless_oob_buffer"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t NonBindlessOOBBufferPass::GetLinkFunctionId() {
+u32 NonBindlessOOBBufferPass::GetLinkFunctionId() {
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -39,12 +39,11 @@ uint32_t NonBindlessOOBBufferPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t NonBindlessOOBBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                      const InjectionData& injection_data) {
+u32 NonBindlessOOBBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
     assert(access_chain_inst_ && var_inst_);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const u32 descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
     // For now, only do bounds check for non-aggregate types
     // TODO - Do bounds check for aggregate loads and stores
@@ -57,9 +56,9 @@ uint32_t NonBindlessOOBBufferPass::CreateFunctionCall(BasicBlock& block, Instruc
         descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
-    const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const u32 function_result = module_.TakeNextId();
+    const u32 function_def = GetLinkFunctionId();
+    const u32 bool_type = module_.type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(
         spv::OpFunctionCall,
@@ -82,7 +81,7 @@ void NonBindlessOOBBufferPass::Reset() {
 }
 
 bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
-    const uint32_t opcode = inst.Opcode();
+    const u32 opcode = inst.Opcode();
 
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
         return false;
@@ -95,14 +94,14 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
         return false;
     }
 
-    const uint32_t variable_id = access_chain_inst_->Operand(0);
+    const u32 variable_id = access_chain_inst_->Operand(0);
     const Variable* variable = module_.type_manager_.FindVariableById(variable_id);
     if (!variable) {
         return false;
     }
     var_inst_ = &variable->inst_;
 
-    uint32_t storage_class = variable->StorageClass();
+    u32 storage_class = variable->StorageClass();
     if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
         return false;
     }
@@ -125,7 +124,7 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
 
     // Check for deprecated storage block form
     if (storage_class == spv::StorageClassUniform) {
-        const uint32_t block_type_id = is_descriptor_array ? pointer_type->inst_.Operand(0) : pointer_type->Id();
+        const u32 block_type_id = is_descriptor_array ? pointer_type->inst_.Operand(0) : pointer_type->Id();
         assert(module_.type_manager_.FindTypeById(block_type_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
 
         const bool block_found = GetDecoration(block_type_id, spv::DecorationBlock) != nullptr;
@@ -194,7 +193,7 @@ bool NonBindlessOOBBufferPass::Run() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->position_index_;
+                const u32 inst_position = target_instruction_->position_index_;
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 

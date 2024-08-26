@@ -40,7 +40,7 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
         }
 
         // If sharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
-        // queueFamilyIndexCount uint32_t values
+        // queueFamilyIndexCount u32 values
         if (pCreateInfo->pQueueFamilyIndices == nullptr) {
             skip |= LogError("VUID-VkBufferCreateInfo-sharingMode-00913", device, create_info_loc.dot(Field::sharingMode),
                              "is VK_SHARING_MODE_CONCURRENT, but pQueueFamilyIndices is NULL.");

@@ -20,7 +20,7 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
 
-bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
+bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, u64 next_seq) {
     auto guard = WriteLock();
     if (scope_ != kInternal) {
         return true;
@@ -136,4 +136,3 @@ void vvl::Fence::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
         waiter_ = std::shared_future<void>(completed_.get_future());
     }
 }
-

@@ -55,7 +55,7 @@ struct ShaderStageState {
     VkShaderStageFlagBits GetStage() const;
     vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void *GetPNext() const;
-    bool GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const;
+    bool GetInt32ConstantValue(const spirv::Instruction &insn, u32 *value) const;
 };
 
 namespace spirv {
@@ -63,7 +63,7 @@ struct ResourceInterfaceVariable;
 }  // namespace spirv
 
 struct DescriptorRequirement {
-    uint64_t revalidate_hash;
+    u64 revalidate_hash;
     const spirv::ResourceInterfaceVariable *variable;
     DescriptorRequirement() : revalidate_hash(0), variable(nullptr) {}
 };
@@ -77,13 +77,13 @@ inline bool operator<(const DescriptorRequirement &a, const DescriptorRequiremen
 }
 
 // < binding index (of descriptor set) : meta data >
-typedef std::unordered_multimap<uint32_t, DescriptorRequirement> BindingVariableMap;
+typedef std::unordered_multimap<u32, DescriptorRequirement> BindingVariableMap;
 
 // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
-using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
+using ActiveSlotMap = vvl::unordered_map<u32, BindingVariableMap>;
 
 void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
 ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState> &stage_states);
 ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
 
-uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots);
+u32 GetMaxActiveSlot(const ActiveSlotMap &active_slots);

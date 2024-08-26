@@ -50,8 +50,8 @@ ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &ent
     return active_slots;
 }
 
-uint32_t GetMaxActiveSlot(const ActiveSlotMap &active_slots) {
-    uint32_t max_active_slot = 0;
+u32 GetMaxActiveSlot(const ActiveSlotMap &active_slots) {
+    u32 max_active_slot = 0;
     for (const auto &entry : active_slots) {
         max_active_slot = std::max(max_active_slot, entry.first);
     }
@@ -74,7 +74,7 @@ const void *ShaderStageState::GetPNext() const {
     return (pipeline_create_info) ? pipeline_create_info->pNext : shader_object_create_info->pNext;
 }
 
-bool ShaderStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const {
+bool ShaderStageState::GetInt32ConstantValue(const spirv::Instruction &insn, u32 *value) const {
     const spirv::Instruction *type_id = spirv_state->FindDef(insn.Word(1));
     if (type_id->Opcode() != spv::OpTypeInt || type_id->Word(2) != 32) {
         return false;
@@ -86,10 +86,9 @@ bool ShaderStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uin
     } else if (insn.Opcode() == spv::OpSpecConstant) {
         *value = insn.Word(3);  // default value
         const auto *spec_info = GetSpecializationInfo();
-        const uint32_t spec_id = spirv_state->static_data_.id_to_spec_id.at(insn.Word(2));
+        const u32 spec_id = spirv_state->static_data_.id_to_spec_id.at(insn.Word(2));
         if (spec_info && spec_id < spec_info->mapEntryCount) {
-            memcpy(value, (uint8_t *)spec_info->pData + spec_info->pMapEntries[spec_id].offset,
-                   spec_info->pMapEntries[spec_id].size);
+            memcpy(value, (u8 *)spec_info->pData + spec_info->pMapEntries[spec_id].offset, spec_info->pMapEntries[spec_id].size);
         }
         return true;
     }

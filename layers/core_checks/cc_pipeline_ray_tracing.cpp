@@ -40,7 +40,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
                          create_info.maxPipelineRayRecursionDepth, phys_dev_ext_props.ray_tracing_props_khr.maxRayRecursionDepth);
         }
         if (create_info.pLibraryInfo) {
-            for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
+            for (u32 i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
                 const Location library_info_loc = create_info_loc.dot(Field::pLibraryInfo);
                 const Location library_loc = library_info_loc.dot(Field::pLibraries, i);
                 const auto library_pipelinestate = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[i]);
@@ -92,7 +92,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
     }
     const auto *groups = create_info.ptr()->pGroups;
 
-    for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
+    for (u32 i = 0; i < pipeline.stage_states.size(); i++) {
         skip |= ValidateShaderStage(pipeline.stage_states[i], &pipeline, create_info_loc.dot(Field::pStages, i));
     }
 
@@ -101,7 +101,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
     }
 
     if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
-        const uint32_t raygen_stages_count = CalcShaderStageCount(pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        const u32 raygen_stages_count = CalcShaderStageCount(pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         if (raygen_stages_count == 0) {
             skip |= LogError(
                 isKHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425" : "VUID-VkRayTracingPipelineCreateInfoNV-stage-06232",
@@ -115,7 +115,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
                          "is %s (contains both SKIP_TRIANGLES and SKIP_AABBS).", string_VkPipelineCreateFlags(flags).c_str());
     }
 
-    for (uint32_t group_index = 0; group_index < create_info.groupCount; group_index++) {
+    for (u32 group_index = 0; group_index < create_info.groupCount; group_index++) {
         const auto &group = groups[group_index];
         const Location &group_loc = create_info_loc.dot(Field::pGroups, group_index);
 
@@ -166,7 +166,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             const ErrorObject &error_obj, PipelineStates &pipeline_states,
@@ -175,7 +175,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                                          pPipelines, error_obj, pipeline_states, chassis_state);
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
-    for (uint32_t i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
         ASSERT_AND_CONTINUE(pipeline);
 
@@ -199,7 +199,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             }
         }
         skip |= ValidateRayTracingPipeline(*pipeline, create_info, pCreateInfos[i].flags, create_info_loc);
-        uint32_t stage_index = 0;
+        u32 stage_index = 0;
         for (const auto &stage_ci : pipeline->shader_stages_ci) {
             skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, create_info_loc.dot(Field::pStages, stage_index++));
         }
@@ -210,7 +210,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
 }
 
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                             VkPipelineCache pipelineCache, uint32_t count,
+                                                             VkPipelineCache pipelineCache, u32 count,
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                              const ErrorObject &error_obj, PipelineStates &pipeline_states,
@@ -223,7 +223,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
     skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),
                                       "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03678");
 
-    for (uint32_t i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         const vvl::Pipeline *pipeline = pipeline_states[i].get();
         ASSERT_AND_CONTINUE(pipeline);
 
@@ -247,7 +247,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             }
         }
         skip |= ValidateRayTracingPipeline(*pipeline, create_info, pCreateInfos[i].flags, create_info_loc);
-        uint32_t stage_index = 0;
+        u32 stage_index = 0;
         for (const auto &stage_ci : pipeline->shader_stages_ci) {
             skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, create_info_loc.dot(Field::pStages, stage_index++));
         }
@@ -267,7 +267,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                 {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-07403", VK_PIPELINE_CREATE_RAY_TRACING_OPACITY_MICROMAP_BIT_EXT},
             }};
             bool uses_descriptor_buffer = false;
-            for (uint32_t j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
+            for (u32 j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
                 const Location library_info_loc = create_info_loc.dot(Field::pLibraryInfo);
                 const Location library_loc = library_info_loc.dot(Field::pLibraries, j);
                 const auto lib = Get<vvl::Pipeline>(create_info.pLibraryInfo->pLibraries[j]);
@@ -293,10 +293,10 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                 if (j == 0) {
                     uses_descriptor_buffer = lib->descriptor_buffer_mode;
                 } else if (uses_descriptor_buffer != lib->descriptor_buffer_mode) {
-                    skip |= LogError(
-                        "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096", device, library_loc,
-                        "%s created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT which is opposite of pLibraries[0].",
-                        lib->descriptor_buffer_mode ? "was" : "was not");
+                    skip |=
+                        LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096", device, library_loc,
+                                 "%s created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT which is opposite of pLibraries[0].",
+                                 lib->descriptor_buffer_mode ? "was" : "was not");
                     break;  // no point keep checking as might have many of same error
                 }
             }

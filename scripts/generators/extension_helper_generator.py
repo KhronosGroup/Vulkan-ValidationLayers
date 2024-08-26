@@ -156,7 +156,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             // Map of promoted extension information per version (a separate map exists for instance and device extensions).
             // The map is keyed by the version number (e.g. VK_API_VERSION_1_1) and each value is a pair consisting of the
             // version string (e.g. "VK_VERSION_1_1") and the set of name of the promoted extensions.
-            typedef vvl::unordered_map<uint32_t, std::pair<const char*, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
+            typedef vvl::unordered_map<u32, std::pair<const char*, vvl::unordered_set<vvl::Extension>>> PromotedExtensionInfoMap;
             const PromotedExtensionInfoMap& GetInstancePromotionInfoMap();
             const PromotedExtensionInfoMap& GetDevicePromotionInfoMap();
 
@@ -408,7 +408,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
                 // CreateInfo takes precedence over promoted
                 if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-                    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+                    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                         if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
                         auto info = GetInfo(extension);
@@ -443,7 +443,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
                 // CreateInfo takes precedence over promoted
                 if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-                    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+                    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                         if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
                         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
                         auto info = GetInfo(extension);

@@ -18,7 +18,7 @@
 
 struct QSTestContext {
     vkt::Device* dev;
-    uint32_t q_fam = ~0U;
+    u32 q_fam = ~0U;
     VkQueue q0 = VK_NULL_HANDLE;
     VkQueue q1 = VK_NULL_HANDLE;
 

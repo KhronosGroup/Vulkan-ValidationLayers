@@ -38,32 +38,28 @@ class Image : public vvl::Image {
     }
 
     Image(const ValidationStateTracker& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
-          uint32_t swapchain_index, VkFormatFeatureFlags2 features)
+          u32 swapchain_index, VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, create_info, swapchain, swapchain_index, features) {
         SetupUsages();
     }
 
     struct Usage {
         IMAGE_SUBRESOURCE_USAGE_BP type;
-        uint32_t queue_family_index;
+        u32 queue_family_index;
     };
 
-    Usage UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family) {
+    Usage UpdateUsage(u32 array_layer, u32 mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, u32 queue_family) {
         auto last_usage = usages_[array_layer][mip_level];
         usages_[array_layer][mip_level].type = usage;
         usages_[array_layer][mip_level].queue_family_index = queue_family;
         return last_usage;
     }
 
-    Usage GetUsage(uint32_t array_layer, uint32_t mip_level) const { return usages_[array_layer][mip_level]; }
+    Usage GetUsage(u32 array_layer, u32 mip_level) const { return usages_[array_layer][mip_level]; }
 
-    IMAGE_SUBRESOURCE_USAGE_BP GetUsageType(uint32_t array_layer, uint32_t mip_level) const {
-        return GetUsage(array_layer, mip_level).type;
-    }
+    IMAGE_SUBRESOURCE_USAGE_BP GetUsageType(u32 array_layer, u32 mip_level) const { return GetUsage(array_layer, mip_level).type; }
 
-    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) const {
-        return GetUsage(array_layer, mip_level).queue_family_index;
-    }
+    u32 GetLastQueueFamily(u32 array_layer, u32 mip_level) const { return GetUsage(array_layer, mip_level).queue_family_index; }
 
   private:
     void SetupUsages() {
@@ -76,7 +72,7 @@ class Image : public vvl::Image {
     // This does not split usages per aspect.
     // Aspects are generally read and written together,
     // and tracking them independently could be misleading.
-    // second/uint32_t is last queue family usage
+    // second/u32 is last queue family usage
     std::vector<std::vector<Usage>> usages_;
 };
 
@@ -94,7 +90,7 @@ class PhysicalDevice : public vvl::PhysicalDevice {
     CALL_STATE vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfaceFormatsKHRState = UNCALLED;
-    uint32_t surface_formats_count = 0;
+    u32 surface_formats_count = 0;
     CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
 };
 
@@ -108,9 +104,9 @@ class Swapchain : public vvl::Swapchain {
 
 class DeviceMemory : public vvl::DeviceMemory {
   public:
-    DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address,
+    DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, u64 fake_address,
                  const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
-                 std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
+                 std::optional<vvl::DedicatedBinding>&& dedicated_binding, u32 physical_device_count)
         : vvl::DeviceMemory(handle, allocate_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
                             physical_device_count) {}
 
@@ -118,10 +114,10 @@ class DeviceMemory : public vvl::DeviceMemory {
 };
 
 struct AttachmentInfo {
-    uint32_t framebufferAttachment;
+    u32 framebufferAttachment;
     VkImageAspectFlags aspects;
 
-    AttachmentInfo(uint32_t framebufferAttachment_, VkImageAspectFlags aspects_)
+    AttachmentInfo(u32 framebufferAttachment_, VkImageAspectFlags aspects_)
         : framebufferAttachment(framebufferAttachment_), aspects(aspects_) {}
 };
 
@@ -131,13 +127,13 @@ struct RenderPassState {
     bool colorAttachment = false;
     bool depthOnly = false;
     bool depthEqualComparison = false;
-    uint32_t numDrawCallsDepthOnly = 0;
-    uint32_t numDrawCallsDepthEqualCompare = 0;
+    u32 numDrawCallsDepthOnly = 0;
+    u32 numDrawCallsDepthEqualCompare = 0;
 
     // For secondaries, we need to keep this around for execute commands.
     struct ClearInfo {
-        uint32_t framebufferAttachment;
-        uint32_t colorAttachment;
+        u32 framebufferAttachment;
+        u32 colorAttachment;
         VkImageAspectFlags aspects;
         std::vector<VkClearRect> rects;
     };
@@ -156,23 +152,23 @@ struct CommandBufferStateNV {
             Enabled,
         };
 
-        uint32_t num_switches = 0;
+        u32 num_switches = 0;
         State state = State::Unknown;
         bool threshold_signaled = false;
     };
     struct ZcullResourceState {
         ZcullDirection direction = ZcullDirection::Unknown;
-        uint64_t num_less_draws = 0;
-        uint64_t num_greater_draws = 0;
+        u64 num_less_draws = 0;
+        u64 num_greater_draws = 0;
     };
     struct ZcullTree {
         std::vector<ZcullResourceState> states;
-        uint32_t mip_levels = 0;
-        uint32_t array_layers = 0;
+        u32 mip_levels = 0;
+        u32 array_layers = 0;
 
-        const ZcullResourceState& GetState(uint32_t layer, uint32_t level) const { return states[layer * mip_levels + level]; }
+        const ZcullResourceState& GetState(u32 layer, u32 level) const { return states[layer * mip_levels + level]; }
 
-        ZcullResourceState& GetState(uint32_t layer, uint32_t level) { return states[layer * mip_levels + level]; }
+        ZcullResourceState& GetState(u32 layer, u32 level) { return states[layer * mip_levels + level]; }
     };
     struct ZcullScope {
         VkImage image = VK_NULL_HANDLE;
@@ -197,9 +193,9 @@ class CommandBuffer : public vvl::CommandBuffer {
 
     RenderPassState render_pass_state;
     CommandBufferStateNV nv;
-    uint64_t num_submits = 0;
+    u64 num_submits = 0;
     bool uses_vertex_buffer = false;
-    uint32_t small_indexed_draw_call_count = 0;
+    u32 small_indexed_draw_call_count = 0;
 
     // This function used to not be empty. It has been left empty because
     // the logic to decide to call this function is not simple, so adding this
@@ -226,7 +222,7 @@ class DescriptorPool : public vvl::DescriptorPool {
     DescriptorPool(ValidationStateTracker& dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* create_info)
         : vvl::DescriptorPool(dev, handle, create_info) {}
 
-    uint32_t freed_count{0};
+    u32 freed_count{0};
 };
 
 class Pipeline : public vvl::Pipeline {

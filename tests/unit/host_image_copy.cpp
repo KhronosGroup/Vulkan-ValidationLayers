@@ -26,7 +26,7 @@ TEST_F(NegativeHostImageCopy, ImageLayout) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -76,7 +76,7 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -154,7 +154,7 @@ TEST_F(NegativeHostImageCopy, AspectMask) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -205,7 +205,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemoryNoMemory) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -257,7 +257,7 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -361,7 +361,7 @@ TEST_F(NegativeHostImageCopy, ImageExtent) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -448,7 +448,7 @@ TEST_F(NegativeHostImageCopy, Image1D) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -563,7 +563,7 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -701,7 +701,7 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -805,7 +805,7 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -890,7 +890,7 @@ TEST_F(NegativeHostImageCopy, NonSupportedLayout) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -945,7 +945,7 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -1529,7 +1529,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemorySubsampled) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
@@ -1901,7 +1901,7 @@ TEST_F(NegativeHostImageCopy, Features) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
-    std::vector<uint8_t> pixels(32 * 32 * 4);
+    std::vector<u8> pixels(32 * 32 * 4);
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1980,7 +1980,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     region.imageSubresource = imageSubresource;
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {32, 32, 1};
-    const uint32_t copy_size = (32 * 32 * 4) / 8;  // 64 bit pointer
+    const u32 copy_size = (32 * 32 * 4) / 8;  // 64 bit pointer
     VkCopyImageToMemoryInfoEXT copy_image_to_memory = vku::InitStructHelper();
     copy_image_to_memory.srcImage = image.handle();
     copy_image_to_memory.srcImageLayout = layout;
@@ -2041,8 +2041,8 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
 
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    const uint32_t bufferSize = width * height * 4;
-    std::vector<uint8_t> data(bufferSize);
+    const u32 bufferSize = width * height * 4;
+    std::vector<u8> data(bufferSize);
 
     VkImageSubresourceLayers imageSubresource = {};
     imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

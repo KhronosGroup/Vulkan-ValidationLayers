@@ -32,7 +32,7 @@
 
 using vkt::MakeVkHandles;
 
-static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
+static constexpr u64 kWaitTimeout{10000000000};  // 10 seconds in ns
 static constexpr VkDeviceSize kZeroDeviceSize{0};
 
 struct SurfaceContext {
@@ -75,14 +75,14 @@ class VkRenderFramework : public VkTestFramework {
     ErrorMonitor &Monitor();
     const VkPhysicalDeviceProperties &physDevProps() const;
 
-    bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
-    bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
+    bool InstanceLayerSupported(const char *layer_name, u32 spec_version = 0, u32 impl_version = 0);
+    bool InstanceExtensionSupported(const char *extension_name, u32 spec_version = 0);
 
     VkInstanceCreateInfo GetInstanceCreateInfo() const;
     void InitFramework(void *instance_pnext = NULL);
     void ShutdownFramework();
 
-     // Functions to modify the VkRenderFramework surface & swapchain variables
+    // Functions to modify the VkRenderFramework surface & swapchain variables
     void InitSurface();
     void DestroySurface();
     void InitSwapchainInfo();
@@ -91,16 +91,17 @@ class VkRenderFramework : public VkTestFramework {
     void DestroySwapchain();
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
     VkResult CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance = VK_NULL_HANDLE);
-    void DestroySurface(VkSurfaceKHR& surface);
-    void DestroySurfaceContext(SurfaceContext& surface_context);
+    void DestroySurface(VkSurfaceKHR &surface);
+    void DestroySurfaceContext(SurfaceContext &surface_context);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
-    bool CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,  VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain, VkSwapchainKHR oldSwapchain = 0);
+    bool CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
+                         VkSwapchainKHR &swapchain, VkSwapchainKHR oldSwapchain = 0);
     std::vector<VkImage> GetSwapchainImages(const VkSwapchainKHR swapchain);
 
     void InitRenderTarget();
-    void InitRenderTarget(uint32_t targets);
+    void InitRenderTarget(u32 targets);
     void InitRenderTarget(const VkImageView *dsBinding);
-    void InitRenderTarget(uint32_t targets, const VkImageView *dsBinding);
+    void InitRenderTarget(u32 targets, const VkImageView *dsBinding);
     void InitDynamicRenderTarget(VkFormat format = VK_FORMAT_UNDEFINED);
     VkImageView GetDynamicRenderTarget() const;
     VkRect2D GetRenderTargetArea() const;
@@ -120,9 +121,9 @@ class VkRenderFramework : public VkTestFramework {
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
                    const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     void InitStateWithRequirements(vkt::FeatureRequirements &feature_requirements);
-    bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
+    bool DeviceExtensionSupported(const char *extension_name, u32 spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
-                                  uint32_t spec_version = 0) const {  // deprecated
+                                  u32 spec_version = 0) const {  // deprecated
         return DeviceExtensionSupported(name, spec_version);
     }
 
@@ -151,9 +152,9 @@ class VkRenderFramework : public VkTestFramework {
     void AddDisabledFeature(vkt::Feature feature);
 
     template <typename GLSLContainer>
-    std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code,
-                                    const spv_target_env env = SPV_ENV_VULKAN_1_0) {
-        std::vector<uint32_t> spv;
+    std::vector<u32> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code,
+                               const spv_target_env env = SPV_ENV_VULKAN_1_0) {
+        std::vector<u32> spv;
         GLSLtoSPV(&m_device->phy().limits_, stage, code, spv, env);
         return spv;
     }
@@ -174,8 +175,8 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
 
-    std::vector<VkLayerProperties> available_layers_; // allow caching of available layers
-    std::vector<VkExtensionProperties> available_extensions_; // allow caching of available instance extensions
+    std::vector<VkLayerProperties> available_layers_;          // allow caching of available layers
+    std::vector<VkExtensionProperties> available_extensions_;  // allow caching of available instance extensions
 
     ErrorMonitor monitor_ = ErrorMonitor(m_print_vu);
     ErrorMonitor *m_errorMonitor = &monitor_;  // TODO: Removing this properly is it's own PR. It's a big change.
@@ -191,7 +192,7 @@ class VkRenderFramework : public VkTestFramework {
     vkt::FeatureRequirements feature_requirements_;
     bool all_queue_count_ = false;
 
-    uint32_t m_gpu_index;
+    u32 m_gpu_index;
     vkt::Device *m_device;
     vkt::CommandPool m_command_pool;
     vkt::CommandBuffer *m_commandBuffer;  // DEPRECATED: use m_command_buffer
@@ -213,7 +214,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
     std::vector<std::unique_ptr<vkt::Image>> m_renderTargets;
-    uint32_t m_width, m_height;
+    u32 m_width, m_height;
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
     VkClearColorValue m_clear_color;

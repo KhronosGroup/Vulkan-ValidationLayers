@@ -453,11 +453,11 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     // #extension GL_EXT_shader_explicit_arithmetic_types_int8 : enable
     // layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
     // // All spec constants will write zero by default
-    // layout (constant_id = 0) const uint8_t a = uint8_t(0);
+    // layout (constant_id = 0) const u8 a = u8(0);
     // layout (constant_id = 1) const uint b = 0;
     // layout (constant_id = 3) const uint c = 0;
     // layout (constant_id = 4) const uint d = 0;
-    // layout (constant_id = 5) const uint8_t e = uint8_t(0);
+    // layout (constant_id = 5) const u8 e = u8(0);
     //
     // layout(set = 0, binding = 0) buffer ssbo {
     //     uint data[5];
@@ -548,11 +548,11 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
         {5, 3, 1},  // OpTypeInt 8
     };
 
-    uint8_t data[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    u8 data[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     VkSpecializationInfo specialization_info = {
         5,
         entries,
-        sizeof(uint8_t) * 8,
+        sizeof(u8) * 8,
         reinterpret_cast<void *>(data),
     };
 
@@ -588,7 +588,7 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     // Make sure spec constants were updated correctly
     void *pData;
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), buffer.memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
-    uint32_t *ssbo_data = reinterpret_cast<uint32_t *>(pData);
+    u32 *ssbo_data = reinterpret_cast<u32 *>(pData);
     ASSERT_EQ(ssbo_data[0], 0x02);
     ASSERT_EQ(ssbo_data[1], 0x05040302);
     ASSERT_EQ(ssbo_data[2], 0x06050403);
@@ -677,17 +677,17 @@ TEST_F(PositiveShaderSpirv, OpTypeArraySpecConstant) {
                OpFunctionEnd
     )";
 
-    uint32_t data = 5;
+    u32 data = 5;
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     // Use default value for spec constant
@@ -931,15 +931,15 @@ TEST_F(PositiveShaderSpirv, SpecializeInt8) {
     VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const VkSpecializationMapEntry entry = {
-        0,               // id
-        0,               // offset
-        sizeof(uint8_t)  // size
+        0,          // id
+        0,          // offset
+        sizeof(u8)  // size
     };
-    uint8_t const data = 0x42;
+    u8 const data = 0x42;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
-        1 * sizeof(uint8_t),
+        1 * sizeof(u8),
         &data,
     };
 
@@ -988,15 +988,15 @@ TEST_F(PositiveShaderSpirv, SpecializeInt16) {
     VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const VkSpecializationMapEntry entry = {
-        0,                // id
-        0,                // offset
-        sizeof(uint16_t)  // size
+        0,           // id
+        0,           // offset
+        sizeof(u16)  // size
     };
-    uint16_t const data = 0x4342;
+    u16 const data = 0x4342;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
-        1 * sizeof(uint16_t),
+        1 * sizeof(u16),
         &data,
     };
 
@@ -1036,15 +1036,15 @@ TEST_F(PositiveShaderSpirv, SpecializeInt32) {
     VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const VkSpecializationMapEntry entry = {
-        0,                // id
-        0,                // offset
-        sizeof(uint32_t)  // size
+        0,           // id
+        0,           // offset
+        sizeof(u32)  // size
     };
-    uint32_t const data = 0x45444342;
+    u32 const data = 0x45444342;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
-        1 * sizeof(uint32_t),
+        1 * sizeof(u32),
         &data,
     };
 
@@ -1094,15 +1094,15 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
     VkShaderObj const fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     const VkSpecializationMapEntry entry = {
-        0,                // id
-        0,                // offset
-        sizeof(uint64_t)  // size
+        0,           // id
+        0,           // offset
+        sizeof(u64)  // size
     };
-    uint64_t const data = 0x4948474645444342;
+    u64 const data = 0x4948474645444342;
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
-        1 * sizeof(uint64_t),
+        1 * sizeof(u64),
         &data,
     };
 
@@ -1144,7 +1144,7 @@ TEST_F(PositiveShaderSpirv, SpecializationUnused) {
         {3, 0, 4},  // usued
     };
 
-    int32_t data = 0;
+    i32 data = 0;
     VkSpecializationInfo specialization_info = {
         4,
         entries,
@@ -1885,9 +1885,9 @@ TEST_F(PositiveShaderSpirv, SpecConstantTextureIndexValue) {
                OpFunctionEnd
         )";
 
-    uint32_t data = 3;
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    u32 data = 3;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(u32)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(u32), &data};
     const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
                          &specialization_info);
 
@@ -1912,9 +1912,9 @@ TEST_F(PositiveShaderSpirv, DescriptorCountSpecConstant) {
         }
     )glsl";
 
-    uint32_t data = 2;
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    u32 data = 2;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(u32)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(u32), &data};
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {

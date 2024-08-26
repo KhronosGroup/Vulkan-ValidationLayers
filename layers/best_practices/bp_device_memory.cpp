@@ -77,7 +77,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 
             const auto now = std::chrono::high_resolution_clock::now();
             const VkDeviceSize alloc_size = pAllocateInfo->allocationSize;
-            const uint32_t memory_type_index = pAllocateInfo->memoryTypeIndex;
+            const u32 memory_type_index = pAllocateInfo->memoryTypeIndex;
             const auto latest_event =
                 std::find_if(memory_free_events_.rbegin(), memory_free_events_.rend(), [&](const MemoryFreeEvent& event) {
                     return (memory_type_index == event.memory_type_index) && (alloc_size <= event.allocation_size) &&
@@ -94,8 +94,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                         "has just been released, and it could have been reused in place of this allocation.",
                         VendorSpecificTag(kBPVendorNVIDIA));
                 } else {
-                    const uint32_t seconds = static_cast<uint32_t>(time_delta.count() / 1000);
-                    const uint32_t milliseconds = static_cast<uint32_t>(time_delta.count() % 1000);
+                    const u32 seconds = static_cast<u32>(time_delta.count() / 1000);
+                    const u32 milliseconds = static_cast<u32>(time_delta.count() % 1000);
 
                     skip |= LogPerformanceWarning(
                         "BestPractices-NVIDIA-AllocateMemory-ReuseAllocations", device, error_obj.location,
@@ -182,18 +182,18 @@ bool BestPractices::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer bu
     return skip;
 }
 
-bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                     const VkBindBufferMemoryInfo* pBindInfos, const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, u32 bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
+                                                     const ErrorObject& error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
+    for (u32 i = 0; i < bindInfoCount; i++) {
         skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, error_obj.location.dot(Field::pBindInfos, i));
     }
 
     return skip;
 }
 
-bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
+bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, u32 bindInfoCount,
                                                         const VkBindBufferMemoryInfo* pBindInfos,
                                                         const ErrorObject& error_obj) const {
     return PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, error_obj);
@@ -222,9 +222,9 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     // (i.e.most tile - based renderers)
     if (image_state->create_info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
         bool supports_lazy = false;
-        uint32_t suggested_type = 0;
+        u32 suggested_type = 0;
 
-        for (uint32_t i = 0; i < phys_dev_mem_props.memoryTypeCount; i++) {
+        for (u32 i = 0; i < phys_dev_mem_props.memoryTypeCount; i++) {
             if ((1u << i) & image_state->requirements[0].memoryTypeBits) {
                 if (phys_dev_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
                     supports_lazy = true;
@@ -234,7 +234,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
             }
         }
 
-        uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags;
+        u32 allocated_properties = phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags;
 
         if (supports_lazy && (allocated_properties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
             skip |= LogPerformanceWarning(
@@ -260,11 +260,11 @@ bool BestPractices::PreCallValidateBindImageMemory(VkDevice device, VkImage imag
     return skip;
 }
 
-bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                    const VkBindImageMemoryInfo* pBindInfos, const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
+                                                    const ErrorObject& error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
+    for (u32 i = 0; i < bindInfoCount; i++) {
         if (!vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(pBindInfos[i].pNext)) {
             skip |=
                 ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, error_obj.location.dot(Field::pBindInfos, i));
@@ -274,8 +274,7 @@ bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bi
     return skip;
 }
 
-bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                       const VkBindImageMemoryInfo* pBindInfos,
+bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                                        const ErrorObject& error_obj) const {
     return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
 }
@@ -307,13 +306,13 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
 }
 
 std::shared_ptr<vvl::DeviceMemory> BestPractices::CreateDeviceMemoryState(
-    VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address, const VkMemoryType& memory_type,
-    const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count) {
+    VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, u64 fake_address, const VkMemoryType& memory_type,
+    const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, u32 physical_device_count) {
     return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
         handle, allocate_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
 }
 
-void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
+void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, u32 bindInfoCount,
                                                           const VkBindBufferMemoryInfo* pBindInfos,
                                                           const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
@@ -325,7 +324,7 @@ void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint3
     }
 }
 
-void BestPractices::ManualPostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
+void BestPractices::ManualPostCallRecordBindImageMemory2(VkDevice device, u32 bindInfoCount,
                                                          const VkBindImageMemoryInfo* pBindInfos, const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
         // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527

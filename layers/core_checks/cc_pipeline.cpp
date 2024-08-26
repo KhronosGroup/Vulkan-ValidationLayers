@@ -28,7 +28,7 @@
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
 
-bool CoreChecks::IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t subminor) const {
+bool CoreChecks::IsBeforeCtsVersion(u32 major, u32 minor, u32 subminor) const {
     // If VK_KHR_driver_properties is not enabled then conformance version will not be set
     if (phys_dev_props_core12.conformanceVersion.major == 0) {
         return false;
@@ -78,7 +78,8 @@ bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2KHR 
                              string_VkPipelineCreateFlags2KHR(flags).c_str());
         }
     }
-    if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
+    if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT) &&
+        (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07369", device, loc,
                          "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
                          string_VkPipelineCreateFlags2KHR(flags).c_str());
@@ -146,7 +147,7 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
 }
 
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
-                                                                   uint32_t *pExecutableCount,
+                                                                   u32 *pExecutableCount,
                                                                    VkPipelineExecutablePropertiesKHR *pProperties,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
@@ -169,7 +170,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
         pi.pipeline = pExecutableInfo->pipeline;
 
         // We could probably cache this instead of fetching it every time
-        uint32_t executable_count = 0;
+        u32 executable_count = 0;
         DispatchGetPipelineExecutablePropertiesKHR(device, &pi, &executable_count, NULL);
 
         if (pExecutableInfo->executableIndex >= executable_count) {
@@ -187,7 +188,7 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device,
                                                                    const VkPipelineExecutableInfoKHR *pExecutableInfo,
-                                                                   uint32_t *pStatisticCount,
+                                                                   u32 *pStatisticCount,
                                                                    VkPipelineExecutableStatisticKHR *pStatistics,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
@@ -206,7 +207,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
 }
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
-    VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
+    VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, u32 *pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR *pStatistics, const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
@@ -312,14 +313,15 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
             if (cb_state->activeRenderPass && phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
                 const auto *multisample_state = pipeline_state.MultisampleState();
-                const auto *sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
+                const auto *sample_locations =
+                    vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
                 if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
                     !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
-                    const auto *sample_locations_begin_info =
-                        vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->active_render_pass_begin_info.pNext);
+                    const auto *sample_locations_begin_info = vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(
+                        cb_state->active_render_pass_begin_info.pNext);
                     bool found = false;
                     if (sample_locations_begin_info) {
-                        for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
+                        for (u32 i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
                             if (sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
                                 cb_state->GetActiveSubpass()) {
                                 if (MatchSampleLocationsInfo(
@@ -345,7 +347,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             if (enabled_features.variableMultisampleRate == VK_FALSE) {
                 if (const auto *multisample_state = pipeline_state.MultisampleState(); multisample_state) {
                     if (const auto &render_pass = cb_state->activeRenderPass; render_pass) {
-                        const uint32_t subpass = cb_state->GetActiveSubpass();
+                        const u32 subpass = cb_state->GetActiveSubpass();
                         // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
                         // pMultisampleState->rasterizationSamples.
                         if (render_pass->UsesNoAttachment(subpass)) {
@@ -558,7 +560,7 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
                              "(%zu) plus offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
                              map_entry.size, map_entry.offset, spec->dataSize, map_entry.constantID);
         }
-        for (uint32_t j = i + 1; j < spec->mapEntryCount; ++j) {
+        for (u32 j = i + 1; j < spec->mapEntryCount; ++j) {
             if (map_entry.constantID == spec->pMapEntries[j].constantID) {
                 skip |= LogError("VUID-VkSpecializationInfo-constantID-04911", device, map_loc,
                                  "and pMapEntries[%" PRIu32 "] both have constantID (%" PRIu32 ").", j, map_entry.constantID);
@@ -572,7 +574,7 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
 bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const vvl::Pipeline &pipeline,
                                                  const Location &loc) const {
     bool skip = false;
-    uint32_t total_resources = 0;
+    u32 total_resources = 0;
 
     const auto &rp_state = pipeline.RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
@@ -599,7 +601,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
                 continue;
             }
 
-            for (uint32_t binding_idx = 0; binding_idx < set_layout->GetBindingCount(); binding_idx++) {
+            for (u32 binding_idx = 0; binding_idx < set_layout->GetBindingCount(); binding_idx++) {
                 const VkDescriptorSetLayoutBinding *binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
                 // Bindings with a descriptorCount of 0 are "reserved" and should be skipped
                 if (((stage & binding->stageFlags) != 0) && (binding->descriptorCount > 0)) {

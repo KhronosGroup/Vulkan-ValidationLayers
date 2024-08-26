@@ -52,7 +52,7 @@ TEST_F(NegativeMemory, MapMemory) {
     }
     ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &mem));
 
-    uint8_t *pData;
+    u8 *pData;
     // Attempt to map memory size 0 is invalid
     m_errorMonitor->SetDesiredError("VUID-vkMapMemory-size-00680");
     vk::MapMemory(device(), mem, 0, 0, 0, (void **)&pData);
@@ -215,7 +215,7 @@ TEST_F(NegativeMemory, MapMemory2) {
     VkMemoryUnmapInfoKHR unmap_info = vku::InitStructHelper();
     unmap_info.memory = memory;
 
-    uint8_t *pData;
+    u8 *pData;
     // Attempt to map memory size 0 is invalid
     map_info.offset = 0;
     map_info.size = 0;
@@ -239,8 +239,7 @@ TEST_F(NegativeMemory, MapMemory2) {
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
-    map_info.offset = 1,
-    map_info.size = allocation_size;
+    map_info.offset = 1, map_info.size = allocation_size;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-size-07961");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
@@ -317,7 +316,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
     map_info.memory = memory.handle();
     map_info.offset = 0;
     map_info.size = 32;
-    uint8_t *pData;
+    u8 *pData;
 
     m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-memory-07962");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
@@ -519,8 +518,8 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     VkMemoryRequirements mem_reqs;
 
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
+    const i32 tex_width = 32;
+    const i32 tex_height = 32;
     VkImageCreateInfo image_create_info =
         vkt::Image::ImageCreateInfo2D(tex_width, tex_height, 1, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
@@ -608,7 +607,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
     VkPhysicalDeviceMemoryProperties memory_info;
 
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
-    uint32_t i = 0;
+    u32 i = 0;
     for (; i < memory_info.memoryTypeCount; i++) {
         // Would require deviceCoherentMemory feature
         if (memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) {
@@ -848,7 +847,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
     VkPhysicalDeviceMemoryProperties memory_properties = {};
     vk::GetPhysicalDeviceMemoryProperties(m_device->phy().handle(), &memory_properties);
 
-    uint32_t image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
+    u32 image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
     // can't have protected bit because feature bit is not added
     bool found_type =
         m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0,
@@ -860,7 +859,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
         m_errorMonitor->VerifyFound();
     }
 
-    uint32_t buffer_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~buffer_mem_reqs.memoryTypeBits;
+    u32 buffer_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~buffer_mem_reqs.memoryTypeBits;
     found_type = m_device->phy().set_memory_type(buffer_unsupported_mem_type_bits, &buffer_alloc_info, 0,
                                                  VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
     if (buffer_unsupported_mem_type_bits != 0 && found_type) {
@@ -1504,7 +1503,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.size = sizeof(u32);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
@@ -1548,7 +1547,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.size = sizeof(u32);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
@@ -1576,7 +1575,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.size = sizeof(u32);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
@@ -1650,7 +1649,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
-    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.size = sizeof(u32);
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
@@ -1749,9 +1748,9 @@ TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
     // Find a memory type that includes the device coherent memory property
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
-    uint32_t deviceCoherentMemoryTypeIndex = memory_info.memoryTypeCount;  // Set to an invalid value just in case
+    u32 deviceCoherentMemoryTypeIndex = memory_info.memoryTypeCount;  // Set to an invalid value just in case
 
-    for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
+    for (u32 i = 0; i < memory_info.memoryTypeCount; ++i) {
         if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0) {
             deviceCoherentMemoryTypeIndex = i;
             break;
@@ -2153,7 +2152,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
@@ -2189,7 +2188,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
 
     vkt::DeviceMemory buffer_memory(*m_device, buffer_alloc_info);
 
-    std::vector<uint32_t> device_indices(create_device_pnext.physicalDeviceCount);
+    std::vector<u32> device_indices(create_device_pnext.physicalDeviceCount);
 
     VkBindBufferMemoryDeviceGroupInfo bind_buffer_memory_device_group = vku::InitStructHelper();
     bind_buffer_memory_device_group.deviceIndexCount = 1;

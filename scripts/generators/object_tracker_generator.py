@@ -879,7 +879,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     countName = f'{prefix}{member.length}'
                     pre_call_validate += f'''
                         if (({countName} > 0) && ({prefix}{member.name})) {{
-                            for (uint32_t {index} = 0; {index} < {countName}; ++{index}) {{
+                            for (u32 {index} = 0; {index} < {countName}; ++{index}) {{
                                 skip |= ValidateObject({prefix}{member.name}[{index}], kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});
                             }}
                         }}\n'''
@@ -926,7 +926,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 if member.length is not None:
                     # Update struct prefix
                     nested_struct.append(f'if ({prefix}{member.name}) {{\n')
-                    nested_struct.append(f'    for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n')
+                    nested_struct.append(f'    for (u32 {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n')
                     new_error_loc = f'{index}_loc'
                     nested_struct.append(f'[[maybe_unused]] const Location {new_error_loc} = {errorLoc}.dot(Field::{member.name}, {index});\n')
                     new_prefix = f'{prefix}{member.name}[{index}].'
@@ -1007,7 +1007,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
 
                     post_call_record += f'if ({command.params[-1].name}) {{\n'
                     countIsPointer = '*' if command.params[-2].type == 'uint32_t' and command.params[-2].pointer else ''
-                    post_call_record += f'for (uint32_t index = 0; index < {countIsPointer}{command.params[-1].length}; index++) {{\n'
+                    post_call_record += f'for (u32 index = 0; index < {countIsPointer}{command.params[-1].length}; index++) {{\n'
 
                 if isCreatePipelines:
                     post_call_record += 'if (!pPipelines[index]) continue;\n'
@@ -1027,7 +1027,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 post_call_record += f'''
                     if ({command.params[-1].name}) {{
                         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
-                        for (uint32_t device_group_index = 0; device_group_index < *{command.params[-2].name}; device_group_index++) {{
+                        for (u32 device_group_index = 0; device_group_index < *{command.params[-2].name}; device_group_index++) {{
                             PostCallRecordEnumeratePhysicalDevices({command.params[0].name}, &{command.params[-1].name}[device_group_index].physicalDeviceCount, {command.params[-1].name}[device_group_index].physicalDevices, record_obj);
                         }}
                     }}\n'''

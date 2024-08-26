@@ -34,8 +34,8 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     // Try to find a protected queue family type
     bool protected_queue = false;
     VkQueueFamilyProperties queue_properties;  // selected queue family used
-    uint32_t queue_family_index = 0;
-    uint32_t queue_family_count = 0;
+    u32 queue_family_index = 0;
+    u32 queue_family_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());

@@ -274,7 +274,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     // Draw with pipeline created with null set
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
@@ -288,7 +288,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
     if (device_props.limits.maxVertexInputAttributeOffset == 0xFFFFFFFF) {
-        GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
+        GTEST_SKIP() << "maxVertexInputAttributeOffset is max<u32> already";
     }
 
     InitRenderTarget();
@@ -476,7 +476,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     VkPipelineInputAssemblyStateCreateInfo ia_state = vku::InitStructHelper();
     ia_state.primitiveRestartEnable = false;
@@ -558,7 +558,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     VkPipelineInputAssemblyStateCreateInfo ia_state = vku::InitStructHelper();
     ia_state.primitiveRestartEnable = false;
@@ -640,7 +640,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
@@ -713,7 +713,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
     VkPipelineLayout layout = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
-    uint32_t subpass = 0;
+    u32 subpass = 0;
 
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
@@ -835,7 +835,7 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
                OpReturn
                OpFunctionEnd
         )";
-        vector<uint32_t> fs_spv;
+        vector<u32> fs_spv;
         ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, fs_src, fs_spv);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);

@@ -31,7 +31,7 @@ namespace device_profile_api {
 
 static std::mutex global_lock;
 
-static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+static u32 loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
 
 struct layer_data {
     VkInstance instance;
@@ -187,7 +187,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     instance_data->dispatch_table.GetPhysicalDeviceProcAddr =
         (PFN_GetPhysicalDeviceProcAddr)fp_get_instance_proc_addr(*pInstance, "vk_layerGetPhysicalDeviceProcAddr");
 
-    uint32_t physical_device_count = 0;
+    u32 physical_device_count = 0;
     instance_data->dispatch_table.EnumeratePhysicalDevices(*pInstance, &physical_device_count, NULL);
 
     std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
@@ -209,7 +209,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         return;
     }
 
-    uint32_t physical_device_count = 0;
+    u32 physical_device_count = 0;
     instance_data->dispatch_table.EnumeratePhysicalDevices(instance, &physical_device_count, NULL);
     std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
     VkResult result =
@@ -296,30 +296,30 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
 
 static const VkLayerProperties device_profile_api_LayerProps = {
     "VK_LAYER_LUNARG_device_profile_api",
-    VK_HEADER_VERSION_COMPLETE,             // specVersion
-    1,                                      // implementationVersion
+    VK_HEADER_VERSION_COMPLETE,  // specVersion
+    1,                           // implementationVersion
     "LunarG device profile api Layer",
 };
 
 template <typename T>
-VkResult EnumerateProperties(uint32_t src_count, const T *src_props, uint32_t *dst_count, T *dst_props) {
+VkResult EnumerateProperties(u32 src_count, const T *src_props, u32 *dst_count, T *dst_props) {
     if (!dst_props || !src_props) {
         *dst_count = src_count;
         return VK_SUCCESS;
     }
 
-    uint32_t copy_count = (*dst_count < src_count) ? *dst_count : src_count;
+    u32 copy_count = (*dst_count < src_count) ? *dst_count : src_count;
     memcpy(dst_props, src_props, sizeof(T) * copy_count);
     *dst_count = copy_count;
 
     return (copy_count == src_count) ? VK_SUCCESS : VK_INCOMPLETE;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(u32 *pCount, VkLayerProperties *pProperties) {
     return EnumerateProperties(1, &device_profile_api_LayerProps, pCount, pProperties);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *pLayerName, u32 *pCount,
                                                                     VkExtensionProperties *pProperties) {
     if (pLayerName && !strcmp(pLayerName, device_profile_api_LayerProps.layerName))
         return EnumerateProperties<VkExtensionProperties>(0, NULL, pCount, pProperties);
@@ -389,11 +389,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
 // for consistency across platforms that don't accept those linker options.
 extern "C" {
 
-VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties) {
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(u32 *pCount, VkLayerProperties *pProperties) {
     return device_profile_api::EnumerateInstanceLayerProperties(pCount, pProperties);
 }
 
-VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, u32 *pCount,
                                                                                  VkExtensionProperties *pProperties) {
     return device_profile_api::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
 }

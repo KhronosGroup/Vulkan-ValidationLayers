@@ -18,13 +18,15 @@
 
 #pragma once
 
+#include "utils/numerical_types.h"
+#include "containers/custom_containers.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <type_traits>
 #include <vector>
-#include "containers/custom_containers.h"
 
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
 namespace hash_util {
@@ -157,10 +159,10 @@ class Dictionary {
     Dict dict;
 };
 
-uint32_t VuidHash(std::string_view vuid);
+u32 VuidHash(std::string_view vuid);
 
-uint32_t ShaderHash(const void *pCode, const size_t codeSize);
+u32 ShaderHash(const void *pCode, const size_t codeSize);
 
-uint64_t DescriptorVariableHash(const void *info, const size_t info_size);
+u64 DescriptorVariableHash(const void *info, const size_t info_size);
 
 }  // namespace hash_util

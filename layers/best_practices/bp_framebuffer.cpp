@@ -21,12 +21,12 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
-bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachment_count,
-                                        const VkImageView* attachments, const Location& loc) const {
+bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, u32 attachment_count, const VkImageView* attachments,
+                                        const Location& loc) const {
     bool skip = false;
 
     // Check for non-transient attachments that should be transient and vice versa
-    for (uint32_t i = 0; i < attachment_count; ++i) {
+    for (u32 i = 0; i < attachment_count; ++i) {
         const auto& attachment = rpci->pAttachments[i];
         bool attachment_should_be_transient =
             (attachment.loadOp != VK_ATTACHMENT_LOAD_OP_LOAD && attachment.storeOp != VK_ATTACHMENT_STORE_OP_STORE);
@@ -54,7 +54,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         }
 
         bool supports_lazy = false;
-        for (uint32_t j = 0; j < phys_dev_mem_props.memoryTypeCount; j++) {
+        for (u32 j = 0; j < phys_dev_mem_props.memoryTypeCount; j++) {
             if (phys_dev_mem_props.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
                 supports_lazy = true;
             }

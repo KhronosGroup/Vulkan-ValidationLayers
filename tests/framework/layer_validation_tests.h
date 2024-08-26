@@ -87,13 +87,13 @@ size_t size(ElementT (&)[array_size]) {
 }
 
 template <class ElementT, size_t array_size>
-uint32_t size32(ElementT (&)[array_size]) {
-    return static_cast<uint32_t>(array_size);
+u32 size32(ElementT (&)[array_size]) {
+    return static_cast<u32>(array_size);
 }
 
 template <class Container>
-uint32_t size32(const Container &c) {
-    return static_cast<uint32_t>(c.size());
+u32 size32(const Container &c) {
+    return static_cast<u32>(c.size());
 }
 
 // Format search helper
@@ -323,8 +323,8 @@ class HostImageCopyTest : public VkLayerTest {
     std::vector<VkImageLayout> copy_dst_layouts;
 
     // Every test will use these, set the default most will use
-    uint32_t width = 32;
-    uint32_t height = 32;
+    u32 width = 32;
+    u32 height = 32;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     VkImageCreateInfo image_ci;
 };
@@ -337,7 +337,7 @@ class ImageTest : public VkLayerTest {
 class ImageDrmTest : public VkLayerTest {
   public:
     void InitBasicImageDrm();
-    std::vector<uint64_t> GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count = 1);
+    std::vector<u64> GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, u32 plane_count = 1);
 };
 
 class QueryTest : public VkLayerTest {
@@ -384,8 +384,8 @@ class WsiTest : public VkLayerTest {
         wl_surface *surface = nullptr;
         wl_compositor *compositor = nullptr;
     };
-    void InitWaylandContext(WaylandContext& context);
-    void ReleaseWaylandContext(WaylandContext& context);
+    void InitWaylandContext(WaylandContext &context);
+    void ReleaseWaylandContext(WaylandContext &context);
 #endif
 };
 
@@ -397,7 +397,7 @@ class YcbcrTest : public VkLayerTest {
 class CooperativeMatrixTest : public VkLayerTest {
   public:
     void InitCooperativeMatrixKHR();
-    bool HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type);
+    bool HasValidProperty(VkScopeKHR scope, u32 m, u32 n, u32 k, VkComponentTypeKHR type);
     std::vector<VkCooperativeMatrixPropertiesKHR> coop_matrix_props;
 };
 

@@ -77,8 +77,7 @@ const VkPhysicalDeviceProperties &VkRenderFramework::physDevProps() const {
 }
 
 // Return true if layer name is found and spec+implementation values are >= requested values
-bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const uint32_t spec_version,
-                                               const uint32_t impl_version) {
+bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const u32 spec_version, const u32 impl_version) {
     if (available_layers_.empty()) {
         available_layers_ = vkt::GetGlobalLayers();
     }
@@ -93,7 +92,7 @@ bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, con
 
 // Return true if extension name is found and spec value is >= requested spec value
 // WARNING: for simplicity, does not cover layers' extensions
-bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const uint32_t spec_version) {
+bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const u32 spec_version) {
     // WARNING: assume debug and validation feature extensions are always supported, which are usually provided by layers
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
@@ -112,7 +111,7 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
 }
 
 // Return true if extension name is found and spec value is >= requested spec value
-bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const uint32_t spec_version) const {
+bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const u32 spec_version) const {
     if (!instance_ || !gpu_) {
         EXPECT_NE((VkInstance)0, instance_);  // Complain, not cool without an instance
         EXPECT_NE((VkPhysicalDevice)0, gpu_);
@@ -232,10 +231,10 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     }
 
     // Choose a physical device
-    uint32_t gpu_count = 0;
+    u32 gpu_count = 0;
     const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, nullptr);
     ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
-    ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
+    ASSERT_GT(gpu_count, (u32)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
     std::vector<VkPhysicalDevice> phys_devices(gpu_count);
     vk::EnumeratePhysicalDevices(instance_, &gpu_count, phys_devices.data());
@@ -842,14 +841,14 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
 
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &info.surface_capabilities);
 
-    uint32_t format_count;
+    u32 format_count;
     vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &format_count, nullptr);
     if (format_count != 0) {
         info.surface_formats.resize(format_count);
         vk::GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &format_count, info.surface_formats.data());
     }
 
-    uint32_t present_mode_count;
+    u32 present_mode_count;
     vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &present_mode_count, nullptr);
     if (present_mode_count != 0) {
         info.surface_present_modes.resize(present_mode_count);
@@ -922,7 +921,7 @@ bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags
 }
 
 std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR swapchain) {
-    uint32_t imageCount = 0;
+    u32 imageCount = 0;
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
     vector<VkImage> swapchainImages;
     swapchainImages.resize(imageCount);
@@ -942,11 +941,11 @@ void VkRenderFramework::DestroySwapchain() {
 
 void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
 
-void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, NULL); }
+void VkRenderFramework::InitRenderTarget(u32 targets) { InitRenderTarget(targets, NULL); }
 
 void VkRenderFramework::InitRenderTarget(const VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
-void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *dsBinding) {
+void VkRenderFramework::InitRenderTarget(u32 targets, const VkImageView *dsBinding) {
     vector<VkAttachmentReference> color_references;
     vector<VkAttachmentDescription> attachment_descriptions;
 
@@ -972,7 +971,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
     VkClearValue clear = {};
     clear.color = m_clear_color;
 
-    for (uint32_t i = 0; i < targets; i++) {
+    for (u32 i = 0; i < targets; i++) {
         attachment_descriptions.push_back(att);
 
         ref.attachment = i;
@@ -1167,8 +1166,8 @@ void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynam
 }
 
 void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
-    uint32_t width = 32;
-    uint32_t height = 32;
+    u32 width = 32;
+    u32 height = 32;
     VkViewport viewport = {0, 0, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f};
     VkRect2D scissor = {{0, 0}, {width, height}};
     vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);

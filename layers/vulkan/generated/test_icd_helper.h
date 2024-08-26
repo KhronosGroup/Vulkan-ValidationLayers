@@ -31,7 +31,7 @@
 namespace icd {
 
 // Map of instance extension name to version
-static const std::unordered_map<std::string, uint32_t> instance_extension_map = {
+static const std::unordered_map<std::string, u32> instance_extension_map = {
     {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_SURFACE_SPEC_VERSION},
     {VK_KHR_DISPLAY_EXTENSION_NAME, VK_KHR_DISPLAY_SPEC_VERSION},
 #ifdef VK_USE_PLATFORM_XLIB_KHR
@@ -102,7 +102,7 @@ static const std::unordered_map<std::string, uint32_t> instance_extension_map = 
 };
 
 // Map of device extension name to version
-static const std::unordered_map<std::string, uint32_t> device_extension_map = {
+static const std::unordered_map<std::string, u32> device_extension_map = {
     {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SWAPCHAIN_SPEC_VERSION},
     {VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME, VK_KHR_DISPLAY_SWAPCHAIN_SPEC_VERSION},
     {VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_SPEC_VERSION},
@@ -2878,7 +2878,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, V
                                                               const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         pPipelines[i] = (VkPipeline)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -2889,7 +2889,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, Vk
                                                              const VkComputePipelineCreateInfo* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         pPipelines[i] = (VkPipeline)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -2947,7 +2947,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDes
 static VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                              VkDescriptorSet* pDescriptorSets) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; ++i) {
+    for (u32 i = 0; i < pAllocateInfo->descriptorSetCount; ++i) {
         pDescriptorSets[i] = (VkDescriptorSet)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -3404,7 +3404,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkSwapchainKHR* pSwapchains) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < swapchainCount; ++i) {
+    for (u32 i = 0; i < swapchainCount; ++i) {
         pSwapchains[i] = (VkSwapchainKHR)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -4307,7 +4307,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateExecutionGraphPipelinesAMDX(VkDevice
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         VkPipeline* pPipelines) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         pPipelines[i] = (VkPipeline)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -4416,7 +4416,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice devic
                                                                   const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         pPipelines[i] = (VkPipeline)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -5204,7 +5204,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t
                                                        const VkShaderCreateInfoEXT* pCreateInfos,
                                                        const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         pShaders[i] = (VkShaderEXT)global_unique_handle++;
     }
     return VK_SUCCESS;
@@ -5339,7 +5339,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice devi
                                                                    const VkAllocationCallbacks* pAllocator,
                                                                    VkPipeline* pPipelines) {
     unique_lock_t lock(global_lock);
-    for (uint32_t i = 0; i < createInfoCount; ++i) {
+    for (u32 i = 0; i < createInfoCount; ++i) {
         pPipelines[i] = (VkPipeline)global_unique_handle++;
     }
     return VK_SUCCESS;

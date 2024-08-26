@@ -28,7 +28,7 @@ static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumen
                              LinkFunctions::inst_bindless_descriptor, 0, "inst_bindless_descriptor"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t BindlessDescriptorPass::GetLinkFunctionId() {
+u32 BindlessDescriptorPass::GetLinkFunctionId() {
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -37,30 +37,29 @@ uint32_t BindlessDescriptorPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                    const InjectionData& injection_data) {
+u32 BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const u32 descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
     if (image_inst_) {
         // Get Texel buffer offset
-        const uint32_t opcode = target_instruction_->Opcode();
+        const u32 opcode = target_instruction_->Opcode();
         if (opcode == spv::OpImageRead || opcode == spv::OpImageFetch || opcode == spv::OpImageWrite) {
-            const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
+            const u32 image_operand_position = OpcodeImageOperandsPosition(opcode);
             if (target_instruction_->Length() > image_operand_position) {
-                const uint32_t image_operand_word = target_instruction_->Word(image_operand_position);
+                const u32 image_operand_word = target_instruction_->Word(image_operand_position);
                 if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
                     // TODO - Add support if there are image operands (like offset)
                 }
             }
 
             const Type* image_type = module_.type_manager_.FindTypeById(image_inst_->TypeId());
-            const uint32_t dim = image_type->inst_.Operand(1);
+            const u32 dim = image_type->inst_.Operand(1);
             if (dim == spv::DimBuffer) {
-                const uint32_t depth = image_type->inst_.Operand(2);
-                const uint32_t arrayed = image_type->inst_.Operand(3);
-                const uint32_t multi_sampling = image_type->inst_.Operand(4);
+                const u32 depth = image_type->inst_.Operand(2);
+                const u32 arrayed = image_type->inst_.Operand(3);
+                const u32 multi_sampling = image_type->inst_.Operand(4);
                 if (depth == 0 && arrayed == 0 && multi_sampling == 0) {
                     descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
                 }
@@ -69,12 +68,12 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
             // if not a direct read/write/fetch, will be a OpSampledImage
             // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
             // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
-            uint32_t image_id = target_instruction_->Operand(0);
+            u32 image_id = target_instruction_->Operand(0);
             const Instruction* sampled_image_inst = block.function_.FindInstruction(image_id);
             // TODO - Add tests to understand what else can be here other then OpSampledImage
             if (sampled_image_inst->Opcode() == spv::OpSampledImage) {
-                const uint32_t type_id = sampled_image_inst->TypeId();
-                const uint32_t copy_id = module_.TakeNextId();
+                const u32 type_id = sampled_image_inst->TypeId();
+                const u32 copy_id = module_.TakeNextId();
                 const_cast<Instruction*>(target_instruction_)->ReplaceOperandId(image_id, copy_id);
 
                 // incase the OpSampledImage is shared, copy the previous OpCopyObject
@@ -105,9 +104,9 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
         descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
-    const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const u32 function_result = module_.TakeNextId();
+    const u32 function_def = GetLinkFunctionId();
+    const u32 bool_type = module_.type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(
         spv::OpFunctionCall,
@@ -130,7 +129,7 @@ void BindlessDescriptorPass::Reset() {
 }
 
 bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
-    const uint32_t opcode = inst.Opcode();
+    const u32 opcode = inst.Opcode();
 
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
         // For now only have non-bindless support for buffers
@@ -149,7 +148,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
         }
         var_inst_ = &variable->inst_;
 
-        uint32_t storage_class = variable->StorageClass();
+        u32 storage_class = variable->StorageClass();
         if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
             return false;
         }
@@ -158,7 +157,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
 
         // Check for deprecated storage block form
         if (storage_class == spv::StorageClassUniform) {
-            const uint32_t block_type_id = (pointer_type->inst_.IsArray()) ? pointer_type->inst_.Operand(0) : pointer_type->Id();
+            const u32 block_type_id = (pointer_type->inst_.IsArray()) ? pointer_type->inst_.Operand(0) : pointer_type->Id();
             if (module_.type_manager_.FindTypeById(block_type_id)->spv_type_ != SpvType::kStruct) {
                 module_.InternalError("BindlessDescriptorPass", "Uniform variable block type is not OpTypeStruct");
                 return false;
@@ -193,7 +192,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
         }
 
         // Reference is not load or store, so ifi it isn't a image-based reference, move on
-        const uint32_t image_word = OpcodeImageAccessPosition(opcode);
+        const u32 image_word = OpcodeImageAccessPosition(opcode);
         if (image_word == 0) {
             return false;
         }
@@ -243,7 +242,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
     }
 
     assert(var_inst_);
-    uint32_t variable_id = var_inst_->ResultId();
+    u32 variable_id = var_inst_->ResultId();
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {

@@ -23,14 +23,14 @@
 namespace gpu {
 namespace spirv {
 
-// All functions are a list of uint32_t
+// All functions are a list of u32
 // The difference is just how many are passed in
-uint32_t DebugPrintfPass::GetLinkFunctionId(uint32_t argument_count) {
+u32 DebugPrintfPass::GetLinkFunctionId(u32 argument_count) {
     if (auto it = function_id_map_.find(argument_count); it != function_id_map_.end()) {
         return it->second;
     }
 
-    const uint32_t link_function_id = module_.TakeNextId();
+    const u32 link_function_id = module_.TakeNextId();
     function_id_map_[argument_count] = link_function_id;
 
     return link_function_id;
@@ -44,19 +44,19 @@ bool DebugPrintfPass::AnalyzeInstruction(const Instruction& inst) {
     return false;
 }
 
-// Takes the various arguments and casts them to a valid uint32_t to be passed as a parameter in the function
-void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params,
-                                           BasicBlock& block, InstructionIt* inst_it) {
-    const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
+// Takes the various arguments and casts them to a valid u32 to be passed as a parameter in the function
+void DebugPrintfPass::CreateFunctionParams(u32 argument_id, const Type& argument_type, std::vector<u32>& params, BasicBlock& block,
+                                           InstructionIt* inst_it) {
+    const u32 u32ype_id = module_.type_manager_.GetTypeInt(32, false).Id();
 
     switch (argument_type.spv_type_) {
         case SpvType::kVector: {
-            const uint32_t component_count = argument_type.inst_.Word(3);
-            const uint32_t component_type_id = argument_type.inst_.Word(2);
+            const u32 component_count = argument_type.inst_.Word(3);
+            const u32 component_type_id = argument_type.inst_.Word(2);
             const Type* component_type = module_.type_manager_.FindTypeById(component_type_id);
             assert(component_type);
-            for (uint32_t i = 0; i < component_count; i++) {
-                const uint32_t extract_id = module_.TakeNextId();
+            for (u32 i = 0; i < component_count; i++) {
+                const u32 extract_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpCompositeExtract, {component_type_id, extract_id, argument_id, i}, inst_it);
                 CreateFunctionParams(extract_id, *component_type, params, block, inst_it);
             }
@@ -64,14 +64,14 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         }
 
         case SpvType::kInt: {
-            const uint32_t width = argument_type.inst_.Word(2);
+            const u32 width = argument_type.inst_.Word(2);
 
             // first thing is to get any signed to unsigned via bitcast
             const bool is_signed = argument_type.inst_.Word(3) != 0;
-            uint32_t incoming_id = argument_id;
+            u32 incoming_id = argument_id;
             if (is_signed) {
-                const uint32_t bitcast_id = module_.TakeNextId();
-                const uint32_t unsigned_type_id = module_.type_manager_.GetTypeInt(width, false).Id();
+                const u32 bitcast_id = module_.TakeNextId();
+                const u32 unsigned_type_id = module_.type_manager_.GetTypeInt(width, false).Id();
                 block.CreateInstruction(spv::OpBitcast, {unsigned_type_id, bitcast_id, argument_id}, inst_it);
                 incoming_id = bitcast_id;
 
@@ -95,27 +95,27 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             }
 
             if (width == 8 || width == 16) {
-                const uint32_t uconvert_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_id, incoming_id}, inst_it);
+                const u32 uconvert_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpUConvert, {u32ype_id, uconvert_id, incoming_id}, inst_it);
                 params.push_back(uconvert_id);
                 expanded_parameter_count_++;
             } else if (width == 32) {
                 params.push_back(incoming_id);
                 expanded_parameter_count_++;
             } else if (width == 64) {
-                const uint32_t uconvert_high_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_high_id, incoming_id}, inst_it);
+                const u32 uconvert_high_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpUConvert, {u32ype_id, uconvert_high_id, incoming_id}, inst_it);
                 params.push_back(uconvert_high_id);
                 expanded_parameter_count_++;
 
-                const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();
-                const uint32_t shift_right_id = module_.TakeNextId();
-                const uint32_t constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
-                block.CreateInstruction(spv::OpShiftRightLogical, {uint64_type_id, shift_right_id, incoming_id, constant_32_id},
+                const u32 u64ype_id = module_.type_manager_.GetTypeInt(64, false).Id();
+                const u32 shift_right_id = module_.TakeNextId();
+                const u32 constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
+                block.CreateInstruction(spv::OpShiftRightLogical, {u64ype_id, shift_right_id, incoming_id, constant_32_id},
                                         inst_it);
 
-                const uint32_t uconvert_low_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_low_id, shift_right_id}, inst_it);
+                const u32 uconvert_low_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpUConvert, {u32ype_id, uconvert_low_id, shift_right_id}, inst_it);
                 params.push_back(uconvert_low_id);
             } else {
                 module_.InternalError("DebugPrintfPass", "CreateFunctionParams has unsupported for int width");
@@ -124,19 +124,19 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         }
 
         case SpvType::kFloat: {
-            const uint32_t width = argument_type.inst_.Word(2);
+            const u32 width = argument_type.inst_.Word(2);
             if (width == 16) {
-                const uint32_t float32_type_id = module_.type_manager_.GetTypeFloat(32).Id();
-                const uint32_t fconvert_id = module_.TakeNextId();
+                const u32 float32_type_id = module_.type_manager_.GetTypeFloat(32).Id();
+                const u32 fconvert_id = module_.TakeNextId();
                 block.CreateInstruction(spv::OpFConvert, {float32_type_id, fconvert_id, argument_id}, inst_it);
 
-                const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uint32_type_id, bitcast_id, fconvert_id}, inst_it);
+                const u32 bitcast_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {u32ype_id, bitcast_id, fconvert_id}, inst_it);
                 params.push_back(bitcast_id);
                 expanded_parameter_count_++;
             } else if (width == 32) {
-                const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uint32_type_id, bitcast_id, argument_id}, inst_it);
+                const u32 bitcast_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {u32ype_id, bitcast_id, argument_id}, inst_it);
                 params.push_back(bitcast_id);
                 expanded_parameter_count_++;
             } else if (width == 64) {
@@ -156,22 +156,21 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 }
                 module_.AddCapability(spv::CapabilityInt64);
 
-                const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();
-                const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uint64_type_id, bitcast_id, argument_id}, inst_it);
+                const u32 u64ype_id = module_.type_manager_.GetTypeInt(64, false).Id();
+                const u32 bitcast_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpBitcast, {u64ype_id, bitcast_id, argument_id}, inst_it);
 
-                const uint32_t uconvert_high_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_high_id, bitcast_id}, inst_it);
+                const u32 uconvert_high_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpUConvert, {u32ype_id, uconvert_high_id, bitcast_id}, inst_it);
                 params.push_back(uconvert_high_id);
                 expanded_parameter_count_++;
 
-                const uint32_t shift_right_id = module_.TakeNextId();
-                const uint32_t constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
-                block.CreateInstruction(spv::OpShiftRightLogical, {uint64_type_id, shift_right_id, bitcast_id, constant_32_id},
-                                        inst_it);
+                const u32 shift_right_id = module_.TakeNextId();
+                const u32 constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
+                block.CreateInstruction(spv::OpShiftRightLogical, {u64ype_id, shift_right_id, bitcast_id, constant_32_id}, inst_it);
 
-                const uint32_t uconvert_low_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_low_id, shift_right_id}, inst_it);
+                const u32 uconvert_low_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpUConvert, {u32ype_id, uconvert_low_id, shift_right_id}, inst_it);
                 params.push_back(uconvert_low_id);
             } else {
                 module_.InternalError("DebugPrintfPass", "CreateFunctionParams has unsupported for float width");
@@ -180,11 +179,11 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
         }
 
         case SpvType::kBool: {
-            // cast to uint32_t via an OpSelect
-            const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
-            const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
-            const uint32_t select_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpSelect, {uint32_type_id, select_id, argument_id, one_id, zero_id}, inst_it);
+            // cast to u32 via an OpSelect
+            const u32 zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
+            const u32 one_id = module_.type_manager_.GetConstantUInt32(1).Id();
+            const u32 select_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpSelect, {u32ype_id, select_id, argument_id, one_id, zero_id}, inst_it);
             params.push_back(select_id);
             expanded_parameter_count_++;
             break;
@@ -202,14 +201,14 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     // need to call to get the underlying 4 IDs (simpler to pass in as 4 uint then a uvec4)
     GetStageInfo(block_func, block_it, *inst_it);
 
-    const uint32_t inst_position = target_instruction_->position_index_;
+    const u32 inst_position = target_instruction_->position_index_;
     auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
 
-    const uint32_t string_id = target_instruction_->Word(5);
+    const u32 string_id = target_instruction_->Word(5);
     auto string_id_constant = module_.type_manager_.CreateConstantUInt32(string_id);
 
-    const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
-    const uint32_t function_result = module_.TakeNextId();
+    const u32 void_type = module_.type_manager_.GetTypeVoid().Id();
+    const u32 function_result = module_.TakeNextId();
 
     // We know the first part, then build up the rest from the printf arguments
     // except a few slots, we place hold it with zero until we build up the params
@@ -217,24 +216,24 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     const size_t double_bitmask_slot = 5;
     const size_t signed_8_bitmask_slot = 6;
     const size_t signed_16_bitmask_slot = 7;
-    std::vector<uint32_t> function_call_params = {void_type,
-                                                  function_result,
-                                                  0,  // function_def_slot
-                                                  inst_position_constant.Id(),
-                                                  string_id_constant.Id(),
-                                                  0,  // double_bitmask_slot,
-                                                  0,  // signed_8_bitmask_slot,
-                                                  0,  // signed_16_bitmask_slot,
-                                                  block_func.stage_info_x_id_,
-                                                  block_func.stage_info_y_id_,
-                                                  block_func.stage_info_z_id_,
-                                                  block_func.stage_info_w_id_};
+    std::vector<u32> function_call_params = {void_type,
+                                             function_result,
+                                             0,  // function_def_slot
+                                             inst_position_constant.Id(),
+                                             string_id_constant.Id(),
+                                             0,  // double_bitmask_slot,
+                                             0,  // signed_8_bitmask_slot,
+                                             0,  // signed_16_bitmask_slot,
+                                             block_func.stage_info_x_id_,
+                                             block_func.stage_info_y_id_,
+                                             block_func.stage_info_z_id_,
+                                             block_func.stage_info_w_id_};
 
     // where we find the first arugment in OpExtInst instruction
-    const uint32_t first_argument_offset = 6;
-    const uint32_t argument_count = target_instruction_->Length() - first_argument_offset;
-    for (uint32_t i = 0; i < argument_count; i++) {
-        const uint32_t argument_id = target_instruction_->Word(first_argument_offset + i);
+    const u32 first_argument_offset = 6;
+    const u32 argument_count = target_instruction_->Length() - first_argument_offset;
+    for (u32 i = 0; i < argument_count; i++) {
+        const u32 argument_id = target_instruction_->Word(first_argument_offset + i);
         const Instruction* argument_inst = nullptr;
         const Constant* constant = module_.type_manager_.FindConstantById(argument_id);
         if (constant) {
@@ -251,9 +250,9 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     }
 
     // 3 params are the [result, function type, and function ID]
-    const uint32_t ignored_params = 3;
-    const uint32_t param_count = (uint32_t)function_call_params.size() - ignored_params;
-    const uint32_t function_def = GetLinkFunctionId(param_count);
+    const u32 ignored_params = 3;
+    const u32 param_count = (u32)function_call_params.size() - ignored_params;
+    const u32 function_def = GetLinkFunctionId(param_count);
 
     // patch in params
     function_call_params[function_def_slot] = function_def;
@@ -273,8 +272,8 @@ void DebugPrintfPass::CreateDescriptorSet() {
     //     uint data[];
     // } output_buffer;
 
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-    const uint32_t runtime_array_type_id = module_.type_manager_.GetTypeRuntimeArray(uint32_type).Id();
+    const Type& u32ype = module_.type_manager_.GetTypeInt(32, false);
+    const u32 runtime_array_type_id = module_.type_manager_.GetTypeRuntimeArray(u32ype).Id();
 
     // if 2 OpTypeRuntimeArray are combined, we can't have ArrayStride twice
     bool has_array_stride = false;
@@ -289,9 +288,9 @@ void DebugPrintfPass::CreateDescriptorSet() {
         module_.AddDecoration(runtime_array_type_id, spv::DecorationArrayStride, {4});
     }
 
-    const uint32_t struct_type_id = module_.TakeNextId();
+    const u32 struct_type_id = module_.TakeNextId();
     auto new_struct_inst = std::make_unique<Instruction>(4, spv::OpTypeStruct);
-    new_struct_inst->Fill({struct_type_id, uint32_type.Id(), runtime_array_type_id});
+    new_struct_inst->Fill({struct_type_id, u32ype.Id(), runtime_array_type_id});
     const Type& struct_type = module_.type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
     module_.AddDecoration(struct_type_id, spv::DecorationBlock, {});
     module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferSize, spv::DecorationOffset, {0});
@@ -309,7 +308,7 @@ void DebugPrintfPass::CreateDescriptorSet() {
     module_.AddDecoration(output_buffer_variable_id_, spv::DecorationBinding, {binding_slot_});
 }
 
-void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id) {
+void DebugPrintfPass::CreateBufferWriteFunction(u32 argument_count, u32 function_id) {
     // Currently this is generated by the number of arguments
     // The following is what the GLSL would look like
     //
@@ -326,37 +325,37 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
 
     // Need 1 byte to write the "how many bytes will there be"
     // Need 1 byte for the shader stage (which we don't pass in as we know already)
-    const uint32_t byte_written = argument_count + 2;
+    const u32 byte_written = argument_count + 2;
 
     // Debug name is matching number of bytes written into the buffer
     std::string function_name = "inst_debug_printf_" + std::to_string(byte_written);
     module_.AddDebugName(function_name.c_str(), function_id);
 
     // Need to create the function type
-    const uint32_t function_type_id = module_.TakeNextId();
-    const uint32_t void_type_id = module_.type_manager_.GetTypeVoid().Id();
-    const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
+    const u32 function_type_id = module_.TakeNextId();
+    const u32 void_type_id = module_.type_manager_.GetTypeVoid().Id();
+    const u32 u32ype_id = module_.type_manager_.GetTypeInt(32, false).Id();
     {
-        std::vector<uint32_t> words = {function_type_id, void_type_id};
+        std::vector<u32> words = {function_type_id, void_type_id};
         for (size_t i = 0; i < argument_count; i++) {
-            words.push_back(uint32_type_id);
+            words.push_back(u32ype_id);
         }
-        auto new_inst = std::make_unique<Instruction>((uint32_t)words.size() + 1, spv::OpTypeFunction);
+        auto new_inst = std::make_unique<Instruction>((u32)words.size() + 1, spv::OpTypeFunction);
         new_inst->Fill(words);
         module_.type_manager_.AddType(std::move(new_inst), SpvType::kFunction);
     }
 
     auto& new_function = module_.functions_.emplace_back(std::make_unique<Function>(module_));
-    std::vector<uint32_t> function_param_ids;
+    std::vector<u32> function_param_ids;
     {
         auto new_inst = std::make_unique<Instruction>(5, spv::OpFunction);
         new_inst->Fill({void_type_id, function_id, spv::FunctionControlMaskNone, function_type_id});
         new_function->pre_block_inst_.emplace_back(std::move(new_inst));
 
         for (size_t i = 0; i < argument_count; i++) {
-            const uint32_t new_id = module_.TakeNextId();
+            const u32 new_id = module_.TakeNextId();
             auto param_inst = std::make_unique<Instruction>(3, spv::OpFunctionParameter);
-            param_inst->Fill({uint32_type_id, new_id});
+            param_inst->Fill({u32ype_id, new_id});
             new_function->pre_block_inst_.emplace_back(std::move(param_inst));
             function_param_ids.push_back(new_id);
         }
@@ -367,47 +366,47 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     auto& store_block = new_function->blocks_[1];
     auto& merge_block = new_function->blocks_[2];
 
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-    const uint32_t pointer_type_id = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
-    const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
-    const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
-    const uint32_t byte_written_id = module_.type_manager_.GetConstantUInt32(byte_written).Id();
-    uint32_t atomic_add_id = 0;
+    const Type& u32ype = module_.type_manager_.GetTypeInt(32, false);
+    const u32 pointer_type_id = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, u32ype).Id();
+    const u32 zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
+    const u32 one_id = module_.type_manager_.GetConstantUInt32(1).Id();
+    const u32 byte_written_id = module_.type_manager_.GetConstantUInt32(byte_written).Id();
+    u32 atomic_add_id = 0;
 
     // Add atomic and check if buffer size is large enough
     {
-        const uint32_t access_chain_id = module_.TakeNextId();
+        const u32 access_chain_id = module_.TakeNextId();
         check_block->CreateInstruction(spv::OpAccessChain, {pointer_type_id, access_chain_id, output_buffer_variable_id_, zero_id});
 
         atomic_add_id = module_.TakeNextId();
-        const uint32_t scope_invok_id = module_.type_manager_.GetConstantUInt32(spv::ScopeInvocation).Id();
-        const uint32_t mask_none_id = module_.type_manager_.GetConstantUInt32(spv::MemoryAccessMaskNone).Id();
-        check_block->CreateInstruction(
-            spv::OpAtomicIAdd, {uint32_type_id, atomic_add_id, access_chain_id, scope_invok_id, mask_none_id, byte_written_id});
+        const u32 scope_invok_id = module_.type_manager_.GetConstantUInt32(spv::ScopeInvocation).Id();
+        const u32 mask_none_id = module_.type_manager_.GetConstantUInt32(spv::MemoryAccessMaskNone).Id();
+        check_block->CreateInstruction(spv::OpAtomicIAdd,
+                                       {u32ype_id, atomic_add_id, access_chain_id, scope_invok_id, mask_none_id, byte_written_id});
 
-        const uint32_t int_add_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, byte_written_id});
+        const u32 int_add_id = module_.TakeNextId();
+        check_block->CreateInstruction(spv::OpIAdd, {u32ype_id, int_add_id, atomic_add_id, byte_written_id});
 
-        const uint32_t array_length_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpArrayLength, {uint32_type_id, array_length_id, output_buffer_variable_id_, 1});
+        const u32 array_length_id = module_.TakeNextId();
+        check_block->CreateInstruction(spv::OpArrayLength, {u32ype_id, array_length_id, output_buffer_variable_id_, 1});
 
-        const uint32_t less_than_equal_id = module_.TakeNextId();
-        const uint32_t bool_type_id = module_.type_manager_.GetTypeBool().Id();
+        const u32 less_than_equal_id = module_.TakeNextId();
+        const u32 bool_type_id = module_.type_manager_.GetTypeBool().Id();
         check_block->CreateInstruction(spv::OpULessThanEqual, {bool_type_id, less_than_equal_id, int_add_id, array_length_id});
 
-        const uint32_t merge_block_label_id = merge_block->GetLabelId();
+        const u32 merge_block_label_id = merge_block->GetLabelId();
         check_block->CreateInstruction(spv::OpSelectionMerge, {merge_block_label_id, spv::SelectionControlMaskNone});
 
-        const uint32_t store_block_label_id = store_block->GetLabelId();
+        const u32 store_block_label_id = store_block->GetLabelId();
         check_block->CreateInstruction(spv::OpBranchConditional, {less_than_equal_id, store_block_label_id, merge_block_label_id});
     }
 
     // Store how many 32-bit words
     {
-        const uint32_t int_add_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, zero_id});
+        const u32 int_add_id = module_.TakeNextId();
+        store_block->CreateInstruction(spv::OpIAdd, {u32ype_id, int_add_id, atomic_add_id, zero_id});
 
-        const uint32_t access_chain_id = module_.TakeNextId();
+        const u32 access_chain_id = module_.TakeNextId();
         store_block->CreateInstruction(spv::OpAccessChain,
                                        {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
 
@@ -416,25 +415,25 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
 
     // Store Shader Stage ID
     {
-        const uint32_t int_add_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, one_id});
+        const u32 int_add_id = module_.TakeNextId();
+        store_block->CreateInstruction(spv::OpIAdd, {u32ype_id, int_add_id, atomic_add_id, one_id});
 
-        const uint32_t access_chain_id = module_.TakeNextId();
+        const u32 access_chain_id = module_.TakeNextId();
         store_block->CreateInstruction(spv::OpAccessChain,
                                        {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
 
-        const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.shader_id_).Id();
+        const u32 shader_id = module_.type_manager_.GetConstantUInt32(module_.shader_id_).Id();
         store_block->CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
     }
 
     // Write a 32-bit word to the output buffer for each argument
-    const uint32_t argument_id_offset = 2;
-    for (uint32_t i = 0; i < argument_count; i++) {
-        const uint32_t int_add_id = module_.TakeNextId();
-        const uint32_t offset_id = module_.type_manager_.GetConstantUInt32(i + argument_id_offset).Id();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, offset_id});
+    const u32 argument_id_offset = 2;
+    for (u32 i = 0; i < argument_count; i++) {
+        const u32 int_add_id = module_.TakeNextId();
+        const u32 offset_id = module_.type_manager_.GetConstantUInt32(i + argument_id_offset).Id();
+        store_block->CreateInstruction(spv::OpIAdd, {u32ype_id, int_add_id, atomic_add_id, offset_id});
 
-        const uint32_t access_chain_id = module_.TakeNextId();
+        const u32 access_chain_id = module_.TakeNextId();
         store_block->CreateInstruction(spv::OpAccessChain,
                                        {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
 
@@ -542,19 +541,19 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
     struct ParamInfo {
         bool is_float = false;  // else int (don't attempt to validate unsigned vs signed here)
         bool is_64_bit = false;
-        uint32_t vector_size = 0;  // zero == scalar
+        u32 vector_size = 0;  // zero == scalar
         char modifier[32];
     };
 
     // where we find the first arugment in OpExtInst instruction
-    const uint32_t first_argument_offset = 6;
+    const u32 first_argument_offset = 6;
 
     if (target_instruction_->Length() < first_argument_offset) {
         module_.InternalError(tag, "OpExtInst in a invalid SPIR-V format and should have been caught in spirv-val");
         return false;
     }
 
-    uint32_t string_id = target_instruction_->Word(5);
+    u32 string_id = target_instruction_->Word(5);
     const char* op_string = nullptr;
     for (const auto& inst : module_.debug_source_) {
         if (inst->Opcode() == spv::OpString && inst->ResultId() == string_id) {
@@ -690,7 +689,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
     }
     if (!valid) return false;
 
-    const uint32_t argument_count = target_instruction_->Length() - first_argument_offset;
+    const u32 argument_count = target_instruction_->Length() - first_argument_offset;
     if (argument_count > param_infos.size()) {
         std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains only " + std::to_string(param_infos.size()) +
                               " modifiers, but " + std::to_string(argument_count) +
@@ -705,10 +704,10 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
         return false;
     }
 
-    const uint32_t count = std::min(argument_count, (uint32_t)param_infos.size());
-    for (uint32_t i = 0; i < count; i++) {
+    const u32 count = std::min(argument_count, (u32)param_infos.size());
+    for (u32 i = 0; i < count; i++) {
         const ParamInfo& param = param_infos[i];
-        const uint32_t argument_id = target_instruction_->Word(first_argument_offset + i);
+        const u32 argument_id = target_instruction_->Word(first_argument_offset + i);
 
         const Type* argument_type = nullptr;
         if (const Constant* constant = module_.type_manager_.FindConstantById(argument_id)) {
@@ -734,7 +733,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                 module_.InternalError(tag, err_msg.c_str());
                 return false;
             }
-            const uint32_t vector_size = argument_type->inst_.Word(3);
+            const u32 vector_size = argument_type->inst_.Word(3);
             if (vector_size != param.vector_size) {
                 std::string err_msg = "OpString \"" + std::string(op_string) + "\" contains a " +
                                       std::to_string(param.vector_size) + "-wide vector modifier \"" + param.modifier +

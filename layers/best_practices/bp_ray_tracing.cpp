@@ -31,14 +31,14 @@ bool BestPractices::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuff
 }
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts,
+    VkCommandBuffer commandBuffer, u32 infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkDeviceAddress* pIndirectDeviceAddresses, const u32* pIndirectStrides, const u32* const* ppMaxPrimitiveCounts,
     const ErrorObject& error_obj) const {
     return ValidateBuildAccelerationStructure(commandBuffer, error_obj.location);
 }
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresKHR(
-    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    VkCommandBuffer commandBuffer, u32 infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
     return ValidateBuildAccelerationStructure(commandBuffer, error_obj.location);
 }
@@ -59,12 +59,12 @@ bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBu
     return skip;
 }
 
-bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, u32 bindInfoCount,
                                                                      const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
+    for (u32 i = 0; i < bindInfoCount; i++) {
         auto as_state = Get<vvl::AccelerationStructureNV>(pBindInfos[i].accelerationStructure);
         ASSERT_AND_CONTINUE(as_state);
         if (!as_state->memory_requirements_checked) {

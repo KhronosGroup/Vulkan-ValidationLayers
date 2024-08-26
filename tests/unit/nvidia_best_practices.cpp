@@ -69,7 +69,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, TilingLinear) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
-    image_ci.extent = { 512, 512, 1 };
+    image_ci.extent = {512, 512, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -99,7 +99,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     // This should be VK_FORMAT_D24_UNORM_S8_UINT, but that's not a required format.
     image_ci.format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
-    image_ci.extent = { 512, 512, 1 };
+    image_ci.extent = {512, 512, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -112,7 +112,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, Depth32Format) {
         m_errorMonitor->Finish();
     }
 
-    VkFormat formats[] = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT };
+    VkFormat formats[] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT};
 
     for (VkFormat format : formats) {
         image_ci.format = format;
@@ -135,7 +135,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     general_queue_ci.queueCount = 1;
     general_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
-        const std::optional<uint32_t> familyIndex = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT);
+        const std::optional<u32> familyIndex = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_SPARSE_BINDING_BIT);
         if (!familyIndex) {
             GTEST_SKIP() << "Required queue families not present";
         }
@@ -146,8 +146,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     transfer_queue_ci.queueCount = 1;
     transfer_queue_ci.pQueuePriorities = &defaultQueuePriority;
     {
-        const std::optional<uint32_t> familyIndex = m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
-                                                                          VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
+        const std::optional<u32> familyIndex = m_device->QueueFamily(VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
+                                                                     VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT);
         if (!familyIndex) {
             GTEST_SKIP() << "Required queue families not present";
         }
@@ -158,7 +158,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
         general_queue_ci,
         transfer_queue_ci,
     };
-    uint32_t queue_family_indices[] = {
+    u32 queue_family_indices[] = {
         general_queue_ci.queueFamilyIndex,
         transfer_queue_ci.queueFamilyIndex,
     };
@@ -192,7 +192,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     ASSERT_NE(memory_requirements.memoryTypeBits, 0);
 
     // Find first valid bit, whatever it is
-    uint32_t memory_type_index = 0;
+    u32 memory_type_index = 0;
     while (((memory_requirements.memoryTypeBits >> memory_type_index) & 1) == 0) {
         ++memory_type_index;
     }
@@ -250,7 +250,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     vkt::Queue *graphics_queue = m_device->QueuesWithGraphicsCapability()[0];
 
     vkt::Queue *compute_queue = nullptr;
-    for (uint32_t i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
+    for (u32 i = 0; i < m_device->QueuesWithComputeCapability().size(); ++i) {
         auto cqi = m_device->QueuesWithComputeCapability()[i];
         if (cqi->family_index != graphics_queue->family_index) {
             compute_queue = cqi;
@@ -384,7 +384,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     ASSERT_NE(memory_requirements.memoryTypeBits, 0);
 
     // Find first valid bit, whatever it is
-    uint32_t memory_type_index = 0;
+    u32 memory_type_index = 0;
     while (((memory_requirements.memoryTypeBits >> memory_type_index) & 1) == 0) {
         ++memory_type_index;
     }
@@ -450,7 +450,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     ASSERT_NE(memory_requirements.memoryTypeBits, 0);
 
     // Find first valid bit, whatever it is
-    uint32_t memory_type_index = 0;
+    u32 memory_type_index = 0;
     while (((memory_requirements.memoryTypeBits >> memory_type_index) & 1) == 0) {
         ++memory_type_index;
     }
@@ -470,7 +470,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     m_errorMonitor->Finish();
 }
 
-static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorType type, uint32_t binding) {
+static VkDescriptorSetLayoutBinding CreateSingleDescriptorBinding(VkDescriptorType type, u32 binding) {
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = binding;
     layout_binding.descriptorType = type;
@@ -531,11 +531,11 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
     }
 
     VkDescriptorSetLayoutBinding large_bindings[] = {
-        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
-        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
     VkDescriptorSetLayoutBinding small_bindings[] = {
-        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
 
     VkDescriptorSetLayoutCreateInfo large_set_layout_ci = vku::InitStructHelper();
@@ -571,8 +571,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout)
     }
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
-{
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -913,7 +912,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
         vk::CmdEndRendering(cmd);
 
         VkClearDepthStencilValue ds_value{};
-        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1, &discard_barrier.subresourceRange);
+        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1,
+                                      &discard_barrier.subresourceRange);
 
         vk::CmdBeginRendering(cmd, &begin_rendering_info);
 
@@ -940,7 +940,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
 
         set_desired_failure_msg();
         VkClearDepthStencilValue ds_value{};
-        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1, &discard_barrier.subresourceRange);
+        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1,
+                                      &discard_barrier.subresourceRange);
         m_errorMonitor->VerifyFound();
     }
 
@@ -999,8 +1000,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
-{
+TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
@@ -1044,7 +1044,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
     clear.clearValue.color.float32[3] = 0.0f;
     clear.colorAttachment = 0;
 
-    auto set_clear_color = [&clear](const std::array<float, 4>& color) {
+    auto set_clear_color = [&clear](const std::array<float, 4> &color) {
         for (size_t i = 0; i < 4; ++i) {
             clear.clearValue.color.float32[i] = color[i];
         }

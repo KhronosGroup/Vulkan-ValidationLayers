@@ -38,7 +38,7 @@ void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const V
     if (pCommandBuffers) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& pool_command_buffers = pool_command_buffers_map[pAllocateInfo->commandPool];
-        for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
+        for (u32 index = 0; index < pAllocateInfo->commandBufferCount; index++) {
             command_pool_map.insert_or_assign(pCommandBuffers[index], pAllocateInfo->commandPool);
             CreateObject(pCommandBuffers[index]);
             pool_command_buffers.insert(pCommandBuffers[index]);
@@ -62,9 +62,10 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(VkDevice device, cons
         // Check whether any binding uses read_only
         bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
         if (!read_only) {
-            const auto* flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
+            const auto* flags_create_info =
+                vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
             if (flags_create_info) {
-                for (uint32_t i = 0; i < flags_create_info->bindingCount; ++i) {
+                for (u32 i = 0; i < flags_create_info->bindingCount; ++i) {
                     if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
                         read_only = true;
                         break;
@@ -91,7 +92,7 @@ void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const V
     if (VK_SUCCESS == record_obj.result) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& pool_descriptor_sets = pool_descriptor_sets_map[pAllocateInfo->descriptorPool];
-        for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
+        for (u32 index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
             CreateObject(pDescriptorSets[index0]);
             pool_descriptor_sets.insert(pDescriptorSets[index0]);
 
@@ -105,12 +106,12 @@ void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const V
     }
 }
 
-void ThreadSafety::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+void ThreadSafety::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, u32 descriptorSetCount,
                                                    const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
     StartWriteObject(descriptorPool, record_obj.location);
     if (pDescriptorSets) {
-        for (uint32_t index = 0; index < descriptorSetCount; index++) {
+        for (u32 index = 0; index < descriptorSetCount; index++) {
             StartWriteObject(pDescriptorSets[index], record_obj.location);
         }
     }
@@ -118,12 +119,12 @@ void ThreadSafety::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptor
     // Host access to each member of pDescriptorSets must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+void ThreadSafety::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, u32 descriptorSetCount,
                                                     const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishWriteObject(descriptorPool, record_obj.location);
     if (pDescriptorSets) {
-        for (uint32_t index = 0; index < descriptorSetCount; index++) {
+        for (u32 index = 0; index < descriptorSetCount; index++) {
             FinishWriteObject(pDescriptorSets[index], record_obj.location);
         }
     }
@@ -133,7 +134,7 @@ void ThreadSafety::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescripto
     if (VK_SUCCESS == record_obj.result) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& pool_descriptor_sets = pool_descriptor_sets_map[descriptorPool];
-        for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
+        for (u32 index0 = 0; index0 < descriptorSetCount; index0++) {
             auto descriptor_set = pDescriptorSets[index0];
             DestroyObject(descriptor_set);
             pool_descriptor_sets.erase(descriptor_set);
@@ -218,12 +219,12 @@ bool ThreadSafety::DsReadOnly(VkDescriptorSet set) const {
     return false;
 }
 
-void ThreadSafety::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                     const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+void ThreadSafety::PreCallRecordUpdateDescriptorSets(VkDevice device, u32 descriptorWriteCount,
+                                                     const VkWriteDescriptorSet* pDescriptorWrites, u32 descriptorCopyCount,
                                                      const VkCopyDescriptorSet* pDescriptorCopies, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
     if (pDescriptorWrites) {
-        for (uint32_t index = 0; index < descriptorWriteCount; index++) {
+        for (u32 index = 0; index < descriptorWriteCount; index++) {
             auto dstSet = pDescriptorWrites[index].dstSet;
             bool read_only = DsReadOnly(dstSet);
             if (read_only) {
@@ -234,7 +235,7 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t d
         }
     }
     if (pDescriptorCopies) {
-        for (uint32_t index = 0; index < descriptorCopyCount; index++) {
+        for (u32 index = 0; index < descriptorCopyCount; index++) {
             auto dstSet = pDescriptorCopies[index].dstSet;
             bool read_only = DsReadOnly(dstSet);
             if (read_only) {
@@ -249,13 +250,13 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t d
     // Host access to pDescriptorCopies[].dstSet must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                      const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+void ThreadSafety::PostCallRecordUpdateDescriptorSets(VkDevice device, u32 descriptorWriteCount,
+                                                      const VkWriteDescriptorSet* pDescriptorWrites, u32 descriptorCopyCount,
                                                       const VkCopyDescriptorSet* pDescriptorCopies,
                                                       const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     if (pDescriptorWrites) {
-        for (uint32_t index = 0; index < descriptorWriteCount; index++) {
+        for (u32 index = 0; index < descriptorWriteCount; index++) {
             auto dstSet = pDescriptorWrites[index].dstSet;
             bool read_only = DsReadOnly(dstSet);
             if (read_only) {
@@ -266,7 +267,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSets(VkDevice device, uint32_t 
         }
     }
     if (pDescriptorCopies) {
-        for (uint32_t index = 0; index < descriptorCopyCount; index++) {
+        for (u32 index = 0; index < descriptorCopyCount; index++) {
             auto dstSet = pDescriptorCopies[index].dstSet;
             bool read_only = DsReadOnly(dstSet);
             if (read_only) {
@@ -341,7 +342,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice dev
     // Host access to descriptorSet must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, u32 commandBufferCount,
                                                    const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     const bool lockCommandPool = false;  // pool is already directly locked
     StartReadObjectParentInstance(device, record_obj.location);
@@ -353,7 +354,7 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
         // These updates need to be done before calling down to the driver.
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& pool_command_buffers = pool_command_buffers_map[commandPool];
-        for (uint32_t index = 0; index < commandBufferCount; index++) {
+        for (u32 index = 0; index < commandBufferCount; index++) {
             StartWriteObject(pCommandBuffers[index], record_obj.location, lockCommandPool);
             FinishWriteObject(pCommandBuffers[index], record_obj.location, lockCommandPool);
             DestroyObject(pCommandBuffers[index]);
@@ -363,7 +364,7 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
     }
 }
 
-void ThreadSafety::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+void ThreadSafety::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, u32 commandBufferCount,
                                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishWriteObject(commandPool, record_obj.location);
@@ -432,20 +433,20 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
 
 // GetSwapchainImages can return a non-zero count with a NULL pSwapchainImages pointer.  Let's avoid crashes by ignoring
 // pSwapchainImages.
-void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, u32* pSwapchainImageCount,
                                                       VkImage* pSwapchainImages, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
     StartReadObject(swapchain, record_obj.location);
 }
 
-void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, u32* pSwapchainImageCount,
                                                        VkImage* pSwapchainImages, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(swapchain, record_obj.location);
     if (pSwapchainImages != nullptr) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& wrapped_swapchain_image_handles = swapchain_wrapped_image_handle_map[swapchain];
-        for (uint32_t i = static_cast<uint32_t>(wrapped_swapchain_image_handles.size()); i < *pSwapchainImageCount; i++) {
+        for (u32 i = static_cast<u32>(wrapped_swapchain_image_handles.size()); i < *pSwapchainImageCount; i++) {
             CreateObject(pSwapchainImages[i]);
             wrapped_swapchain_image_handles.emplace_back(pSwapchainImages[i]);
         }
@@ -495,12 +496,12 @@ void ThreadSafety::PostCallRecordDestroyDevice(VkDevice device, const VkAllocati
     device_queues_map[device].clear();
 }
 
-void ThreadSafety::PreCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
+void ThreadSafety::PreCallRecordGetDeviceQueue(VkDevice device, u32 queueFamilyIndex, u32 queueIndex, VkQueue* pQueue,
                                                const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
 }
 
-void ThreadSafety::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
+void ThreadSafety::PostCallRecordGetDeviceQueue(VkDevice device, u32 queueFamilyIndex, u32 queueIndex, VkQueue* pQueue,
                                                 const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     CreateObject(*pQueue);
@@ -521,100 +522,98 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDevice
     device_queues_map[device].insert(*pQueue);
 }
 
-void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                        VkDisplayPropertiesKHR* pProperties,
                                                                        const RecordObject& record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
-        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+        for (u32 i = 0; i < *pPropertyCount; ++i) {
             CreateObjectParentInstance(pProperties[i].display);
         }
     }
 }
 
-void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                         VkDisplayProperties2KHR* pProperties,
                                                                         const RecordObject& record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
-        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+        for (u32 i = 0; i < *pPropertyCount; ++i) {
             CreateObjectParentInstance(pProperties[i].displayProperties.display);
         }
     }
 }
 
-void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                                            uint32_t* pPropertyCount,
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                             VkDisplayPlanePropertiesKHR* pProperties,
                                                                             const RecordObject& record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
-        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+        for (u32 i = 0; i < *pPropertyCount; ++i) {
             CreateObjectParentInstance(pProperties[i].currentDisplay);
         }
     }
 }
 
-void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                             uint32_t* pPropertyCount,
+void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, u32* pPropertyCount,
                                                                              VkDisplayPlaneProperties2KHR* pProperties,
                                                                              const RecordObject& record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties) {
-        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+        for (u32 i = 0; i < *pPropertyCount; ++i) {
             CreateObjectParentInstance(pProperties[i].displayPlaneProperties.currentDisplay);
         }
     }
 }
 
-void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                    uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
+void ThreadSafety::PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, u32 planeIndex,
+                                                                    u32* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                     const RecordObject& record_obj) {
     // Nothing to do for this pre-call function
 }
 
-void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                     uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
+void ThreadSafety::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, u32 planeIndex,
+                                                                     u32* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                      const RecordObject& record_obj) {
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pDisplays) {
-        for (uint32_t index = 0; index < *pDisplayCount; index++) {
+        for (u32 index = 0; index < *pDisplayCount; index++) {
             CreateObjectParentInstance(pDisplays[index]);
         }
     }
 }
 
 void ThreadSafety::PreCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                            uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
+                                                            u32* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
                                                             const RecordObject& record_obj) {
     StartReadObjectParentInstance(display, record_obj.location);
 }
 
 void ThreadSafety::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                             uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
+                                                             u32* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
                                                              const RecordObject& record_obj) {
     FinishReadObjectParentInstance(display, record_obj.location);
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties != nullptr) {
-        for (uint32_t index = 0; index < *pPropertyCount; index++) {
+        for (u32 index = 0; index < *pPropertyCount; index++) {
             CreateObject(pProperties[index].displayMode);
         }
     }
 }
 
 void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                             uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
+                                                             u32* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
                                                              const RecordObject& record_obj) {
     StartReadObjectParentInstance(display, record_obj.location);
 }
 
 void ThreadSafety::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                              uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
+                                                              u32* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
                                                               const RecordObject& record_obj) {
     FinishReadObjectParentInstance(display, record_obj.location);
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     if (pProperties != nullptr) {
-        for (uint32_t index = 0; index < *pPropertyCount; index++) {
+        for (u32 index = 0; index < *pPropertyCount; index++) {
             CreateObject(pProperties[index].displayModeProperties.displayMode);
         }
     }
@@ -644,7 +643,7 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physi
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-void ThreadSafety::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
+void ThreadSafety::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, i32 drmFd, u32 connectorId,
                                                   VkDisplayKHR* display, const RecordObject& record_obj) {
     if ((record_obj.result != VK_SUCCESS) || (display == nullptr)) return;
     CreateObjectParentInstance(*display);
@@ -688,7 +687,7 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObj
 }
 
 void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                             VkPipelineCache pipelineCache, u32 createInfoCount,
                                                              const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                              const RecordObject& record_obj) {
@@ -698,7 +697,7 @@ void ThreadSafety::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
 }
 
 void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                              VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                              VkPipelineCache pipelineCache, u32 createInfoCount,
                                                               const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                               const RecordObject& record_obj) {
@@ -744,7 +743,7 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
     } else {
         unlock_objects();
         if (pPipelines) {
-            for (uint32_t index = 0; index < createInfoCount; index++) {
+            for (u32 index = 0; index < createInfoCount; index++) {
                 if (!pPipelines[index]) continue;
                 CreateObject(pPipelines[index]);
             }
@@ -755,14 +754,14 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
 void ThreadSafety::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                 const RecordObject& record_obj) {
     StartWriteObject(queue, record_obj.location);
-    uint32_t waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+    u32 waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
     if (pPresentInfo->pWaitSemaphores != nullptr) {
-        for (uint32_t index = 0; index < waitSemaphoreCount; index++) {
+        for (u32 index = 0; index < waitSemaphoreCount; index++) {
             StartReadObject(pPresentInfo->pWaitSemaphores[index], record_obj.location);
         }
     }
     if (pPresentInfo->pSwapchains != nullptr) {
-        for (uint32_t index = 0; index < pPresentInfo->swapchainCount; ++index) {
+        for (u32 index = 0; index < pPresentInfo->swapchainCount; ++index) {
             StartWriteObject(pPresentInfo->pSwapchains[index], record_obj.location);
         }
     }
@@ -771,20 +770,20 @@ void ThreadSafety::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
 void ThreadSafety::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                  const RecordObject& record_obj) {
     FinishWriteObject(queue, record_obj.location);
-    uint32_t waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+    u32 waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
     if (pPresentInfo->pWaitSemaphores != nullptr) {
-        for (uint32_t index = 0; index < waitSemaphoreCount; index++) {
+        for (u32 index = 0; index < waitSemaphoreCount; index++) {
             FinishReadObject(pPresentInfo->pWaitSemaphores[index], record_obj.location);
         }
     }
     if (pPresentInfo->pSwapchains != nullptr) {
-        for (uint32_t index = 0; index < pPresentInfo->swapchainCount; ++index) {
+        for (u32 index = 0; index < pPresentInfo->swapchainCount; ++index) {
             FinishWriteObject(pPresentInfo->pSwapchains[index], record_obj.location);
         }
     }
 }
 
-void ThreadSafety::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
+void ThreadSafety::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, u64 presentId, u64 timeout,
                                                   const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
 
@@ -800,7 +799,7 @@ void ThreadSafety::PreCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKH
     // in a subtle way (threading!). Ratio risk/value looks too high now.
 }
 
-void ThreadSafety::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
+void ThreadSafety::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, u64 presentId, u64 timeout,
                                                    const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
 }

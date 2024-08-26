@@ -19,9 +19,9 @@
 #include "generated/enum_flag_bits.h"
 
 namespace sync_utils {
-static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2KHR) * 8;
+static constexpr u32 kNumPipelineStageBits = sizeof(VkPipelineStageFlags2KHR) * 8;
 
-VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions& device_extensions) {
+VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions &device_extensions) {
     VkPipelineStageFlags2KHR result = 0;
     if (!features.geometryShader) {
         result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
@@ -166,15 +166,15 @@ VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_
 // helper to extract the union of the stage masks in all of the barriers
 ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
     ExecScopes result{};
-    for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
+    for (u32 i = 0; i < dep_info.memoryBarrierCount; i++) {
         result.src |= dep_info.pMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pMemoryBarriers[i].dstStageMask;
     }
-    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+    for (u32 i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         result.src |= dep_info.pBufferMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pBufferMemoryBarriers[i].dstStageMask;
     }
-    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+    for (u32 i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
         result.src |= dep_info.pImageMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pImageMemoryBarriers[i].dstStageMask;
     }

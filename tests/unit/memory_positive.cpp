@@ -49,7 +49,7 @@ TEST_F(PositiveMemory, MapMemory2) {
     VkMemoryUnmapInfoKHR unmap_info = vku::InitStructHelper();
     unmap_info.memory = memory;
 
-    uint32_t *pData = nullptr;
+    u32 *pData = nullptr;
     VkResult err = vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_TRUE(pData != nullptr);
@@ -148,7 +148,7 @@ TEST_F(PositiveMemory, MapMemoryPlaced) {
     /* We unmapped with RESERVE above so this should be different */
     ASSERT_NE(pData, addr);
 
-    ASSERT_EQ(static_cast<uint8_t *>(pData)[0], 0x5c);
+    ASSERT_EQ(static_cast<u8 *>(pData)[0], 0x5c);
 
     unmap_info.flags = 0;
     res = vk::UnmapMemory2KHR(device(), &unmap_info);
@@ -284,7 +284,7 @@ TEST_F(PositiveMemory, NonCoherentMapping) {
         "Ensure that validations handling of non-coherent memory mapping while using VK_WHOLE_SIZE does not cause access "
         "violations");
     VkResult err;
-    uint8_t *pData;
+    u8 *pData;
     RETURN_IF_SKIP(Init());
 
     VkMemoryRequirements mem_reqs;
@@ -377,8 +377,8 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 
-    uint32_t memory_index = std::numeric_limits<uint32_t>::max();
-    for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
+    u32 memory_index = std::numeric_limits<u32>::max();
+    for (u32 i = 0; i < memory_info.memoryTypeCount; ++i) {
         if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
             if (memory_info.memoryHeaps[memory_info.memoryTypes[i].heapIndex].flags & VK_MEMORY_HEAP_MULTI_INSTANCE_BIT) {
                 memory_index = i;
@@ -387,7 +387,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
         }
     }
 
-    if (memory_index == std::numeric_limits<uint32_t>::max()) {
+    if (memory_index == std::numeric_limits<u32>::max()) {
         GTEST_SKIP() << "Did not host visible memory from memory heap with VK_MEMORY_HEAP_MULTI_INSTANCE_BIT bit";
     }
 
@@ -397,7 +397,7 @@ TEST_F(PositiveMemory, MappingWithMultiInstanceHeapFlag) {
 
     vkt::DeviceMemory memory(*m_device, mem_alloc);
 
-    uint32_t *pData;
+    u32 *pData;
     vk::MapMemory(device(), memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     vk::UnmapMemory(device(), memory);
 }
@@ -424,7 +424,7 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
 
     // Create an image object, allocate memory, bind memory, and destroy the object
     auto worker_thread = [&]() {
-        for (uint32_t i = 0; i < 1000; ++i) {
+        for (u32 i = 0; i < 1000; ++i) {
             vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
             VkMemoryRequirements mem_reqs;

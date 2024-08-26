@@ -149,7 +149,7 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDevices(VkInstance instance
                                                              VkPhysicalDevice* pPhysicalDevices, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pPhysicalDevices) {
-        for (uint32_t index = 0; index < *pPhysicalDeviceCount; index++) {
+        for (u32 index = 0; index < *pPhysicalDeviceCount; index++) {
             CreateObject(pPhysicalDevices[index], kVulkanObjectTypePhysicalDevice, nullptr,
                          record_obj.location.dot(Field::pPhysicalDevices, index));
         }
@@ -192,11 +192,11 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
     // Checked by chassis: queue: "VUID-vkQueueSubmit-queue-parameter"
     // Checked by chassis: queue: "VUID-vkQueueSubmit-commonparent"
     if (pSubmits) {
-        for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
+        for (u32 index0 = 0; index0 < submitCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pSubmits, index0);
 
             if ((pSubmits[index0].waitSemaphoreCount > 0) && (pSubmits[index0].pWaitSemaphores)) {
-                for (uint32_t index1 = 0; index1 < pSubmits[index0].waitSemaphoreCount; ++index1) {
+                for (u32 index1 = 0; index1 < pSubmits[index0].waitSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pSubmits[index0].pWaitSemaphores[index1], kVulkanObjectTypeSemaphore, false,
                                            "VUID-VkSubmitInfo-pWaitSemaphores-parameter", "VUID-VkSubmitInfo-commonparent",
                                            index0_loc.dot(Field::pWaitSemaphores, index1));
@@ -204,7 +204,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
             }
 
             if ((pSubmits[index0].commandBufferCount > 0) && (pSubmits[index0].pCommandBuffers)) {
-                for (uint32_t index1 = 0; index1 < pSubmits[index0].commandBufferCount; ++index1) {
+                for (u32 index1 = 0; index1 < pSubmits[index0].commandBufferCount; ++index1) {
                     skip |= ValidateObject(pSubmits[index0].pCommandBuffers[index1], kVulkanObjectTypeCommandBuffer, false,
                                            "VUID-VkSubmitInfo-pCommandBuffers-parameter", "VUID-VkSubmitInfo-commonparent",
                                            index0_loc.dot(Field::pCommandBuffers, index1));
@@ -212,7 +212,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
             }
 
             if ((pSubmits[index0].signalSemaphoreCount > 0) && (pSubmits[index0].pSignalSemaphores)) {
-                for (uint32_t index1 = 0; index1 < pSubmits[index0].signalSemaphoreCount; ++index1) {
+                for (u32 index1 = 0; index1 < pSubmits[index0].signalSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pSubmits[index0].pSignalSemaphores[index1], kVulkanObjectTypeSemaphore, false,
                                            "VUID-VkSubmitInfo-pSignalSemaphores-parameter", "VUID-VkSubmitInfo-commonparent",
                                            index0_loc.dot(Field::pSignalSemaphores, index1));
@@ -222,7 +222,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
-                    for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
                                                "VUID-VkFrameBoundaryEXT-pImages-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pImages, index2));
@@ -230,7 +230,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 }
 
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
-                    for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                                "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pBuffers, index2));
@@ -243,7 +243,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-commonparent",
@@ -252,7 +252,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 }
 
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-commonparent",
@@ -265,7 +265,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-commonparent",
@@ -274,7 +274,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitC
                 }
 
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pReleaseSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-commonparent",
@@ -386,7 +386,7 @@ bool ObjectLifetimes::PreCallValidateFlushMappedMemoryRanges(VkDevice device, ui
     bool skip = false;
     // Checked by chassis: device: "VUID-vkFlushMappedMemoryRanges-device-parameter"
     if (pMemoryRanges) {
-        for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
+        for (u32 index0 = 0; index0 < memoryRangeCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pMemoryRanges, index0);
             skip |= ValidateObject(pMemoryRanges[index0].memory, kVulkanObjectTypeDeviceMemory, false,
                                    "VUID-VkMappedMemoryRange-memory-parameter", "UNASSIGNED-VkMappedMemoryRange-memory-device",
@@ -403,7 +403,7 @@ bool ObjectLifetimes::PreCallValidateInvalidateMappedMemoryRanges(VkDevice devic
     bool skip = false;
     // Checked by chassis: device: "VUID-vkInvalidateMappedMemoryRanges-device-parameter"
     if (pMemoryRanges) {
-        for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
+        for (u32 index0 = 0; index0 < memoryRangeCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pMemoryRanges, index0);
             skip |= ValidateObject(pMemoryRanges[index0].memory, kVulkanObjectTypeDeviceMemory, false,
                                    "VUID-VkMappedMemoryRange-memory-parameter", "UNASSIGNED-VkMappedMemoryRange-memory-device",
@@ -492,24 +492,24 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
     // Checked by chassis: queue: "VUID-vkQueueBindSparse-queue-parameter"
     // Checked by chassis: queue: "VUID-vkQueueBindSparse-commonparent"
     if (pBindInfo) {
-        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfo, index0);
 
             if ((pBindInfo[index0].waitSemaphoreCount > 0) && (pBindInfo[index0].pWaitSemaphores)) {
-                for (uint32_t index1 = 0; index1 < pBindInfo[index0].waitSemaphoreCount; ++index1) {
+                for (u32 index1 = 0; index1 < pBindInfo[index0].waitSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pBindInfo[index0].pWaitSemaphores[index1], kVulkanObjectTypeSemaphore, false,
                                            "VUID-VkBindSparseInfo-pWaitSemaphores-parameter", "VUID-VkBindSparseInfo-commonparent",
                                            index0_loc.dot(Field::pWaitSemaphores, index1));
                 }
             }
             if (pBindInfo[index0].pBufferBinds) {
-                for (uint32_t index1 = 0; index1 < pBindInfo[index0].bufferBindCount; ++index1) {
+                for (u32 index1 = 0; index1 < pBindInfo[index0].bufferBindCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pBufferBinds, index1);
                     skip |= ValidateObject(pBindInfo[index0].pBufferBinds[index1].buffer, kVulkanObjectTypeBuffer, false,
                                            "VUID-VkSparseBufferMemoryBindInfo-buffer-parameter",
                                            "UNASSIGNED-VkSparseBufferMemoryBindInfo-buffer-parent", index1_loc.dot(Field::buffer));
                     if (pBindInfo[index0].pBufferBinds[index1].pBinds) {
-                        for (uint32_t index2 = 0; index2 < pBindInfo[index0].pBufferBinds[index1].bindCount; ++index2) {
+                        for (u32 index2 = 0; index2 < pBindInfo[index0].pBufferBinds[index1].bindCount; ++index2) {
                             [[maybe_unused]] const Location index2_loc = index1_loc.dot(Field::pBinds, index2);
                             skip |= ValidateObject(pBindInfo[index0].pBufferBinds[index1].pBinds[index2].memory,
                                                    kVulkanObjectTypeDeviceMemory, true, "VUID-VkSparseMemoryBind-memory-parameter",
@@ -519,14 +519,14 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                 }
             }
             if (pBindInfo[index0].pImageOpaqueBinds) {
-                for (uint32_t index1 = 0; index1 < pBindInfo[index0].imageOpaqueBindCount; ++index1) {
+                for (u32 index1 = 0; index1 < pBindInfo[index0].imageOpaqueBindCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pImageOpaqueBinds, index1);
                     skip |=
                         ValidateObject(pBindInfo[index0].pImageOpaqueBinds[index1].image, kVulkanObjectTypeImage, false,
                                        "VUID-VkSparseImageOpaqueMemoryBindInfo-image-parameter",
                                        "UNASSIGNED-VkSparseImageOpaqueMemoryBindInfo-image-parent", index1_loc.dot(Field::image));
                     if (pBindInfo[index0].pImageOpaqueBinds[index1].pBinds) {
-                        for (uint32_t index2 = 0; index2 < pBindInfo[index0].pImageOpaqueBinds[index1].bindCount; ++index2) {
+                        for (u32 index2 = 0; index2 < pBindInfo[index0].pImageOpaqueBinds[index1].bindCount; ++index2) {
                             [[maybe_unused]] const Location index2_loc = index1_loc.dot(Field::pBinds, index2);
                             skip |= ValidateObject(pBindInfo[index0].pImageOpaqueBinds[index1].pBinds[index2].memory,
                                                    kVulkanObjectTypeDeviceMemory, true, "VUID-VkSparseMemoryBind-memory-parameter",
@@ -536,13 +536,13 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                 }
             }
             if (pBindInfo[index0].pImageBinds) {
-                for (uint32_t index1 = 0; index1 < pBindInfo[index0].imageBindCount; ++index1) {
+                for (u32 index1 = 0; index1 < pBindInfo[index0].imageBindCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pImageBinds, index1);
                     skip |= ValidateObject(pBindInfo[index0].pImageBinds[index1].image, kVulkanObjectTypeImage, false,
                                            "VUID-VkSparseImageMemoryBindInfo-image-parameter",
                                            "UNASSIGNED-VkSparseImageMemoryBindInfo-image-parent", index1_loc.dot(Field::image));
                     if (pBindInfo[index0].pImageBinds[index1].pBinds) {
-                        for (uint32_t index2 = 0; index2 < pBindInfo[index0].pImageBinds[index1].bindCount; ++index2) {
+                        for (u32 index2 = 0; index2 < pBindInfo[index0].pImageBinds[index1].bindCount; ++index2) {
                             [[maybe_unused]] const Location index2_loc = index1_loc.dot(Field::pBinds, index2);
                             skip |=
                                 ValidateObject(pBindInfo[index0].pImageBinds[index1].pBinds[index2].memory,
@@ -554,7 +554,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
             }
 
             if ((pBindInfo[index0].signalSemaphoreCount > 0) && (pBindInfo[index0].pSignalSemaphores)) {
-                for (uint32_t index1 = 0; index1 < pBindInfo[index0].signalSemaphoreCount; ++index1) {
+                for (u32 index1 = 0; index1 < pBindInfo[index0].signalSemaphoreCount; ++index1) {
                     skip |= ValidateObject(pBindInfo[index0].pSignalSemaphores[index1], kVulkanObjectTypeSemaphore, false,
                                            "VUID-VkBindSparseInfo-pSignalSemaphores-parameter",
                                            "VUID-VkBindSparseInfo-commonparent", index0_loc.dot(Field::pSignalSemaphores, index1));
@@ -564,7 +564,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
-                    for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
                                                "VUID-VkFrameBoundaryEXT-pImages-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pImages, index2));
@@ -572,7 +572,7 @@ bool ObjectLifetimes::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bin
                 }
 
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
-                    for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                                "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pBuffers, index2));
@@ -620,7 +620,7 @@ bool ObjectLifetimes::PreCallValidateResetFences(VkDevice device, uint32_t fence
     // Checked by chassis: device: "VUID-vkResetFences-device-parameter"
 
     if ((fenceCount > 0) && (pFences)) {
-        for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
+        for (u32 index0 = 0; index0 < fenceCount; ++index0) {
             skip |= ValidateObject(pFences[index0], kVulkanObjectTypeFence, false, "VUID-vkResetFences-pFences-parameter",
                                    "VUID-vkResetFences-pFences-parent", error_obj.location.dot(Field::pFences, index0));
         }
@@ -644,7 +644,7 @@ bool ObjectLifetimes::PreCallValidateWaitForFences(VkDevice device, uint32_t fen
     // Checked by chassis: device: "VUID-vkWaitForFences-device-parameter"
 
     if ((fenceCount > 0) && (pFences)) {
-        for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
+        for (u32 index0 = 0; index0 < fenceCount; ++index0) {
             skip |= ValidateObject(pFences[index0], kVulkanObjectTypeFence, false, "VUID-vkWaitForFences-pFences-parameter",
                                    "VUID-vkWaitForFences-pFences-parent", error_obj.location.dot(Field::pFences, index0));
         }
@@ -1059,7 +1059,7 @@ bool ObjectLifetimes::PreCallValidateMergePipelineCaches(VkDevice device, VkPipe
                            "VUID-vkMergePipelineCaches-dstCache-parent", error_obj.location.dot(Field::dstCache));
 
     if ((srcCacheCount > 0) && (pSrcCaches)) {
-        for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
+        for (u32 index0 = 0; index0 < srcCacheCount; ++index0) {
             skip |= ValidateObject(
                 pSrcCaches[index0], kVulkanObjectTypePipelineCache, false, "VUID-vkMergePipelineCaches-pSrcCaches-parameter",
                 "VUID-vkMergePipelineCaches-pSrcCaches-parent", error_obj.location.dot(Field::pSrcCaches, index0));
@@ -1080,10 +1080,10 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                            "VUID-vkCreateGraphicsPipelines-pipelineCache-parameter",
                            "VUID-vkCreateGraphicsPipelines-pipelineCache-parent", error_obj.location.dot(Field::pipelineCache));
     if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
             if (pCreateInfos[index0].pStages) {
-                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
+                for (u32 index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pStages, index1);
                     skip |=
                         ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
@@ -1109,7 +1109,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkGraphicsPipelineShaderGroupsCreateInfoNV);
 
                 if ((pNext->pipelineCount > 0) && (pNext->pPipelines)) {
-                    for (uint32_t index2 = 0; index2 < pNext->pipelineCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->pipelineCount; ++index2) {
                         skip |= ValidateObject(pNext->pPipelines[index2], kVulkanObjectTypePipeline, false,
                                                "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parameter",
                                                "UNASSIGNED-VkGraphicsPipelineShaderGroupsCreateInfoNV-pPipelines-parent",
@@ -1121,7 +1121,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkPipelineBinaryInfoKHR);
 
                 if ((pNext->binaryCount > 0) && (pNext->pPipelineBinaries)) {
-                    for (uint32_t index2 = 0; index2 < pNext->binaryCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->binaryCount; ++index2) {
                         skip |= ValidateObject(pNext->pPipelineBinaries[index2], kVulkanObjectTypePipelineBinaryKHR, false,
                                                "VUID-VkPipelineBinaryInfoKHR-pPipelineBinaries-parameter",
                                                "UNASSIGNED-VkPipelineBinaryInfoKHR-pPipelineBinaries-parent",
@@ -1134,7 +1134,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, Vk
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR);
 
                 if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
-                    for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->libraryCount; ++index2) {
                         skip |= ValidateObject(pNext->pLibraries[index2], kVulkanObjectTypePipeline, false,
                                                "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter",
                                                "UNASSIGNED-VkPipelineLibraryCreateInfoKHR-pLibraries-parent",
@@ -1159,7 +1159,7 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkP
         ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true, "VUID-vkCreateComputePipelines-pipelineCache-parameter",
                        "VUID-vkCreateComputePipelines-pipelineCache-parent", error_obj.location.dot(Field::pipelineCache));
     if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
             [[maybe_unused]] const Location stage_loc = index0_loc.dot(Field::stage);
             skip |= ValidateObject(pCreateInfos[index0].stage.module, kVulkanObjectTypeShaderModule, true,
@@ -1184,7 +1184,7 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(VkDevice device, VkP
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkPipelineBinaryInfoKHR);
 
                 if ((pNext->binaryCount > 0) && (pNext->pPipelineBinaries)) {
-                    for (uint32_t index2 = 0; index2 < pNext->binaryCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->binaryCount; ++index2) {
                         skip |= ValidateObject(pNext->pPipelineBinaries[index2], kVulkanObjectTypePipelineBinaryKHR, false,
                                                "VUID-VkPipelineBinaryInfoKHR-pPipelineBinaries-parameter",
                                                "UNASSIGNED-VkPipelineBinaryInfoKHR-pPipelineBinaries-parent",
@@ -1212,7 +1212,7 @@ void ObjectLifetimes::PostCallRecordCreateComputePipelines(VkDevice device, VkPi
                                                            const RecordObject& record_obj) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
                          record_obj.location.dot(Field::pPipelines, index));
@@ -1241,7 +1241,7 @@ bool ObjectLifetimes::PreCallValidateCreatePipelineLayout(VkDevice device, const
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
 
         if ((pCreateInfo->setLayoutCount > 0) && (pCreateInfo->pSetLayouts)) {
-            for (uint32_t index1 = 0; index1 < pCreateInfo->setLayoutCount; ++index1) {
+            for (u32 index1 = 0; index1 < pCreateInfo->setLayoutCount; ++index1) {
                 skip |= ValidateObject(pCreateInfo->pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, true,
                                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
                                        "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
@@ -1500,7 +1500,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer comma
                            "VUID-vkCmdBindDescriptorSets-commonparent", error_obj.location.dot(Field::layout));
 
     if ((descriptorSetCount > 0) && (pDescriptorSets)) {
-        for (uint32_t index0 = 0; index0 < descriptorSetCount; ++index0) {
+        for (u32 index0 = 0; index0 < descriptorSetCount; ++index0) {
             skip |=
                 ValidateObject(pDescriptorSets[index0], kVulkanObjectTypeDescriptorSet, true,
                                "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter",
@@ -1530,7 +1530,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer comman
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindVertexBuffers-commonparent"
 
     if ((bindingCount > 0) && (pBuffers)) {
-        for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindingCount; ++index0) {
             skip |=
                 ValidateObject(pBuffers[index0], kVulkanObjectTypeBuffer, true, "VUID-vkCmdBindVertexBuffers-pBuffers-parameter",
                                "VUID-vkCmdBindVertexBuffers-commonparent", error_obj.location.dot(Field::pBuffers, index0));
@@ -1752,13 +1752,13 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents(
     // Checked by chassis: commandBuffer: "VUID-vkCmdWaitEvents-commonparent"
 
     if ((eventCount > 0) && (pEvents)) {
-        for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+        for (u32 index0 = 0; index0 < eventCount; ++index0) {
             skip |= ValidateObject(pEvents[index0], kVulkanObjectTypeEvent, false, "VUID-vkCmdWaitEvents-pEvents-parameter",
                                    "VUID-vkCmdWaitEvents-commonparent", error_obj.location.dot(Field::pEvents, index0));
         }
     }
     if (pBufferMemoryBarriers) {
-        for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
+        for (u32 index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBufferMemoryBarriers, index0);
             skip |= ValidateObject(pBufferMemoryBarriers[index0].buffer, kVulkanObjectTypeBuffer, false,
                                    "VUID-VkBufferMemoryBarrier-buffer-parameter",
@@ -1766,7 +1766,7 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents(
         }
     }
     if (pImageMemoryBarriers) {
-        for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
+        for (u32 index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pImageMemoryBarriers, index0);
             skip |= ValidateObject(pImageMemoryBarriers[index0].image, kVulkanObjectTypeImage, false,
                                    "VUID-VkImageMemoryBarrier-image-parameter",
@@ -1785,7 +1785,7 @@ bool ObjectLifetimes::PreCallValidateCmdPipelineBarrier(
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdPipelineBarrier-commandBuffer-parameter"
     if (pBufferMemoryBarriers) {
-        for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
+        for (u32 index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBufferMemoryBarriers, index0);
             skip |= ValidateObject(pBufferMemoryBarriers[index0].buffer, kVulkanObjectTypeBuffer, false,
                                    "VUID-VkBufferMemoryBarrier-buffer-parameter",
@@ -1793,7 +1793,7 @@ bool ObjectLifetimes::PreCallValidateCmdPipelineBarrier(
         }
     }
     if (pImageMemoryBarriers) {
-        for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
+        for (u32 index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pImageMemoryBarriers, index0);
             skip |= ValidateObject(pImageMemoryBarriers[index0].image, kVulkanObjectTypeImage, false,
                                    "VUID-VkImageMemoryBarrier-image-parameter",
@@ -1892,7 +1892,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandB
             [[maybe_unused]] const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
-                for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->attachmentCount; ++index2) {
                     skip |=
                         ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
                                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter",
@@ -1919,7 +1919,7 @@ bool ObjectLifetimes::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandB
     // Checked by chassis: commandBuffer: "VUID-vkCmdExecuteCommands-commonparent"
 
     if ((commandBufferCount > 0) && (pCommandBuffers)) {
-        for (uint32_t index0 = 0; index0 < commandBufferCount; ++index0) {
+        for (u32 index0 = 0; index0 < commandBufferCount; ++index0) {
             skip |= ValidateObject(pCommandBuffers[index0], kVulkanObjectTypeCommandBuffer, false,
                                    "VUID-vkCmdExecuteCommands-pCommandBuffers-parameter", "VUID-vkCmdExecuteCommands-commonparent",
                                    error_obj.location.dot(Field::pCommandBuffers, index0));
@@ -1935,7 +1935,7 @@ bool ObjectLifetimes::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t
     bool skip = false;
     // Checked by chassis: device: "VUID-vkBindBufferMemory2-device-parameter"
     if (pBindInfos) {
-        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfos, index0);
             skip |= ValidateObject(pBindInfos[index0].buffer, kVulkanObjectTypeBuffer, false,
                                    "VUID-VkBindBufferMemoryInfo-buffer-parameter", "VUID-VkBindBufferMemoryInfo-commonparent",
@@ -1954,7 +1954,7 @@ bool ObjectLifetimes::PreCallValidateBindImageMemory2(VkDevice device, uint32_t 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkBindImageMemory2-device-parameter"
     if (pBindInfos) {
-        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfos, index0);
             skip |= ValidateObject(pBindInfos[index0].image, kVulkanObjectTypeImage, false,
                                    "VUID-VkBindImageMemoryInfo-image-parameter", "VUID-VkBindImageMemoryInfo-commonparent",
@@ -1992,7 +1992,7 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance ins
 
     if (pPhysicalDeviceGroupProperties) {
         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
-        for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
+        for (u32 device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
             PostCallRecordEnumeratePhysicalDevices(instance,
                                                    &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount,
                                                    pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, record_obj);
@@ -2217,7 +2217,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer command
             [[maybe_unused]] const Location pNext_loc = pRenderPassBegin_loc.pNext(Struct::VkRenderPassAttachmentBeginInfo);
 
             if ((pNext->attachmentCount > 0) && (pNext->pAttachments)) {
-                for (uint32_t index2 = 0; index2 < pNext->attachmentCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->attachmentCount; ++index2) {
                     skip |=
                         ValidateObject(pNext->pAttachments[index2], kVulkanObjectTypeImageView, false,
                                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-parameter",
@@ -2264,7 +2264,7 @@ bool ObjectLifetimes::PreCallValidateWaitSemaphores(VkDevice device, const VkSem
         [[maybe_unused]] const Location pWaitInfo_loc = error_obj.location.dot(Field::pWaitInfo);
 
         if ((pWaitInfo->semaphoreCount > 0) && (pWaitInfo->pSemaphores)) {
-            for (uint32_t index1 = 0; index1 < pWaitInfo->semaphoreCount; ++index1) {
+            for (u32 index1 = 0; index1 < pWaitInfo->semaphoreCount; ++index1) {
                 skip |= ValidateObject(pWaitInfo->pSemaphores[index1], kVulkanObjectTypeSemaphore, false,
                                        "VUID-VkSemaphoreWaitInfo-pSemaphores-parameter",
                                        "UNASSIGNED-VkSemaphoreWaitInfo-pSemaphores-parent",
@@ -2374,7 +2374,7 @@ bool ObjectLifetimes::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer,
     if (pDependencyInfo) {
         [[maybe_unused]] const Location pDependencyInfo_loc = error_obj.location.dot(Field::pDependencyInfo);
         if (pDependencyInfo->pBufferMemoryBarriers) {
-            for (uint32_t index1 = 0; index1 < pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+            for (u32 index1 = 0; index1 < pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, index1);
                 skip |= ValidateObject(pDependencyInfo->pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer, false,
                                        "VUID-VkBufferMemoryBarrier2-buffer-parameter",
@@ -2382,7 +2382,7 @@ bool ObjectLifetimes::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer,
             }
         }
         if (pDependencyInfo->pImageMemoryBarriers) {
-            for (uint32_t index1 = 0; index1 < pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+            for (u32 index1 = 0; index1 < pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, index1);
                 skip |= ValidateObject(pDependencyInfo->pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage, false,
                                        "VUID-VkImageMemoryBarrier2-image-parameter",
@@ -2412,16 +2412,16 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffe
     // Checked by chassis: commandBuffer: "VUID-vkCmdWaitEvents2-commonparent"
 
     if ((eventCount > 0) && (pEvents)) {
-        for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+        for (u32 index0 = 0; index0 < eventCount; ++index0) {
             skip |= ValidateObject(pEvents[index0], kVulkanObjectTypeEvent, false, "VUID-vkCmdWaitEvents2-pEvents-parameter",
                                    "VUID-vkCmdWaitEvents2-commonparent", error_obj.location.dot(Field::pEvents, index0));
         }
     }
     if (pDependencyInfos) {
-        for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+        for (u32 index0 = 0; index0 < eventCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pDependencyInfos, index0);
             if (pDependencyInfos[index0].pBufferMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pBufferMemoryBarriers, index1);
                     skip |= ValidateObject(pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer,
                                            false, "VUID-VkBufferMemoryBarrier2-buffer-parameter",
@@ -2429,7 +2429,7 @@ bool ObjectLifetimes::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffe
                 }
             }
             if (pDependencyInfos[index0].pImageMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pImageMemoryBarriers, index1);
                     skip |= ValidateObject(pDependencyInfos[index0].pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage,
                                            false, "VUID-VkImageMemoryBarrier2-image-parameter",
@@ -2449,7 +2449,7 @@ bool ObjectLifetimes::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer command
     if (pDependencyInfo) {
         [[maybe_unused]] const Location pDependencyInfo_loc = error_obj.location.dot(Field::pDependencyInfo);
         if (pDependencyInfo->pBufferMemoryBarriers) {
-            for (uint32_t index1 = 0; index1 < pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+            for (u32 index1 = 0; index1 < pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, index1);
                 skip |=
                     ValidateObject(pDependencyInfo->pBufferMemoryBarriers[index1].buffer, kVulkanObjectTypeBuffer, false,
@@ -2458,7 +2458,7 @@ bool ObjectLifetimes::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer command
             }
         }
         if (pDependencyInfo->pImageMemoryBarriers) {
-            for (uint32_t index1 = 0; index1 < pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+            for (u32 index1 = 0; index1 < pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, index1);
                 skip |= ValidateObject(pDependencyInfo->pImageMemoryBarriers[index1].image, kVulkanObjectTypeImage, false,
                                        "VUID-VkImageMemoryBarrier2-image-parameter",
@@ -2487,10 +2487,10 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
     // Checked by chassis: queue: "VUID-vkQueueSubmit2-queue-parameter"
     // Checked by chassis: queue: "VUID-vkQueueSubmit2-commonparent"
     if (pSubmits) {
-        for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
+        for (u32 index0 = 0; index0 < submitCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pSubmits, index0);
             if (pSubmits[index0].pWaitSemaphoreInfos) {
-                for (uint32_t index1 = 0; index1 < pSubmits[index0].waitSemaphoreInfoCount; ++index1) {
+                for (u32 index1 = 0; index1 < pSubmits[index0].waitSemaphoreInfoCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pWaitSemaphoreInfos, index1);
                     skip |= ValidateObject(pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore, kVulkanObjectTypeSemaphore,
                                            false, "VUID-VkSemaphoreSubmitInfo-semaphore-parameter",
@@ -2498,7 +2498,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 }
             }
             if (pSubmits[index0].pCommandBufferInfos) {
-                for (uint32_t index1 = 0; index1 < pSubmits[index0].commandBufferInfoCount; ++index1) {
+                for (u32 index1 = 0; index1 < pSubmits[index0].commandBufferInfoCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pCommandBufferInfos, index1);
                     skip |= ValidateObject(
                         pSubmits[index0].pCommandBufferInfos[index1].commandBuffer, kVulkanObjectTypeCommandBuffer, false,
@@ -2507,7 +2507,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 }
             }
             if (pSubmits[index0].pSignalSemaphoreInfos) {
-                for (uint32_t index1 = 0; index1 < pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
+                for (u32 index1 = 0; index1 < pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pSignalSemaphoreInfos, index1);
                     skip |= ValidateObject(pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore, kVulkanObjectTypeSemaphore,
                                            false, "VUID-VkSemaphoreSubmitInfo-semaphore-parameter",
@@ -2518,7 +2518,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryEXT);
 
                 if ((pNext->imageCount > 0) && (pNext->pImages)) {
-                    for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->imageCount; ++index2) {
                         skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
                                                "VUID-VkFrameBoundaryEXT-pImages-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pImages, index2));
@@ -2526,7 +2526,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 }
 
                 if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
-                    for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->bufferCount; ++index2) {
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                                "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pBuffers, index2));
@@ -2539,7 +2539,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoKHR);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pAcquireSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-commonparent",
@@ -2548,7 +2548,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 }
 
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-pReleaseSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoKHR-commonparent",
@@ -2561,7 +2561,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkWin32KeyedMutexAcquireReleaseInfoNV);
 
                 if ((pNext->acquireCount > 0) && (pNext->pAcquireSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->acquireCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->acquireCount; ++index2) {
                         skip |= ValidateObject(pNext->pAcquireSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pAcquireSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-commonparent",
@@ -2570,7 +2570,7 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submit
                 }
 
                 if ((pNext->releaseCount > 0) && (pNext->pReleaseSyncs)) {
-                    for (uint32_t index2 = 0; index2 < pNext->releaseCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pNext->releaseCount; ++index2) {
                         skip |= ValidateObject(pNext->pReleaseSyncs[index2], kVulkanObjectTypeDeviceMemory, false,
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-pReleaseSyncs-parameter",
                                                "VUID-VkWin32KeyedMutexAcquireReleaseInfoNV-commonparent",
@@ -2694,7 +2694,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBu
     if (pRenderingInfo) {
         [[maybe_unused]] const Location pRenderingInfo_loc = error_obj.location.dot(Field::pRenderingInfo);
         if (pRenderingInfo->pColorAttachments) {
-            for (uint32_t index1 = 0; index1 < pRenderingInfo->colorAttachmentCount; ++index1) {
+            for (u32 index1 = 0; index1 < pRenderingInfo->colorAttachmentCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pRenderingInfo_loc.dot(Field::pColorAttachments, index1);
                 skip |= ValidateObject(pRenderingInfo->pColorAttachments[index1].imageView, kVulkanObjectTypeImageView, true,
                                        "VUID-VkRenderingAttachmentInfo-imageView-parameter",
@@ -2774,7 +2774,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer comma
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindVertexBuffers2-commonparent"
 
     if ((bindingCount > 0) && (pBuffers)) {
-        for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindingCount; ++index0) {
             skip |=
                 ValidateObject(pBuffers[index0], kVulkanObjectTypeBuffer, true, "VUID-vkCmdBindVertexBuffers2-pBuffers-parameter",
                                "VUID-vkCmdBindVertexBuffers2-commonparent", error_obj.location.dot(Field::pBuffers, index0));
@@ -2972,7 +2972,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
         [[maybe_unused]] const Location pPresentInfo_loc = error_obj.location.dot(Field::pPresentInfo);
 
         if ((pPresentInfo->waitSemaphoreCount > 0) && (pPresentInfo->pWaitSemaphores)) {
-            for (uint32_t index1 = 0; index1 < pPresentInfo->waitSemaphoreCount; ++index1) {
+            for (u32 index1 = 0; index1 < pPresentInfo->waitSemaphoreCount; ++index1) {
                 skip |= ValidateObject(pPresentInfo->pWaitSemaphores[index1], kVulkanObjectTypeSemaphore, false,
                                        "VUID-VkPresentInfoKHR-pWaitSemaphores-parameter", "VUID-VkPresentInfoKHR-commonparent",
                                        pPresentInfo_loc.dot(Field::pWaitSemaphores, index1));
@@ -2980,7 +2980,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
         }
 
         if ((pPresentInfo->swapchainCount > 0) && (pPresentInfo->pSwapchains)) {
-            for (uint32_t index1 = 0; index1 < pPresentInfo->swapchainCount; ++index1) {
+            for (u32 index1 = 0; index1 < pPresentInfo->swapchainCount; ++index1) {
                 skip |= ValidateObject(pPresentInfo->pSwapchains[index1], kVulkanObjectTypeSwapchainKHR, false,
                                        "VUID-VkPresentInfoKHR-pSwapchains-parameter", "VUID-VkPresentInfoKHR-commonparent",
                                        pPresentInfo_loc.dot(Field::pSwapchains, index1));
@@ -2990,7 +2990,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
             [[maybe_unused]] const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkFrameBoundaryEXT);
 
             if ((pNext->imageCount > 0) && (pNext->pImages)) {
-                for (uint32_t index2 = 0; index2 < pNext->imageCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->imageCount; ++index2) {
                     skip |= ValidateObject(pNext->pImages[index2], kVulkanObjectTypeImage, false,
                                            "VUID-VkFrameBoundaryEXT-pImages-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                            pNext_loc.dot(Field::pImages, index2));
@@ -2998,7 +2998,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
             }
 
             if ((pNext->bufferCount > 0) && (pNext->pBuffers)) {
-                for (uint32_t index2 = 0; index2 < pNext->bufferCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->bufferCount; ++index2) {
                     skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                            "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                            pNext_loc.dot(Field::pBuffers, index2));
@@ -3009,7 +3009,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
             [[maybe_unused]] const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkSwapchainPresentFenceInfoEXT);
 
             if ((pNext->swapchainCount > 0) && (pNext->pFences)) {
-                for (uint32_t index2 = 0; index2 < pNext->swapchainCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->swapchainCount; ++index2) {
                     skip |= ValidateObject(pNext->pFences[index2], kVulkanObjectTypeFence, false,
                                            "VUID-VkSwapchainPresentFenceInfoEXT-pFences-parameter",
                                            "UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent",
@@ -3088,7 +3088,7 @@ void ObjectLifetimes::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysic
                                                                         const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pDisplays) {
-        for (uint32_t index = 0; index < *pDisplayCount; index++) {
+        for (u32 index = 0; index < *pDisplayCount; index++) {
             CreateObject(pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr, record_obj.location.dot(Field::pDisplays, index));
         }
     }
@@ -3172,7 +3172,7 @@ bool ObjectLifetimes::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateSharedSwapchainsKHR-device-parameter"
     if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
+        for (u32 index0 = 0; index0 < swapchainCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
             auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
             auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
@@ -3195,7 +3195,7 @@ void ObjectLifetimes::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, u
                                                               const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pSwapchains) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
+        for (u32 index = 0; index < swapchainCount; index++) {
             CreateObject(pSwapchains[index], kVulkanObjectTypeSwapchainKHR, pAllocator,
                          record_obj.location.dot(Field::pSwapchains, index));
         }
@@ -3337,7 +3337,7 @@ bool ObjectLifetimes::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, 
                            "VUID-vkBindVideoSessionMemoryKHR-videoSession-parameter",
                            "VUID-vkBindVideoSessionMemoryKHR-videoSession-parent", error_obj.location.dot(Field::videoSession));
     if (pBindSessionMemoryInfos) {
-        for (uint32_t index0 = 0; index0 < bindSessionMemoryInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindSessionMemoryInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindSessionMemoryInfos, index0);
             skip |= ValidateObject(pBindSessionMemoryInfos[index0].memory, kVulkanObjectTypeDeviceMemory, false,
                                    "VUID-VkBindVideoSessionMemoryInfoKHR-memory-parameter",
@@ -3430,7 +3430,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer comm
                                "VUID-VkVideoBeginCodingInfoKHR-videoSessionParameters-parameter",
                                "VUID-VkVideoBeginCodingInfoKHR-commonparent", pBeginInfo_loc.dot(Field::videoSessionParameters));
         if (pBeginInfo->pReferenceSlots) {
-            for (uint32_t index1 = 0; index1 < pBeginInfo->referenceSlotCount; ++index1) {
+            for (u32 index1 = 0; index1 < pBeginInfo->referenceSlotCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pBeginInfo_loc.dot(Field::pReferenceSlots, index1);
                 if (pBeginInfo->pReferenceSlots[index1].pPictureResource) {
                     [[maybe_unused]] const Location pPictureResource_loc = index1_loc.dot(Field::pPictureResource);
@@ -3479,7 +3479,7 @@ bool ObjectLifetimes::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBu
             }
         }
         if (pDecodeInfo->pReferenceSlots) {
-            for (uint32_t index1 = 0; index1 < pDecodeInfo->referenceSlotCount; ++index1) {
+            for (u32 index1 = 0; index1 < pDecodeInfo->referenceSlotCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pDecodeInfo_loc.dot(Field::pReferenceSlots, index1);
                 if (pDecodeInfo->pReferenceSlots[index1].pPictureResource) {
                     [[maybe_unused]] const Location pPictureResource_loc = index1_loc.dot(Field::pPictureResource);
@@ -3552,7 +3552,7 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
 
     if (pPhysicalDeviceGroupProperties) {
         const RecordObject record_obj(vvl::Func::vkEnumeratePhysicalDevices, VK_SUCCESS);
-        for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
+        for (u32 device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
             PostCallRecordEnumeratePhysicalDevices(instance,
                                                    &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount,
                                                    pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, record_obj);
@@ -4210,7 +4210,7 @@ bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBu
             }
         }
         if (pEncodeInfo->pReferenceSlots) {
-            for (uint32_t index1 = 0; index1 < pEncodeInfo->referenceSlotCount; ++index1) {
+            for (u32 index1 = 0; index1 < pEncodeInfo->referenceSlotCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pEncodeInfo_loc.dot(Field::pReferenceSlots, index1);
                 if (pEncodeInfo->pReferenceSlots[index1].pPictureResource) {
                     [[maybe_unused]] const Location pPictureResource_loc = index1_loc.dot(Field::pPictureResource);
@@ -4569,7 +4569,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer c
                                pBindDescriptorSetsInfo_loc.dot(Field::layout));
 
         if ((pBindDescriptorSetsInfo->descriptorSetCount > 0) && (pBindDescriptorSetsInfo->pDescriptorSets)) {
-            for (uint32_t index1 = 0; index1 < pBindDescriptorSetsInfo->descriptorSetCount; ++index1) {
+            for (u32 index1 = 0; index1 < pBindDescriptorSetsInfo->descriptorSetCount; ++index1) {
                 skip |= ValidateObject(pBindDescriptorSetsInfo->pDescriptorSets[index1], kVulkanObjectTypeDescriptorSet, false,
                                        "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-parameter",
                                        "VUID-VkBindDescriptorSetsInfoKHR-commonparent",
@@ -4580,7 +4580,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer c
             [[maybe_unused]] const Location pNext_loc = pBindDescriptorSetsInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
 
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
-                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
                                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
                                            "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
@@ -4607,7 +4607,7 @@ bool ObjectLifetimes::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer comman
             [[maybe_unused]] const Location pNext_loc = pPushConstantsInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
 
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
-                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
                                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
                                            "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
@@ -4643,7 +4643,7 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
                 pPushDescriptorSetWithTemplateInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
 
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
-                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
                                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
                                            "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
@@ -4674,7 +4674,7 @@ bool ObjectLifetimes::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
                 pSetDescriptorBufferOffsetsInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
 
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
-                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
                                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
                                            "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
@@ -4705,7 +4705,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT
                 pBindDescriptorBufferEmbeddedSamplersInfo_loc.pNext(Struct::VkPipelineLayoutCreateInfo);
 
             if ((pNext->setLayoutCount > 0) && (pNext->pSetLayouts)) {
-                for (uint32_t index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->setLayoutCount; ++index2) {
                     skip |= ValidateObject(pNext->pSetLayouts[index2], kVulkanObjectTypeDescriptorSetLayout, true,
                                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter",
                                            "UNASSIGNED-VkPipelineLayoutCreateInfo-pSetLayouts-commonparent",
@@ -4772,7 +4772,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkComman
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindTransformFeedbackBuffersEXT-commonparent"
 
     if ((bindingCount > 0) && (pBuffers)) {
-        for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindingCount; ++index0) {
             skip |= ValidateObject(
                 pBuffers[index0], kVulkanObjectTypeBuffer, false, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-parameter",
                 "VUID-vkCmdBindTransformFeedbackBuffersEXT-commonparent", error_obj.location.dot(Field::pBuffers, index0));
@@ -4791,7 +4791,7 @@ bool ObjectLifetimes::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffe
     // Checked by chassis: commandBuffer: "VUID-vkCmdBeginTransformFeedbackEXT-commonparent"
 
     if ((counterBufferCount > 0) && (pCounterBuffers)) {
-        for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
+        for (u32 index0 = 0; index0 < counterBufferCount; ++index0) {
             skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true,
                                    "VUID-vkCmdBeginTransformFeedbackEXT-counterBufferCount-02607",
                                    "VUID-vkCmdBeginTransformFeedbackEXT-commonparent",
@@ -4811,7 +4811,7 @@ bool ObjectLifetimes::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer 
     // Checked by chassis: commandBuffer: "VUID-vkCmdEndTransformFeedbackEXT-commonparent"
 
     if ((counterBufferCount > 0) && (pCounterBuffers)) {
-        for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
+        for (u32 index0 = 0; index0 < counterBufferCount; ++index0) {
             skip |= ValidateObject(pCounterBuffers[index0], kVulkanObjectTypeBuffer, true,
                                    "VUID-vkCmdEndTransformFeedbackEXT-counterBufferCount-02608",
                                    "VUID-vkCmdEndTransformFeedbackEXT-commonparent",
@@ -5206,7 +5206,7 @@ bool ObjectLifetimes::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint32_t
     // Checked by chassis: device: "VUID-vkSetHdrMetadataEXT-device-parameter"
 
     if ((swapchainCount > 0) && (pSwapchains)) {
-        for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
+        for (u32 index0 = 0; index0 < swapchainCount; ++index0) {
             skip |= ValidateObject(pSwapchains[index0], kVulkanObjectTypeSwapchainKHR, false,
                                    "VUID-vkSetHdrMetadataEXT-pSwapchains-parameter", "VUID-vkSetHdrMetadataEXT-pSwapchains-parent",
                                    error_obj.location.dot(Field::pSwapchains, index0));
@@ -5330,10 +5330,10 @@ bool ObjectLifetimes::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice 
         pipelineCache, kVulkanObjectTypePipelineCache, true, "VUID-vkCreateExecutionGraphPipelinesAMDX-pipelineCache-parameter",
         "VUID-vkCreateExecutionGraphPipelinesAMDX-pipelineCache-parent", error_obj.location.dot(Field::pipelineCache));
     if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
             if (pCreateInfos[index0].pStages) {
-                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
+                for (u32 index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pStages, index1);
                     skip |=
                         ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
@@ -5354,7 +5354,7 @@ bool ObjectLifetimes::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice 
                 [[maybe_unused]] const Location pLibraryInfo_loc = index0_loc.dot(Field::pLibraryInfo);
 
                 if ((pCreateInfos[index0].pLibraryInfo->libraryCount > 0) && (pCreateInfos[index0].pLibraryInfo->pLibraries)) {
-                    for (uint32_t index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
+                    for (u32 index2 = 0; index2 < pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
                         skip |= ValidateObject(pCreateInfos[index0].pLibraryInfo->pLibraries[index2], kVulkanObjectTypePipeline,
                                                false, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter",
                                                "UNASSIGNED-VkPipelineLibraryCreateInfoKHR-pLibraries-parent",
@@ -5381,7 +5381,7 @@ void ObjectLifetimes::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice d
                                                                       VkPipeline* pPipelines, const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
                          record_obj.location.dot(Field::pPipelines, index));
         }
@@ -5486,7 +5486,7 @@ bool ObjectLifetimes::PreCallValidateMergeValidationCachesEXT(VkDevice device, V
                        "VUID-vkMergeValidationCachesEXT-dstCache-parent", error_obj.location.dot(Field::dstCache));
 
     if ((srcCacheCount > 0) && (pSrcCaches)) {
-        for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
+        for (u32 index0 = 0; index0 < srcCacheCount; ++index0) {
             skip |= ValidateObject(pSrcCaches[index0], kVulkanObjectTypeValidationCacheEXT, false,
                                    "VUID-vkMergeValidationCachesEXT-pSrcCaches-parameter",
                                    "VUID-vkMergeValidationCachesEXT-pSrcCaches-parent",
@@ -5536,7 +5536,7 @@ bool ObjectLifetimes::PreCallValidateCreateAccelerationStructureNV(VkDevice devi
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
         [[maybe_unused]] const Location info_loc = pCreateInfo_loc.dot(Field::info);
         if (pCreateInfo->info.pGeometries) {
-            for (uint32_t index2 = 0; index2 < pCreateInfo->info.geometryCount; ++index2) {
+            for (u32 index2 = 0; index2 < pCreateInfo->info.geometryCount; ++index2) {
                 [[maybe_unused]] const Location index2_loc = info_loc.dot(Field::pGeometries, index2);
                 [[maybe_unused]] const Location geometry_loc = index2_loc.dot(Field::geometry);
                 [[maybe_unused]] const Location triangles_loc = geometry_loc.dot(Field::triangles);
@@ -5614,7 +5614,7 @@ bool ObjectLifetimes::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkBindAccelerationStructureMemoryNV-device-parameter"
     if (pBindInfos) {
-        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfos, index0);
             skip |= ValidateObject(pBindInfos[index0].accelerationStructure, kVulkanObjectTypeAccelerationStructureNV, false,
                                    "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-parameter",
@@ -5639,7 +5639,7 @@ bool ObjectLifetimes::PreCallValidateCmdBuildAccelerationStructureNV(
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         if (pInfo->pGeometries) {
-            for (uint32_t index1 = 0; index1 < pInfo->geometryCount; ++index1) {
+            for (u32 index1 = 0; index1 < pInfo->geometryCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pInfo_loc.dot(Field::pGeometries, index1);
                 [[maybe_unused]] const Location geometry_loc = index1_loc.dot(Field::geometry);
                 [[maybe_unused]] const Location triangles_loc = geometry_loc.dot(Field::triangles);
@@ -5729,10 +5729,10 @@ bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device
                            "VUID-vkCreateRayTracingPipelinesNV-pipelineCache-parameter",
                            "VUID-vkCreateRayTracingPipelinesNV-pipelineCache-parent", error_obj.location.dot(Field::pipelineCache));
     if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
             if (pCreateInfos[index0].pStages) {
-                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
+                for (u32 index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
                     [[maybe_unused]] const Location index1_loc = index0_loc.dot(Field::pStages, index1);
                     skip |=
                         ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
@@ -5769,7 +5769,7 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device,
                                                                 const RecordObject& record_obj) {
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
                          record_obj.location.dot(Field::pPipelines, index));
@@ -5817,7 +5817,7 @@ bool ObjectLifetimes::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     // Checked by chassis: commandBuffer: "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commonparent"
 
     if ((accelerationStructureCount > 0) && (pAccelerationStructures)) {
-        for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
+        for (u32 index0 = 0; index0 < accelerationStructureCount; ++index0) {
             skip |= ValidateObject(pAccelerationStructures[index0], kVulkanObjectTypeAccelerationStructureNV, false,
                                    "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-pAccelerationStructures-parameter",
                                    "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commonparent",
@@ -6190,7 +6190,7 @@ bool ObjectLifetimes::PreCallValidateTransitionImageLayoutEXT(VkDevice device, u
     bool skip = false;
     // Checked by chassis: device: "VUID-vkTransitionImageLayoutEXT-device-parameter"
     if (pTransitions) {
-        for (uint32_t index0 = 0; index0 < transitionCount; ++index0) {
+        for (u32 index0 = 0; index0 < transitionCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pTransitions, index0);
             skip |= ValidateObject(pTransitions[index0].image, kVulkanObjectTypeImage, false,
                                    "VUID-VkHostImageLayoutTransitionInfoEXT-image-parameter",
@@ -6257,7 +6257,7 @@ bool ObjectLifetimes::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandB
                                "VUID-VkGeneratedCommandsInfoNV-commonparent",
                                pGeneratedCommandsInfo_loc.dot(Field::indirectCommandsLayout));
         if (pGeneratedCommandsInfo->pStreams) {
-            for (uint32_t index1 = 0; index1 < pGeneratedCommandsInfo->streamCount; ++index1) {
+            for (u32 index1 = 0; index1 < pGeneratedCommandsInfo->streamCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pGeneratedCommandsInfo_loc.dot(Field::pStreams, index1);
                 skip |= ValidateObject(pGeneratedCommandsInfo->pStreams[index1].buffer, kVulkanObjectTypeBuffer, false,
                                        "VUID-VkIndirectCommandsStreamNV-buffer-parameter",
@@ -6296,7 +6296,7 @@ bool ObjectLifetimes::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuff
                                "VUID-VkGeneratedCommandsInfoNV-commonparent",
                                pGeneratedCommandsInfo_loc.dot(Field::indirectCommandsLayout));
         if (pGeneratedCommandsInfo->pStreams) {
-            for (uint32_t index1 = 0; index1 < pGeneratedCommandsInfo->streamCount; ++index1) {
+            for (u32 index1 = 0; index1 < pGeneratedCommandsInfo->streamCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pGeneratedCommandsInfo_loc.dot(Field::pStreams, index1);
                 skip |= ValidateObject(pGeneratedCommandsInfo->pStreams[index1].buffer, kVulkanObjectTypeBuffer, false,
                                        "VUID-VkIndirectCommandsStreamNV-buffer-parameter",
@@ -6342,7 +6342,7 @@ bool ObjectLifetimes::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice dev
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
         if (pCreateInfo->pTokens) {
-            for (uint32_t index1 = 0; index1 < pCreateInfo->tokenCount; ++index1) {
+            for (u32 index1 = 0; index1 < pCreateInfo->tokenCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pCreateInfo_loc.dot(Field::pTokens, index1);
                 skip |= ValidateObject(pCreateInfo->pTokens[index1].pushconstantPipelineLayout, kVulkanObjectTypePipelineLayout,
                                        true, "VUID-VkIndirectCommandsLayoutTokenNV-pushconstantPipelineLayout-parameter",
@@ -6568,7 +6568,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindDescriptorBuffersEXT-commandBuffer-parameter"
     if (pBindingInfos) {
-        for (uint32_t index0 = 0; index0 < bufferCount; ++index0) {
+        for (u32 index0 = 0; index0 < bufferCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindingInfos, index0);
             if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(
                     pBindingInfos[index0].pNext)) {
@@ -6999,7 +6999,7 @@ bool ObjectLifetimes::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer comman
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdBuildMicromapsEXT-commandBuffer-parameter"
     if (pInfos) {
-        for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+        for (u32 index0 = 0; index0 < infoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pInfos, index0);
             // There should be an explicit VU (if not that is a spec bug)
             {
@@ -7021,7 +7021,7 @@ bool ObjectLifetimes::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferr
                            "VUID-vkBuildMicromapsEXT-deferredOperation-parameter",
                            "VUID-vkBuildMicromapsEXT-deferredOperation-parent", error_obj.location.dot(Field::deferredOperation));
     if (pInfos) {
-        for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+        for (u32 index0 = 0; index0 < infoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pInfos, index0);
             // There should be an explicit VU (if not that is a spec bug)
             {
@@ -7096,7 +7096,7 @@ bool ObjectLifetimes::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device
     // Checked by chassis: device: "VUID-vkWriteMicromapsPropertiesEXT-device-parameter"
 
     if ((micromapCount > 0) && (pMicromaps)) {
-        for (uint32_t index0 = 0; index0 < micromapCount; ++index0) {
+        for (u32 index0 = 0; index0 < micromapCount; ++index0) {
             skip |= ValidateObject(
                 pMicromaps[index0], kVulkanObjectTypeMicromapEXT, false, "VUID-vkWriteMicromapsPropertiesEXT-pMicromaps-parameter",
                 "VUID-vkWriteMicromapsPropertiesEXT-pMicromaps-parent", error_obj.location.dot(Field::pMicromaps, index0));
@@ -7158,7 +7158,7 @@ bool ObjectLifetimes::PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuf
     // Checked by chassis: commandBuffer: "VUID-vkCmdWriteMicromapsPropertiesEXT-commonparent"
 
     if ((micromapCount > 0) && (pMicromaps)) {
-        for (uint32_t index0 = 0; index0 < micromapCount; ++index0) {
+        for (u32 index0 = 0; index0 < micromapCount; ++index0) {
             skip |= ValidateObject(pMicromaps[index0], kVulkanObjectTypeMicromapEXT, false,
                                    "VUID-vkCmdWriteMicromapsPropertiesEXT-pMicromaps-parameter",
                                    "VUID-vkCmdWriteMicromapsPropertiesEXT-commonparent",
@@ -7298,7 +7298,7 @@ bool ObjectLifetimes::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkD
             [[maybe_unused]] const Location pNext_loc = pCreateInfo_loc.pNext(Struct::VkPipelineBinaryInfoKHR);
 
             if ((pNext->binaryCount > 0) && (pNext->pPipelineBinaries)) {
-                for (uint32_t index2 = 0; index2 < pNext->binaryCount; ++index2) {
+                for (u32 index2 = 0; index2 < pNext->binaryCount; ++index2) {
                     skip |= ValidateObject(pNext->pPipelineBinaries[index2], kVulkanObjectTypePipelineBinaryKHR, false,
                                            "VUID-VkPipelineBinaryInfoKHR-pPipelineBinaries-parameter",
                                            "UNASSIGNED-VkPipelineBinaryInfoKHR-pPipelineBinaries-parent",
@@ -7544,11 +7544,11 @@ bool ObjectLifetimes::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t 
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateShadersEXT-device-parameter"
     if (pCreateInfos) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+        for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
 
             if ((pCreateInfos[index0].setLayoutCount > 0) && (pCreateInfos[index0].pSetLayouts)) {
-                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
+                for (u32 index1 = 0; index1 < pCreateInfos[index0].setLayoutCount; ++index1) {
                     skip |= ValidateObject(pCreateInfos[index0].pSetLayouts[index1], kVulkanObjectTypeDescriptorSetLayout, false,
                                            "VUID-VkShaderCreateInfoEXT-pSetLayouts-parameter",
                                            "UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent",
@@ -7567,7 +7567,7 @@ void ObjectLifetimes::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t c
                                                      const RecordObject& record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     if (pShaders) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pShaders[index]) break;
             CreateObject(pShaders[index], kVulkanObjectTypeShaderEXT, pAllocator, record_obj.location.dot(Field::pShaders, index));
         }
@@ -7609,7 +7609,7 @@ bool ObjectLifetimes::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBu
     // Checked by chassis: commandBuffer: "VUID-vkCmdBindShadersEXT-commonparent"
 
     if ((stageCount > 0) && (pShaders)) {
-        for (uint32_t index0 = 0; index0 < stageCount; ++index0) {
+        for (u32 index0 = 0; index0 < stageCount; ++index0) {
             skip |=
                 ValidateObject(pShaders[index0], kVulkanObjectTypeShaderEXT, true, "VUID-vkCmdBindShadersEXT-pShaders-parameter",
                                "VUID-vkCmdBindShadersEXT-commonparent", error_obj.location.dot(Field::pShaders, index0));
@@ -7639,7 +7639,7 @@ bool ObjectLifetimes::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDev
     if (pRenderingInfo) {
         [[maybe_unused]] const Location pRenderingInfo_loc = error_obj.location.dot(Field::pRenderingInfo);
         if (pRenderingInfo->pColorAttachments) {
-            for (uint32_t index1 = 0; index1 < pRenderingInfo->colorAttachmentCount; ++index1) {
+            for (u32 index1 = 0; index1 < pRenderingInfo->colorAttachmentCount; ++index1) {
                 [[maybe_unused]] const Location index1_loc = pRenderingInfo_loc.dot(Field::pColorAttachments, index1);
                 skip |= ValidateObject(pRenderingInfo->pColorAttachments[index1].imageView, kVulkanObjectTypeImageView, true,
                                        "VUID-VkRenderingAttachmentInfo-imageView-parameter",
@@ -7871,7 +7871,7 @@ bool ObjectLifetimes::PreCallValidateWriteAccelerationStructuresPropertiesKHR(
     // Checked by chassis: device: "VUID-vkWriteAccelerationStructuresPropertiesKHR-device-parameter"
 
     if ((accelerationStructureCount > 0) && (pAccelerationStructures)) {
-        for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
+        for (u32 index0 = 0; index0 < accelerationStructureCount; ++index0) {
             skip |= ValidateObject(pAccelerationStructures[index0], kVulkanObjectTypeAccelerationStructureKHR, false,
                                    "VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-parameter",
                                    "VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-parent",
@@ -7951,7 +7951,7 @@ bool ObjectLifetimes::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR
     // Checked by chassis: commandBuffer: "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commonparent"
 
     if ((accelerationStructureCount > 0) && (pAccelerationStructures)) {
-        for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
+        for (u32 index0 = 0; index0 < accelerationStructureCount; ++index0) {
             skip |= ValidateObject(pAccelerationStructures[index0], kVulkanObjectTypeAccelerationStructureKHR, false,
                                    "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-parameter",
                                    "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commonparent",

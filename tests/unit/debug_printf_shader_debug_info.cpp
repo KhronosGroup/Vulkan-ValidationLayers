@@ -44,7 +44,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     const char *object_name = "bad_pipeline";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    name_info.objectHandle = (uint64_t)pipe.Handle();
+    name_info.objectHandle = (u64)pipe.Handle();
     name_info.pObjectName = object_name;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
@@ -82,7 +82,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     const char *object_name = "bad_shader_object";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_SHADER_EXT;
-    name_info.objectHandle = (uint64_t)comp_shader.handle();
+    name_info.objectHandle = (u64)comp_shader.handle();
     name_info.pObjectName = object_name;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 

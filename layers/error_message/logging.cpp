@@ -75,7 +75,7 @@ void DebugReport::SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState
     }
 }
 
-void DebugReport::RemoveDebugUtilsCallback(uint64_t callback) {
+void DebugReport::RemoveDebugUtilsCallback(u64 callback) {
     std::vector<VkLayerDbgFunctionState> &callbacks = debug_callback_list;
     auto item = callbacks.begin();
     for (item = callbacks.begin(); item != callbacks.end(); item++) {
@@ -92,7 +92,7 @@ void DebugReport::RemoveDebugUtilsCallback(uint64_t callback) {
 }
 
 // Returns TRUE if the number of times this message has been logged is over the set limit
-bool DebugReport::UpdateLogMsgCounts(int32_t vuid_hash) const {
+bool DebugReport::UpdateLogMsgCounts(i32 vuid_hash) const {
     auto vuid_count_it = duplicate_message_count_map.find(vuid_hash);
     if (vuid_count_it == duplicate_message_count_map.end()) {
         duplicate_message_count_map.emplace(vuid_hash, 1);
@@ -127,7 +127,7 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
 
     std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_infos;
     object_name_infos.reserve(objects.object_list.size());
-    for (uint32_t i = 0; i < objects.object_list.size(); i++) {
+    for (u32 i = 0; i < objects.object_list.size(); i++) {
         // If only one VkDevice was created, it is just noise to print it out in the error message.
         // Also avoid printing unknown objects, likely if new function is calling error with null LogObjectList
         if ((objects.object_list[i].type == kVulkanObjectTypeDevice && device_created <= 1) ||
@@ -171,18 +171,18 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
         object_name_infos.push_back(object_name_info);
     }
 
-    const uint32_t message_id_number = text_vuid ? hash_util::VuidHash(text_vuid) : 0U;
+    const u32 message_id_number = text_vuid ? hash_util::VuidHash(text_vuid) : 0U;
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data = vku::InitStructHelper();
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
-    callback_data.messageIdNumber = vvl_bit_cast<int32_t>(message_id_number);
+    callback_data.messageIdNumber = vvl_bit_cast<i32>(message_id_number);
     callback_data.pMessage = nullptr;
-    callback_data.queueLabelCount = static_cast<uint32_t>(queue_labels.size());
+    callback_data.queueLabelCount = static_cast<u32>(queue_labels.size());
     callback_data.pQueueLabels = queue_labels.empty() ? nullptr : queue_labels.data();
-    callback_data.cmdBufLabelCount = static_cast<uint32_t>(cmd_buf_labels.size());
+    callback_data.cmdBufLabelCount = static_cast<u32>(cmd_buf_labels.size());
     callback_data.pCmdBufLabels = cmd_buf_labels.empty() ? nullptr : cmd_buf_labels.data();
-    callback_data.objectCount = static_cast<uint32_t>(object_name_infos.size());
+    callback_data.objectCount = static_cast<u32>(object_name_infos.size());
     callback_data.pObjects = object_name_infos.data();
 
     std::ostringstream oss;
@@ -210,7 +210,7 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
     if (text_vuid != nullptr) {
         oss << "[ " << text_vuid << " ] ";
     }
-    uint32_t index = 0;
+    u32 index = 0;
     for (const auto &src_object : object_name_infos) {
         if (0 != src_object.objectHandle) {
             oss << "Object " << index++ << ": handle = 0x" << std::hex << src_object.objectHandle;
@@ -293,7 +293,7 @@ void DebugReport::SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNam
 
 // NoLock suffix means that the function itself does not hold debug_output_mutex lock,
 // and it's **mandatory responsibility** of the caller to hold this lock.
-std::string DebugReport::GetUtilsObjectNameNoLock(const uint64_t object) const {
+std::string DebugReport::GetUtilsObjectNameNoLock(const u64 object) const {
     std::string label = "";
     const auto utils_name_iter = debug_utils_object_name_map.find(object);
     if (utils_name_iter != debug_utils_object_name_map.end()) {
@@ -304,7 +304,7 @@ std::string DebugReport::GetUtilsObjectNameNoLock(const uint64_t object) const {
 
 // NoLock suffix means that the function itself does not hold debug_output_mutex lock,
 // and it's **mandatory responsibility** of the caller to hold this lock.
-std::string DebugReport::GetMarkerObjectNameNoLock(const uint64_t object) const {
+std::string DebugReport::GetMarkerObjectNameNoLock(const u64 object) const {
     std::string label = "";
     const auto marker_name_iter = debug_object_name_map.find(object);
     if (marker_name_iter != debug_object_name_map.end()) {
@@ -313,7 +313,7 @@ std::string DebugReport::GetMarkerObjectNameNoLock(const uint64_t object) const 
     return label;
 }
 
-std::string DebugReport::FormatHandle(const char *handle_type_name, uint64_t handle) const {
+std::string DebugReport::FormatHandle(const char *handle_type_name, u64 handle) const {
     std::unique_lock<std::mutex> lock(debug_output_mutex);
     std::string handle_name = GetUtilsObjectNameNoLock(handle);
     if (handle_name.empty()) {
@@ -538,11 +538,11 @@ bool DebugReport::LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageS
         return false;
     }
     // If message is in filter list, bail out very early
-    const uint32_t message_id = hash_util::VuidHash(vuid_text);
+    const u32 message_id = hash_util::VuidHash(vuid_text);
     if (filter_message_ids.find(message_id) != filter_message_ids.end()) {
         return false;
     }
-    if ((duplicate_message_limit > 0) && UpdateLogMsgCounts(static_cast<int32_t>(message_id))) {
+    if ((duplicate_message_limit > 0) && UpdateLogMsgCounts(static_cast<i32>(message_id))) {
         // Count for this particular message is over the limit, ignore it
         return false;
     }
@@ -601,10 +601,10 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
     if ((vuid_text.find("VUID-") != std::string::npos)) {
         // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
         // this point in the error reporting path
-        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
+        u32 num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
         const char *spec_text = nullptr;
         std::string spec_type;
-        for (uint32_t i = 0; i < num_vuids; i++) {
+        for (u32 i = 0; i < num_vuids; i++) {
             if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
                 spec_text = vuid_spec_text[i].spec_text;
                 spec_type = vuid_spec_text[i].url_id;
@@ -685,7 +685,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
     msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
                << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
     msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
-    for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
+    for (u32 obj = 0; obj < callback_data->objectCount; ++obj) {
         msg_buffer << "        [" << obj << "] " << std::hex << std::showbase
                    << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
                    << callback_data->pObjects[obj].objectType
@@ -719,7 +719,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
                << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
     msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
 
-    for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
+    for (u32 obj = 0; obj < callback_data->objectCount; ++obj) {
         msg_buffer << "       [" << obj << "]  " << std::hex << std::showbase
                    << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
                    << callback_data->pObjects[obj].objectType

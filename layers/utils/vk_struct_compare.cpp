@@ -33,8 +33,8 @@ bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateC
                                                const VkPipelineMultisampleStateCreateInfo &b) {
     bool valid_mask = true;
     if (a.pSampleMask && b.pSampleMask && (a.rasterizationSamples == b.rasterizationSamples)) {
-        uint32_t length = (SampleCountSize(a.rasterizationSamples) + 31) / 32;
-        for (uint32_t i = 0; i < length; i++) {
+        u32 length = (SampleCountSize(a.rasterizationSamples) + 31) / 32;
+        for (u32 i = 0; i < length; i++) {
             if (a.pSampleMask[i] != b.pSampleMask[i]) {
                 valid_mask = false;
                 break;

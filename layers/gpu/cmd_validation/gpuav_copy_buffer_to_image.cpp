@@ -41,7 +41,7 @@ struct SharedCopyBufferToImageValidationResources final {
         };
 
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-        ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
+        ds_layout_ci.bindingCount = static_cast<u32>(bindings.size());
         ds_layout_ci.pBindings = bindings.data();
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &ds_layout);
         if (result != VK_SUCCESS) {
@@ -56,7 +56,7 @@ struct SharedCopyBufferToImageValidationResources final {
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-        uint32_t mem_type_index = 0;
+        u32 mem_type_index = 0;
         vmaFindMemoryTypeIndexForBufferInfo(vma_allocator, &buffer_info, &alloc_info, &mem_type_index);
         VmaPoolCreateInfo pool_create_info = {};
         pool_create_info.memoryTypeIndex = mem_type_index;
@@ -71,7 +71,7 @@ struct SharedCopyBufferToImageValidationResources final {
 
         std::array<VkDescriptorSetLayout, 2> set_layouts = {{error_output_set_layout, ds_layout}};
         VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-        pipeline_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+        pipeline_layout_ci.setLayoutCount = static_cast<u32>(set_layouts.size());
         pipeline_layout_ci.pSetLayouts = set_layouts.data();
         result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, nullptr, &pipeline_layout);
         if (result != VK_SUCCESS) {
@@ -80,7 +80,7 @@ struct SharedCopyBufferToImageValidationResources final {
         }
 
         VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-        shader_module_ci.codeSize = cmd_validation_copy_buffer_to_image_comp_size * sizeof(uint32_t);
+        shader_module_ci.codeSize = cmd_validation_copy_buffer_to_image_comp_size * sizeof(u32);
         shader_module_ci.pCode = cmd_validation_copy_buffer_to_image_comp;
         VkShaderModule validation_shader = VK_NULL_HANDLE;
         result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &validation_shader);
@@ -166,22 +166,22 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     }
 
     // Allocate buffer that will be used to store pRegions
-    uint32_t max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
-                                           copy_buffer_to_img_info->pRegions[0].imageExtent.height *
-                                           copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
+    u32 max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
+                                      copy_buffer_to_img_info->pRegions[0].imageExtent.height *
+                                      copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
     gpu::DeviceMemoryBlock copy_src_regions_mem_block;
     {
         // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {
-            uint32_t src_buffer_byte_offset;
-            uint32_t start_layer;
-            uint32_t layer_count;
-            uint32_t row_extent;
-            uint32_t slice_extent;
-            uint32_t layer_extent;
-            uint32_t pad_[2];
-            int32_t image_offset[4];
-            uint32_t image_extent[4];
+            u32 src_buffer_byte_offset;
+            u32 start_layer;
+            u32 layer_count;
+            u32 row_extent;
+            u32 slice_extent;
+            u32 layer_extent;
+            u32 pad_[2];
+            i32 image_offset[4];
+            u32 image_extent[4];
         };
 
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -190,13 +190,13 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
                                                                 1 +  // gpu copy regions count
                                                                 2    // pad
                                                                 ) *
-                                                               sizeof(uint32_t);
+                                                               sizeof(u32);
         buffer_info.size = uniform_block_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
         buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-        uint32_t mem_type_index = 0;
+        u32 mem_type_index = 0;
         vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
 
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
@@ -208,7 +208,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         }
         cb_state.gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
 
-        uint32_t *gpu_regions_u32_ptr = nullptr;
+        u32 *gpu_regions_u32_ptr = nullptr;
         result = vmaMapMemory(gpuav.vma_allocator_, copy_src_regions_mem_block.allocation,
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
@@ -217,10 +217,10 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
             return;
         }
 
-        const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
-        uint32_t gpu_regions_count = 0;
+        const u32 block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
+        u32 gpu_regions_count = 0;
         BufferImageCopy *gpu_regions_ptr =
-            reinterpret_cast<BufferImageCopy *>(&gpu_regions_u32_ptr[uniform_block_constants_byte_size / sizeof(uint32_t)]);
+            reinterpret_cast<BufferImageCopy *>(&gpu_regions_u32_ptr[uniform_block_constants_byte_size / sizeof(u32)]);
         for (const auto &cpu_region : vvl::make_span(copy_buffer_to_img_info->pRegions, copy_buffer_to_img_info->regionCount)) {
             if (cpu_region.imageSubresource.aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT) {
                 continue;
@@ -235,7 +235,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
             }
 
             BufferImageCopy &gpu_region = gpu_regions_ptr[gpu_regions_count];
-            gpu_region.src_buffer_byte_offset = static_cast<uint32_t>(cpu_region.bufferOffset);
+            gpu_region.src_buffer_byte_offset = static_cast<u32>(cpu_region.bufferOffset);
             gpu_region.start_layer = cpu_region.imageSubresource.baseArrayLayer;
             gpu_region.layer_count = cpu_region.imageSubresource.layerCount;
             gpu_region.row_extent = std::max(cpu_region.bufferRowLength, image_state->create_info.extent.width * block_size);
@@ -298,13 +298,13 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         std::array<VkWriteDescriptorSet, descriptor_buffer_infos.size()> desc_writes = {};
         for (const auto [i, desc_buffer_info] : vvl::enumerate(descriptor_buffer_infos.data(), descriptor_buffer_infos.size())) {
             desc_writes[i] = vku::InitStructHelper();
-            desc_writes[i].dstBinding = static_cast<uint32_t>(i);
+            desc_writes[i].dstBinding = static_cast<u32>(i);
             desc_writes[i].descriptorCount = 1;
             desc_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             desc_writes[i].pBufferInfo = desc_buffer_info;
             desc_writes[i].dstSet = validation_desc_set;
         }
-        DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
+        DispatchUpdateDescriptorSets(gpuav.device, static_cast<u32>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
     // Save current graphics pipeline state
     RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -314,17 +314,16 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
 
     BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE,
                                     shared_copy_validation_resources.pipeline_layout, 0,
-                                    static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+                                    static_cast<u32>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
                                   shared_copy_validation_resources.pipeline_layout, glsl::kDiagPerCmdDescriptorSet, 1,
                                   &validation_desc_set, 0, nullptr);
     // correct_count == max texelsCount?
-    const uint32_t group_count_x = max_texels_count_in_regions / 64 + uint32_t(max_texels_count_in_regions % 64 > 0);
+    const u32 group_count_x = max_texels_count_in_regions / 64 + u32(max_texels_count_in_regions % 64 > 0);
     DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                      Validator &gpuav, const uint32_t *error_record,
-                                                      const LogObjectList &objlist) {
+                                                      Validator &gpuav, const u32 *error_record, const LogObjectList &objlist) {
         bool skip = false;
 
         using namespace glsl;
@@ -335,7 +334,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
 
         switch (error_record[kHeaderErrorSubCodeOffset]) {
             case kErrorSubCodePreCopyBufferToImageBufferTexel: {
-                uint32_t texel_offset = error_record[kPreActionParamOffset_0];
+                u32 texel_offset = error_record[kPreActionParamOffset_0];
                 LogObjectList objlist_and_src_buffer = objlist;
                 objlist_and_src_buffer.add(src_buffer);
                 const char *vuid = loc.function == vvl::Func::vkCmdCopyBufferToImage

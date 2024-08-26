@@ -24,7 +24,7 @@
 
 #include "generated/spirv_tools_commit_id.h"
 
-void ValidationCache::GetUUID(uint8_t *uuid) {
+void ValidationCache::GetUUID(u8 *uuid) {
     const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
     // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
     // output, so pad with zeroes if the input string is shorter than that, and truncate
@@ -38,39 +38,39 @@ void ValidationCache::GetUUID(uint8_t *uuid) {
 #if defined(__GNUC__) && (__GNUC__ > 8)
 #pragma GCC diagnostic pop
 #endif
-    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+    for (u32 i = 0; i < VK_UUID_SIZE; ++i) {
         const char byte_str[] = {padded_sha1_str[2 * i + 0], padded_sha1_str[2 * i + 1], '\0'};
-        uuid[i] = static_cast<uint8_t>(std::strtoul(byte_str, nullptr, 16));
+        uuid[i] = static_cast<u8>(std::strtoul(byte_str, nullptr, 16));
     }
 
     // Replace the last 4 bytes (likely padded with zero anyway)
-    std::memcpy(uuid + (VK_UUID_SIZE - sizeof(uint32_t)), &spirv_val_option_hash_, sizeof(uint32_t));
+    std::memcpy(uuid + (VK_UUID_SIZE - sizeof(u32)), &spirv_val_option_hash_, sizeof(u32));
 }
 
 void ValidationCache::Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
-    const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;
+    const auto headerSize = 2 * sizeof(u32) + VK_UUID_SIZE;
     auto size = headerSize;
     if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size) return;
 
-    uint32_t const *data = (uint32_t const *)pCreateInfo->pInitialData;
+    u32 const *data = (u32 const *)pCreateInfo->pInitialData;
     if (data[0] != size) return;
     if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) return;
-    uint8_t expected_uuid[VK_UUID_SIZE];
+    u8 expected_uuid[VK_UUID_SIZE];
     GetUUID(expected_uuid);
     if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) return;  // different version
 
-    data = (uint32_t const *)(reinterpret_cast<uint8_t const *>(data) + headerSize);
+    data = (u32 const *)(reinterpret_cast<u8 const *>(data) + headerSize);
 
     auto guard = WriteLock();
-    for (; size < pCreateInfo->initialDataSize; data++, size += sizeof(uint32_t)) {
+    for (; size < pCreateInfo->initialDataSize; data++, size += sizeof(u32)) {
         good_shader_hashes_.insert(*data);
     }
 }
 
 void ValidationCache::Write(size_t *pDataSize, void *pData) {
-    const auto header_size = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
+    const auto header_size = 2 * sizeof(u32) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
     if (!pData) {
-        *pDataSize = header_size + good_shader_hashes_.size() * sizeof(uint32_t);
+        *pDataSize = header_size + good_shader_hashes_.size() * sizeof(u32);
         return;
     }
 
@@ -79,19 +79,19 @@ void ValidationCache::Write(size_t *pDataSize, void *pData) {
         return;  // Too small for even the header!
     }
 
-    uint32_t *out = (uint32_t *)pData;
+    u32 *out = (u32 *)pData;
     size_t actual_size = header_size;
 
     // Write the header
     *out++ = header_size;
     *out++ = VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT;
-    GetUUID(reinterpret_cast<uint8_t *>(out));
-    out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
+    GetUUID(reinterpret_cast<u8 *>(out));
+    out = (u32 *)(reinterpret_cast<u8 *>(out) + VK_UUID_SIZE);
 
     {
         auto guard = ReadLock();
         for (auto it = good_shader_hashes_.begin(); it != good_shader_hashes_.end() && actual_size < *pDataSize;
-             it++, out++, actual_size += sizeof(uint32_t)) {
+             it++, out++, actual_size += sizeof(u32)) {
             *out = *it;
         }
     }
@@ -127,7 +127,7 @@ spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4) {
 
 // Some Vulkan extensions/features are just all done in spirv-val behind optional settings
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &out_options, uint32_t *out_hash) {
+                            spvtools::ValidatorOptions &out_options, u32 *out_hash) {
     struct Settings {
         bool relax_block_layout;
         bool uniform_buffer_standard_layout;

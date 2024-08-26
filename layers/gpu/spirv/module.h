@@ -27,18 +27,18 @@ namespace gpu {
 namespace spirv {
 
 struct ModuleHeader {
-    uint32_t magic_number;
-    uint32_t version;
-    uint32_t generator;
-    uint32_t bound;
-    uint32_t schema;
+    u32 magic_number;
+    u32 version;
+    u32 generator;
+    u32 bound;
+    u32 schema;
 };
 
 struct Settings {
-    uint32_t shader_id;
-    uint32_t output_buffer_descriptor_set;
+    u32 shader_id;
+    u32 output_buffer_descriptor_set;
     bool print_debug_info;
-    uint32_t max_instrumented_count;
+    u32 max_instrumented_count;
     bool support_int64;
     bool support_memory_model_device_scope;
     bool has_bindless_descriptors;
@@ -48,7 +48,7 @@ struct Settings {
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings);
+    Module(vvl::span<const u32> words, DebugReport* debug_report, const Settings& settings);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -71,7 +71,7 @@ class Module {
     TypeManager type_manager_;
 
     // When adding a new instruction with result ID, will need to grab the next ID
-    uint32_t TakeNextId();
+    u32 TakeNextId();
 
     // Order of functions that will try to be linked in
     std::vector<LinkInfo> link_info_;
@@ -79,7 +79,7 @@ class Module {
     void PostProcess();
 
     // The class is designed to be written out to a binary file.
-    void ToBinary(std::vector<uint32_t>& out);
+    void ToBinary(std::vector<u32>& out);
 
     // Passes that can be ran
     // Return true if code was instrumented
@@ -88,25 +88,25 @@ class Module {
     bool RunPassNonBindlessOOBTexelBuffer();
     bool RunPassBufferDeviceAddress();
     bool RunPassRayQuery();
-    bool RunPassDebugPrintf(uint32_t binding_slot = 0);
+    bool RunPassDebugPrintf(u32 binding_slot = 0);
 
-    void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
+    void AddInterfaceVariables(u32 id, spv::StorageClass storage_class);
 
     // Helpers
     bool HasCapability(spv::Capability capability);
     void AddCapability(spv::Capability capability);
     void AddExtension(const char* extension);
-    void AddDebugName(const char* name, uint32_t id);
-    void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);
-    void AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration, const std::vector<uint32_t>& operands);
+    void AddDebugName(const char* name, u32 id);
+    void AddDecoration(u32 target_id, spv::Decoration decoration, const std::vector<u32>& operands);
+    void AddMemberDecoration(u32 target_id, u32 index, spv::Decoration decoration, const std::vector<u32>& operands);
 
-    const uint32_t max_instrumented_count_ = 0;  // zero is same as "unlimited"
+    const u32 max_instrumented_count_ = 0;  // zero is same as "unlimited"
     bool use_bda_ = false;
     // provides a way to map back and know which original SPIR-V this was from
-    const uint32_t shader_id_;
+    const u32 shader_id_;
     // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
     // This allows anything to be set in the GLSL for the set value, as we change it at runtime
-    const uint32_t output_buffer_descriptor_set_;
+    const u32 output_buffer_descriptor_set_;
 
     const bool support_int64_;
     const bool support_memory_model_device_scope_;

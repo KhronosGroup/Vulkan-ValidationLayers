@@ -40,12 +40,12 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkFrameBoundaryEXT*>(cur_pnext);
                 if (safe_struct->pImages) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->imageCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->imageCount; ++index0) {
                         safe_struct->pImages[index0] = layer_data->Unwrap(safe_struct->pImages[index0]);
                     }
                 }
                 if (safe_struct->pBuffers) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->bufferCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->bufferCount; ++index0) {
                         safe_struct->pBuffers[index0] = layer_data->Unwrap(safe_struct->pBuffers[index0]);
                     }
                 }
@@ -54,12 +54,12 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkWin32KeyedMutexAcquireReleaseInfoKHR*>(cur_pnext);
                 if (safe_struct->pAcquireSyncs) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->acquireCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->acquireCount; ++index0) {
                         safe_struct->pAcquireSyncs[index0] = layer_data->Unwrap(safe_struct->pAcquireSyncs[index0]);
                     }
                 }
                 if (safe_struct->pReleaseSyncs) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->releaseCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->releaseCount; ++index0) {
                         safe_struct->pReleaseSyncs[index0] = layer_data->Unwrap(safe_struct->pReleaseSyncs[index0]);
                     }
                 }
@@ -67,12 +67,12 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkWin32KeyedMutexAcquireReleaseInfoNV*>(cur_pnext);
                 if (safe_struct->pAcquireSyncs) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->acquireCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->acquireCount; ++index0) {
                         safe_struct->pAcquireSyncs[index0] = layer_data->Unwrap(safe_struct->pAcquireSyncs[index0]);
                     }
                 }
                 if (safe_struct->pReleaseSyncs) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->releaseCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->releaseCount; ++index0) {
                         safe_struct->pReleaseSyncs[index0] = layer_data->Unwrap(safe_struct->pReleaseSyncs[index0]);
                     }
                 }
@@ -147,7 +147,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineBinaryInfoKHR*>(cur_pnext);
                 if (safe_struct->pPipelineBinaries) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->binaryCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->binaryCount; ++index0) {
                         safe_struct->pPipelineBinaries[index0] = layer_data->Unwrap(safe_struct->pPipelineBinaries[index0]);
                     }
                 }
@@ -162,9 +162,9 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_SHADER_GROUPS_CREATE_INFO_NV: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkGraphicsPipelineShaderGroupsCreateInfoNV*>(cur_pnext);
                 if (safe_struct->pGroups) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->groupCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->groupCount; ++index0) {
                         if (safe_struct->pGroups[index0].pStages) {
-                            for (uint32_t index1 = 0; index1 < safe_struct->pGroups[index0].stageCount; ++index1) {
+                            for (u32 index1 = 0; index1 < safe_struct->pGroups[index0].stageCount; ++index1) {
                                 UnwrapPnextChainHandles(layer_data, safe_struct->pGroups[index0].pStages[index1].pNext);
 
                                 if (safe_struct->pGroups[index0].pStages[index1].module) {
@@ -176,7 +176,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                     }
                 }
                 if (safe_struct->pPipelines) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->pipelineCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->pipelineCount; ++index0) {
                         safe_struct->pPipelines[index0] = layer_data->Unwrap(safe_struct->pPipelines[index0]);
                     }
                 }
@@ -184,7 +184,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineLibraryCreateInfoKHR*>(cur_pnext);
                 if (safe_struct->pLibraries) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->libraryCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->libraryCount; ++index0) {
                         safe_struct->pLibraries[index0] = layer_data->Unwrap(safe_struct->pLibraries[index0]);
                     }
                 }
@@ -192,7 +192,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetAccelerationStructureKHR*>(cur_pnext);
                 if (safe_struct->pAccelerationStructures) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
                         safe_struct->pAccelerationStructures[index0] =
                             layer_data->Unwrap(safe_struct->pAccelerationStructures[index0]);
                     }
@@ -201,7 +201,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetAccelerationStructureNV*>(cur_pnext);
                 if (safe_struct->pAccelerationStructures) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->accelerationStructureCount; ++index0) {
                         safe_struct->pAccelerationStructures[index0] =
                             layer_data->Unwrap(safe_struct->pAccelerationStructures[index0]);
                     }
@@ -210,7 +210,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkRenderPassAttachmentBeginInfo*>(cur_pnext);
                 if (safe_struct->pAttachments) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->attachmentCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->attachmentCount; ++index0) {
                         safe_struct->pAttachments[index0] = layer_data->Unwrap(safe_struct->pAttachments[index0]);
                     }
                 }
@@ -225,7 +225,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_SUBMIT_INFO_ARM: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkRenderPassStripeSubmitInfoARM*>(cur_pnext);
                 if (safe_struct->pStripeSemaphoreInfos) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->stripeSemaphoreInfoCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->stripeSemaphoreInfoCount; ++index0) {
                         if (safe_struct->pStripeSemaphoreInfos[index0].semaphore) {
                             safe_struct->pStripeSemaphoreInfos[index0].semaphore =
                                 layer_data->Unwrap(safe_struct->pStripeSemaphoreInfos[index0].semaphore);
@@ -250,7 +250,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkSwapchainPresentFenceInfoEXT*>(cur_pnext);
                 if (safe_struct->pFences) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->swapchainCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->swapchainCount; ++index0) {
                         safe_struct->pFences[index0] = layer_data->Unwrap(safe_struct->pFences[index0]);
                     }
                 }
@@ -281,7 +281,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkExecutionGraphPipelineCreateInfoAMDX*>(cur_pnext);
                 if (safe_struct->pStages) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->stageCount; ++index0) {
                         UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
 
                         if (safe_struct->pStages[index0].module) {
@@ -291,7 +291,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                 }
                 if (safe_struct->pLibraryInfo) {
                     if (safe_struct->pLibraryInfo->pLibraries) {
-                        for (uint32_t index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
+                        for (u32 index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
                             safe_struct->pLibraryInfo->pLibraries[index1] =
                                 layer_data->Unwrap(safe_struct->pLibraryInfo->pLibraries[index1]);
                         }
@@ -309,7 +309,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkGraphicsPipelineCreateInfo*>(cur_pnext);
                 if (safe_struct->pStages) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->stageCount; ++index0) {
                         UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
 
                         if (safe_struct->pStages[index0].module) {
@@ -331,7 +331,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkRayTracingPipelineCreateInfoKHR*>(cur_pnext);
                 if (safe_struct->pStages) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->stageCount; ++index0) {
                         UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
 
                         if (safe_struct->pStages[index0].module) {
@@ -341,7 +341,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                 }
                 if (safe_struct->pLibraryInfo) {
                     if (safe_struct->pLibraryInfo->pLibraries) {
-                        for (uint32_t index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
+                        for (u32 index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
                             safe_struct->pLibraryInfo->pLibraries[index1] =
                                 layer_data->Unwrap(safe_struct->pLibraryInfo->pLibraries[index1]);
                         }
@@ -358,7 +358,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkRayTracingPipelineCreateInfoNV*>(cur_pnext);
                 if (safe_struct->pStages) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->stageCount; ++index0) {
                         UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
 
                         if (safe_struct->pStages[index0].module) {
@@ -377,7 +377,7 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
             case VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineLayoutCreateInfo*>(cur_pnext);
                 if (safe_struct->pSetLayouts) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->setLayoutCount; ++index0) {
+                    for (u32 index0 = 0; index0 < safe_struct->setLayoutCount; ++index0) {
                         safe_struct->pSetLayouts[index0] = layer_data->Unwrap(safe_struct->pSetLayouts[index0]);
                     }
                 }
@@ -560,17 +560,17 @@ VkResult DispatchQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmit
     {
         if (pSubmits) {
             local_pSubmits = new vku::safe_VkSubmitInfo[submitCount];
-            for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
+            for (u32 index0 = 0; index0 < submitCount; ++index0) {
                 local_pSubmits[index0].initialize(&pSubmits[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pSubmits[index0].pNext);
                 if (local_pSubmits[index0].pWaitSemaphores) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].waitSemaphoreCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].waitSemaphoreCount; ++index1) {
                         local_pSubmits[index0].pWaitSemaphores[index1] =
                             layer_data->Unwrap(local_pSubmits[index0].pWaitSemaphores[index1]);
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphores) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreCount; ++index1) {
                         local_pSubmits[index0].pSignalSemaphores[index1] =
                             layer_data->Unwrap(local_pSubmits[index0].pSignalSemaphores[index1]);
                     }
@@ -627,7 +627,7 @@ void DispatchFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocati
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.FreeMemory(device, memory, pAllocator);
 
-    uint64_t memory_id = CastToUint64(memory);
+    u64 memory_id = CastToUint64(memory);
     auto iter = unique_id_mapping.pop(memory_id);
     if (iter != unique_id_mapping.end()) {
         memory = (VkDeviceMemory)iter->second;
@@ -661,7 +661,7 @@ VkResult DispatchFlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCo
     {
         if (pMemoryRanges) {
             local_pMemoryRanges = new vku::safe_VkMappedMemoryRange[memoryRangeCount];
-            for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
+            for (u32 index0 = 0; index0 < memoryRangeCount; ++index0) {
                 local_pMemoryRanges[index0].initialize(&pMemoryRanges[index0]);
 
                 if (pMemoryRanges[index0].memory) {
@@ -687,7 +687,7 @@ VkResult DispatchInvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRa
     {
         if (pMemoryRanges) {
             local_pMemoryRanges = new vku::safe_VkMappedMemoryRange[memoryRangeCount];
-            for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
+            for (u32 index0 = 0; index0 < memoryRangeCount; ++index0) {
                 local_pMemoryRanges[index0].initialize(&pMemoryRanges[index0]);
 
                 if (pMemoryRanges[index0].memory) {
@@ -777,23 +777,23 @@ VkResult DispatchQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const Vk
     {
         if (pBindInfo) {
             local_pBindInfo = new vku::safe_VkBindSparseInfo[bindInfoCount];
-            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfo[index0].initialize(&pBindInfo[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pBindInfo[index0].pNext);
                 if (local_pBindInfo[index0].pWaitSemaphores) {
-                    for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].waitSemaphoreCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pBindInfo[index0].waitSemaphoreCount; ++index1) {
                         local_pBindInfo[index0].pWaitSemaphores[index1] =
                             layer_data->Unwrap(local_pBindInfo[index0].pWaitSemaphores[index1]);
                     }
                 }
                 if (local_pBindInfo[index0].pBufferBinds) {
-                    for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].bufferBindCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pBindInfo[index0].bufferBindCount; ++index1) {
                         if (pBindInfo[index0].pBufferBinds[index1].buffer) {
                             local_pBindInfo[index0].pBufferBinds[index1].buffer =
                                 layer_data->Unwrap(pBindInfo[index0].pBufferBinds[index1].buffer);
                         }
                         if (local_pBindInfo[index0].pBufferBinds[index1].pBinds) {
-                            for (uint32_t index2 = 0; index2 < local_pBindInfo[index0].pBufferBinds[index1].bindCount; ++index2) {
+                            for (u32 index2 = 0; index2 < local_pBindInfo[index0].pBufferBinds[index1].bindCount; ++index2) {
                                 if (pBindInfo[index0].pBufferBinds[index1].pBinds[index2].memory) {
                                     local_pBindInfo[index0].pBufferBinds[index1].pBinds[index2].memory =
                                         layer_data->Unwrap(pBindInfo[index0].pBufferBinds[index1].pBinds[index2].memory);
@@ -803,14 +803,13 @@ VkResult DispatchQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const Vk
                     }
                 }
                 if (local_pBindInfo[index0].pImageOpaqueBinds) {
-                    for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].imageOpaqueBindCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pBindInfo[index0].imageOpaqueBindCount; ++index1) {
                         if (pBindInfo[index0].pImageOpaqueBinds[index1].image) {
                             local_pBindInfo[index0].pImageOpaqueBinds[index1].image =
                                 layer_data->Unwrap(pBindInfo[index0].pImageOpaqueBinds[index1].image);
                         }
                         if (local_pBindInfo[index0].pImageOpaqueBinds[index1].pBinds) {
-                            for (uint32_t index2 = 0; index2 < local_pBindInfo[index0].pImageOpaqueBinds[index1].bindCount;
-                                 ++index2) {
+                            for (u32 index2 = 0; index2 < local_pBindInfo[index0].pImageOpaqueBinds[index1].bindCount; ++index2) {
                                 if (pBindInfo[index0].pImageOpaqueBinds[index1].pBinds[index2].memory) {
                                     local_pBindInfo[index0].pImageOpaqueBinds[index1].pBinds[index2].memory =
                                         layer_data->Unwrap(pBindInfo[index0].pImageOpaqueBinds[index1].pBinds[index2].memory);
@@ -820,13 +819,13 @@ VkResult DispatchQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const Vk
                     }
                 }
                 if (local_pBindInfo[index0].pImageBinds) {
-                    for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].imageBindCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pBindInfo[index0].imageBindCount; ++index1) {
                         if (pBindInfo[index0].pImageBinds[index1].image) {
                             local_pBindInfo[index0].pImageBinds[index1].image =
                                 layer_data->Unwrap(pBindInfo[index0].pImageBinds[index1].image);
                         }
                         if (local_pBindInfo[index0].pImageBinds[index1].pBinds) {
-                            for (uint32_t index2 = 0; index2 < local_pBindInfo[index0].pImageBinds[index1].bindCount; ++index2) {
+                            for (u32 index2 = 0; index2 < local_pBindInfo[index0].pImageBinds[index1].bindCount; ++index2) {
                                 if (pBindInfo[index0].pImageBinds[index1].pBinds[index2].memory) {
                                     local_pBindInfo[index0].pImageBinds[index1].pBinds[index2].memory =
                                         layer_data->Unwrap(pBindInfo[index0].pImageBinds[index1].pBinds[index2].memory);
@@ -836,7 +835,7 @@ VkResult DispatchQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const Vk
                     }
                 }
                 if (local_pBindInfo[index0].pSignalSemaphores) {
-                    for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].signalSemaphoreCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pBindInfo[index0].signalSemaphoreCount; ++index1) {
                         local_pBindInfo[index0].pSignalSemaphores[index1] =
                             layer_data->Unwrap(local_pBindInfo[index0].pSignalSemaphores[index1]);
                     }
@@ -869,7 +868,7 @@ void DispatchDestroyFence(VkDevice device, VkFence fence, const VkAllocationCall
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyFence(device, fence, pAllocator);
 
-    uint64_t fence_id = CastToUint64(fence);
+    u64 fence_id = CastToUint64(fence);
     auto iter = unique_id_mapping.pop(fence_id);
     if (iter != unique_id_mapping.end()) {
         fence = (VkFence)iter->second;
@@ -887,7 +886,7 @@ VkResult DispatchResetFences(VkDevice device, uint32_t fenceCount, const VkFence
     {
         if (pFences) {
             local_pFences = fenceCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkFence[fenceCount] : var_local_pFences;
-            for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
+            for (u32 index0 = 0; index0 < fenceCount; ++index0) {
                 local_pFences[index0] = layer_data->Unwrap(pFences[index0]);
             }
         }
@@ -914,7 +913,7 @@ VkResult DispatchWaitForFences(VkDevice device, uint32_t fenceCount, const VkFen
     {
         if (pFences) {
             local_pFences = fenceCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkFence[fenceCount] : var_local_pFences;
-            for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
+            for (u32 index0 = 0; index0 < fenceCount; ++index0) {
                 local_pFences[index0] = layer_data->Unwrap(pFences[index0]);
             }
         }
@@ -941,7 +940,7 @@ void DispatchDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAl
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
 
-    uint64_t semaphore_id = CastToUint64(semaphore);
+    u64 semaphore_id = CastToUint64(semaphore);
     auto iter = unique_id_mapping.pop(semaphore_id);
     if (iter != unique_id_mapping.end()) {
         semaphore = (VkSemaphore)iter->second;
@@ -967,7 +966,7 @@ void DispatchDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCall
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyEvent(device, event, pAllocator);
 
-    uint64_t event_id = CastToUint64(event);
+    u64 event_id = CastToUint64(event);
     auto iter = unique_id_mapping.pop(event_id);
     if (iter != unique_id_mapping.end()) {
         event = (VkEvent)iter->second;
@@ -1020,7 +1019,7 @@ void DispatchDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAl
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
 
-    uint64_t queryPool_id = CastToUint64(queryPool);
+    u64 queryPool_id = CastToUint64(queryPool);
     auto iter = unique_id_mapping.pop(queryPool_id);
     if (iter != unique_id_mapping.end()) {
         queryPool = (VkQueryPool)iter->second;
@@ -1068,7 +1067,7 @@ void DispatchDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationC
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
 
-    uint64_t buffer_id = CastToUint64(buffer);
+    u64 buffer_id = CastToUint64(buffer);
     auto iter = unique_id_mapping.pop(buffer_id);
     if (iter != unique_id_mapping.end()) {
         buffer = (VkBuffer)iter->second;
@@ -1106,7 +1105,7 @@ void DispatchDestroyBufferView(VkDevice device, VkBufferView bufferView, const V
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
 
-    uint64_t bufferView_id = CastToUint64(bufferView);
+    u64 bufferView_id = CastToUint64(bufferView);
     auto iter = unique_id_mapping.pop(bufferView_id);
     if (iter != unique_id_mapping.end()) {
         bufferView = (VkBufferView)iter->second;
@@ -1141,7 +1140,7 @@ void DispatchDestroyImage(VkDevice device, VkImage image, const VkAllocationCall
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyImage(device, image, pAllocator);
 
-    uint64_t image_id = CastToUint64(image);
+    u64 image_id = CastToUint64(image);
     auto iter = unique_id_mapping.pop(image_id);
     if (iter != unique_id_mapping.end()) {
         image = (VkImage)iter->second;
@@ -1188,7 +1187,7 @@ void DispatchDestroyImageView(VkDevice device, VkImageView imageView, const VkAl
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
 
-    uint64_t imageView_id = CastToUint64(imageView);
+    u64 imageView_id = CastToUint64(imageView);
     auto iter = unique_id_mapping.pop(imageView_id);
     if (iter != unique_id_mapping.end()) {
         imageView = (VkImageView)iter->second;
@@ -1223,7 +1222,7 @@ void DispatchDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, c
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
 
-    uint64_t shaderModule_id = CastToUint64(shaderModule);
+    u64 shaderModule_id = CastToUint64(shaderModule);
     auto iter = unique_id_mapping.pop(shaderModule_id);
     if (iter != unique_id_mapping.end()) {
         shaderModule = (VkShaderModule)iter->second;
@@ -1250,7 +1249,7 @@ void DispatchDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
 
-    uint64_t pipelineCache_id = CastToUint64(pipelineCache);
+    u64 pipelineCache_id = CastToUint64(pipelineCache);
     auto iter = unique_id_mapping.pop(pipelineCache_id);
     if (iter != unique_id_mapping.end()) {
         pipelineCache = (VkPipelineCache)iter->second;
@@ -1280,7 +1279,7 @@ VkResult DispatchMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, 
         if (pSrcCaches) {
             local_pSrcCaches =
                 srcCacheCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkPipelineCache[srcCacheCount] : var_local_pSrcCaches;
-            for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
+            for (u32 index0 = 0; index0 < srcCacheCount; ++index0) {
                 local_pSrcCaches[index0] = layer_data->Unwrap(pSrcCaches[index0]);
             }
         }
@@ -1295,7 +1294,7 @@ void DispatchDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAlloc
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
 
-    uint64_t pipeline_id = CastToUint64(pipeline);
+    u64 pipeline_id = CastToUint64(pipeline);
     auto iter = unique_id_mapping.pop(pipeline_id);
     if (iter != unique_id_mapping.end()) {
         pipeline = (VkPipeline)iter->second;
@@ -1317,7 +1316,7 @@ VkResult DispatchCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCre
             local_pCreateInfo = &var_local_pCreateInfo;
             local_pCreateInfo->initialize(pCreateInfo);
             if (local_pCreateInfo->pSetLayouts) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->setLayoutCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pCreateInfo->setLayoutCount; ++index1) {
                     local_pCreateInfo->pSetLayouts[index1] = layer_data->Unwrap(local_pCreateInfo->pSetLayouts[index1]);
                 }
             }
@@ -1335,7 +1334,7 @@ void DispatchDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLay
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
 
-    uint64_t pipelineLayout_id = CastToUint64(pipelineLayout);
+    u64 pipelineLayout_id = CastToUint64(pipelineLayout);
     auto iter = unique_id_mapping.pop(pipelineLayout_id);
     if (iter != unique_id_mapping.end()) {
         pipelineLayout = (VkPipelineLayout)iter->second;
@@ -1370,7 +1369,7 @@ void DispatchDestroySampler(VkDevice device, VkSampler sampler, const VkAllocati
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySampler(device, sampler, pAllocator);
 
-    uint64_t sampler_id = CastToUint64(sampler);
+    u64 sampler_id = CastToUint64(sampler);
     auto iter = unique_id_mapping.pop(sampler_id);
     if (iter != unique_id_mapping.end()) {
         sampler = (VkSampler)iter->second;
@@ -1392,9 +1391,9 @@ VkResult DispatchCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSe
             local_pCreateInfo = &var_local_pCreateInfo;
             local_pCreateInfo->initialize(pCreateInfo);
             if (local_pCreateInfo->pBindings) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->bindingCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pCreateInfo->bindingCount; ++index1) {
                     if (local_pCreateInfo->pBindings[index1].pImmutableSamplers) {
-                        for (uint32_t index2 = 0; index2 < local_pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
+                        for (u32 index2 = 0; index2 < local_pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
                             local_pCreateInfo->pBindings[index1].pImmutableSamplers[index2] =
                                 layer_data->Unwrap(local_pCreateInfo->pBindings[index1].pImmutableSamplers[index2]);
                         }
@@ -1416,7 +1415,7 @@ void DispatchDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout d
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
 
-    uint64_t descriptorSetLayout_id = CastToUint64(descriptorSetLayout);
+    u64 descriptorSetLayout_id = CastToUint64(descriptorSetLayout);
     auto iter = unique_id_mapping.pop(descriptorSetLayout_id);
     if (iter != unique_id_mapping.end()) {
         descriptorSetLayout = (VkDescriptorSetLayout)iter->second;
@@ -1450,7 +1449,7 @@ void DispatchUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
     {
         if (pDescriptorWrites) {
             local_pDescriptorWrites = new vku::safe_VkWriteDescriptorSet[descriptorWriteCount];
-            for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
+            for (u32 index0 = 0; index0 < descriptorWriteCount; ++index0) {
                 local_pDescriptorWrites[index0].initialize(&pDescriptorWrites[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pDescriptorWrites[index0].pNext);
 
@@ -1458,7 +1457,7 @@ void DispatchUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
                     local_pDescriptorWrites[index0].dstSet = layer_data->Unwrap(pDescriptorWrites[index0].dstSet);
                 }
                 if (local_pDescriptorWrites[index0].pImageInfo) {
-                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
                         if (pDescriptorWrites[index0].pImageInfo[index1].sampler) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].sampler =
                                 layer_data->Unwrap(pDescriptorWrites[index0].pImageInfo[index1].sampler);
@@ -1470,7 +1469,7 @@ void DispatchUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
                     }
                 }
                 if (local_pDescriptorWrites[index0].pBufferInfo) {
-                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
                         if (pDescriptorWrites[index0].pBufferInfo[index1].buffer) {
                             local_pDescriptorWrites[index0].pBufferInfo[index1].buffer =
                                 layer_data->Unwrap(pDescriptorWrites[index0].pBufferInfo[index1].buffer);
@@ -1478,7 +1477,7 @@ void DispatchUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
                     }
                 }
                 if (local_pDescriptorWrites[index0].pTexelBufferView) {
-                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
                         local_pDescriptorWrites[index0].pTexelBufferView[index1] =
                             layer_data->Unwrap(local_pDescriptorWrites[index0].pTexelBufferView[index1]);
                     }
@@ -1487,7 +1486,7 @@ void DispatchUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount
         }
         if (pDescriptorCopies) {
             local_pDescriptorCopies = new vku::safe_VkCopyDescriptorSet[descriptorCopyCount];
-            for (uint32_t index0 = 0; index0 < descriptorCopyCount; ++index0) {
+            for (u32 index0 = 0; index0 < descriptorCopyCount; ++index0) {
                 local_pDescriptorCopies[index0].initialize(&pDescriptorCopies[index0]);
 
                 if (pDescriptorCopies[index0].srcSet) {
@@ -1525,7 +1524,7 @@ VkResult DispatchCreateFramebuffer(VkDevice device, const VkFramebufferCreateInf
                 local_pCreateInfo->renderPass = layer_data->Unwrap(pCreateInfo->renderPass);
             }
             if (local_pCreateInfo->pAttachments) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->attachmentCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pCreateInfo->attachmentCount; ++index1) {
                     local_pCreateInfo->pAttachments[index1] = layer_data->Unwrap(local_pCreateInfo->pAttachments[index1]);
                 }
             }
@@ -1543,7 +1542,7 @@ void DispatchDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, cons
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
 
-    uint64_t framebuffer_id = CastToUint64(framebuffer);
+    u64 framebuffer_id = CastToUint64(framebuffer);
     auto iter = unique_id_mapping.pop(framebuffer_id);
     if (iter != unique_id_mapping.end()) {
         framebuffer = (VkFramebuffer)iter->second;
@@ -1675,7 +1674,7 @@ void DispatchCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBind
         if (pDescriptorSets) {
             local_pDescriptorSets = descriptorSetCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkDescriptorSet[descriptorSetCount]
                                                                                         : var_local_pDescriptorSets;
-            for (uint32_t index0 = 0; index0 < descriptorSetCount; ++index0) {
+            for (u32 index0 = 0; index0 < descriptorSetCount; ++index0) {
                 local_pDescriptorSets[index0] = layer_data->Unwrap(pDescriptorSets[index0]);
             }
         }
@@ -1704,7 +1703,7 @@ void DispatchCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstB
     {
         if (pBuffers) {
             local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
-            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindingCount; ++index0) {
                 local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
             }
         }
@@ -1917,13 +1916,13 @@ void DispatchCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, c
     {
         if (pEvents) {
             local_pEvents = eventCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkEvent[eventCount] : var_local_pEvents;
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+            for (u32 index0 = 0; index0 < eventCount; ++index0) {
                 local_pEvents[index0] = layer_data->Unwrap(pEvents[index0]);
             }
         }
         if (pBufferMemoryBarriers) {
             local_pBufferMemoryBarriers = new vku::safe_VkBufferMemoryBarrier[bufferMemoryBarrierCount];
-            for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
+            for (u32 index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
                 local_pBufferMemoryBarriers[index0].initialize(&pBufferMemoryBarriers[index0]);
 
                 if (pBufferMemoryBarriers[index0].buffer) {
@@ -1933,7 +1932,7 @@ void DispatchCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, c
         }
         if (pImageMemoryBarriers) {
             local_pImageMemoryBarriers = new vku::safe_VkImageMemoryBarrier[imageMemoryBarrierCount];
-            for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
+            for (u32 index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
                 local_pImageMemoryBarriers[index0].initialize(&pImageMemoryBarriers[index0]);
 
                 if (pImageMemoryBarriers[index0].image) {
@@ -1970,7 +1969,7 @@ void DispatchCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFl
     {
         if (pBufferMemoryBarriers) {
             local_pBufferMemoryBarriers = new vku::safe_VkBufferMemoryBarrier[bufferMemoryBarrierCount];
-            for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
+            for (u32 index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
                 local_pBufferMemoryBarriers[index0].initialize(&pBufferMemoryBarriers[index0]);
 
                 if (pBufferMemoryBarriers[index0].buffer) {
@@ -1980,7 +1979,7 @@ void DispatchCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFl
         }
         if (pImageMemoryBarriers) {
             local_pImageMemoryBarriers = new vku::safe_VkImageMemoryBarrier[imageMemoryBarrierCount];
-            for (uint32_t index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
+            for (u32 index0 = 0; index0 < imageMemoryBarrierCount; ++index0) {
                 local_pImageMemoryBarriers[index0].initialize(&pImageMemoryBarriers[index0]);
 
                 if (pImageMemoryBarriers[index0].image) {
@@ -2103,7 +2102,7 @@ VkResult DispatchBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, cons
     {
         if (pBindInfos) {
             local_pBindInfos = new vku::safe_VkBindBufferMemoryInfo[bindInfoCount];
-            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfos[index0].initialize(&pBindInfos[index0]);
 
                 if (pBindInfos[index0].buffer) {
@@ -2130,7 +2129,7 @@ VkResult DispatchBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const
     {
         if (pBindInfos) {
             local_pBindInfos = new vku::safe_VkBindImageMemoryInfo[bindInfoCount];
-            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfos[index0].initialize(&pBindInfos[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pBindInfos[index0].pNext);
 
@@ -2332,7 +2331,7 @@ void DispatchDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConver
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
 
-    uint64_t ycbcrConversion_id = CastToUint64(ycbcrConversion);
+    u64 ycbcrConversion_id = CastToUint64(ycbcrConversion);
     auto iter = unique_id_mapping.pop(ycbcrConversion_id);
     if (iter != unique_id_mapping.end()) {
         ycbcrConversion = (VkSamplerYcbcrConversion)iter->second;
@@ -2380,9 +2379,9 @@ void DispatchGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSe
             local_pCreateInfo = &var_local_pCreateInfo;
             local_pCreateInfo->initialize(pCreateInfo);
             if (local_pCreateInfo->pBindings) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->bindingCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pCreateInfo->bindingCount; ++index1) {
                     if (local_pCreateInfo->pBindings[index1].pImmutableSamplers) {
-                        for (uint32_t index2 = 0; index2 < local_pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
+                        for (u32 index2 = 0; index2 < local_pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
                             local_pCreateInfo->pBindings[index1].pImmutableSamplers[index2] =
                                 layer_data->Unwrap(local_pCreateInfo->pBindings[index1].pImmutableSamplers[index2]);
                         }
@@ -2487,7 +2486,7 @@ VkResult DispatchWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWai
             local_pWaitInfo = &var_local_pWaitInfo;
             local_pWaitInfo->initialize(pWaitInfo);
             if (local_pWaitInfo->pSemaphores) {
-                for (uint32_t index1 = 0; index1 < local_pWaitInfo->semaphoreCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pWaitInfo->semaphoreCount; ++index1) {
                     local_pWaitInfo->pSemaphores[index1] = layer_data->Unwrap(local_pWaitInfo->pSemaphores[index1]);
                 }
             }
@@ -2599,7 +2598,7 @@ void DispatchDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDa
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
 
-    uint64_t privateDataSlot_id = CastToUint64(privateDataSlot);
+    u64 privateDataSlot_id = CastToUint64(privateDataSlot);
     auto iter = unique_id_mapping.pop(privateDataSlot_id);
     if (iter != unique_id_mapping.end()) {
         privateDataSlot = (VkPrivateDataSlot)iter->second;
@@ -2650,7 +2649,7 @@ void DispatchCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const Vk
             local_pDependencyInfo = &var_local_pDependencyInfo;
             local_pDependencyInfo->initialize(pDependencyInfo);
             if (local_pDependencyInfo->pBufferMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pBufferMemoryBarriers[index1].buffer) {
                         local_pDependencyInfo->pBufferMemoryBarriers[index1].buffer =
                             layer_data->Unwrap(pDependencyInfo->pBufferMemoryBarriers[index1].buffer);
@@ -2658,7 +2657,7 @@ void DispatchCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const Vk
                 }
             }
             if (local_pDependencyInfo->pImageMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pImageMemoryBarriers[index1].image) {
                         local_pDependencyInfo->pImageMemoryBarriers[index1].image =
                             layer_data->Unwrap(pDependencyInfo->pImageMemoryBarriers[index1].image);
@@ -2688,16 +2687,16 @@ void DispatchCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, 
     {
         if (pEvents) {
             local_pEvents = eventCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkEvent[eventCount] : var_local_pEvents;
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+            for (u32 index0 = 0; index0 < eventCount; ++index0) {
                 local_pEvents[index0] = layer_data->Unwrap(pEvents[index0]);
             }
         }
         if (pDependencyInfos) {
             local_pDependencyInfos = new vku::safe_VkDependencyInfo[eventCount];
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+            for (u32 index0 = 0; index0 < eventCount; ++index0) {
                 local_pDependencyInfos[index0].initialize(&pDependencyInfos[index0]);
                 if (local_pDependencyInfos[index0].pBufferMemoryBarriers) {
-                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
                         if (pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer) {
                             local_pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer =
                                 layer_data->Unwrap(pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer);
@@ -2705,7 +2704,7 @@ void DispatchCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, 
                     }
                 }
                 if (local_pDependencyInfos[index0].pImageMemoryBarriers) {
-                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
                         if (pDependencyInfos[index0].pImageMemoryBarriers[index1].image) {
                             local_pDependencyInfos[index0].pImageMemoryBarriers[index1].image =
                                 layer_data->Unwrap(pDependencyInfos[index0].pImageMemoryBarriers[index1].image);
@@ -2733,7 +2732,7 @@ void DispatchCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependen
             local_pDependencyInfo = &var_local_pDependencyInfo;
             local_pDependencyInfo->initialize(pDependencyInfo);
             if (local_pDependencyInfo->pBufferMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pBufferMemoryBarriers[index1].buffer) {
                         local_pDependencyInfo->pBufferMemoryBarriers[index1].buffer =
                             layer_data->Unwrap(pDependencyInfo->pBufferMemoryBarriers[index1].buffer);
@@ -2741,7 +2740,7 @@ void DispatchCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependen
                 }
             }
             if (local_pDependencyInfo->pImageMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pImageMemoryBarriers[index1].image) {
                         local_pDependencyInfo->pImageMemoryBarriers[index1].image =
                             layer_data->Unwrap(pDependencyInfo->pImageMemoryBarriers[index1].image);
@@ -2767,11 +2766,11 @@ VkResult DispatchQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmi
     {
         if (pSubmits) {
             local_pSubmits = new vku::safe_VkSubmitInfo2[submitCount];
-            for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
+            for (u32 index0 = 0; index0 < submitCount; ++index0) {
                 local_pSubmits[index0].initialize(&pSubmits[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pSubmits[index0].pNext);
                 if (local_pSubmits[index0].pWaitSemaphoreInfos) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].waitSemaphoreInfoCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].waitSemaphoreInfoCount; ++index1) {
                         if (pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore) {
                             local_pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore =
                                 layer_data->Unwrap(pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore);
@@ -2779,12 +2778,12 @@ VkResult DispatchQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmi
                     }
                 }
                 if (local_pSubmits[index0].pCommandBufferInfos) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
                         UnwrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
                         if (pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore) {
                             local_pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore =
                                 layer_data->Unwrap(pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore);
@@ -2941,7 +2940,7 @@ void DispatchCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingI
             local_pRenderingInfo = &var_local_pRenderingInfo;
             local_pRenderingInfo->initialize(pRenderingInfo);
             if (local_pRenderingInfo->pColorAttachments) {
-                for (uint32_t index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
                     if (pRenderingInfo->pColorAttachments[index1].imageView) {
                         local_pRenderingInfo->pColorAttachments[index1].imageView =
                             layer_data->Unwrap(pRenderingInfo->pColorAttachments[index1].imageView);
@@ -3026,7 +3025,7 @@ void DispatchCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t first
     {
         if (pBuffers) {
             local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
-            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindingCount; ++index0) {
                 local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
             }
         }
@@ -3118,7 +3117,7 @@ void DispatchDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
 
-    uint64_t surface_id = CastToUint64(surface);
+    u64 surface_id = CastToUint64(surface);
     auto iter = unique_id_mapping.pop(surface_id);
     if (iter != unique_id_mapping.end()) {
         surface = (VkSurfaceKHR)iter->second;
@@ -3345,7 +3344,7 @@ VkResult DispatchCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCo
     {
         if (pCreateInfos) {
             local_pCreateInfos = new vku::safe_VkSwapchainCreateInfoKHR[swapchainCount];
-            for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
+            for (u32 index0 = 0; index0 < swapchainCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
 
                 if (pCreateInfos[index0].surface) {
@@ -3363,7 +3362,7 @@ VkResult DispatchCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCo
         delete[] local_pCreateInfos;
     }
     if (VK_SUCCESS == result) {
-        for (uint32_t index0 = 0; index0 < swapchainCount; index0++) {
+        for (u32 index0 = 0; index0 < swapchainCount; index0++) {
             pSwapchains[index0] = layer_data->WrapNew(pSwapchains[index0]);
         }
     }
@@ -3521,7 +3520,7 @@ void DispatchDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSess
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
 
-    uint64_t videoSession_id = CastToUint64(videoSession);
+    u64 videoSession_id = CastToUint64(videoSession);
     auto iter = unique_id_mapping.pop(videoSession_id);
     if (iter != unique_id_mapping.end()) {
         videoSession = (VkVideoSessionKHR)iter->second;
@@ -3556,7 +3555,7 @@ VkResult DispatchBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR vi
         videoSession = layer_data->Unwrap(videoSession);
         if (pBindSessionMemoryInfos) {
             local_pBindSessionMemoryInfos = new vku::safe_VkBindVideoSessionMemoryInfoKHR[bindSessionMemoryInfoCount];
-            for (uint32_t index0 = 0; index0 < bindSessionMemoryInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindSessionMemoryInfoCount; ++index0) {
                 local_pBindSessionMemoryInfos[index0].initialize(&pBindSessionMemoryInfos[index0]);
 
                 if (pBindSessionMemoryInfos[index0].memory) {
@@ -3621,7 +3620,7 @@ void DispatchDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionPar
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
 
-    uint64_t videoSessionParameters_id = CastToUint64(videoSessionParameters);
+    u64 videoSessionParameters_id = CastToUint64(videoSessionParameters);
     auto iter = unique_id_mapping.pop(videoSessionParameters_id);
     if (iter != unique_id_mapping.end()) {
         videoSessionParameters = (VkVideoSessionParametersKHR)iter->second;
@@ -3648,7 +3647,7 @@ void DispatchCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideo
                 local_pBeginInfo->videoSessionParameters = layer_data->Unwrap(pBeginInfo->videoSessionParameters);
             }
             if (local_pBeginInfo->pReferenceSlots) {
-                for (uint32_t index1 = 0; index1 < local_pBeginInfo->referenceSlotCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pBeginInfo->referenceSlotCount; ++index1) {
                     if (local_pBeginInfo->pReferenceSlots[index1].pPictureResource) {
                         if (pBeginInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding) {
                             local_pBeginInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding =
@@ -3700,7 +3699,7 @@ void DispatchCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecod
                 }
             }
             if (local_pDecodeInfo->pReferenceSlots) {
-                for (uint32_t index1 = 0; index1 < local_pDecodeInfo->referenceSlotCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDecodeInfo->referenceSlotCount; ++index1) {
                     if (local_pDecodeInfo->pReferenceSlots[index1].pPictureResource) {
                         if (pDecodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding) {
                             local_pDecodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding =
@@ -3725,7 +3724,7 @@ void DispatchCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderi
             local_pRenderingInfo = &var_local_pRenderingInfo;
             local_pRenderingInfo->initialize(pRenderingInfo);
             if (local_pRenderingInfo->pColorAttachments) {
-                for (uint32_t index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
                     if (pRenderingInfo->pColorAttachments[index1].imageView) {
                         local_pRenderingInfo->pColorAttachments[index1].imageView =
                             layer_data->Unwrap(pRenderingInfo->pColorAttachments[index1].imageView);
@@ -4043,7 +4042,7 @@ void DispatchCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBi
         layout = layer_data->Unwrap(layout);
         if (pDescriptorWrites) {
             local_pDescriptorWrites = new vku::safe_VkWriteDescriptorSet[descriptorWriteCount];
-            for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
+            for (u32 index0 = 0; index0 < descriptorWriteCount; ++index0) {
                 local_pDescriptorWrites[index0].initialize(&pDescriptorWrites[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pDescriptorWrites[index0].pNext);
 
@@ -4051,7 +4050,7 @@ void DispatchCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBi
                     local_pDescriptorWrites[index0].dstSet = layer_data->Unwrap(pDescriptorWrites[index0].dstSet);
                 }
                 if (local_pDescriptorWrites[index0].pImageInfo) {
-                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
                         if (pDescriptorWrites[index0].pImageInfo[index1].sampler) {
                             local_pDescriptorWrites[index0].pImageInfo[index1].sampler =
                                 layer_data->Unwrap(pDescriptorWrites[index0].pImageInfo[index1].sampler);
@@ -4063,7 +4062,7 @@ void DispatchCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBi
                     }
                 }
                 if (local_pDescriptorWrites[index0].pBufferInfo) {
-                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
                         if (pDescriptorWrites[index0].pBufferInfo[index1].buffer) {
                             local_pDescriptorWrites[index0].pBufferInfo[index1].buffer =
                                 layer_data->Unwrap(pDescriptorWrites[index0].pBufferInfo[index1].buffer);
@@ -4071,7 +4070,7 @@ void DispatchCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBi
                     }
                 }
                 if (local_pDescriptorWrites[index0].pTexelBufferView) {
-                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
                         local_pDescriptorWrites[index0].pTexelBufferView[index1] =
                             layer_data->Unwrap(local_pDescriptorWrites[index0].pTexelBufferView[index1]);
                     }
@@ -4418,7 +4417,7 @@ void DispatchDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrCon
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
 
-    uint64_t ycbcrConversion_id = CastToUint64(ycbcrConversion);
+    u64 ycbcrConversion_id = CastToUint64(ycbcrConversion);
     auto iter = unique_id_mapping.pop(ycbcrConversion_id);
     if (iter != unique_id_mapping.end()) {
         ycbcrConversion = (VkSamplerYcbcrConversion)iter->second;
@@ -4435,7 +4434,7 @@ VkResult DispatchBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, c
     {
         if (pBindInfos) {
             local_pBindInfos = new vku::safe_VkBindBufferMemoryInfo[bindInfoCount];
-            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfos[index0].initialize(&pBindInfos[index0]);
 
                 if (pBindInfos[index0].buffer) {
@@ -4462,7 +4461,7 @@ VkResult DispatchBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, co
     {
         if (pBindInfos) {
             local_pBindInfos = new vku::safe_VkBindImageMemoryInfo[bindInfoCount];
-            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfos[index0].initialize(&pBindInfos[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pBindInfos[index0].pNext);
 
@@ -4494,9 +4493,9 @@ void DispatchGetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescripto
             local_pCreateInfo = &var_local_pCreateInfo;
             local_pCreateInfo->initialize(pCreateInfo);
             if (local_pCreateInfo->pBindings) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->bindingCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pCreateInfo->bindingCount; ++index1) {
                     if (local_pCreateInfo->pBindings[index1].pImmutableSamplers) {
-                        for (uint32_t index2 = 0; index2 < local_pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
+                        for (u32 index2 = 0; index2 < local_pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
                             local_pCreateInfo->pBindings[index1].pImmutableSamplers[index2] =
                                 layer_data->Unwrap(local_pCreateInfo->pBindings[index1].pImmutableSamplers[index2]);
                         }
@@ -4557,7 +4556,7 @@ VkResult DispatchWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* p
             local_pWaitInfo = &var_local_pWaitInfo;
             local_pWaitInfo->initialize(pWaitInfo);
             if (local_pWaitInfo->pSemaphores) {
-                for (uint32_t index1 = 0; index1 < local_pWaitInfo->semaphoreCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pWaitInfo->semaphoreCount; ++index1) {
                     local_pWaitInfo->pSemaphores[index1] = layer_data->Unwrap(local_pWaitInfo->pSemaphores[index1]);
                 }
             }
@@ -4709,7 +4708,7 @@ void DispatchDestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDeferredOperationKHR(device, operation, pAllocator);
 
-    uint64_t operation_id = CastToUint64(operation);
+    u64 operation_id = CastToUint64(operation);
     auto iter = unique_id_mapping.pop(operation_id);
     if (iter != unique_id_mapping.end()) {
         operation = (VkDeferredOperationKHR)iter->second;
@@ -4908,7 +4907,7 @@ void DispatchCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncod
                 }
             }
             if (local_pEncodeInfo->pReferenceSlots) {
-                for (uint32_t index1 = 0; index1 < local_pEncodeInfo->referenceSlotCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pEncodeInfo->referenceSlotCount; ++index1) {
                     if (local_pEncodeInfo->pReferenceSlots[index1].pPictureResource) {
                         if (pEncodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding) {
                             local_pEncodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding =
@@ -4934,7 +4933,7 @@ void DispatchCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const
             local_pDependencyInfo = &var_local_pDependencyInfo;
             local_pDependencyInfo->initialize(pDependencyInfo);
             if (local_pDependencyInfo->pBufferMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pBufferMemoryBarriers[index1].buffer) {
                         local_pDependencyInfo->pBufferMemoryBarriers[index1].buffer =
                             layer_data->Unwrap(pDependencyInfo->pBufferMemoryBarriers[index1].buffer);
@@ -4942,7 +4941,7 @@ void DispatchCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const
                 }
             }
             if (local_pDependencyInfo->pImageMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pImageMemoryBarriers[index1].image) {
                         local_pDependencyInfo->pImageMemoryBarriers[index1].image =
                             layer_data->Unwrap(pDependencyInfo->pImageMemoryBarriers[index1].image);
@@ -4972,16 +4971,16 @@ void DispatchCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCoun
     {
         if (pEvents) {
             local_pEvents = eventCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkEvent[eventCount] : var_local_pEvents;
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+            for (u32 index0 = 0; index0 < eventCount; ++index0) {
                 local_pEvents[index0] = layer_data->Unwrap(pEvents[index0]);
             }
         }
         if (pDependencyInfos) {
             local_pDependencyInfos = new vku::safe_VkDependencyInfo[eventCount];
-            for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
+            for (u32 index0 = 0; index0 < eventCount; ++index0) {
                 local_pDependencyInfos[index0].initialize(&pDependencyInfos[index0]);
                 if (local_pDependencyInfos[index0].pBufferMemoryBarriers) {
-                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
                         if (pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer) {
                             local_pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer =
                                 layer_data->Unwrap(pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer);
@@ -4989,7 +4988,7 @@ void DispatchCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCoun
                     }
                 }
                 if (local_pDependencyInfos[index0].pImageMemoryBarriers) {
-                    for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pDependencyInfos[index0].imageMemoryBarrierCount; ++index1) {
                         if (pDependencyInfos[index0].pImageMemoryBarriers[index1].image) {
                             local_pDependencyInfos[index0].pImageMemoryBarriers[index1].image =
                                 layer_data->Unwrap(pDependencyInfos[index0].pImageMemoryBarriers[index1].image);
@@ -5017,7 +5016,7 @@ void DispatchCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDepen
             local_pDependencyInfo = &var_local_pDependencyInfo;
             local_pDependencyInfo->initialize(pDependencyInfo);
             if (local_pDependencyInfo->pBufferMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->bufferMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pBufferMemoryBarriers[index1].buffer) {
                         local_pDependencyInfo->pBufferMemoryBarriers[index1].buffer =
                             layer_data->Unwrap(pDependencyInfo->pBufferMemoryBarriers[index1].buffer);
@@ -5025,7 +5024,7 @@ void DispatchCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDepen
                 }
             }
             if (local_pDependencyInfo->pImageMemoryBarriers) {
-                for (uint32_t index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pDependencyInfo->imageMemoryBarrierCount; ++index1) {
                     if (pDependencyInfo->pImageMemoryBarriers[index1].image) {
                         local_pDependencyInfo->pImageMemoryBarriers[index1].image =
                             layer_data->Unwrap(pDependencyInfo->pImageMemoryBarriers[index1].image);
@@ -5052,11 +5051,11 @@ VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
     {
         if (pSubmits) {
             local_pSubmits = new vku::safe_VkSubmitInfo2[submitCount];
-            for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
+            for (u32 index0 = 0; index0 < submitCount; ++index0) {
                 local_pSubmits[index0].initialize(&pSubmits[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pSubmits[index0].pNext);
                 if (local_pSubmits[index0].pWaitSemaphoreInfos) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].waitSemaphoreInfoCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].waitSemaphoreInfoCount; ++index1) {
                         if (pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore) {
                             local_pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore =
                                 layer_data->Unwrap(pSubmits[index0].pWaitSemaphoreInfos[index1].semaphore);
@@ -5064,12 +5063,12 @@ VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
                     }
                 }
                 if (local_pSubmits[index0].pCommandBufferInfos) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].commandBufferInfoCount; ++index1) {
                         UnwrapPnextChainHandles(layer_data, local_pSubmits[index0].pCommandBufferInfos[index1].pNext);
                     }
                 }
                 if (local_pSubmits[index0].pSignalSemaphoreInfos) {
-                    for (uint32_t index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pSubmits[index0].signalSemaphoreInfoCount; ++index1) {
                         if (pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore) {
                             local_pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore =
                                 layer_data->Unwrap(pSubmits[index0].pSignalSemaphoreInfos[index1].semaphore);
@@ -5316,7 +5315,7 @@ VkResult DispatchCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBina
             local_pBinaries = &var_local_pBinaries;
             local_pBinaries->initialize(pBinaries);
             if (local_pBinaries->pPipelineBinaries) {
-                for (uint32_t index1 = 0; index1 < local_pBinaries->pipelineBinaryCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pBinaries->pipelineBinaryCount; ++index1) {
                     local_pBinaries->pPipelineBinaries[index1] = layer_data->Unwrap(local_pBinaries->pPipelineBinaries[index1]);
                 }
             }
@@ -5334,7 +5333,7 @@ void DispatchDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipel
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
 
-    uint64_t pipelineBinary_id = CastToUint64(pipelineBinary);
+    u64 pipelineBinary_id = CastToUint64(pipelineBinary);
     auto iter = unique_id_mapping.pop(pipelineBinary_id);
     if (iter != unique_id_mapping.end()) {
         pipelineBinary = (VkPipelineBinaryKHR)iter->second;
@@ -5461,7 +5460,7 @@ void DispatchCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBi
                 local_pBindDescriptorSetsInfo->layout = layer_data->Unwrap(pBindDescriptorSetsInfo->layout);
             }
             if (local_pBindDescriptorSetsInfo->pDescriptorSets) {
-                for (uint32_t index1 = 0; index1 < local_pBindDescriptorSetsInfo->descriptorSetCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pBindDescriptorSetsInfo->descriptorSetCount; ++index1) {
                     local_pBindDescriptorSetsInfo->pDescriptorSets[index1] =
                         layer_data->Unwrap(local_pBindDescriptorSetsInfo->pDescriptorSets[index1]);
                 }
@@ -5506,7 +5505,7 @@ void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
                 local_pPushDescriptorSetInfo->layout = layer_data->Unwrap(pPushDescriptorSetInfo->layout);
             }
             if (local_pPushDescriptorSetInfo->pDescriptorWrites) {
-                for (uint32_t index1 = 0; index1 < local_pPushDescriptorSetInfo->descriptorWriteCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pPushDescriptorSetInfo->descriptorWriteCount; ++index1) {
                     UnwrapPnextChainHandles(layer_data, local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pNext);
 
                     if (pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet) {
@@ -5514,7 +5513,7 @@ void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
                             layer_data->Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet);
                     }
                     if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo) {
-                        for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                        for (u32 index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
                              ++index2) {
                             if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler) {
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler =
@@ -5529,7 +5528,7 @@ void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
                         }
                     }
                     if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo) {
-                        for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                        for (u32 index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
                              ++index2) {
                             if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo[index2].buffer) {
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo[index2].buffer =
@@ -5539,7 +5538,7 @@ void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPus
                         }
                     }
                     if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView) {
-                        for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                        for (u32 index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
                              ++index2) {
                             local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView[index2] = layer_data->Unwrap(
                                 local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView[index2]);
@@ -5619,7 +5618,7 @@ void DispatchDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCal
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
 
-    uint64_t callback_id = CastToUint64(callback);
+    u64 callback_id = CastToUint64(callback);
     auto iter = unique_id_mapping.pop(callback_id);
     if (iter != unique_id_mapping.end()) {
         callback = (VkDebugReportCallbackEXT)iter->second;
@@ -5668,7 +5667,7 @@ void DispatchCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, u
     {
         if (pBuffers) {
             local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
-            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindingCount; ++index0) {
                 local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
             }
         }
@@ -5690,7 +5689,7 @@ void DispatchCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_
         if (pCounterBuffers) {
             local_pCounterBuffers =
                 counterBufferCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[counterBufferCount] : var_local_pCounterBuffers;
-            for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
+            for (u32 index0 = 0; index0 < counterBufferCount; ++index0) {
                 local_pCounterBuffers[index0] = layer_data->Unwrap(pCounterBuffers[index0]);
             }
         }
@@ -5712,7 +5711,7 @@ void DispatchCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t 
         if (pCounterBuffers) {
             local_pCounterBuffers =
                 counterBufferCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[counterBufferCount] : var_local_pCounterBuffers;
-            for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
+            for (u32 index0 = 0; index0 < counterBufferCount; ++index0) {
                 local_pCounterBuffers[index0] = layer_data->Unwrap(pCounterBuffers[index0]);
             }
         }
@@ -5790,7 +5789,7 @@ void DispatchDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkA
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCuModuleNVX(device, module, pAllocator);
 
-    uint64_t module_id = CastToUint64(module);
+    u64 module_id = CastToUint64(module);
     auto iter = unique_id_mapping.pop(module_id);
     if (iter != unique_id_mapping.end()) {
         module = (VkCuModuleNVX)iter->second;
@@ -5804,7 +5803,7 @@ void DispatchDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, con
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCuFunctionNVX(device, function, pAllocator);
 
-    uint64_t function_id = CastToUint64(function);
+    u64 function_id = CastToUint64(function);
     auto iter = unique_id_mapping.pop(function_id);
     if (iter != unique_id_mapping.end()) {
         function = (VkCuFunctionNVX)iter->second;
@@ -6137,7 +6136,7 @@ void DispatchSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const V
         if (pSwapchains) {
             local_pSwapchains =
                 swapchainCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkSwapchainKHR[swapchainCount] : var_local_pSwapchains;
-            for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
+            for (u32 index0 = 0; index0 < swapchainCount; ++index0) {
                 local_pSwapchains[index0] = layer_data->Unwrap(pSwapchains[index0]);
             }
         }
@@ -6231,7 +6230,7 @@ void DispatchDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMess
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 
-    uint64_t messenger_id = CastToUint64(messenger);
+    u64 messenger_id = CastToUint64(messenger);
     auto iter = unique_id_mapping.pop(messenger_id);
     if (iter != unique_id_mapping.end()) {
         messenger = (VkDebugUtilsMessengerEXT)iter->second;
@@ -6295,10 +6294,10 @@ VkResult DispatchCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCa
         pipelineCache = layer_data->Unwrap(pipelineCache);
         if (pCreateInfos) {
             local_pCreateInfos = new vku::safe_VkExecutionGraphPipelineCreateInfoAMDX[createInfoCount];
-            for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
                 if (local_pCreateInfos[index0].pStages) {
-                    for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].stageCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pCreateInfos[index0].stageCount; ++index1) {
                         UnwrapPnextChainHandles(layer_data, local_pCreateInfos[index0].pStages[index1].pNext);
 
                         if (pCreateInfos[index0].pStages[index1].module) {
@@ -6309,7 +6308,7 @@ VkResult DispatchCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCa
                 }
                 if (local_pCreateInfos[index0].pLibraryInfo) {
                     if (local_pCreateInfos[index0].pLibraryInfo->pLibraries) {
-                        for (uint32_t index2 = 0; index2 < local_pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
+                        for (u32 index2 = 0; index2 < local_pCreateInfos[index0].pLibraryInfo->libraryCount; ++index2) {
                             local_pCreateInfos[index0].pLibraryInfo->pLibraries[index2] =
                                 layer_data->Unwrap(local_pCreateInfos[index0].pLibraryInfo->pLibraries[index2]);
                         }
@@ -6332,7 +6331,7 @@ VkResult DispatchCreateExecutionGraphPipelinesAMDX(VkDevice device, VkPipelineCa
         delete[] local_pCreateInfos;
     }
     if (VK_SUCCESS == result) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+        for (u32 index0 = 0; index0 < createInfoCount; index0++) {
             pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
         }
     }
@@ -6432,7 +6431,7 @@ void DispatchDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT val
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
 
-    uint64_t validationCache_id = CastToUint64(validationCache);
+    u64 validationCache_id = CastToUint64(validationCache);
     auto iter = unique_id_mapping.pop(validationCache_id);
     if (iter != unique_id_mapping.end()) {
         validationCache = (VkValidationCacheEXT)iter->second;
@@ -6454,7 +6453,7 @@ VkResult DispatchMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT 
         if (pSrcCaches) {
             local_pSrcCaches =
                 srcCacheCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkValidationCacheEXT[srcCacheCount] : var_local_pSrcCaches;
-            for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
+            for (u32 index0 = 0; index0 < srcCacheCount; ++index0) {
                 local_pSrcCaches[index0] = layer_data->Unwrap(pSrcCaches[index0]);
             }
         }
@@ -6512,7 +6511,7 @@ VkResult DispatchCreateAccelerationStructureNV(VkDevice device, const VkAccelera
             local_pCreateInfo = &var_local_pCreateInfo;
             local_pCreateInfo->initialize(pCreateInfo);
             if (local_pCreateInfo->info.pGeometries) {
-                for (uint32_t index2 = 0; index2 < local_pCreateInfo->info.geometryCount; ++index2) {
+                for (u32 index2 = 0; index2 < local_pCreateInfo->info.geometryCount; ++index2) {
                     if (pCreateInfo->info.pGeometries[index2].geometry.triangles.vertexData) {
                         local_pCreateInfo->info.pGeometries[index2].geometry.triangles.vertexData =
                             layer_data->Unwrap(pCreateInfo->info.pGeometries[index2].geometry.triangles.vertexData);
@@ -6547,7 +6546,7 @@ void DispatchDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStruc
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
 
-    uint64_t accelerationStructure_id = CastToUint64(accelerationStructure);
+    u64 accelerationStructure_id = CastToUint64(accelerationStructure);
     auto iter = unique_id_mapping.pop(accelerationStructure_id);
     if (iter != unique_id_mapping.end()) {
         accelerationStructure = (VkAccelerationStructureNV)iter->second;
@@ -6588,7 +6587,7 @@ VkResult DispatchBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bin
     {
         if (pBindInfos) {
             local_pBindInfos = new vku::safe_VkBindAccelerationStructureMemoryInfoNV[bindInfoCount];
-            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfos[index0].initialize(&pBindInfos[index0]);
 
                 if (pBindInfos[index0].accelerationStructure) {
@@ -6623,7 +6622,7 @@ void DispatchCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, cons
             local_pInfo = &var_local_pInfo;
             local_pInfo->initialize(pInfo);
             if (local_pInfo->pGeometries) {
-                for (uint32_t index1 = 0; index1 < local_pInfo->geometryCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pInfo->geometryCount; ++index1) {
                     if (pInfo->pGeometries[index1].geometry.triangles.vertexData) {
                         local_pInfo->pGeometries[index1].geometry.triangles.vertexData =
                             layer_data->Unwrap(pInfo->pGeometries[index1].geometry.triangles.vertexData);
@@ -6743,7 +6742,7 @@ void DispatchCmdWriteAccelerationStructuresPropertiesNV(VkCommandBuffer commandB
             local_pAccelerationStructures = accelerationStructureCount > DISPATCH_MAX_STACK_ALLOCATIONS
                                                 ? new VkAccelerationStructureNV[accelerationStructureCount]
                                                 : var_local_pAccelerationStructures;
-            for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
+            for (u32 index0 = 0; index0 < accelerationStructureCount; ++index0) {
                 local_pAccelerationStructures[index0] = layer_data->Unwrap(pAccelerationStructures[index0]);
             }
         }
@@ -7150,7 +7149,7 @@ void DispatchCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t fi
     {
         if (pBuffers) {
             local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
-            for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
+            for (u32 index0 = 0; index0 < bindingCount; ++index0) {
                 local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
             }
         }
@@ -7271,7 +7270,7 @@ VkResult DispatchTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCo
     {
         if (pTransitions) {
             local_pTransitions = new vku::safe_VkHostImageLayoutTransitionInfoEXT[transitionCount];
-            for (uint32_t index0 = 0; index0 < transitionCount; ++index0) {
+            for (u32 index0 = 0; index0 < transitionCount; ++index0) {
                 local_pTransitions[index0].initialize(&pTransitions[index0]);
 
                 if (pTransitions[index0].image) {
@@ -7361,7 +7360,7 @@ void DispatchCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
                     layer_data->Unwrap(pGeneratedCommandsInfo->indirectCommandsLayout);
             }
             if (local_pGeneratedCommandsInfo->pStreams) {
-                for (uint32_t index1 = 0; index1 < local_pGeneratedCommandsInfo->streamCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pGeneratedCommandsInfo->streamCount; ++index1) {
                     if (pGeneratedCommandsInfo->pStreams[index1].buffer) {
                         local_pGeneratedCommandsInfo->pStreams[index1].buffer =
                             layer_data->Unwrap(pGeneratedCommandsInfo->pStreams[index1].buffer);
@@ -7407,7 +7406,7 @@ void DispatchCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool
                     layer_data->Unwrap(pGeneratedCommandsInfo->indirectCommandsLayout);
             }
             if (local_pGeneratedCommandsInfo->pStreams) {
-                for (uint32_t index1 = 0; index1 < local_pGeneratedCommandsInfo->streamCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pGeneratedCommandsInfo->streamCount; ++index1) {
                     if (pGeneratedCommandsInfo->pStreams[index1].buffer) {
                         local_pGeneratedCommandsInfo->pStreams[index1].buffer =
                             layer_data->Unwrap(pGeneratedCommandsInfo->pStreams[index1].buffer);
@@ -7456,7 +7455,7 @@ VkResult DispatchCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirec
             local_pCreateInfo = &var_local_pCreateInfo;
             local_pCreateInfo->initialize(pCreateInfo);
             if (local_pCreateInfo->pTokens) {
-                for (uint32_t index1 = 0; index1 < local_pCreateInfo->tokenCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pCreateInfo->tokenCount; ++index1) {
                     if (pCreateInfo->pTokens[index1].pushconstantPipelineLayout) {
                         local_pCreateInfo->pTokens[index1].pushconstantPipelineLayout =
                             layer_data->Unwrap(pCreateInfo->pTokens[index1].pushconstantPipelineLayout);
@@ -7479,7 +7478,7 @@ void DispatchDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommands
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
 
-    uint64_t indirectCommandsLayout_id = CastToUint64(indirectCommandsLayout);
+    u64 indirectCommandsLayout_id = CastToUint64(indirectCommandsLayout);
     auto iter = unique_id_mapping.pop(indirectCommandsLayout_id);
     if (iter != unique_id_mapping.end()) {
         indirectCommandsLayout = (VkIndirectCommandsLayoutNV)iter->second;
@@ -7533,7 +7532,7 @@ void DispatchDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privat
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 
-    uint64_t privateDataSlot_id = CastToUint64(privateDataSlot);
+    u64 privateDataSlot_id = CastToUint64(privateDataSlot);
     auto iter = unique_id_mapping.pop(privateDataSlot_id);
     if (iter != unique_id_mapping.end()) {
         privateDataSlot = (VkPrivateDataSlot)iter->second;
@@ -7622,7 +7621,7 @@ void DispatchDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const V
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
 
-    uint64_t module_id = CastToUint64(module);
+    u64 module_id = CastToUint64(module);
     auto iter = unique_id_mapping.pop(module_id);
     if (iter != unique_id_mapping.end()) {
         module = (VkCudaModuleNV)iter->second;
@@ -7636,7 +7635,7 @@ void DispatchDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, c
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
 
-    uint64_t function_id = CastToUint64(function);
+    u64 function_id = CastToUint64(function);
     auto iter = unique_id_mapping.pop(function_id);
     if (iter != unique_id_mapping.end()) {
         function = (VkCudaFunctionNV)iter->second;
@@ -7689,7 +7688,7 @@ void DispatchCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t
     {
         if (pBindingInfos) {
             local_pBindingInfos = new vku::safe_VkDescriptorBufferBindingInfoEXT[bufferCount];
-            for (uint32_t index0 = 0; index0 < bufferCount; ++index0) {
+            for (u32 index0 = 0; index0 < bufferCount; ++index0) {
                 local_pBindingInfos[index0].initialize(&pBindingInfos[index0]);
                 UnwrapPnextChainHandles(layer_data, local_pBindingInfos[index0].pNext);
             }
@@ -8035,7 +8034,7 @@ void DispatchDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionF
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
 
-    uint64_t collection_id = CastToUint64(collection);
+    u64 collection_id = CastToUint64(collection);
     auto iter = unique_id_mapping.pop(collection_id);
     if (iter != unique_id_mapping.end()) {
         collection = (VkBufferCollectionFUCHSIA)iter->second;
@@ -8220,7 +8219,7 @@ void DispatchDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const V
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyMicromapEXT(device, micromap, pAllocator);
 
-    uint64_t micromap_id = CastToUint64(micromap);
+    u64 micromap_id = CastToUint64(micromap);
     auto iter = unique_id_mapping.pop(micromap_id);
     if (iter != unique_id_mapping.end()) {
         micromap = (VkMicromapEXT)iter->second;
@@ -8237,7 +8236,7 @@ void DispatchCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCo
     {
         if (pInfos) {
             local_pInfos = new vku::safe_VkMicromapBuildInfoEXT[infoCount];
-            for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+            for (u32 index0 = 0; index0 < infoCount; ++index0) {
                 local_pInfos[index0].initialize(&pInfos[index0]);
 
                 if (pInfos[index0].dstMicromap) {
@@ -8261,7 +8260,7 @@ VkResult DispatchBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR defer
         deferredOperation = layer_data->Unwrap(deferredOperation);
         if (pInfos) {
             local_pInfos = new vku::safe_VkMicromapBuildInfoEXT[infoCount];
-            for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+            for (u32 index0 = 0; index0 < infoCount; ++index0) {
                 local_pInfos[index0].initialize(&pInfos[index0]);
 
                 if (pInfos[index0].dstMicromap) {
@@ -8396,7 +8395,7 @@ VkResult DispatchWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapC
         if (pMicromaps) {
             local_pMicromaps =
                 micromapCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkMicromapEXT[micromapCount] : var_local_pMicromaps;
-            for (uint32_t index0 = 0; index0 < micromapCount; ++index0) {
+            for (u32 index0 = 0; index0 < micromapCount; ++index0) {
                 local_pMicromaps[index0] = layer_data->Unwrap(pMicromaps[index0]);
             }
         }
@@ -8476,7 +8475,7 @@ void DispatchCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint3
         if (pMicromaps) {
             local_pMicromaps =
                 micromapCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkMicromapEXT[micromapCount] : var_local_pMicromaps;
-            for (uint32_t index0 = 0; index0 < micromapCount; ++index0) {
+            for (u32 index0 = 0; index0 < micromapCount; ++index0) {
                 local_pMicromaps[index0] = layer_data->Unwrap(pMicromaps[index0]);
             }
         }
@@ -8909,7 +8908,7 @@ void DispatchDestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyOpticalFlowSessionNV(device, session, pAllocator);
 
-    uint64_t session_id = CastToUint64(session);
+    u64 session_id = CastToUint64(session);
     auto iter = unique_id_mapping.pop(session_id);
     if (iter != unique_id_mapping.end()) {
         session = (VkOpticalFlowSessionNV)iter->second;
@@ -8957,10 +8956,10 @@ VkResult DispatchCreateShadersEXT(VkDevice device, uint32_t createInfoCount, con
     {
         if (pCreateInfos) {
             local_pCreateInfos = new vku::safe_VkShaderCreateInfoEXT[createInfoCount];
-            for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            for (u32 index0 = 0; index0 < createInfoCount; ++index0) {
                 local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
                 if (local_pCreateInfos[index0].pSetLayouts) {
-                    for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].setLayoutCount; ++index1) {
+                    for (u32 index1 = 0; index1 < local_pCreateInfos[index0].setLayoutCount; ++index1) {
                         local_pCreateInfos[index0].pSetLayouts[index1] =
                             layer_data->Unwrap(local_pCreateInfos[index0].pSetLayouts[index1]);
                     }
@@ -8974,7 +8973,7 @@ VkResult DispatchCreateShadersEXT(VkDevice device, uint32_t createInfoCount, con
         delete[] local_pCreateInfos;
     }
     if (VK_SUCCESS == result) {
-        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+        for (u32 index0 = 0; index0 < createInfoCount; index0++) {
             pShaders[index0] = layer_data->WrapNew(pShaders[index0]);
         }
     }
@@ -8985,7 +8984,7 @@ void DispatchDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAlloc
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyShaderEXT(device, shader, pAllocator);
 
-    uint64_t shader_id = CastToUint64(shader);
+    u64 shader_id = CastToUint64(shader);
     auto iter = unique_id_mapping.pop(shader_id);
     if (iter != unique_id_mapping.end()) {
         shader = (VkShaderEXT)iter->second;
@@ -9013,7 +9012,7 @@ void DispatchCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCoun
     {
         if (pShaders) {
             local_pShaders = stageCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkShaderEXT[stageCount] : var_local_pShaders;
-            for (uint32_t index0 = 0; index0 < stageCount; ++index0) {
+            for (u32 index0 = 0; index0 < stageCount; ++index0) {
                 local_pShaders[index0] = layer_data->Unwrap(pShaders[index0]);
             }
         }
@@ -9047,7 +9046,7 @@ VkResult DispatchGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const Vk
             local_pRenderingInfo = &var_local_pRenderingInfo;
             local_pRenderingInfo->initialize(pRenderingInfo);
             if (local_pRenderingInfo->pColorAttachments) {
-                for (uint32_t index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
+                for (u32 index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
                     if (pRenderingInfo->pColorAttachments[index1].imageView) {
                         local_pRenderingInfo->pColorAttachments[index1].imageView =
                             layer_data->Unwrap(pRenderingInfo->pColorAttachments[index1].imageView);
@@ -9188,7 +9187,7 @@ void DispatchDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStru
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 
-    uint64_t accelerationStructure_id = CastToUint64(accelerationStructure);
+    u64 accelerationStructure_id = CastToUint64(accelerationStructure);
     auto iter = unique_id_mapping.pop(accelerationStructure_id);
     if (iter != unique_id_mapping.end()) {
         accelerationStructure = (VkAccelerationStructureKHR)iter->second;
@@ -9209,7 +9208,7 @@ void DispatchCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, ui
     {
         if (pInfos) {
             local_pInfos = new vku::safe_VkAccelerationStructureBuildGeometryInfoKHR[infoCount];
-            for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+            for (u32 index0 = 0; index0 < infoCount; ++index0) {
                 local_pInfos[index0].initialize(&pInfos[index0], false, nullptr);
 
                 if (pInfos[index0].srcAccelerationStructure) {
@@ -9241,7 +9240,7 @@ void DispatchCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBu
     {
         if (pInfos) {
             local_pInfos = new vku::safe_VkAccelerationStructureBuildGeometryInfoKHR[infoCount];
-            for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+            for (u32 index0 = 0; index0 < infoCount; ++index0) {
                 local_pInfos[index0].initialize(&pInfos[index0], false, nullptr);
 
                 if (pInfos[index0].srcAccelerationStructure) {
@@ -9376,7 +9375,7 @@ VkResult DispatchWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint3
             local_pAccelerationStructures = accelerationStructureCount > DISPATCH_MAX_STACK_ALLOCATIONS
                                                 ? new VkAccelerationStructureKHR[accelerationStructureCount]
                                                 : var_local_pAccelerationStructures;
-            for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
+            for (u32 index0 = 0; index0 < accelerationStructureCount; ++index0) {
                 local_pAccelerationStructures[index0] = layer_data->Unwrap(pAccelerationStructures[index0]);
             }
         }
@@ -9486,7 +9485,7 @@ void DispatchCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer command
             local_pAccelerationStructures = accelerationStructureCount > DISPATCH_MAX_STACK_ALLOCATIONS
                                                 ? new VkAccelerationStructureKHR[accelerationStructureCount]
                                                 : var_local_pAccelerationStructures;
-            for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
+            for (u32 index0 = 0; index0 < accelerationStructureCount; ++index0) {
                 local_pAccelerationStructures[index0] = layer_data->Unwrap(pAccelerationStructures[index0]);
             }
         }

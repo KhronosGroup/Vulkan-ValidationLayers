@@ -26,13 +26,13 @@ namespace gpu_tracker {
 
 class Queue : public vvl::Queue {
   public:
-    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
+    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, u32 family_index, u32 queue_index,
           VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
     virtual ~Queue();
 
   protected:
     vvl::SubmitResult PostSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
-    void SubmitBarrier(const Location &loc, uint64_t seq);
+    void SubmitBarrier(const Location &loc, u64 seq);
     void Retire(vvl::QueueSubmission &) override;
 
     gpu::GpuShaderInstrumentor &shader_instrumentor_;

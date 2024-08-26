@@ -78,7 +78,7 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)uniform_buffer.memory().map();
+    u32 *data = (u32 *)uniform_buffer.memory().map();
     *data = 0;
     uniform_buffer.memory().unmap();
     // normally VUID-vkCmdDraw-uniformBuffers-06935
@@ -88,7 +88,7 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
-    data = (uint32_t *)uniform_buffer.memory().map();
+    data = (u32 *)uniform_buffer.memory().map();
     *data = 1;
     uniform_buffer.memory().unmap();
     // normally VUID-vkCmdDraw-storageBuffers-06936
@@ -144,7 +144,7 @@ TEST_F(NegativeGpuAVOOB, Basic) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 8;
     offset_buffer.memory().unmap();
 
@@ -404,7 +404,7 @@ TEST_F(NegativeGpuAVOOB, GPLWrite) {
     descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 8;
     offset_buffer.memory().unmap();
 
@@ -674,7 +674,7 @@ TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
 
     const std::array<VkDescriptorSet, 3> desc_sets = {vertex_set.set_, common_set.set_, fragment_set.set_};
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 8;
     offset_buffer.memory().unmap();
 
@@ -710,7 +710,7 @@ TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -761,7 +761,7 @@ TEST_F(NegativeGpuAVOOB, GPLTexelFetchIndependentSets) {
 
     const std::array<VkDescriptorSet, 3> desc_sets = {vertex_set.set_, common_set.set_, fragment_set.set_};
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 8;
     offset_buffer.memory().unmap();
 
@@ -795,7 +795,7 @@ TEST_F(NegativeGpuAVOOB, GPLTexelFetchIndependentSets) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -875,7 +875,7 @@ TEST_F(NegativeGpuAVOOB, GPLImageLoadStoreIndependentSets) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+                              static_cast<u32>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -910,7 +910,7 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
             Test test;
         };
 
-        Test GetTest(uint64_t ptr) {
+        Test GetTest(u64 ptr) {
             return TestBuffer(ptr).test;
         }
 
@@ -921,7 +921,7 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
         } in_buffer;
 
         void main() {
-            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+            in_buffer.x = GetTest(u64(in_buffer.data)).a;
         }
     )glsl";
 
@@ -937,7 +937,7 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
 
     VkDeviceAddress block_ptr = block_buffer.address();
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 
@@ -1650,7 +1650,7 @@ TEST_F(NegativeGpuAVOOB, ConstantArrayOOBBuffer) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 8;
     offset_buffer.memory().unmap();
 
@@ -1707,7 +1707,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_ConstantArrayOOBTexture) {
     pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    uint32_t *data = (uint32_t *)storage_buffer.memory().map();
+    u32 *data = (u32 *)storage_buffer.memory().map();
     *data = 8;
     storage_buffer.memory().unmap();
 

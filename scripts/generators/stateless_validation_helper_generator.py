@@ -880,7 +880,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             indexName = length.replace('Count', 'Index')
                             # If the length value is a pointer, de-reference it for the count.
                             deref = '*' if lengthMember.pointer else ''
-                            expr.append(f'for (uint32_t {indexName} = 0; {indexName} < {deref}{valuePrefix}{length}; ++{indexName})\n')
+                            expr.append(f'for (u32 {indexName} = 0; {indexName} < {deref}{valuePrefix}{length}; ++{indexName})\n')
                             expr.append('{\n')
                             expr.append(f'[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name}, {indexName});')
                             # Prefix for value name to display in error message
@@ -1000,7 +1000,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     VkPhysicalDeviceProperties device_properties = {{}};
                     DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
                     if (device_properties.apiVersion < {struct.version.nameApi}) {{
-                        APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
+                        APIVersion device_api_version(static_cast<u32>(device_properties.apiVersion));
                         skip |= LogError(
                                 pnext_vuid, instance, loc.dot(Field::pNext),
                                 "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "

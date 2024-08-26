@@ -93,7 +93,7 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
             #include "vulkan/vulkan.h"\n''')
 
         out.append('// clang-format off\n')
-        out.append(f'const uint32_t GeneratedVulkanHeaderVersion = {self.vk.headerVersion};\n')
+        out.append(f'const u32 GeneratedVulkanHeaderVersion = {self.vk.headerVersion};\n')
         guard_helper = PlatformGuardHelper()
         for bitmask in bitmasks:
             if bitmask.flagName == 'VkGeometryInstanceFlagsKHR':

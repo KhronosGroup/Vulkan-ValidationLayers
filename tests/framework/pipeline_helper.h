@@ -63,14 +63,14 @@ class CreatePipelineHelper {
     template <typename StageContainer>
     void InitPreRasterLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
         InitPreRasterLibInfo(stages.data(), p_next);
-        gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
+        gp_ci_.stageCount = static_cast<u32>(stages.size());
     }
     void InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
 
     template <typename StageContainer>
     void InitFragmentLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
         InitFragmentLibInfo(stages.data(), p_next);
-        gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
+        gp_ci_.stageCount = static_cast<u32>(stages.size());
     }
     void InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
 
@@ -190,11 +190,11 @@ class CreateComputePipelineHelper {
 namespace vkt {
 
 struct GraphicsPipelineLibraryStage {
-    vvl::span<const uint32_t> spv;
+    vvl::span<const u32> spv;
     VkShaderModuleCreateInfo shader_ci;
     VkPipelineShaderStageCreateInfo stage_ci;
 
-    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage);
+    GraphicsPipelineLibraryStage(vvl::span<const u32> spv, VkShaderStageFlagBits stage);
 };
 
 // Used when need a Graphics Pipeline Library with the most basic components

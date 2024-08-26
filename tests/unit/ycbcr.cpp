@@ -1178,7 +1178,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         VkMemoryRequirements2 mem_req2 = vku::InitStructHelper();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
 
-        uint32_t image2_unsupported_mem_type_bits =
+        u32 image2_unsupported_mem_type_bits =
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mem_req2.memoryRequirements.memoryTypeBits;
         bool found_type =
             m_device->phy().set_memory_type(image2_unsupported_mem_type_bits, &image_alloc_info, 0,
@@ -1192,7 +1192,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         }
     } else {
         // Same as 01047 but with bindImageMemory2 call
-        uint32_t image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
+        u32 image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
         bool found_type =
             m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0,
                                             VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
@@ -1215,7 +1215,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         mem_req_info2.image = mp_image.handle();
         vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
 
-        uint32_t mp_image_unsupported_mem_type_bits =
+        u32 mp_image_unsupported_mem_type_bits =
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits;
         bool found_type =
             m_device->phy().set_memory_type(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0,
@@ -1534,7 +1534,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
 
     VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
 
-    std::vector<uint64_t> mods;
+    std::vector<u64> mods;
     VkDrmFormatModifierPropertiesListEXT mod_props = vku::InitStructHelper();
     VkFormatProperties2 format_props = vku::InitStructHelper(&mod_props);
     vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
@@ -1546,7 +1546,7 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     mod_props.pDrmFormatModifierProperties = mod_props_length.data();
     vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
 
-    for (uint32_t i = 0; i < mod_props.drmFormatModifierCount; ++i) {
+    for (u32 i = 0; i < mod_props.drmFormatModifierCount; ++i) {
         auto &mod = mod_props.pDrmFormatModifierProperties[i];
         if (((mod.drmFormatModifierTilingFeatures &
               (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_DISJOINT_BIT)) ==

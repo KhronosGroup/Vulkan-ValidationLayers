@@ -84,11 +84,11 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    std::vector<uint8_t> pixels(width * height * 4);
+    std::vector<u8> pixels(width * height * 4);
     // Fill image with random values
     for (auto &channel : pixels) {
-        const uint32_t r = static_cast<uint32_t>(std::rand());
-        channel = static_cast<uint8_t>((r & 0xffu) | ((r >> 8) & 0xff) | ((r >> 16) & 0xff) | (r >> 24));
+        const u32 r = static_cast<u32>(std::rand());
+        channel = static_cast<u8>((r & 0xffu) | ((r >> 8) & 0xff) | ((r >> 16) & 0xff) | (r >> 24));
     }
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
@@ -109,7 +109,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     ASSERT_EQ(VK_SUCCESS, result);
 
     // Copy back to host memory
-    std::vector<uint8_t> welcome_back(width * height * 4);
+    std::vector<u8> welcome_back(width * height * 4);
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = welcome_back.data();
@@ -149,7 +149,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     ASSERT_EQ(VK_SUCCESS, result);
 
     // Copy back from destination image to memory
-    std::vector<uint8_t> after_image_copy(width * height * 4);
+    std::vector<u8> after_image_copy(width * height * 4);
 
     copy_from_image.srcImage = image2;
     region_from_image.pHostPointer = after_image_copy.data();
@@ -208,8 +208,8 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
-    const uint32_t bufferSize = width * height * 4u;
-    std::vector<uint8_t> data(bufferSize);
+    const u32 bufferSize = width * height * 4u;
+    std::vector<u8> data(bufferSize);
 
     VkImageToMemoryCopyEXT region = vku::InitStructHelper();
     region.pHostPointer = data.data();

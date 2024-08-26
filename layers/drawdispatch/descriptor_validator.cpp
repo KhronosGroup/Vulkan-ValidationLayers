@@ -49,7 +49,7 @@ static const char *GetActionType(vvl::Func command) {
     }
 }
 
-std::string vvl::DescriptorValidator::DescribeDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index) const {
+std::string vvl::DescriptorValidator::DescribeDescriptor(const DescriptorBindingInfo &binding_info, u32 index) const {
     std::stringstream ss;
     ss << FormatHandle(descriptor_set.Handle()) << " [Set " << set_index << ", Binding " << binding_info.first << ", Index "
        << index;
@@ -66,13 +66,19 @@ std::string vvl::DescriptorValidator::DescribeDescriptor(const DescriptorBinding
 }
 
 vvl::DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, vvl::CommandBuffer &cb, vvl::DescriptorSet &set,
-                                              uint32_t set_index_, VkFramebuffer fb, const Location &l)
-    : dev_state(dev), cb_state(cb), descriptor_set(set), set_index(set_index_), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
+                                              u32 set_index_, VkFramebuffer fb, const Location &l)
+    : dev_state(dev),
+      cb_state(cb),
+      descriptor_set(set),
+      set_index(set_index_),
+      framebuffer(fb),
+      loc(l),
+      vuids(GetDrawDispatchVuid(loc.function)) {}
 
 template <typename T>
 bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding) const {
     bool skip = false;
-    for (uint32_t index = 0; !skip && index < binding.count; index++) {
+    for (u32 index = 0; !skip && index < binding.count; index++) {
         const auto &descriptor = binding.descriptors[index];
 
         if (!binding.updated[index]) {
@@ -87,7 +93,8 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
     return skip;
 }
 
-bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const vvl::DescriptorBinding &binding) const {
+bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info,
+                                               const vvl::DescriptorBinding &binding) const {
     using DescriptorClass = vvl::DescriptorClass;
     bool skip = false;
     switch (binding.descriptor_class) {
@@ -120,7 +127,7 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
 
 template <typename T>
 bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding,
-                                                    const std::vector<uint32_t> &indices) {
+                                                   const std::vector<u32> &indices) {
     bool skip = false;
     for (auto index : indices) {
         const auto &descriptor = binding.descriptors[index];
@@ -137,7 +144,7 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
     return skip;
 }
 
-bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const std::vector<uint32_t> &indices) {
+bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const std::vector<u32> &indices) {
     using DescriptorClass = vvl::DescriptorClass;
     bool skip = false;
     auto binding_ptr = descriptor_set.GetBinding(binding_info.first);
@@ -183,8 +190,8 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
     return skip;
 }
 
-bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    VkDescriptorType descriptor_type, const vvl::BufferDescriptor &descriptor) const {
+bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, u32 index,
+                                                  VkDescriptorType descriptor_type, const vvl::BufferDescriptor &descriptor) const {
     // Verify that buffers are valid
     const VkBuffer buffer = descriptor.GetBuffer();
     auto buffer_node = descriptor.GetBufferState();
@@ -284,17 +291,16 @@ static const spirv::ResourceInterfaceVariable *FindMatchingImageVar(const std::v
     return reqs.begin()->variable;
 }
 
-bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    VkDescriptorType descriptor_type,
-                                    const vvl::ImageDescriptor &image_descriptor) const {
+bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, u32 index,
+                                                  VkDescriptorType descriptor_type,
+                                                  const vvl::ImageDescriptor &image_descriptor) const {
     std::vector<const vvl::Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
     const vvl::ImageView *image_view_state = image_descriptor.GetImageViewState();
     const auto binding = binding_info.first;
 
     if (image_descriptor.GetClass() == vvl::DescriptorClass::ImageSampler) {
-        sampler_states.emplace_back(
-            static_cast<const vvl::ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
+        sampler_states.emplace_back(static_cast<const vvl::ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
     } else {
         for (const auto &req : binding_info.second) {
             if (!req.variable || req.variable->samplers_used_by_image.size() <= index) {
@@ -434,8 +440,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         // Verify Image Layout
         // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
         bool hit_error = false;
-        dev_state.VerifyImageLayout(cb_state, *image_view_state, image_layout, loc,
-                          "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+        dev_state.VerifyImageLayout(cb_state, *image_view_state, image_layout, loc, "VUID-VkDescriptorImageInfo-imageLayout-00344",
+                                    &hit_error);
         if (hit_error) {
             auto set = descriptor_set.Handle();
             std::stringstream msg;
@@ -448,7 +454,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                        "descriptor is used";
             }
             return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
-                            "%s. See previous error callback for specific details.", msg.str().c_str());
+                                      "%s. See previous error callback for specific details.", msg.str().c_str());
         }
     }
 
@@ -547,7 +553,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     // Verify if attachments are used in DescriptorSet
     if (!cb_state.active_attachments.empty() && !cb_state.active_subpasses.empty() &&
         (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-        for (uint32_t att_index = 0; att_index < cb_state.active_attachments.size(); ++att_index) {
+        for (u32 att_index = 0; att_index < cb_state.active_attachments.size(); ++att_index) {
             const auto *view_state = cb_state.active_attachments[att_index].image_view;
             const SubpassInfo &subpass = cb_state.active_subpasses[att_index];
             if (!view_state || view_state->Destroyed()) {
@@ -882,8 +888,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
     }
 
-    for (const uint32_t texel_component_count : variable->write_without_formats_component_count_list) {
-        const uint32_t format_component_count = vkuFormatComponentCount(image_view_format);
+    for (const u32 texel_component_count : variable->write_without_formats_component_count_list) {
+        const u32 format_component_count = vkuFormatComponentCount(image_view_format);
         if (image_view_format == VK_FORMAT_A8_UNORM_KHR) {
             if (texel_component_count != 4) {
                 auto set = descriptor_set.Handle();
@@ -908,9 +914,9 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     return false;
 }
 
-bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    VkDescriptorType descriptor_type,
-                                    const vvl::ImageSamplerDescriptor &descriptor) const {
+bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, u32 index,
+                                                  VkDescriptorType descriptor_type,
+                                                  const vvl::ImageSamplerDescriptor &descriptor) const {
     bool skip = false;
     skip |= ValidateDescriptor(binding_info, index, descriptor_type, static_cast<const vvl::ImageDescriptor &>(descriptor));
     if (skip) {
@@ -939,12 +945,13 @@ static const spirv::ResourceInterfaceVariable *FindMatchingTexelVar(const std::v
     return reqs.begin()->variable;
 }
 
-bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    VkDescriptorType descriptor_type,
-                                    const vvl::TexelDescriptor &texel_descriptor) const {
+bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, u32 index,
+                                                  VkDescriptorType descriptor_type,
+                                                  const vvl::TexelDescriptor &texel_descriptor) const {
     const VkBufferView buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
-    if ((!buffer_view_state && !dev_state.enabled_features.nullDescriptor) || (buffer_view_state && buffer_view_state->Destroyed())) {
+    if ((!buffer_view_state && !dev_state.enabled_features.nullDescriptor) ||
+        (buffer_view_state && buffer_view_state->Destroyed())) {
         auto set = descriptor_set.Handle();
         return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
                                   "the descriptor %s is using bufferView %s that is invalid or has been destroyed.",
@@ -966,7 +973,7 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
                                   DescribeDescriptor(binding_info, index).c_str(), FormatHandle(buffer).c_str());
     }
     const VkFormat buffer_view_format = buffer_view_state->create_info.format;
-    const uint32_t format_bits = spirv::GetFormatType(buffer_view_format);
+    const u32 format_bits = spirv::GetFormatType(buffer_view_format);
 
     if ((variable->info.image_format_type & format_bits) == 0) {
         const bool signed_override =
@@ -1062,8 +1069,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
         }
     }
 
-    for (const uint32_t texel_component_count : variable->write_without_formats_component_count_list) {
-        const uint32_t format_component_count = vkuFormatComponentCount(buffer_view_format);
+    for (const u32 texel_component_count : variable->write_without_formats_component_count_list) {
+        const u32 format_component_count = vkuFormatComponentCount(buffer_view_format);
         if (texel_component_count < format_component_count) {
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, buffer_view);
@@ -1078,9 +1085,9 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
     return false;
 }
 
-bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    VkDescriptorType descriptor_type,
-                                    const vvl::AccelerationStructureDescriptor &descriptor) const {
+bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, u32 index,
+                                                  VkDescriptorType descriptor_type,
+                                                  const vvl::AccelerationStructureDescriptor &descriptor) const {
     // Verify that acceleration structures are valid
     if (descriptor.is_khr()) {
         auto acc = descriptor.GetAccelerationStructure();
@@ -1129,9 +1136,8 @@ bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &b
 // If the validation is related to both of image and sampler,
 // please leave it in (descriptor_class == DescriptorClass::ImageSampler || descriptor_class ==
 // DescriptorClass::Image) Here is to validate for only sampler.
-bool vvl::DescriptorValidator::ValidateSamplerDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                                         VkSampler sampler, bool is_immutable,
-                                                         const vvl::Sampler *sampler_state) const {
+bool vvl::DescriptorValidator::ValidateSamplerDescriptor(const DescriptorBindingInfo &binding_info, u32 index, VkSampler sampler,
+                                                         bool is_immutable, const vvl::Sampler *sampler_state) const {
     // Verify Sampler still valid
     if (!sampler_state || sampler_state->Destroyed()) {
         auto set = descriptor_set.Handle();
@@ -1151,8 +1157,9 @@ bool vvl::DescriptorValidator::ValidateSamplerDescriptor(const DescriptorBinding
     return false;
 }
 
-bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    VkDescriptorType descriptor_type, const vvl::SamplerDescriptor &descriptor) const {
-    return ValidateSamplerDescriptor(binding_info, index, descriptor.GetSampler(), descriptor.IsImmutableSampler(), descriptor.GetSamplerState());
+bool vvl::DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, u32 index,
+                                                  VkDescriptorType descriptor_type,
+                                                  const vvl::SamplerDescriptor &descriptor) const {
+    return ValidateSamplerDescriptor(binding_info, index, descriptor.GetSampler(), descriptor.IsImmutableSampler(),
+                                     descriptor.GetSamplerState());
 }
-

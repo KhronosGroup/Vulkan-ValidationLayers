@@ -25,7 +25,7 @@
 
 namespace spirv {
 
-void DecorationBase::Add(uint32_t decoration, uint32_t value) {
+void DecorationBase::Add(u32 decoration, u32 value) {
     switch (decoration) {
         case spv::DecorationLocation:
             location = value;
@@ -79,7 +79,7 @@ void DecorationBase::Add(uint32_t decoration, uint32_t value) {
 }
 
 // Some decorations are only avaiable for variables, so can't be in OpMemberDecorate
-void DecorationSet::Add(uint32_t decoration, uint32_t value) {
+void DecorationSet::Add(u32 decoration, u32 value) {
     switch (decoration) {
         case spv::DecorationDescriptorSet:
             set = value;
@@ -128,8 +128,8 @@ bool DecorationSet::AllMemberHave(FlagBit flag_bit) const {
 }
 
 void ExecutionModeSet::Add(const Instruction& insn) {
-    const uint32_t execution_mode = insn.Word(2);
-    const uint32_t value = insn.Length() > 3u ? insn.Word(3) : 0u;
+    const u32 execution_mode = insn.Word(2);
+    const u32 value = insn.Length() > 3u ? insn.Word(3) : 0u;
     switch (execution_mode) {
         case spv::ExecutionModeOutputPoints:  // for geometry shaders
             flags |= output_points_bit;
@@ -285,7 +285,7 @@ void ExecutionModeSet::Add(const Instruction& insn) {
     }
 }
 
-static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
+static u32 ExecutionModelToShaderStageFlagBits(u32 mode) {
     switch (mode) {
         case spv::ExecutionModelVertex:
             return VK_SHADER_STAGE_VERTEX_BIT;
@@ -326,7 +326,7 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 
 // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
 // converting parts of this to be generated from the machine-readable spec instead.
-static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<uint32_t>& result) {
+static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u32>& result) {
     switch (insn.Opcode()) {
         case spv::OpLoad:
             result.insert(insn.Word(3));  // ptr
@@ -381,13 +381,13 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
             result.insert(insn.Word(1));  // Image -- different operand order to above
             break;
         case spv::OpFunctionCall:
-            for (uint32_t i = 3; i < insn.Length(); i++) {
+            for (u32 i = 3; i < insn.Length(); i++) {
                 result.insert(insn.Word(i));  // fn itself, and all args
             }
             break;
 
         case spv::OpExtInst:
-            for (uint32_t i = 5; i < insn.Length(); i++) {
+            for (u32 i = 5; i < insn.Length(); i++) {
                 result.insert(insn.Word(i));  // Operands to ext inst
             }
             break;
@@ -427,7 +427,7 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
         if (it == access_chain_map.end()) {
             return false;
         }
-        const uint32_t member_index = member.first;
+        const u32 member_index = member.first;
         for (const auto access_chain_insn : it->second) {
             if (access_chain_insn->Length() < 5) continue;
 
@@ -435,7 +435,7 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
             // Also no built-in we are dealing with are inside array-of-structs
             const Instruction* value_def = module_state.GetConstantDef(access_chain_insn->Word(4));
             if (value_def) {
-                const uint32_t value = value_def->GetConstantValue();
+                const u32 value = value_def->GetConstantValue();
                 if (value == member_index) {
                     return true;
                 }
@@ -446,12 +446,12 @@ bool EntryPoint::IsBuiltInWritten(spv::BuiltIn built_in, const Module& module_st
     return false;
 }
 
-vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
-    vvl::unordered_set<uint32_t> result_ids;
+vvl::unordered_set<u32> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
+    vvl::unordered_set<u32> result_ids;
 
     // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
     // This is important for identifying the set of shader resources actually used by an entrypoint.
-    vvl::unordered_set<uint32_t> worklist;
+    vvl::unordered_set<u32> worklist;
     worklist.insert(entrypoint.id);
 
     while (!worklist.empty()) {
@@ -500,7 +500,7 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
     std::vector<StageInterfaceVariable> variables;
 
     // spirv-val validates that any Input/Output used in the entrypoint is listed in as interface IDs
-    uint32_t word = 3;  // operand Name operand starts
+    u32 word = 3;  // operand Name operand starts
     // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out
     // the rest of the word - so we only need to look at the last byte in the word to determine which word contains the
     // terminator.
@@ -509,9 +509,9 @@ std::vector<StageInterfaceVariable> EntryPoint::GetStageInterfaceVariables(const
     }
     ++word;
 
-    vvl::unordered_set<uint32_t> unique_interface_id;
+    vvl::unordered_set<u32> unique_interface_id;
     for (; word < entrypoint.entrypoint_insn.Length(); word++) {
-        const uint32_t interface_id = entrypoint.entrypoint_insn.Word(word);
+        const u32 interface_id = entrypoint.entrypoint_insn.Word(word);
         if (unique_interface_id.insert(interface_id).second == false) {
             continue;  // Before SPIR-V 1.4 duplicates of these IDs are allowed
         };
@@ -539,7 +539,7 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
         if (insn.Opcode() != spv::OpVariable) {
             continue;
         }
-        const uint32_t storage_class = insn.StorageClass();
+        const u32 storage_class = insn.StorageClass();
         // These are the only storage classes that interface with a descriptor
         // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
@@ -554,14 +554,14 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
     return variables;
 }
 
-static inline bool IsImageOperandsBiasOffset(uint32_t type) {
+static inline bool IsImageOperandsBiasOffset(u32 type) {
     return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
                     spv::ImageOperandsConstOffsetsMask)) != 0;
 }
 
 ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_insn, const FuncParameterMap& func_parameter_map)
     : image_insn(image_insn) {
-    const uint32_t image_opcode = image_insn.Opcode();
+    const u32 image_opcode = image_insn.Opcode();
 
     // Get properties from each access instruction
     switch (image_opcode) {
@@ -632,9 +632,9 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
     is_not_sampler_sampled = !is_sampler_sampled;
 
     // Find any optional Image Operands
-    const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
+    const u32 image_operand_position = OpcodeImageOperandsPosition(image_opcode);
     if (image_insn.Length() > image_operand_position) {
-        const uint32_t image_operand_word = image_insn.Word(image_operand_position);
+        const u32 image_operand_word = image_insn.Word(image_operand_position);
 
         if (is_sampler_sampled) {
             if (IsImageOperandsBiasOffset(image_operand_word)) {
@@ -658,7 +658,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
     auto walk_to_variables = [this, &module_state, &func_parameter_map, &sampler_insn_to_search](const Instruction* insn,
                                                                                                  bool sampler) {
         // Protect from loops
-        vvl::unordered_set<uint32_t> visited;
+        vvl::unordered_set<u32> visited;
 
         // stack of function call sites to search through
         std::queue<const Instruction*> insn_to_search;
@@ -677,7 +677,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                 visited.clear();
             }
 
-            const uint32_t current_id = insn->ResultId();
+            const u32 current_id = insn->ResultId();
             const auto visited_iter = visited.find(current_id);
             if (visited_iter != visited.end()) {
                 valid_access = false;  // Caught in a loop
@@ -722,7 +722,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
 
                     auto it = func_parameter_map.find(insn->ResultId());
                     if (it != func_parameter_map.end()) {
-                        for (uint32_t arg : it->second) {
+                        for (u32 arg : it->second) {
                             insn_to_search.push(module_state.FindDef(arg));
                         }
                     }
@@ -746,7 +746,7 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
         }
     };
 
-    const uint32_t image_operand = OpcodeImageAccessPosition(image_opcode);
+    const u32 image_operand = OpcodeImageAccessPosition(image_opcode);
     assert(image_operand != 0);
     const Instruction* insn = module_state.FindDef(image_insn.Word(image_operand));
     walk_to_variables(insn, false);
@@ -849,12 +849,12 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
 
     // Parse the words first so we have instruction class objects to use
     {
-        std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
+        std::vector<u32>::const_iterator it = module_state.words_.cbegin();
         it += 5;  // skip first 5 word of header
         instructions.reserve(module_state.words_.size() * 4);
         while (it != module_state.words_.cend()) {
             auto new_insn = instructions.emplace_back(it);
-            const uint32_t opcode = new_insn.Opcode();
+            const u32 opcode = new_insn.Opcode();
 
             // Check for opcodes that would require reparsing of the words
             if (opcode == spv::OpGroupDecorate || opcode == spv::OpDecorationGroup || opcode == spv::OpGroupMemberDecorate) {
@@ -880,27 +880,27 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
 
     DebugNameMap debug_name_map;
 
-    std::vector<uint32_t> store_pointer_ids;
-    std::vector<uint32_t> load_pointer_ids;
-    std::vector<uint32_t> atomic_store_pointer_ids;
-    std::vector<uint32_t> atomic_load_pointer_ids;
+    std::vector<u32> store_pointer_ids;
+    std::vector<u32> load_pointer_ids;
+    std::vector<u32> atomic_store_pointer_ids;
+    std::vector<u32> atomic_load_pointer_ids;
 
     AccessChainVariableMap access_chain_map;
 
-    uint32_t last_func_id = 0;
+    u32 last_func_id = 0;
     // < Function ID, OpFunctionParameter Ids >
-    vvl::unordered_map<uint32_t, std::vector<uint32_t>> func_parameter_list;
+    vvl::unordered_map<u32, std::vector<u32>> func_parameter_list;
 
     // Loop through once and build up the static data
     // Also process the entry points
     for (const Instruction& insn : instructions) {
         // Build definition list
-        const uint32_t result_id = insn.ResultId();
+        const u32 result_id = insn.ResultId();
         if (result_id != 0) {
             definitions[result_id] = &insn;
         }
 
-        const uint32_t opcode = insn.Opcode();
+        const u32 opcode = insn.Opcode();
         switch (opcode) {
             // Specialization constants
             case spv::OpSpecConstantTrue:
@@ -913,7 +913,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
 
             // Decorations
             case spv::OpDecorate: {
-                const uint32_t target_id = insn.Word(1);
+                const u32 target_id = insn.Word(1);
                 decorations[target_id].Add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
                 decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
@@ -923,8 +923,8 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 }
             } break;
             case spv::OpMemberDecorate: {
-                const uint32_t target_id = insn.Word(1);
-                const uint32_t member_index = insn.Word(2);
+                const u32 target_id = insn.Word(1);
+                const u32 member_index = insn.Word(2);
                 decorations[target_id].member_decorations[member_index].Add(insn.Word(3), insn.Length() > 4u ? insn.Word(4) : 0u);
                 member_decoration_inst.push_back(&insn);
                 if (insn.Word(3) == spv::DecorationBuiltIn) {
@@ -1040,7 +1040,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
             }
             case spv::OpAccessChain:
             case spv::OpInBoundsAccessChain: {
-                const uint32_t base_id = insn.Word(3);
+                const u32 base_id = insn.Word(3);
                 access_chain_map[base_id].push_back(&insn);
                 break;
             }
@@ -1113,18 +1113,18 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     }
 
     FuncParameterMap func_parameter_map;
-    const uint32_t first_arg_word = 4;
+    const u32 first_arg_word = 4;
     for (const auto& func_def : func_parameter_list) {
-        const uint32_t func_id = func_def.first;
+        const u32 func_id = func_def.first;
         for (const Instruction* func_call : func_call_instructions) {
             if (func_call->Word(3) != func_id) {
                 continue;
             }
             // guaranteed number of args/params is same
-            const uint32_t arg_count = (func_call->Length() - first_arg_word);
-            for (uint32_t i = 0; i < arg_count; i++) {
-                const uint32_t arg = func_call->Word(first_arg_word + i);
-                const uint32_t param = func_def.second[i];
+            const u32 arg_count = (func_call->Length() - first_arg_word);
+            for (u32 i = 0; i < arg_count; i++) {
+                const u32 arg = func_call->Word(first_arg_word + i);
+                const u32 param = func_def.second[i];
                 func_parameter_map[param].push_back(arg);
             }
         }
@@ -1133,9 +1133,9 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     // parsing, take every load/store find the variable it touches
     // (image access are done later)
     VariableAccessMap variable_access_map;
-    auto mark_variable_access = [&module_state, &variable_access_map](const std::vector<uint32_t>& ids, uint32_t access) {
+    auto mark_variable_access = [&module_state, &variable_access_map](const std::vector<u32>& ids, u32 access) {
         for (const auto& object_id : ids) {
-            uint32_t variable_id = object_id;
+            u32 variable_id = object_id;
             const Instruction* insn = module_state.FindDef(object_id);
             while (insn) {
                 switch (insn->Opcode()) {
@@ -1164,7 +1164,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     mark_variable_access(atomic_load_pointer_ids, AccessBit::atomic_read);
 
     for (const Instruction* decoration_inst : builtin_decoration_instructions) {
-        const uint32_t built_in = decoration_inst->GetBuiltIn();
+        const u32 built_in = decoration_inst->GetBuiltIn();
         if (built_in == spv::BuiltInLayer) {
             has_builtin_layer = true;
         } else if (built_in == spv::BuiltInFullyCoveredEXT) {
@@ -1205,7 +1205,7 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     }
 }
 
-std::string Module::GetDecorations(uint32_t id) const {
+std::string Module::GetDecorations(u32 id) const {
     std::ostringstream ss;
     for (const spirv::Instruction& insn : GetInstructions()) {
         if (insn.Opcode() == spv::OpFunction) {
@@ -1217,7 +1217,7 @@ std::string Module::GetDecorations(uint32_t id) const {
     return ss.str();
 }
 
-std::string Module::GetName(uint32_t id) const {
+std::string Module::GetName(u32 id) const {
     for (const spirv::Instruction& insn : GetInstructions()) {
         if (insn.Opcode() == spv::OpFunction) {
             break;  // names are found before first function block
@@ -1228,7 +1228,7 @@ std::string Module::GetName(uint32_t id) const {
     return "";
 }
 
-std::string Module::GetMemberName(uint32_t id, uint32_t member_index) const {
+std::string Module::GetMemberName(u32 id, u32 member_index) const {
     for (const spirv::Instruction& insn : GetInstructions()) {
         if (insn.Opcode() == spv::OpFunction) {
             break;  // names are found before first function block
@@ -1240,10 +1240,10 @@ std::string Module::GetMemberName(uint32_t id, uint32_t member_index) const {
 }
 
 // Used to pretty-print the OpType* for an error message
-void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t indent) const {
+void Module::DescribeTypeInner(std::ostringstream& ss, u32 type, u32 indent) const {
     const Instruction* insn = FindDef(type);
-    auto indent_by = [&ss](uint32_t i) {
-        for (uint32_t x = 0; x < i; x++) {
+    auto indent_by = [&ss](u32 i) {
+        for (u32 x = 0; x < i; x++) {
             ss << '\t';
         }
     };
@@ -1281,7 +1281,7 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
         case spv::OpTypeStruct: {
             ss << "struct of {\n";
             indent++;
-            for (uint32_t i = 2; i < insn->Length(); i++) {
+            for (u32 i = 2; i < insn->Length(); i++) {
                 indent_by(indent);
                 ss << "- ";
                 DescribeTypeInner(ss, insn->Word(i), indent);
@@ -1322,13 +1322,13 @@ void Module::DescribeTypeInner(std::ostringstream& ss, uint32_t type, uint32_t i
     }
 }
 
-std::string Module::DescribeType(uint32_t type) const {
+std::string Module::DescribeType(u32 type) const {
     std::ostringstream ss;
     DescribeTypeInner(ss, type, 0);
     return ss.str();
 }
 
-std::string Module::DescribeVariable(uint32_t id) const {
+std::string Module::DescribeVariable(u32 id) const {
     std::ostringstream ss;
     auto name = GetName(id);
     if (!name.empty()) {
@@ -1356,8 +1356,7 @@ std::shared_ptr<const EntryPoint> Module::FindEntrypoint(char const* name, VkSha
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
 // Assumes shader module contains no spec constants used to set the local size values
-bool Module::FindLocalSize(const EntryPoint& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
-                           uint32_t& local_size_z) const {
+bool Module::FindLocalSize(const EntryPoint& entrypoint, u32& local_size_x, u32& local_size_y, u32& local_size_z) const {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
     if (static_data_.has_builtin_workgroup_size) {
@@ -1387,8 +1386,8 @@ bool Module::FindLocalSize(const EntryPoint& entrypoint, uint32_t& local_size_x,
     return false;  // not found
 }
 
-uint32_t Module::CalculateWorkgroupSharedMemory() const {
-    uint32_t total_size = 0;
+u32 Module::CalculateWorkgroupSharedMemory() const {
+    u32 total_size = 0;
     // when using WorkgroupMemoryExplicitLayoutKHR
     // either all or none the structs are decorated with Block,
     // if using block, all must decorated with Aliased.
@@ -1402,14 +1401,14 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
                 find_max_block = true;
             }
 
-            const uint32_t result_type_id = insn->Word(1);
+            const u32 result_type_id = insn->Word(1);
             const Instruction* result_type = FindDef(result_type_id);
             const Instruction* type = FindDef(result_type->Word(3));
 
             // structs might have an offset padding
-            const uint32_t variable_shared_size = (type->Opcode() == spv::OpTypeStruct)
-                                                      ? GetTypeStructInfo(type->Word(1))->GetSize(*this).size
-                                                      : GetTypeBytesSize(type);
+            const u32 variable_shared_size = (type->Opcode() == spv::OpTypeStruct)
+                                                 ? GetTypeStructInfo(type->Word(1))->GetSize(*this).size
+                                                 : GetTypeBytesSize(type);
 
             if (find_max_block) {
                 total_size = std::max(total_size, variable_shared_size);
@@ -1423,7 +1422,7 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
 
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
-const Instruction* Module::GetConstantDef(uint32_t id) const {
+const Instruction* Module::GetConstantDef(u32 id) const {
     const Instruction* value = FindDef(id);
 
     // If id is a copy, see where it was copied from
@@ -1440,7 +1439,7 @@ const Instruction* Module::GetConstantDef(uint32_t id) const {
 
 // Returns the constant value described by the instruction at |id|
 // Caller ensures there can't be a runtime array or specialization constants
-uint32_t Module::GetConstantValueById(uint32_t id) const {
+u32 Module::GetConstantValueById(u32 id) const {
     const Instruction* value = GetConstantDef(id);
 
     // If this hit, most likley a runtime array (probably from VK_EXT_descriptor_indexing)
@@ -1456,7 +1455,7 @@ uint32_t Module::GetConstantValueById(uint32_t id) const {
 }
 
 // Returns the number of Location slots used for a given ID reference to a OpType*
-uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
+u32 Module::GetLocationsConsumedByType(u32 type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
@@ -1467,30 +1466,30 @@ uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
         case spv::OpTypeArray: {
             // Spec: "If an array of size n and each element takes m locations,
             // it will be assigned m × n consecutive locations starting with the location specified"
-            const uint32_t locations = GetLocationsConsumedByType(insn->Word(2));
-            const uint32_t array_size = GetConstantValueById(insn->Word(3));
+            const u32 locations = GetLocationsConsumedByType(insn->Word(2));
+            const u32 array_size = GetConstantValueById(insn->Word(3));
             return locations * array_size;
         }
         case spv::OpTypeMatrix: {
             // Spec: "if n × m matrix, the number of locations assigned for each matrix will be the same as for an n-element array
             // of m-component vectors"
-            const uint32_t column_type = insn->Word(2);
-            const uint32_t column_count = insn->Word(3);
+            const u32 column_type = insn->Word(2);
+            const u32 column_count = insn->Word(3);
             return column_count * GetLocationsConsumedByType(column_type);
         }
         case spv::OpTypeVector: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
-            const uint32_t width = scalar_type->GetByteWidth();
-            const uint32_t vector_length = insn->Word(3);
-            const uint32_t components = width * vector_length;
+            const u32 width = scalar_type->GetByteWidth();
+            const u32 vector_length = insn->Word(3);
+            const u32 components = width * vector_length;
             // Locations are 128-bit wide (4 components)
             // 3- and 4-component vectors of 64 bit types require two.
             return (components / 5) + 1;
         }
         case spv::OpTypeStruct: {
-            uint32_t sum = 0;
+            u32 sum = 0;
             // first 2 words of struct are not the elements to check
-            for (uint32_t i = 2; i < insn->Length(); i++) {
+            for (u32 i = 2; i < insn->Length(); i++) {
                 sum += GetLocationsConsumedByType(insn->Word(i));
             }
             return sum;
@@ -1502,7 +1501,7 @@ uint32_t Module::GetLocationsConsumedByType(uint32_t type) const {
 }
 
 // Returns the number of Components slots used for a given ID reference to a OpType*
-uint32_t Module::GetComponentsConsumedByType(uint32_t type) const {
+u32 Module::GetComponentsConsumedByType(u32 type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
@@ -1515,20 +1514,20 @@ uint32_t Module::GetComponentsConsumedByType(uint32_t type) const {
             // ex. vec3[5] will only return 3
             return GetComponentsConsumedByType(insn->Word(2));
         case spv::OpTypeMatrix: {
-            const uint32_t column_type = insn->Word(2);
-            const uint32_t column_count = insn->Word(3);
+            const u32 column_type = insn->Word(2);
+            const u32 column_count = insn->Word(3);
             return column_count * GetComponentsConsumedByType(column_type);
         }
         case spv::OpTypeVector: {
             const Instruction* scalar_type = FindDef(insn->Word(2));
-            const uint32_t width = scalar_type->GetByteWidth();
-            const uint32_t vector_length = insn->Word(3);
+            const u32 width = scalar_type->GetByteWidth();
+            const u32 vector_length = insn->Word(3);
             return width * vector_length;  // One component is 32-bit
         }
         case spv::OpTypeStruct: {
-            uint32_t sum = 0;
+            u32 sum = 0;
             // first 2 words of struct are not the elements to check
-            for (uint32_t i = 2; i < insn->Length(); i++) {
+            for (u32 i = 2; i < insn->Length(); i++) {
                 sum += GetComponentsConsumedByType(insn->Word(i));
             }
             return sum;
@@ -1541,7 +1540,7 @@ uint32_t Module::GetComponentsConsumedByType(uint32_t type) const {
 
 // characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
 // also used for input attachments, as we statically know their format.
-NumericType Module::GetNumericType(uint32_t type) const {
+NumericType Module::GetNumericType(u32 type) const {
     const Instruction* insn = FindDef(type);
 
     switch (insn->Opcode()) {
@@ -1562,7 +1561,7 @@ NumericType Module::GetNumericType(uint32_t type) const {
     }
 }
 
-bool Module::HasRuntimeArray(uint32_t type_id) const {
+bool Module::HasRuntimeArray(u32 type_id) const {
     const Instruction* type = FindDef(type_id);
     if (!type) {
         return false;
@@ -1571,7 +1570,7 @@ bool Module::HasRuntimeArray(uint32_t type_id) const {
         if (type->Opcode() == spv::OpTypeRuntimeArray) {
             return true;
         }
-        const uint32_t next_word = (type->Opcode() == spv::OpTypePointer) ? 3 : 2;
+        const u32 next_word = (type->Opcode() == spv::OpTypePointer) ? 3 : 2;
         type = FindDef(type->Word(next_word));
     }
     return false;
@@ -1584,7 +1583,7 @@ std::string InterfaceSlot::Describe() const {
     return msg.str();
 }
 
-uint32_t GetFormatType(VkFormat format) {
+u32 GetFormatType(VkFormat format) {
     if (vkuFormatIsSINT(format)) return NumericTypeSint;
     if (vkuFormatIsUINT(format)) return NumericTypeUint;
     // Formats such as VK_FORMAT_D16_UNORM_S8_UINT are both
@@ -1594,7 +1593,7 @@ uint32_t GetFormatType(VkFormat format) {
     return NumericTypeFloat;
 }
 
-char const* string_NumericType(uint32_t type) {
+char const* string_NumericType(u32 type) {
     if (type == NumericTypeSint) return "SINT";
     if (type == NumericTypeUint) return "UINT";
     if (type == NumericTypeFloat) return "FLOAT";
@@ -1687,7 +1686,7 @@ const Instruction& StageInterfaceVariable::FindBaseType(StageInterfaceVariable& 
     // Strip away the first array, if any, if special interface array
     // Most times won't be anything to strip
     if (variable.is_array_interface && base_type->IsArray()) {
-        const uint32_t type_id = base_type->Word(2);
+        const u32 type_id = base_type->Word(2);
         base_type = module_state.FindDef(type_id);
     }
 
@@ -1707,33 +1706,33 @@ bool StageInterfaceVariable::IsBuiltin(const StageInterfaceVariable& variable, c
 
 // This logic is based off assumption that the Location are implicit and not member decorations
 // when we have structs-of-structs, only the top struct can have explicit locations given
-static uint32_t GetStructInterfaceSlots(const Module& module_state, std::shared_ptr<const TypeStructInfo> type_struct_info,
-                                        std::vector<InterfaceSlot>& slots, uint32_t starting_location) {
-    uint32_t locations_added = 0;
-    for (uint32_t i = 0; i < type_struct_info->length; i++) {
+static u32 GetStructInterfaceSlots(const Module& module_state, std::shared_ptr<const TypeStructInfo> type_struct_info,
+                                   std::vector<InterfaceSlot>& slots, u32 starting_location) {
+    u32 locations_added = 0;
+    for (u32 i = 0; i < type_struct_info->length; i++) {
         const auto& member = type_struct_info->members[i];
 
         // Keep walking down nested structs
         if (member.type_struct_info) {
-            const uint32_t array_size = module_state.GetFlattenArraySize(*member.insn);
-            for (uint32_t j = 0; j < array_size; j++) {
+            const u32 array_size = module_state.GetFlattenArraySize(*member.insn);
+            for (u32 j = 0; j < array_size; j++) {
                 locations_added +=
                     GetStructInterfaceSlots(module_state, member.type_struct_info, slots, starting_location + locations_added);
             }
             continue;
         }
 
-        const uint32_t member_id = member.id;
-        const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
-        const uint32_t locations = module_state.GetLocationsConsumedByType(member_id);
+        const u32 member_id = member.id;
+        const u32 components = module_state.GetComponentsConsumedByType(member_id);
+        const u32 locations = module_state.GetLocationsConsumedByType(member_id);
 
         // Info needed to test type matching later
         const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
-        const uint32_t numerical_type_opcode = numerical_type->Opcode();
-        const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+        const u32 numerical_type_opcode = numerical_type->Opcode();
+        const u32 numerical_type_width = numerical_type->GetBitWidth();
 
-        for (uint32_t j = 0; j < locations; j++) {
-            for (uint32_t k = 0; k < components; k++) {
+        for (u32 j = 0; j < locations; j++) {
+            for (u32 k = 0; k < components; k++) {
                 slots.emplace_back(starting_location + locations_added, k, numerical_type_opcode, numerical_type_width);
             }
             locations_added++;
@@ -1756,10 +1755,10 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
         const bool block_decorated_with_location = variable.decorations.location != kInvalidValue;
         if (block_decorated_with_location) {
             // In case of option 1, need to keep track as we go
-            uint32_t base_location = variable.decorations.location;
+            u32 base_location = variable.decorations.location;
             for (const auto& members : variable.type_struct_info->members) {
-                const uint32_t member_id = members.id;
-                const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+                const u32 member_id = members.id;
+                const u32 components = module_state.GetComponentsConsumedByType(member_id);
 
                 // Info needed to test type matching later
                 const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
@@ -1768,68 +1767,68 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
                     variable.physical_storage_buffer = true;
                     break;
                 }
-                const uint32_t numerical_type_opcode = numerical_type->Opcode();
+                const u32 numerical_type_opcode = numerical_type->Opcode();
                 // TODO - Handle nested structs
                 if (numerical_type_opcode == spv::OpTypeStruct) {
                     variable.nested_struct = true;
                     break;
                 }
-                const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+                const u32 numerical_type_width = numerical_type->GetBitWidth();
 
-                for (uint32_t j = 0; j < components; j++) {
+                for (u32 j = 0; j < components; j++) {
                     slots.emplace_back(base_location, j, numerical_type_opcode, numerical_type_width);
                 }
                 base_location++;  // If using, each members starts a new Location
             }
         } else {
             // Option 2
-            for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
+            for (u32 i = 0; i < variable.type_struct_info->length; i++) {
                 const auto& member = variable.type_struct_info->members[i];
-                const uint32_t member_id = member.id;
+                const u32 member_id = member.id;
                 // Location/Components cant be decorated in nested structs, so no need to keep checking further
                 // The spec says all or non of the member variables must have Location
                 const auto member_decoration = variable.type_struct_info->decorations.member_decorations.at(i);
-                uint32_t location = member_decoration.location;
-                const uint32_t starting_component = member_decoration.component;
+                u32 location = member_decoration.location;
+                const u32 starting_component = member_decoration.component;
 
                 if (member.type_struct_info) {
-                    const uint32_t array_size = module_state.GetFlattenArraySize(*member.insn);
-                    for (uint32_t j = 0; j < array_size; j++) {
+                    const u32 array_size = module_state.GetFlattenArraySize(*member.insn);
+                    for (u32 j = 0; j < array_size; j++) {
                         location += GetStructInterfaceSlots(module_state, member.type_struct_info, slots, location);
                     }
                 } else {
-                    const uint32_t components = module_state.GetComponentsConsumedByType(member_id);
+                    const u32 components = module_state.GetComponentsConsumedByType(member_id);
 
                     // Info needed to test type matching later
                     const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
-                    const uint32_t numerical_type_opcode = numerical_type->Opcode();
-                    const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+                    const u32 numerical_type_opcode = numerical_type->Opcode();
+                    const u32 numerical_type_width = numerical_type->GetBitWidth();
 
-                    for (uint32_t j = 0; j < components; j++) {
+                    for (u32 j = 0; j < components; j++) {
                         slots.emplace_back(location, starting_component + j, numerical_type_opcode, numerical_type_width);
                     }
                 }
             }
         }
     } else {
-        uint32_t locations = 0;
+        u32 locations = 0;
         // Will have array peeled off already
-        uint32_t type_id = variable.base_type.ResultId();
+        u32 type_id = variable.base_type.ResultId();
 
         locations = module_state.GetLocationsConsumedByType(type_id);
-        const uint32_t components = module_state.GetComponentsConsumedByType(type_id);
+        const u32 components = module_state.GetComponentsConsumedByType(type_id);
 
         // Info needed to test type matching later
         const Instruction* numerical_type = module_state.GetBaseTypeInstruction(type_id);
-        const uint32_t numerical_type_opcode = numerical_type->Opcode();
-        const uint32_t numerical_type_width = numerical_type->GetBitWidth();
+        const u32 numerical_type_opcode = numerical_type->Opcode();
+        const u32 numerical_type_width = numerical_type->GetBitWidth();
 
-        const uint32_t starting_location = variable.decorations.location;
-        const uint32_t starting_component = variable.decorations.component;
-        for (uint32_t array_index = 0; array_index < variable.array_size; array_index++) {
+        const u32 starting_location = variable.decorations.location;
+        const u32 starting_component = variable.decorations.component;
+        for (u32 array_index = 0; array_index < variable.array_size; array_index++) {
             // offet into array if there is one
-            const uint32_t location = starting_location + (locations * array_index);
-            for (uint32_t component = 0; component < components; component++) {
+            const u32 location = starting_location + (locations * array_index);
+            for (u32 component = 0; component < components; component++) {
                 slots.emplace_back(location, component + starting_component, numerical_type_opcode, numerical_type_width);
             }
         }
@@ -1837,9 +1836,9 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
     return slots;
 }
 
-std::vector<uint32_t> StageInterfaceVariable::GetBuiltinBlock(const StageInterfaceVariable& variable, const Module& module_state) {
+std::vector<u32> StageInterfaceVariable::GetBuiltinBlock(const StageInterfaceVariable& variable, const Module& module_state) {
     // Built-in Location slot will always be [zero, size]
-    std::vector<uint32_t> slots;
+    std::vector<u32> slots;
     // Only check block built-ins - many builtin are non-block and not used between shaders
     if (!variable.is_builtin || !variable.type_struct_info) {
         return slots;
@@ -1847,15 +1846,15 @@ std::vector<uint32_t> StageInterfaceVariable::GetBuiltinBlock(const StageInterfa
 
     const auto& decoration_set = variable.type_struct_info->decorations;
     if (decoration_set.Has(DecorationSet::block_bit)) {
-        for (uint32_t i = 0; i < variable.type_struct_info->length; i++) {
+        for (u32 i = 0; i < variable.type_struct_info->length; i++) {
             slots.push_back(decoration_set.member_decorations.at(i).builtin);
         }
     }
     return slots;
 }
 
-uint32_t StageInterfaceVariable::GetBuiltinComponents(const StageInterfaceVariable& variable, const Module& module_state) {
-    uint32_t count = 0;
+u32 StageInterfaceVariable::GetBuiltinComponents(const StageInterfaceVariable& variable, const Module& module_state) {
+    u32 count = 0;
     if (!variable.is_builtin) {
         return count;
     }
@@ -1864,7 +1863,7 @@ uint32_t StageInterfaceVariable::GetBuiltinComponents(const StageInterfaceVariab
             count += module_state.GetComponentsConsumedByType(members.id);
         }
     } else {
-        const uint32_t base_type_id = variable.base_type.ResultId();
+        const u32 base_type_id = variable.base_type.ResultId();
         count += module_state.GetComponentsConsumedByType(base_type_id);
     }
     return count;
@@ -1951,10 +1950,10 @@ bool ResourceInterfaceVariable::IsDynamicAccessed(ResourceInterfaceVariable& var
         return false;  // nothing is accessing this in any known way
     }
 
-    const uint32_t start = 4;  // first word of the Indexes operand
+    const u32 start = 4;  // first word of the Indexes operand
     for (const auto access_chain_inst : it->second) {
-        for (uint32_t i = start; i < access_chain_inst->Length(); i++) {
-            const uint32_t index = access_chain_inst->Word(i);
+        for (u32 i = start; i < access_chain_inst->Length(); i++) {
+            const u32 index = access_chain_inst->Word(i);
             if (module_state.FindDef(index)->Opcode() != spv::OpConstant) {
                 return true;  // access is dynamic
             }
@@ -1963,7 +1962,7 @@ bool ResourceInterfaceVariable::IsDynamicAccessed(ResourceInterfaceVariable& var
     return false;
 }
 
-uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const Module& module_state, const Instruction& base_type) {
+u32 ResourceInterfaceVariable::FindImageSampledTypeWidth(const Module& module_state, const Instruction& base_type) {
     return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetTypeBitsSize(&base_type) : 0;
 }
 
@@ -2069,9 +2068,9 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
                 if (!image_access.variable_sampler_insn.empty() && !is_sampled_image) {
                     // if no AccessChain, it is same conceptually as being zero
-                    const uint32_t image_index =
+                    const u32 image_index =
                         image_access.image_access_chain_index != kInvalidValue ? image_access.image_access_chain_index : 0;
-                    const uint32_t sampler_index =
+                    const u32 sampler_index =
                         image_access.sampler_access_chain_index != kInvalidValue ? image_access.sampler_access_chain_index : 0;
 
                     if (image_index >= samplers_used_by_image.size()) {
@@ -2105,7 +2104,7 @@ PushConstantVariable::PushConstantVariable(const Module& module_state, const Ins
 TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& struct_insn)
     : id(struct_insn.Word(1)), length(struct_insn.Length() - 2), decorations(module_state.GetDecorationSet(id)) {
     members.resize(length);
-    for (uint32_t i = 0; i < length; i++) {
+    for (u32 i = 0; i < length; i++) {
         Member& member = members[i];
         member.id = struct_insn.Word(2 + i);
         member.insn = module_state.FindDef(member.id);
@@ -2119,8 +2118,8 @@ TypeStructInfo::TypeStructInfo(const Module& module_state, const Instruction& st
 }
 
 TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
-    uint32_t offset = vvl::kU32Max;
-    uint32_t size = 0;
+    u32 offset = vvl::kU32Max;
+    u32 size = 0;
 
     // Non-Blocks don't have offset so can get packed size
     if (!decorations.Has(DecorationSet::block_bit)) {
@@ -2138,13 +2137,13 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     //    OpMemberDecorate %x 0 Offset 4
     //
     // Info at https://gitlab.khronos.org/spirv/SPIR-V/-/issues/763
-    uint32_t highest_element_index = 0;
-    uint32_t highest_element_offset = 0;
+    u32 highest_element_index = 0;
+    u32 highest_element_offset = 0;
 
-    for (uint32_t i = 0; i < members.size(); i++) {
+    for (u32 i = 0; i < members.size(); i++) {
         const auto& member = members[i];
         // all struct elements are required to have offset decorations in Block
-        const uint32_t memeber_offset = member.decorations->offset;
+        const u32 memeber_offset = member.decorations->offset;
         offset = std::min(offset, memeber_offset);
         if (memeber_offset > highest_element_offset) {
             highest_element_index = i;
@@ -2153,7 +2152,7 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     }
 
     const auto& highest_member = members[highest_element_index];
-    uint32_t highest_element_size = 0;
+    u32 highest_element_size = 0;
     if (highest_member.insn->Opcode() == spv::OpTypeArray &&
         module_state.FindDef(highest_member.insn->Word(3))->Opcode() == spv::OpSpecConstant) {
         // TODO - This is a work-around because currently we only apply SpecConstant for workgroup size
@@ -2169,9 +2168,9 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     return {offset, size};
 }
 
-uint32_t Module::GetNumComponentsInBaseType(const Instruction* insn) const {
-    const uint32_t opcode = insn->Opcode();
-    uint32_t component_count = 0;
+u32 Module::GetNumComponentsInBaseType(const Instruction* insn) const {
+    const u32 opcode = insn->Opcode();
+    u32 component_count = 0;
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
         component_count = 1;
     } else if (opcode == spv::OpTypeVector) {
@@ -2184,7 +2183,7 @@ uint32_t Module::GetNumComponentsInBaseType(const Instruction* insn) const {
         const Instruction* element_type = FindDef(insn->Word(2));
         component_count = GetNumComponentsInBaseType(element_type);  // element length
     } else if (opcode == spv::OpTypeStruct) {
-        for (uint32_t i = 2; i < insn->Length(); ++i) {
+        for (u32 i = 2; i < insn->Length(); ++i) {
             component_count += GetNumComponentsInBaseType(FindDef(insn->Word(i)));
         }
     } else if (opcode == spv::OpTypePointer) {
@@ -2195,28 +2194,28 @@ uint32_t Module::GetNumComponentsInBaseType(const Instruction* insn) const {
 }
 
 // Returns the total size in 'bits' of any OpType*
-uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
-    const uint32_t opcode = insn->Opcode();
-    uint32_t bit_size = 0;
+u32 Module::GetTypeBitsSize(const Instruction* insn) const {
+    const u32 opcode = insn->Opcode();
+    u32 bit_size = 0;
     if (opcode == spv::OpTypeVector) {
         const Instruction* component_type = FindDef(insn->Word(2));
-        uint32_t scalar_width = GetTypeBitsSize(component_type);
-        uint32_t component_count = insn->Word(3);
+        u32 scalar_width = GetTypeBitsSize(component_type);
+        u32 component_count = insn->Word(3);
         bit_size = scalar_width * component_count;
     } else if (opcode == spv::OpTypeMatrix) {
         const Instruction* column_type = FindDef(insn->Word(2));
-        uint32_t vector_width = GetTypeBitsSize(column_type);
-        uint32_t column_count = insn->Word(3);
+        u32 vector_width = GetTypeBitsSize(column_type);
+        u32 column_count = insn->Word(3);
         bit_size = vector_width * column_count;
     } else if (opcode == spv::OpTypeArray) {
         const Instruction* element_type = FindDef(insn->Word(2));
-        uint32_t element_width = GetTypeBitsSize(element_type);
+        u32 element_width = GetTypeBitsSize(element_type);
         const Instruction* length_type = FindDef(insn->Word(3));
-        uint32_t length = length_type->GetConstantValue();
+        u32 length = length_type->GetConstantValue();
         bit_size = element_width * length;
     } else if (opcode == spv::OpTypeStruct) {
         // Will not consider any possible Offset, gets size of a packed struct
-        for (uint32_t i = 2; i < insn->Length(); ++i) {
+        for (u32 i = 2; i < insn->Length(); ++i) {
             bit_size += GetTypeBitsSize(FindDef(insn->Word(i)));
         }
     } else if (opcode == spv::OpTypePointer) {
@@ -2245,12 +2244,12 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
 }
 
 // Returns the total size in 'bytes' of any OpType*
-uint32_t Module::GetTypeBytesSize(const Instruction* insn) const { return GetTypeBitsSize(insn) / 8; }
+u32 Module::GetTypeBytesSize(const Instruction* insn) const { return GetTypeBitsSize(insn) / 8; }
 
 // Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)
 // Will return 0 if it can not be determined
-uint32_t Module::GetBaseType(const Instruction* insn) const {
-    const uint32_t opcode = insn->Opcode();
+u32 Module::GetBaseType(const Instruction* insn) const {
+    const u32 opcode = insn->Opcode();
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeBool || opcode == spv::OpTypeStruct) {
         // point to itself as its the base type (or a struct that needs to be traversed still)
         return insn->Word(1);
@@ -2282,22 +2281,22 @@ uint32_t Module::GetBaseType(const Instruction* insn) const {
     return 0;
 }
 
-const Instruction* Module::GetBaseTypeInstruction(uint32_t type) const {
+const Instruction* Module::GetBaseTypeInstruction(u32 type) const {
     const Instruction* insn = FindDef(type);
-    const uint32_t base_insn_id = GetBaseType(insn);
+    const u32 base_insn_id = GetBaseType(insn);
     // Will return end() if an invalid/unknown base_insn_id is returned
     return FindDef(base_insn_id);
 }
 
 // Returns type_id if id has type or zero otherwise
-uint32_t Module::GetTypeId(uint32_t id) const {
+u32 Module::GetTypeId(u32 id) const {
     const Instruction* type = FindDef(id);
     return type ? type->TypeId() : 0;
 }
 
 // Return zero if nothing is found
-uint32_t Module::GetTexelComponentCount(const Instruction& insn) const {
-    uint32_t texel_component_count = 0;
+u32 Module::GetTexelComponentCount(const Instruction& insn) const {
+    u32 texel_component_count = 0;
     switch (insn.Opcode()) {
         case spv::OpImageWrite: {
             const Instruction* texel_def = FindDef(insn.Word(3));
@@ -2313,8 +2312,8 @@ uint32_t Module::GetTexelComponentCount(const Instruction& insn) const {
 
 // Takes an array like [3][2][4] and returns 24
 // If not an array, returns 1
-uint32_t Module::GetFlattenArraySize(const Instruction& insn) const {
-    uint32_t array_size = 1;
+u32 Module::GetFlattenArraySize(const Instruction& insn) const {
+    u32 array_size = 1;
     if (insn.Opcode() == spv::OpTypeArray) {
         array_size = GetConstantValueById(insn.Word(3));
         const Instruction* element_insn = FindDef(insn.Word(2));
@@ -2329,7 +2328,7 @@ AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
     AtomicInstructionInfo info;
 
     // All atomics have a pointer referenced
-    const uint32_t pointer_index = insn.Opcode() == spv::OpAtomicStore ? 1 : 3;
+    const u32 pointer_index = insn.Opcode() == spv::OpAtomicStore ? 1 : 3;
     const Instruction* access = FindDef(insn.Word(pointer_index));
 
     // spirv-val will catch if not OpTypePointer

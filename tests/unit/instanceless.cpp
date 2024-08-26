@@ -264,7 +264,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
 
     VkInstance instance;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance));
-    uint32_t physical_device_count = 1;
+    u32 physical_device_count = 1;
     VkPhysicalDevice physical_device;
     const VkResult err = vk::EnumeratePhysicalDevices(instance, &physical_device_count, &physical_device);
     ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
@@ -288,7 +288,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     Monitor().VerifyFound();
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL callback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t, size_t, int32_t, const char*,
+VKAPI_ATTR VkBool32 VKAPI_CALL callback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, u64, size_t, i32, const char*,
                                         const char*, void*) {
     return VK_FALSE;
 }

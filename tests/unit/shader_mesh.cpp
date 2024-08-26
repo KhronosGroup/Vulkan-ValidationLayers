@@ -28,8 +28,8 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream mesh_source;
     mesh_source << R"glsl(
@@ -69,8 +69,8 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream mesh_source;
     mesh_source << R"glsl(
@@ -119,8 +119,8 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantDefault) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream mesh_source;
     mesh_source << R"glsl(
@@ -160,8 +160,8 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream mesh_source;
     mesh_source << R"glsl(
@@ -179,17 +179,17 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
         void main(){}
     )glsl";
 
-    uint32_t data = 1;  // set Condition
+    u32 data = 1;  // set Condition
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
@@ -215,8 +215,8 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxTaskSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxTaskSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream task_source;
     task_source << R"glsl(

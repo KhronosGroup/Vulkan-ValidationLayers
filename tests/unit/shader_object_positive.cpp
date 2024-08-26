@@ -110,12 +110,12 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
 
     size_t vertDataSize;
     vk::GetShaderBinaryDataEXT(*m_device, vertShader.handle(), &vertDataSize, nullptr);
-    std::vector<uint8_t> vertData(vertDataSize);
+    std::vector<u8> vertData(vertDataSize);
     vk::GetShaderBinaryDataEXT(*m_device, vertShader.handle(), &vertDataSize, vertData.data());
 
     size_t fragDataSize;
     vk::GetShaderBinaryDataEXT(*m_device, fragShader.handle(), &fragDataSize, nullptr);
-    std::vector<uint8_t> fragData(fragDataSize);
+    std::vector<u8> fragData(fragDataSize);
     vk::GetShaderBinaryDataEXT(*m_device, fragShader.handle(), &fragDataSize, fragData.data());
 
     vkt::Shader binaryVertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vertData);
@@ -145,7 +145,7 @@ TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
 
-    for (uint32_t i = 0; i < 2; ++i) {
+    for (u32 i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
     }
 }
@@ -172,7 +172,7 @@ TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
     VkShaderEXT shaders[5];
     vk::CreateShadersEXT(m_device->handle(), 5u, createInfos, nullptr, shaders);
 
-    for (uint32_t i = 0; i < 5; ++i) {
+    for (u32 i = 0; i < 5; ++i) {
         vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
     }
 }
@@ -241,8 +241,8 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     color_attachment.imageView = view;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.extent.width = static_cast<u32>(m_width);
+    begin_rendering_info.renderArea.extent.height = static_cast<u32>(m_height);
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
@@ -297,8 +297,8 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
 
     VkBufferImageCopy copyRegion = {};
     copyRegion.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copyRegion.imageOffset.x = static_cast<int32_t>(m_width / 2) + 1;
-    copyRegion.imageOffset.y = static_cast<int32_t>(m_height / 2) + 1;
+    copyRegion.imageOffset.x = static_cast<i32>(m_width / 2) + 1;
+    copyRegion.imageOffset.y = static_cast<i32>(m_height / 2) + 1;
     copyRegion.imageExtent = {1, 1, 1};
 
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copyRegion);
@@ -390,7 +390,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    std::vector<uint32_t> spv[5];
+    std::vector<u32> spv[5];
     spv[0] = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
     spv[1] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tesc_src);
     spv[2] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tese_src);
@@ -419,8 +419,8 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     begin_rendering_info.flags = 0u;
     begin_rendering_info.renderArea.offset.x = 0;
     begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.extent.width = static_cast<u32>(m_width);
+    begin_rendering_info.renderArea.extent.height = static_cast<u32>(m_height);
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.viewMask = 0x0;
     begin_rendering_info.colorAttachmentCount = 1u;
@@ -564,8 +564,8 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     begin_rendering_info.flags = 0u;
     begin_rendering_info.renderArea.offset.x = 0;
     begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
-    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.renderArea.extent.width = static_cast<u32>(m_width);
+    begin_rendering_info.renderArea.extent.height = static_cast<u32>(m_height);
     begin_rendering_info.layerCount = 1u;
     begin_rendering_info.viewMask = 0x0;
     begin_rendering_info.colorAttachmentCount = 1u;
@@ -691,15 +691,15 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
         }
     )glsl";
 
-    constexpr uint32_t stages_count = 5;
-    constexpr uint32_t shaders_count = 20;
-    constexpr uint32_t fail_index = 15;
+    constexpr u32 stages_count = 5;
+    constexpr u32 shaders_count = 20;
+    constexpr u32 fail_index = 15;
 
     VkShaderStageFlagBits shaderStages[stages_count] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                                         VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                                         VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    std::vector<uint32_t> spv[stages_count];
+    std::vector<u32> spv[stages_count];
     spv[0] = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
     spv[1] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tesc_src);
     spv[2] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tese_src);
@@ -709,17 +709,17 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     VkShaderEXT shaders[shaders_count];
 
     VkShaderCreateInfoEXT createInfos[shaders_count];
-    for (uint32_t i = 0; i < shaders_count; ++i) {
+    for (u32 i = 0; i < shaders_count; ++i) {
         createInfos[i] = vku::InitStructHelper();
         createInfos[i].stage = shaderStages[i % stages_count];
         createInfos[i].codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-        createInfos[i].codeSize = spv[i % stages_count].size() * sizeof(uint32_t);
+        createInfos[i].codeSize = spv[i % stages_count].size() * sizeof(u32);
         createInfos[i].pCode = spv[i % stages_count].data();
         createInfos[i].pName = "main";
     }
 
     // Binary code must be aligned to 16 bytes
-    std::vector<uint8_t> garbage(createInfos[fail_index].codeSize + 16);
+    std::vector<u8> garbage(createInfos[fail_index].codeSize + 16);
     auto pCode = reinterpret_cast<std::uintptr_t>(garbage.data());
     while (pCode % 16 != 0) {
         pCode += 1;
@@ -731,7 +731,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     VkResult res = vk::CreateShadersEXT(m_device->handle(), 20u, createInfos, nullptr, shaders);
     ASSERT_EQ(res, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
 
-    for (uint32_t i = 0; i < shaders_count; ++i) {
+    for (u32 i = 0; i < shaders_count; ++i) {
         if (i < fail_index) {
             vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
         }
@@ -1173,7 +1173,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1293,7 +1293,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional<u32> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
 
     vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
     vkt::CommandBuffer command_buffer(*m_device, command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1397,7 +1397,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    std::vector<uint32_t> spv[5];
+    std::vector<u32> spv[5];
     spv[0] = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     spv[1] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
     spv[2] = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, kTessellationEvalMinimalGlsl);
@@ -1406,7 +1406,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
 
     VkShaderEXT shaders[5];
     VkShaderEXT binaryShaders[5];
-    for (uint32_t i = 0; i < 5u; ++i) {
+    for (u32 i = 0; i < 5u; ++i) {
         VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
         createInfo.stage = shaderStages[i];
         createInfo.nextStage = 0u;
@@ -1421,7 +1421,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
         vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shaders[i]);
         size_t dataSize;
         vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &dataSize, nullptr);
-        std::vector<uint8_t> data(dataSize);
+        std::vector<u8> data(dataSize);
         vk::GetShaderBinaryDataEXT(*m_device, shaders[i], &dataSize, data.data());
 
         createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
@@ -1440,7 +1440,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
-    for (uint32_t i = 0; i < 5; ++i) {
+    for (u32 i = 0; i < 5; ++i) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
         vk::DestroyShaderEXT(*m_device, binaryShaders[i], nullptr);
     }
@@ -1497,7 +1497,7 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
 
     VkShaderEXT shaders[5];
     vk::CreateShadersEXT(*m_device, 3u, createInfos, nullptr, shaders);
-    for (uint32_t i = 3u; i < 5u; ++i) {
+    for (u32 i = 3u; i < 5u; ++i) {
         vk::CreateShadersEXT(*m_device, 1u, &createInfos[i], nullptr, &shaders[i]);
     }
 
@@ -1511,7 +1511,7 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 
-    for (uint32_t i = 0; i < 5u; ++i) {
+    for (u32 i = 0; i < 5u; ++i) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }

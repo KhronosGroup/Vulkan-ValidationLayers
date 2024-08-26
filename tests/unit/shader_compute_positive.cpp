@@ -23,9 +23,9 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSize) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
-    uint32_t y_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[1];
-    uint32_t z_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[2];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 y_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[1];
+    u32 z_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[2];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -64,7 +64,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeSpecConstantUnder) {
 
     RETURN_IF_SKIP(Init());
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -91,17 +91,17 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeSpecConstantUnder) {
                OpFunctionEnd
         )";
 
-    uint32_t data = 1;
+    u32 data = 1;
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
@@ -157,7 +157,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeIdSpecConstant) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     RETURN_IF_SKIP(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     // layout(local_size_x_id = 18, local_size_z_id = 19) in;
     // layout(local_size_x = 32) in;
@@ -183,17 +183,17 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeIdSpecConstant) {
                OpFunctionEnd
         )";
 
-    uint32_t data = x_size_limit - 1;
+    u32 data = x_size_limit - 1;
 
     VkSpecializationMapEntry entry;
     entry.constantID = 18;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
@@ -215,7 +215,7 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSizeId) {
     features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
     RETURN_IF_SKIP(InitState(nullptr, &features13));
 
-    uint32_t x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
+    u32 x_size_limit = m_device->phy().limits_.maxComputeWorkGroupSize[0];
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -254,8 +254,8 @@ TEST_F(PositiveShaderCompute, SharedMemorySpecConstantOp) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     if (max_shared_ints < 16 * 7) {
         GTEST_SKIP() << "Supported compute shader shared memory size is too small";

@@ -490,7 +490,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     const auto* discard_rectangle_state =
         vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.GetCreateInfoPNext());
     if (discard_rectangle_state && pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
-        for (uint32_t i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
+        for (u32 i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
             if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
                 skip |= LogError(vuid.dynamic_discard_rectangle_07751, objlist, vuid.loc(),
                                  "vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32
@@ -502,7 +502,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     }
 
     // must set the state for all active color attachments in the current subpass
-    for (const uint32_t& color_index : cb_state.active_color_attachments_index) {
+    for (const u32& color_index : cb_state.active_color_attachments_index) {
         if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
             !cb_state.dynamic_state_value.color_blend_enable_attachments.test(color_index)) {
             skip |= LogError(vuid.dynamic_color_blend_enable_07476, objlist, vuid.loc(),
@@ -534,8 +534,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     }
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
-        const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments.size());
-        for (uint32_t i = 0; i < attachment_count; ++i) {
+        const u32 attachment_count = static_cast<u32>(cb_state.active_attachments.size());
+        for (u32 i = 0; i < attachment_count; ++i) {
             if (!cb_state.dynamic_state_value.color_blend_enabled[i]) {
                 continue;
             }
@@ -677,8 +677,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
         const auto color_blend_state = pipeline.ColorBlendState();
         if (color_blend_state) {
-            uint32_t blend_attachment_count = color_blend_state->attachmentCount;
-            uint32_t dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
+            u32 blend_attachment_count = color_blend_state->attachmentCount;
+            u32 dynamic_attachment_count = cb_state.dynamic_state_value.color_write_enable_attachment_count;
             if (dynamic_attachment_count < blend_attachment_count) {
                 skip |= LogError(
                     vuid.dynamic_color_write_enable_count_07750, objlist, vuid.loc(),
@@ -715,7 +715,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
             !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
-            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+            for (u32 i = 0; i < cb_state.active_attachments.size(); ++i) {
                 const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
                 const auto* attachment = attachment_info.image_view;
                 if (attachment && !attachment_info.IsInput() && !attachment_info.IsResolve() &&
@@ -935,8 +935,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
 
     // If inheriting viewports, verify that not using more than inherited.
     if (cb_state.inheritedViewportDepths.size() != 0 && dyn_viewport) {
-        const uint32_t viewport_count = viewport_state->viewportCount;
-        const uint32_t max_inherited = uint32_t(cb_state.inheritedViewportDepths.size());
+        const u32 viewport_count = viewport_state->viewportCount;
+        const u32 max_inherited = u32(cb_state.inheritedViewportDepths.size());
         if (viewport_count > max_inherited) {
             skip |= LogError(vuid.dynamic_state_inherited_07850, objlist, vuid.loc(),
                              "Pipeline requires more viewports (%" PRIu32 ".) than inherited (viewportDepthCount = %" PRIu32 ".).",
@@ -963,7 +963,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
-        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+        for (u32 i = 0; i < cb_state.active_attachments.size(); ++i) {
             const auto* attachment = cb_state.active_attachments[i].image_view;
             if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
                 const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[i];
@@ -1019,9 +1019,9 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                 if (const auto* attrib = vvl::Find(binding_state->locations, variable_ptr->decorations.location)) {
                     location_provided = true;
 
-                    const uint32_t var_base_type_id = variable_ptr->base_type.ResultId();
-                    const uint32_t attribute_type = spirv::GetFormatType(attrib->desc.format);
-                    const uint32_t var_numeric_type = vert_spirv_state->GetNumericType(var_base_type_id);
+                    const u32 var_base_type_id = variable_ptr->base_type.ResultId();
+                    const u32 attribute_type = spirv::GetFormatType(attrib->desc.format);
+                    const u32 var_numeric_type = vert_spirv_state->GetNumericType(var_base_type_id);
 
                     const bool attribute64 = vkuFormatIs64bit(attrib->desc.format);
                     const bool shader64 = vert_spirv_state->GetBaseTypeInstruction(var_base_type_id)->GetBitWidth() == 64;
@@ -1051,8 +1051,8 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                             attrib->index, attrib->desc.binding, attrib->desc.location, string_VkFormat(attrib->desc.format),
                             vert_spirv_state->DescribeType(var_base_type_id).c_str());
                     } else if (attribute64 && shader64) {
-                        const uint32_t attribute_components = vkuFormatComponentCount(attrib->desc.format);
-                        const uint32_t input_components = vert_spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type);
+                        const u32 attribute_components = vkuFormatComponentCount(attrib->desc.format);
+                        const u32 input_components = vert_spirv_state->GetNumComponentsInBaseType(&variable_ptr->base_type);
                         if (attribute_components < input_components) {
                             skip |= LogError(vuid.vertex_input_format_09203, vert_spirv_state->handle(), vuid.loc(),
                                              "vkCmdSetVertexInputEXT set pVertexAttributeDescriptions[%" PRIu32
@@ -1096,7 +1096,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
             if (cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
-                for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
+                for (u32 i = 0; i < cb_state.active_attachments.size(); i++) {
                     const auto* attachment = cb_state.active_attachments[i].image_view;
                     if (attachment && attachment->create_info.subresourceRange.aspectMask &
                                           (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
@@ -1196,11 +1196,11 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     if (!cb_state.rendering_attachments.set_color_locations) {
         return skip;
     }
-    const uint32_t color_attachment_count = (uint32_t)cb_state.rendering_attachments.color_locations.size();
+    const u32 color_attachment_count = (u32)cb_state.rendering_attachments.color_locations.size();
 
     // Default from spec
-    uint32_t pipeline_color_count = 0;
-    const uint32_t* pipeline_color_locations = nullptr;
+    u32 pipeline_color_count = 0;
+    const u32* pipeline_color_locations = nullptr;
     if (const auto* pipeline_location_info =
             vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline_state.GetCreateInfoPNext())) {
         pipeline_color_count = pipeline_location_info->colorAttachmentCount;
@@ -1218,7 +1218,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
                         " but vkCmdSetRenderingAttachmentLocationsKHR last set colorAttachmentCount to %" PRIu32 "",
                         pipeline_color_count, color_attachment_count);
     } else if (pipeline_color_locations) {
-        for (uint32_t i = 0; i < pipeline_color_count; i++) {
+        for (u32 i = 0; i < pipeline_color_count; i++) {
             if (pipeline_color_locations[i] != cb_state.rendering_attachments.color_locations[i]) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
                 skip = LogError(
@@ -1240,13 +1240,13 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         return skip;
     }
 
-    const uint32_t color_index_count = (uint32_t)cb_state.rendering_attachments.color_indexes.size();
+    const u32 color_index_count = (u32)cb_state.rendering_attachments.color_indexes.size();
 
     // Default from spec
-    uint32_t pipeline_color_count = 0;
-    const uint32_t* pipeline_color_indexes = nullptr;
-    const uint32_t* pipeline_depth_index = nullptr;
-    const uint32_t* pipeline_stencil_index = nullptr;
+    u32 pipeline_color_count = 0;
+    const u32* pipeline_color_indexes = nullptr;
+    const u32* pipeline_depth_index = nullptr;
+    const u32* pipeline_stencil_index = nullptr;
     if (const auto* pipeline_index_info =
             vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline_state.GetCreateInfoPNext())) {
         pipeline_color_count = pipeline_index_info->colorAttachmentCount;
@@ -1266,7 +1266,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
                         " but vkCmdSetRenderingInputAttachmentIndicesKHR last set colorAttachmentCount to %" PRIu32 "",
                         pipeline_color_count, color_index_count);
     } else if (pipeline_color_indexes) {
-        for (uint32_t i = 0; i < pipeline_color_count; i++) {
+        for (u32 i = 0; i < pipeline_color_count; i++) {
             if (pipeline_color_indexes[i] != cb_state.rendering_attachments.color_indexes[i]) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
                 skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
@@ -1374,7 +1374,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     }
 
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+        for (u32 i = 0; i < cb_state.active_attachments.size(); ++i) {
             const auto* attachment = cb_state.active_attachments[i].image_view;
             if (attachment && vkuFormatIsColor(attachment->create_info.format) &&
                 (attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
@@ -1390,7 +1390,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
             enabled_features.multisampledRenderToSingleSampled == VK_FALSE &&
             cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+            for (u32 i = 0; i < cb_state.active_attachments.size(); ++i) {
                 const auto* attachment = cb_state.active_attachments[i].image_view;
                 if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
                     skip |= LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), loc,
@@ -1487,7 +1487,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     }
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            const uint32_t attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
+            const u32 attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (attachment_count > 0) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
                                                   cb_state, objlist, loc, vuid.set_color_blend_enable_08657);
@@ -1498,7 +1498,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             const std::array<VkBlendFactor, 4> const_factors = {
                 VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
                 VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
-            for (uint32_t i = 0; i < attachment_count; ++i) {
+            for (u32 i = 0; i < attachment_count; ++i) {
                 if (!cb_state.dynamic_state_value.color_blend_enable_attachments[i]) {
                     skip |= LogError(vuid.set_blend_advanced_09417, objlist, loc,
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
@@ -1600,7 +1600,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
-        for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
+        for (u32 stage = 0; stage < kShaderObjectStageCount; ++stage) {
             const auto shader_object = last_bound_state.GetShaderState(static_cast<ShaderObjectStage>(stage));
             if (shader_object && shader_object->entrypoint &&
                 shader_object->entrypoint->written_builtin_primitive_shading_rate_khr) {
@@ -1710,7 +1710,7 @@ bool CoreChecks::ValidateExtendedDynamicState(const vvl::CommandBuffer& cb_state
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
                                                const VkViewport* pViewports, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -1719,7 +1719,7 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, u32 firstScissor, u32 scissorCount,
                                               const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -1728,16 +1728,16 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
-                                                         uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors,
+bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, u32 firstExclusiveScissor,
+                                                         u32 exclusiveScissorCount, const VkRect2D* pExclusiveScissors,
                                                          const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, enabled_features.exclusiveScissor,
                                         "VUID-vkCmdSetExclusiveScissorNV-None-02031", "exclusiveScissor");
 }
 
-bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                                   uint32_t viewportCount,
+bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, u32 firstViewport,
+                                                                   u32 viewportCount,
                                                                    const VkShadingRatePaletteNV* pShadingRatePalettes,
                                                                    const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1746,8 +1746,8 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, enabled_features.shadingRateImage,
                                          "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02064", "shadingRateImage");
 
-    for (uint32_t i = 0; i < viewportCount; ++i) {
-        auto *palette = &pShadingRatePalettes[i];
+    for (u32 i = 0; i < viewportCount; ++i) {
+        auto* palette = &pShadingRatePalettes[i];
         if (palette->shadingRatePaletteEntryCount == 0 ||
             palette->shadingRatePaletteEntryCount > phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize) {
             skip |=
@@ -1761,8 +1761,8 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                         uint32_t viewportCount, const VkViewportWScalingNV* pViewportWScalings,
+bool CoreChecks::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
+                                                         const VkViewportWScalingNV* pViewportWScalings,
                                                          const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
@@ -1774,13 +1774,13 @@ bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, f
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
 }
 
-bool CoreChecks::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                     uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, u32 lineStippleFactor, u16 lineStipplePattern,
+                                                     const ErrorObject& error_obj) const {
     return PreCallValidateCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
 }
 
-bool CoreChecks::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                     uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, u32 lineStippleFactor, u16 lineStipplePattern,
+                                                     const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
 }
@@ -1838,7 +1838,8 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
                          "is %f, but the depthBiasClamp device feature was not enabled.", pDepthBiasInfo->depthBiasClamp);
     }
 
-    if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
+    if (const auto* depth_bias_representation =
+            vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
         skip |= ValidateDepthBiasRepresentationInfo(error_obj.location, error_obj.objlist, *depth_bias_representation);
     }
 
@@ -1876,25 +1877,25 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                         uint32_t compareMask, const ErrorObject& error_obj) const {
+                                                         u32 compareMask, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
 }
 
-bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                       uint32_t writeMask, const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, u32 writeMask,
+                                                       const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
 }
 
-bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                       uint32_t reference, const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, u32 reference,
+                                                       const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
 }
 
-bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
-                                                          uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
+bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, u32 firstDiscardRectangle,
+                                                          u32 discardRectangleCount, const VkRect2D* pDiscardRectangles,
                                                           const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -1902,7 +1903,7 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
     skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
     skip |=
         ForbidInheritedViewportScissor(*cb_state, "VUID-vkCmdSetDiscardRectangleEXT-viewportScissor2D-04788", error_obj.location);
-    for (uint32_t i = 0; i < discardRectangleCount; ++i) {
+    for (u32 i = 0; i < discardRectangleCount; ++i) {
         if (pDiscardRectangles[i].offset.x < 0) {
             skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-x-00587", commandBuffer,
                              error_obj.location.dot(Field::pDiscardRectangles, i).dot(Field::offset).dot(Field::x),
@@ -1950,7 +1951,7 @@ bool CoreChecks::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, 
                                         "VUID-vkCmdSetLogicOpEXT-None-09422", "extendedDynamicState2LogicOp or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
+bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, u32 patchControlPoints,
                                                             const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -2053,7 +2054,7 @@ bool CoreChecks::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandB
     return ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
 }
 
-bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, u32 viewportCount,
                                                            const VkViewport* pViewports, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -2065,7 +2066,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer comma
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, u32 viewportCount,
                                                         const VkViewport* pViewports, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -2075,7 +2076,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandB
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, u32 scissorCount,
                                                           const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -2087,8 +2088,8 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer comman
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                       const VkRect2D* pScissors, const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, u32 scissorCount, const VkRect2D* pScissors,
+                                                       const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
@@ -2295,17 +2296,15 @@ bool CoreChecks::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBu
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
-                                                          uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
-                                                          const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
+                                                          const VkBool32* pColorBlendEnables, const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(
         *cb_state, error_obj.location, enabled_features.extendedDynamicState3ColorBlendEnable || enabled_features.shaderObject,
         "VUID-vkCmdSetColorBlendEnableEXT-None-09423", "extendedDynamicState3ColorBlendEnable or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
-                                                            uint32_t attachmentCount,
+bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
                                                             const VkColorBlendEquationEXT* pColorBlendEquations,
                                                             const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -2313,9 +2312,9 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
     skip |= ValidateExtendedDynamicState(
         *cb_state, error_obj.location, enabled_features.extendedDynamicState3ColorBlendEquation || enabled_features.shaderObject,
         "VUID-vkCmdSetColorBlendEquationEXT-None-09423", "extendedDynamicState3ColorBlendEquation or shaderObject");
-    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
+    for (u32 attachment = 0U; attachment < attachmentCount; ++attachment) {
         const Location equation_loc = error_obj.location.dot(Field::pColorBlendEquations, attachment);
-        VkColorBlendEquationEXT const &equation = pColorBlendEquations[attachment];
+        VkColorBlendEquationEXT const& equation = pColorBlendEquations[attachment];
         if (!enabled_features.dualSrcBlend) {
             if (IsSecondaryColorInputBlendFactor(equation.srcColorBlendFactor)) {
                 skip |= LogError(
@@ -2364,8 +2363,8 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
-                                                        uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
+bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
+                                                        const VkColorComponentFlags* pColorWriteMasks,
                                                         const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(
@@ -2373,7 +2372,7 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandB
         "VUID-vkCmdSetColorWriteMaskEXT-None-09423", "extendedDynamicState3ColorWriteMask or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
+bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, u32 rasterizationStream,
                                                              const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -2457,8 +2456,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEnableEXT(VkCommandBuffer c
         "VUID-vkCmdSetSampleLocationsEnableEXT-None-09423", "extendedDynamicState3SampleLocationsEnable or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
-                                                            uint32_t attachmentCount,
+bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, u32 firstAttachment, u32 attachmentCount,
                                                             const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
                                                             const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -2466,8 +2464,8 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
     skip |= ValidateExtendedDynamicState(
         *cb_state, error_obj.location, enabled_features.extendedDynamicState3ColorBlendAdvanced || enabled_features.shaderObject,
         "VUID-vkCmdSetColorBlendAdvancedEXT-None-09423", "extendedDynamicState3ColorBlendAdvanced or shaderObject");
-    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
-        VkColorBlendAdvancedEXT const &advanced = pColorBlendAdvanced[attachment];
+    for (u32 attachment = 0U; attachment < attachmentCount; ++attachment) {
+        VkColorBlendAdvancedEXT const& advanced = pColorBlendAdvanced[attachment];
         if (advanced.srcPremultiplied == VK_TRUE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
             skip |= LogError("VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505", commandBuffer,
@@ -2566,8 +2564,8 @@ bool CoreChecks::PreCallValidateCmdSetViewportWScalingEnableNV(VkCommandBuffer c
         "VUID-vkCmdSetViewportWScalingEnableNV-None-09423", "extendedDynamicState3ViewportWScalingEnable or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                        uint32_t viewportCount, const VkViewportSwizzleNV* pViewportSwizzles,
+bool CoreChecks::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, u32 firstViewport, u32 viewportCount,
+                                                        const VkViewportSwizzleNV* pViewportSwizzles,
                                                         const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(
@@ -2583,7 +2581,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageToColorEnableNV(VkCommandBuffer co
         "VUID-vkCmdSetCoverageToColorEnableNV-None-09423", "extendedDynamicState3CoverageToColorEnable or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation,
+bool CoreChecks::PreCallValidateCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, u32 coverageToColorLocation,
                                                                 const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateExtendedDynamicState(
@@ -2613,8 +2611,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableEnableNV(VkCommandB
         "extendedDynamicState3CoverageModulationTableEnable or shaderObject");
 }
 
-bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer,
-                                                                uint32_t coverageModulationTableCount,
+bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, u32 coverageModulationTableCount,
                                                                 const float* pCoverageModulationTable,
                                                                 const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -2759,7 +2756,7 @@ bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer com
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, u32 attachmentCount,
                                                           const VkBool32* pColorWriteEnables, const ErrorObject& error_obj) const {
     bool skip = false;
 
@@ -2776,9 +2773,9 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer comman
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+bool CoreChecks::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, u32 vertexBindingDescriptionCount,
                                                      const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
-                                                     uint32_t vertexAttributeDescriptionCount,
+                                                     u32 vertexAttributeDescriptionCount,
                                                      const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions,
                                                      const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -2788,7 +2785,7 @@ bool CoreChecks::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
-                                                          uint32_t customSampleOrderCount,
+                                                          u32 customSampleOrderCount,
                                                           const VkCoarseSampleOrderCustomNV* pCustomSampleOrders,
                                                           const ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);

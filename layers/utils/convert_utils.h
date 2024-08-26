@@ -17,18 +17,21 @@
  */
 
 #pragma once
+
 #include <vulkan/utility/vk_safe_struct.hpp>
+
+#include "utils/numerical_types.h"
 
 vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info);
 
 vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier,
-                                                               VkPipelineStageFlags2 srcStageMask,
-                                                               VkPipelineStageFlags2 dstStageMask);
+                                                                VkPipelineStageFlags2 srcStageMask,
+                                                                VkPipelineStageFlags2 dstStageMask);
 
 // Converts array of VkSubmitInfo into array of VkSubmitInfo2.
 // Constructor performs the conversion. The result is stored into submit_infos2.
 struct SubmitInfoConverter {
-    SubmitInfoConverter(const VkSubmitInfo* submit_infos, uint32_t count);
+    SubmitInfoConverter(const VkSubmitInfo* submit_infos, u32 count);
 
     // That's the conversion result
     std::vector<VkSubmitInfo2> submit_infos2;

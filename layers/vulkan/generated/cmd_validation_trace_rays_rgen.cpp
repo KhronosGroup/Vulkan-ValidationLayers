@@ -24,8 +24,8 @@
 #include "cmd_validation_trace_rays_rgen.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t cmd_validation_trace_rays_rgen_size = 1252;
-[[maybe_unused]] const uint32_t cmd_validation_trace_rays_rgen[1252] = {
+[[maybe_unused]] const u32 cmd_validation_trace_rays_rgen_size = 1252;
+[[maybe_unused]] const u32 cmd_validation_trace_rays_rgen[1252] = {
     0x07230203, 0x00010500, 0x0008000b, 0x000000af, 0x00000000, 0x00020011, 0x0000117f, 0x00020011, 0x000014e3, 0x0006000a,
     0x5f565053, 0x5f52484b, 0x5f796172, 0x63617274, 0x00676e69, 0x0006000b, 0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e,
     0x00000000, 0x0003000e, 0x000014e4, 0x00000001, 0x000a000f, 0x000014c1, 0x00000004, 0x6e69616d, 0x00000000, 0x00000017,

@@ -137,11 +137,11 @@ def write(words, filename, apiname, outdir = None):
 
 #pragma once
 
-#include <cstdint>
+#include "utils/numerical_types.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-extern const uint32_t {name}_size;
-extern const uint32_t {name}[];
+extern const u32 {name}_size;
+extern const u32 {name}[];
 '''
 
     source = f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -170,8 +170,8 @@ extern const uint32_t {name}[];
 #include "{name}.h"
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-[[maybe_unused]] const uint32_t {name}_size = {len(words)};
-[[maybe_unused]] const uint32_t {name}[{len(words)}] = {{\n{literals}\n}};
+[[maybe_unused]] const u32 {name}_size = {len(words)};
+[[maybe_unused]] const u32 {name}[{len(words)}] = {{\n{literals}\n}};
 '''
 
     if outdir:

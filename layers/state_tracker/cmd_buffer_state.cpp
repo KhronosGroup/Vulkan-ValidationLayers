@@ -42,7 +42,7 @@ static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
 // but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and it is not
 // obvious at all to the user where it came from
-std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) const {
+std::string AttachmentInfo::Describe(AttachmentSource source, u32 index) const {
     std::ostringstream ss;
     auto type_string = [](Type type) {
         switch (type) {
@@ -127,15 +127,15 @@ CommandPool::CommandPool(ValidationStateTracker &dev, VkCommandPool handle, cons
       unprotected((create_info->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
 
 void CommandPool::Allocate(const VkCommandBufferAllocateInfo *allocate_info, const VkCommandBuffer *command_buffers) {
-    for (uint32_t i = 0; i < allocate_info->commandBufferCount; i++) {
+    for (u32 i = 0; i < allocate_info->commandBufferCount; i++) {
         auto new_cb = dev_data.CreateCmdBufferState(command_buffers[i], allocate_info, this);
         commandBuffers.emplace(command_buffers[i], new_cb.get());
         dev_data.Add(std::move(new_cb));
     }
 }
 
-void CommandPool::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
-    for (uint32_t i = 0; i < count; i++) {
+void CommandPool::Free(u32 count, const VkCommandBuffer *command_buffers) {
+    for (u32 i = 0; i < count; i++) {
         auto iter = commandBuffers.find(command_buffers[i]);
         if (iter != commandBuffers.end()) {
             dev_data.Destroy<CommandBuffer>(iter->first);
@@ -159,7 +159,7 @@ void CommandPool::Destroy() {
     StateObject::Destroy();
 }
 
-void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
+void CommandBuffer::SetActiveSubpass(u32 subpass) {
     active_subpass_ = subpass;
     // Always reset stored rasterization samples count
     active_subpass_sample_count_ = std::nullopt;
@@ -177,13 +177,13 @@ CommandBuffer::CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle
 }
 
 // Get the image viewstate for a given framebuffer attachment
-vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) {
+vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(u32 index) {
     assert(!active_attachments.empty() && index != VK_ATTACHMENT_UNUSED && (index < active_attachments.size()));
     return active_attachments[index].image_view;
 }
 
 // Get the image viewstate for a given framebuffer attachment
-const vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) const {
+const vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(u32 index) const {
     if (active_attachments.empty() || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments.size())) {
         return nullptr;
     }
@@ -463,7 +463,7 @@ void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
     activeQueries.insert(query_obj);
     startedQueries.insert(query_obj);
     queryUpdates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                          uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
+                                          u32 perfQueryPass, QueryMap *localQueryToStateMap) {
         SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
         return false;
     });
@@ -476,7 +476,7 @@ void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
 void CommandBuffer::EndQuery(const QueryObject &query_obj) {
     activeQueries.erase(query_obj);
     queryUpdates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                          uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
+                                          u32 perfQueryPass, QueryMap *localQueryToStateMap) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
     updatedQueries.insert(query_obj);
@@ -497,36 +497,36 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     return updatedQueries.find(key) != updatedQueries.end();
 }
 
-static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
+static bool SetQueryStateMulti(VkQueryPool queryPool, u32 firstQuery, u32 queryCount, u32 perfPass, QueryState value,
                                QueryMap *localQueryToStateMap) {
-    for (uint32_t i = 0; i < queryCount; i++) {
+    for (u32 i = 0; i < queryCount; i++) {
         QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
         (*localQueryToStateMap)[query_obj] = value;
     }
     return false;
 }
 
-void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
-    for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
+void CommandBuffer::EndQueries(VkQueryPool queryPool, u32 firstQuery, u32 queryCount) {
+    for (u32 slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         activeQueries.erase(query_obj);
         updatedQueries.insert(query_obj);
     }
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
-                                                                  VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                                  VkQueryPool &firstPerfQueryPool, u32 perfQueryPass,
                                                                   QueryMap *localQueryToStateMap) {
         return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_ENDED, localQueryToStateMap);
     });
 }
 
-void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
-    for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
+void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, u32 firstQuery, u32 queryCount) {
+    for (u32 slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         updatedQueries.insert(query_obj);
     }
 
     queryUpdates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
-                                                                  VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                                  VkQueryPool &firstPerfQueryPool, u32 perfQueryPass,
                                                                   QueryMap *localQueryToStateMap) {
         return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_RESET, localQueryToStateMap);
     });
@@ -536,8 +536,8 @@ void CommandBuffer::UpdateSubpassAttachments() {
     const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
     assert(active_subpasses.size() == active_attachments.size());
 
-    for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
-        const uint32_t attachment_index = subpass.pInputAttachments[index].attachment;
+    for (u32 index = 0; index < subpass.inputAttachmentCount; ++index) {
+        const u32 attachment_index = subpass.pInputAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Input;
             active_subpasses[attachment_index].used = true;
@@ -547,8 +547,8 @@ void CommandBuffer::UpdateSubpassAttachments() {
         }
     }
 
-    for (uint32_t index = 0; index < subpass.colorAttachmentCount; ++index) {
-        const uint32_t attachment_index = subpass.pColorAttachments[index].attachment;
+    for (u32 index = 0; index < subpass.colorAttachmentCount; ++index) {
+        const u32 attachment_index = subpass.pColorAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Color;
             active_subpasses[attachment_index].used = true;
@@ -558,7 +558,7 @@ void CommandBuffer::UpdateSubpassAttachments() {
             active_color_attachments_index.insert(index);
         }
         if (subpass.pResolveAttachments) {
-            const uint32_t attachment_index2 = subpass.pResolveAttachments[index].attachment;
+            const u32 attachment_index2 = subpass.pResolveAttachments[index].attachment;
             if (attachment_index2 != VK_ATTACHMENT_UNUSED) {
                 active_attachments[attachment_index2].type = AttachmentInfo::Type::ColorResolve;
                 active_subpasses[attachment_index2].used = true;
@@ -570,7 +570,7 @@ void CommandBuffer::UpdateSubpassAttachments() {
     }
 
     if (subpass.pDepthStencilAttachment) {
-        const uint32_t attachment_index = subpass.pDepthStencilAttachment->attachment;
+        const u32 attachment_index = subpass.pDepthStencilAttachment->attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::DepthStencil;
             active_subpasses[attachment_index].used = true;
@@ -585,9 +585,10 @@ void CommandBuffer::UpdateSubpassAttachments() {
 void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
     const bool imageless = (activeFramebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
-    if (pRenderPassBegin) attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    if (pRenderPassBegin)
+        attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
-    for (uint32_t i = 0; i < active_attachments.size(); ++i) {
+    for (u32 i = 0; i < active_attachments.size(); ++i) {
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
                 active_attachments[i].image_view = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
@@ -716,11 +717,11 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     // add 2 for the Depth and Stencil
     // multiple by 2 because every attachment might have a resolve
     // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
-    uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
+    u32 attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     active_attachments.resize(attachment_count);
 
-    for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+    for (u32 i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
         active_color_attachments_index.insert(i);
 
         // Default from spec
@@ -798,10 +799,10 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
     if (pBeginInfo->referenceSlotCount > 0) {
         size_t deactivated_slot_count = 0;
 
-        for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
+        for (u32 i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
             // Initialize the set of bound video picture resources
             if (pBeginInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-                int32_t slot_index = pBeginInfo->pReferenceSlots[i].slotIndex;
+                i32 slot_index = pBeginInfo->pReferenceSlots[i].slotIndex;
                 vvl::VideoPictureResource res(dev_data, *pBeginInfo->pReferenceSlots[i].pPictureResource);
                 bound_video_picture_resources.emplace(std::make_pair(res, slot_index));
             }
@@ -812,9 +813,9 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
         }
 
         if (deactivated_slot_count > 0) {
-            std::vector<int32_t> deactivated_slots{};
+            std::vector<i32> deactivated_slots{};
             deactivated_slots.reserve(deactivated_slot_count);
-            for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
+            for (u32 i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
                 if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 && pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
                     deactivated_slots.emplace_back(pBeginInfo->pReferenceSlots[i].slotIndex);
                 }
@@ -878,7 +879,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
         if (bound_video_session->IsEncode() && pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR) {
             auto quality_level_info = vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(pControlInfo->pNext);
             if (quality_level_info != nullptr) {
-                uint32_t quality_level = quality_level_info->qualityLevel;
+                u32 quality_level = quality_level_info->qualityLevel;
                 video_encode_quality_level = quality_level;
 
                 // Enqueue encode quality level device state change
@@ -895,13 +896,13 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
 void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {
     queryUpdates.emplace_back([query_info](vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
-        for (uint32_t i = 0; i < query_info.queryCount; i++) {
+                                           u32 perfQueryPass, QueryMap *localQueryToStateMap) {
+        for (u32 i = 0; i < query_info.queryCount; i++) {
             SetQueryState(QueryObject(query_info.queryPool, query_info.firstQuery + i), QUERYSTATE_ENDED, localQueryToStateMap);
         }
         return false;
     });
-    for (uint32_t i = 0; i < query_info.queryCount; i++) {
+    for (u32 i = 0; i < query_info.queryCount; i++) {
         updatedQueries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
     }
 }
@@ -932,7 +933,7 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
 
         // Update active query indices
         for (auto &query : activeQueries) {
-            uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(pDecodeInfo);
+            u32 op_count = bound_video_session->GetVideoDecodeOperationCount(pDecodeInfo);
             query.active_query_index += op_count;
         }
 
@@ -972,7 +973,7 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
 
         // Update active query indices
         for (auto &query : activeQueries) {
-            uint32_t op_count = bound_video_session->GetVideoEncodeOperationCount(pEncodeInfo);
+            u32 op_count = bound_video_session->GetVideoEncodeOperationCount(pEncodeInfo);
             query.active_query_index += op_count;
         }
 
@@ -1092,7 +1093,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         // This avoids locking ambiguity because primary command buffers are locked when these
         // callbacks run, but secondary command buffers are not.
         queryUpdates.emplace_back([sub_command_buffer](CommandBuffer &cb_state_arg, bool do_validate,
-                                                       VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                       VkQueryPool &firstPerfQueryPool, u32 perfQueryPass,
                                                        QueryMap *localQueryToStateMap) {
             bool skip = false;
             auto sub_cb_state_arg = cb_state_arg.dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
@@ -1143,8 +1144,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
 }
 
 void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
-                                           uint32_t set, uint32_t descriptorWriteCount,
-                                           const VkWriteDescriptorSet *pDescriptorWrites) {
+                                           u32 set, u32 descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites) {
     // Short circuit invalid updates
     if ((set >= pipeline_layout.set_layouts.size()) || !pipeline_layout.set_layouts[set] ||
         !pipeline_layout.set_layouts[set]->IsPushDescriptor()) {
@@ -1211,7 +1211,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
 
     if (last_bound.desc_set_pipeline_layout != VK_NULL_HANDLE) {
         for (const auto &set_binding_pair : pipe->active_slots) {
-            uint32_t set_index = set_binding_pair.first;
+            u32 set_index = set_binding_pair.first;
             if (set_index >= last_bound.per_set.size()) {
                 continue;
             }
@@ -1248,7 +1248,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
 }
 
 // Helper for descriptor set (and buffer) updates.
-static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
+static bool PushDescriptorCleanup(LastBound &last_bound, u32 set_idx) {
     // All uses are from loops over per_set, but just in case..
     assert(set_idx < last_bound.per_set.size());
 
@@ -1265,14 +1265,14 @@ static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                  const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
-                                                  uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                                  const vvl::PipelineLayout &pipeline_layout, u32 first_set, u32 set_count,
+                                                  const VkDescriptorSet *pDescriptorSets,
                                                   std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
-                                                  uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+                                                  u32 dynamic_offset_count, const u32 *p_dynamic_offsets) {
     ASSERT_AND_RETURN((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
-    uint32_t required_size = first_set + set_count;
-    const uint32_t last_binding_index = required_size - 1;
+    u32 required_size = first_set + set_count;
+    const u32 last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout.set_compat_ids.size());
 
     // Some useful shorthand
@@ -1284,7 +1284,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     if (last_binding_index >= last_bound.per_set.size()) {
         last_bound.per_set.resize(required_size);
     }
-    const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
+    const u32 current_size = static_cast<u32>(last_bound.per_set.size());
 
     // Clean up the "disturbed" before and after the range to be set
     if (required_size < current_size) {
@@ -1307,7 +1307,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     }
 
     // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
-    for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
+    for (u32 set_idx = 0; set_idx < first_set; ++set_idx) {
         auto &set_info = last_bound.per_set[set_idx];
         if (set_info.compat_id_for_set != pipe_compat_ids[set_idx]) {
             PushDescriptorCleanup(last_bound, set_idx);
@@ -1317,8 +1317,8 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     }
 
     // Now update the bound sets with the input sets
-    const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
-    for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
+    const u32 *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
+    for (u32 input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
         auto &set_info = last_bound.per_set[set_idx];
         auto descriptor_set =
@@ -1337,8 +1337,8 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
             // TODO: Add logic for tracking push_descriptor offsets (here or in caller)
             if (set_dynamic_descriptor_count && input_dynamic_offsets) {
-                const uint32_t *end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
-                set_info.dynamicOffsets = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
+                const u32 *end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
+                set_info.dynamicOffsets = std::vector<u32>(input_dynamic_offsets, end_offset);
                 input_dynamic_offsets = end_offset;
                 assert(input_dynamic_offsets <= (p_dynamic_offsets + dynamic_offset_count));
             } else {
@@ -1349,11 +1349,10 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 }
 
 void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
-                                                     const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
-                                                     uint32_t set_count, const uint32_t *buffer_indicies,
-                                                     const VkDeviceSize *buffer_offsets) {
-    uint32_t required_size = first_set + set_count;
-    const uint32_t last_binding_index = required_size - 1;
+                                                     const vvl::PipelineLayout &pipeline_layout, u32 first_set, u32 set_count,
+                                                     const u32 *buffer_indicies, const VkDeviceSize *buffer_offsets) {
+    u32 required_size = first_set + set_count;
+    const u32 last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout.set_compat_ids.size());
 
     // Some useful shorthand
@@ -1365,7 +1364,7 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     if (last_binding_index >= last_bound.per_set.size()) {
         last_bound.per_set.resize(required_size);
     }
-    const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
+    const u32 current_size = static_cast<u32>(last_bound.per_set.size());
 
     // Clean up the "disturbed" before and after the range to be set
     if (required_size < current_size) {
@@ -1388,13 +1387,13 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     }
 
     // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
-    for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
+    for (u32 set_idx = 0; set_idx < first_set; ++set_idx) {
         PushDescriptorCleanup(last_bound, set_idx);
         last_bound.per_set[set_idx].Reset();
     }
 
     // Now update the bound sets with the input sets
-    for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
+    for (u32 input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
         auto &set_info = last_bound.per_set[set_idx];
         set_info.Reset();
@@ -1538,10 +1537,10 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
         });
 }
 
-void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
+void CommandBuffer::RecordWaitEvents(Func command, u32 eventCount, const VkEvent *pEvents,
                                      VkPipelineStageFlags2KHR src_stage_mask) {
     RecordCmd(command);
-    for (uint32_t i = 0; i < eventCount; ++i) {
+    for (u32 i = 0; i < eventCount; ++i) {
         if (!dev_data.disabled[command_buffer_state]) {
             auto event_state = dev_data.Get<vvl::Event>(pEvents[i]);
             if (event_state) {
@@ -1553,18 +1552,18 @@ void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const Vk
     }
 }
 
-void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                   uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+void CommandBuffer::RecordBarriers(u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
+                                   const VkImageMemoryBarrier *pImageMemoryBarriers) {
     if (dev_data.disabled[command_buffer_state]) return;
 
-    for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
+    for (u32 i = 0; i < bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data.Get<vvl::Buffer>(pBufferMemoryBarriers[i].buffer);
         if (buffer_state) {
             AddChild(buffer_state);
         }
     }
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
+    for (u32 i = 0; i < imageMemoryBarrierCount; i++) {
         auto image_state = dev_data.Get<vvl::Image>(pImageMemoryBarriers[i].image);
         if (image_state) {
             AddChild(image_state);
@@ -1575,13 +1574,13 @@ void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBa
 void CommandBuffer::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
     if (dev_data.disabled[command_buffer_state]) return;
 
-    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+    for (u32 i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data.Get<vvl::Buffer>(dep_info.pBufferMemoryBarriers[i].buffer);
         if (buffer_state) {
             AddChild(buffer_state);
         }
     }
-    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+    for (u32 i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
         auto image_state = dev_data.Get<vvl::Image>(dep_info.pImageMemoryBarriers[i].image);
         if (image_state) {
             AddChild(image_state);
@@ -1589,8 +1588,7 @@ void CommandBuffer::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
     }
 }
 
-void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
-                                         uint32_t slot) {
+void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, u32 slot) {
     RecordCmd(command);
     if (dev_data.disabled[query_validation]) return;
 
@@ -1602,7 +1600,7 @@ void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR 
     EndQuery(query_obj);
 }
 
-void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc) {
+void CommandBuffer::Submit(VkQueue queue, u32 perf_submit_pass, const Location &loc) {
     // Update vvl::QueryPool with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
@@ -1643,7 +1641,7 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
     }
 }
 
-void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
+void CommandBuffer::Retire(u32 perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
     // First perform decrement on general case bound objects
     for (auto event : writeEventsBeforeWait) {
         auto event_state = dev_data.Get<vvl::Event>(event);
@@ -1666,7 +1664,7 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
     }
 }
 
-uint32_t CommandBuffer::GetDynamicColorAttachmentCount() const {
+u32 CommandBuffer::GetDynamicColorAttachmentCount() const {
     if (activeRenderPass) {
         if (activeRenderPass->use_dynamic_rendering_inherited) {
             return activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
@@ -1711,7 +1709,7 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
     auto &last_bound_state = lastBound[ConvertToPipelineBindPoint(shader_stage)];
-    const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
+    const auto stage_index = static_cast<u32>(ConvertToShaderObjectStage(shader_stage));
     last_bound_state.shader_object_bound[stage_index] = true;
     last_bound_state.shader_object_states[stage_index] = shader_object_state;
 }
@@ -1828,7 +1826,7 @@ void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &lab
     }
 }
 
-std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
+std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &label_commands, u32 label_command_index,
                                               const std::vector<std::string> &initial_label_stack) {
     assert(label_command_index < label_commands.size());
 

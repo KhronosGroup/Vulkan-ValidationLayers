@@ -102,7 +102,7 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
         pipeline_ci.basePipelineIndex = -1;
-        constexpr uint64_t fake_pipeline_id = 0xCADECADE;
+        constexpr u64 fake_pipeline_id = 0xCADECADE;
         VkPipeline fake_pipeline_handle = CastFromUint64<VkPipeline>(fake_pipeline_id);
         pipeline_ci.basePipelineHandle = fake_pipeline_handle;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07984");
@@ -781,7 +781,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.AddGlslMissShader(kRayTracingMinimalGlsl);
     rt_pipe.Build();
 
-    uint32_t fake_buffer;
+    u32 fake_buffer;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-arraylength");
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 1, 1, 0, &fake_buffer);
@@ -808,7 +808,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051");
     // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
-    uint32_t invalid_firstgroup = rt_pipe.GetShaderGroupsCount() + 1;
+    u32 invalid_firstgroup = rt_pipe.GetShaderGroupsCount() + 1;
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), invalid_firstgroup, 0,
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
                                                         &fake_buffer);
@@ -953,7 +953,7 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
         GTEST_SKIP() << "Feature rayTraversalPrimitiveCulling is not supported.";
     }
 
-    const uint32_t maxPerStageResources = 4;
+    const u32 maxPerStageResources = 4;
     VkPhysicalDeviceProperties props;
     fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     props.limits.maxPerStageResources = maxPerStageResources;

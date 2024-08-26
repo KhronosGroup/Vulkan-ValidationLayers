@@ -96,7 +96,7 @@ TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    u32 *data = (u32 *)buffer.memory().map();
     // Will get to data[4] in loop and can crash
     data[0] = 32;  // data[0]
     data[1] = 32;  // data[1]

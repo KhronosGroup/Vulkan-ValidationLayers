@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 The Khronos Group Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ class InterfaceRenderPassSingleSubpass {
                                           VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL) = 0;
 
     // Pass in index to VkAttachmentReference
-    virtual void AddInputAttachment(uint32_t index) = 0;
-    virtual void AddColorAttachment(uint32_t index) = 0;
-    virtual void AddResolveAttachment(uint32_t index) = 0;
-    virtual void AddDepthStencilAttachment(uint32_t index) = 0;
+    virtual void AddInputAttachment(u32 index) = 0;
+    virtual void AddColorAttachment(u32 index) = 0;
+    virtual void AddResolveAttachment(u32 index) = 0;
+    virtual void AddDepthStencilAttachment(u32 index) = 0;
 
     virtual void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                       VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -91,10 +91,10 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
     void AddAttachmentReference(VkAttachmentReference reference);
 
     // Pass in index to VkAttachmentReference
-    void AddInputAttachment(uint32_t index);
-    void AddColorAttachment(uint32_t index);
-    void AddResolveAttachment(uint32_t index);
-    void AddDepthStencilAttachment(uint32_t index);
+    void AddInputAttachment(u32 index);
+    void AddColorAttachment(u32 index);
+    void AddResolveAttachment(u32 index);
+    void AddDepthStencilAttachment(u32 index);
 
     void AddSubpassDependency(VkSubpassDependency dependency);
     void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -137,23 +137,22 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL);
 
     // Have a seperate set function to keep AddAttachmentDescription simple (very few things extend the AttachmentDescription)
-    void SetAttachmentDescriptionPNext(uint32_t index, void *pNext);
+    void SetAttachmentDescriptionPNext(u32 index, void *pNext);
 
-    void AddAttachmentReference(uint32_t attachment, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
-                                void *pNext = nullptr);
+    void AddAttachmentReference(u32 attachment, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0, void *pNext = nullptr);
 
     // Pass in index to VkAttachmentReference
-    void AddInputAttachment(uint32_t index);
-    void AddColorAttachment(uint32_t index);
-    void AddResolveAttachment(uint32_t index);
-    void AddDepthStencilAttachment(uint32_t index);
+    void AddInputAttachment(u32 index);
+    void AddColorAttachment(u32 index);
+    void AddResolveAttachment(u32 index);
+    void AddDepthStencilAttachment(u32 index);
     // VK_KHR_depth_stencil_resolve
-    void AddDepthStencilResolveAttachment(uint32_t index, VkResolveModeFlagBits depth_resolve_mode,
+    void AddDepthStencilResolveAttachment(u32 index, VkResolveModeFlagBits depth_resolve_mode,
                                           VkResolveModeFlagBits stencil_resolve_mode);
     // VK_KHR_fragment_shading_rate
-    void AddFragmentShadingRateAttachment(uint32_t index, VkExtent2D texel_size);
+    void AddFragmentShadingRateAttachment(u32 index, VkExtent2D texel_size);
 
-    void SetViewMask(uint32_t view_mask) { subpass_description_.viewMask = view_mask; }
+    void SetViewMask(u32 view_mask) { subpass_description_.viewMask = view_mask; }
 
     void AddSubpassDependency(VkSubpassDependency2 dependency);
     void AddSubpassDependency(VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

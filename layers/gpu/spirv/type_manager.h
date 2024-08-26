@@ -25,7 +25,7 @@ class Module;
 class TypeManager;
 
 // These are the constant operations that we plan to handle in for shader instrumentation
-static constexpr bool ConstantOperation(uint32_t opcode) {
+static constexpr bool ConstantOperation(u32 opcode) {
     switch (opcode) {
         case spv::OpConstant:
         case spv::OpConstantTrue:
@@ -52,7 +52,7 @@ struct Type {
     Type(SpvType spv_type, const Instruction& inst) : spv_type_(spv_type), inst_(inst) {}
 
     bool operator==(Type const& other) const;
-    uint32_t Id() const { return inst_.ResultId(); }
+    u32 Id() const { return inst_.ResultId(); }
 
     const SpvType spv_type_;
     const Instruction& inst_;
@@ -63,7 +63,7 @@ struct Type {
 struct Constant {
     Constant(const Type& type, const Instruction& inst) : type_(type), inst_(inst) {}
 
-    uint32_t Id() const { return inst_.ResultId(); }
+    u32 Id() const { return inst_.ResultId(); }
 
     const Type& type_;
     const Instruction& inst_;
@@ -73,7 +73,7 @@ struct Constant {
 struct Variable {
     Variable(const Type& type, const Instruction& inst) : type_(type), inst_(inst) {}
 
-    uint32_t Id() const { return inst_.ResultId(); }
+    u32 Id() const { return inst_.ResultId(); }
     spv::StorageClass StorageClass() const { return spv::StorageClass(inst_.Word(3)); }
     const Type* PointerType(TypeManager& type_manager_) const;
 
@@ -93,7 +93,7 @@ class TypeManager {
     TypeManager(Module& module) : module_(module) {}
 
     const Type& AddType(std::unique_ptr<Instruction> new_inst, SpvType spv_type);
-    const Type* FindTypeById(uint32_t id) const;
+    const Type* FindTypeById(u32 id) const;
     const Type* FindFunctionType(const Instruction& inst) const;
     // There shouldn't be a case where we need to query for a specific type, but then not add it if not found.
     const Type& GetTypeVoid();
@@ -101,42 +101,42 @@ class TypeManager {
     const Type& GetTypeSampler();
     const Type& GetTypeRayQuery();
     const Type& GetTypeAccelerationStructure();
-    const Type& GetTypeInt(uint32_t bit_width, bool is_signed);
-    const Type& GetTypeFloat(uint32_t bit_width);
+    const Type& GetTypeInt(u32 bit_width, bool is_signed);
+    const Type& GetTypeFloat(u32 bit_width);
     const Type& GetTypeArray(const Type& element_type, const Constant& length);
     const Type& GetTypeRuntimeArray(const Type& element_type);
-    const Type& GetTypeVector(const Type& component_type, uint32_t component_count);
-    const Type& GetTypeMatrix(const Type& column_type, uint32_t column_count);
+    const Type& GetTypeVector(const Type& component_type, u32 component_count);
+    const Type& GetTypeMatrix(const Type& column_type, u32 column_count);
     const Type& GetTypeSampledImage(const Type& image_type);
     const Type& GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type);
     const Type& GetTypePointerBuiltInInput(spv::BuiltIn built_in);
-    uint32_t TypeLength(const Type& type);
+    u32 TypeLength(const Type& type);
 
     const Constant& AddConstant(std::unique_ptr<Instruction> new_inst, const Type& type);
-    const Constant* FindConstantById(uint32_t id) const;
-    const Constant* FindConstantInt32(uint32_t type_id, uint32_t value) const;
-    const Constant* FindConstantFloat32(uint32_t type_id, uint32_t value) const;
+    const Constant* FindConstantById(u32 id) const;
+    const Constant* FindConstantInt32(u32 type_id, u32 value) const;
+    const Constant* FindConstantFloat32(u32 type_id, u32 value) const;
     // most constants are uint
-    const Constant& CreateConstantUInt32(uint32_t value);
-    const Constant& GetConstantUInt32(uint32_t value);
+    const Constant& CreateConstantUInt32(u32 value);
+    const Constant& GetConstantUInt32(u32 value);
     const Constant& GetConstantZeroUint32();
     const Constant& GetConstantZeroFloat32();
     const Constant& GetConstantZeroVec3();
     const Constant& GetConstantNull(const Type& type);
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
-    const Variable* FindVariableById(uint32_t id) const;
+    const Variable* FindVariableById(u32 id) const;
 
-    uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false);
+    u32 FindTypeByteSize(u32 type_id, u32 matrix_stride = 0, bool col_major = false, bool in_matrix = false);
 
   private:
     Module& module_;
 
     // Currently we don't worry about duplicated types. If duplicate types are added from the original SPIR-V, we just use the first
     // one we fine. We should only be adding a new object because it currently doesn't exists.
-    vvl::unordered_map<uint32_t, std::unique_ptr<Type>> id_to_type_;
-    vvl::unordered_map<uint32_t, std::unique_ptr<Constant>> id_to_constant_;
-    vvl::unordered_map<uint32_t, std::unique_ptr<Variable>> id_to_variable_;
+    vvl::unordered_map<u32, std::unique_ptr<Type>> id_to_type_;
+    vvl::unordered_map<u32, std::unique_ptr<Constant>> id_to_constant_;
+    vvl::unordered_map<u32, std::unique_ptr<Variable>> id_to_variable_;
 
     // Create faster lookups for specific types
     // some types are base types and only will be one

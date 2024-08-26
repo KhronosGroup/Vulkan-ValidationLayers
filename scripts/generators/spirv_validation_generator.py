@@ -176,7 +176,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('''
             // Each instance of the struct will only have a singel field non-null
             struct RequiredSpirvInfo {
-                uint32_t version;
+                u32 version;
                 FeaturePointer feature;
                 ExtEnabled DeviceExtensions::*extension;
                 const char* property; // For human readability and make some capabilities unique
@@ -186,9 +186,9 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
         #
         # Build the struct with all the requirments for the spirv capabilities
-        out.append('const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites() {\n')
+        out.append('const std::unordered_multimap<u32, RequiredSpirvInfo>& GetSpirvCapabilites() {\n')
         out.append('// clang-format off\n')
-        out.append('    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {')
+        out.append('    static const std::unordered_multimap<u32, RequiredSpirvInfo> spirv_capabilities = {')
         for spirv in [x for x in self.vk.spirv if x.capability]:
             for enable in [x for x in spirv.enable if x.struct is None or x.struct not in self.promotedFeatures]:
                 if spirv.name not in self.capabilityList:
@@ -218,7 +218,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
         #
         # Creates the Enum string helpers for better error messages. Same idea of vk_enum_string_helper.h but for SPIR-V
-        out.append('static inline const char* string_SpvCapability(uint32_t input_value) {\n')
+        out.append('static inline const char* string_SpvCapability(u32 input_value) {\n')
         out.append('    switch ((spv::Capability)input_value) {\n')
         for name in self.capabilityList:
             if name not in self.capabilityAliasList:
@@ -235,7 +235,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             // Note: will return VK_FORMAT_UNDEFINED if non valid input
             // This was in vk_format_utils but the SPIR-V Header dependency was an issue
             //   see https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4647
-            VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) const {
+            VkFormat CoreChecks::CompatibleSpirvImageFormat(u32 spirv_image_format) const {
                 switch (spirv_image_format) {
             ''')
         for format in [x for x in self.vk.formats.values() if x.spirvImageFormat]:
@@ -249,8 +249,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
         out.append('''
 // clang-format off
-static inline const char* SpvCapabilityRequirements(uint32_t capability) {
-    static const vvl::unordered_map<uint32_t, std::string_view> table {
+static inline const char* SpvCapabilityRequirements(u32 capability) {
+    static const vvl::unordered_map<u32, std::string_view> table {
 ''')
         for spirv in [x for x in self.vk.spirv if x.capability and x.name in self.capabilityList]:
             requirment = ''

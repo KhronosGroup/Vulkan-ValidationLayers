@@ -279,7 +279,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const u32 count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }
@@ -329,7 +329,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     AddRequiredFeature(vkt::Feature::workgroupMemoryExplicitLayout);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
 
     // layout(constant_id = 0) const uint value = 4;
     // shared X {

@@ -69,7 +69,7 @@ ConfigFile &GetLayerConfig() {
 }
 
 #if defined(__ANDROID__)
-static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] uint32_t serial) {
+static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] u32 serial) {
     std::string *property = static_cast<std::string *>(cookie);
     *property = value;
 }
@@ -151,7 +151,7 @@ FILE *getLayerLogOutput(const char *option, const char *layer_name) {
 }
 
 // Map option strings to flag enum values
-VkFlags GetLayerOptionFlags(const string &option, vvl::unordered_map<string, VkFlags> const &enum_data, uint32_t option_default) {
+VkFlags GetLayerOptionFlags(const string &option, vvl::unordered_map<string, VkFlags> const &enum_data, u32 option_default) {
     VkDebugReportFlagsEXT flags = option_default;
     string option_list = GetLayerConfig().GetOption(option.c_str());
 
@@ -231,7 +231,7 @@ static inline bool IsHighIntegrity() {
     HANDLE process_token;
     if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_QUERY_SOURCE, &process_token)) {
         // Maximum possible size of SID_AND_ATTRIBUTES is maximum size of a SID + size of attributes DWORD.
-        uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
+        u8 mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
         DWORD buffer_size;
         if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
                                 &buffer_size) != 0) {
@@ -490,12 +490,12 @@ void __attribute__((constructor)) CheckAndroidVersion() {
         return;
     }
 
-    constexpr uint32_t target_android_api = 26;
-    constexpr uint32_t android_api = __ANDROID_API__;
+    constexpr u32 target_android_api = 26;
+    constexpr u32 android_api = __ANDROID_API__;
 
     static_assert(android_api >= target_android_api, "Vulkan-ValidationLayers is not supported on Android 25 and below");
 
-    uint32_t queried_version{};
+    u32 queried_version{};
 
     if (std::from_chars(version.data(), version.data() + version.size(), queried_version).ec != std::errc()) {
         return;

@@ -31,7 +31,7 @@ static LinkInfo link_info = {instrumentation_non_bindless_oob_texel_buffer_comp,
                              LinkFunctions::inst_non_bindless_oob_texel_buffer, 0, "inst_non_bindless_oob_texel_buffer"};
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t NonBindlessOOBTexelBufferPass::GetLinkFunctionId() {
+u32 NonBindlessOOBTexelBufferPass::GetLinkFunctionId() {
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -40,17 +40,17 @@ uint32_t NonBindlessOOBTexelBufferPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t NonBindlessOOBTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                           const InjectionData& injection_data) {
+u32 NonBindlessOOBTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                      const InjectionData& injection_data) {
     assert(access_chain_inst_ && var_inst_);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const u32 descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
-    const uint32_t opcode = target_instruction_->Opcode();
-    const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
+    const u32 opcode = target_instruction_->Opcode();
+    const u32 image_operand_position = OpcodeImageOperandsPosition(opcode);
     if (target_instruction_->Length() > image_operand_position) {
-        const uint32_t image_operand_word = target_instruction_->Word(image_operand_position);
+        const u32 image_operand_word = target_instruction_->Word(image_operand_position);
         if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
             // TODO - Add support if there are image operands (like offset)
         }
@@ -60,9 +60,9 @@ uint32_t NonBindlessOOBTexelBufferPass::CreateFunctionCall(BasicBlock& block, In
     // TODO - This assumes no depth/arrayed/ms from AnalyzeInstruction
     descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
 
-    const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const u32 function_result = module_.TakeNextId();
+    const u32 function_def = GetLinkFunctionId();
+    const u32 bool_type = module_.type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(
         spv::OpFunctionCall,
@@ -85,25 +85,25 @@ void NonBindlessOOBTexelBufferPass::Reset() {
 }
 
 bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
-    const uint32_t opcode = inst.Opcode();
+    const u32 opcode = inst.Opcode();
 
     if (opcode != spv::OpImageFetch && opcode != spv::OpImageWrite && opcode != spv::OpImageRead) {
         return false;
     }
-    const uint32_t image_word = OpcodeImageAccessPosition(opcode);
+    const u32 image_word = OpcodeImageAccessPosition(opcode);
 
     image_inst_ = function.FindInstruction(inst.Word(image_word));
     if (!image_inst_) return false;
     const Type* image_type = module_.type_manager_.FindTypeById(image_inst_->TypeId());
     if (!image_type) return false;
 
-    const uint32_t dim = image_type->inst_.Operand(1);
+    const u32 dim = image_type->inst_.Operand(1);
     if (dim != spv::DimBuffer) {
         return false;  // It is a Storage Image
     }
-    const uint32_t depth = image_type->inst_.Operand(2);
-    const uint32_t arrayed = image_type->inst_.Operand(3);
-    const uint32_t multi_sampling = image_type->inst_.Operand(4);
+    const u32 depth = image_type->inst_.Operand(2);
+    const u32 arrayed = image_type->inst_.Operand(3);
+    const u32 multi_sampling = image_type->inst_.Operand(4);
     if (depth != 0 || arrayed != 0 || multi_sampling != 0) {
         // TODO - Currently don't support caculating these for getting the OOB offset, so not worst continuing
         return false;
@@ -168,7 +168,7 @@ bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function,
         descriptor_array_size_id_ = module_.type_manager_.GetConstantUInt32(1).Id();
     }
 
-    uint32_t variable_id = var_inst_->ResultId();
+    u32 variable_id = var_inst_->ResultId();
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
@@ -216,7 +216,7 @@ bool NonBindlessOOBTexelBufferPass::Run() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->position_index_;
+                const u32 inst_position = target_instruction_->position_index_;
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 

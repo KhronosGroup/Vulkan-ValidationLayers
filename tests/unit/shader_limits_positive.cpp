@@ -61,8 +61,8 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
     }
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_vec4 = max_shared_memory_size / 16;
 
     std::stringstream csSource;
     csSource << R"glsl(
@@ -92,8 +92,8 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     csSource << R"glsl(
@@ -114,9 +114,9 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryBooleanAtLimit) {
 
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const u32 max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
-    const uint32_t max_shared_bools = max_shared_memory_size / 4;
+    const u32 max_shared_bools = max_shared_memory_size / 4;
 
     std::stringstream csSource;
     csSource << R"glsl(
@@ -146,8 +146,8 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream mesh_source;
     mesh_source << R"glsl(
@@ -184,8 +184,8 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    const uint32_t max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const u32 max_shared_memory_size = mesh_shader_properties.maxMeshSharedMemorySize;
+    const u32 max_shared_ints = max_shared_memory_size / 4;
 
     std::stringstream task_source;
     task_source << R"glsl(
@@ -214,7 +214,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const u32 count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }
@@ -259,7 +259,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const u32 count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }

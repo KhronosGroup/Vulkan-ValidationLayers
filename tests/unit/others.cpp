@@ -82,10 +82,10 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     typedef struct CustomStruct {
         VkStructureType sType;
         const void *pNext;
-        uint32_t custom_data;
+        u32 custom_data;
     } CustomStruct;
 
-    uint32_t custom_stype = 3000300000;
+    u32 custom_stype = 3000300000;
     CustomStruct custom_struct;
     custom_struct.pNext = nullptr;
     custom_struct.sType = static_cast<VkStructureType>(custom_stype);
@@ -94,8 +94,9 @@ TEST_F(VkLayerTest, CustomStypeStructString) {
     // Communicate list of structinfo pairs to layers
     const char *id[] = {"3000300000", "24"};
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_STRING_EXT,
-                                       static_cast<uint32_t>(std::size(id)), &id};
-    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+                                       static_cast<u32>(std::size(id)), &id};
+    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                              &setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
     RETURN_IF_SKIP(InitState());
@@ -115,16 +116,16 @@ TEST_F(VkLayerTest, CustomStypeStructStringArray) {
     typedef struct CustomStruct {
         VkStructureType sType;
         const void *pNext;
-        uint32_t custom_data;
+        u32 custom_data;
     } CustomStruct;
 
-    const uint32_t custom_stype_a = 3000300000;
+    const u32 custom_stype_a = 3000300000;
     CustomStruct custom_struct_a;
     custom_struct_a.pNext = nullptr;
     custom_struct_a.sType = static_cast<VkStructureType>(custom_stype_a);
     custom_struct_a.custom_data = 44;
 
-    const uint32_t custom_stype_b = 3000300001;
+    const u32 custom_stype_b = 3000300001;
     CustomStruct custom_struct_b;
     custom_struct_b.pNext = &custom_struct_a;
     custom_struct_b.sType = static_cast<VkStructureType>(custom_stype_b);
@@ -136,14 +137,13 @@ TEST_F(VkLayerTest, CustomStypeStructStringArray) {
     const std::string sizeof_struct = format("%d", sizeof(CustomStruct));
 
     const char *ids[] = {
-        string_stype_a.c_str(), sizeof_struct.c_str(),
-        string_stype_b.c_str(), sizeof_struct.c_str(),
-        string_stype_a.c_str(), sizeof_struct.c_str(),
+        string_stype_a.c_str(), sizeof_struct.c_str(),  string_stype_b.c_str(),
+        sizeof_struct.c_str(),  string_stype_a.c_str(), sizeof_struct.c_str(),
     };
-    const VkLayerSettingEXT setting = {
-        OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_STRING_EXT, static_cast<uint32_t>(std::size(ids)), &ids};
-    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {
-        VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_STRING_EXT,
+                                       static_cast<u32>(std::size(ids)), &ids};
+    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                              &setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
     RETURN_IF_SKIP(InitState());
@@ -163,32 +163,29 @@ TEST_F(VkLayerTest, CustomStypeStructIntegerArray) {
     typedef struct CustomStruct {
         VkStructureType sType;
         const void *pNext;
-        uint32_t custom_data;
+        u32 custom_data;
     } CustomStruct;
 
-    const uint32_t custom_stype_a = 3000300000;
+    const u32 custom_stype_a = 3000300000;
     CustomStruct custom_struct_a;
     custom_struct_a.pNext = nullptr;
     custom_struct_a.sType = static_cast<VkStructureType>(custom_stype_a);
     custom_struct_a.custom_data = 44;
 
-    const uint32_t custom_stype_b = 3000300001;
+    const u32 custom_stype_b = 3000300001;
     CustomStruct custom_struct_b;
     custom_struct_b.pNext = &custom_struct_a;
     custom_struct_b.sType = static_cast<VkStructureType>(custom_stype_b);
     custom_struct_b.custom_data = 88;
 
     // Communicate list of structinfo pairs to layers, including a duplicate which should get filtered out
-    const uint32_t ids[] = {
-        custom_stype_a, sizeof(CustomStruct),
-        custom_stype_b, sizeof(CustomStruct),
-        custom_stype_a, sizeof(CustomStruct)
-    };
+    const u32 ids[] = {custom_stype_a,       sizeof(CustomStruct), custom_stype_b,
+                       sizeof(CustomStruct), custom_stype_a,       sizeof(CustomStruct)};
 
     const VkLayerSettingEXT setting[] = {
-        {OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_UINT32_EXT, static_cast<uint32_t>(std::size(ids)), ids}
-    };
-    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, setting};
+        {OBJECT_LAYER_NAME, "custom_stype_list", VK_LAYER_SETTING_TYPE_UINT32_EXT, static_cast<u32>(std::size(ids)), ids}};
+    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                              setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
     RETURN_IF_SKIP(InitState());
@@ -205,7 +202,7 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     TEST_DESCRIPTION("Use the duplicate_message_id setting and verify correct operation");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-    uint32_t value = 3;
+    u32 value = 3;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value};
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
 
@@ -235,11 +232,11 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
 TEST_F(VkLayerTest, VuidCheckForHashCollisions) {
     TEST_DESCRIPTION("Ensure there are no VUID hash collisions");
 
-    constexpr uint64_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text[0]);
-    std::vector<uint32_t> hashes;
+    constexpr u64 num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text[0]);
+    std::vector<u32> hashes;
     hashes.reserve(num_vuids);
     for (const auto &vuid_spec_text_pair : vuid_spec_text) {
-        const uint32_t hash = hash_util::VuidHash(vuid_spec_text_pair.vuid);
+        const u32 hash = hash_util::VuidHash(vuid_spec_text_pair.vuid);
         hashes.push_back(hash);
     }
     std::sort(hashes.begin(), hashes.end());
@@ -265,7 +262,8 @@ TEST_F(VkLayerTest, VuidIdFilterString) {
 
     const char *ids[] = {"VUID-VkRenderPassCreateInfo-pNext-01963"};
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
 
@@ -298,7 +296,8 @@ TEST_F(VkLayerTest, VuidFilterHexInt) {
 
     const char *ids[] = {"0xa19880e3"};
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
 
@@ -331,7 +330,8 @@ TEST_F(VkLayerTest, VuidFilterInt) {
 
     const char *ids[] = {"2711126243"};
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &setting};
 
     RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
@@ -572,7 +572,7 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     // Set one of the features values to an invalid boolean value
     indexing_features.descriptorBindingUniformBufferUpdateAfterBind = 800;
 
-    uint32_t queue_node_count;
+    u32 queue_node_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
     std::vector<VkQueueFamilyProperties> queue_props;
     queue_props.resize(queue_node_count);
@@ -898,7 +898,7 @@ TEST_F(VkLayerTest, Features12Features13AndpNext) {
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    for (u32 i = 0; i < queue_info.size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }
@@ -929,7 +929,7 @@ TEST_F(VkLayerTest, RequiredPromotedFeaturesExtensions) {
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    for (u32 i = 0; i < queue_info.size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }
@@ -1022,7 +1022,7 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
     auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    for (u32 i = 0; i < queue_info.size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }
@@ -1242,7 +1242,7 @@ TEST_F(VkLayerTest, DuplicatePhysicalDevices) {
     TEST_DESCRIPTION("Duplicated physical devices in DeviceGroupDeviceCreateInfo.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitFramework());
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
@@ -1283,20 +1283,17 @@ TEST_F(VkLayerTest, InvalidCombinationOfDeviceFeatures) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature =
-        vku::InitStructHelper();
+    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT shader_image_atomic_int64_feature = vku::InitStructHelper();
     shader_image_atomic_int64_feature.sparseImageInt64Atomics = VK_TRUE;
     shader_image_atomic_int64_feature.shaderImageInt64Atomics = VK_FALSE;
 
-    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_feature =
-        vku::InitStructHelper();
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT shader_atomic_float_feature = vku::InitStructHelper();
     shader_atomic_float_feature.sparseImageFloat32Atomics = VK_TRUE;
     shader_atomic_float_feature.shaderImageFloat32Atomics = VK_FALSE;
     shader_atomic_float_feature.sparseImageFloat32AtomicAdd = VK_TRUE;
     shader_atomic_float_feature.shaderImageFloat32AtomicAdd = VK_FALSE;
 
-    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shader_atomic_float_feature2 =
-        vku::InitStructHelper();
+    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT shader_atomic_float_feature2 = vku::InitStructHelper();
     shader_atomic_float_feature2.sparseImageFloat32AtomicMinMax = VK_TRUE;
     shader_atomic_float_feature2.shaderImageFloat32AtomicMinMax = VK_FALSE;
 
@@ -1338,7 +1335,7 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
 
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
+    u32 physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
@@ -1467,16 +1464,13 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-sType-unique");
     // in VkPhysicalDeviceProperties2 create a chain of pNext of type A -> B -> A
     // Also using different instance of struct to not trip the cycle checkings
-    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_0 =
-        vku::InitStructHelper();
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_0 = vku::InitStructHelper();
 
     VkPhysicalDeviceIDProperties id_properties = vku::InitStructHelper(&protected_memory_properties_0);
 
-    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_1 =
-        vku::InitStructHelper(&id_properties);
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_1 = vku::InitStructHelper(&id_properties);
 
-    VkPhysicalDeviceProperties2 physical_device_properties2 =
-        vku::InitStructHelper(&protected_memory_properties_1);
+    VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&protected_memory_properties_1);
 
     vk::GetPhysicalDeviceProperties2(gpu(), &physical_device_properties2);
     m_errorMonitor->VerifyFound();
@@ -1502,7 +1496,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t count = 0;
+    u32 count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
     std::vector<VkTimeDomainEXT> time_domains(count);
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, time_domains.data());
@@ -1513,8 +1507,8 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
     timestamp_infos[1] = vku::InitStructHelper();
     timestamp_infos[1].timeDomain = time_domains[0];
 
-    uint64_t timestamps[2];
-    uint64_t max_deviation;
+    u64 timestamps[2];
+    u64 max_deviation;
     m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246");
     vk::GetCalibratedTimestampsEXT(device(), 2, timestamp_infos, timestamps, &max_deviation);
     m_errorMonitor->VerifyFound();
@@ -1526,7 +1520,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicateKHR) {
     AddRequiredExtensions(VK_KHR_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t count = 0;
+    u32 count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, nullptr);
     std::vector<VkTimeDomainEXT> time_domains(count);
     vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(gpu(), &count, time_domains.data());
@@ -1537,8 +1531,8 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicateKHR) {
     timestamp_infos[1] = vku::InitStructHelper();
     timestamp_infos[1].timeDomain = time_domains[0];
 
-    uint64_t timestamps[2];
-    uint64_t max_deviation;
+    u64 timestamps[2];
+    u64 max_deviation;
     m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246");
     vk::GetCalibratedTimestampsKHR(device(), 2, timestamp_infos, timestamps, &max_deviation);
     m_errorMonitor->VerifyFound();
@@ -1550,12 +1544,12 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
     AddRequiredExtensions(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    uint32_t count = 0;
+    u32 count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, nullptr);
     std::vector<VkTimeDomainEXT> time_domains(count);
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu(), &count, time_domains.data());
 
-    for (uint32_t i = 0; i < count; i++) {
+    for (u32 i = 0; i < count; i++) {
         if (time_domains[i] == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT) {
             GTEST_SKIP() << "Support for VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT";
         }
@@ -1563,8 +1557,8 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
     VkCalibratedTimestampInfoEXT timestamp_info = vku::InitStructHelper();
     timestamp_info.timeDomain = VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT;
 
-    uint64_t timestamp;
-    uint64_t max_deviation;
+    u64 timestamp;
+    u64 max_deviation;
     m_errorMonitor->SetDesiredError("VUID-VkCalibratedTimestampInfoEXT-timeDomain-02354");
     vk::GetCalibratedTimestampsEXT(device(), 1, &timestamp_info, &timestamp, &max_deviation);
     m_errorMonitor->VerifyFound();
@@ -1715,7 +1709,7 @@ TEST_F(VkLayerTest, ExtensionXmlDependsLogic) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
-    dev_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    dev_info.enabledExtensionCount = static_cast<u32>(m_device_extension_names.size());
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
@@ -1761,7 +1755,7 @@ TEST_F(VkLayerTest, ExtensionXmlDependsLogic2) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
-    dev_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    dev_info.enabledExtensionCount = static_cast<u32>(m_device_extension_names.size());
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
@@ -1807,7 +1801,7 @@ TEST_F(VkLayerTest, ExtensionXmlDependsLogic3) {
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = nullptr;
-    dev_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    dev_info.enabledExtensionCount = static_cast<u32>(m_device_extension_names.size());
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
@@ -2156,7 +2150,7 @@ TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
     VkInstance instance2;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&instance_create_info, nullptr, &instance2));
 
-    uint32_t gpu_count = 0;
+    u32 gpu_count = 0;
     vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
     std::vector<VkPhysicalDevice> physical_devices(gpu_count);
     vk::EnumeratePhysicalDevices(instance2, &gpu_count, physical_devices.data());

@@ -42,7 +42,7 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
     helper.CreateGraphicsPipeline();
 
-    const uint32_t data_size = sizeof(float) * 3;
+    const u32 data_size = sizeof(float) * 3;
     vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
@@ -107,7 +107,7 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
-    const uint32_t data_size = sizeof(float);
+    const u32 data_size = sizeof(float);
     vkt::Buffer buffer(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptor set
@@ -142,7 +142,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
     InitRenderTarget();
 
     // Create a descriptor to push
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4,
+    vkt::Buffer buffer(*m_device, sizeof(u32) * 4,
                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
@@ -235,8 +235,8 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
-    const uint64_t fake_address_32 = 0xCDCDCDCD;
+    const u64 fake_address_64 = 0xCDCDCDCDCDCDCDCD;
+    const u64 fake_address_32 = 0xCDCDCDCD;
     const void *fake_pointer =
         sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
     const VkSampler *hopefully_undereferencable_pointer = reinterpret_cast<const VkSampler *>(fake_pointer);

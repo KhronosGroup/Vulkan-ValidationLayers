@@ -321,7 +321,7 @@ void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFe
 
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
 void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *val_flags_struct) {
-    for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
+    for (u32 i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
         switch (val_flags_struct->pDisabledValidationChecks[i]) {
             case VK_VALIDATION_CHECK_SHADERS_EXT:
                 disables[shader_validation] = true;
@@ -339,10 +339,10 @@ void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *va
 // Process Validation Features flags specified through the ValidationFeature extension
 void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_data,
                            const VkValidationFeaturesEXT *val_features_struct) {
-    for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
+    for (u32 i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
         SetValidationFeatureDisable(disable_data, val_features_struct->pDisabledValidationFeatures[i]);
     }
-    for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
+    for (u32 i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
         SetValidationFeatureEnable(enable_data, val_features_struct->pEnabledValidationFeatures[i]);
     }
 }
@@ -408,24 +408,24 @@ void SetLocalDisableSetting(std::string list_of_disables, const std::string &del
     }
 }
 
-uint32_t TokenToUint(std::string &token) {
-    uint32_t int_id = 0;
+u32 TokenToUint(std::string &token) {
+    u32 int_id = 0;
     if ((token.find("0x") == 0) || token.find("0X") == 0) {  // Handle hex format
-        int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 16));
+        int_id = static_cast<u32>(std::strtoul(token.c_str(), nullptr, 16));
     } else {
-        int_id = static_cast<uint32_t>(std::strtoul(token.c_str(), nullptr, 10));  // Decimal format
+        int_id = static_cast<u32>(std::strtoul(token.c_str(), nullptr, 10));  // Decimal format
     }
     return int_id;
 }
 
-void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, vvl::unordered_set<uint32_t> &filter_list) {
+void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, vvl::unordered_set<u32> &filter_list) {
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
         token = GetNextToken(&raw_id_list, delimiter, &pos);
-        uint32_t int_id = TokenToUint(token);
+        u32 int_id = TokenToUint(token);
         if (int_id == 0) {
-            const uint32_t id_hash = hash_util::VuidHash(token);
+            const u32 id_hash = hash_util::VuidHash(token);
             if (id_hash != 0) {
                 int_id = id_hash;
             }
@@ -571,7 +571,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     // Duplicate message limit
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
-        uint32_t config_limit_setting = 0;
+        u32 config_limit_setting = 0;
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
         if (config_limit_setting != 0) {
             settings_data->debug_report->duplicate_message_limit = config_limit_setting;

@@ -200,9 +200,9 @@ TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
         }
     )glsl";
 
-    uint32_t data = 2;
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
+    u32 data = 2;
+    VkSpecializationMapEntry entry = {0, 0, sizeof(u32)};
+    VkSpecializationInfo specialization_info = {1, &entry, sizeof(u32), &data};
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {

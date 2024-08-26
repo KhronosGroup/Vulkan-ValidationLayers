@@ -191,8 +191,8 @@ TEST_F(PositivePipeline, IgnoredMultisampleState) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
-    const uint64_t fake_address_32 = 0xCDCDCDCD;
+    const u64 fake_address_64 = 0xCDCDCDCDCDCDCDCD;
+    const u64 fake_address_32 = 0xCDCDCDCD;
     void *bad_pointer = sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
 
     CreatePipelineHelper pipe(*this);
@@ -213,8 +213,8 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
-    const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
-    const uint64_t fake_address_32 = 0xCDCDCDCD;
+    const u64 fake_address_64 = 0xCDCDCDCDCDCDCDCD;
+    const u64 fake_address_32 = 0xCDCDCDCD;
     void *hopefully_undereferencable_pointer =
         sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
 
@@ -356,9 +356,9 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            nullptr,                              // pNext
-            0,                                    // flags
-            static_cast<uint32_t>(size(stages)),  // stageCount
+            nullptr,                         // pNext
+            0,                               // flags
+            static_cast<u32>(size(stages)),  // stageCount
             stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
@@ -420,9 +420,9 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             2, dynamic_states};
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                                                                   nullptr,                              // pNext
-                                                                   0,                                    // flags
-                                                                   static_cast<uint32_t>(size(stages)),  // stageCount
+                                                                   nullptr,                         // pNext
+                                                                   0,                               // flags
+                                                                   static_cast<u32>(size(stages)),  // stageCount
                                                                    stages,
                                                                    &pipeline_vertex_input_state_create_info,
                                                                    &pipeline_input_assembly_state_create_info,
@@ -531,8 +531,7 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
     const float fp_height = static_cast<float>(m_height);
 
     std::vector<VkViewport> vps = {{0.0f, 0.0f, fp_width / 2.0f, fp_height}, {fp_width / 2.0f, 0.0f, fp_width / 2.0f, fp_height}};
-    std::vector<VkRect2D> scs = {{{0, 0}, {m_width / 2, m_height}},
-                                 {{static_cast<int32_t>(m_width) / 2, 0}, {m_width / 2, m_height}}};
+    std::vector<VkRect2D> scs = {{{0, 0}, {m_width / 2, m_height}}, {{static_cast<i32>(m_width) / 2, 0}, {m_width / 2, m_height}}};
 
     enum class TestStage { VERTEX = 0, TESSELLATION_EVAL = 1, GEOMETRY = 2 };
     std::array<TestStage, 3> vertex_stages = {{TestStage::VERTEX, TestStage::TESSELLATION_EVAL, TestStage::GEOMETRY}};
@@ -958,8 +957,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
-        vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features = vku::InitStructHelper();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_TRUE;
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&fragment_shader_barycentric_features);
     RETURN_IF_SKIP(InitState(nullptr, &features2));

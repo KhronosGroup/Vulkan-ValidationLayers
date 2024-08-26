@@ -49,22 +49,21 @@ struct AddressBuffer {
 class DescriptorSet : public vvl::DescriptorSet {
   public:
     DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
-                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
+                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, u32 variable_count,
                   ValidationStateTracker *state_data);
     virtual ~DescriptorSet();
     void Destroy() override { last_used_state_.reset(); };
     struct State {
-        State(VkDescriptorSet set, uint32_t version, Validator &gpuav) : set(set), version(version), buffer(gpuav) {}
+        State(VkDescriptorSet set, u32 version, Validator &gpuav) : set(set), version(version), buffer(gpuav) {}
         ~State();
 
         const VkDescriptorSet set;
-        const uint32_t version;
+        const u32 version;
         AddressBuffer buffer;
 
-        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DescriptorSet &set,
-                                                                  uint32_t shader_set) const;
+        std::map<u32, std::vector<u32>> UsedDescriptors(const Location &loc, const DescriptorSet &set, u32 shader_set) const;
     };
-    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
+    void PerformPushDescriptorsUpdate(u32 write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
     void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
 
@@ -79,16 +78,16 @@ class DescriptorSet : public vvl::DescriptorSet {
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
     AddressBuffer layout_;
-    std::atomic<uint32_t> current_version_{0};
+    std::atomic<u32> current_version_{0};
     std::shared_ptr<State> last_used_state_;
     std::shared_ptr<State> output_state_;
     mutable std::mutex state_lock_;
 };
 
-typedef uint32_t DescriptorId;
+typedef u32 DescriptorId;
 class DescriptorHeap {
   public:
-    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
+    DescriptorHeap(Validator &gpuav, u32 max_descriptors, const Location &loc);
     ~DescriptorHeap();
     DescriptorId NextId(const VulkanTypedHandle &handle);
     void DeleteId(DescriptorId id);
@@ -100,12 +99,12 @@ class DescriptorHeap {
 
     mutable std::mutex lock_;
 
-    const uint32_t max_descriptors_;
+    const u32 max_descriptors_;
     DescriptorId next_id_{1};
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
     AddressBuffer buffer_;
-    uint32_t *gpu_heap_state_{nullptr};
+    u32 *gpu_heap_state_{nullptr};
 };
 
 }  // namespace gpuav

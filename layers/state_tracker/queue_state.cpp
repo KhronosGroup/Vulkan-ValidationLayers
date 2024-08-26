@@ -98,7 +98,7 @@ vvl::SubmitResult vvl::Queue::PostSubmit(std::vector<vvl::QueueSubmission> &&sub
     return result;
 }
 
-void vvl::Queue::Notify(uint64_t until_seq) {
+void vvl::Queue::Notify(u64 until_seq) {
     auto guard = Lock();
     if (until_seq == kU64Max) {
         until_seq = seq_.load();
@@ -109,7 +109,7 @@ void vvl::Queue::Notify(uint64_t until_seq) {
     cond_.notify_one();
 }
 
-void vvl::Queue::Wait(const Location &loc, uint64_t until_seq) {
+void vvl::Queue::Wait(const Location &loc, u64 until_seq) {
     std::shared_future<void> waiter;
     {
         auto guard = Lock();
@@ -119,7 +119,7 @@ void vvl::Queue::Wait(const Location &loc, uint64_t until_seq) {
         if (submissions_.empty() || until_seq < submissions_.begin()->seq) {
             return;
         }
-        uint64_t index = until_seq - submissions_.begin()->seq;
+        u64 index = until_seq - submissions_.begin()->seq;
         assert(index < submissions_.size());
         waiter = submissions_[static_cast<size_t>(index)].waiter;
     }
@@ -133,7 +133,7 @@ void vvl::Queue::Wait(const Location &loc, uint64_t until_seq) {
     }
 }
 
-void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
+void vvl::Queue::NotifyAndWait(const Location &loc, u64 until_seq) {
     Notify(until_seq);
     Wait(loc, until_seq);
 }

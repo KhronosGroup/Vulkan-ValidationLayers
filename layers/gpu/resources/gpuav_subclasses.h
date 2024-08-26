@@ -42,9 +42,9 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     // per vkCmdBindDescriptorSet() state
     std::vector<DescBindingInfo> di_input_buffer_list;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
-    uint32_t draw_index = 0;
-    uint32_t compute_index = 0;
-    uint32_t trace_rays_index = 0;
+    u32 draw_index = 0;
+    u32 compute_index = 0;
+    u32 trace_rays_index = 0;
 
     CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const vvl::CommandPool *pool);
@@ -70,14 +70,14 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
         return validation_cmd_desc_set_layout_;
     }
 
-    uint32_t GetValidationErrorBufferDescSetIndex() const { return 0; }
+    u32 GetValidationErrorBufferDescSetIndex() const { return 0; }
 
     const VkBuffer &GetErrorOutputBuffer() const {
         assert(error_output_buffer_.buffer != VK_NULL_HANDLE);
         return error_output_buffer_.buffer;
     }
 
-    VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(uint32_t); }
+    VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(u32); }
 
     const VkBuffer &GetCmdErrorsCountsBuffer() const {
         assert(cmd_errors_counts_buffer_.buffer != VK_NULL_HANDLE);
@@ -94,7 +94,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     gpu::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
+        stdext::inplace_function<bool(Validator &gpuav, const u32 *error_record, const LogObjectList &objlist), 128>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
   private:
@@ -120,7 +120,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     gpu::DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
     // Buffer storing a snapshot of buffer device address ranges
     gpu::DeviceMemoryBlock bda_ranges_snapshot_ = {};
-    uint32_t bda_ranges_snapshot_version_ = 0;
+    u32 bda_ranges_snapshot_version_ = 0;
 };
 
 class Buffer : public vvl::Buffer {

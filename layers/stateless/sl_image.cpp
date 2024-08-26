@@ -38,7 +38,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
 
         // If sharingMode is VK_SHARING_MODE_CONCURRENT, pQueueFamilyIndices must be a pointer to an array of
-        // queueFamilyIndexCount uint32_t values
+        // queueFamilyIndexCount u32 values
         if (pCreateInfo->pQueueFamilyIndices == nullptr) {
             skip |= LogError("VUID-VkImageCreateInfo-sharingMode-00941", device, create_info_loc.dot(Field::pQueueFamilyIndices),
                              "is NULL.");
@@ -123,11 +123,10 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
     const VkImageCreateFlags image_flags = pCreateInfo->flags;
     // mipLevels must be less than or equal to the number of levels in the complete mipmap chain
-    uint32_t max_dim = std::max(std::max(pCreateInfo->extent.width, pCreateInfo->extent.height), pCreateInfo->extent.depth);
+    u32 max_dim = std::max(std::max(pCreateInfo->extent.width, pCreateInfo->extent.height), pCreateInfo->extent.depth);
     // Max mip levels is different for corner-sampled images vs normal images.
-    uint32_t max_mip_levels = (image_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV)
-                                  ? static_cast<uint32_t>(ceil(log2(max_dim)))
-                                  : static_cast<uint32_t>(floor(log2(max_dim)) + 1);
+    u32 max_mip_levels = (image_flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? static_cast<u32>(ceil(log2(max_dim)))
+                                                                               : static_cast<u32>(floor(log2(max_dim)) + 1);
     if (max_dim > 0 && pCreateInfo->mipLevels > max_mip_levels) {
         skip |= LogError("VUID-VkImageCreateInfo-mipLevels-00958", device, create_info_loc,
                          "pCreateInfo->mipLevels must be less than or equal to "
@@ -174,10 +173,11 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
     const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
 
-    std::vector<uint64_t> image_create_drm_format_modifiers;
+    std::vector<u64> image_create_drm_format_modifiers;
     if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
         const auto drm_format_mod_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-        const auto drm_format_mod_explict = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        const auto drm_format_mod_explict =
+            vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
         if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
             if ((!drm_format_mod_list) && (!drm_format_mod_explict)) {
                 skip |= LogError("VUID-VkImageCreateInfo-tiling-02261", device, create_info_loc.dot(Field::tiling),
@@ -192,7 +192,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             } else if (drm_format_mod_explict) {
                 image_create_drm_format_modifiers.push_back(drm_format_mod_explict->drmFormatModifier);
             } else if (drm_format_mod_list) {
-                for (uint32_t i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
+                for (u32 i = 0; i < drm_format_mod_list->drmFormatModifierCount; i++) {
                     image_create_drm_format_modifiers.push_back(*drm_format_mod_list->pDrmFormatModifiers);
                 }
             }
@@ -222,7 +222,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
 
         if (drm_format_mod_explict && drm_format_mod_explict->pPlaneLayouts) {
-            for (uint32_t i = 0; i < drm_format_mod_explict->drmFormatModifierPlaneCount; ++i) {
+            for (u32 i = 0; i < drm_format_mod_explict->drmFormatModifierPlaneCount; ++i) {
                 const Location drm_loc =
                     create_info_loc.pNext(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT, Field::pPlaneLayouts, i);
                 if (drm_format_mod_explict->pPlaneLayouts[i].size != 0) {
@@ -249,7 +249,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 
-    static const uint64_t drm_format_mod_linear = 0;
+    static const u64 drm_format_mod_linear = 0;
     bool image_create_maybe_linear = false;
     if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
         image_create_maybe_linear = true;
@@ -340,7 +340,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     }
 
     if (format_list_info) {
-        const uint32_t view_format_count = format_list_info->viewFormatCount;
+        const u32 view_format_count = format_list_info->viewFormatCount;
         const bool mutable_image = (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) != 0;
         if (!mutable_image && view_format_count > 1) {
             skip |= LogError("VUID-VkImageCreateInfo-flags-04738", device,
@@ -349,7 +349,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              string_VkImageCreateFlags(image_flags).c_str());
         }
         // Check if viewFormatCount is not zero that it is all compatible
-        for (uint32_t i = 0; i < view_format_count; i++) {
+        for (u32 i = 0; i < view_format_count; i++) {
             const VkFormat view_format = format_list_info->pViewFormats[i];
             const Location format_loc = create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i);
             const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);

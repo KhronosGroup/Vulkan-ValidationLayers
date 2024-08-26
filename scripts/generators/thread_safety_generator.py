@@ -129,7 +129,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                 if param.length:
                     # Externsync can list pointers to arrays of members to synchronize
                     out.append(f'if ({param.name}) {{\n')
-                    out.append(f'    for (uint32_t index = 0; index < {param.length}; index++) {{\n')
+                    out.append(f'    for (u32 index = 0; index < {param.length}; index++) {{\n')
                     for member in param.externSyncPointer:
                         # Replace first empty [] in member name with index
                         element = member.replace('[]','[index]',1)
@@ -150,7 +150,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                             limit = element[0:element.find('s[]')] + 'Count'
                             dotp = limit.rfind('.p')
                             limit = limit[0:dotp+1] + limit[dotp+2:dotp+3].lower() + limit[dotp+3:]
-                            out.append(f'for (uint32_t index2=0; index2 < {limit}; index2++) {{\n')
+                            out.append(f'for (u32 index2=0; index2 < {limit}; index2++) {{\n')
                             element = element.replace('[]','[index2]')
                             out.append(f'    {prefix}WriteObject{suffix}({element}, record_obj.location);')
                             out.append('}\n')
@@ -170,7 +170,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                 if param.length:
                     out.append(f'''
                         if ({param.name}) {{
-                            for (uint32_t index = 0; index < {param.length}; index++) {{
+                            for (u32 index = 0; index < {param.length}; index++) {{
                                 {prefix}WriteObject{GetParentInstance(param)}({param.name}[index], record_obj.location);
                             }}
                         }}\n''')
@@ -199,7 +199,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                                     dereference = '*'
                         param_len = param.length.replace("::", "->")
                         out.append(f'if ({param.name}) {{\n')
-                        out.append(f'    for (uint32_t index = 0; index < {dereference}{param_len}; index++) {{\n')
+                        out.append(f'    for (u32 index = 0; index < {dereference}{param_len}; index++) {{\n')
                         if create_pipelines_call:
                             out.append('if (!pPipelines[index]) continue;\n')
                         if create_shaders_call:
@@ -224,7 +224,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         param_len = param.length.replace("::", "->")
                         out.append(f'''
                             if ({param.name}) {{
-                                for (uint32_t index = 0; index < {dereference}{param.length}; index++) {{
+                                for (u32 index = 0; index < {dereference}{param.length}; index++) {{
                                     {prefix}ReadObject{GetParentInstance(param)}({param.name}[index], record_obj.location);
                                 }}
                             }}\n''')

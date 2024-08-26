@@ -14,8 +14,8 @@
 #include "../framework/pipeline_helper.h"
 
 namespace {
-VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
-                                                        size_t, int32_t, const char *, const char *message, void *user_data) {
+VKAPI_ATTR VkBool32 VKAPI_CALL EmptyDebugReportCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, u64,
+                                                        size_t, i32, const char *, const char *message, void *user_data) {
     return VK_FALSE;
 }
 struct Instance {
@@ -402,7 +402,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
 
     VkPhysicalDevice instance2_physical_device = VK_NULL_HANDLE;
     {
-        uint32_t gpu_count = 0;
+        u32 gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
         assert(gpu_count > 0);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
@@ -522,7 +522,7 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
 
     VkPhysicalDevice instance2_gpu = VK_NULL_HANDLE;
     {
-        uint32_t gpu_count = 0;
+        u32 gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
         ASSERT_GT(gpu_count, 0);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
@@ -531,7 +531,7 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
     }
     VkDisplayKHR display = VK_NULL_HANDLE;
     {
-        uint32_t display_count = 0;
+        u32 display_count = 0;
         ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, nullptr));
         if (display_count == 0) {
             GTEST_SKIP() << "No VkDisplayKHR displays found";
@@ -541,7 +541,7 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
         display = display_props[0].display;
     }
     // display from a different physical device
-    uint32_t mode_count = 0;
+    u32 mode_count = 0;
     m_errorMonitor->SetDesiredError("VUID-vkGetDisplayModePropertiesKHR-display-parent");
     vk::GetDisplayModePropertiesKHR(gpu(), display, &mode_count, nullptr);
     m_errorMonitor->VerifyFound();
@@ -558,7 +558,7 @@ TEST_F(NegativeParent, PhysicalDevice_RegisterDisplayEvent) {
 
     VkPhysicalDevice instance2_gpu = VK_NULL_HANDLE;
     {
-        uint32_t gpu_count = 0;
+        u32 gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
         ASSERT_GT(gpu_count, 0);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
@@ -567,7 +567,7 @@ TEST_F(NegativeParent, PhysicalDevice_RegisterDisplayEvent) {
     }
     VkDisplayKHR display = VK_NULL_HANDLE;
     {
-        uint32_t display_count = 0;
+        u32 display_count = 0;
         ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPropertiesKHR(instance2_gpu, &display_count, nullptr));
         if (display_count == 0) {
             GTEST_SKIP() << "No VkDisplayKHR displays found";
@@ -597,7 +597,7 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
 
     VkPhysicalDevice instance2_gpu = VK_NULL_HANDLE;
     {
-        uint32_t gpu_count = 0;
+        u32 gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
         ASSERT_GT(gpu_count, 0);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
@@ -606,7 +606,7 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     }
     VkDisplayKHR display = VK_NULL_HANDLE;
     {
-        uint32_t plane_count = 0;
+        u32 plane_count = 0;
         ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(instance2_gpu, &plane_count, nullptr));
         if (plane_count == 0) {
             GTEST_SKIP() << "No display planes found";
@@ -659,7 +659,7 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
     VkPipelineInfoKHR pipeline_info = vku::InitStructHelper();
     pipeline_info.pipeline = pipe.Handle();
 
-    uint32_t count;
+    u32 count;
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
     vk::GetPipelineExecutableStatisticsKHR(*m_second_device, &pipeline_exe_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
@@ -881,7 +881,7 @@ TEST_F(NegativeParent, MapMemory2) {
     map_info.offset = 0;
     map_info.size = memory_info.allocationSize;
 
-    uint32_t *pData = nullptr;
+    u32 *pData = nullptr;
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryMapInfoKHR-memory-parent");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();

@@ -32,7 +32,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
     vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -91,7 +91,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitAutomaticVisibility) {
     vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
@@ -142,7 +142,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -245,7 +245,7 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
         vkt::Fence fence(*m_device);
 
         for (int i = 0; i < N; i++) {
-            uint32_t image_index = 0;
+            u32 image_index = 0;
             vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
@@ -314,7 +314,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     vkt::Buffer src_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer dst_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    auto present = [this](const vkt::Semaphore& submit_semaphore, uint32_t image_index) {
+    auto present = [this](const vkt::Semaphore& submit_semaphore, u32 image_index) {
         VkPresentInfoKHR present = vku::InitStructHelper();
         present.waitSemaphoreCount = 1;
         present.pWaitSemaphores = &submit_semaphore.handle();
@@ -326,7 +326,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
 
     // Frame 0
     {
-        uint32_t image_index = 0;
+        u32 image_index = 0;
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
         m_command_buffer.begin();
@@ -338,7 +338,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     }
     // Frame 1
     {
-        uint32_t image_index = 0;
+        u32 image_index = 0;
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore2, VK_NULL_HANDLE, &image_index);
 
         // TODO: Present should be able to accept semaphore from Acquire directly, but due to
@@ -355,7 +355,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         // import accesses from regular submits.
         vk::WaitForFences(*m_device, 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
-        uint32_t image_index = 0;
+        u32 image_index = 0;
         vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
         // If WaitForFences leaks accesses from present batches the following copy will cause submit time hazard.

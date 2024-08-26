@@ -26,7 +26,7 @@ VkPipelineLayoutCreateFlags PipelineSubState::PipelineLayoutCreateFlags() const 
 
 VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGraphicsPipelineCreateInfo &create_info)
     : PipelineSubState(p) {
-    for (uint32_t i = 0; i < create_info.stageCount; i++) {
+    for (u32 i = 0; i < create_info.stageCount; i++) {
         if (create_info.pStages && create_info.pStages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             return;  // if mesh shaders are used, all vertex input state is ignored
         }
@@ -74,7 +74,7 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
       subpass(create_info.subpass) {
     VkShaderStageFlags all_stages = 0;
 
-    for (uint32_t i = 0; i < create_info.stageCount; ++i) {
+    for (u32 i = 0; i < create_info.stageCount; ++i) {
         const auto &stage_ci = create_info.pStages[i];
         const VkShaderStageFlagBits stage = stage_ci.stage;
         // TODO might need to filter out more than just fragment shaders here
@@ -102,7 +102,8 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
 
         // Check if a shader module identifier is used to reference the shader module.
         if (!module_state) {
-            if (const auto shader_stage_id = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
+            if (const auto shader_stage_id =
+                    vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_ci.pNext);
                 shader_stage_id) {
                 module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
             }
@@ -196,7 +197,7 @@ template <typename CreateInfo>
 void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
                                   const CreateInfo &create_info,
                                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
-    for (uint32_t i = 0; i < create_info.stageCount; ++i) {
+    for (u32 i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
             auto module_state = state_data.Get<vvl::ShaderModule>(create_info.pStages[i].module);
             if (!module_state) {
@@ -218,8 +219,8 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
 
             // Check if a shader module identifier is used to reference the shader module.
             if (!module_state) {
-                if (const auto shader_stage_id =
-                        vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(create_info.pStages[i].pNext);
+                if (const auto shader_stage_id = vku::FindStructInPNextChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(
+                        create_info.pStages[i].pNext);
                     shader_stage_id) {
                     module_state = state_data.GetShaderModuleStateFromIdentifier(*shader_stage_id);
                 }
@@ -253,10 +254,10 @@ void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, c
 }
 
 FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data,
-                                         std::shared_ptr<const vvl::RenderPass> rp, uint32_t subp, VkPipelineLayout layout)
+                                         std::shared_ptr<const vvl::RenderPass> rp, u32 subp, VkPipelineLayout layout)
     : PipelineSubState(p), rp_state(rp), subpass(subp), pipeline_layout(dev_data.Get<vvl::PipelineLayout>(layout)) {}
 
-FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, uint32_t sp)
+FragmentOutputState::FragmentOutputState(const vvl::Pipeline &p, std::shared_ptr<const vvl::RenderPass> rp, u32 sp)
     : PipelineSubState(p), rp_state(rp), subpass(sp) {}
 
 // static

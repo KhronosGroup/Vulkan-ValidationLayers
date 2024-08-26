@@ -163,7 +163,8 @@ TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthSt
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
 
-    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         GTEST_SKIP() << "VK_FORMAT_S8_UINT format not supported";
     }
 
@@ -212,7 +213,7 @@ TEST_F(PositiveDynamicRendering, FragmentDensityMapSubsampledBit) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+                                    VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
     }
 
@@ -1102,14 +1103,14 @@ TEST_F(PositiveDynamicRendering, BeginRenderingWithRenderPassStriped) {
 
     VkPhysicalDeviceRenderPassStripedPropertiesARM rp_striped_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(rp_striped_props);
-    const uint32_t stripe_width = rp_striped_props.renderPassStripeGranularity.width * 2;
-    const uint32_t stripe_height = rp_striped_props.renderPassStripeGranularity.height;
+    const u32 stripe_width = rp_striped_props.renderPassStripeGranularity.width * 2;
+    const u32 stripe_height = rp_striped_props.renderPassStripeGranularity.height;
 
-    const uint32_t stripe_count = 8;
-    const uint32_t width = stripe_width * stripe_count;
-    const uint32_t height = stripe_height;
+    const u32 stripe_count = 8;
+    const u32 width = stripe_width * stripe_count;
+    const u32 height = stripe_height;
     std::vector<VkRenderPassStripeInfoARM> stripe_infos(stripe_count);
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         stripe_infos[i] = vku::InitStructHelper();
         stripe_infos[i].stripeArea.offset.x = stripe_width * i;
         stripe_infos[i].stripeArea.offset.y = 0;
@@ -1138,7 +1139,7 @@ TEST_F(PositiveDynamicRendering, BeginRenderingWithRenderPassStriped) {
     vkt::Semaphore semaphores[stripe_count];
     VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count];
 
-    for (uint32_t i = 0; i < stripe_count; ++i) {
+    for (u32 i = 0; i < stripe_count; ++i) {
         semaphores[i].init(*m_device, semaphore_create_info);
         semaphore_submit_infos[i] = vku::InitStructHelper();
         semaphore_submit_infos[i].semaphore = semaphores[i].handle();

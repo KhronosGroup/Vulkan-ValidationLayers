@@ -56,9 +56,9 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     // Setup for update w/ template tests
     // Create a template of descriptor set updates
     struct SimpleTemplateData {
-        uint8_t padding[7];
+        u8 padding[7];
         VkDescriptorBufferInfo buff_info;
-        uint32_t other_padding[4];
+        u32 other_padding[4];
     };
     SimpleTemplateData update_template_data = {};
 
@@ -97,7 +97,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     push_template_ci.set = 0;
     ASSERT_EQ(VK_SUCCESS, vk::CreateDescriptorUpdateTemplateKHR(device(), &push_template_ci, nullptr, &push_template));
 
-    auto do_test = [&](const char *desired_failure) {
+    auto do_test = [&](const char* desired_failure) {
         m_errorMonitor->SetDesiredError(desired_failure);
         vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
@@ -261,7 +261,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     auto pipeline_layout = vkt::PipelineLayout(*m_device, {&ds_layout});
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform sampler2D tex;
         layout(location=0) out vec4 color;
@@ -295,7 +295,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
     descriptor_write.dstArrayElement = 0;
     descriptor_write.dstBinding = 0;
 
-    for (uint32_t i = 0; i < 2; i++) {
+    for (u32 i = 0; i < 2; i++) {
         m_commandBuffer->begin();
         if (i == 1) {
             // Test path where image layout in command buffer is known at draw time
@@ -400,7 +400,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
                                                      VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     const vkt::PipelineLayout pipeline_layout(*m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
 
-    constexpr uint64_t badhandle = 0xcadecade;
+    constexpr u64 badhandle = 0xcadecade;
     VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
     VkDescriptorUpdateTemplateCreateInfo create_info = vku::InitStructHelper();
     create_info.flags = 0;
@@ -502,7 +502,7 @@ TEST_F(NegativePushDescriptor, SetLayout) {
     test_create_ds_layout(
         "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280");  // This is the same VUID as above, just a second error condition.
 
-    if (!(push_descriptor_prop.maxPushDescriptors == std::numeric_limits<uint32_t>::max())) {
+    if (!(push_descriptor_prop.maxPushDescriptors == std::numeric_limits<u32>::max())) {
         binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         binding.descriptorCount = push_descriptor_prop.maxPushDescriptors + 1;
         test_create_ds_layout("VUID-VkDescriptorSetLayoutCreateInfo-flags-00281");
@@ -643,7 +643,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout, &ds_layout});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, sizeof(u32) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     // Create a "write" struct, noting that the buffer_info cannot be a temporary arg (the return from write_descriptor_set
     // references its data), and the DescriptorSet() can be temporary, because the value is ignored
@@ -654,10 +654,10 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
 
     // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
-    const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
+    const std::optional<u32> compute_qfi = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> transfer_qfi = m_device->TransferOnlyQueueFamily();
     if (transfer_qfi || compute_qfi) {
-        const uint32_t err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
+        const u32 err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
 
         vkt::CommandPool command_pool(*m_device, err_qfi);
         ASSERT_TRUE(command_pool.initialized());
@@ -723,7 +723,7 @@ TEST_F(NegativePushDescriptor, DestoryLayout) {
 
     RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, sizeof(u32) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::write_descriptor_set(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
@@ -754,7 +754,7 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout});
     ASSERT_TRUE(pipeline_layout.initialized());
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, sizeof(u32) * 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Use an invalid alignment.
     VkDescriptorBufferInfo buffer_info = {buffer.handle(), min_alignment - 1, VK_WHOLE_SIZE};
@@ -805,7 +805,7 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (!compute_qfi.has_value()) {
         GTEST_SKIP() << "Required queue family capabilities not found.";
     }

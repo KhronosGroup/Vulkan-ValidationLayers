@@ -322,7 +322,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     vkt::Buffer dynamic_uniform_buffer_2(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptors
-    const uint32_t BINDING_COUNT = 3;
+    const u32 BINDING_COUNT = 3;
     VkDescriptorBufferInfo buff_info[BINDING_COUNT] = {};
     buff_info[0].buffer = dynamic_uniform_buffer_1.handle();
     buff_info[0].offset = 0;
@@ -367,7 +367,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // This update should succeed, but offset of inactive binding 1 oversteps binding 2 buffer size
     //   we used to have a bug in this case.
-    uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
+    u32 dyn_off[BINDING_COUNT] = {0, 1024, 256};
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, BINDING_COUNT, dyn_off);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
@@ -729,8 +729,8 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t width = m_width;
-    const uint32_t height = m_height;
+    const u32 width = m_width;
+    const u32 height = m_height;
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 
@@ -1056,7 +1056,7 @@ TEST_F(PositiveDescriptors, VariableDescriptorCount) {
 
     const vkt::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
 
-    uint32_t descriptor_count = 1u;
+    u32 descriptor_count = 1u;
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_allocate = vku::InitStructHelper();
     variable_allocate.descriptorSetCount = 1u;
     variable_allocate.pDescriptorCounts = &descriptor_count;

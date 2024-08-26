@@ -34,7 +34,7 @@ size_t PipelineLayoutCompatDef::hash() const {
     // The set number is integral to the CompatDef's distinctiveness
     hc << set << push_constant_ranges.get();
     const auto &descriptor_set_layouts = *set_layouts_id.get();
-    for (uint32_t i = 0; i <= set; i++) {
+    for (u32 i = 0; i <= set; i++) {
         hc << descriptor_set_layouts[i].get();
     }
     return hc.Value();
@@ -55,7 +55,7 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) c
     assert(set < descriptor_set_layouts.size());
     const auto &other_ds_layouts = *other.set_layouts_id.get();
     assert(set < other_ds_layouts.size());
-    for (uint32_t i = 0; i <= set; i++) {
+    for (u32 i = 0; i <= set; i++) {
         if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
             return false;
         }
@@ -72,7 +72,7 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
     } else {
         const auto &descriptor_set_layouts = *set_layouts_id.get();
         const auto &other_ds_layouts = *other.set_layouts_id.get();
-        for (uint32_t i = 0; i <= set; i++) {
+        for (u32 i = 0; i <= set; i++) {
             if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
                 return descriptor_set_layouts[i]->DescribeDifference(i, *other_ds_layouts[i]);
             }
@@ -81,7 +81,7 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
     return ss.str();
 }
 
-static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const PushConstantRangesId &pcr_id,
+static PipelineLayoutCompatId GetCanonicalId(const u32 set_index, const PushConstantRangesId &pcr_id,
                                              const PipelineLayoutSetLayoutsId &set_layouts_id) {
     return pipeline_layout_compat_dict.LookUp(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
 }
@@ -101,7 +101,7 @@ struct PushConstantRangeCompare {
     }
 };
 
-PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges) {
+PushConstantRangesId GetCanonicalId(u32 pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges) {
     if (!pPushConstantRanges) {
         // Hand back the empty entry (creating as needed)...
         return push_constant_ranges_dict.LookUp(PushConstantRanges());
@@ -109,7 +109,7 @@ PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPus
 
     // Sort the input ranges to ensure equivalent ranges map to the same id
     std::set<const VkPushConstantRange *, PushConstantRangeCompare> sorted;
-    for (uint32_t i = 0; i < pushConstantRangeCount; i++) {
+    for (u32 i = 0; i < pushConstantRangeCount; i++) {
         sorted.insert(pPushConstantRanges + i);
     }
 
@@ -148,7 +148,7 @@ std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::share
     std::vector<PipelineLayoutCompatId> set_compat_ids;
     set_compat_ids.reserve(set_layouts.size());
 
-    for (uint32_t i = 0; i < set_layouts.size(); i++) {
+    for (u32 i = 0; i < set_layouts.size(); i++) {
         set_compat_ids.emplace_back(GetCanonicalId(i, push_constant_ranges, set_layouts_id));
     }
     return set_compat_ids;
@@ -170,7 +170,7 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev
                                                      const VkPipelineLayoutCreateInfo *pCreateInfo) {
     PipelineLayout::SetLayoutVector set_layouts(pCreateInfo->setLayoutCount);
 
-    for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->setLayoutCount; ++i) {
         set_layouts[i] = dev_data.Get<vvl::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
     }
     return set_layouts;

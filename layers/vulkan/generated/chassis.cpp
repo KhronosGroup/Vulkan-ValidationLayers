@@ -41,10 +41,10 @@ thread_local WriteLockGuard* ValidationObject::record_guard{};
 small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 
 // Global unique object identifier.
-std::atomic<uint64_t> global_unique_id(1ULL);
+std::atomic<u64> global_unique_id(1ULL);
 // Map uniqueID to actual object handle. Accesses to the map itself are
 // internally synchronized.
-vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+vvl::concurrent_unordered_map<u64, u64, 4, HashedUint64> unique_id_mapping;
 
 // State we track in order to populate HandleData for things such as ignored pointers
 static vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
@@ -213,8 +213,8 @@ void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Help
 }
 
 // Global list of sType,size identifiers
-std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
-    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+std::vector<std::pair<u32, u32>>& GetCustomStypeInfo() {
+    static std::vector<std::pair<u32, u32>> custom_stype_info{};
     return custom_stype_info;
 }
 
@@ -290,7 +290,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 
 // Check enabled instance extensions against supported instance extension whitelist
 static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkInstanceCreateInfo* pCreateInfo, VkInstance instance) {
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized instance extensions
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (!IsInstanceExtension(extension)) {
@@ -306,7 +306,7 @@ static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkIns
 
 // Check enabled device extensions against supported device extension whitelist
 static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized device extensions
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (!IsDeviceExtension(extension)) {
@@ -323,7 +323,7 @@ static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDevic
 void OutputLayerStatusInfo(ValidationObject* context) {
     std::string list_of_enables;
     std::string list_of_disables;
-    for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
+    for (u32 i = 0; i < kMaxEnableFlags; i++) {
         if (context->enabled[i]) {
             if (list_of_enables.size()) list_of_enables.append(", ");
             list_of_enables.append(GetEnableFlagNameHelper()[i]);
@@ -332,7 +332,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
     if (list_of_enables.empty()) {
         list_of_enables.append("None");
     }
-    for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
+    for (u32 i = 0; i < kMaxDisableFlags; i++) {
         if (context->disabled[i]) {
             if (list_of_disables.size()) list_of_disables.append(", ");
             list_of_disables.append(GetDisableFlagNameHelper()[i]);
@@ -436,19 +436,19 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
     return table.GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties* pProperties) {
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(u32* pCount, VkLayerProperties* pProperties) {
     return util_GetLayerProperties(1, &global_layer, pCount, pProperties);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pCount,
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, u32* pCount,
                                                               VkLayerProperties* pProperties) {
     return util_GetLayerProperties(1, &global_layer, pCount, pProperties);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pCount,
+VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char* pLayerName, u32* pCount,
                                                                     VkExtensionProperties* pProperties) {
     if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) {
-        return util_GetExtensionProperties(static_cast<uint32_t>(kInstanceExtensions.size()), kInstanceExtensions.data(), pCount,
+        return util_GetExtensionProperties(static_cast<u32>(kInstanceExtensions.size()), kInstanceExtensions.data(), pCount,
                                            pProperties);
     }
 
@@ -456,9 +456,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char* 
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
-                                                                  uint32_t* pCount, VkExtensionProperties* pProperties) {
+                                                                  u32* pCount, VkExtensionProperties* pProperties) {
     if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) {
-        return util_GetExtensionProperties(static_cast<uint32_t>(kDeviceExtensions.size()), kDeviceExtensions.data(), pCount,
+        return util_GetExtensionProperties(static_cast<u32>(kDeviceExtensions.size()), kDeviceExtensions.data(), pCount,
                                            pProperties);
     }
 
@@ -477,7 +477,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(nullptr, "vkCreateInstance");
     if (fpCreateInstance == nullptr) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
-    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    u32 specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     APIVersion api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
                                                  VK_API_VERSION_MINOR(specified_version), 0);
 
@@ -796,7 +796,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 
 // Special-case APIs for which core_validation needs custom parameter lists and/or modifies parameters
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     VVL_ZoneScoped;
@@ -851,7 +851,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
 }
 
 // This API saves some core_validation pipeline state state on the stack for performance purposes
-VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                       const VkComputePipelineCreateInfo* pCreateInfos,
                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     VVL_ZoneScoped;
@@ -905,7 +905,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, u32 createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -945,7 +945,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                            VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                            VkPipelineCache pipelineCache, u32 createInfoCount,
                                                             const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
     VVL_ZoneScoped;
@@ -1094,9 +1094,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                                VkShaderEXT* pShaders) {
+VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, u32 createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
+                                                const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders) {
     VVL_ZoneScoped;
 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -1300,7 +1299,7 @@ static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
     "Khronos Validation Layer",
     OBJECT_LAYER_NAME};
 
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, u32* pToolCount,
                                                                   VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
@@ -1334,7 +1333,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
-    assert(*pToolCount != std::numeric_limits<uint32_t>::max());
+    assert(*pToolCount != std::numeric_limits<u32>::max());
     (*pToolCount)++;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1344,7 +1343,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, u32* pToolCount,
                                                                VkPhysicalDeviceToolProperties* pToolProperties) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     bool skip = false;
@@ -1377,7 +1376,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     if (original_pToolProperties != nullptr) {
         pToolProperties = original_pToolProperties;
     }
-    assert(*pToolCount != std::numeric_limits<uint32_t>::max());
+    assert(*pToolCount != std::numeric_limits<u32>::max());
     (*pToolCount)++;
 
     for (ValidationObject* intercept : layer_data->object_dispatch) {
@@ -1409,7 +1408,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(VkDevice device, VkValidati
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
+VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, u32 srcCacheCount,
                                                         const VkValidationCacheEXT* pSrcCaches) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (auto core_checks = layer_data->GetValidationObject<CoreChecks>()) {
@@ -4234,7 +4233,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
 
     if ((result == VK_SUCCESS) && pAllocateInfo && (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         auto lock = WriteLockGuard(secondary_cb_map_mutex);
-        for (uint32_t cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
+        for (u32 cb_index = 0; cb_index < pAllocateInfo->commandBufferCount; cb_index++) {
             secondary_cb_map.emplace(pCommandBuffers[cb_index], pAllocateInfo->commandPool);
         }
     }
@@ -4279,7 +4278,7 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
 
     {
         auto lock = WriteLockGuard(secondary_cb_map_mutex);
-        for (uint32_t cb_index = 0; cb_index < commandBufferCount; cb_index++) {
+        for (u32 cb_index = 0; cb_index < commandBufferCount; cb_index++) {
             secondary_cb_map.erase(pCommandBuffers[cb_index]);
         }
     }
@@ -28192,11 +28191,11 @@ VVL_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice
     return vulkan_layer_chassis::GetDeviceProcAddr(dev, funcName);
 }
 
-VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(uint32_t* pCount, VkLayerProperties* pProperties) {
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(u32* pCount, VkLayerProperties* pProperties) {
     return vulkan_layer_chassis::EnumerateInstanceLayerProperties(pCount, pProperties);
 }
 
-VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pCount,
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char* pLayerName, u32* pCount,
                                                                                  VkExtensionProperties* pProperties) {
     return vulkan_layer_chassis::EnumerateInstanceExtensionProperties(pLayerName, pCount, pProperties);
 }
@@ -28216,7 +28215,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion
 }
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pCount,
+VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, u32* pCount,
                                                                            VkLayerProperties* pProperties) {
     // the layer command handles VK_NULL_HANDLE just fine internally
     assert(physicalDevice == VK_NULL_HANDLE);
@@ -28224,7 +28223,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(VkPhy
 }
 
 VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
-                                                                               const char* pLayerName, uint32_t* pCount,
+                                                                               const char* pLayerName, u32* pCount,
                                                                                VkExtensionProperties* pProperties) {
     // the layer command handles VK_NULL_HANDLE just fine internally
     assert(physicalDevice == VK_NULL_HANDLE);

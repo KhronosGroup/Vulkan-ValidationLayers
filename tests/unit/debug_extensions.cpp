@@ -43,7 +43,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     vkt::DeviceMemory memory_1(*m_device, memory_allocate_info);
     vkt::DeviceMemory memory_2(*m_device, memory_allocate_info);
     VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
-    name_info.object = (uint64_t)memory_2.handle();
+    name_info.object = (u64)memory_2.handle();
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
@@ -69,7 +69,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
 
-    name_info.object = (uint64_t)commandBuffer;
+    name_info.object = (u64)commandBuffer;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT;
     name_info.pObjectName = commandBuffer_name.c_str();
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
@@ -109,14 +109,14 @@ TEST_F(NegativeDebugExtensions, DebugMarkerSetObject) {
     vkt::DeviceMemory memory(*m_device, memory_allocate_info);
 
     VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
-    name_info.object = (uint64_t)VK_NULL_HANDLE;
+    name_info.object = (u64)VK_NULL_HANDLE;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
     m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectNameInfoEXT-object-01491");
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
-    name_info.object = (uint64_t)memory.handle();
+    name_info.object = (u64)memory.handle();
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectNameInfoEXT-objectType-01490");
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
@@ -177,7 +177,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
 
     // Pass in bad handle make sure ObjectTracker catches it
     m_errorMonitor->SetDesiredError("VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
-    name_info.objectHandle = (uint64_t)0xcadecade;
+    name_info.objectHandle = (u64)0xcadecade;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
@@ -189,7 +189,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
 
     // Pass in 'unknown' object type and see if parameter validation catches it
     m_errorMonitor->SetDesiredError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587");
-    name_info.objectHandle = (uint64_t)memory_2.handle();
+    name_info.objectHandle = (u64)memory_2.handle();
     name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
@@ -218,7 +218,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
 
-    name_info.objectHandle = (uint64_t)commandBuffer;
+    name_info.objectHandle = (u64)commandBuffer;
     name_info.objectType = VK_OBJECT_TYPE_COMMAND_BUFFER;
     name_info.pObjectName = commandBuffer_name.c_str();
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
@@ -282,7 +282,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerSetUtils) {
 
     int tags[3] = {1, 2, 3};
     VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
-    name_info.object = (uint64_t)VK_NULL_HANDLE;
+    name_info.object = (u64)VK_NULL_HANDLE;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.tagName = 1;
     name_info.tagSize = 4;
@@ -291,7 +291,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerSetUtils) {
     vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
-    name_info.object = (uint64_t)memory.handle();
+    name_info.object = (u64)memory.handle();
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkDebugMarkerObjectTagInfoEXT-objectType-01493");
     vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
@@ -402,7 +402,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
-    name_info.objectHandle = (uint64_t)second_device.handle();
+    name_info.objectHandle = (u64)second_device.handle();
     name_info.pObjectName = object_name;
     m_errorMonitor->SetDesiredError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-07874");
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
@@ -437,7 +437,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    uint64_t bad_handle = (uint64_t)sampler.handle();
+    u64 bad_handle = (u64)sampler.handle();
     sampler.destroy();
     const char *object_name = "sampler_object";
 
@@ -561,14 +561,14 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     VkSwapchainKHR swapchain;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
-    uint32_t imageCount;
+    u32 imageCount;
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
     std::vector<VkImage> images(imageCount);
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
 
     {
         VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
-        name_info.object = (uint64_t)images[0];
+        name_info.object = (u64)images[0];
         name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
         std::string image_name = "swapchain [0]";
         name_info.pObjectName = image_name.c_str();
@@ -580,7 +580,7 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     {
         int tags[2] = {1, 2};
         VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
-        name_info.object = (uint64_t)images[0];
+        name_info.object = (u64)images[0];
         name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
         name_info.tagName = 1;
         name_info.tagSize = 2;

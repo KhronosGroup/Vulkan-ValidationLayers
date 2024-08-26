@@ -71,8 +71,7 @@ class HazardDetectFirstUse {
     const ResourceUsageRange &tag_range_;
 };
 
-AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
-                             const std::vector<SubpassDependencyGraphNode> &dependencies,
+AccessContext::AccessContext(u32 subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
     Reset();
     const auto &subpass_dep = dependencies[subpass];
@@ -255,7 +254,7 @@ void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncStageA
 }
 
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
-    for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
+    for (u32 subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
         auto &context = contexts[subpass_index];
         ApplyTrackbackStackAction barrier_action(context.GetDstExternalTrackBack().barriers);
         context.ResolveAccessRange(kFullRange, barrier_action, &access_state_map_, nullptr, false);

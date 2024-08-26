@@ -31,7 +31,7 @@ inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) n
 namespace std {
 template <>
 struct hash<VulkanTypedHandle> {
-    size_t operator()(VulkanTypedHandle obj) const noexcept { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
+    size_t operator()(VulkanTypedHandle obj) const noexcept { return hash<u64>()(obj.handle) ^ hash<u32>()(obj.type); }
 };
 }  // namespace std
 
@@ -39,15 +39,15 @@ namespace vvl {
 // inheriting from enable_shared_from_this<> adds a method, shared_from_this(), which
 // returns a shared_ptr version of the current object. It requires the object to
 // be created with std::make_shared<> and it MUST NOT be used from the constructor
-class StateObject: public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
+class StateObject : public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
   public:
     // Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
     // in a map keyed by VulkanTypedHandle. This also allows looking for specific
     // parent types without locking every weak_ptr.
     using NodeMap = unordered_map<VulkanTypedHandle, std::weak_ptr<StateObject>>;
-    using NodeList = small_vector<std::shared_ptr<StateObject>, 4, uint32_t>;
-    using IdType = uint32_t;
+    using NodeList = small_vector<std::shared_ptr<StateObject>, 4, u32>;
+    using IdType = u32;
 
     template <typename Handle>
     StateObject(Handle h, VulkanObjectType t) : TypedHandleWrapper(h, t), destroyed_(false), id_(0) {}
@@ -84,7 +84,7 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     static VulkanTypedHandle Handle(const StateObject *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
     static VulkanTypedHandle Handle(const std::shared_ptr<const StateObject> &node) { return Handle(node.get()); }
 
-    virtual const VulkanTypedHandle* InUse() const;
+    virtual const VulkanTypedHandle *InUse() const;
 
     virtual bool AddParent(StateObject *parent_node);
     virtual void RemoveParent(StateObject *parent_node);
@@ -115,6 +115,7 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     // hang around until its shared_ptr refcount goes to zero.
     std::atomic<bool> destroyed_;
     IdType id_;
+
   private:
     ReadLockGuard ReadLockTree() const { return ReadLockGuard(tree_lock_); }
     WriteLockGuard WriteLockTree() { return WriteLockGuard(tree_lock_); }
@@ -139,6 +140,6 @@ class RefcountedStateObject : public StateObject {
 
     void EndUse() { in_use_.fetch_sub(1); }
 
-    const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr; }
+    const VulkanTypedHandle *InUse() const override { return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr; }
 };
-} // namespace vvl
+}  // namespace vvl

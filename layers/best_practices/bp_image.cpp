@@ -55,11 +55,11 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     }
 
     if (VendorCheckEnabled(kBPVendorArm) && pCreateInfo->samples > kMaxEfficientSamplesArm) {
-        skip |= LogPerformanceWarning(
-            "BestPractices-Arm-vkCreateImage-too-large-sample-count", device, error_obj.location,
-            "%s Trying to create an image with %u samples. "
-            "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
-            VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
+        skip |=
+            LogPerformanceWarning("BestPractices-Arm-vkCreateImage-too-large-sample-count", device, error_obj.location,
+                                  "%s Trying to create an image with %u samples. "
+                                  "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
+                                  VendorSpecificTag(kBPVendorArm), static_cast<u32>(pCreateInfo->samples), kMaxEfficientSamplesArm);
     }
 
     if (VendorCheckEnabled(kBPVendorIMG) && pCreateInfo->samples > kMaxEfficientSamplesImg) {
@@ -68,7 +68,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
             "%s Trying to create an image with %u samples. "
             "The device may not have full support for true multisampling for images with more than %u samples. "
             "XT devices support up to 8 samples, XE up to 4 samples.",
-            VendorSpecificTag(kBPVendorIMG), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesImg);
+            VendorSpecificTag(kBPVendorIMG), static_cast<u32>(pCreateInfo->samples), kMaxEfficientSamplesImg);
     }
 
     if (VendorCheckEnabled(kBPVendorIMG) && (pCreateInfo->format == VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG ||
@@ -147,15 +147,15 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
-    const uint32_t base_array_layer = state->create_info.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
+    const u32 base_array_layer = state->create_info.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
 
-    const uint32_t max_layers = state->create_info.arrayLayers - base_array_layer;
-    const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
-    const uint32_t max_levels = state->create_info.mipLevels - subresource_range.baseMipLevel;
-    const uint32_t mip_levels = std::min(state->create_info.mipLevels, max_levels);
+    const u32 max_layers = state->create_info.arrayLayers - base_array_layer;
+    const u32 array_layers = std::min(subresource_range.layerCount, max_layers);
+    const u32 max_levels = state->create_info.mipLevels - subresource_range.baseMipLevel;
+    const u32 mip_levels = std::min(state->create_info.mipLevels, max_levels);
 
-    for (uint32_t layer = 0; layer < array_layers; layer++) {
-        for (uint32_t level = 0; level < mip_levels; level++) {
+    for (u32 layer = 0; layer < array_layers; layer++) {
+        for (u32 level = 0; level < mip_levels; level++) {
             QueueValidateImage(funcs, command, state, usage, layer + base_array_layer, level + subresource_range.baseMipLevel);
         }
     }
@@ -163,16 +163,16 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
-    const uint32_t max_layers = state->create_info.arrayLayers - subresource_layers.baseArrayLayer;
-    const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
+    const u32 max_layers = state->create_info.arrayLayers - subresource_layers.baseArrayLayer;
+    const u32 array_layers = std::min(subresource_layers.layerCount, max_layers);
 
-    for (uint32_t layer = 0; layer < array_layers; layer++) {
+    for (u32 layer = 0; layer < array_layers; layer++) {
         QueueValidateImage(funcs, command, state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
     }
 }
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
-                                       IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
+                                       IMAGE_SUBRESOURCE_USAGE_BP usage, u32 array_layer, u32 mip_level) {
     funcs.emplace_back([this, command, state, usage, array_layer, mip_level](
                            const ValidationStateTracker& vst, const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
         ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
@@ -181,7 +181,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 }
 
 void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
-                                               IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
+                                               IMAGE_SUBRESOURCE_USAGE_BP usage, u32 array_layer, u32 mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
     const Location loc(command);
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
@@ -254,7 +254,7 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
 }
 
 void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, Func command, bp_state::Image& state,
-                                         IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
+                                         IMAGE_SUBRESOURCE_USAGE_BP usage, u32 array_layer, u32 mip_level) {
     auto queue_family = qs.queue_family_index;
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
@@ -300,7 +300,7 @@ std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, cons
 }
 
 std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
-                                                            VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                            VkSwapchainKHR swapchain, u32 swapchain_index,
                                                             VkFormatFeatureFlags2 features) {
     return std::make_shared<bp_state::Image>(*this, handle, create_info, swapchain, swapchain_index, features);
 }

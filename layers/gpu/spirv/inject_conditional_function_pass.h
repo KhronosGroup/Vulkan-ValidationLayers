@@ -59,7 +59,7 @@ class InjectConditionalFunctionPass : public Pass {
     // A callback from the function injection logic.
     // Each pass creates a OpFunctionCall and returns its result id.
     // If |inst_it| is not null, it will update it to instruction post OpFunctionCall
-    virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
+    virtual u32 CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
 };
 
 }  // namespace spirv

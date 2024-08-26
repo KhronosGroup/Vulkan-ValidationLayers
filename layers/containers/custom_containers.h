@@ -40,6 +40,8 @@
 
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
 
+#include "utils/numerical_types.h"
+
 // namespace aliases to allow map and set implementations to easily be swapped out
 namespace vvl {
 
@@ -128,7 +130,7 @@ using concurrent_unordered_map = vku::concurrent_unordered_map<Key, T, BucketsLo
 //       MoveAssignable and MoveConstructable
 // NOTE: Unlike std::vector, iterators are invalidated by move assignment between small_vector objects effectively the
 //       "small string" allocation functions as an incompatible allocator.
-template <typename T, size_t N, typename SizeType = uint32_t>
+template <typename T, size_t N, typename SizeType = u32>
 class small_vector {
   public:
     using value_type = T;
@@ -436,7 +438,7 @@ class small_vector {
         BackingStore() {}
         ~BackingStore() {}
 
-        uint8_t data[sizeof(value_type)];
+        u8 data[sizeof(value_type)];
         value_type object;
     };
     size_type size_;
@@ -1097,13 +1099,13 @@ constexpr T MinTypeValue([[maybe_unused]] T) {
 }
 
 // Typesafe UINT32_MAX
-constexpr auto kU32Max = std::numeric_limits<uint32_t>::max();
+constexpr auto kU32Max = std::numeric_limits<u32>::max();
 // Typesafe UINT64_MAX
-constexpr auto kU64Max = std::numeric_limits<uint64_t>::max();
+constexpr auto kU64Max = std::numeric_limits<u64>::max();
 // Typesafe INT32_MAX
-constexpr auto kI32Max = std::numeric_limits<int32_t>::max();
+constexpr auto kI32Max = std::numeric_limits<i32>::max();
 // Typesafe INT64_MAX
-constexpr auto kI64Max = std::numeric_limits<int64_t>::max();
+constexpr auto kI64Max = std::numeric_limits<i64>::max();
 
 // Descriptive names to indicate uninitialized/invalid unsigned index values
 constexpr auto kNoIndex32 = kU32Max;

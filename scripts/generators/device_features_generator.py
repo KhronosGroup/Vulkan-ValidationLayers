@@ -192,7 +192,7 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
                 // Some older extensions were made without features, but equivalent features were
                 // added to the core spec when they were promoted.  When those extensions are
                 // enabled, treat validation rules as if the corresponding feature is enabled.
-                for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+                for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                     vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
             ''')
         for ext, features in sorted(extension_feature_alises.items()):

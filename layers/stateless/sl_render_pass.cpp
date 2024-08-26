@@ -20,9 +20,8 @@
 #include "utils/convert_utils.h"
 #include "error_message/error_strings.h"
 
-bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                       uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
-                                                       const Location &loc) const {
+bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, u32 subpass,
+                                                       VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const {
     bool skip = false;
     // make sure we consider all of the expanded and un-expanded graphics bits to be valid
     const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
@@ -34,7 +33,7 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const Vk
         (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
         ~kExcludeStages;
 
-    const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
+    const auto IsPipeline = [pCreateInfo](u32 subpass, const VkPipelineBindPoint stage) {
         if (subpass == VK_SUBPASS_EXTERNAL || subpass >= pCreateInfo->subpassCount) {
             return false;
         } else {
@@ -57,7 +56,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    uint32_t max_color_attachments = device_limits.maxColorAttachments;
+    u32 max_color_attachments = device_limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
     const char *vuid = nullptr;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -67,7 +66,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
     android_external_format_resolve_feature = enabled_features.externalFormatResolve;
 #endif
 
-    for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->attachmentCount; ++i) {
         const Location &attachment_loc = create_info_loc.dot(Field::pAttachments, i);
 
         // if not null, also confirms rp2 is being used
@@ -317,7 +316,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         }
     }
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->subpassCount; ++i) {
         if (pCreateInfo->pSubpasses[i].colorAttachmentCount > max_color_attachments) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                            : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
@@ -326,7 +325,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
         }
     }
 
-    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const auto &dependency = pCreateInfo->pDependencies[i];
 
         // Need to check first so layer doesn't segfault from out of bound array access
@@ -385,10 +384,10 @@ void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRend
     auto &renderpass_state = renderpasses_states[renderPass];
     lock.unlock();
 
-    for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+    for (u32 subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
         bool uses_color = false;
 
-        for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i) {
+        for (u32 i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i) {
             if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
         }
 
@@ -442,19 +441,19 @@ bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer comm
                          phys_dev_ext_props.renderpass_striped_props.maxRenderPassStripes);
     }
 
-    const uint32_t width_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.width;
-    const uint32_t height_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.height;
-    const uint32_t last_stripe_index = (rp_stripe_begin->stripeInfoCount - 1);
-    uint32_t total_stripe_area = 0;
+    const u32 width_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.width;
+    const u32 height_granularity = phys_dev_ext_props.renderpass_striped_props.renderPassStripeGranularity.height;
+    const u32 last_stripe_index = (rp_stripe_begin->stripeInfoCount - 1);
+    u32 total_stripe_area = 0;
     bool has_overlapping_stripes = false;
 
-    for (uint32_t i = 0; i < rp_stripe_begin->stripeInfoCount; ++i) {
+    for (u32 i = 0; i < rp_stripe_begin->stripeInfoCount; ++i) {
         const Location &stripe_info_loc = loc.pNext(Struct::VkRenderPassStripeBeginInfoARM, Field::pStripeInfos, i);
         const VkRect2D stripe_area = rp_stripe_begin->pStripeInfos[i].stripeArea;
         total_stripe_area += (stripe_area.extent.width * stripe_area.extent.height);
 
         // Check overlapping stripes, report only first overlapping stripe info.
-        for (uint32_t index = i + 1; (!has_overlapping_stripes && i != last_stripe_index && index <= last_stripe_index); ++index) {
+        for (u32 index = i + 1; (!has_overlapping_stripes && i != last_stripe_index && index <= last_stripe_index); ++index) {
             const auto rect = rp_stripe_begin->pStripeInfos[index].stripeArea;
             has_overlapping_stripes =
                 RangesIntersect(rect.offset.x, rect.extent.width, stripe_area.offset.x, stripe_area.extent.width);
@@ -502,7 +501,7 @@ bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer comm
     }
 
     // Check render area coverage if there is no overlapping stripe.
-    const uint32_t total_render_area = render_area.extent.width * render_area.extent.height;
+    const u32 total_render_area = render_area.extent.width * render_area.extent.height;
     if (!has_overlapping_stripes && (total_stripe_area != total_render_area)) {
         const std::string vuid = (loc.function == Func::vkCmdBeginRenderPass) ? "VUID-VkRenderPassBeginInfo-pNext-09539"
                                                                               : "VUID-VkRenderingInfo-pNext-09535";
@@ -545,7 +544,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuf
 
 static bool UniqueRenderingInfoImageViews(const VkRenderingInfo &rendering_info, VkImageView image_view) {
     bool unique_views = true;
-    for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+    for (u32 i = 0; i < rendering_info.colorAttachmentCount; ++i) {
         if (rendering_info.pColorAttachments[i].imageView == image_view) {
             unique_views = false;
         }
@@ -656,7 +655,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
 
     skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, pRenderingInfo->pNext, pRenderingInfo->renderArea, rendering_info_loc);
 
-    for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
+    for (u32 j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
         if (pRenderingInfo->pColorAttachments[j].imageView == VK_NULL_HANDLE) {
             continue;
         }
@@ -828,7 +827,7 @@ bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
             "(%" PRIu32 ") must be a power of two.", rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width);
     }
 
-    const uint32_t max_frs_attach_texel_width =
+    const u32 max_frs_attach_texel_width =
         phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width > max_frs_attach_texel_width) {
         skip |= LogError(
@@ -841,7 +840,7 @@ bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
             rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width, max_frs_attach_texel_width);
     }
 
-    const uint32_t min_frs_attach_texel_width =
+    const u32 min_frs_attach_texel_width =
         phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width < min_frs_attach_texel_width) {
         skip |= LogError(
@@ -862,7 +861,7 @@ bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
             "(%" PRIu32 ") must be a power of two.", rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height);
     }
 
-    const uint32_t max_frs_attach_texel_height =
+    const u32 max_frs_attach_texel_height =
         phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height > max_frs_attach_texel_height) {
         skip |= LogError(
@@ -875,7 +874,7 @@ bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
             rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height, max_frs_attach_texel_height);
     }
 
-    const uint32_t min_frs_attach_texel_height =
+    const u32 min_frs_attach_texel_height =
         phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height;
     if (rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height < min_frs_attach_texel_height) {
         skip |= LogError(
@@ -888,7 +887,7 @@ bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
             rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height, min_frs_attach_texel_height);
     }
 
-    const uint32_t max_frs_attach_texel_aspect_ratio =
+    const u32 max_frs_attach_texel_aspect_ratio =
         phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
     if ((rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.width /
          rendering_fsr_attachment_info.shadingRateAttachmentTexelSize.height) > max_frs_attach_texel_aspect_ratio) {

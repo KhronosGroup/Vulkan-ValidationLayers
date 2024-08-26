@@ -24,6 +24,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "../utils/numerical_types.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -37,8 +39,8 @@ class VkTestFramework : public ::testing::Test {
     static void Finish();
 
     virtual bool GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type,
-                           const char *pshader, std::vector<uint32_t> &spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
-    virtual bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<uint32_t> &spv);
+                           const char *pshader, std::vector<u32> &spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
+    virtual bool ASMtoSPV(const spv_target_env target_env, const u32 options, const char *pasm, std::vector<u32> &spv);
 
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);

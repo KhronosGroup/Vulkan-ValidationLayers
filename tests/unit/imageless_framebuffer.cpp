@@ -29,8 +29,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
 
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat attachmentFormats[2] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
     VkFormat framebufferAttachmentFormats[3] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_UNORM};
 
@@ -316,8 +316,8 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Create a renderPass with a single attachment
@@ -369,8 +369,8 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
     InitRenderTarget();
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Create a renderPass with a single attachment
@@ -462,8 +462,8 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat colorAndInputAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
     VkFormat depthStencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
@@ -566,12 +566,12 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat colorAndInputAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
     VkFormat depthStencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-    uint32_t viewMask = 0x3u;
+    u32 viewMask = 0x3u;
     VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = vku::InitStructHelper();
     renderPassMultiviewCreateInfo.subpassCount = 1;
     renderPassMultiviewCreateInfo.pViewMasks = &viewMask;
@@ -677,8 +677,8 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
 
     RenderPass2SingleSubpass rp(*this);
@@ -915,8 +915,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
 
     bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    uint32_t attachmentWidth = 512;
-    uint32_t attachmentHeight = 512;
+    u32 attachmentWidth = 512;
+    u32 attachmentHeight = 512;
     VkFormat attachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};
     VkFormat framebufferAttachmentFormats[1] = {VK_FORMAT_R8G8B8A8_UNORM};
 
@@ -1099,8 +1099,8 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t attachment_width = 512;
-    uint32_t attachment_height = 512;
+    u32 attachment_width = 512;
+    u32 attachment_height = 512;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     // Create a renderPass with a single attachment

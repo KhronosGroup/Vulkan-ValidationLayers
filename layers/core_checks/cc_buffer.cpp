@@ -302,7 +302,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
     auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
     if (external_memory_info && external_memory_info->handleTypes) {
-        const uint32_t any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
+        const u32 any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
         VkPhysicalDeviceExternalBufferInfo external_buffer_info = vku::InitStructHelper();
         external_buffer_info.flags = pCreateInfo->flags;
         // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
@@ -464,7 +464,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 }
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                              VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const {
+                                              VkDeviceSize size, u32 data, const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto buffer_state = Get<vvl::Buffer>(dstBuffer);

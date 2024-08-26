@@ -79,7 +79,7 @@ bool Buffer::CompareCreateInfo(const Buffer &other) const {
         if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
             valid_queue_family = false;
         } else {
-            for (uint32_t i = 0; i < create_info.queueFamilyIndexCount; i++) {
+            for (u32 i = 0; i < create_info.queueFamilyIndexCount; i++) {
                 if (create_info.pQueueFamilyIndices[i] != other.create_info.pQueueFamilyIndices[i]) {
                     valid_queue_family = false;
                     break;

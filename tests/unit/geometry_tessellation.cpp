@@ -394,7 +394,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
+    for (u32 overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -407,17 +407,17 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
             "#version 450\n"
             "\n";
         // Input components
-        const uint32_t maxTescInComp = m_device->phy().limits_.maxTessellationControlPerVertexInputComponents + overflow;
-        const uint32_t numInVec4 = maxTescInComp / 4;
-        uint32_t inLocation = 0;
+        const u32 maxTescInComp = m_device->phy().limits_.maxTessellationControlPerVertexInputComponents + overflow;
+        const u32 numInVec4 = maxTescInComp / 4;
+        u32 inLocation = 0;
         if (overflow == 2) {
             tcsSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
         } else if (overflow == 1) {
-            for (uint32_t i = 0; i < numInVec4; i++) {
+            for (u32 i = 0; i < numInVec4; i++) {
                 tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
                 inLocation += 1;
             }
-            const uint32_t inRemainder = maxTescInComp % 4;
+            const u32 inRemainder = maxTescInComp % 4;
             if (inRemainder != 0) {
                 if (inRemainder == 1) {
                     tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
@@ -430,17 +430,17 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
         }
 
         // Output components
-        const uint32_t maxTescOutComp = m_device->phy().limits_.maxTessellationControlPerVertexOutputComponents + overflow;
-        const uint32_t numOutVec4 = maxTescOutComp / 4;
-        uint32_t outLocation = 0;
+        const u32 maxTescOutComp = m_device->phy().limits_.maxTessellationControlPerVertexOutputComponents + overflow;
+        const u32 numOutVec4 = maxTescOutComp / 4;
+        u32 outLocation = 0;
         if (overflow == 2) {
             tcsSourceStr += "layout(location=" + std::to_string(numOutVec4 + 1) + ") out vec4 vnOut[3];\n";
         } else if (overflow == 1) {
-            for (uint32_t i = 0; i < numOutVec4; i++) {
+            for (u32 i = 0; i < numOutVec4; i++) {
                 tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out[3];\n";
                 outLocation += 1;
             }
-            const uint32_t outRemainder = maxTescOutComp % 4;
+            const u32 outRemainder = maxTescOutComp % 4;
             if (outRemainder != 0) {
                 if (outRemainder == 1) {
                     tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut[3];\n";
@@ -497,7 +497,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
+    for (u32 overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -512,17 +512,17 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
             "layout (triangles) in;\n"
             "\n";
         // Input components
-        const uint32_t maxTeseInComp = m_device->phy().limits_.maxTessellationEvaluationInputComponents + overflow;
-        const uint32_t numInVec4 = maxTeseInComp / 4;
-        uint32_t inLocation = 0;
+        const u32 maxTeseInComp = m_device->phy().limits_.maxTessellationEvaluationInputComponents + overflow;
+        const u32 numInVec4 = maxTeseInComp / 4;
+        u32 inLocation = 0;
         if (overflow == 2) {
             tesSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
         } else if (overflow == 1) {
-            for (uint32_t i = 0; i < numInVec4; i++) {
+            for (u32 i = 0; i < numInVec4; i++) {
                 tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
                 inLocation += 1;
             }
-            const uint32_t inRemainder = maxTeseInComp % 4;
+            const u32 inRemainder = maxTeseInComp % 4;
             if (inRemainder != 0) {
                 if (inRemainder == 1) {
                     tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
@@ -535,17 +535,17 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
         }
 
         // Output components
-        const uint32_t maxTeseOutComp = m_device->phy().limits_.maxTessellationEvaluationOutputComponents + overflow;
-        const uint32_t numOutVec4 = maxTeseOutComp / 4;
-        uint32_t outLocation = 0;
+        const u32 maxTeseOutComp = m_device->phy().limits_.maxTessellationEvaluationOutputComponents + overflow;
+        const u32 numOutVec4 = maxTeseOutComp / 4;
+        u32 outLocation = 0;
         if (overflow == 2) {
             tesSourceStr += "layout(location=" + std::to_string(numOutVec4 + 1) + ") out vec4 vnOut;\n";
         } else if (overflow == 1) {
-            for (uint32_t i = 0; i < numOutVec4; i++) {
+            for (u32 i = 0; i < numOutVec4; i++) {
                 tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
                 outLocation += 1;
             }
-            const uint32_t outRemainder = maxTeseOutComp % 4;
+            const u32 outRemainder = maxTeseOutComp % 4;
             if (outRemainder != 0) {
                 if (outRemainder == 1) {
                     tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
@@ -601,7 +601,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
     InitRenderTarget();
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
+    for (u32 overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -616,17 +616,17 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
             "layout(invocations=1) in;\n";
 
         // Input components
-        const uint32_t maxGeomInComp = m_device->phy().limits_.maxGeometryInputComponents + overflow;
-        const uint32_t numInVec4 = maxGeomInComp / 4;
-        uint32_t inLocation = 0;
+        const u32 maxGeomInComp = m_device->phy().limits_.maxGeometryInputComponents + overflow;
+        const u32 numInVec4 = maxGeomInComp / 4;
+        u32 inLocation = 0;
         if (overflow == 2) {
             gsSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
         } else {
-            for (uint32_t i = 0; i < numInVec4; i++) {
+            for (u32 i = 0; i < numInVec4; i++) {
                 gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
                 inLocation += 1;
             }
-            const uint32_t inRemainder = maxGeomInComp % 4;
+            const u32 inRemainder = maxGeomInComp % 4;
             if (inRemainder != 0) {
                 if (inRemainder == 1) {
                     gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
@@ -639,17 +639,17 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
         }
 
         // Output components
-        const uint32_t maxGeomOutComp = m_device->phy().limits_.maxGeometryOutputComponents + overflow;
-        const uint32_t numOutVec4 = maxGeomOutComp / 4;
-        uint32_t outLocation = 0;
+        const u32 maxGeomOutComp = m_device->phy().limits_.maxGeometryOutputComponents + overflow;
+        const u32 numOutVec4 = maxGeomOutComp / 4;
+        u32 outLocation = 0;
         if (overflow == 2) {
             gsSourceStr += "layout(location=" + std::to_string(numOutVec4) + ") out vec4 vnOut;\n";
         } else if (overflow == 1) {
-            for (uint32_t i = 0; i < numOutVec4; i++) {
+            for (u32 i = 0; i < numOutVec4; i++) {
                 gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
                 outLocation += 1;
             }
-            const uint32_t outRemainder = maxGeomOutComp % 4;
+            const u32 outRemainder = maxGeomOutComp % 4;
             if (outRemainder != 0) {
                 if (outRemainder == 1) {
                     gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
@@ -1382,7 +1382,7 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
         "OpExecutionMode %main OutputVertices 3",
     };
 
-    for (uint32_t i = 0; i < 4; ++i) {
+    for (u32 i = 0; i < 4; ++i) {
         std::string tesc_source = R"(
                OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"

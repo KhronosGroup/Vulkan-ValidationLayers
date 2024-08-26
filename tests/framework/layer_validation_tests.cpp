@@ -17,7 +17,7 @@
 #endif
 
 // Global list of sType,size identifiers
-std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+std::vector<std::pair<u32, u32>> custom_stype_info{};
 
 VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
     constexpr std::array depth_formats = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
@@ -48,7 +48,7 @@ VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy) {
 
 VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
-    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+    for (u32 i = 0; i < size(ds_formats); ++i) {
         VkFormatProperties format_props;
         vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
 
@@ -352,7 +352,7 @@ VkLayerTest::VkLayerTest() {
     // Find out what version the instance supports and record the default target instance
     auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
     if (enumerateInstanceVersion) {
-        uint32_t instance_api_version;
+        u32 instance_api_version;
         enumerateInstanceVersion(&instance_api_version);
         m_instance_api_version = instance_api_version;
     } else {
@@ -649,9 +649,9 @@ class LogcatPrinter : public ::testing::EmptyTestEventListener {
     };
 };
 
-static int32_t processInput(struct android_app *app, AInputEvent *event) { return 0; }
+static i32 processInput(struct android_app *app, AInputEvent *event) { return 0; }
 
-static void processCommand(struct android_app *app, int32_t cmd) {
+static void processCommand(struct android_app *app, i32 cmd) {
     switch (cmd) {
         case APP_CMD_INIT_WINDOW: {
             if (app->window) {

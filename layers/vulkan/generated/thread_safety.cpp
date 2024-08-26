@@ -331,7 +331,7 @@ void ThreadSafety::PreCallRecordResetFences(VkDevice device, uint32_t fenceCount
     StartReadObjectParentInstance(device, record_obj.location);
 
     if (pFences) {
-        for (uint32_t index = 0; index < fenceCount; index++) {
+        for (u32 index = 0; index < fenceCount; index++) {
             StartWriteObject(pFences[index], record_obj.location);
         }
     }
@@ -343,7 +343,7 @@ void ThreadSafety::PostCallRecordResetFences(VkDevice device, uint32_t fenceCoun
     FinishReadObjectParentInstance(device, record_obj.location);
 
     if (pFences) {
-        for (uint32_t index = 0; index < fenceCount; index++) {
+        for (u32 index = 0; index < fenceCount; index++) {
             FinishWriteObject(pFences[index], record_obj.location);
         }
     }
@@ -365,7 +365,7 @@ void ThreadSafety::PreCallRecordWaitForFences(VkDevice device, uint32_t fenceCou
     StartReadObjectParentInstance(device, record_obj.location);
 
     if (pFences) {
-        for (uint32_t index = 0; index < fenceCount; index++) {
+        for (u32 index = 0; index < fenceCount; index++) {
             StartReadObject(pFences[index], record_obj.location);
         }
     }
@@ -376,7 +376,7 @@ void ThreadSafety::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCo
     FinishReadObjectParentInstance(device, record_obj.location);
 
     if (pFences) {
-        for (uint32_t index = 0; index < fenceCount; index++) {
+        for (u32 index = 0; index < fenceCount; index++) {
             FinishReadObject(pFences[index], record_obj.location);
         }
     }
@@ -730,7 +730,7 @@ void ThreadSafety::PreCallRecordMergePipelineCaches(VkDevice device, VkPipelineC
     StartWriteObject(dstCache, record_obj.location);
 
     if (pSrcCaches) {
-        for (uint32_t index = 0; index < srcCacheCount; index++) {
+        for (u32 index = 0; index < srcCacheCount; index++) {
             StartReadObject(pSrcCaches[index], record_obj.location);
         }
     }
@@ -743,7 +743,7 @@ void ThreadSafety::PostCallRecordMergePipelineCaches(VkDevice device, VkPipeline
     FinishWriteObject(dstCache, record_obj.location);
 
     if (pSrcCaches) {
-        for (uint32_t index = 0; index < srcCacheCount; index++) {
+        for (u32 index = 0; index < srcCacheCount; index++) {
             FinishReadObject(pSrcCaches[index], record_obj.location);
         }
     }
@@ -765,7 +765,7 @@ void ThreadSafety::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipe
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(pipelineCache, record_obj.location);
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index]);
         }
@@ -787,7 +787,7 @@ void ThreadSafety::PostCallRecordCreateComputePipelines(VkDevice device, VkPipel
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(pipelineCache, record_obj.location);
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index]);
         }
@@ -1141,7 +1141,7 @@ void ThreadSafety::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
     StartReadObject(layout, record_obj.location);
 
     if (pDescriptorSets) {
-        for (uint32_t index = 0; index < descriptorSetCount; index++) {
+        for (u32 index = 0; index < descriptorSetCount; index++) {
             StartReadObject(pDescriptorSets[index], record_obj.location);
         }
     }
@@ -1156,7 +1156,7 @@ void ThreadSafety::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBu
     FinishReadObject(layout, record_obj.location);
 
     if (pDescriptorSets) {
-        for (uint32_t index = 0; index < descriptorSetCount; index++) {
+        for (u32 index = 0; index < descriptorSetCount; index++) {
             FinishReadObject(pDescriptorSets[index], record_obj.location);
         }
     }
@@ -1183,7 +1183,7 @@ void ThreadSafety::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuff
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pBuffers) {
-        for (uint32_t index = 0; index < bindingCount; index++) {
+        for (u32 index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], record_obj.location);
         }
     }
@@ -1196,7 +1196,7 @@ void ThreadSafety::PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuf
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pBuffers) {
-        for (uint32_t index = 0; index < bindingCount; index++) {
+        for (u32 index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], record_obj.location);
         }
     }
@@ -1500,7 +1500,7 @@ void ThreadSafety::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pEvents) {
-        for (uint32_t index = 0; index < eventCount; index++) {
+        for (u32 index = 0; index < eventCount; index++) {
             StartReadObject(pEvents[index], record_obj.location);
         }
     }
@@ -1516,7 +1516,7 @@ void ThreadSafety::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, ui
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pEvents) {
-        for (uint32_t index = 0; index < eventCount; index++) {
+        for (u32 index = 0; index < eventCount; index++) {
             FinishReadObject(pEvents[index], record_obj.location);
         }
     }
@@ -1672,7 +1672,7 @@ void ThreadSafety::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pCommandBuffers) {
-        for (uint32_t index = 0; index < commandBufferCount; index++) {
+        for (u32 index = 0; index < commandBufferCount; index++) {
             StartReadObject(pCommandBuffers[index], record_obj.location);
         }
     }
@@ -1684,7 +1684,7 @@ void ThreadSafety::PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pCommandBuffers) {
-        for (uint32_t index = 0; index < commandBufferCount; index++) {
+        for (u32 index = 0; index < commandBufferCount; index++) {
             FinishReadObject(pCommandBuffers[index], record_obj.location);
         }
     }
@@ -2155,7 +2155,7 @@ void ThreadSafety::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pEvents) {
-        for (uint32_t index = 0; index < eventCount; index++) {
+        for (u32 index = 0; index < eventCount; index++) {
             StartReadObject(pEvents[index], record_obj.location);
         }
     }
@@ -2167,7 +2167,7 @@ void ThreadSafety::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, u
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pEvents) {
-        for (uint32_t index = 0; index < eventCount; index++) {
+        for (u32 index = 0; index < eventCount; index++) {
             FinishReadObject(pEvents[index], record_obj.location);
         }
     }
@@ -2381,7 +2381,7 @@ void ThreadSafety::PreCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pBuffers) {
-        for (uint32_t index = 0; index < bindingCount; index++) {
+        for (u32 index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], record_obj.location);
         }
     }
@@ -2395,7 +2395,7 @@ void ThreadSafety::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBu
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pBuffers) {
-        for (uint32_t index = 0; index < bindingCount; index++) {
+        for (u32 index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], record_obj.location);
         }
     }
@@ -2768,14 +2768,14 @@ void ThreadSafety::PreCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint3
                                                           const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
     if (pCreateInfos) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
+        for (u32 index = 0; index < swapchainCount; index++) {
             StartWriteObjectParentInstance(pCreateInfos[index].surface, record_obj.location);
             StartWriteObject(pCreateInfos[index].oldSwapchain, record_obj.location);
         }
     }
 
     if (pSwapchains) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
+        for (u32 index = 0; index < swapchainCount; index++) {
             StartReadObject(pSwapchains[index], record_obj.location);
         }
     }
@@ -2788,14 +2788,14 @@ void ThreadSafety::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint
                                                            const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     if (pCreateInfos) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
+        for (u32 index = 0; index < swapchainCount; index++) {
             FinishWriteObjectParentInstance(pCreateInfos[index].surface, record_obj.location);
             FinishWriteObject(pCreateInfos[index].oldSwapchain, record_obj.location);
         }
     }
     if (record_obj.result == VK_SUCCESS) {
         if (pSwapchains) {
-            for (uint32_t index = 0; index < swapchainCount; index++) {
+            for (u32 index = 0; index < swapchainCount; index++) {
                 CreateObject(pSwapchains[index]);
             }
         }
@@ -4291,7 +4291,7 @@ void ThreadSafety::PreCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pBuffers) {
-        for (uint32_t index = 0; index < bindingCount; index++) {
+        for (u32 index = 0; index < bindingCount; index++) {
             StartReadObject(pBuffers[index], record_obj.location);
         }
     }
@@ -4305,7 +4305,7 @@ void ThreadSafety::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuf
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pBuffers) {
-        for (uint32_t index = 0; index < bindingCount; index++) {
+        for (u32 index = 0; index < bindingCount; index++) {
             FinishReadObject(pBuffers[index], record_obj.location);
         }
     }
@@ -4319,7 +4319,7 @@ void ThreadSafety::PreCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pCounterBuffers) {
-        for (uint32_t index = 0; index < counterBufferCount; index++) {
+        for (u32 index = 0; index < counterBufferCount; index++) {
             StartReadObject(pCounterBuffers[index], record_obj.location);
         }
     }
@@ -4333,7 +4333,7 @@ void ThreadSafety::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer co
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pCounterBuffers) {
-        for (uint32_t index = 0; index < counterBufferCount; index++) {
+        for (u32 index = 0; index < counterBufferCount; index++) {
             FinishReadObject(pCounterBuffers[index], record_obj.location);
         }
     }
@@ -4347,7 +4347,7 @@ void ThreadSafety::PreCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer comma
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pCounterBuffers) {
-        for (uint32_t index = 0; index < counterBufferCount; index++) {
+        for (u32 index = 0; index < counterBufferCount; index++) {
             StartReadObject(pCounterBuffers[index], record_obj.location);
         }
     }
@@ -4361,7 +4361,7 @@ void ThreadSafety::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer comm
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pCounterBuffers) {
-        for (uint32_t index = 0; index < counterBufferCount; index++) {
+        for (u32 index = 0; index < counterBufferCount; index++) {
             FinishReadObject(pCounterBuffers[index], record_obj.location);
         }
     }
@@ -4790,7 +4790,7 @@ void ThreadSafety::PreCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swap
     StartReadObjectParentInstance(device, record_obj.location);
 
     if (pSwapchains) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
+        for (u32 index = 0; index < swapchainCount; index++) {
             StartReadObject(pSwapchains[index], record_obj.location);
         }
     }
@@ -4801,7 +4801,7 @@ void ThreadSafety::PostCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swa
     FinishReadObjectParentInstance(device, record_obj.location);
 
     if (pSwapchains) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
+        for (u32 index = 0; index < swapchainCount; index++) {
             FinishReadObject(pSwapchains[index], record_obj.location);
         }
     }
@@ -5000,7 +5000,7 @@ void ThreadSafety::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice devi
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(pipelineCache, record_obj.location);
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index]);
         }
@@ -5145,7 +5145,7 @@ void ThreadSafety::PreCallRecordMergeValidationCachesEXT(VkDevice device, VkVali
     StartWriteObject(dstCache, record_obj.location);
 
     if (pSrcCaches) {
-        for (uint32_t index = 0; index < srcCacheCount; index++) {
+        for (u32 index = 0; index < srcCacheCount; index++) {
             StartReadObject(pSrcCaches[index], record_obj.location);
         }
     }
@@ -5158,7 +5158,7 @@ void ThreadSafety::PostCallRecordMergeValidationCachesEXT(VkDevice device, VkVal
     FinishWriteObject(dstCache, record_obj.location);
 
     if (pSrcCaches) {
-        for (uint32_t index = 0; index < srcCacheCount; index++) {
+        for (u32 index = 0; index < srcCacheCount; index++) {
             FinishReadObject(pSrcCaches[index], record_obj.location);
         }
     }
@@ -5378,7 +5378,7 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, Vk
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishReadObject(pipelineCache, record_obj.location);
     if (pPipelines) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
             CreateObject(pPipelines[index]);
         }
@@ -5431,7 +5431,7 @@ void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(VkCom
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+        for (u32 index = 0; index < accelerationStructureCount; index++) {
             StartReadObject(pAccelerationStructures[index], record_obj.location);
         }
     }
@@ -5445,7 +5445,7 @@ void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+        for (u32 index = 0; index < accelerationStructureCount; index++) {
             FinishReadObject(pAccelerationStructures[index], record_obj.location);
         }
     }
@@ -6914,7 +6914,7 @@ void ThreadSafety::PreCallRecordWriteMicromapsPropertiesEXT(VkDevice device, uin
     StartReadObjectParentInstance(device, record_obj.location);
 
     if (pMicromaps) {
-        for (uint32_t index = 0; index < micromapCount; index++) {
+        for (u32 index = 0; index < micromapCount; index++) {
             StartReadObject(pMicromaps[index], record_obj.location);
         }
     }
@@ -6927,7 +6927,7 @@ void ThreadSafety::PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, ui
     FinishReadObjectParentInstance(device, record_obj.location);
 
     if (pMicromaps) {
-        for (uint32_t index = 0; index < micromapCount; index++) {
+        for (u32 index = 0; index < micromapCount; index++) {
             FinishReadObject(pMicromaps[index], record_obj.location);
         }
     }
@@ -6980,7 +6980,7 @@ void ThreadSafety::PreCallRecordCmdWriteMicromapsPropertiesEXT(VkCommandBuffer c
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pMicromaps) {
-        for (uint32_t index = 0; index < micromapCount; index++) {
+        for (u32 index = 0; index < micromapCount; index++) {
             StartReadObject(pMicromaps[index], record_obj.location);
         }
     }
@@ -6995,7 +6995,7 @@ void ThreadSafety::PostCallRecordCmdWriteMicromapsPropertiesEXT(VkCommandBuffer 
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pMicromaps) {
-        for (uint32_t index = 0; index < micromapCount; index++) {
+        for (u32 index = 0; index < micromapCount; index++) {
             FinishReadObject(pMicromaps[index], record_obj.location);
         }
     }
@@ -7709,7 +7709,7 @@ void ThreadSafety::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t crea
                                                   const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
     if (pShaders) {
-        for (uint32_t index = 0; index < createInfoCount; index++) {
+        for (u32 index = 0; index < createInfoCount; index++) {
             if (!pShaders[index]) continue;
             CreateObject(pShaders[index]);
         }
@@ -7749,7 +7749,7 @@ void ThreadSafety::PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pShaders) {
-        for (uint32_t index = 0; index < stageCount; index++) {
+        for (u32 index = 0; index < stageCount; index++) {
             StartReadObject(pShaders[index], record_obj.location);
         }
     }
@@ -7762,7 +7762,7 @@ void ThreadSafety::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pShaders) {
-        for (uint32_t index = 0; index < stageCount; index++) {
+        for (u32 index = 0; index < stageCount; index++) {
             FinishReadObject(pShaders[index], record_obj.location);
         }
     }
@@ -8016,7 +8016,7 @@ void ThreadSafety::PreCallRecordWriteAccelerationStructuresPropertiesKHR(VkDevic
     StartReadObjectParentInstance(device, record_obj.location);
 
     if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+        for (u32 index = 0; index < accelerationStructureCount; index++) {
             StartReadObject(pAccelerationStructures[index], record_obj.location);
         }
     }
@@ -8029,7 +8029,7 @@ void ThreadSafety::PostCallRecordWriteAccelerationStructuresPropertiesKHR(VkDevi
     FinishReadObjectParentInstance(device, record_obj.location);
 
     if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+        for (u32 index = 0; index < accelerationStructureCount; index++) {
             FinishReadObject(pAccelerationStructures[index], record_obj.location);
         }
     }
@@ -8095,7 +8095,7 @@ void ThreadSafety::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     StartWriteObject(commandBuffer, record_obj.location);
 
     if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+        for (u32 index = 0; index < accelerationStructureCount; index++) {
             StartReadObject(pAccelerationStructures[index], record_obj.location);
         }
     }
@@ -8109,7 +8109,7 @@ void ThreadSafety::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     FinishWriteObject(commandBuffer, record_obj.location);
 
     if (pAccelerationStructures) {
-        for (uint32_t index = 0; index < accelerationStructureCount; index++) {
+        for (u32 index = 0; index < accelerationStructureCount; index++) {
             FinishReadObject(pAccelerationStructures[index], record_obj.location);
         }
     }

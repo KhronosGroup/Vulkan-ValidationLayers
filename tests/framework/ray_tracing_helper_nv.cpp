@@ -212,14 +212,14 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     ibo->init(device, 1024, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, alloc_pnext);
 
     constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    constexpr std::array<uint32_t, 3> indicies = {{0, 1, 2}};
+    constexpr std::array<u32, 3> indicies = {{0, 1, 2}};
 
-    uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo->memory().map();
-    std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    u8 *mapped_vbo_buffer_data = (u8 *)vbo->memory().map();
+    std::memcpy(mapped_vbo_buffer_data + offset, (u8 *)vertices.data(), sizeof(float) * vertices.size());
     vbo->memory().unmap();
 
-    uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo->memory().map();
-    std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    u8 *mapped_ibo_buffer_data = (u8 *)ibo->memory().map();
+    std::memcpy(mapped_ibo_buffer_data + offset, (u8 *)indicies.data(), sizeof(u32) * indicies.size());
     ibo->memory().unmap();
 
     *geometry = {};

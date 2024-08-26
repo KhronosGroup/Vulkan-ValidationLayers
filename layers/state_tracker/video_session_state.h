@@ -87,12 +87,12 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
     VkExtent2D GetMaxCodingBlockSize() const {
         switch (profile_.base.videoCodecOperation) {
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
-                const uint32_t mb_size = 16;
+                const u32 mb_size = 16;
                 return {mb_size, mb_size};
             }
 
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
-                uint32_t max_ctb_size = 16 * static_cast<uint32_t>(log2(capabilities_.encode_h265.ctbSizes));
+                u32 max_ctb_size = 16 * static_cast<u32>(log2(capabilities_.encode_h265.ctbSizes));
                 return {max_ctb_size, max_ctb_size};
             }
 
@@ -234,7 +234,7 @@ class VideoPictureResource {
   public:
     std::shared_ptr<const ImageView> image_view_state;
     std::shared_ptr<const Image> image_state;
-    uint32_t base_array_layer;
+    u32 base_array_layer;
     VkImageSubresourceRange range;
     VkOffset2D coded_offset;
     VkExtent2D coded_extent;
@@ -272,11 +272,11 @@ class VideoPictureResource {
     VkExtent3D GetEffectiveImageExtent(const vvl::VideoSession &vs_state) const;
 
   private:
-    VkImageSubresourceRange GetImageSubresourceRange(ImageView const *image_view_state, uint32_t layer);
+    VkImageSubresourceRange GetImageSubresourceRange(ImageView const *image_view_state, u32 layer);
 };
 
 using VideoPictureResources = unordered_set<VideoPictureResource, VideoPictureResource::hash>;
-using BoundVideoPictureResources = unordered_map<VideoPictureResource, int32_t, VideoPictureResource::hash>;
+using BoundVideoPictureResources = unordered_map<VideoPictureResource, i32, VideoPictureResource::hash>;
 
 struct VideoPictureID {
     // Used by H.264 to indicate it's a top field picture
@@ -324,7 +324,7 @@ struct VideoPictureID {
 };
 
 struct VideoReferenceSlot {
-    int32_t index;
+    i32 index;
     VideoPictureID picture_id;
     VideoPictureResource resource;
 
@@ -409,7 +409,7 @@ struct VideoEncodeRateControlState {
         }
 
         layers.reserve(base.layerCount);
-        for (uint32_t i = 0; i < base.layerCount; ++i) {
+        for (u32 i = 0; i < base.layerCount; ++i) {
             layers.emplace_back(op, &base.pLayers[i]);
         }
     }
@@ -419,7 +419,7 @@ struct VideoEncodeRateControlState {
 
 class VideoSessionDeviceState {
   public:
-    VideoSessionDeviceState(uint32_t reference_slot_count = 0)
+    VideoSessionDeviceState(u32 reference_slot_count = 0)
         : initialized_(false),
           is_active_(reference_slot_count, false),
           all_pictures_(reference_slot_count),
@@ -427,24 +427,24 @@ class VideoSessionDeviceState {
           encode_() {}
 
     bool IsInitialized() const { return initialized_; }
-    bool IsSlotActive(int32_t slot_index) const {
-        if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= is_active_.size()) {
+    bool IsSlotActive(i32 slot_index) const {
+        if (slot_index < 0 || static_cast<u32>(slot_index) >= is_active_.size()) {
             // Out-of-bounds slot index
             return false;
         }
         return is_active_[slot_index];
     }
 
-    bool IsSlotPicture(int32_t slot_index, const VideoPictureResource &res) const {
-        if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= all_pictures_.size()) {
+    bool IsSlotPicture(i32 slot_index, const VideoPictureResource &res) const {
+        if (slot_index < 0 || static_cast<u32>(slot_index) >= all_pictures_.size()) {
             // Out-of-bounds slot index
             return false;
         }
         return all_pictures_[slot_index].find(res) != all_pictures_[slot_index].end();
     }
 
-    bool IsSlotPicture(int32_t slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) const {
-        if (slot_index < 0 || static_cast<uint32_t>(slot_index) >= pictures_per_id_.size()) {
+    bool IsSlotPicture(i32 slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res) const {
+        if (slot_index < 0 || static_cast<u32>(slot_index) >= pictures_per_id_.size()) {
             // Out-of-bounds slot index
             return false;
         }
@@ -452,15 +452,15 @@ class VideoSessionDeviceState {
         return it != pictures_per_id_[slot_index].end() && it->second == res;
     }
 
-    uint32_t GetEncodeQualityLevel() const { return encode_.quality_level; }
+    u32 GetEncodeQualityLevel() const { return encode_.quality_level; }
     const VideoEncodeRateControlState &GetRateControlState() const { return encode_.rate_control_state; }
 
     void Reset();
-    void Activate(int32_t slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res);
-    void Invalidate(int32_t slot_index, const VideoPictureID &picture_id);
-    void Deactivate(int32_t slot_index);
+    void Activate(i32 slot_index, const VideoPictureID &picture_id, const VideoPictureResource &res);
+    void Invalidate(i32 slot_index, const VideoPictureID &picture_id);
+    void Deactivate(i32 slot_index);
 
-    void SetEncodeQualityLevel(uint32_t quality_level) { encode_.quality_level = quality_level; }
+    void SetEncodeQualityLevel(u32 quality_level) { encode_.quality_level = quality_level; }
     void SetRateControlState(const VideoEncodeRateControlState &rate_control_state) {
         encode_.rate_control_state = rate_control_state;
     }
@@ -475,7 +475,7 @@ class VideoSessionDeviceState {
     std::vector<unordered_map<VideoPictureID, VideoPictureResource, VideoPictureID::hash>> pictures_per_id_;
 
     struct {
-        uint32_t quality_level{0};
+        u32 quality_level{0};
         VideoEncodeRateControlState rate_control_state{};
     } encode_;
 };
@@ -486,13 +486,13 @@ class VideoSession : public StateObject {
         VkMemoryRequirements requirements;
         bool bound;
     };
-    using MemoryBindingMap = unordered_map<uint32_t, MemoryBindingInfo>;
+    using MemoryBindingMap = unordered_map<u32, MemoryBindingInfo>;
 
     const vku::safe_VkVideoSessionCreateInfoKHR safe_create_info;
     const VkVideoSessionCreateInfoKHR &create_info;
     std::shared_ptr<const VideoProfileDesc> profile;
     bool memory_binding_count_queried;
-    uint32_t memory_bindings_queried;
+    u32 memory_bindings_queried;
 
     class DeviceStateWriter {
       public:
@@ -521,7 +521,7 @@ class VideoSession : public StateObject {
 
     DeviceStateWriter DeviceStateWrite() { return DeviceStateWriter(this); }
 
-    const MemoryBindingInfo *GetMemoryBindingInfo(uint32_t index) const {
+    const MemoryBindingInfo *GetMemoryBindingInfo(u32 index) const {
         auto it = memory_bindings_.find(index);
         if (it != memory_bindings_.end()) {
             return &it->second;
@@ -530,10 +530,10 @@ class VideoSession : public StateObject {
         }
     }
 
-    uint32_t GetMemoryBindingCount() const { return (uint32_t)memory_bindings_.size(); }
-    uint32_t GetUnboundMemoryBindingCount() const { return unbound_memory_binding_count_; }
+    u32 GetMemoryBindingCount() const { return (u32)memory_bindings_.size(); }
+    u32 GetUnboundMemoryBindingCount() const { return unbound_memory_binding_count_; }
 
-    void BindMemoryBindingIndex(uint32_t index) {
+    void BindMemoryBindingIndex(u32 index) {
         auto it = memory_bindings_.find(index);
         if (it != memory_bindings_.end() && !it->second.bound) {
             it->second.bound = true;
@@ -541,8 +541,8 @@ class VideoSession : public StateObject {
         }
     }
 
-    uint32_t GetVideoDecodeOperationCount(VkVideoDecodeInfoKHR const *) const { return 1; }
-    uint32_t GetVideoEncodeOperationCount(VkVideoEncodeInfoKHR const *) const { return 1; }
+    u32 GetVideoDecodeOperationCount(VkVideoDecodeInfoKHR const *) const { return 1; }
+    u32 GetVideoEncodeOperationCount(VkVideoEncodeInfoKHR const *) const { return 1; }
 
     bool ReferenceSetupRequested(VkVideoDecodeInfoKHR const &decode_info) const;
     bool ReferenceSetupRequested(VkVideoEncodeInfoKHR const &encode_info) const;
@@ -551,7 +551,7 @@ class VideoSession : public StateObject {
     MemoryBindingMap GetMemoryBindings(const ValidationStateTracker &dev_data, VkVideoSessionKHR vs);
 
     MemoryBindingMap memory_bindings_;
-    uint32_t unbound_memory_binding_count_;
+    u32 unbound_memory_binding_count_;
 
     mutable std::mutex device_state_mutex_;
     VideoSessionDeviceState device_state_;
@@ -559,27 +559,27 @@ class VideoSession : public StateObject {
 
 class VideoSessionParameters : public StateObject {
   public:
-    using H264SPSKey = uint8_t;
-    using H264PPSKey = uint16_t;
-    using H265VPSKey = uint8_t;
-    using H265SPSKey = uint16_t;
-    using H265PPSKey = uint32_t;
-    using ParameterKey = uint32_t;
+    using H264SPSKey = u8;
+    using H264PPSKey = u16;
+    using H265VPSKey = u8;
+    using H265SPSKey = u16;
+    using H265PPSKey = u32;
+    using ParameterKey = u32;
 
     struct H264Parameters {
         unordered_map<H264SPSKey, StdVideoH264SequenceParameterSet> sps;
         unordered_map<H264PPSKey, StdVideoH264PictureParameterSet> pps;
-        uint32_t sps_capacity;
-        uint32_t pps_capacity;
+        u32 sps_capacity;
+        u32 pps_capacity;
     };
 
     struct H265Parameters {
         unordered_map<H265VPSKey, StdVideoH265VideoParameterSet> vps;
         unordered_map<H265SPSKey, StdVideoH265SequenceParameterSet> sps;
         unordered_map<H265PPSKey, StdVideoH265PictureParameterSet> pps;
-        uint32_t vps_capacity;
-        uint32_t sps_capacity;
-        uint32_t pps_capacity;
+        u32 vps_capacity;
+        u32 sps_capacity;
+        u32 pps_capacity;
     };
 
     struct AV1Parameters {
@@ -587,14 +587,14 @@ class VideoSessionParameters : public StateObject {
     };
 
     struct Data {
-        uint32_t update_sequence_counter;
+        u32 update_sequence_counter;
         H264Parameters h264;
         H265Parameters h265;
         AV1Parameters av1;
     };
 
     struct EncodeConfig {
-        uint32_t quality_level{0};
+        u32 quality_level{0};
     };
 
     struct Config {
@@ -624,7 +624,7 @@ class VideoSessionParameters : public StateObject {
         operator bool() const { return data_ != nullptr; }
         const Data *operator->() const { return data_; }
 
-        const StdVideoH264SequenceParameterSet *GetH264SPS(uint32_t sps_id) const {
+        const StdVideoH264SequenceParameterSet *GetH264SPS(u32 sps_id) const {
             if (sps_id > 0xFF) return nullptr;
             auto it = data_->h264.sps.find(sps_id & 0xFF);
             if (it != data_->h264.sps.end()) {
@@ -634,7 +634,7 @@ class VideoSessionParameters : public StateObject {
             }
         }
 
-        const StdVideoH264PictureParameterSet *GetH264PPS(uint32_t sps_id, uint32_t pps_id) const {
+        const StdVideoH264PictureParameterSet *GetH264PPS(u32 sps_id, u32 pps_id) const {
             if (sps_id > 0xFF) return nullptr;
             if (pps_id > 0xFF) return nullptr;
             auto it = data_->h264.pps.find(GetKeyFor2xID8(sps_id & 0xFF, pps_id & 0xFF));
@@ -645,7 +645,7 @@ class VideoSessionParameters : public StateObject {
             }
         }
 
-        const StdVideoH265VideoParameterSet *GetH265VPS(uint32_t vps_id) const {
+        const StdVideoH265VideoParameterSet *GetH265VPS(u32 vps_id) const {
             if (vps_id > 0xFF) return nullptr;
             auto it = data_->h265.vps.find(vps_id & 0xFF);
             if (it != data_->h265.vps.end()) {
@@ -655,7 +655,7 @@ class VideoSessionParameters : public StateObject {
             }
         }
 
-        const StdVideoH265SequenceParameterSet *GetH265SPS(uint32_t vps_id, uint32_t sps_id) const {
+        const StdVideoH265SequenceParameterSet *GetH265SPS(u32 vps_id, u32 sps_id) const {
             if (vps_id > 0xFF) return nullptr;
             if (sps_id > 0xFF) return nullptr;
             auto it = data_->h265.sps.find(GetKeyFor2xID8(vps_id & 0xFF, sps_id & 0xFF));
@@ -666,7 +666,7 @@ class VideoSessionParameters : public StateObject {
             }
         }
 
-        const StdVideoH265PictureParameterSet *GetH265PPS(uint32_t vps_id, uint32_t sps_id, uint32_t pps_id) const {
+        const StdVideoH265PictureParameterSet *GetH265PPS(u32 vps_id, u32 sps_id, u32 pps_id) const {
             if (vps_id > 0xFF) return nullptr;
             if (sps_id > 0xFF) return nullptr;
             if (pps_id > 0xFF) return nullptr;
@@ -699,7 +699,7 @@ class VideoSessionParameters : public StateObject {
 
     VkVideoCodecOperationFlagBitsKHR GetCodecOp() const { return vs_state->GetCodecOp(); }
 
-    uint32_t GetEncodeQualityLevel() const { return config_.encode.quality_level; }
+    u32 GetEncodeQualityLevel() const { return config_.encode.quality_level; }
 
     void Update(VkVideoSessionParametersUpdateInfoKHR const *info);
 
@@ -712,8 +712,8 @@ class VideoSessionParameters : public StateObject {
 
     Config InitConfig(VkVideoSessionParametersCreateInfoKHR const *pCreateInfo);
 
-    static uint16_t GetKeyFor2xID8(uint8_t id1, uint8_t id2) { return (id1 << 8) | id2; }
-    static uint32_t GetKeyFor3xID8(uint8_t id1, uint8_t id2, uint8_t id3) { return (id1 << 16) | (id2 << 8) | id3; }
+    static u16 GetKeyFor2xID8(u8 id1, u8 id2) { return (id1 << 8) | id2; }
+    static u32 GetKeyFor3xID8(u8 id1, u8 id2, u8 id3) { return (id1 << 16) | (id2 << 8) | id3; }
 
     void AddDecodeH264(VkVideoDecodeH264SessionParametersAddInfoKHR const *info);
     void AddDecodeH265(VkVideoDecodeH265SessionParametersAddInfoKHR const *info);

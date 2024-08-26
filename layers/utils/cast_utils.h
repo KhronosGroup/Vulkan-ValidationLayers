@@ -16,13 +16,15 @@
  */
 #pragma once
 
+#include "utils/numerical_types.h"
+
 #include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
 
 #define CAST_TO_FROM_UTILS
-// Casts to allow various types of less than 64 bits to be cast to and from uint64_t safely and portably
+// Casts to allow various types of less than 64 bits to be cast to and from u64 safely and portably
 template <typename HandleType, typename Uint>
 static inline HandleType CastFromUint(Uint untyped_handle) {
     static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
@@ -53,29 +55,27 @@ vvl_bit_cast(const From &src) noexcept {
 
 // Ensure that the size changing casts are *static* to ensure portability
 template <typename HandleType>
-static inline HandleType CastFromUint64(uint64_t untyped_handle) {
-    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
-    typedef
-        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
-                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
-                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
-                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
+static inline HandleType CastFromUint64(u64 untyped_handle) {
+    static_assert(sizeof(HandleType) <= sizeof(u64), "HandleType must be not larger than the untyped handle size");
+    typedef typename std::conditional<
+        sizeof(HandleType) == sizeof(u8), u8,
+        typename std::conditional<sizeof(HandleType) == sizeof(u16), u16,
+                                  typename std::conditional<sizeof(HandleType) == sizeof(u32), u32, u64>::type>::type>::type Uint;
     return CastFromUint<HandleType, Uint>(static_cast<Uint>(untyped_handle));
 }
 
 template <typename HandleType>
-static inline uint64_t CastToUint64(HandleType handle) {
-    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
-    typedef
-        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
-                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
-                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
-                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
-    return static_cast<uint64_t>(CastToUint<HandleType, Uint>(handle));
+static inline u64 CastToUint64(HandleType handle) {
+    static_assert(sizeof(HandleType) <= sizeof(u64), "HandleType must be not larger than the untyped handle size");
+    typedef typename std::conditional<
+        sizeof(HandleType) == sizeof(u8), u8,
+        typename std::conditional<sizeof(HandleType) == sizeof(u16), u16,
+                                  typename std::conditional<sizeof(HandleType) == sizeof(u32), u32, u64>::type>::type>::type Uint;
+    return static_cast<u64>(CastToUint<HandleType, Uint>(handle));
 }
 
 // Convenience functions to case between handles and the types the handles abstract, reflecting the Vulkan handle scheme, where
-// Handles are either pointers (dispatchable) or sizeof(uint64_t) (non-dispatchable), s.t. full size-safe casts are used and
+// Handles are either pointers (dispatchable) or sizeof(u64) (non-dispatchable), s.t. full size-safe casts are used and
 // we ensure that handles are large enough to contain the underlying type.
 template <typename HandleType, typename ValueType>
 void CastToHandle(ValueType value, HandleType *handle) {

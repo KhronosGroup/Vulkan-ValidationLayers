@@ -12,15 +12,15 @@
 
 #include "shader_object_helper.h"
 
-VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage, uint32_t set_layout_count,
-                                       const VkDescriptorSetLayout* set_layouts, uint32_t pc_range_count,
+VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<u32>& spirv, VkShaderStageFlagBits stage, u32 set_layout_count,
+                                       const VkDescriptorSetLayout* set_layouts, u32 pc_range_count,
                                        const VkPushConstantRange* pc_ranges, const VkSpecializationInfo* specialization_info) {
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.flags = 0;
     create_info.stage = stage;
     create_info.nextStage = 0;
     create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    create_info.codeSize = spirv.size() * sizeof(uint32_t);
+    create_info.codeSize = spirv.size() * sizeof(u32);
     create_info.pCode = spirv.data();
     create_info.pName = "main";
     create_info.setLayoutCount = set_layout_count;
@@ -31,14 +31,14 @@ VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkSha
     return create_info;
 }
 
-VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
+VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<u32>& spirv, VkShaderStageFlagBits stage,
                                            VkShaderCreateFlagsEXT flags) {
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.flags = flags;
     create_info.stage = stage;
     create_info.nextStage = 0;
     create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    create_info.codeSize = spirv.size() * sizeof(uint32_t);
+    create_info.codeSize = spirv.size() * sizeof(u32);
     create_info.pCode = spirv.data();
     create_info.pName = "main";
     create_info.setLayoutCount = 0;
@@ -49,14 +49,14 @@ VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<uint32_t>& spirv, V
     return create_info;
 }
 
-VkShaderCreateInfoEXT ShaderCreateInfoLink(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
+VkShaderCreateInfoEXT ShaderCreateInfoLink(const std::vector<u32>& spirv, VkShaderStageFlagBits stage,
                                            VkShaderStageFlags next_stage) {
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
     create_info.stage = stage;
     create_info.nextStage = next_stage;
     create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    create_info.codeSize = spirv.size() * sizeof(uint32_t);
+    create_info.codeSize = spirv.size() * sizeof(u32);
     create_info.pCode = spirv.data();
     create_info.pName = "main";
     return create_info;

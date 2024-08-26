@@ -81,10 +81,10 @@ TEST(CustomContainer, SmallVectorIntResize) {
 
     {
         // resize to size limit
-        small_vector<int, 2, uint8_t> v5 = {1, 2, 3, 4};
-        v5.resize(std::numeric_limits<uint8_t>::max());
+        small_vector<int, 2, u8> v5 = {1, 2, 3, 4};
+        v5.resize(std::numeric_limits<u8>::max());
         std::vector<int> vec = {1, 2, 3, 4};
-        vec.resize(std::numeric_limits<uint8_t>::max());
+        vec.resize(std::numeric_limits<u8>::max());
         ASSERT_TRUE(HaveSameElements(v5, vec));
     }
 
@@ -124,10 +124,10 @@ TEST(CustomContainer, SmallVectorIntResize) {
 
     {
         // resize to size limit
-        small_vector<int, 2, uint8_t> v10 = {1, 2, 3, 4};
-        v10.resize(std::numeric_limits<uint8_t>::max());
+        small_vector<int, 2, u8> v10 = {1, 2, 3, 4};
+        v10.resize(std::numeric_limits<u8>::max());
         std::vector<int> vec = {1, 2, 3, 4};
-        vec.resize(std::numeric_limits<uint8_t>::max());
+        vec.resize(std::numeric_limits<u8>::max());
         ASSERT_TRUE(HaveSameElements(v10, vec));
     }
 }

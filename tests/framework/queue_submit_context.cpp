@@ -29,12 +29,12 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
     } else {
         const auto& queues = device->QueuesWithTransferCapability();
 
-        const uint32_t q_count = static_cast<uint32_t>(queues.size());
-        for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {
+        const u32 q_count = static_cast<u32>(queues.size());
+        for (u32 q0_index = 0; q0_index < q_count; ++q0_index) {
             const auto* q0_entry = queues[q0_index];
             q0 = q0_entry->handle();
             q_fam = q0_entry->family_index;
-            for (uint32_t q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
+            for (u32 q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
                 const auto* q1_entry = queues[q1_index];
                 if (q_fam == q1_entry->family_index) {
                     q1 = q1_entry->handle();

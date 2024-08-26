@@ -75,7 +75,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     }
 
     // to prevent VUID-VkBufferViewCreateInfo-buffer-02751
-    const uint32_t block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
+    const u32 block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
 
     const VkBufferCreateInfo buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -172,7 +172,7 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const uint32_t buffer_size = 32;
+    const u32 buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

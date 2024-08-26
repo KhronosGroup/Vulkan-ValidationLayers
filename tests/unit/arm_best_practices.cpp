@@ -19,11 +19,11 @@ const char* kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM"
 
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {
   public:
-    std::unique_ptr<vkt::Image> CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
+    std::unique_ptr<vkt::Image> CreateImage(VkFormat format, const u32 width, const u32 height,
                                             VkImageUsageFlags attachment_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VkRenderPass CreateRenderPass(VkFormat format, VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR,
                                   VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE);
-    VkFramebuffer CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view, VkRenderPass renderpass);
+    VkFramebuffer CreateFramebuffer(const u32 width, const u32 height, VkImageView image_view, VkRenderPass renderpass);
 };
 
 class VkConstantBufferObj : public vkt::Buffer {
@@ -39,7 +39,7 @@ class VkConstantBufferObj : public vkt::Buffer {
     }
 };
 
-VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t width, const uint32_t height, VkImageView image_view,
+VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const u32 width, const u32 height, VkImageView image_view,
                                                              VkRenderPass renderpass) {
     VkFramebuffer framebuffer{VK_NULL_HANDLE};
 
@@ -58,7 +58,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
     return framebuffer;
 }
 
-std::unique_ptr<vkt::Image> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
+std::unique_ptr<vkt::Image> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const u32 width, const u32 height,
                                                                      VkImageUsageFlags attachment_usage) {
     auto img = std::unique_ptr<vkt::Image>(new vkt::Image(
         *m_device, width, height, 1, format,
@@ -282,7 +282,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     InitRenderTarget();
 
-    vkt::Buffer indexBuffer(*m_device, sizeof(uint32_t) * 3, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vkt::Buffer indexBuffer(*m_device, sizeof(u32) * 3, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -401,36 +401,36 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     }
 
     // create a non-sparse index buffer
-    std::vector<uint16_t> nonsparse_indices;
+    std::vector<u16> nonsparse_indices;
     nonsparse_indices.resize(128);
-    std::generate(nonsparse_indices.begin(), nonsparse_indices.end(), [n = uint16_t(0)]() mutable { return ++n; });
+    std::generate(nonsparse_indices.begin(), nonsparse_indices.end(), [n = u16(0)]() mutable { return ++n; });
 
     // another example of non-sparsity where the number of indices is also very small
-    std::vector<uint16_t> nonsparse_indices_2 = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<u16> nonsparse_indices_2 = {0, 1, 2, 3, 4, 5, 6, 7};
 
     // smallest possible meaningful index buffer
-    std::vector<uint16_t> nonsparse_indices_3 = {0};
+    std::vector<u16> nonsparse_indices_3 = {0};
 
     // another example of non-sparsity, all the indices are the same value (42)
-    std::vector<uint16_t> nonsparse_indices_4 = {};
+    std::vector<u16> nonsparse_indices_4 = {};
     nonsparse_indices_4.resize(128);
-    std::fill(nonsparse_indices_4.begin(), nonsparse_indices_4.end(), uint16_t(42));
+    std::fill(nonsparse_indices_4.begin(), nonsparse_indices_4.end(), u16(42));
 
-    std::vector<uint16_t> sparse_indices = nonsparse_indices;
+    std::vector<u16> sparse_indices = nonsparse_indices;
     // The buffer (0, 1, 2, ..., n) is completely un-sparse. However, if n < 0xFFFF, by adding 0xFFFF at the end, we
     // should trigger a warning due to loading all the indices in the range 0 to 0xFFFF, despite indices in the range
     // (n+1) to (0xFFFF - 1) not being used.
     sparse_indices[sparse_indices.size() - 1] = 0xFFFF;
 
-    VkConstantBufferObj nonsparse_ibo(m_device, nonsparse_indices.size() * sizeof(uint16_t), nonsparse_indices.data(),
+    VkConstantBufferObj nonsparse_ibo(m_device, nonsparse_indices.size() * sizeof(u16), nonsparse_indices.data(),
                                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    VkConstantBufferObj nonsparse_ibo_2(m_device, nonsparse_indices_2.size() * sizeof(uint16_t), nonsparse_indices_2.data(),
+    VkConstantBufferObj nonsparse_ibo_2(m_device, nonsparse_indices_2.size() * sizeof(u16), nonsparse_indices_2.data(),
                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    VkConstantBufferObj nonsparse_ibo_3(m_device, nonsparse_indices_3.size() * sizeof(uint16_t), nonsparse_indices_3.data(),
+    VkConstantBufferObj nonsparse_ibo_3(m_device, nonsparse_indices_3.size() * sizeof(u16), nonsparse_indices_3.data(),
                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    VkConstantBufferObj nonsparse_ibo_4(m_device, nonsparse_indices_4.size() * sizeof(uint16_t), nonsparse_indices_4.data(),
+    VkConstantBufferObj nonsparse_ibo_4(m_device, nonsparse_indices_4.size() * sizeof(u16), nonsparse_indices_4.data(),
                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    VkConstantBufferObj sparse_ibo(m_device, sparse_indices.size() * sizeof(uint16_t), sparse_indices.data(),
+    VkConstantBufferObj sparse_ibo(m_device, sparse_indices.size() * sizeof(u16), sparse_indices.data(),
                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     auto test_pipelines = [&](VkConstantBufferObj& ibo, size_t index_count, bool expect_error) -> void {
@@ -511,7 +511,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    std::vector<uint16_t> worst_indices;
+    std::vector<u16> worst_indices;
     worst_indices.resize(128 * 16);
     for (size_t i = 0; i < 16; i++) {
         for (size_t j = 0; j < 128; j++) {
@@ -521,7 +521,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
         }
     }
 
-    std::vector<uint16_t> best_indices;
+    std::vector<u16> best_indices;
     best_indices.resize(128 * 16);
     for (size_t i = 0; i < 16; i++) {
         for (size_t j = 0; j < 128; j++) {
@@ -532,7 +532,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     }
 
     // make sure the worst-case indices throw a warning
-    VkConstantBufferObj worst_ibo(m_device, worst_indices.size() * sizeof(uint16_t), worst_indices.data(),
+    VkConstantBufferObj worst_ibo(m_device, worst_indices.size() * sizeof(u16), worst_indices.data(),
                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), worst_ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
@@ -545,7 +545,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     worst_ibo.memory().unmap();
 
     // make sure that the best-case indices don't throw a warning
-    VkConstantBufferObj best_ibo(m_device, best_indices.size() * sizeof(uint16_t), best_indices.data(),
+    VkConstantBufferObj best_ibo(m_device, best_indices.size() * sizeof(u16), best_indices.data(),
                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), best_ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
@@ -718,10 +718,10 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     // create a simple index buffer
 
-    std::vector<uint32_t> indices = {};
+    std::vector<u32> indices = {};
     indices.resize(3);
 
-    VkConstantBufferObj ibo(m_device, sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkConstantBufferObj ibo(m_device, sizeof(u32) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
@@ -929,7 +929,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
-    const uint32_t WIDTH = 512, HEIGHT = 512;
+    const u32 WIDTH = 512, HEIGHT = 512;
 
     std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
@@ -1037,7 +1037,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-RenderPass-redundant-clear");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
-    const uint32_t WIDTH = 512, HEIGHT = 512;
+    const u32 WIDTH = 512, HEIGHT = 512;
 
     auto image0 = CreateImage(FMT, WIDTH, HEIGHT);
     image0->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -1111,7 +1111,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
-    const uint32_t WIDTH = 512, HEIGHT = 512;
+    const u32 WIDTH = 512, HEIGHT = 512;
 
     // Create renderpass
     VkAttachmentDescription attachment = {};
@@ -1199,7 +1199,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
-    const uint32_t WIDTH = 512, HEIGHT = 512;
+    const u32 WIDTH = 512, HEIGHT = 512;
 
     // Create renderpass
     VkAttachmentDescription attachment = {};
@@ -1359,7 +1359,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
-    const uint32_t WIDTH = 512, HEIGHT = 512;
+    const u32 WIDTH = 512, HEIGHT = 512;
 
     std::vector<std::unique_ptr<vkt::Image>> images;
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));

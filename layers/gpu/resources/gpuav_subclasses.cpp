@@ -142,7 +142,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, gpu::DeviceMemoryBlock &er
         return false;
     }
 
-    uint32_t *output_buffer_ptr;
+    u32 *output_buffer_ptr;
     result = vmaMapMemory(gpuav.vma_allocator_, error_logs_mem.allocation, reinterpret_cast<void **>(&output_buffer_ptr));
     if (result == VK_SUCCESS) {
         memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
@@ -167,7 +167,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
     if (instrumentation_desc_set_layout_ == VK_NULL_HANDLE) {
         assert(!gpuav->instrumentation_bindings_.empty());
         VkDescriptorSetLayoutCreateInfo instrumentation_desc_set_layout_ci = vku::InitStructHelper();
-        instrumentation_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(gpuav->instrumentation_bindings_.size());
+        instrumentation_desc_set_layout_ci.bindingCount = static_cast<u32>(gpuav->instrumentation_bindings_.size());
         instrumentation_desc_set_layout_ci.pBindings = gpuav->instrumentation_bindings_.data();
         result = DispatchCreateDescriptorSetLayout(gpuav->device, &instrumentation_desc_set_layout_ci, nullptr,
                                                    &instrumentation_desc_set_layout_);
@@ -233,7 +233,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 
         if (validation_cmd_desc_set_layout_ == VK_NULL_HANDLE) {
             VkDescriptorSetLayoutCreateInfo validation_cmd_desc_set_layout_ci = vku::InitStructHelper();
-            validation_cmd_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(validation_cmd_bindings.size());
+            validation_cmd_desc_set_layout_ci.bindingCount = static_cast<u32>(validation_cmd_bindings.size());
             validation_cmd_desc_set_layout_ci.pBindings = validation_cmd_bindings.data();
             result = DispatchCreateDescriptorSetLayout(gpuav->device, &validation_cmd_desc_set_layout_ci, nullptr,
                                                        &validation_cmd_desc_set_layout_);
@@ -274,7 +274,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         assert(error_output_buffer_.buffer != VK_NULL_HANDLE);
         cmd_indices_buffer_desc_info.buffer = gpuav->indices_buffer_.buffer;
         cmd_indices_buffer_desc_info.offset = 0;
-        cmd_indices_buffer_desc_info.range = sizeof(uint32_t);
+        cmd_indices_buffer_desc_info.range = sizeof(u32);
 
         validation_cmd_descriptor_writes[1] = vku::InitStructHelper();
         validation_cmd_descriptor_writes[1].dstBinding = glsl::kBindingDiagActionIndex;
@@ -298,7 +298,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[3].pBufferInfo = &cmd_errors_count_buffer_desc_info;
         validation_cmd_descriptor_writes[3].dstSet = GetValidationCmdCommonDescriptorSet();
 
-        DispatchUpdateDescriptorSets(gpuav->device, static_cast<uint32_t>(validation_cmd_descriptor_writes.size()),
+        DispatchUpdateDescriptorSets(gpuav->device, static_cast<u32>(validation_cmd_descriptor_writes.size()),
                                      validation_cmd_descriptor_writes.data(), 0, NULL);
     }
 }
@@ -333,7 +333,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // QWord 5 | ...
 
     const size_t max_recordable_ranges =
-        static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
+        static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(u64)) / (2 * sizeof(VkDeviceAddress)));
     auto bda_ranges = reinterpret_cast<ValidationStateTracker::BufferAddressRange *>(bda_table_ptr + 1);
     const auto [ranges_to_update_count, total_address_ranges_count] =
         gpuav->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
@@ -427,7 +427,7 @@ void CommandBuffer::ResetCBState() {
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
     auto gpuav = static_cast<Validator *>(&dev_data);
-    uint32_t *cmd_errors_counts_buffer_ptr = nullptr;
+    u32 *cmd_errors_counts_buffer_ptr = nullptr;
     VkResult result = vmaMapMemory(gpuav->vma_allocator_, cmd_errors_counts_buffer_.allocation,
                                    reinterpret_cast<void **>(&cmd_errors_counts_buffer_ptr));
     if (result != VK_SUCCESS) {
@@ -467,7 +467,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     auto gpuav = static_cast<Validator *>(&dev_data);
     bool skip = false;
-    uint32_t *error_output_buffer_ptr = nullptr;
+    u32 *error_output_buffer_ptr = nullptr;
     VkResult result =
         vmaMapMemory(gpuav->vma_allocator_, error_output_buffer_.allocation, reinterpret_cast<void **>(&error_output_buffer_ptr));
     assert(result == VK_SUCCESS);
@@ -477,20 +477,19 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         // The number of words actually written by the shaders is determined by the size of the buffer
         // we provide via the descriptor. So, we process only the number of words that can fit in the
         // buffer.
-        const uint32_t total_words = error_output_buffer_ptr[cst::stream_output_size_offset];
+        const u32 total_words = error_output_buffer_ptr[cst::stream_output_size_offset];
         // A zero here means that the shader instrumentation didn't write anything.
         if (total_words != 0) {
-            uint32_t *const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
+            u32 *const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
             assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
-            uint32_t *const error_records_end =
-                error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::stream_output_data_offset);
+            u32 *const error_records_end = error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::stream_output_data_offset);
 
-            uint32_t *error_record_ptr = error_records_start;
-            uint32_t record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
+            u32 *error_record_ptr = error_records_start;
+            u32 record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
             assert(record_size == glsl::kErrorRecordSize);
 
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
-                const uint32_t error_logger_i = error_record_ptr[glsl::kHeaderCommandResourceIdOffset];
+                const u32 error_logger_i = error_record_ptr[glsl::kHeaderCommandResourceIdOffset];
                 assert(error_logger_i < per_command_error_loggers.size());
                 auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
@@ -504,7 +503,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
             // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
             assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
             memset(&error_output_buffer_ptr[cst::stream_output_data_offset], 0,
-                   glsl::kErrorBufferByteSize - cst::stream_output_data_offset * sizeof(uint32_t));
+                   glsl::kErrorBufferByteSize - cst::stream_output_data_offset * sizeof(u32));
         }
         error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
         vmaUnmapMemory(gpuav->vma_allocator_, error_output_buffer_.allocation);

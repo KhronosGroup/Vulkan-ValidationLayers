@@ -34,8 +34,8 @@ TEST_F(NegativeProtectedMemory, Queue) {
 
     // Try to find a protected queue family type
     bool unprotected_queue = false;
-    uint32_t queue_family_index = 0;
-    uint32_t queue_family_count = 0;
+    u32 queue_family_index = 0;
+    u32 queue_family_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());
@@ -116,7 +116,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
     VkPhysicalDeviceMemoryProperties phys_mem_props;
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
     alloc_info.memoryTypeIndex = phys_mem_props.memoryTypeCount + 1;
-    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+    for (u32 i = 0; i < phys_mem_props.memoryTypeCount; i++) {
         // Check just protected bit is in type at all
         if ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0) {
             alloc_info.memoryTypeIndex = i;
@@ -262,8 +262,8 @@ TEST_F(NegativeProtectedMemory, UniqueQueueDeviceCreationBothProtected) {
     // Try to find a protected queue family type
     bool protected_queue = false;
     VkQueueFamilyProperties queue_properties;  // selected queue family used
-    uint32_t queue_family_index = 0;
-    uint32_t queue_family_count = 0;
+    u32 queue_family_index = 0;
+    u32 queue_family_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());
@@ -329,8 +329,8 @@ TEST_F(NegativeProtectedMemory, GetDeviceQueue) {
 
     // Use the first Physical device and queue family
     // Makes test more portable as every driver has at least 1 queue with a queueCount of 1
-    uint32_t queue_family_count = 1;
-    uint32_t queue_family_index = 0;
+    u32 queue_family_count = 1;
+    u32 queue_family_index = 0;
     VkQueueFamilyProperties queue_properties;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, &queue_properties);
 
@@ -624,7 +624,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     vkt::Buffer indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer index_buffer(*m_device, sizeof(u32), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -821,7 +821,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     image_copy.dstSubresource = image_subresource;
     image_copy.dstOffset = {0, 0, 0};
     image_copy.extent = {1, 1, 1};
-    uint32_t update_data[4] = {0, 0, 0, 0};
+    u32 update_data[4] = {0, 0, 0, 0};
     VkRect2D render_area = {{0, 0}, {8, 8}};
     VkClearAttachment clear_attachments[2] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, {m_clear_color}},
                                               {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
@@ -1087,7 +1087,7 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
 
     VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = vku::InitStructHelper();
     raytracing_pipeline_ci.flags = 0;
-    raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
+    raytracing_pipeline_ci.stageCount = static_cast<u32>(shader_stages.size());
     raytracing_pipeline_ci.pStages = shader_stages.data();
     raytracing_pipeline_ci.pGroups = shader_groups.data();
     raytracing_pipeline_ci.groupCount = shader_groups.size();

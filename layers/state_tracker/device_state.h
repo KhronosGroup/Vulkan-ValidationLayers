@@ -37,15 +37,15 @@ namespace vvl {
 
 class PhysicalDevice : public StateObject {
   public:
-    uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
+    u32 queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
     const VkQueueFlags supported_queues;
     // TODO These are currently used by CoreChecks, but should probably be refactored
     bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
-    uint32_t display_plane_property_count = 0;
+    u32 display_plane_property_count = 0;
 
     // Map of queue family index to QueueFamilyPerfCounters
-    unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
+    unordered_map<u32, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
 
     // Surfaceless Query extension needs 'global' surface_state data
     SurfacelessQueryState surfaceless_query_state{};

@@ -108,7 +108,7 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                     VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+                                                     VkQueryPool queryPool, u32 query, const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::pipelineStage),
@@ -118,13 +118,12 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                         VkQueryPool queryPool, uint32_t query,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkQueryPool queryPool, u32 query, const ErrorObject& error_obj) const {
     return PreCallValidateCmdWriteTimestamp2(commandBuffer, pipelineStage, queryPool, query, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
-                                                      VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+                                                      VkQueryPool queryPool, u32 query, const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::pipelineStage), pipelineStage);
@@ -132,15 +131,15 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuf
     return skip;
 }
 
-bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
-                                                       uint32_t queryCount, size_t dataSize, void* pData, VkDeviceSize stride,
-                                                       VkQueryResultFlags flags, const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, u32 firstQuery, u32 queryCount,
+                                                       size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                                       const ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN_SKIP(query_pool_state);
 
-    for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
+    for (u32 i = firstQuery; i < firstQuery + queryCount; ++i) {
         // Some query type can't have a begin call on it (see VUID-vkCmdBeginQuery-queryType-02804)
         const bool can_have_begin =
             !IsValueIn(query_pool_state->create_info.queryType,
@@ -231,12 +230,12 @@ struct EventValidator {
 };
 }  // namespace
 
-bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, u32 commandBufferCount,
                                                       const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
     const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);
-    for (uint32_t i = 0; i < commandBufferCount; i++) {
+    for (u32 i = 0; i < commandBufferCount; i++) {
         const auto secondary_cb = GetRead<bp_state::CommandBuffer>(pCommandBuffers[i]);
         if (secondary_cb == nullptr) {
             continue;
@@ -244,7 +243,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         const Location& cb_loc = error_obj.location.dot(Field::pCommandBuffers, i);
         const auto& secondary = secondary_cb->render_pass_state;
         for (auto& clear : secondary.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(*primary, uint32_t(clear.rects.size()), clear.rects.data())) {
+            if (ClearAttachmentsIsFullClear(*primary, u32(clear.rects.size()), clear.rects.data())) {
                 skip |=
                     ValidateClearAttachment(*primary, clear.framebufferAttachment, clear.colorAttachment, clear.aspects, cb_loc);
             }
@@ -275,7 +274,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, u32 commandBufferCount,
                                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
 
@@ -284,16 +283,16 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
         return;
     }
 
-    for (uint32_t i = 0; i < commandBufferCount; i++) {
+    for (u32 i = 0; i < commandBufferCount; i++) {
         auto secondary = GetWrite<bp_state::CommandBuffer>(pCommandBuffers[i]);
         if (!secondary) {
             continue;
         }
 
         for (auto& early_clear : secondary->render_pass_state.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(*primary, uint32_t(early_clear.rects.size()), early_clear.rects.data())) {
+            if (ClearAttachmentsIsFullClear(*primary, u32(early_clear.rects.size()), early_clear.rects.data())) {
                 RecordAttachmentClearAttachments(*primary, early_clear.framebufferAttachment, early_clear.colorAttachment,
-                                                 early_clear.aspects, uint32_t(early_clear.rects.size()), early_clear.rects.data());
+                                                 early_clear.aspects, u32(early_clear.rects.size()), early_clear.rects.data());
             } else {
                 RecordAttachmentAccess(*primary, early_clear.framebufferAttachment, early_clear.aspects);
             }

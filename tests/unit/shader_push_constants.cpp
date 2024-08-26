@@ -60,7 +60,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
     VkPhysicalDeviceProperties device_props = {};
     vk::GetPhysicalDeviceProperties(gpu(), &device_props);
     // will be at least 256 as required from the spec
-    const uint32_t maxPushConstantsSize = device_props.limits.maxPushConstantsSize;
+    const u32 maxPushConstantsSize = device_props.limits.maxPushConstantsSize;
 
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     VkPushConstantRange push_constant_range = {0, 0, 4};
@@ -161,7 +161,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     }
 
     // Set limit to be same max as the shader usages
-    const uint32_t maxPushConstantsSize = 16;
+    const u32 maxPushConstantsSize = 16;
     VkPhysicalDeviceProperties props;
     fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     props.limits.maxPushConstantsSize = maxPushConstantsSize;
@@ -460,17 +460,17 @@ TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
         }
     )glsl";
 
-    uint32_t data = 32;
+    u32 data = 32;
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
     entry.offset = 0;
-    entry.size = sizeof(uint32_t);
+    entry.size = sizeof(u32);
 
     VkSpecializationInfo specialization_info = {};
     specialization_info.mapEntryCount = 1;
     specialization_info.pMapEntries = &entry;
-    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.dataSize = sizeof(u32);
     specialization_info.pData = &data;
 
     // With spec constant set, this should be 32, not 16

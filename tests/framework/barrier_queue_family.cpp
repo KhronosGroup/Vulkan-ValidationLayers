@@ -18,7 +18,7 @@ BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {
     delete queue;
 }
 
-void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, uint32_t qf_index, VkQueue qf_queue,
+void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, u32 qf_index, VkQueue qf_queue,
                                                    VkCommandPoolCreateFlags cp_flags) {
     index = qf_index;
     queue = new vkt::Queue(qf_queue, qf_index);
@@ -27,7 +27,7 @@ void BarrierQueueFamilyBase::QueueFamilyObjs::Init(vkt::Device *device, uint32_t
     command_buffer2 = new vkt::CommandBuffer(*device, *command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 }
 
-BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<uint32_t> &queue_family_indices) : layer_test(test) {
+BarrierQueueFamilyBase::Context::Context(VkLayerTest *test, const std::vector<u32> &queue_family_indices) : layer_test(test) {
     if (0 == queue_family_indices.size()) {
         return;  // This is invalid
     }
@@ -49,7 +49,7 @@ void BarrierQueueFamilyBase::Context::Reset() {
     }
 }
 
-void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
+void BarrierQueueFamilyTestHelper::Init(std::vector<u32> *families, bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -75,7 +75,7 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
     buffer_barrier_ = buffer_.buffer_memory_barrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
 }
 
-void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
+void Barrier2QueueFamilyTestHelper::Init(std::vector<u32> *families, bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -103,7 +103,7 @@ void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool i
                                                     VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
 }
 
-BarrierQueueFamilyBase::QueueFamilyObjs *BarrierQueueFamilyBase::GetQueueFamilyInfo(Context *context, uint32_t qfi) {
+BarrierQueueFamilyBase::QueueFamilyObjs *BarrierQueueFamilyBase::GetQueueFamilyInfo(Context *context, u32 qfi) {
     QueueFamilyObjs *qf;
 
     auto qf_it = context->queue_families.find(qfi);
@@ -115,8 +115,8 @@ BarrierQueueFamilyBase::QueueFamilyObjs *BarrierQueueFamilyBase::GetQueueFamilyI
     return qf;
 }
 
-void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, uint32_t src, uint32_t dst,
-                                              uint32_t queue_family_index, Modifier mod) {
+void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, u32 src, u32 dst,
+                                              u32 queue_family_index, Modifier mod) {
     auto &monitor = context_->layer_test->Monitor();
     const bool has_img_err = img_err.size() > 0;
     const bool has_buf_err = buf_err.size() > 0;
@@ -159,8 +159,8 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
     context_->Reset();
 }
 
-void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, uint32_t src, uint32_t dst,
-                                               uint32_t queue_family_index, Modifier mod) {
+void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, u32 src, u32 dst,
+                                               u32 queue_family_index, Modifier mod) {
     auto &monitor = context_->layer_test->Monitor();
     bool positive = true;
     if (img_err.length()) {
@@ -216,8 +216,8 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier) {
     cb->begin();
-    uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
-    uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
+    u32 num_buf_barrier = (buf_barrier) ? 1 : 0;
+    u32 num_img_barrier = (img_barrier) ? 1 : 0;
     vk::CmdPipelineBarrier(cb->handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
                            img_barrier);
     cb->end();

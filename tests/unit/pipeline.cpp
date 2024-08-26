@@ -144,7 +144,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041");
 
     VkFormat non_blending_format = VK_FORMAT_UNDEFINED;
-    for (uint32_t i = 1; i <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; i++) {
+    for (u32 i = 1; i <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; i++) {
         VkFormatFeatureFlags2 format_features = m_device->FormatFeaturesOptimal(static_cast<VkFormat>(i));
         if ((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
             !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
@@ -217,7 +217,7 @@ TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
 
 TEST_F(NegativePipeline, BadPipelineObject) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    constexpr uint64_t fake_pipeline_handle = 0xbaad6001;
+    constexpr u64 fake_pipeline_handle = 0xbaad6001;
     VkPipeline bad_pipeline = CastFromUint64<VkPipeline>(fake_pipeline_handle);
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
@@ -342,7 +342,7 @@ TEST_F(NegativePipeline, ShaderStageName) {
     // Finally, check the string validation for the shader stage pName variable.  Correct the shader stage data, and bork the
     // string before calling again
     shaderStage = vs.GetStageCreateInfo();
-    const uint8_t cont_char = 0xf8;
+    const u8 cont_char = 0xf8;
     char bad_string[] = {static_cast<char>(cont_char), static_cast<char>(cont_char), static_cast<char>(cont_char),
                          static_cast<char>(cont_char)};
     shaderStage.pName = bad_string;
@@ -490,8 +490,8 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
 
     auto render_target_view = m_renderTargets[0]->CreateView();
 
-    const uint32_t fb_width = m_renderTargets[0]->width();
-    const uint32_t fb_height = m_renderTargets[0]->height();
+    const u32 fb_width = m_renderTargets[0]->width();
+    const u32 fb_height = m_renderTargets[0]->height();
     vkt::Framebuffer framebuffer(*m_device, renderpass, 1, &render_target_view.handle(), fb_width, fb_height);
 
     CreatePipelineHelper pipeline_1(*this);
@@ -733,7 +733,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
         pipeline_rasterization_state_create_info_template;
     pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE;
 
-    constexpr uint64_t fake_pipeline_id = 0xCADECADE;
+    constexpr u64 fake_pipeline_id = 0xCADECADE;
     VkPipeline fake_pipeline_handle = CastFromUint64<VkPipeline>(fake_pipeline_id);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -1057,12 +1057,12 @@ TEST_F(NegativePipeline, NullStagepNameMaintenance5) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1085,12 +1085,12 @@ TEST_F(NegativePipeline, NullStagepNameMaintenance5Compute) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    std::vector<uint32_t> shader;
+    std::vector<u32> shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
-    module_create_info.codeSize = shader.size() * sizeof(uint32_t);
+    module_create_info.codeSize = shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper(&module_create_info);
     stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -1135,7 +1135,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
         VkSampleCountFlagBits raster_samples;
         VkBool32 depth_test;
         VkBool32 sample_shading;
-        uint32_t table_count;
+        u32 table_count;
         bool positiveTest;
         std::string vuid;
     };
@@ -1293,7 +1293,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
 
     std::vector<TestCase> test_cases;
 
-    uint32_t combination_count = 0;
+    u32 combination_count = 0;
     std::vector<VkFramebufferMixedSamplesCombinationNV> combinations;
 
     vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr);
@@ -1390,7 +1390,7 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
     struct TestCase {
         VkFormat format;
         VkBool32 enabled;
-        uint32_t location;
+        u32 location;
         bool positive;
     };
 
@@ -1731,7 +1731,7 @@ TEST_F(NegativePipeline, MaxPerStageResources) {
     }
 
     // Spec requires a minimum of 128 so know this is setting it lower than that
-    const uint32_t maxPerStageResources = 4;
+    const u32 maxPerStageResources = 4;
     VkPhysicalDeviceProperties props;
     fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
     props.limits.maxPerStageResources = maxPerStageResources;
@@ -1817,8 +1817,7 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features =
-        vku::InitStructHelper();
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features = vku::InitStructHelper();
     pipeline_exe_features.pipelineExecutableInfo = VK_FALSE;  // Starting with it off
 
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&pipeline_exe_features);
@@ -1833,7 +1832,7 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    uint32_t count;
+    u32 count;
     VkPipelineExecutableInfoKHR pipeline_exe_info = vku::InitStructHelper();
     pipeline_exe_info.pipeline = pipe.Handle();
     pipeline_exe_info.executableIndex = 0;
@@ -2285,11 +2284,10 @@ TEST_F(NegativePipeline, DiscardRectangle) {
     VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(discard_rectangle_properties);
 
-    uint32_t count = discard_rectangle_properties.maxDiscardRectangles + 1;
+    u32 count = discard_rectangle_properties.maxDiscardRectangles + 1;
     std::vector<VkRect2D> discard_rectangles(count);
 
-    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rectangle_state =
-        vku::InitStructHelper();
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rectangle_state = vku::InitStructHelper();
     discard_rectangle_state.discardRectangleCount = count;
     discard_rectangle_state.pDiscardRectangles = discard_rectangles.data();
 
@@ -2329,7 +2327,7 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXTMaxAttachments) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
+    u32 max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
 
     std::vector<VkBool32> enables(max_color_attachments, VK_TRUE);
     VkPipelineColorWriteCreateInfoEXT color_write = vku::InitStructHelper();
@@ -2402,8 +2400,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
-    const uint32_t valid_count =
-        multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
+    const u32 valid_count = multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
 
     if (valid_count == 0) {
         printf("multisample properties are not supported.\n");
@@ -2417,8 +2414,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     sample_locations_info.sampleLocationsCount = valid_count;
     sample_locations_info.pSampleLocations = sample_location.data();
 
-    VkPipelineSampleLocationsStateCreateInfoEXT sample_locations_state =
-        vku::InitStructHelper();
+    VkPipelineSampleLocationsStateCreateInfoEXT sample_locations_state = vku::InitStructHelper();
     sample_locations_state.sampleLocationsEnable = VK_TRUE;
     sample_locations_state.sampleLocationsInfo = sample_locations_info;
 
@@ -2500,8 +2496,7 @@ TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(conservative_rasterization_props);
 
-    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state =
-        vku::InitStructHelper();
+    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_state = vku::InitStructHelper();
     conservative_state.extraPrimitiveOverestimationSize = -1.0f;
 
     CreatePipelineHelper pipe(*this);

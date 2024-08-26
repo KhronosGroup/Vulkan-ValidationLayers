@@ -274,7 +274,7 @@ bool IsFieldPointer(Field field) {
 
             std::string String(const Requirement& requirement) {
                 if (requirement.extension == Extension::Empty) {
-                    APIVersion api_version(static_cast<uint32_t>(requirement.version));
+                    APIVersion api_version(static_cast<u32>(requirement.version));
                     return StringAPIVersion(api_version);
                 } else {
                     return String(requirement.extension);

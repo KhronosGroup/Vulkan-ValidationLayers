@@ -56,7 +56,7 @@ bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Loca
 
     skip |= CheckPipelineStageFlags(objlist, dep_loc, stage_masks.src);
     skip |= CheckPipelineStageFlags(objlist, dep_loc, stage_masks.dst);
-    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
+    for (u32 i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(dep_loc.dot(Field::pImageMemoryBarriers, i), dep_info.pImageMemoryBarriers[i].image,
                                            dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
                                            dep_info.pImageMemoryBarriers[i].srcAccessMask,
@@ -177,12 +177,11 @@ void BestPractices::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, V
     RecordCmdResetEvent(*cb_state, event);
 }
 
-bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent* pEvents,
                                                  VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                                 uint32_t bufferMemoryBarrierCount,
-                                                 const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                                 u32 memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                                 u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                                 u32 imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
                                                  const ErrorObject& error_obj) const {
     bool skip = false;
 
@@ -192,16 +191,16 @@ bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent* pEvents,
                                                      const VkDependencyInfoKHR* pDependencyInfos,
                                                      const ErrorObject& error_obj) const {
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
-bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent* pEvents,
                                                   const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
     bool skip = false;
-    for (uint32_t i = 0; i < eventCount; i++) {
+    for (u32 i = 0; i < eventCount; i++) {
         skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfos, i), pDependencyInfos[i]);
     }
 
@@ -332,17 +331,19 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkImage imag
     return skip;
 }
 
-bool BestPractices::PreCallValidateCmdPipelineBarrier(
-    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                                      VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                                      u32 memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                                      u32 bufferMemoryBarrierCount,
+                                                      const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                                      u32 imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                                      const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::srcStageMask), srcStageMask);
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::dstStageMask), dstStageMask);
 
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+    for (u32 i = 0; i < imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(error_obj.location.dot(Field::pImageMemoryBarriers, i), pImageMemoryBarriers[i].image,
                                            pImageMemoryBarriers[i].oldLayout, pImageMemoryBarriers[i].newLayout,
                                            pImageMemoryBarriers[i].srcAccessMask, pImageMemoryBarriers[i].dstAccessMask,
@@ -367,7 +368,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         };
 
-        for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
+        for (u32 i = 0; i < imageMemoryBarrierCount; i++) {
             // read to read barriers
             const auto& image_barrier = pImageMemoryBarriers[i];
             const bool old_is_read_layout =
@@ -396,7 +397,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
         }
     }
 
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+    for (u32 i = 0; i < imageMemoryBarrierCount; ++i) {
         skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i],
                                                        error_obj.location.dot(Field::pImageMemoryBarriers, i));
     }
@@ -416,7 +417,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBu
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
     skip |= CheckDependencyInfo(commandBuffer, dep_info_loc, *pDependencyInfo);
 
-    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
+    for (u32 i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
         skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i],
                                                        dep_info_loc.dot(Field::pImageMemoryBarriers, i));
     }
@@ -442,15 +443,15 @@ bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer comma
 
 template <typename Func>
 static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
-    const uint32_t layer_count =
+    const u32 layer_count =
         (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
-    const uint32_t level_count =
+    const u32 level_count =
         (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
 
-    for (uint32_t i = 0; i < layer_count; ++i) {
-        const uint32_t layer = range.baseArrayLayer + i;
-        for (uint32_t j = 0; j < level_count; ++j) {
-            const uint32_t level = range.baseMipLevel + j;
+    for (u32 i = 0; i < layer_count; ++i) {
+        const u32 layer = range.baseArrayLayer + i;
+        for (u32 j = 0; j < level_count; ++j) {
+            const u32 level = range.baseMipLevel + j;
             func(layer, level);
         }
     }
@@ -469,7 +470,7 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
         cb_state->queue_submit_functions.emplace_back([image, subresource_range](const ValidationStateTracker& vst,
                                                                                  const vvl::Queue& qs,
                                                                                  const vvl::CommandBuffer& cbs) -> bool {
-            ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
+            ForEachSubresource(*image, subresource_range, [&](u32 layer, u32 level) {
                 // Update queue family index without changing usage, signifying a correct queue family transfer
                 image->UpdateUsage(layer, level, image->GetUsageType(layer, level), qs.queue_family_index);
             });
@@ -482,18 +483,20 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
     }
 }
 
-void BestPractices::PostCallRecordCmdPipelineBarrier(
-    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) {
+void BestPractices::PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                                     VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                                     u32 memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                                     u32 bufferMemoryBarrierCount,
+                                                     const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                                     u32 imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                                     const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordCmdPipelineBarrier(
         commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
         pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
     num_barriers_objects_ += (memoryBarrierCount + imageMemoryBarrierCount + bufferMemoryBarrierCount);
 
-    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+    for (u32 i = 0; i < imageMemoryBarrierCount; ++i) {
         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pImageMemoryBarriers[i]);
     }
 }
@@ -502,7 +505,7 @@ void BestPractices::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuf
                                                       const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
-    for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
+    for (u32 i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);
     }
 }

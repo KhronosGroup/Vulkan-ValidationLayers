@@ -235,7 +235,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        uint8_t buffer[128];
+        u8 buffer[128];
         VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
         dgi.type = VK_DESCRIPTOR_TYPE_SAMPLER;
         dgi.data.pSampler = &sampler.handle();
@@ -256,7 +256,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        uint32_t data[128];
+        u32 data[128];
         const auto ocddci = vku::InitStruct<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(nullptr, &data);
 
         {
@@ -355,7 +355,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        uint8_t data[256];
+        u8 data[256];
         vkt::Buffer temp_buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
         VkBufferCaptureDescriptorDataInfoEXT bcddi = vku::InitStructHelper();
@@ -368,7 +368,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        uint8_t data[256];
+        u8 data[256];
 
         VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -394,7 +394,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        uint8_t data[256];
+        u8 data[256];
 
         VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -422,7 +422,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     }
 
     {
-        uint8_t data[256];
+        u8 data[256];
 
         VkSamplerCaptureDescriptorDataInfoEXT scddi = vku::InitStructHelper();
         scddi.sampler = sampler.handle();
@@ -437,7 +437,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
         blas->Build();
 
-        uint8_t data[256];
+        u8 data[256];
 
         VkAccelerationStructureCaptureDescriptorDataInfoEXT ascddi = vku::InitStructHelper();
         ascddi.accelerationStructure = blas->handle();
@@ -496,7 +496,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
                  VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
 
     std::vector<VkDescriptorBufferBindingInfoEXT> binding_infos;
-    for (uint32_t i = 0; i < descriptor_buffer_properties.maxDescriptorBufferBindings + 1; i++) {
+    for (u32 i = 0; i < descriptor_buffer_properties.maxDescriptorBufferBindings + 1; i++) {
         binding_infos.push_back(dbbi);
     }
 
@@ -539,7 +539,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptors) {
                  VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     std::vector<VkDescriptorBufferBindingInfoEXT> binding_infos;
-    for (uint32_t i = 0; i < descriptor_buffer_properties.maxDescriptorBufferBindings + 1; i++) {
+    for (u32 i = 0; i < descriptor_buffer_properties.maxDescriptorBufferBindings + 1; i++) {
         binding_infos.push_back(dbbi);
     }
 
@@ -710,7 +710,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
     vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
 
-    uint32_t index = 0;
+    u32 index = 0;
     VkDeviceSize offset = 0;
 
     if (descriptor_buffer_properties.descriptorBufferOffsetAlignment != 1) {
@@ -730,7 +730,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
                                          &index, &offset);
     m_errorMonitor->VerifyFound();
 
-    uint32_t indices[3] = {0};
+    u32 indices[3] = {0};
     VkDeviceSize offsets[3] = {0};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-08066");
@@ -739,7 +739,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
                                          indices, offsets);
     m_errorMonitor->VerifyFound();
 
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
+    const std::optional<u32> compute_qfi = m_device->ComputeOnlyQueueFamily();
     if (compute_qfi) {
         vkt::CommandPool command_pool(*m_device, compute_qfi.value());
         ASSERT_TRUE(command_pool.initialized());
@@ -762,7 +762,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
         const vkt::DescriptorSetLayout set_layout_no_flag(*m_device, {binding});
         const vkt::PipelineLayout pipeline_layout_2(*m_device, {&set_layout_no_flag, &set_layout_no_flag});
 
-        const uint32_t indices_2[2] = {0, 0};
+        const u32 indices_2[2] = {0, 0};
         const VkDeviceSize offsets_2[2] = {0, 0};
         vk::CmdBindDescriptorBuffersEXT(*m_commandBuffer, 1, &dbbi);
         // complain about set layout for set 0
@@ -854,7 +854,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
 
     vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
 
-    constexpr uint32_t index = 0;
+    constexpr u32 index = 0;
 
     // First call should succeed because offset is small enough to fit in large_buffer
     const VkDeviceSize offset = small_buffer_size;
@@ -908,7 +908,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
 
     vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
 
-    uint32_t index = 0;
+    u32 index = 0;
     VkDeviceSize offset = 0;
     vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                                          &index, &offset);
@@ -1010,7 +1010,7 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
     }
 
     {
-        const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
+        const std::optional<u32> compute_qfi = m_device->ComputeOnlyQueueFamily();
         if (!compute_qfi) {
             GTEST_SKIP() << "No compute-only queue family, skipping bindpoint and queue tests.";
             return;
@@ -1033,7 +1033,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoBasic) {
     TEST_DESCRIPTION("Descriptor buffer vkDescriptorGetInfo().");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    uint8_t buffer[128];
+    u8 buffer[128];
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
@@ -1055,7 +1055,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoValidPointer) {
     TEST_DESCRIPTION("If type is used, need valid pointer to corresponding data.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    uint8_t buffer[16];
+    u8 buffer[16];
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
 
     dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1093,7 +1093,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorAddressInfoImplicit) {
     dgi.data.pUniformTexelBuffer = &dai;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-pNext-pNext");
-    uint8_t buffer[16];
+    u8 buffer[16];
     vk::GetDescriptorEXT(device(), &dgi, 4, &buffer);
     m_errorMonitor->VerifyFound();
 }
@@ -1102,7 +1102,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoSampler) {
     TEST_DESCRIPTION("Descriptor buffer vkDescriptorGetInfo() with a sampler backed VkDescriptorImageInfo.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    uint8_t buffer[128];
+    u8 buffer[128];
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
@@ -1168,7 +1168,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAS) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    uint8_t buffer[128];
+    u8 buffer[128];
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
@@ -1185,7 +1185,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoRtxNV) {
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    uint8_t buffer[128];
+    u8 buffer[128];
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
@@ -1203,7 +1203,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    uint8_t buffer[128];
+    u8 buffer[128];
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
@@ -1311,7 +1311,7 @@ TEST_F(NegativeDescriptorBuffer, Various) {
         VkImageView invalid_imageview = CastToHandle<VkImageView, uintptr_t>(0xbaadbeef);
         VkDeviceAddress invalid_buffer = CastToHandle<VkDeviceAddress, uintptr_t>(0xbaadbeef);
 
-        uint8_t buffer[128];
+        u8 buffer[128];
         VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
 
         const VkDescriptorImageInfo dii = {invalid_sampler, invalid_imageview, VK_IMAGE_LAYOUT_GENERAL};
@@ -1557,7 +1557,7 @@ TEST_F(NegativeDescriptorBuffer, NullCombinedImageSampler) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    uint8_t out;
+    u8 out;
     VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
     dgi.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     dgi.data.pCombinedImageSampler = nullptr;
@@ -1694,7 +1694,7 @@ TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {
     dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     dgi.data.pUniformTexelBuffer = &dai;
 
-    uint8_t out;
+    u8 out;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-address-08043");  // null address
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-09427");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
@@ -1724,7 +1724,7 @@ TEST_F(NegativeDescriptorBuffer, TexelBufferFormat) {
     dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
     dgi.data.pUniformTexelBuffer = &dai;
 
-    uint8_t out;
+    u8 out;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-None-09508");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
     m_errorMonitor->VerifyFound();

@@ -23,7 +23,7 @@
 
 static const VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
-static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
+static VkSubpassDependency2 ImplicitDependencyFromExternal(u32 subpass) {
     VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
                                           nullptr,
                                           VK_SUBPASS_EXTERNAL,
@@ -39,7 +39,7 @@ static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
     return from_external;
 }
 
-static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
+static VkSubpassDependency2 ImplicitDependencyToExternal(u32 subpass) {
     VkSubpassDependency2 to_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
                                         nullptr,
                                         subpass,
@@ -64,12 +64,12 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
     auto &subpass_dependencies = const_cast<vvl::RenderPass::SubpassGraphVec &>(render_pass->subpass_dependencies);
     subpass_dependencies.resize(pCreateInfo->subpassCount);
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->subpassCount; ++i) {
         subpass_to_node[i].pass = i;
         self_dependencies[i].clear();
         subpass_dependencies[i].pass = i;
     }
-    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+    for (u32 i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const auto &dependency = pCreateInfo->pDependencies[i];
         const auto src_subpass = dependency.srcSubpass;
         const auto dst_subpass = dependency.dstSubpass;
@@ -95,7 +95,7 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
 
     // If no barriers to external are provided for a given subpass, add them.
     for (auto &subpass_dep : subpass_dependencies) {
-        const uint32_t pass = subpass_dep.pass;
+        const u32 pass = subpass_dep.pass;
         if (subpass_dep.barrier_from_external.empty()) {
             // Add implicit from barrier if they're aren't any
             subpass_dep.implicit_barrier_from_external =
@@ -115,19 +115,19 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
     // NOTE: This is O(N^3), which we could shrink to O(N^2logN) using sets instead of arrays, but given that N is likely to be
     // small and the K for |= from the prev is must less than for set, we'll accept the brute force.
     std::vector<std::vector<bool>> pass_depends(pCreateInfo->subpassCount);
-    for (uint32_t i = 1; i < pCreateInfo->subpassCount; ++i) {
+    for (u32 i = 1; i < pCreateInfo->subpassCount; ++i) {
         auto &depends = pass_depends[i];
         depends.resize(i);
         auto &subpass_dep = subpass_dependencies[i];
         for (const auto &prev : subpass_dep.prev) {
             const auto prev_pass = prev.first->pass;
             const auto &prev_depends = pass_depends[prev_pass];
-            for (uint32_t j = 0; j < prev_pass; j++) {
+            for (u32 j = 0; j < prev_pass; j++) {
                 depends[j] = depends[j] || prev_depends[j];
             }
             depends[prev_pass] = true;
         }
-        for (uint32_t pass = 0; pass < subpass_dep.pass; pass++) {
+        for (u32 pass = 0; pass < subpass_dep.pass; pass++) {
             if (!depends[pass]) {
                 subpass_dep.async.push_back(pass);
             }
@@ -142,7 +142,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
     vvl::RenderPass::SubpassVec &last;
     vvl::RenderPass::TransitionVec &subpass_transitions;
     vvl::RenderPass::FirstReadMap &first_read;
-    const uint32_t attachment_count;
+    const u32 attachment_count;
     std::vector<VkImageLayout> attachment_layout;
     std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
     explicit AttachmentTracker(vvl::RenderPass *render_pass)
@@ -165,17 +165,17 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
             subpass_layouts.resize(attachment_count, kInvalidLayout);
         }
 
-        for (uint32_t j = 0; j < attachment_count; j++) {
+        for (u32 j = 0; j < attachment_count; j++) {
             attachment_layout.push_back(rp->create_info.pAttachments[j].initialLayout);
         }
     }
 
-    void Update(uint32_t subpass, const uint32_t *preserved, uint32_t count) {
+    void Update(u32 subpass, const u32 *preserved, u32 count) {
         // for preserved attachment, preserve the layout from the most recent (max subpass) dependency
         // or initial, if none
 
         // max_prev is invariant across attachments
-        uint32_t max_prev = VK_SUBPASS_EXTERNAL;
+        u32 max_prev = VK_SUBPASS_EXTERNAL;
         for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
             const auto prev_pass = prev.first->pass;
             max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? prev_pass : std::max(prev_pass, max_prev);
@@ -190,9 +190,9 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         }
     }
 
-    void Update(uint32_t subpass, const VkAttachmentReference2 *attach_ref, uint32_t count, bool is_read) {
+    void Update(u32 subpass, const VkAttachmentReference2 *attach_ref, u32 count, bool is_read) {
         if (nullptr == attach_ref) return;
-        for (uint32_t j = 0; j < count; ++j) {
+        for (u32 j = 0; j < count; ++j) {
             const auto attachment = attach_ref[j].attachment;
             if (attachment != VK_ATTACHMENT_UNUSED) {
                 const auto layout = attach_ref[j].layout;
@@ -234,7 +234,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
     void FinalTransitions() {
         auto &final_transitions = subpass_transitions[rp->create_info.subpassCount];
 
-        for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
+        for (u32 attachment = 0; attachment < attachment_count; ++attachment) {
             const auto final_layout = rp->create_info.pAttachments[attachment].finalLayout;
             // Add final transitions for attachments that were used and change layout.
             if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
@@ -251,7 +251,7 @@ static void InitRenderPassState(vvl::RenderPass *render_pass) {
 
     AttachmentTracker attachment_tracker(render_pass);
 
-    for (uint32_t subpass_index = 0; subpass_index < create_info->subpassCount; ++subpass_index) {
+    for (u32 subpass_index = 0; subpass_index < create_info->subpassCount; ++subpass_index) {
         const VkSubpassDescription2 &subpass = create_info->pSubpasses[subpass_index];
         attachment_tracker.Update(subpass_index, subpass.pColorAttachments, subpass.colorAttachmentCount, false);
         attachment_tracker.Update(subpass_index, subpass.pResolveAttachments, subpass.colorAttachmentCount, false);
@@ -305,13 +305,13 @@ RenderPass::RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCr
                                                  ? pPipelineRenderingCreateInfo
                                                  : &VkPipelineRenderingCreateInfo_default) {}
 
-bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
+bool RenderPass::UsesColorAttachment(u32 subpass_num) const {
     bool result = false;
 
     if (subpass_num < create_info.subpassCount) {
         const auto &subpass = create_info.pSubpasses[subpass_num];
 
-        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+        for (u32 i = 0; i < subpass.colorAttachmentCount; ++i) {
             if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
                 result = true;
                 break;
@@ -323,8 +323,8 @@ bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
         // but in this case, it will use the resolve attachment as color attachment. Which means that we do
         // actually use color attachments
         if (subpass.pResolveAttachments != nullptr) {
-            for (uint32_t i = 0; i < subpass.colorAttachmentCount && !result; ++i) {
-                uint32_t resolveAttachmentIndex = subpass.pResolveAttachments[i].attachment;
+            for (u32 i = 0; i < subpass.colorAttachmentCount && !result; ++i) {
+                u32 resolveAttachmentIndex = subpass.pResolveAttachments[i].attachment;
                 const void *resolveAtatchmentPNextChain = create_info.pAttachments[resolveAttachmentIndex].pNext;
                 if (vku::FindStructInPNextChain<VkExternalFormatANDROID>(resolveAtatchmentPNextChain)) result = true;
             }
@@ -334,7 +334,7 @@ bool RenderPass::UsesColorAttachment(uint32_t subpass_num) const {
     return result;
 }
 
-bool RenderPass::UsesDepthStencilAttachment(uint32_t subpass_num) const {
+bool RenderPass::UsesDepthStencilAttachment(u32 subpass_num) const {
     bool result = false;
     if (subpass_num < create_info.subpassCount) {
         const auto &subpass = create_info.pSubpasses[subpass_num];
@@ -346,12 +346,12 @@ bool RenderPass::UsesDepthStencilAttachment(uint32_t subpass_num) const {
 }
 
 // vkspec.html#renderpass-noattachments
-bool RenderPass::UsesNoAttachment(uint32_t subpass) const {
+bool RenderPass::UsesNoAttachment(u32 subpass) const {
     // If using dynamic rendering, there is no subpass, so return 'false'
     return !UsesColorAttachment(subpass) && !UsesDepthStencilAttachment(subpass) && !UsesDynamicRendering();
 }
 
-uint32_t RenderPass::GetDynamicRenderingColorAttachmentCount() const {
+u32 RenderPass::GetDynamicRenderingColorAttachmentCount() const {
     if (use_dynamic_rendering_inherited) {
         return inheritance_rendering_info.colorAttachmentCount;
     } else if (use_dynamic_rendering) {
@@ -360,7 +360,7 @@ uint32_t RenderPass::GetDynamicRenderingColorAttachmentCount() const {
     return 0;
 }
 
-uint32_t RenderPass::GetDynamicRenderingViewMask() const {
+u32 RenderPass::GetDynamicRenderingViewMask() const {
     if (use_dynamic_rendering_inherited) {
         return inheritance_rendering_info.viewMask;
     } else if (use_dynamic_rendering) {
@@ -369,7 +369,7 @@ uint32_t RenderPass::GetDynamicRenderingViewMask() const {
     return 0;
 }
 
-uint32_t RenderPass::GetViewMaskBits(uint32_t subpass) const {
+u32 RenderPass::GetViewMaskBits(u32 subpass) const {
     if (use_dynamic_rendering_inherited) {
         return GetBitSetCount(inheritance_rendering_info.viewMask);
     } else if (use_dynamic_rendering) {
@@ -383,7 +383,7 @@ uint32_t RenderPass::GetViewMaskBits(uint32_t subpass) const {
     return 0;
 }
 
-const VkMultisampledRenderToSingleSampledInfoEXT *RenderPass::GetMSRTSSInfo(uint32_t subpass) const {
+const VkMultisampledRenderToSingleSampledInfoEXT *RenderPass::GetMSRTSSInfo(u32 subpass) const {
     if (UsesDynamicRendering()) {
         return vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(
             dynamic_rendering_begin_rendering_info.pNext);

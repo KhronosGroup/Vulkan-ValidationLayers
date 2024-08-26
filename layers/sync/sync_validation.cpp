@@ -154,7 +154,7 @@ void SyncValidator::WaitForFence(VkFence fence) {
     }
 }
 
-void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindImageMemoryInfo *infos) {
+void SyncValidator::UpdateSyncImageMemoryBindState(u32 count, const VkBindImageMemoryInfo *infos) {
     for (const auto &info : vvl::make_span(infos, count)) {
         if (VK_NULL_HANDLE == info.image) continue;
         auto image_state = Get<ImageState>(info.image);
@@ -194,7 +194,7 @@ std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage handle, cons
 }
 
 std::shared_ptr<vvl::Image> SyncValidator::CreateImageState(VkImage handle, const VkImageCreateInfo *create_info,
-                                                            VkSwapchainKHR swapchain, uint32_t swapchain_index,
+                                                            VkSwapchainKHR swapchain, u32 swapchain_index,
                                                             VkFormatFeatureFlags2 features) {
     return std::make_shared<ImageState>(*this, handle, create_info, swapchain, swapchain_index, features);
 }
@@ -205,7 +205,7 @@ std::shared_ptr<vvl::ImageView> SyncValidator::CreateImageViewState(
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                                 uint32_t regionCount, const VkBufferCopy *pRegions,
+                                                 u32 regionCount, const VkBufferCopy *pRegions,
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -218,7 +218,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
@@ -248,7 +248,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
 }
 
 void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                               uint32_t regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
+                                               u32 regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -262,7 +262,7 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
     auto dst_tag_ex = dst_buffer ? cb_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
@@ -288,7 +288,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
     auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
     auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
 
-    for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
+    for (u32 region = 0; region < pCopyBufferInfo->regionCount; region++) {
         const auto &copy_region = pCopyBufferInfo->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
@@ -337,7 +337,7 @@ void SyncValidator::RecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const Vk
     auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
     auto dst_tag_ex = dst_buffer ? cb_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
 
-    for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
+    for (u32 region = 0; region < pCopyBufferInfo->regionCount; region++) {
         const auto &copy_region = pCopyBufferInfo->pRegions[region];
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
@@ -361,7 +361,7 @@ void SyncValidator::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, c
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                                 const VkImageCopy *pRegions, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -375,7 +375,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
 
     auto src_image = Get<ImageState>(srcImage);
     auto dst_image = Get<ImageState>(dstImage);
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset,
@@ -407,7 +407,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
 }
 
 void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                               const VkImageCopy *pRegions, const RecordObject &record_obj) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -426,7 +426,7 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
         cb_access_context->AddCommandHandle(tag, dst_image->Handle());
     }
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
@@ -454,7 +454,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
     auto src_image = Get<ImageState>(pCopyImageInfo->srcImage);
     auto dst_image = Get<ImageState>(pCopyImageInfo->dstImage);
 
-    for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
+    for (u32 region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset,
@@ -508,7 +508,7 @@ void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkC
         cb_access_context->AddCommandHandle(tag, dst_image->Handle());
     }
 
-    for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
+    for (u32 region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
@@ -531,11 +531,13 @@ void SyncValidator::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, co
     RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj.location.function);
 }
 
-bool SyncValidator::PreCallValidateCmdPipelineBarrier(
-    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier *pImageMemoryBarriers, const ErrorObject &error_obj) const {
+bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                                      VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                                      u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                      u32 bufferMemoryBarrierCount,
+                                                      const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                      u32 imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -550,11 +552,13 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdPipelineBarrier(
-    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject &record_obj) {
+void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                                    VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                                    u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                    u32 bufferMemoryBarrierCount,
+                                                    const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
+                                                    const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                                    const RecordObject &record_obj) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -629,11 +633,11 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
 
     const auto env_debug_command_number = GetEnvironment("VK_SYNCVAL_DEBUG_COMMAND_NUMBER");
     if (!env_debug_command_number.empty()) {
-        debug_command_number = static_cast<uint32_t>(std::stoul(env_debug_command_number));
+        debug_command_number = static_cast<u32>(std::stoul(env_debug_command_number));
     }
     const auto env_debug_reset_count = GetEnvironment("VK_SYNCVAL_DEBUG_RESET_COUNT");
     if (!env_debug_reset_count.empty()) {
-        debug_reset_count = static_cast<uint32_t>(std::stoul(env_debug_reset_count));
+        debug_reset_count = static_cast<u32>(std::stoul(env_debug_reset_count));
     }
     debug_cmdbuf_pattern = GetEnvironment("VK_SYNCVAL_DEBUG_CMDBUF_PATTERN");
     vvl::ToLower(debug_cmdbuf_pattern);
@@ -910,7 +914,7 @@ void SyncValidator::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, 
 
 template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                 VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                                                 VkImageLayout dstImageLayout, u32 regionCount, const RegionType *pRegions,
                                                  const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -925,7 +929,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_image = Get<ImageState>(dstImage);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         HazardResult hazard;
         if (dst_image) {
@@ -961,7 +965,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                        VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                        VkImageLayout dstImageLayout, u32 regionCount,
                                                         const VkBufferImageCopy *pRegions, const ErrorObject &error_obj) const {
     return ValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                         error_obj.location);
@@ -983,7 +987,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer command
 
 template <typename RegionType>
 void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                               VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
+                                               VkImageLayout dstImageLayout, u32 regionCount, const RegionType *pRegions,
                                                Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1002,7 +1006,7 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
         cb_access_context->AddCommandHandle(tag, dst_image->Handle());
     }
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (dst_image) {
             if (src_buffer) {
@@ -1020,7 +1024,7 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
 }
 
 void SyncValidator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                      VkImageLayout dstImageLayout, u32 regionCount,
                                                       const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                                     record_obj);
@@ -1045,7 +1049,7 @@ void SyncValidator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBu
 
 template <typename RegionType>
 bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                 VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
+                                                 VkBuffer dstBuffer, u32 regionCount, const RegionType *pRegions,
                                                  const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1060,7 +1064,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
     auto src_image = Get<ImageState>(srcImage);
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
     const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->VkHandle() : VK_NULL_HANDLE;
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
@@ -1092,7 +1096,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
 }
 
 bool SyncValidator::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                        VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
+                                                        VkImageLayout srcImageLayout, VkBuffer dstBuffer, u32 regionCount,
                                                         const VkBufferImageCopy *pRegions, const ErrorObject &error_obj) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                         error_obj.location);
@@ -1114,7 +1118,7 @@ bool SyncValidator::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer command
 
 template <typename RegionType>
 void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions, Func command) {
+                                               VkBuffer dstBuffer, u32 regionCount, const RegionType *pRegions, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -1135,7 +1139,7 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->VkHandle() : VK_NULL_HANDLE;
     const VulkanTypedHandle dst_handle(dst_mem, kVulkanObjectTypeDeviceMemory);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
@@ -1153,7 +1157,7 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
 }
 
 void SyncValidator::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
+                                                      VkBuffer dstBuffer, u32 regionCount, const VkBufferImageCopy *pRegions,
                                                       const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                                     record_obj);
@@ -1178,7 +1182,7 @@ void SyncValidator::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBu
 
 template <typename RegionType>
 bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                         VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                          const RegionType *pRegions, VkFilter filter, const Location &loc) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1193,15 +1197,15 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
     auto src_image = Get<ImageState>(srcImage);
     auto dst_image = Get<ImageState>(dstImage);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &blit_region = pRegions[region];
         if (src_image) {
             VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
                                  std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
                                  std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
-            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
-                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
-                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
+            VkExtent3D extent = {static_cast<u32>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
+                                 static_cast<u32>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
+                                 static_cast<u32>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(blit_region.srcSubresource), offset, extent, false,
                                                 SYNC_BLIT_TRANSFER_READ);
             if (hazard.IsHazard()) {
@@ -1217,9 +1221,9 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
             VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
                                  std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
                                  std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
-            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
-                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
-                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
+            VkExtent3D extent = {static_cast<u32>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
+                                 static_cast<u32>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
+                                 static_cast<u32>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
             auto hazard = context->DetectHazard(*dst_image, RangeFromLayers(blit_region.dstSubresource), offset, extent, false,
                                                 SYNC_BLIT_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
@@ -1237,7 +1241,7 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
 }
 
 bool SyncValidator::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                                 const VkImageBlit *pRegions, VkFilter filter, const ErrorObject &error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
                                 error_obj.location);
@@ -1257,8 +1261,8 @@ bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, 
 
 template <typename RegionType>
 void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                       const RegionType *pRegions, VkFilter filter, Func command) {
+                                       VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount, const RegionType *pRegions,
+                                       VkFilter filter, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     const auto tag = cb_state->access_context.NextCommandTag(command);
@@ -1274,15 +1278,15 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
         cb_state->access_context.AddCommandHandle(tag, dst_image->Handle());
     }
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &blit_region = pRegions[region];
         if (src_image) {
             VkOffset3D offset = {std::min(blit_region.srcOffsets[0].x, blit_region.srcOffsets[1].x),
                                  std::min(blit_region.srcOffsets[0].y, blit_region.srcOffsets[1].y),
                                  std::min(blit_region.srcOffsets[0].z, blit_region.srcOffsets[1].z)};
-            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
-                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
-                                 static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
+            VkExtent3D extent = {static_cast<u32>(abs(blit_region.srcOffsets[1].x - blit_region.srcOffsets[0].x)),
+                                 static_cast<u32>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
+                                 static_cast<u32>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
             context->UpdateAccessState(*src_image, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(blit_region.srcSubresource), offset, extent, tag);
         }
@@ -1290,9 +1294,9 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
             VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
                                  std::min(blit_region.dstOffsets[0].y, blit_region.dstOffsets[1].y),
                                  std::min(blit_region.dstOffsets[0].z, blit_region.dstOffsets[1].z)};
-            VkExtent3D extent = {static_cast<uint32_t>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
-                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
-                                 static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
+            VkExtent3D extent = {static_cast<u32>(abs(blit_region.dstOffsets[1].x - blit_region.dstOffsets[0].x)),
+                                 static_cast<u32>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
+                                 static_cast<u32>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
             context->UpdateAccessState(*dst_image, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(blit_region.dstSubresource), offset, extent, tag);
         }
@@ -1300,7 +1304,7 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                               const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions, filter, record_obj);
@@ -1323,7 +1327,7 @@ void SyncValidator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, co
 
 bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
                                            VkCommandBuffer commandBuffer, const VkDeviceSize struct_size, const VkBuffer buffer,
-                                           const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
+                                           const VkDeviceSize offset, const u32 drawCount, const u32 stride,
                                            const Location &loc) const {
     bool skip = false;
     if (drawCount == 0) return skip;
@@ -1341,7 +1345,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
                              cb_context.FormatHazard(hazard).c_str());
         }
     } else {
-        for (uint32_t i = 0; i < drawCount; ++i) {
+        for (u32 i = 0; i < drawCount; ++i) {
             const ResourceAccessRange range = MakeRange(offset + i * stride, size);
             auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
             if (hazard.IsHazard()) {
@@ -1358,7 +1362,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
 
 void SyncValidator::RecordIndirectBuffer(CommandBufferAccessContext &cb_context, const ResourceUsageTag tag,
                                          const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
-                                         const uint32_t drawCount, uint32_t stride) {
+                                         const u32 drawCount, u32 stride) {
     auto buf_state = Get<vvl::Buffer>(buffer);
     auto tag_ex = buf_state ? cb_context.AddCommandHandle(tag, buf_state->Handle()) : ResourceUsageTagEx{tag};
 
@@ -1370,7 +1374,7 @@ void SyncValidator::RecordIndirectBuffer(CommandBufferAccessContext &cb_context,
         context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
                                   tag_ex);
     } else {
-        for (uint32_t i = 0; i < drawCount; ++i) {
+        for (u32 i = 0; i < drawCount; ++i) {
             const ResourceAccessRange range = MakeRange(offset + i * stride, size);
             context.UpdateAccessState(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, SyncOrdering::kNonAttachment, range,
                                       tag_ex);
@@ -1405,7 +1409,7 @@ void SyncValidator::RecordCountBuffer(CommandBufferAccessContext &cb_context, co
                               tag_ex);
 }
 
-bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
+bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, u32 x, u32 y, u32 z,
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1416,8 +1420,7 @@ bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
-                                             const RecordObject &record_obj) {
+void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, u32 x, u32 y, u32 z, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDispatch(commandBuffer, x, y, z, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1457,8 +1460,8 @@ void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
                          sizeof(VkDispatchIndirectCommand));
 }
 
-bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                           uint32_t firstVertex, uint32_t firstInstance, const ErrorObject &error_obj) const {
+bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex,
+                                           u32 firstInstance, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1471,8 +1474,8 @@ bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                         uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
+void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, u32 vertexCount, u32 instanceCount, u32 firstVertex,
+                                         u32 firstInstance, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1484,9 +1487,8 @@ void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t
     cb_access_context->RecordDrawAttachment(tag);
 }
 
-bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                                  uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                                  const ErrorObject &error_obj) const {
+bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex,
+                                                  i32 vertexOffset, u32 firstInstance, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1499,9 +1501,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                                const RecordObject &record_obj) {
+void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u32 indexCount, u32 instanceCount, u32 firstIndex,
+                                                i32 vertexOffset, u32 firstInstance, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                               record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1515,7 +1516,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
+                                                   u32 drawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     if (drawCount == 0) return skip;
 
@@ -1536,12 +1537,12 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, error_obj.location);
+    skip |= cb_access_context->ValidateDrawVertex(std::optional<u32>(), 0, error_obj.location);
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
+void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, u32 drawCount,
+                                                 u32 stride, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     if (drawCount == 0) return;
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1556,11 +1557,11 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
+    cb_access_context->RecordDrawVertex(std::optional<u32>(), 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                          uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
+                                                          u32 drawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     if (drawCount == 0) return skip;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1580,12 +1581,12 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, error_obj.location);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<u32>(), 0, error_obj.location);
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
+                                                        u32 drawCount, u32 stride, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1600,12 +1601,12 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(std::optional<uint32_t>(), 0, tag);
+    cb_access_context->RecordDrawVertexIndex(std::optional<u32>(), 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride, const ErrorObject &error_obj) const {
+                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                        u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1625,13 +1626,13 @@ bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandB
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, error_obj.location);
+    skip |= cb_access_context->ValidateDrawVertex(std::optional<u32>(), 0, error_obj.location);
     return skip;
 }
 
 void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                               uint32_t stride, Func command) {
+                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                               Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -1646,51 +1647,48 @@ void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, Vk
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
+    cb_access_context->RecordDrawVertex(std::optional<u32>(), 0, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride, const RecordObject &record_obj) {
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                      u32 stride, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                     stride, record_obj);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                record_obj.location.function);
 }
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride,
-                                                           const ErrorObject &error_obj) const {
+                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                           u32 stride, const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                error_obj);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                         uint32_t maxDrawCount, uint32_t stride, const RecordObject &record_obj) {
+                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                         u32 stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                       record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride,
-                                                           const ErrorObject &error_obj) const {
+                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                           u32 stride, const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                error_obj);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                         uint32_t maxDrawCount, uint32_t stride, const RecordObject &record_obj) {
+                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                         u32 stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                       record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                               uint32_t maxDrawCount, uint32_t stride,
-                                                               const ErrorObject &error_obj) const {
+                                                               u32 maxDrawCount, u32 stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1710,13 +1708,13 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer c
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, error_obj.location);
+    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<u32>(), 0, error_obj.location);
     return skip;
 }
 
 void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride, Func command) {
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                      u32 stride, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -1731,13 +1729,12 @@ void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuf
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will update the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(std::optional<uint32_t>(), 0, tag);
+    cb_access_context->RecordDrawVertexIndex(std::optional<u32>(), 0, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                             uint32_t maxDrawCount, uint32_t stride,
-                                                             const RecordObject &record_obj) {
+                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset, u32 maxDrawCount,
+                                                             u32 stride, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                            maxDrawCount, stride, record_obj);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
@@ -1746,38 +1743,36 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer com
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                   VkDeviceSize offset, VkBuffer countBuffer,
-                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                  uint32_t stride, const ErrorObject &error_obj) const {
+                                                                  VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                                                  const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                       stride, error_obj);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                                uint32_t maxDrawCount, uint32_t stride,
-                                                                const RecordObject &record_obj) {
+                                                                u32 maxDrawCount, u32 stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                              record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                   VkDeviceSize offset, VkBuffer countBuffer,
-                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                  uint32_t stride, const ErrorObject &error_obj) const {
+                                                                  VkDeviceSize countBufferOffset, u32 maxDrawCount, u32 stride,
+                                                                  const ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                       stride, error_obj);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                                uint32_t maxDrawCount, uint32_t stride,
-                                                                const RecordObject &record_obj) {
+                                                                u32 maxDrawCount, u32 stride, const RecordObject &record_obj) {
     PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                              record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                      const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                      const VkClearColorValue *pColor, u32 rangeCount,
                                                       const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1791,7 +1786,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
 
     auto image_state = Get<ImageState>(image);
 
-    for (uint32_t index = 0; index < rangeCount; index++) {
+    for (u32 index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
@@ -1807,7 +1802,7 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
 }
 
 void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                    const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                    const VkClearColorValue *pColor, u32 rangeCount,
                                                     const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1823,7 +1818,7 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
         cb_access_context->AddCommandHandle(tag, image_state->Handle());
     }
 
-    for (uint32_t index = 0; index < rangeCount; index++) {
+    for (u32 index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
             context->UpdateAccessState(*image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
@@ -1833,7 +1828,7 @@ void SyncValidator::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffe
 
 bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image,
                                                              VkImageLayout imageLayout,
-                                                             const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                             const VkClearDepthStencilValue *pDepthStencil, u32 rangeCount,
                                                              const VkImageSubresourceRange *pRanges,
                                                              const ErrorObject &error_obj) const {
     bool skip = false;
@@ -1848,7 +1843,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 
     auto image_state = Get<ImageState>(image);
 
-    for (uint32_t index = 0; index < rangeCount; index++) {
+    for (u32 index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
@@ -1864,7 +1859,7 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 }
 
 void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                           const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                           const VkClearDepthStencilValue *pDepthStencil, u32 rangeCount,
                                                            const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges,
                                                          record_obj);
@@ -1881,7 +1876,7 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
         cb_access_context->AddCommandHandle(tag, image_state->Handle());
     }
 
-    for (uint32_t index = 0; index < rangeCount; index++) {
+    for (u32 index = 0; index < rangeCount; index++) {
         const auto &range = pRanges[index];
         if (image_state) {
             context->UpdateAccessState(*image_state, SYNC_CLEAR_TRANSFER_WRITE, SyncOrdering::kNonAttachment, range, tag);
@@ -1889,8 +1884,8 @@ void SyncValidator::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     }
 }
 
-bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                       const VkClearAttachment *pAttachments, uint32_t rectCount,
+bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, u32 attachmentCount,
+                                                       const VkClearAttachment *pAttachments, u32 rectCount,
                                                        const VkClearRect *pRects, const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -1908,8 +1903,8 @@ bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
+void SyncValidator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, u32 attachmentCount,
+                                                     const VkClearAttachment *pAttachments, u32 rectCount,
                                                      const VkClearRect *pRects, const RecordObject &record_obj) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     auto cb_access_context = &cb_state->access_context;
@@ -1922,9 +1917,9 @@ void SyncValidator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
     }
 }
 
-bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
-                                                           uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
-                                                           VkDeviceSize dstOffset, VkDeviceSize stride, VkQueryResultFlags flags,
+bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 firstQuery,
+                                                           u32 queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                           VkDeviceSize stride, VkQueryResultFlags flags,
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -1953,8 +1948,8 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, u32 firstQuery,
+                                                         u32 queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                          VkDeviceSize stride, VkQueryResultFlags flags,
                                                          const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
@@ -1979,7 +1974,7 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
 }
 
 bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                 VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const {
+                                                 VkDeviceSize size, u32 data, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -2006,7 +2001,7 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
 }
 
 void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                               VkDeviceSize size, uint32_t data, const RecordObject &record_obj) {
+                                               VkDeviceSize size, u32 data, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -2026,7 +2021,7 @@ void SyncValidator::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, Vk
 }
 
 bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                   VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                                    const VkImageResolve *pRegions, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2041,7 +2036,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
     auto src_image = Get<ImageState>(srcImage);
     auto dst_image = Get<ImageState>(dstImage);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(resolve_region.srcSubresource),
@@ -2074,7 +2069,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
 }
 
 void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                 VkImage dstImage, VkImageLayout dstImageLayout, u32 regionCount,
                                                  const VkImageResolve *pRegions, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                                pRegions, record_obj);
@@ -2095,7 +2090,7 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
         cb_access_context->AddCommandHandle(tag, dst_image->Handle());
     }
 
-    for (uint32_t region = 0; region < regionCount; region++) {
+    for (u32 region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
@@ -2126,7 +2121,7 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
     auto src_image = Get<ImageState>(pResolveImageInfo->srcImage);
     auto dst_image = Get<ImageState>(pResolveImageInfo->dstImage);
 
-    for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
+    for (u32 region = 0; region < pResolveImageInfo->regionCount; region++) {
         const Location region_loc = image_info_loc.dot(Field::pRegions, region);
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
@@ -2185,7 +2180,7 @@ void SyncValidator::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
         cb_access_context->AddCommandHandle(tag, dst_image->Handle());
     }
 
-    for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
+    for (u32 region = 0; region < pResolveImageInfo->regionCount; region++) {
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
@@ -2255,7 +2250,7 @@ void SyncValidator::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, 
 }
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, u32 marker,
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2282,7 +2277,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
 }
 
 void SyncValidator::PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                         VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                         VkBuffer dstBuffer, VkDeviceSize dstOffset, u32 marker,
                                                          const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2354,7 +2349,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
+    for (u32 i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
             auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
@@ -2406,7 +2401,7 @@ void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer
         }
     }
 
-    for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
+    for (u32 i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
             auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
@@ -2468,7 +2463,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
+    for (u32 i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
             auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
@@ -2520,7 +2515,7 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
         }
     }
 
-    for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
+    for (u32 i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
             auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
@@ -2654,12 +2649,11 @@ void SyncValidator::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
     cb_context->RecordSyncOp<SyncOpResetEvent>(record_obj.location.function, *this, cb_context->GetQueueFlags(), event, stageMask);
 }
 
-bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                  VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                                 uint32_t bufferMemoryBarrierCount,
-                                                 const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                                 u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                 u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                 u32 imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2673,12 +2667,11 @@ bool SyncValidator::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
     return wait_events_op.Validate(*cb_context);
 }
 
-void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                 VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                                uint32_t bufferMemoryBarrierCount,
-                                                const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                                u32 memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                u32 bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                u32 imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                                 const RecordObject &record_obj) {
     StateTracker::PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount,
                                               pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
@@ -2695,18 +2688,18 @@ void SyncValidator::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, u
                                                pImageMemoryBarriers);
 }
 
-bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+bool SyncValidator::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                      const VkDependencyInfoKHR *pDependencyInfos,
                                                      const ErrorObject &error_obj) const {
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
-void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+void SyncValidator::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                     const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
     PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
 }
 
-bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                   const VkDependencyInfo *pDependencyInfos, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2720,7 +2713,7 @@ bool SyncValidator::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                                  const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
     StateTracker::PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
 
@@ -2734,7 +2727,7 @@ void SyncValidator::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, 
 }
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                            VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                            VkBuffer dstBuffer, VkDeviceSize dstOffset, u32 marker,
                                                             const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2761,7 +2754,7 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer comm
 }
 
 void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                          VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                          VkBuffer dstBuffer, VkDeviceSize dstOffset, u32 marker,
                                                           const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2781,7 +2774,7 @@ void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer comman
     }
 }
 
-bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, u32 commandBufferCount,
                                                       const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
     bool skip = StateTracker::PreCallValidateCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, error_obj);
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
@@ -2796,7 +2789,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     proxy_label_commands = cb_state->GetLabelCommands();
 
     // Make working copies of the access and events contexts
-    for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
+    for (u32 cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
         if (cb_index == 0) {
             proxy_cb_context.NextCommandTag(error_obj.location.function, ResourceUsageRecord::SubcommandType::kIndex);
         } else {
@@ -2824,14 +2817,14 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, u32 commandBufferCount,
                                                     const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
     StateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
-    for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
+    for (u32 cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
         if (const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index])) {
             const auto subcommand = ResourceUsageRecord::SubcommandType::kIndex;
             if (cb_index == 0) {
@@ -2854,15 +2847,15 @@ void SyncValidator::PostCallRecordBindImageMemory(VkDevice device, VkImage image
     UpdateSyncImageMemoryBindState(1, &bind_info);
 }
 
-void SyncValidator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+void SyncValidator::PostCallRecordBindImageMemory2(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                    const RecordObject &record_obj) {
     StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
     if (VK_SUCCESS != record_obj.result) return;
     UpdateSyncImageMemoryBindState(bindInfoCount, pBindInfos);
 }
 
-void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                      const VkBindImageMemoryInfo *pBindInfos, const RecordObject &record_obj) {
+void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, u32 bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
+                                                      const RecordObject &record_obj) {
     PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 }
 
@@ -2910,12 +2903,12 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
     // The submit id is a mutable automic which is not recoverable on a skip == true condition
-    uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
+    u64 submit_id = cmd_state->queue->ReserveSubmitId();
 
     QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
     QueueBatchContext::Ptr batch(std::make_shared<QueueBatchContext>(*this, *cmd_state->queue));
 
-    uint32_t present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
+    u32 present_tag_count = SetupPresentInfo(*pPresentInfo, batch, cmd_state->presented_images);
 
     const auto wait_semaphores = vvl::make_span(pPresentInfo->pWaitSemaphores, pPresentInfo->waitSemaphoreCount);
     const auto resolved_batches = batch->ResolvePresentDependencies(wait_semaphores, last_batch, cmd_state->presented_images,
@@ -2941,15 +2934,15 @@ bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
     return skip;
 }
 
-uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
-                                         PresentedImages &presented_images) const {
+u32 SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, QueueBatchContext::Ptr &batch,
+                                    PresentedImages &presented_images) const {
     const VkSwapchainKHR *const swapchains = present_info.pSwapchains;
-    const uint32_t *const image_indices = present_info.pImageIndices;
-    const uint32_t swapchain_count = present_info.swapchainCount;
+    const u32 *const image_indices = present_info.pImageIndices;
+    const u32 swapchain_count = present_info.swapchainCount;
 
     // Create the working list of presented images
     presented_images.reserve(swapchain_count);
-    for (uint32_t present_index = 0; present_index < swapchain_count; present_index++) {
+    for (u32 present_index = 0; present_index < swapchain_count; present_index++) {
         // Note: Given the "EraseIf" implementation for acquire fence waits, each presentation needs a unique tag.
         const ResourceUsageTag tag = presented_images.size();
         presented_images.emplace_back(*this, batch, swapchains[present_index], image_indices[present_index], present_index, tag);
@@ -2958,7 +2951,7 @@ uint32_t SyncValidator::SetupPresentInfo(const VkPresentInfoKHR &present_info, Q
         }
     }
     // Present is tagged for each swapchain.
-    return static_cast<uint32_t>(presented_images.size());
+    return static_cast<u32>(presented_images.size());
 }
 
 void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
@@ -2985,24 +2978,23 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
     queue_state->UpdateLastBatch();
 }
 
-void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                      VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
-                                                      const RecordObject &record_obj) {
+void SyncValidator::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, u64 timeout, VkSemaphore semaphore,
+                                                      VkFence fence, u32 *pImageIndex, const RecordObject &record_obj) {
     StateTracker::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
     if (!syncval_settings.submit_time_validation) return;
     RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
 }
 
 void SyncValidator::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                       uint32_t *pImageIndex, const RecordObject &record_obj) {
+                                                       u32 *pImageIndex, const RecordObject &record_obj) {
     StateTracker::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
     if (!syncval_settings.submit_time_validation) return;
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                 pAcquireInfo->fence, pImageIndex, record_obj);
 }
 
-void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                                VkFence fence, uint32_t *pImageIndex, const RecordObject &record_obj) {
+void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, u64 timeout, VkSemaphore semaphore,
+                                                VkFence fence, u32 *pImageIndex, const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_SUBOPTIMAL_KHR != record_obj.result)) return;
 
     // Get the image out of the presented list and create apppropriate fences/semaphores.
@@ -3043,13 +3035,13 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
     }
 }
 
-bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                                const ErrorObject &error_obj) const {
     SubmitInfoConverter submit_info(pSubmits, submitCount);
     return ValidateQueueSubmit(queue, submitCount, submit_info.submit_infos2.data(), fence, error_obj);
 }
 
-bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+bool SyncValidator::ValidateQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                         const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -3063,14 +3055,14 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     SignaledSemaphoresUpdate &signals_update = cmd_state->signaled_semaphores_update;
 
     // The submit id is a mutable automic which is not recoverable on a skip == true condition
-    uint64_t submit_id = cmd_state->queue->ReserveSubmitId();
+    u64 submit_id = cmd_state->queue->ReserveSubmitId();
 
     // Update label stack as we progress through batches and command buffers
     auto current_label_stack = cmd_state->queue->GetQueueState()->cmdbuf_label_stack;
 
     QueueBatchContext::ConstPtr last_batch = cmd_state->queue->LastBatch();
     QueueBatchContext::Ptr batch;
-    for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
+    for (u32 batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
 
@@ -3102,7 +3094,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     return skip;
 }
 
-void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                               const RecordObject &record_obj) {
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
 
@@ -3118,7 +3110,7 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const Record
     vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
 
     if (VK_SUCCESS != record_obj.result) return;  // dispatched QueueSubmit failed
-    if (!cmd_state->queue) return;     // Validation couldn't find a valid queue object
+    if (!cmd_state->queue) return;                // Validation couldn't find a valid queue object
 
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
@@ -3129,21 +3121,21 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const Record
     UpdateFenceWaitInfo(fence, queue_state->GetQueueId(), fence_tag_range.begin);
 }
 
-bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                   VkFence fence, const ErrorObject &error_obj) const {
+bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                                   const ErrorObject &error_obj) const {
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, const ErrorObject &error_obj) const {
+bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                                const ErrorObject &error_obj) const {
     return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                  VkFence fence, const RecordObject &record_obj) {
+void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                                  const RecordObject &record_obj) {
     PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
-void SyncValidator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+void SyncValidator::PostCallRecordQueueSubmit2(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                                const RecordObject &record_obj) {
     StateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     RecordQueueSubmit(queue, fence, record_obj);
@@ -3158,26 +3150,26 @@ void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
     }
 }
 
-void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
-                                                uint64_t timeout, const RecordObject &record_obj) {
+void SyncValidator::PostCallRecordWaitForFences(VkDevice device, u32 fenceCount, const VkFence *pFences, VkBool32 waitAll,
+                                                u64 timeout, const RecordObject &record_obj) {
     StateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
     if (!syncval_settings.submit_time_validation) return;
     if ((record_obj.result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
         // We can only know the pFences have signal if we waited for all of them, or there was only one of them
-        for (uint32_t i = 0; i < fenceCount; i++) {
+        for (u32 i = 0; i < fenceCount; i++) {
             WaitForFence(pFences[i]);
         }
     }
 }
 
-void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, u32 *pSwapchainImageCount,
                                                         VkImage *pSwapchainImages, const RecordObject &record_obj) {
     StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     if ((record_obj.result != VK_SUCCESS) && (record_obj.result != VK_INCOMPLETE)) return;
     auto swapchain_state = Get<vvl::Swapchain>(swapchain);
 
     if (pSwapchainImages) {
-        for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
+        for (u32 i = 0; i < *pSwapchainImageCount; ++i) {
             vvl::SwapchainImage &swapchain_image = swapchain_state->images[i];
             if (swapchain_image.image_state) {
                 auto *sync_image = static_cast<ImageState *>(swapchain_image.image_state);
@@ -3275,4 +3267,3 @@ ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen(const VkOffset3D 
 
     return GetImageState()->MakeImageRangeGen(subresource_range, offset, extent, IsDepthSliced());
 }
-

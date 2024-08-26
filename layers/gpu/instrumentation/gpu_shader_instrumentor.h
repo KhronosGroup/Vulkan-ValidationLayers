@@ -32,7 +32,7 @@ class Validator;
 namespace chassis {
 struct ShaderInstrumentationMetadata;
 struct ShaderObjectInstrumentationData;
-}
+}  // namespace chassis
 
 namespace gpu {
 
@@ -46,24 +46,24 @@ static const VkShaderModule kPipelineStageInfoHandle = CastFromUint64<VkShaderMo
 
 // GPU Info shows 99% of devices have a maxBoundDescriptorSets of 32 or less, but some are 2^30
 // We set a reasonable max because we have to pad the pipeline layout with dummy descriptor set layouts.
-static const uint32_t kMaxAdjustedBoundDescriptorSet = 33;
+static const u32 kMaxAdjustedBoundDescriptorSet = 33;
 
 class SpirvCache {
   public:
-    void Add(uint32_t hash, std::vector<uint32_t> spirv);
-    std::vector<uint32_t> *Get(uint32_t spirv_hash);
+    void Add(u32 hash, std::vector<u32> spirv);
+    std::vector<u32> *Get(u32 spirv_hash);
     bool IsEmpty() { return spirv_shaders_.empty(); }
 
   private:
     friend class gpuav::Validator;
-    vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders_{};
+    vvl::unordered_map<u32, std::vector<u32>> spirv_shaders_{};
 };
 
 struct GpuAssistedShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     VkShaderEXT shader_object;
-    std::vector<uint32_t> instrumented_spirv;
+    std::vector<u32> instrumented_spirv;
 };
 
 // Interface common to both GPU-AV and DebugPrintF.
@@ -91,15 +91,15 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                                     const RecordObject &record_obj) override;
 
     bool ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask, const Location &loc) const;
-    bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                      VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                      uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+    bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
+                                      VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, u32 memoryBarrierCount,
+                                      const VkMemoryBarrier *pMemoryBarriers, u32 bufferMemoryBarrierCount,
+                                      const VkBufferMemoryBarrier *pBufferMemoryBarriers, u32 imageMemoryBarrierCount,
+                                      const VkImageMemoryBarrier *pImageMemoryBarriers,
                                       const ErrorObject &error_obj) const override;
-    bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+    bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                           const VkDependencyInfoKHR *pDependencyInfos, const ErrorObject &error_obj) const override;
-    bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+    bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, u32 eventCount, const VkEvent *pEvents,
                                        const VkDependencyInfo *pDependencyInfos, const ErrorObject &error_obj) const override;
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
@@ -113,53 +113,53 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                           const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
     void PreCallRecordShaderObjectInstrumentation(VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
                                                   chassis::ShaderObjectInstrumentationData &shader_instrumentation_data);
-    void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+    void PreCallRecordCreateShadersEXT(VkDevice device, u32 createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                        const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;
-    void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+    void PostCallRecordCreateShadersEXT(VkDevice device, u32 createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                         const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                         const RecordObject &record_obj, chassis::ShaderObject &chassis_state) override;
     void PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator,
                                        const RecordObject &record_obj) override;
 
-    void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                               const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                               const RecordObject &record_obj, PipelineStates &pipeline_states,
                                               chassis::CreateGraphicsPipelines &chassis_state) override;
-    void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                              const VkComputePipelineCreateInfo *pCreateInfos,
                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                              const RecordObject &record_obj, PipelineStates &pipeline_states,
                                              chassis::CreateComputePipelines &chassis_state) override;
-    void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                   const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                   const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                   chassis::CreateRayTracingPipelinesNV &chassis_state) override;
     void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                   VkPipelineCache pipelineCache, uint32_t count,
+                                                   VkPipelineCache pipelineCache, u32 count,
                                                    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                    const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                    chassis::CreateRayTracingPipelinesKHR &chassis_state) override;
-    void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                chassis::CreateGraphicsPipelines &chassis_state) override;
-    void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                               const VkComputePipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                               const RecordObject &record_obj, PipelineStates &pipeline_states,
                                               chassis::CreateComputePipelines &chassis_state) override;
-    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, u32 count,
                                                    const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                    const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                    chassis::CreateRayTracingPipelinesNV &chassis_state) override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                    VkPipelineCache pipelineCache, uint32_t count,
+                                                    VkPipelineCache pipelineCache, u32 count,
                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                     const RecordObject &record_obj, PipelineStates &pipeline_states,
@@ -167,11 +167,11 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 
-    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+    void PreCallRecordQueueSubmit(VkQueue queue, u32 submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                   const RecordObject &record_obj) override;
-    void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+    void PreCallRecordQueueSubmit2KHR(VkQueue queue, u32 submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                       const RecordObject &record_obj) override;
-    void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+    void PreCallRecordQueueSubmit2(VkQueue queue, u32 submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                    const RecordObject &record_obj) override;
 
     VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;
@@ -182,13 +182,12 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     bool IsSelectiveInstrumentationEnabled(const void *pNext);
 
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
-                                         uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
-                                         uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
-                                         VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const;
+                                         u32 stage_id, u32 stage_info_0, u32 stage_info_1, u32 stage_info_2,
+                                         u32 instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
+                                         VkPipelineBindPoint pipeline_bind_point, u32 operation_index) const;
 
   protected:
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                            VkDeviceQueueCreateFlags flags,
+    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, u32 family_index, u32 queue_index, VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override;
 
     template <typename SafeCreateInfo>
@@ -203,8 +202,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not
-    bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, bool has_bindless_descriptors,
-                          const Location &loc, std::vector<uint32_t> &out_instrumented_spirv);
+    bool InstrumentShader(const vvl::span<const u32> &input_spirv, u32 unique_shader_id, bool has_bindless_descriptors,
+                          const Location &loc, std::vector<u32> &out_instrumented_spirv);
 
     VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
 
@@ -218,20 +217,20 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     mutable bool aborted_ = false;
 
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
-    std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
+    std::atomic<u32> unique_shader_module_id_ = 1;  // zero represents no shader module found
     // The descriptor slot we will be injecting our error buffer into
-    uint32_t desc_set_bind_index_ = 0;
+    u32 desc_set_bind_index_ = 0;
     VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager_;
-    vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map_;
+    vvl::concurrent_unordered_map<u32, GpuAssistedShaderTracker> shader_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
     DeviceMemoryBlock indices_buffer_{};
     unsigned int indices_buffer_alignment_ = 0;
 
     // DebugPrintf takes the first available slot in the set
-    uint32_t debug_printf_binding_slot_ = 0;
+    u32 debug_printf_binding_slot_ = 0;
 
   private:
     void Cleanup();

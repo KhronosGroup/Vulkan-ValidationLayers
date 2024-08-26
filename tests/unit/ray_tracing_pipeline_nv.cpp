@@ -58,7 +58,7 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
         pipeline_ci.basePipelineIndex = -1;
-        constexpr uint64_t fake_pipeline_id = 0xCADECADE;
+        constexpr u64 fake_pipeline_id = 0xCADECADE;
         VkPipeline fake_pipeline_handle = CastFromUint64<VkPipeline>(fake_pipeline_id);
         pipeline_ci.basePipelineHandle = fake_pipeline_handle;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoNV-flags-07984");

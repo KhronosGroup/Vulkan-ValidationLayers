@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 The Khronos Group Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,9 @@
 
 typedef struct prop_info prop_info;
 
-static const prop_info* __system_property_find(const char* __name) {
-    return nullptr;
-}
+static const prop_info* __system_property_find(const char* __name) { return nullptr; }
 
 static void __system_property_read_callback(const prop_info* __pi,
-    void (*__callback)(void* __cookie, const char* __name, const char* __value, uint32_t __serial),
-    void* __cookie) {
-
-}
+                                            void (*__callback)(void* __cookie, const char* __name, const char* __value,
+                                                               u32 __serial),
+                                            void* __cookie) {}

@@ -117,11 +117,11 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
     // Note: From the spec--
     //  Providing a NULL VkInstanceCreateInfo::pApplicationInfo or providing an apiVersion of 0 is equivalent to providing
     //  an apiVersion of VK_MAKE_VERSION(1, 0, 0).  (a.k.a. VK_API_VERSION_1_0)
-    uint32_t local_api_version = (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion)
-                                     ? pCreateInfo->pApplicationInfo->apiVersion
-                                     : VK_API_VERSION_1_0;
+    u32 local_api_version = (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion)
+                                ? pCreateInfo->pApplicationInfo->apiVersion
+                                : VK_API_VERSION_1_0;
 
-    uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(local_api_version), VK_VERSION_MINOR(local_api_version), 0);
+    u32 api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(local_api_version), VK_VERSION_MINOR(local_api_version), 0);
     if (api_version != api_version_nopatch) {
         if ((api_version_nopatch < VK_API_VERSION_1_0) && (local_api_version != 0)) {
             skip |= LogError("VUID-VkApplicationInfo-apiVersion-04010", instance,
@@ -138,11 +138,11 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
     }
 
     // Create and use a local instance extension object, as an actual instance has not been created yet
-    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    u32 specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     InstanceExtensions local_instance_extensions;
     local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         skip |= ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
                                       extension, create_info_loc.dot(Field::ppEnabledExtensionNames, i));
@@ -159,7 +159,7 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
         bool debug_printf = false;
         bool gpu_assisted = false;
         bool reserve_slot = false;
-        for (uint32_t i = 0; i < validation_features->enabledValidationFeatureCount; i++) {
+        for (u32 i = 0; i < validation_features->enabledValidationFeatureCount; i++) {
             switch (validation_features->pEnabledValidationFeatures[i]) {
                 case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
                     gpu_assisted = true;
@@ -248,13 +248,13 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
             physical_device_properties_map[phys_device] = phys_dev_props;
 
             // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
-            uint32_t ext_count = 0;
+            u32 ext_count = 0;
             vvl::unordered_set<vvl::Extension> dev_exts_enumerated{};
             std::vector<VkExtensionProperties> ext_props{};
             instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
             ext_props.resize(ext_count);
             instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
-            for (uint32_t j = 0; j < ext_count; j++) {
+            for (u32 j = 0; j < ext_count; j++) {
                 vvl::Extension extension = GetExtension(ext_props[j].extensionName);
                 dev_exts_enumerated.insert(extension);
 
@@ -269,7 +269,7 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
     }
 }
 
-void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, u32 *pPhysicalDeviceCount,
                                                                  VkPhysicalDevice *pPhysicalDevices,
                                                                  const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
@@ -282,14 +282,14 @@ void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance inst
 }
 
 void StatelessValidation::PostCallRecordEnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
+    VkInstance instance, u32 *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
     const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
 
     if (pPhysicalDeviceGroupCount && pPhysicalDeviceGroupProperties) {
-        for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
+        for (u32 i = 0; i < *pPhysicalDeviceGroupCount; i++) {
             const auto &group = pPhysicalDeviceGroupProperties[i];
             CommonPostCallRecordEnumeratePhysicalDevice(group.physicalDevices, group.physicalDeviceCount);
         }
@@ -420,7 +420,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
     }
 
-     if (IsExtEnabled(device_extensions.vk_arm_render_pass_striped)) {
+    if (IsExtEnabled(device_extensions.vk_arm_render_pass_striped)) {
         VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&renderpass_striped_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
@@ -450,7 +450,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     bool fragmentmask_requested = false;
 
     vvl::unordered_set<vvl::Extension> enabled_extensions{};
-    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+    for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         enabled_extensions.insert(extension);
         skip |=
@@ -492,7 +492,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        const auto *descriptor_buffer_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
+        const auto *descriptor_buffer_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
         if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer && fragmentmask_requested) {
             skip |= LogError("VUID-VkDeviceCreateInfo-None-08095", physicalDevice, error_obj.location,
                              "If the descriptorBuffer feature is enabled, ppEnabledExtensionNames must not "
@@ -530,7 +531,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000", physicalDevice,
                          error_obj.location, "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
     }
-    const auto *raytracing_features = vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
+    const auto *raytracing_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
     if (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
         !raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay) {
         skip |= LogError(
@@ -667,9 +669,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     // Validate pCreateInfo->pQueueCreateInfos
     if (pCreateInfo->pQueueCreateInfos) {
-        for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
+        for (u32 i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
-            const uint32_t requested_queue_family = queue_create_info.queueFamilyIndex;
+            const u32 requested_queue_family = queue_create_info.queueFamilyIndex;
             if (requested_queue_family == VK_QUEUE_FAMILY_IGNORED) {
                 skip |=
                     LogError("VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381", physicalDevice, error_obj.location,
@@ -680,7 +682,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             }
 
             if (queue_create_info.pQueuePriorities != nullptr) {
-                for (uint32_t j = 0; j < queue_create_info.queueCount; ++j) {
+                for (u32 j = 0; j < queue_create_info.queueCount; ++j) {
                     const float queue_priority = queue_create_info.pQueuePriorities[j];
                     if (!(queue_priority >= 0.f) || !(queue_priority <= 1.f)) {
                         skip |= LogError("VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383", physicalDevice, error_obj.location,
@@ -709,7 +711,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     // feature dependencies for VK_KHR_variable_pointers
-    const auto *variable_pointers_features = vku::FindStructInPNextChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
+    const auto *variable_pointers_features =
+        vku::FindStructInPNextChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
     VkBool32 variable_pointers = VK_FALSE;
     VkBool32 variable_pointers_storage_buffer = VK_FALSE;
     if (vulkan_11_features) {
@@ -785,7 +788,8 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                 }
             }
         }
-        const auto image_drm_format = vku::FindStructInPNextChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
+        const auto image_drm_format =
+            vku::FindStructInPNextChain<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(pImageFormatInfo->pNext);
         if (image_drm_format) {
             if (pImageFormatInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
                 skip |= LogError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249", physicalDevice,
@@ -807,11 +811,11 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                         "is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount is %" PRIu32 ", but pQueueFamilyIndices is NULL.",
                         image_drm_format->queueFamilyIndexCount);
                 } else {
-                    uint32_t queue_family_property_count = 0;
+                    u32 queue_family_property_count = 0;
                     DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(physicalDevice, &queue_family_property_count, nullptr);
-                    vvl::unordered_set<uint32_t> queue_family_indices_set;
-                    for (uint32_t i = 0; i < image_drm_format->queueFamilyIndexCount; i++) {
-                        const uint32_t queue_index = image_drm_format->pQueueFamilyIndices[i];
+                    vvl::unordered_set<u32> queue_family_indices_set;
+                    for (u32 i = 0; i < image_drm_format->queueFamilyIndexCount; i++) {
+                        const u32 queue_index = image_drm_format->pQueueFamilyIndices[i];
                         if (queue_family_indices_set.find(queue_index) != queue_family_indices_set.end()) {
                             skip |= LogError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316", physicalDevice,
                                              format_info_loc.pNext(Struct::VkPhysicalDeviceImageDrmFormatModifierInfoEXT,
@@ -906,7 +910,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceProperties2(VkP
     bool skip = false;
     const auto *api_props_lists = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiPropertiesListKHR>(pProperties->pNext);
     if (api_props_lists && api_props_lists->pLayeredApis) {
-        for (uint32_t i = 0; i < api_props_lists->layeredApiCount; i++) {
+        for (u32 i = 0; i < api_props_lists->layeredApiCount; i++) {
             if (const auto *api_vulkan_props = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiVulkanPropertiesKHR>(
                     api_props_lists->pLayeredApis[i].pNext)) {
                 const VkBaseOutStructure *current = static_cast<const VkBaseOutStructure *>(api_vulkan_props->properties.pNext);

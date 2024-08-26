@@ -80,7 +80,7 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
                              string_VkFormat(create_info.format));
         }
     }
-    const uint64_t external_format = GetExternalFormat(memory_requirements.pCreateInfo->pNext);
+    const u64 external_format = GetExternalFormat(memory_requirements.pCreateInfo->pNext);
     if (external_format != 0) {
         skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pNext-06996", device, loc.dot(Field::pCreateInfo),
                          "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".", external_format);
@@ -101,7 +101,7 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
 }
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
-    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, u32 *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -110,16 +110,15 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
-                                                                const VkBindSparseInfo *pBindInfo, VkFence fence,
-                                                                const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u32 bindInfoCount, const VkBindSparseInfo *pBindInfo,
+                                                                VkFence fence, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    for (uint32_t bind_info_i = 0; bind_info_i < bindInfoCount; ++bind_info_i) {
+    for (u32 bind_info_i = 0; bind_info_i < bindInfoCount; ++bind_info_i) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_info_i];
-        for (uint32_t image_bind_i = 0; image_bind_i < bind_info.imageBindCount; ++image_bind_i) {
+        for (u32 image_bind_i = 0; image_bind_i < bind_info.imageBindCount; ++image_bind_i) {
             const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_bind_i];
-            for (uint32_t bind_i = 0; bind_i < image_bind.bindCount; ++bind_i) {
+            for (u32 bind_i = 0; bind_i < image_bind.bindCount; ++bind_i) {
                 const VkSparseImageMemoryBind &bind = image_bind.pBinds[bind_i];
                 if (bind.extent.width == 0) {
                     const LogObjectList objlist(queue, image_bind.image);

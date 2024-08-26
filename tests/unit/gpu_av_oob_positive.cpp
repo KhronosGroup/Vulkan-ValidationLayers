@@ -84,19 +84,19 @@ TEST_F(PositiveGpuAVOOB, Basic) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 1;
     offset_buffer.memory().unmap();
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.memory().map();
+    data = (u32 *)offset_buffer.memory().map();
     *data = 2;
     offset_buffer.memory().unmap();
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.memory().map();
+    data = (u32 *)offset_buffer.memory().map();
     *data = 3;
     offset_buffer.memory().unmap();
     m_default_queue->Submit(*m_commandBuffer);
@@ -280,19 +280,19 @@ TEST_F(PositiveGpuAVOOB, GPL) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    u32 *data = (u32 *)offset_buffer.memory().map();
     *data = 1;
     offset_buffer.memory().unmap();
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.memory().map();
+    data = (u32 *)offset_buffer.memory().map();
     *data = 2;
     offset_buffer.memory().unmap();
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.memory().map();
+    data = (u32 *)offset_buffer.memory().map();
     *data = 3;
     offset_buffer.memory().unmap();
     m_default_queue->Submit(*m_commandBuffer);

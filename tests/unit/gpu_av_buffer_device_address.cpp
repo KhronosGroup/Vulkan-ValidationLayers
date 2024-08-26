@@ -75,7 +75,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<u32 *>(buffer.memory().map());
     for (int i = 0; i < 3; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
@@ -139,7 +139,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<u32 *>(buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
@@ -164,11 +164,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     VkDeviceAddress u_info_ptr = buffer.address();
     // Will dereference the wrong ptr address
     VkDeviceAddress invalid_buffer_address = u_info_ptr - 16;
-    uint32_t n_writes = 4;
+    u32 n_writes = 4;
 
-    uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.memory().map();
+    u8 *uniform_buffer_ptr = (u8 *)uniform_buffer.memory().map();
     memcpy(uniform_buffer_ptr, &invalid_buffer_address, sizeof(VkDeviceAddress));
-    memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
+    memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(u32));
     uniform_buffer.memory().unmap();
 
     char const *shader_source = R"glsl(
@@ -211,7 +211,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<u32 *>(buffer.memory().map());
     for (int i = 0; i < 3; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
@@ -235,11 +235,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     vkt::Buffer buffer(*m_device, 64, 0, vkt::device_address);
     VkDeviceAddress u_info_ptr = buffer.address();
     // will go over a[4] by one
-    uint32_t n_writes = 5;
+    u32 n_writes = 5;
 
-    uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.memory().map();
+    u8 *uniform_buffer_ptr = (u8 *)uniform_buffer.memory().map();
     memcpy(uniform_buffer_ptr, &u_info_ptr, sizeof(VkDeviceAddress));
-    memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
+    memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(u32));
     uniform_buffer.memory().unmap();
 
     char const *shader_source = R"glsl(
@@ -281,7 +281,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<u32 *>(buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
@@ -326,11 +326,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     // Hold only 3 indices
     vkt::Buffer block_buffer(*m_device, 36, 0, vkt::device_address);
     VkDeviceAddress block_ptr = block_buffer.address();
-    const uint32_t n_reads = 4;  // uvec3[0] to uvec3[3]
+    const u32 n_reads = 4;  // uvec3[0] to uvec3[3]
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
+    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(u32));
     in_buffer.memory().unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
@@ -377,14 +377,14 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
         }
     )glsl";
 
-    std::vector<uint32_t> vert_shader;
-    std::vector<uint32_t> frag_shader;
+    std::vector<u32> vert_shader;
+    std::vector<u32> frag_shader;
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl, vert_shader);
     this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, frag_shader);
 
     VkShaderModuleCreateInfo module_create_info_vert = vku::InitStructHelper();
     module_create_info_vert.pCode = vert_shader.data();
-    module_create_info_vert.codeSize = vert_shader.size() * sizeof(uint32_t);
+    module_create_info_vert.codeSize = vert_shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci_vert = vku::InitStructHelper(&module_create_info_vert);
     stage_ci_vert.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -393,7 +393,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
 
     VkShaderModuleCreateInfo module_create_info_frag = vku::InitStructHelper();
     module_create_info_frag.pCode = frag_shader.data();
-    module_create_info_frag.codeSize = frag_shader.size() * sizeof(uint32_t);
+    module_create_info_frag.codeSize = frag_shader.size() * sizeof(u32);
 
     VkPipelineShaderStageCreateInfo stage_ci_frag = vku::InitStructHelper(&module_create_info_frag);
     stage_ci_frag.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -414,11 +414,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
     VkDeviceAddress block_ptr = block_buffer.address();
-    const uint32_t n_reads = 64;  // way too large
+    const u32 n_reads = 64;  // way too large
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
+    memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(u32));
     in_buffer.memory().unmap();
 
     descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
@@ -484,9 +484,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    uint8_t *buffer_ptr = (uint8_t *)storage_buffer.memory().map();
-    const uint32_t index = 8;  // out of bounds
-    memcpy(buffer_ptr, &index, sizeof(uint32_t));
+    u8 *buffer_ptr = (u8 *)storage_buffer.memory().map();
+    const u32 index = 8;  // out of bounds
+    memcpy(buffer_ptr, &index, sizeof(u32));
     memcpy(buffer_ptr + (1 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (2 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (3 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
@@ -514,7 +514,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    const u32 uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -555,7 +555,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     m_commandBuffer->end();
 
     // Make another buffer to write to
-    const uint32_t storage_buffer_size = 16 * 4;
+    const u32 storage_buffer_size = 16 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -569,7 +569,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
@@ -583,7 +583,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    const u32 uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -624,7 +624,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     m_commandBuffer->end();
 
     // Make another buffer to write to
-    const uint32_t storage_buffer_size = 16 * 4;
+    const u32 storage_buffer_size = 16 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     // Get device address of buffer to write to
@@ -656,7 +656,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
@@ -670,7 +670,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
+    const u32 uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -711,7 +711,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     m_commandBuffer->end();
 
     // Make another buffer to write to
-    const uint32_t storage_buffer_size = 4 * 4;
+    const u32 storage_buffer_size = 4 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
@@ -725,7 +725,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<u32 *>(storage_buffer.memory().map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], 42);
     }
@@ -809,7 +809,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     )";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    const u32 uniform_buffer_size = 8;  // 64 bits pointer
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -829,7 +829,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    const uint32_t storage_buffer_size = 3 * sizeof(float);  // only can fit 3 floats
+    const u32 storage_buffer_size = 3 * sizeof(float);  // only can fit 3 floats
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
     const VkDeviceAddress storage_buffer_addr = storage_buffer.address();
 
@@ -899,7 +899,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     )glsl";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    const u32 uniform_buffer_size = 8;  // 64 bits pointer
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -918,7 +918,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
     m_commandBuffer->end();
 
-    const uint32_t storage_buffer_size = 3 * sizeof(float);  // can only hold 3 floats, when SSBO uses 4
+    const u32 storage_buffer_size = 3 * sizeof(float);  // can only hold 3 floats, when SSBO uses 4
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
     const VkDeviceAddress storage_buffer_addr = storage_buffer.address();
 
@@ -964,7 +964,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
-    const uint32_t uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
+    const u32 uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
 
@@ -1013,7 +1013,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     constexpr size_t nodes_count = 3;
 
     // Make a list of storage buffers, each one holding a Node
-    uint32_t storage_buffer_size = (4 * sizeof(float)) + sizeof(VkDeviceAddress);
+    u32 storage_buffer_size = (4 * sizeof(float)) + sizeof(VkDeviceAddress);
     std::vector<vkt::Buffer> storage_buffers;
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
     for (size_t i = 0; i < nodes_count; ++i) {
@@ -1090,7 +1090,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ProxyStructLoad) {
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address();
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 
@@ -1130,7 +1130,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
             Test test;
         };
 
-        Test GetTest(uint64_t ptr) {
+        Test GetTest(u64 ptr) {
             return TestBuffer(ptr).test;
         }
 
@@ -1140,7 +1140,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
         } in_buffer;
 
         void main() {
-            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+            in_buffer.x = GetTest(u64(in_buffer.data)).a;
         }
     )glsl";
 
@@ -1154,7 +1154,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address();
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 
@@ -1192,7 +1192,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
             Test test;
         };
 
-        Test GetTest(uint64_t ptr) {
+        Test GetTest(u64 ptr) {
             return TestBuffer(ptr).test;
         }
 
@@ -1202,7 +1202,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
         } in_buffer;
 
         void main() {
-            in_buffer.x = GetTest(uint64_t(in_buffer.data)).a;
+            in_buffer.x = GetTest(u64(in_buffer.data)).a;
         }
     )glsl";
 
@@ -1216,7 +1216,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDeviceAddress buffer_ptr = bda_buffer.address() + 256;  // wrong
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    u8 *in_buffer_ptr = (u8 *)in_buffer.memory().map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
     in_buffer.memory().unmap();
 

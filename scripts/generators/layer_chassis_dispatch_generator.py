@@ -273,7 +273,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                     create_ndo_code += 'if (VK_SUCCESS == result) {\n'
                     ndo_dest = f'*{lastParam.name}'
                     if ndo_array:
-                        create_ndo_code += f'for (uint32_t index0 = 0; index0 < {lastParam.length}; index0++) {{\n'
+                        create_ndo_code += f'for (u32 index0 = 0; index0 < {lastParam.length}; index0++) {{\n'
                         ndo_dest = f'{lastParam.name}[index0]'
                     create_ndo_code += f'{ndo_dest} = layer_data->{wrap_call}({ndo_dest});\n'
                     if ndo_array:
@@ -287,7 +287,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                 if self.isNonDispatchable(param.type):
                     # Remove a single handle from the map
                     destroy_ndo_code += f'''
-                        uint64_t {param.name}_id = CastToUint64({param.name});
+                        u64 {param.name}_id = CastToUint64({param.name});
                         auto iter = unique_id_mapping.pop({param.name}_id);
                         if (iter != unique_id_mapping.end()) {{
                             {param.name} = ({param.type})iter->second;
@@ -413,11 +413,11 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                         if topLevel:
                             pre_code += f'''
                                 local_{prefix}{member.name} = {count_name} > DISPATCH_MAX_STACK_ALLOCATIONS ? new {member.type}[{count_name}] : var_local_{prefix}{member.name};
-                                for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{
+                                for (u32 {index} = 0; {index} < {count_name}; ++{index}) {{
                                     local_{prefix}{member.name}[{index}] = layer_data->Unwrap({member.name}[{index}]);'''
                         else:
                             pre_code += f'''
-                                for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{
+                                for (u32 {index} = 0; {index} < {count_name}; ++{index}) {{
                                     {prefix}{member.name}[{index}] = layer_data->Unwrap({prefix}{member.name}[{index}]);'''
                         pre_code += '}\n'
                         pre_code += '}\n'
@@ -456,7 +456,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                         pre_code += f'if ({prefix}{member.name}) {{\n'
                         if topLevel:
                             pre_code += f'{new_prefix} = new {safe_type}[{member.length}];\n'
-                        pre_code += f'for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
+                        pre_code += f'for (u32 {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
                         if topLevel:
                             if safe_type.startswith('vku::safe'):
                                 # Handle special initialize function for VkAccelerationStructureBuildGeometryInfoKHR

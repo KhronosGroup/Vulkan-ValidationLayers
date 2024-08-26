@@ -208,7 +208,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
 
     // Query sparse memory requirements
-    uint32_t sparse_reqs_count = 0;
+    u32 sparse_reqs_count = 0;
     vk::GetImageSparseMemoryRequirements(device(), image, &sparse_reqs_count, nullptr);
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(sparse_reqs_count);
     vk::GetImageSparseMemoryRequirements(device(), image, &sparse_reqs_count, sparse_reqs.data());

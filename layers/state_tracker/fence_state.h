@@ -35,7 +35,7 @@ class Swapchain;
 // More common scheme is to use QueueSubmit fence for frame synchronization.
 struct PresentSync {
     // Queue submissions that will be notified when WaitForFences is called.
-    small_vector<SubmissionReference, 2, uint32_t> submissions;
+    small_vector<SubmissionReference, 2, u32> submissions;
 
     // Swapchain associated with this PresentSync.
     std::shared_ptr<vvl::Swapchain> swapchain;
@@ -61,7 +61,7 @@ class Fence : public RefcountedStateObject {
 
     VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
 
-    bool EnqueueSignal(Queue *queue_state, uint64_t next_seq);
+    bool EnqueueSignal(Queue *queue_state, u64 next_seq);
 
     void SetPresentSync(const PresentSync &present_sync);
     bool IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const;
@@ -106,9 +106,9 @@ class Fence : public RefcountedStateObject {
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
     Queue *queue_{nullptr};
-    uint64_t seq_{0};
+    u64 seq_{0};
     enum State state_;
-    enum Scope scope_{kInternal};
+    enum Scope scope_ { kInternal };
     std::optional<VkExternalFenceHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
     mutable std::shared_mutex lock_;
     std::promise<void> completed_;

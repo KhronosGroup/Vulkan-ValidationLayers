@@ -84,12 +84,12 @@ struct FormatterImpl {
 // Command buffer context stores array of handles that are referenced by the tagged commands.
 // VulkanTypedHandle is stored in unpacked form to avoid structure padding gaps.
 struct HandleRecord {
-    uint64_t handle = 0;
+    u64 handle = 0;
     VulkanObjectType type = kVulkanObjectTypeUnknown;
-    uint32_t index = vvl::kNoIndex32;
+    u32 index = vvl::kNoIndex32;
 
     HandleRecord() = default;
-    explicit HandleRecord(const VulkanTypedHandle &typed_handle, uint32_t index = vvl::kNoIndex32)
+    explicit HandleRecord(const VulkanTypedHandle &typed_handle, u32 index = vvl::kNoIndex32)
         : handle(typed_handle.handle), type(typed_handle.type), index(index) {}
     bool IsIndexed() const { return index != vvl::kNoIndex32; }
 
@@ -108,8 +108,8 @@ struct ResourceCmdUsageRecord {
     enum class SubcommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
 
     ResourceCmdUsageRecord() = default;
-    ResourceCmdUsageRecord(vvl::Func command_, uint32_t seq_num_, SubcommandType sub_type_, uint32_t sub_command_,
-                           const vvl::CommandBuffer *cb_state_, uint32_t reset_count_)
+    ResourceCmdUsageRecord(vvl::Func command_, u32 seq_num_, SubcommandType sub_type_, u32 sub_command_,
+                           const vvl::CommandBuffer *cb_state_, u32 reset_count_)
         : command(command_),
           seq_num(seq_num_),
           sub_command_type(sub_type_),
@@ -118,20 +118,20 @@ struct ResourceCmdUsageRecord {
           reset_count(reset_count_) {}
 
     vvl::Func command = vvl::Func::Empty;
-    uint32_t seq_num = 0U;
+    u32 seq_num = 0U;
     SubcommandType sub_command_type = SubcommandType::kNone;
-    uint32_t sub_command = 0U;
+    u32 sub_command = 0U;
 
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
     // from different command buffers and resets.
     // plain pointer as a shared pointer is held by the context storing this record
     const vvl::CommandBuffer *cb_state = nullptr;
-    uint32_t reset_count = 0;
+    u32 reset_count = 0;
 
-    uint32_t first_handle_index = vvl::kNoIndex32;
-    uint32_t handle_count = 0;
+    u32 first_handle_index = vvl::kNoIndex32;
+    u32 handle_count = 0;
 
-    uint32_t label_command_index = vvl::kNoIndex32;
+    u32 label_command_index = vvl::kNoIndex32;
 };
 
 struct DebugNameProvider;
@@ -139,7 +139,7 @@ struct DebugNameProvider;
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     struct FormatterState {
         FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_, const vvl::CommandBuffer *cb_state_,
-                       const DebugNameProvider *debug_name_provider_, uint32_t handle_index)
+                       const DebugNameProvider *debug_name_provider_, u32 handle_index)
             : sync_state(sync_state_),
               record(record_),
               ex_cb_state(cb_state_),
@@ -149,18 +149,18 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
         const ResourceUsageRecord &record;
         const vvl::CommandBuffer *ex_cb_state;
         const DebugNameProvider *debug_name_provider;
-        uint32_t handle_index;
+        u32 handle_index;
     };
     FormatterState Formatter(const SyncValidator &sync_state, const vvl::CommandBuffer *ex_cb_state,
-                             const DebugNameProvider *debug_name_provider, uint32_t handle_index) const {
+                             const DebugNameProvider *debug_name_provider, u32 handle_index) const {
         return FormatterState(sync_state, *this, ex_cb_state, debug_name_provider, handle_index);
     }
 
     AlternateResourceUsage alt_usage;
 
     ResourceUsageRecord() = default;
-    ResourceUsageRecord(vvl::Func command_, uint32_t seq_num_, SubcommandType sub_type_, uint32_t sub_command_,
-                        const vvl::CommandBuffer *cb_state_, uint32_t reset_count_)
+    ResourceUsageRecord(vvl::Func command_, u32 seq_num_, SubcommandType sub_type_, u32 sub_command_,
+                        const vvl::CommandBuffer *cb_state_, u32 reset_count_)
         : ResourceCmdUsageRecord(command_, seq_num_, sub_type_, sub_command_, cb_state_, reset_count_) {}
 
     ResourceUsageRecord(const AlternateResourceUsage &other) : ResourceCmdUsageRecord(), alt_usage(other) {}
@@ -290,10 +290,10 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void RecordEndRendering(const RecordObject &record_obj);
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
-    bool ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, const Location &loc) const;
-    void RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
-    bool ValidateDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, const Location &loc) const;
-    void RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, ResourceUsageTag tag);
+    bool ValidateDrawVertex(const std::optional<u32> &vertexCount, u32 firstVertex, const Location &loc) const;
+    void RecordDrawVertex(const std::optional<u32> &vertexCount, u32 firstVertex, ResourceUsageTag tag);
+    bool ValidateDrawVertexIndex(const std::optional<u32> &indexCount, u32 firstIndex, const Location &loc) const;
+    void RecordDrawVertexIndex(const std::optional<u32> &indexCount, u32 firstIndex, ResourceUsageTag tag);
     bool ValidateDrawAttachment(const Location &loc) const;
     bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
@@ -324,12 +324,11 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
                                     ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
     ResourceUsageTag NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand);
 
-    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
-                                        uint32_t index = vvl::kNoIndex32);
+    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, u32 index = vvl::kNoIndex32);
 
     // Default subcommand behavior is that it references the same handles as the main command.
     // The following method allows to set subcommand handles independently of the main command.
-    void AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index = vvl::kNoIndex32);
+    void AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, u32 index = vvl::kNoIndex32);
 
     const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
 
@@ -359,7 +358,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
   private:
     CommandBufferAccessContext(const SyncValidator &sync_validator);
 
-    uint32_t AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index);
+    u32 AddHandle(const VulkanTypedHandle &typed_handle, u32 index);
 
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
@@ -376,9 +375,9 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
-    uint32_t command_number_;
-    uint32_t subcommand_number_;
-    uint32_t reset_count_;
+    u32 command_number_;
+    u32 subcommand_number_;
+    u32 reset_count_;
 
     // Handles referenced by the tagged commands
     std::vector<HandleRecord> handles_;

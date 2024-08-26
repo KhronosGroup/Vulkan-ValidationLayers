@@ -553,7 +553,7 @@ APIVersion InstanceExtensions::InitFromInstanceCreateInfo(APIVersion requested_a
 
     // CreateInfo takes precedence over promoted
     if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
             vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
             auto info = GetInfo(extension);
@@ -588,7 +588,7 @@ APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* 
 
     // CreateInfo takes precedence over promoted
     if (pCreateInfo && pCreateInfo->ppEnabledExtensionNames) {
-        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        for (u32 i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;
             vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
             auto info = GetInfo(extension);
