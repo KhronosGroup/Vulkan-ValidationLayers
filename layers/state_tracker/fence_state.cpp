@@ -49,7 +49,7 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
 // Called from a non-queue operation, such as vkWaitForFences()|
 void vvl::Fence::NotifyAndWait(const Location &loc) {
     std::shared_future<void> waiter;
-    PresentSync present_sync;
+    AcquireFenceSync acquire_fence_sync;
     {
         // Hold the lock only while updating members, but not
         // while waiting
@@ -64,8 +64,8 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
                 queue_ = nullptr;
                 seq_ = 0;
             }
-            present_sync = std::move(present_sync_);
-            present_sync_ = PresentSync{};
+            acquire_fence_sync = std::move(acquire_fence_sync_);
+            acquire_fence_sync_ = AcquireFenceSync{};
         }
     }
     if (waiter.valid()) {
@@ -76,8 +76,8 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
                 "The Validation Layers hit a timeout waiting for fence state to update (this is most likely a validation bug).");
         }
     }
-    for (const auto &submission : present_sync.submissions) {
-        submission.queue->NotifyAndWait(loc, submission.seq);
+    for (const auto &submission_ref : acquire_fence_sync.submission_refs) {
+        submission_ref.queue->NotifyAndWait(loc, submission_ref.seq);
     }
 }
 
@@ -106,7 +106,7 @@ void vvl::Fence::Reset() {
     state_ = kUnsignaled;
     completed_ = std::promise<void>();
     waiter_ = std::shared_future<void>(completed_.get_future());
-    present_sync_ = PresentSync{};
+    acquire_fence_sync_ = AcquireFenceSync{};
 }
 
 void vvl::Fence::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
@@ -147,15 +147,16 @@ std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType(
     return imported_handle_type_;
 }
 
-void vvl::Fence::SetPresentSync(const PresentSync &present_sync) {
+void vvl::Fence::SetAcquireFenceSync(const AcquireFenceSync &acquire_fence_sync) {
     auto guard = WriteLock();
-    // Attempt to overwrite not yet comitted present sync data with a new one is a bug
-    assert(present_sync.submissions.empty() || present_sync_.submissions.empty());
 
-    present_sync_ = present_sync;
+    // An attempt to overwrite existing acquire fence sync is a bug
+    assert(acquire_fence_sync.submission_refs.empty() || acquire_fence_sync_.submission_refs.empty());
+
+    acquire_fence_sync_ = acquire_fence_sync;
 }
 
-bool vvl::Fence::IsPresentSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const {
+bool vvl::Fence::IsAcquireFenceSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const {
     auto guard = ReadLock();
-    return present_sync_.swapchain != current_swapchain;
+    return acquire_fence_sync_.swapchain != current_swapchain;
 }

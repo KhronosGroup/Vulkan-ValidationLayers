@@ -634,7 +634,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     // Create new swapchain.
     CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, m_swapchain);
 
-    // The following Acquire will detect that fence's PresentSync belongs to the old swapchain and will invalidate it.
+    // The following Acquire will detect that fence's AcquireFenceSync belongs to the old swapchain and will invalidate it.
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
 
     vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
