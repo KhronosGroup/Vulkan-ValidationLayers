@@ -901,19 +901,63 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const vvl::Pipeline &pipeli
                                                 create_info_loc);
     }
 
-    for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
-        const auto &producer = pipeline.stage_states[i - 1];
-        const auto &consumer = pipeline.stage_states[i];
-        const std::shared_ptr<const spirv::Module> &producer_spirv =
-            producer.spirv_state ? producer.spirv_state : producer.module_state->spirv;
-        const std::shared_ptr<const spirv::Module> &consumer_spirv =
-            consumer.spirv_state ? consumer.spirv_state : consumer.module_state->spirv;
-        if (&producer == fragment_stage) {
-            break;
-        }
-        if (consumer_spirv && producer_spirv && consumer.entrypoint && producer.entrypoint) {
-            skip |= ValidateInterfaceBetweenStages(*producer_spirv.get(), *producer.entrypoint, *consumer_spirv.get(),
-                                                   *consumer.entrypoint, create_info_loc);
+    // We need to order the stages not how they are supplied in VkGraphicsPipelineCreateInfo::pStages but rather how they are
+    // chained together in the pipeline. Note, we could be in the PreRaster GPL path, so there may not be a Fragment Shader see
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8443
+    if (pipeline.stage_states.size() > 1) {
+        const size_t not_found = vvl::kU32Max;
+        auto get_stage = [&pipeline, not_found = not_found](VkShaderStageFlagBits stage) {
+            for (size_t i = 0; i < pipeline.stage_states.size(); i++) {
+                if (pipeline.stage_states[i].GetStage() == stage) {
+                    return i;
+                }
+            }
+            return not_found;
+        };
+        // Two graphic pipeline paths will be
+        // Vert -> (Tess) -> (Geom) -> [Fragment]
+        // (Task) -> Mesh -> [Fragment]
+        // Pack both paths in, works because fragment are the last stage always
+        const std::array ordered_stages = {VK_SHADER_STAGE_VERTEX_BIT,
+                                           VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                           VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                                           VK_SHADER_STAGE_GEOMETRY_BIT,
+                                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                                           VK_SHADER_STAGE_TASK_BIT_EXT,
+                                           VK_SHADER_STAGE_MESH_BIT_EXT,
+                                           VK_SHADER_STAGE_FRAGMENT_BIT};
+
+        // Use active_shaders because with GPL, you will need to check PreRaster and Fragment together at linking
+        const bool has_vertex_shader = pipeline.active_shaders & VK_SHADER_STAGE_VERTEX_BIT;
+        const bool has_task_shader = pipeline.active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT;
+
+        size_t ordered_stages_index = has_vertex_shader ? 0 : has_task_shader ? 5 : 6;
+        size_t producer_index = get_stage(ordered_stages[ordered_stages_index++]);
+        assert(producer_index != not_found);
+
+        size_t consumer_index = not_found;
+        // start at 1 as we are always searching for the next consumer
+        for (size_t i = 1; i < pipeline.stage_states.size(); i++) {
+            // Find current producer's consumer
+            while (ordered_stages_index < ordered_stages.size()) {
+                consumer_index = get_stage(ordered_stages[ordered_stages_index++]);
+                if (consumer_index != not_found) break;
+            }
+
+            const auto &producer = pipeline.stage_states[producer_index];
+            const auto &consumer = pipeline.stage_states[consumer_index];
+
+            const std::shared_ptr<const spirv::Module> &producer_spirv =
+                producer.spirv_state ? producer.spirv_state : producer.module_state->spirv;
+            const std::shared_ptr<const spirv::Module> &consumer_spirv =
+                consumer.spirv_state ? consumer.spirv_state : consumer.module_state->spirv;
+
+            if (consumer_spirv && producer_spirv && consumer.entrypoint && producer.entrypoint) {
+                skip |= ValidateInterfaceBetweenStages(*producer_spirv.get(), *producer.entrypoint, *consumer_spirv.get(),
+                                                       *consumer.entrypoint, create_info_loc);
+            }
+
+            producer_index = consumer_index;
         }
     }
 
