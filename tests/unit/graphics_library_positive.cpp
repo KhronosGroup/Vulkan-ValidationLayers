@@ -835,7 +835,7 @@ TEST_F(PositiveGraphicsLibrary, LinkingInputAttachment) {
                OpReturn
                OpFunctionEnd
         )";
-        vector<uint32_t> fs_spv;
+        std::vector<uint32_t> fs_spv;
         ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, fs_src, fs_spv);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);

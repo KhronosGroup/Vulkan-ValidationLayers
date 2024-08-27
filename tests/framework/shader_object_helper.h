@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "layer_validation_tests.h"
-#include "shader_helper.h"
+#include <vector>
+#include <vulkan/vulkan.h>
 
 // Assumes VK_SHADER_CODE_TYPE_SPIRV_EXT as that is how must tests will create the shader
 VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,

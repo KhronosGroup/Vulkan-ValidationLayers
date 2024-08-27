@@ -23,6 +23,7 @@
 
 #include "render.h"
 #include "test_framework.h"
+#include "shader_templates.h"
 
 class VkRenderFramework;
 class VkTestFramework;

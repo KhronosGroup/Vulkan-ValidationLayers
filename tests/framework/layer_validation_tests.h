@@ -29,22 +29,16 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-#include "test_common.h"
 #include "binding.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_extension_helper.h"
 #include "render.h"
-#include "utils/convert_utils.h"
-#include "shader_templates.h"
 
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <string>
 #include <vector>
-
-using std::string;
-using std::vector;
 
 // MSVC and GCC define __SANITIZE_ADDRESS__ when compiling with address sanitization
 // However, clang doesn't. Instead you have to use __has_feature to check.

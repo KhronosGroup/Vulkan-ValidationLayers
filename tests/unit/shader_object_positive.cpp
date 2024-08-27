@@ -12,6 +12,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/shader_object_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_templates.h"
 
 void ShaderObjectTest::InitBasicShaderObject() {
     SetTargetApiVersion(VK_API_VERSION_1_1);
