@@ -750,8 +750,8 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
         };
         if (overflow) {
             CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                              vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00714",
-                                                             "VUID-VkPipelineShaderStageCreateInfo-stage-00715"});
+                                              std::vector<std::string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00714",
+                                                                       "VUID-VkPipelineShaderStageCreateInfo-stage-00715"});
         } else {
             CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }

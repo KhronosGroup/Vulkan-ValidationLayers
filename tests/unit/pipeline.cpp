@@ -3541,7 +3541,7 @@ TEST_F(NegativePipeline, ViewportStateScissorOverflow) {
         helper.vp_state_ci_.pScissors = &scissor_x;
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp_x, kErrorBit,
-                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02822"}));
+                                      std::vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02822"}));
 
     const auto break_vp_y = [&](CreatePipelineHelper &helper) {
         helper.vp_state_ci_.viewportCount = 1;
@@ -3550,7 +3550,7 @@ TEST_F(NegativePipeline, ViewportStateScissorOverflow) {
         helper.vp_state_ci_.pScissors = &scissor_y;
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp_y, kErrorBit,
-                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02823"}));
+                                      std::vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-offset-02823"}));
 }
 
 TEST_F(NegativePipeline, ViewportStateScissorNegative) {

@@ -2171,7 +2171,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
             vsrisci.viewportCount = 1;
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057"}));
     }
 
     // Create an image without the SRI bit

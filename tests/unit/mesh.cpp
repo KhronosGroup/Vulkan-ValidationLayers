@@ -174,14 +174,14 @@ TEST_F(NegativeMesh, BasicUsage) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(), ms.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
 
         // vertex or mesh must be present
         // 02096 overlaps with 06896
         const auto break_vp2 = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
         CreatePipelineHelper::OneshotTest(*this, break_vp2, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
-                                                               "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
+                                                                    "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
 
         // vertexinput and inputassembly must be valid when vertex stage is present
         const auto break_vp3 = [&](CreatePipelineHelper &helper) {
@@ -196,10 +196,10 @@ TEST_F(NegativeMesh, BasicUsage) {
             helper.shader_stages_ = {ms_xfb.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp4, kErrorBit,
-                                          vector<std::string>({" VUID-VkGraphicsPipelineCreateInfo-None-02322"}));
+                                          std::vector<std::string>({" VUID-VkGraphicsPipelineCreateInfo-None-02322"}));
 
         // invalid dynamic state with mesh shader
-        vector<VkDynamicState> dyn_states[] = {
+        std::vector<VkDynamicState> dyn_states[] = {
             {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT},
             {VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT},
             {VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT},
@@ -219,7 +219,7 @@ TEST_F(NegativeMesh, BasicUsage) {
                 helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
                 helper.gp_ci_.pDynamicState = &dyn_state;
             };
-            CreatePipelineHelper::OneshotTest(*this, break_vp5, kErrorBit, vector<std::string>({err_vuids[i]}));
+            CreatePipelineHelper::OneshotTest(*this, break_vp5, kErrorBit, std::vector<std::string>({err_vuids[i]}));
         }
 
         // viewMask without enabling multiviewMeshShader feature
@@ -235,7 +235,7 @@ TEST_F(NegativeMesh, BasicUsage) {
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp5, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"}));
     }
 }
 
@@ -339,8 +339,8 @@ TEST_F(NegativeMesh, ExtensionDisabled) {
         helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                      vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02091",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
+                                      std::vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02091",
+                                                                "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
 }
 
 TEST_F(NegativeMesh, RuntimeSpirv) {
@@ -358,7 +358,7 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    vector<std::string> error_vuids;
+    std::vector<std::string> error_vuids;
     uint32_t max_task_workgroup_size_x = mesh_shader_properties.maxTaskWorkGroupSize[0];
     uint32_t max_task_workgroup_size_y = mesh_shader_properties.maxTaskWorkGroupSize[1];
     uint32_t max_task_workgroup_size_z = mesh_shader_properties.maxTaskWorkGroupSize[2];
@@ -647,14 +647,14 @@ TEST_F(NegativeMesh, BasicUsageNV) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo(), ms.GetStageCreateInfo()};
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
 
         // vertex or mesh must be present
         // 02096 overlaps with 06896
         const auto break_vp2 = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
         CreatePipelineHelper::OneshotTest(*this, break_vp2, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
-                                                               "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
+                                          std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
+                                                                    "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
 
         // vertexinput and inputassembly must be valid when vertex stage is present
         const auto break_vp3 = [&](CreatePipelineHelper &helper) {
@@ -844,8 +844,8 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
         helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                      vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02091",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
+                                      std::vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02091",
+                                                                "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
 }
 
 TEST_F(NegativeMesh, DrawCmds) {

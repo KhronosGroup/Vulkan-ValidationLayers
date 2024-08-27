@@ -16,6 +16,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "utils/convert_utils.h"
 
 class NegativeDynamicRenderingLocalRead : public DynamicRenderingTest {};
 
@@ -573,8 +574,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     for (uint32_t i = 0; i < 3; i++) {
-        vector<VkAttachmentReference> color_references;
-        vector<VkAttachmentDescription> attachment_descriptions;
+        std::vector<VkAttachmentReference> color_references;
+        std::vector<VkAttachmentDescription> attachment_descriptions;
         std::shared_ptr<vkt::Framebuffer> framebuffer;
         std::vector<std::unique_ptr<vkt::Image>> renderTargets;
         std::vector<vkt::ImageView> render_target_views;   // color attachments but not depth

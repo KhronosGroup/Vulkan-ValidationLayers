@@ -11,6 +11,7 @@
  */
 
 #include "shader_object_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage, uint32_t set_layout_count,
                                        const VkDescriptorSetLayout* set_layouts, uint32_t pc_range_count,

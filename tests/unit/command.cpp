@@ -2405,14 +2405,15 @@ TEST_F(NegativeCommand, ViewportWScalingNV) {
     // Create pipeline with w-scaling enabled but without a valid scaling array
     vpsi.pViewportWScalings = nullptr;
     CreatePipelineHelper::OneshotTest(*this, set_vpci, kErrorBit,
-                                      vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715"}));
+                                      std::vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715"}));
 
     vpsi.pViewportWScalings = scale.data();
 
     // Create pipeline with w-scaling enabled but without matching viewport counts
     vpsi.viewportCount = 1;
-    CreatePipelineHelper::OneshotTest(*this, set_vpci, kErrorBit,
-                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726"}));
+    CreatePipelineHelper::OneshotTest(
+        *this, set_vpci, kErrorBit,
+        std::vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726"}));
 
     VkShaderObj vs(this, vs_src, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);

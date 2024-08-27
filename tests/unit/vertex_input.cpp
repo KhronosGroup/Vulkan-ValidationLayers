@@ -403,9 +403,9 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputAttributes) {
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit,
-                                      vector<string>{"VUID-VkVertexInputAttributeDescription-location-00620",
-                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
-                                                     "VUID-VkVertexInputAttributeDescription-format-00623"});
+                                      std::vector<std::string>{"VUID-VkVertexInputAttributeDescription-location-00620",
+                                                               "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                                                               "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
 TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
@@ -425,9 +425,9 @@ TEST_F(NegativeVertexInput, InputAttributeMaxVertexInputBindings) {
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit,
-                                      vector<string>{"VUID-VkVertexInputAttributeDescription-binding-00621",
-                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
-                                                     "VUID-VkVertexInputAttributeDescription-format-00623"});
+                                      std::vector<std::string>{"VUID-VkVertexInputAttributeDescription-binding-00621",
+                                                               "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                                                               "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
 TEST_F(NegativeVertexInput, AttributeDescriptionOffset) {
