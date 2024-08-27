@@ -196,3 +196,60 @@ TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
     pipe.tess_ci_ = tess_ci;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8443");
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(location = 0) out ivec4 a;
+        void main() {
+            a = ivec4(1);
+        }
+    )glsl";
+
+    char const *geom_source = R"glsl(
+        #version 450
+        layout(triangles) in;
+        layout(triangle_strip) out;
+        layout(location = 0) in ivec4 a[3];
+        layout(location = 0) out vec4 b;
+        layout(max_vertices = 3) out;
+
+        void main() {
+            b = vec4(a[0]);
+            gl_Position = a[0];
+            EmitVertex();
+
+            b = vec4(a[1]);
+            gl_Position = a[1];
+            EmitVertex();
+
+            b = vec4(a[2]);
+            gl_Position = a[2];
+            EmitVertex();
+
+            EndPrimitive();
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 450
+        layout(location = 0) in vec4 b;
+        layout(location = 0) out vec4 c;
+        void main() {
+            c = b;
+        }
+    )glsl";
+
+    VkShaderObj vert(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj geom(this, geom_source, VK_SHADER_STAGE_GEOMETRY_BIT);
+    VkShaderObj frag(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vert.GetStageCreateInfo(), frag.GetStageCreateInfo(), geom.GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}

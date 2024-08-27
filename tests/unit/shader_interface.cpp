@@ -422,6 +422,39 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatch) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
 }
 
+TEST_F(NegativeShaderInterface, VsFsTypeMismatch2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8443");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out int x;
+        void main(){
+           x = 0;
+           gl_Position = vec4(1);
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float x; /* VS writes int */
+        layout(location=0) out vec4 color;
+        void main(){
+           color = vec4(x);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        // Flipped here
+        helper.shader_stages_ = {fs.GetStageCreateInfo(), vs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-07754");
+}
+
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchInBlock) {
     TEST_DESCRIPTION(
         "Test that an error is produced for mismatched types across the vertex->fragment shader interface, when the variable is "
