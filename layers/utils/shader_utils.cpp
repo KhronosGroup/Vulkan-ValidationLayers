@@ -24,27 +24,16 @@
 
 #include "generated/spirv_tools_commit_id.h"
 
-void ValidationCache::GetUUID(uint8_t *uuid) {
-    const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
-    // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
-    // output, so pad with zeroes if the input string is shorter than that, and truncate
-    // if it's longer.
-#if defined(__GNUC__) && (__GNUC__ > 8)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
-    char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};  // 2 hex digits == 1 byte
-    std::strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE);
-#if defined(__GNUC__) && (__GNUC__ > 8)
-#pragma GCC diagnostic pop
-#endif
-    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
-        const char byte_str[] = {padded_sha1_str[2 * i + 0], padded_sha1_str[2 * i + 1], '\0'};
-        uuid[i] = static_cast<uint8_t>(std::strtoul(byte_str, nullptr, 16));
-    }
+void ValidationCache::SetUUID(uint8_t *uuid) {
+    // Currently not using the last 8 bytes, so make sure they are zero
+    std::memset(uuid, 0, VK_UUID_SIZE);
 
-    // Replace the last 4 bytes (likely padded with zero anyway)
-    std::memcpy(uuid + (VK_UUID_SIZE - sizeof(uint32_t)), &spirv_val_option_hash_, sizeof(uint32_t));
+    std::string_view spirv_tool_commit{SPIRV_TOOLS_COMMIT_ID};
+    // just make use of the VUID hash as it is the same format
+    uint32_t spirv_tool_commit_hash = hash_util::VuidHash(spirv_tool_commit);
+    std::memcpy(uuid, &spirv_tool_commit_hash, sizeof(uint32_t));
+
+    std::memcpy(uuid + sizeof(uint32_t), &spirv_val_option_hash_, sizeof(uint32_t));
 }
 
 void ValidationCache::Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
@@ -56,7 +45,7 @@ void ValidationCache::Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
     if (data[0] != size) return;
     if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) return;
     uint8_t expected_uuid[VK_UUID_SIZE];
-    GetUUID(expected_uuid);
+    SetUUID(expected_uuid);
     if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) return;  // different version
 
     data = (uint32_t const *)(reinterpret_cast<uint8_t const *>(data) + headerSize);
@@ -85,7 +74,7 @@ void ValidationCache::Write(size_t *pDataSize, void *pData) {
     // Write the header
     *out++ = header_size;
     *out++ = VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT;
-    GetUUID(reinterpret_cast<uint8_t *>(out));
+    SetUUID(reinterpret_cast<uint8_t *>(out));
     out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
 
     {
