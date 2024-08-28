@@ -517,12 +517,16 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
                                                    const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (Count<vvl::Semaphore>() > kMaxRecommendedSemaphoreObjectsSizeAMD) {
+        const size_t count = Count<vvl::Semaphore>();
+        if (count > kMaxRecommendedSemaphoreObjectsSizeAMD) {
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfSemaphores", device, error_obj.location,
                                           "%s %s High number of vkSemaphore objects created. "
+                                          "%zu created, but recommanded max is %" PRIu32
+                                          ". "
                                           "Minimize the amount of queue synchronization that is used. "
                                           "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",
-                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
+                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), count,
+                                          kMaxRecommendedSemaphoreObjectsSizeAMD);
         }
     }
 
@@ -534,12 +538,16 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
                                                const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (Count<vvl::Fence>() > kMaxRecommendedFenceObjectsSizeAMD) {
+        const size_t count = Count<vvl::Fence>();
+        if (count > kMaxRecommendedFenceObjectsSizeAMD) {
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfFences", device, error_obj.location,
-                                          "%s %s High number of VkFence objects created."
+                                          "%s %s High number of VkFence objects created. "
+                                          "%zu created, but recommanded max is %" PRIu32
+                                          ". "
                                           "Minimize the amount of CPU-GPU synchronization that is used. "
                                           "Semaphores and fences have overhead. Each fence has a CPU and GPU cost with it.",
-                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA));
+                                          VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), count,
+                                          kMaxRecommendedFenceObjectsSizeAMD);
         }
     }
 
