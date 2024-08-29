@@ -2961,119 +2961,62 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
-    semaphore_type_create_info.initialValue = 5;
-
-    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
-
-    VkSemaphore semaphore[2];
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore[0]));
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &semaphore[1]));
-
-    VkSemaphoreSignalInfo semaphore_signal_info = vku::InitStructHelper();
-    semaphore_signal_info.semaphore = semaphore[0];
-    semaphore_signal_info.value = 3;
+    vkt::Semaphore timeline0(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 5);
+    vkt::Semaphore timeline1(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 5);
 
     m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03258");
-    vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
+    timeline0.SignalKHR(3);
     m_errorMonitor->VerifyFound();
 
-    semaphore_signal_info.value = 10;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
-
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
-    uint64_t waitValue = 10;
-    uint64_t signalValue = 20;
-    timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
-    timeline_semaphore_submit_info.pWaitSemaphoreValues = &waitValue;
-    timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
-    timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
-
-    VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_semaphore_submit_info);
-    submit_info.pWaitDstStageMask = &stageFlags;
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &(semaphore[1]);
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &(semaphore[0]);
-    ASSERT_EQ(VK_SUCCESS, vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE));
-
-    semaphore_signal_info.value = 25;
+    timeline0.SignalKHR(10);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline1, 10, timeline0, 20);
 
     m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03259");
-    vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
+    timeline0.SignalKHR(25);
     m_errorMonitor->VerifyFound();
 
-    semaphore_signal_info.value = 15;
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
-    semaphore_signal_info.semaphore = semaphore[1];
-    ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
+    timeline0.SignalKHR(15);
+    timeline1.SignalKHR(15);
 
-    // Check if we can test violations of maxTimelineSemaphoreValueDifference
+    // Test violations of maxTimelineSemaphoreValueDifference
     if (timelineproperties.maxTimelineSemaphoreValueDifference < vvl::kU64Max) {
-        VkSemaphore sem;
-
-        semaphore_type_create_info.initialValue = 0;
-        ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &sem));
-
-        semaphore_signal_info.semaphore = sem;
-        semaphore_signal_info.value = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
+        vkt::Semaphore sem(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
         m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03260");
-        vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
+        sem.SignalKHR(timelineproperties.maxTimelineSemaphoreValueDifference + 1);
         m_errorMonitor->VerifyFound();
 
-        semaphore_signal_info.value--;
-        ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphoreKHR(device(), &semaphore_signal_info));
-
+        sem.SignalKHR(timelineproperties.maxTimelineSemaphoreValueDifference);
         m_default_queue->Wait();
-
-        vk::DestroySemaphore(device(), sem, nullptr);
-
-        // Regression test for value difference validations ran against binary semaphores
-        {
-            VkSemaphore timeline_sem;
-            VkSemaphore binary_sem;
-
-            semaphore_type_create_info.initialValue = 0;
-            ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &semaphore_create_info, nullptr, &timeline_sem));
-
-            VkSemaphoreCreateInfo binary_semaphore_create_info = vku::InitStructHelper();
-
-            ASSERT_EQ(VK_SUCCESS, vk::CreateSemaphore(device(), &binary_semaphore_create_info, nullptr, &binary_sem));
-
-            signalValue = 1;
-            uint64_t offendingValue = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
-
-            submit_info.waitSemaphoreCount = 1;
-            submit_info.pWaitSemaphores = &timeline_sem;
-            submit_info.signalSemaphoreCount = 1;
-            submit_info.pSignalSemaphores = &binary_sem;
-
-            timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
-            timeline_semaphore_submit_info.pWaitSemaphoreValues = &signalValue;
-
-            // These two assignments are not required by the spec, but would segfault on older versions of validation layers
-            timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
-            timeline_semaphore_submit_info.pSignalSemaphoreValues = &offendingValue;
-
-            vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
-
-            semaphore_signal_info.semaphore = timeline_sem;
-            semaphore_signal_info.value = 1;
-            vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
-
-            m_default_queue->Wait();
-
-            vk::DestroySemaphore(device(), binary_sem, nullptr);
-            vk::DestroySemaphore(device(), timeline_sem, nullptr);
-        }
     }
+    // Regression test for value difference validations ran against binary semaphores
+    {
+        vkt::Semaphore timeline_sem(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+        vkt::Semaphore binary_sem(*m_device);
 
+        uint64_t signalValue = 1;
+        uint64_t offendingValue = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
+
+        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+        timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
+        timeline_semaphore_submit_info.pWaitSemaphoreValues = &signalValue;
+        // These two assignments are not required by the spec, but would segfault on older versions of validation layers
+        timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
+        timeline_semaphore_submit_info.pSignalSemaphoreValues = &offendingValue;
+
+        VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkSubmitInfo submit_info = vku::InitStructHelper(&timeline_semaphore_submit_info);
+        submit_info.pWaitDstStageMask = &stageFlags;
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &timeline_sem.handle();
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = &binary_sem.handle();
+
+        vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+        timeline_sem.SignalKHR(signalValue);
+        m_default_queue->Wait();
+    }
     m_default_queue->Wait();
-    vk::DestroySemaphore(device(), semaphore[0], nullptr);
-    vk::DestroySemaphore(device(), semaphore[1], nullptr);
 }
 
 TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
