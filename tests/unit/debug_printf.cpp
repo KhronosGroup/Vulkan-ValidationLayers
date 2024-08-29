@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
@@ -3005,4 +3006,192 @@ TEST_F(NegativeDebugPrintf, ValidationAbort) {
 
     m_default_queue->Submit(*m_commandBuffer);
     m_default_queue->Wait();
+}
+
+TEST_F(NegativeDebugPrintf, DualPipelines) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_debug(*this);
+    pipe_debug.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_debug.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_normal(*this);
+    pipe_normal.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // no print
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // print
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // print
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // no print
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // print
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, DualCommandBufferHalfPrint) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_debug(*this);
+    pipe_debug.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_debug.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_normal(*this);
+    pipe_normal.CreateComputePipeline();
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+
+    cb0.begin();
+    vk::CmdBindPipeline(cb0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(cb0.handle(), 1, 1, 1);
+    cb0.end();
+
+    cb1.begin();
+    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    cb1.end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+
+    VkCommandBuffer cbs[2] = {cb0.handle(), cb1.handle()};
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 2;
+    submit.pCommandBuffers = cbs;
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, DualCommandBufferBothPrint) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(push_constant) uniform PushConstants { int x; } pc;
+        void main() {
+            debugPrintfEXT("int == %u", pc.x);
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+    pipe_layout_ci.pushConstantRangeCount = 1;
+    pipe_layout_ci.pPushConstantRanges = &pc_range;
+    vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+
+    uint32_t data = 4;
+    cb0.begin();
+    vk::CmdPushConstants(cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &data);
+    vk::CmdBindPipeline(cb0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(cb0.handle(), 1, 1, 1);
+    cb0.end();
+
+    cb1.begin();
+    data = 8;
+    vk::CmdPushConstants(cb1.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &data);
+    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    cb1.end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "int == 4");  // cb0
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "int == 8");  // cb1
+
+    VkCommandBuffer cbs[2] = {cb0.handle(), cb1.handle()};
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 2;
+    submit.pCommandBuffers = cbs;
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, DualCommandBufferEmpty) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_debug(*this);
+    pipe_debug.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_debug.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_normal(*this);
+    pipe_normal.CreateComputePipeline();
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+
+    // Empty to make sure nothing breaks
+    cb0.begin();
+    cb0.end();
+
+    cb2.begin();
+    cb2.end();
+
+    cb1.begin();
+    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    cb1.end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+
+    VkCommandBuffer cbs[3] = {cb0.handle(), cb1.handle(), cb2.handle()};
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 3;
+    submit.pCommandBuffers = cbs;
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 }
