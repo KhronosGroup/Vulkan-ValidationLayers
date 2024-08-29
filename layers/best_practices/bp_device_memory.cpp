@@ -41,9 +41,11 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                                                   const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if ((Count<vvl::DeviceMemory>() + 1) > kMemoryObjectWarningLimit) {
+    const size_t object_count = Count<vvl::DeviceMemory>() + 1;
+    if (object_count > kMemoryObjectWarningLimit) {
         skip |= LogPerformanceWarning("BestPractices-vkAllocateMemory-too-many-objects", device, error_obj.location,
-                                      "This app has over %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
+                                      "This app has %zu memory objects, recommended max is %" PRIu32 ".", object_count,
+                                      kMemoryObjectWarningLimit);
     }
 
     if (pAllocateInfo->allocationSize < kMinDeviceAllocationSize) {

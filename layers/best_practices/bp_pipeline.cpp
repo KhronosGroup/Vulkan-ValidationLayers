@@ -185,9 +185,12 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         }
     }
     if (VendorCheckEnabled(kBPVendorAMD)) {
-        if (num_pso_ > kMaxRecommendedNumberOfPSOAMD) {
+        const uint32_t pso_count = num_pso_.load();
+        if (pso_count > kMaxRecommendedNumberOfPSOAMD) {
             skip |= LogPerformanceWarning("BestPractices-AMD-CreatePipelines-TooManyPipelines", device, error_obj.location,
-                                          "%s Too many pipelines created, consider consolidation", VendorSpecificTag(kBPVendorAMD));
+                                          "%s Too many pipelines created (%" PRIu32 " but max recommended is %" PRIu32
+                                          "), consider consolidation",
+                                          VendorSpecificTag(kBPVendorAMD), pso_count, kMaxRecommendedNumberOfPSOAMD);
         }
     }
 
