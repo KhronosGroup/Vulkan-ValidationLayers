@@ -30,20 +30,25 @@ struct BufferInfo {
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
+    uint32_t action_command_index;
     BufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
-               VkPipelineBindPoint pipeline_bind_point)
-        : output_mem_block(output_mem_block), desc_set(desc_set), desc_pool(desc_pool), pipeline_bind_point(pipeline_bind_point){};
+               VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
+        : output_mem_block(output_mem_block),
+          desc_set(desc_set),
+          desc_pool(desc_pool),
+          pipeline_bind_point(pipeline_bind_point),
+          action_command_index(action_command_index){};
 };
 
 class CommandBuffer : public gpu_tracker::CommandBuffer {
   public:
     std::vector<BufferInfo> buffer_infos;
-
+    uint32_t action_command_count = 0;
     CommandBuffer(Validator& dp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* create_info,
                   const vvl::CommandPool* pool);
     ~CommandBuffer();
 
-    bool PreProcess(const Location& loc) final { return !buffer_infos.empty(); }
+    bool PreProcess(const Location& loc) final { return true; }
     void PostProcess(VkQueue queue, const Location& loc) final;
 
     void Destroy() final;
@@ -66,7 +71,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-    void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info, uint32_t operation_index,
+    void AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueue queue, BufferInfo& buffer_info,
                                    uint32_t* const debug_output_buffer, const Location& loc);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance, const RecordObject& record_obj) override;
@@ -148,8 +153,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
 
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) final;
-
-    void DestroyBuffer(BufferInfo& buffer_info);
 
   private:
     bool verbose = false;
