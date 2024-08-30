@@ -1158,6 +1158,16 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceCooperativeMatrixPropertiesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PROFILE_INFO_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -1681,11 +1691,6 @@ void PnextChainFree(void *chain) {
             delete reinterpret_cast<const VkPresentFrameTokenGGP *>(header);
             break;
 #endif  // VK_USE_PLATFORM_GGP
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV:
-            PnextChainFree(header->pNext);
-            header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *>(header);
-            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;

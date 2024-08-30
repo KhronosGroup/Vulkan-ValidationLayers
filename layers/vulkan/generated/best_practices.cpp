@@ -112,6 +112,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_vertex_attribute_divisor,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_vertex_attribute_divisor}}},
         {vvl::Extension::_VK_EXT_pipeline_creation_feedback, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_NV_compute_shader_derivatives,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_compute_shader_derivatives}}},
         {vvl::Extension::_VK_NV_fragment_shader_barycentric,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_fragment_shader_barycentric}}},
         {vvl::Extension::_VK_EXT_scalar_block_layout, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},

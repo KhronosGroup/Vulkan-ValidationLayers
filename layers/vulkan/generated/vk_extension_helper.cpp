@@ -131,6 +131,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_KHR_ray_tracing_position_fetch", vvl::Extension::_VK_KHR_ray_tracing_position_fetch},
         {"VK_KHR_pipeline_binary", vvl::Extension::_VK_KHR_pipeline_binary},
         {"VK_KHR_cooperative_matrix", vvl::Extension::_VK_KHR_cooperative_matrix},
+        {"VK_KHR_compute_shader_derivatives", vvl::Extension::_VK_KHR_compute_shader_derivatives},
         {"VK_KHR_video_decode_av1", vvl::Extension::_VK_KHR_video_decode_av1},
         {"VK_KHR_video_maintenance1", vvl::Extension::_VK_KHR_video_maintenance1},
         {"VK_KHR_vertex_attribute_divisor", vvl::Extension::_VK_KHR_vertex_attribute_divisor},

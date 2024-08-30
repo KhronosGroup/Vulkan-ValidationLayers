@@ -1547,6 +1547,27 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR: {  // Covers
+                                                                                           // VUID-VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR);
+                if (!IsExtEnabled(device_extensions.vk_khr_compute_shader_derivatives) &&
+                    !IsExtEnabled(device_extensions.vk_nv_compute_shader_derivatives)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR, but when "
+                                     "creating VkDevice, the parent extension "
+                                     "(VK_KHR_compute_shader_derivatives or VK_NV_compute_shader_derivatives) was not included in "
+                                     "ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR* structure =
+                    (VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::computeDerivativeGroupQuads), structure->computeDerivativeGroupQuads);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::computeDerivativeGroupLinear), structure->computeDerivativeGroupLinear);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceVideoMaintenance1FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceVideoMaintenance1FeaturesKHR-sType-sType
@@ -1913,25 +1934,6 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV* structure =
                     (VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::representativeFragmentTest), structure->representativeFragmentTest);
-            }
-        } break;
-
-        // Validation code for VkPhysicalDeviceComputeShaderDerivativesFeaturesNV structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV: {  // Covers
-                                                                                          // VUID-VkPhysicalDeviceComputeShaderDerivativesFeaturesNV-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceComputeShaderDerivativesFeaturesNV);
-                if (!IsExtEnabled(device_extensions.vk_nv_compute_shader_derivatives)) {
-                    skip |= LogError(pnext_vuid, instance, pNext_loc,
-                                     "includes a pointer to a VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, but when "
-                                     "creating VkDevice, the parent extension "
-                                     "(VK_NV_compute_shader_derivatives) was not included in ppEnabledExtensionNames.");
-                }
-                VkPhysicalDeviceComputeShaderDerivativesFeaturesNV* structure =
-                    (VkPhysicalDeviceComputeShaderDerivativesFeaturesNV*)header;
-                skip |= ValidateBool32(pNext_loc.dot(Field::computeDerivativeGroupQuads), structure->computeDerivativeGroupQuads);
-
-                skip |= ValidateBool32(pNext_loc.dot(Field::computeDerivativeGroupLinear), structure->computeDerivativeGroupLinear);
             }
         } break;
 
@@ -4557,6 +4559,9 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
 
         // No Validation code for VkPhysicalDeviceCooperativeMatrixPropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceCooperativeMatrixPropertiesKHR-sType-sType
+
+        // No Validation code for VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR structure members  -- Covers
+        // VUID-VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR-sType-sType
 
         // No Validation code for VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR-sType-sType
@@ -9759,7 +9764,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMMAND_BUFFER_INHERITANCE_FEATURES_NV,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV,
@@ -11239,7 +11244,8 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(VkDevice device
             skip |= ValidateStructPnext(pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext,
                                         allowed_structs_VkGraphicsPipelineCreateInfo.size(),
                                         allowed_structs_VkGraphicsPipelineCreateInfo.data(), GeneratedVulkanHeaderVersion,
-                                        kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+                                        "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext",
+                                        "VUID-VkGraphicsPipelineCreateInfo-sType-unique", VK_NULL_HANDLE, true);
 
             skip |= ValidateStructType(pCreateInfos_loc.dot(Field::pDynamicState), pCreateInfos[createInfoIndex].pDynamicState,
                                        VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, false,
@@ -11303,7 +11309,8 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(VkDevice device,
             skip |= ValidateStructPnext(pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext,
                                         allowed_structs_VkComputePipelineCreateInfo.size(),
                                         allowed_structs_VkComputePipelineCreateInfo.data(), GeneratedVulkanHeaderVersion,
-                                        kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+                                        "VUID-VkComputePipelineCreateInfo-pNext-pNext",
+                                        "VUID-VkComputePipelineCreateInfo-sType-unique", VK_NULL_HANDLE, true);
 
             skip |= ValidateStructType(pCreateInfos_loc.dot(Field::stage), &(pCreateInfos[createInfoIndex].stage),
                                        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, false, kVUIDUndefined,
@@ -13180,6 +13187,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV,
@@ -21123,7 +21131,8 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
             skip |= ValidateStructPnext(pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext,
                                         allowed_structs_VkExecutionGraphPipelineCreateInfoAMDX.size(),
                                         allowed_structs_VkExecutionGraphPipelineCreateInfoAMDX.data(), GeneratedVulkanHeaderVersion,
-                                        kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+                                        "VUID-VkExecutionGraphPipelineCreateInfoAMDX-pNext-pNext",
+                                        "VUID-VkExecutionGraphPipelineCreateInfoAMDX-sType-unique", VK_NULL_HANDLE, true);
 
             skip |= ValidateStructTypeArray(pCreateInfos_loc.dot(Field::stageCount), pCreateInfos_loc.dot(Field::pStages),
                                             pCreateInfos[createInfoIndex].stageCount, pCreateInfos[createInfoIndex].pStages,
@@ -21818,7 +21827,8 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
             skip |= ValidateStructPnext(pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext,
                                         allowed_structs_VkRayTracingPipelineCreateInfoNV.size(),
                                         allowed_structs_VkRayTracingPipelineCreateInfoNV.data(), GeneratedVulkanHeaderVersion,
-                                        kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+                                        "VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext",
+                                        "VUID-VkRayTracingPipelineCreateInfoNV-sType-unique", VK_NULL_HANDLE, true);
 
             skip |= ValidateStructTypeArray(pCreateInfos_loc.dot(Field::stageCount), pCreateInfos_loc.dot(Field::pStages),
                                             pCreateInfos[createInfoIndex].stageCount, pCreateInfos[createInfoIndex].pStages,
@@ -24865,7 +24875,8 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectMemoryRequirementsNV
 
         skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkComputePipelineCreateInfo.size(),
                                     allowed_structs_VkComputePipelineCreateInfo.data(), GeneratedVulkanHeaderVersion,
-                                    kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+                                    "VUID-VkComputePipelineCreateInfo-pNext-pNext", "VUID-VkComputePipelineCreateInfo-sType-unique",
+                                    VK_NULL_HANDLE, true);
 
         skip |= ValidateStructType(pCreateInfo_loc.dot(Field::stage), &(pCreateInfo->stage),
                                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, false, kVUIDUndefined,
@@ -26772,7 +26783,8 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
             skip |= ValidateStructPnext(pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext,
                                         allowed_structs_VkRayTracingPipelineCreateInfoKHR.size(),
                                         allowed_structs_VkRayTracingPipelineCreateInfoKHR.data(), GeneratedVulkanHeaderVersion,
-                                        kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+                                        "VUID-VkRayTracingPipelineCreateInfoKHR-pNext-pNext",
+                                        "VUID-VkRayTracingPipelineCreateInfoKHR-sType-unique", VK_NULL_HANDLE, true);
 
             skip |= ValidateStructTypeArray(pCreateInfos_loc.dot(Field::stageCount), pCreateInfos_loc.dot(Field::pStages),
                                             pCreateInfos[createInfoIndex].stageCount, pCreateInfos[createInfoIndex].pStages,

@@ -595,6 +595,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->cooperativeMatrixRobustBufferAccess |= enabled->cooperativeMatrixRobustBufferAccess == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR: {
+                const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *>(pNext);
+                features->computeDerivativeGroupQuads |= enabled->computeDerivativeGroupQuads == VK_TRUE;
+                features->computeDerivativeGroupLinear |= enabled->computeDerivativeGroupLinear == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {
                 const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(pNext);
@@ -730,13 +737,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV *>(pNext);
                 features->representativeFragmentTest |= enabled->representativeFragmentTest == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV: {
-                const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *>(pNext);
-                features->computeDerivativeGroupQuads |= enabled->computeDerivativeGroupQuads == VK_TRUE;
-                features->computeDerivativeGroupLinear |= enabled->computeDerivativeGroupLinear == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV: {

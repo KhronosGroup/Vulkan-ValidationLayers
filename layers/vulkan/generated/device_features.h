@@ -95,9 +95,9 @@ struct DeviceFeatures {
     bool colorWriteEnable;
     // VkPhysicalDeviceCommandBufferInheritanceFeaturesNV
     bool commandBufferInheritance;
-    // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
+    // VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
     bool computeDerivativeGroupLinear;
-    // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
+    // VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
     bool computeDerivativeGroupQuads;
     // VkPhysicalDeviceConditionalRenderingFeaturesEXT
     bool conditionalRendering;
