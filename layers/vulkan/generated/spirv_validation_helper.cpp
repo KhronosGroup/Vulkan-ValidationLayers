@@ -188,6 +188,10 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites(
         {spv::CapabilityRoundingModeRTZ, {0, nullptr, nullptr, "(VkPhysicalDeviceVulkan12Properties::shaderRoundingModeRTZFloat64 & VK_TRUE) != 0"}},
         {spv::CapabilityComputeDerivativeGroupQuadsNV, {0, &DeviceFeatures::computeDerivativeGroupQuads, nullptr, ""}},
         {spv::CapabilityComputeDerivativeGroupLinearNV, {0, &DeviceFeatures::computeDerivativeGroupLinear, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityComputeDerivativeGroupQuadsKHR, {0, &DeviceFeatures::computeDerivativeGroupQuads, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityComputeDerivativeGroupLinearKHR, {0, &DeviceFeatures::computeDerivativeGroupLinear, nullptr, ""}},
         {spv::CapabilityFragmentBarycentricNV, {0, &DeviceFeatures::fragmentShaderBarycentric, nullptr, ""}},
         {spv::CapabilityImageFootprintNV, {0, &DeviceFeatures::imageFootprint, nullptr, ""}},
         {spv::CapabilityShadingRateNV, {0, &DeviceFeatures::shadingRateImage, nullptr, ""}},
@@ -359,6 +363,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo> &GetSpirvExte
         {"SPV_KHR_float_controls2", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls2, ""}},
         {"SPV_KHR_quad_control", {0, nullptr, &DeviceExtensions::vk_khr_shader_quad_control, ""}},
         {"SPV_NV_raw_access_chains", {0, nullptr, &DeviceExtensions::vk_nv_raw_access_chains, ""}},
+        {"SPV_KHR_compute_shader_derivatives", {0, nullptr, &DeviceExtensions::vk_khr_compute_shader_derivatives, ""}},
         {"SPV_EXT_replicated_composites", {0, nullptr, &DeviceExtensions::vk_ext_shader_replicated_composites, ""}},
         {"SPV_KHR_relaxed_extended_instruction", {0, nullptr, &DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, ""}},
     };
@@ -1067,6 +1072,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_float_controls2", {{vvl::Extension::_VK_KHR_shader_float_controls2}}},
     {"SPV_KHR_quad_control", {{vvl::Extension::_VK_KHR_shader_quad_control}}},
     {"SPV_NV_raw_access_chains", {{vvl::Extension::_VK_NV_raw_access_chains}}},
+    {"SPV_KHR_compute_shader_derivatives", {{vvl::Extension::_VK_KHR_compute_shader_derivatives}}},
     {"SPV_EXT_replicated_composites", {{vvl::Extension::_VK_EXT_shader_replicated_composites}}},
     {"SPV_KHR_relaxed_extended_instruction", {{vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction}}},
     };

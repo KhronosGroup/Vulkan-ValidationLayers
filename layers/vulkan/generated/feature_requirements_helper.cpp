@@ -626,10 +626,10 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     "VkPhysicalDeviceCommandBufferInheritanceFeaturesNV::commandBufferInheritance"};
         }
         case Feature::computeDerivativeGroupLinear: {
-            auto vk_struct = const_cast<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceComputeShaderDerivativesFeaturesNV;
+                vk_struct = new VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -638,13 +638,13 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 }
             }
             return {&vk_struct->computeDerivativeGroupLinear,
-                    "VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear"};
+                    "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR::computeDerivativeGroupLinear"};
         }
         case Feature::computeDerivativeGroupQuads: {
-            auto vk_struct = const_cast<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceComputeShaderDerivativesFeaturesNV;
+                vk_struct = new VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -653,7 +653,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 }
             }
             return {&vk_struct->computeDerivativeGroupQuads,
-                    "VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads"};
+                    "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR::computeDerivativeGroupQuads"};
         }
         case Feature::conditionalRendering: {
             auto vk_struct = const_cast<VkPhysicalDeviceConditionalRenderingFeaturesEXT *>(

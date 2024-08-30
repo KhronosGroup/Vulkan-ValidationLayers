@@ -90,9 +90,9 @@ enum class Feature {
     colorWriteEnable,
     // VkPhysicalDeviceCommandBufferInheritanceFeaturesNV
     commandBufferInheritance,
-    // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
+    // VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
     computeDerivativeGroupLinear,
-    // VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
+    // VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR
     computeDerivativeGroupQuads,
     // VkPhysicalDeviceConditionalRenderingFeaturesEXT
     conditionalRendering,
