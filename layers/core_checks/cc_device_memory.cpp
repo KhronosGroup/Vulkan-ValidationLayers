@@ -363,7 +363,7 @@ bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Buffer &buffer, VkExt
     info.usage = buffer.create_info.usage;
     info.handleType = handle_type;
     VkExternalBufferProperties properties = vku::InitStructHelper();
-    DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &info, &properties);
+    DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &info, &properties);
     return (properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
 }
 
@@ -877,7 +877,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
             auto validate_export_handle_types = [&](VkExternalMemoryHandleTypeFlagBits flag) {
                 external_info.handleType = flag;
-                DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_info, &external_properties);
+                DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &external_info, &external_properties);
                 const auto external_features = external_properties.externalMemoryProperties.externalMemoryFeatures;
                 if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
                     export_supported = false;

@@ -2446,7 +2446,7 @@ class ValidationObject {
         display_id_reverse_mapping.insert_or_assign(handle, unique_id);
         return (VkDisplayKHR)unique_id;
     }
-    // We make many internal dispatch calls to VK_KHR_get_physical_device_properties2 functions which can depend on the API version
+    // We make many internal dispatch calls to extended query functions which can depend on the API version
     void DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) const;
     void DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pProperties) const;
@@ -2463,6 +2463,15 @@ class ValidationObject {
                                                                      const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
                                                                      uint32_t* pPropertyCount,
                                                                      VkSparseImageFormatProperties2* pProperties) const;
+    void DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(
+        VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+        VkExternalSemaphoreProperties* pExternalSemaphoreProperties) const;
+    void DispatchGetPhysicalDeviceExternalFencePropertiesHelper(VkPhysicalDevice physicalDevice,
+                                                                const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+                                                                VkExternalFenceProperties* pExternalFenceProperties) const;
+    void DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+                                                                 VkExternalBufferProperties* pExternalBufferProperties) const;
 
     // clang-format off
         // Pre/post hook point declarations

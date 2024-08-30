@@ -228,12 +228,13 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
 
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
 void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    BaseClass::PostCreateDevice(pCreateInfo, loc);
-
     if (api_version < VK_API_VERSION_1_1) {
         InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
         return;
     }
+
+    // If using 1.0 and doesn't supports VK_KHR_timeline_semaphore, this will error inside, simple fix is to do after the 1.1 check
+    BaseClass::PostCreateDevice(pCreateInfo, loc);
 
     VkPhysicalDeviceFeatures supported_features{};
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);

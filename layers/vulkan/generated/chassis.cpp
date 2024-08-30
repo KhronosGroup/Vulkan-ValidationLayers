@@ -212,6 +212,38 @@ void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Help
     }
 }
 
+void ValidationObject::DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
+                                                                    pExternalSemaphoreProperties);
+    } else {
+        return DispatchGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
+                                                                       pExternalSemaphoreProperties);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceExternalFencePropertiesHelper(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+    VkExternalFenceProperties* pExternalFenceProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+    } else {
+        return DispatchGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+    }
+}
+
+void ValidationObject::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
+    VkExternalBufferProperties* pExternalBufferProperties) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return DispatchGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+    } else {
+        return DispatchGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+    }
+}
+
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo() {
     static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};

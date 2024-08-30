@@ -1815,14 +1815,8 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features =
-        vku::InitStructHelper();
-    pipeline_exe_features.pipelineExecutableInfo = VK_FALSE;  // Starting with it off
-
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&pipeline_exe_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddDisabledFeature(vkt::Feature::pipelineExecutableInfo);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // MockICD will return 0 for the executable count
@@ -4479,7 +4473,7 @@ TEST_F(NegativePipeline, PipelineBinaryCreation5) {
 
     std::vector<VkPipelineBinaryKHR> binaries(handlesInfo.pipelineBinaryCount);
     handlesInfo.pPipelineBinaries = binaries.data();
-    
+
     err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handlesInfo);
     ASSERT_EQ(VK_SUCCESS, err);
 
