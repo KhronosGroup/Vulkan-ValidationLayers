@@ -211,7 +211,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER];
         }
         VkExternalBufferProperties ext_buf_props = vku::InitStructHelper();
-        DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
+        DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.

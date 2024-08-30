@@ -1898,6 +1898,11 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                HANDLE* pHandle, const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+    bool CanSemaphoreExportFromImported(VkExternalSemaphoreHandleTypeFlagBits export_type,
+                                        VkExternalSemaphoreHandleTypeFlagBits imported_type) const;
+    bool CanFenceExportFromImported(VkExternalFenceHandleTypeFlagBits export_type,
+                                    VkExternalFenceHandleTypeFlagBits imported_type) const;
     bool PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd,
                                        const ErrorObject& error_obj) const override;
     bool PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo,

@@ -309,7 +309,8 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         external_buffer_info.usage = VkBufferUsageFlags(pCreateInfo->usage);
         external_buffer_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
         VkExternalBufferProperties external_buffer_properties = vku::InitStructHelper();
-        DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_buffer_info, &external_buffer_properties);
+        DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &external_buffer_info,
+                                                                &external_buffer_properties);
         const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 
         if ((external_memory_info->handleTypes & compatible_types) != external_memory_info->handleTypes) {

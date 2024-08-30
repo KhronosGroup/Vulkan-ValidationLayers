@@ -159,12 +159,11 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
                                                 const Location &loc, const char *feature_vuid) const {
     bool skip = false;
 
+    // If feature is not enabled, not allowed to call dispatch call below
     if (!enabled_features.pipelineExecutableInfo) {
         skip |= LogError(feature_vuid, device, loc, "called when pipelineExecutableInfo feature is not enabled.");
-    }
-
-    // vkGetPipelineExecutablePropertiesKHR will not have struct to validate further
-    if (pExecutableInfo) {
+    } else if (pExecutableInfo) {
+        // vkGetPipelineExecutablePropertiesKHR will not have struct to validate further
         VkPipelineInfoKHR pi = vku::InitStructHelper();
         pi.pipeline = pExecutableInfo->pipeline;
 

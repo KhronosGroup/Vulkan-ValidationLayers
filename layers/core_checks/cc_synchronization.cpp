@@ -448,7 +448,7 @@ bool CoreChecks::PreCallValidateCreateFence(VkDevice device, const VkFenceCreate
         auto check_export_support = [&](VkExternalFenceHandleTypeFlagBits flag) {
             VkPhysicalDeviceExternalFenceInfo external_info = vku::InitStructHelper();
             external_info.handleType = flag;
-            DispatchGetPhysicalDeviceExternalFenceProperties(physical_device, &external_info, &external_properties);
+            DispatchGetPhysicalDeviceExternalFencePropertiesHelper(physical_device, &external_info, &external_properties);
             if ((external_properties.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT) == 0) {
                 export_supported = false;
                 skip |= LogError("VUID-VkExportFenceCreateInfo-handleTypes-01446", device,
@@ -500,7 +500,7 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
         auto check_export_support = [&](VkExternalSemaphoreHandleTypeFlagBits flag) {
             VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper();
             external_info.handleType = flag;
-            DispatchGetPhysicalDeviceExternalSemaphoreProperties(physical_device, &external_info, &external_properties);
+            DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(physical_device, &external_info, &external_properties);
             if ((external_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) == 0) {
                 export_supported = false;
                 skip |= LogError("VUID-VkExportSemaphoreCreateInfo-handleTypes-01124", device,
