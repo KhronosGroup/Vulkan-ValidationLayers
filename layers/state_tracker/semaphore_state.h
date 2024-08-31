@@ -48,7 +48,7 @@ class Semaphore : public RefcountedStateObject {
     struct SemOp {
         OpType op_type;
         uint64_t payload;
-        SubmissionReference submit;
+        SubmissionReference submit;  // Used only by binary semaphores
         std::optional<Func> acquire_command;
 
         SemOp(OpType op_type, const SubmissionReference &submit, uint64_t payload)
@@ -63,6 +63,7 @@ class Semaphore : public RefcountedStateObject {
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
+        bool pending_wait = false;  // WORKAROUND when wait can't see a signal (then signal has to see the wait)
 
         TimePoint() : completed(), waiter(completed.get_future()) {}
         bool HasSignaler() const { return signal_submit.has_value() || acquire_command.has_value(); }
@@ -84,11 +85,14 @@ class Semaphore : public RefcountedStateObject {
     // Enqueue binary semaphore signal from swapchain image acquire command
     void EnqueueAcquire(Func acquire_command);
 
-    // Helper for retiring timeline semaphores and then retiring all queues using the semaphore
-    void NotifyAndWait(const Location &loc, uint64_t payload);
+    // Process wait by retiring timeline timepoints up to the specified payload.
+    // If there is un-retired resolving signal then wait until another queue or a host retires timepoints instead.
+    // queue_thread determines if this function is called by a queue thread or by the validation object.
+    // (validation object has to use {Begin/End}BlockingOperation() when waiting for the timepoint)
+    void RetireWait(Queue *current_queue, uint64_t payload, const Location &loc, bool queue_thread = false);
 
-    // Remove completed operations and signal any waiters. This should only be called by Queue
-    void Retire(Queue *current_queue, const Location &loc, uint64_t payload);
+    // Process signal by retiring timeline timepoints up to the specified payload
+    void RetireSignal(Queue *current_queue, uint64_t payload, const Location &loc);
 
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(
@@ -101,7 +105,7 @@ class Semaphore : public RefcountedStateObject {
     std::optional<SubmissionReference> GetPendingBinaryWaitSubmission() const;
 
     // Current payload value.
-    // If a queue submission command is pending execution, then the returned value may immediately be out of date.
+    // If a queue submission command is pending execution, then the returned value may immediately be out of date
     uint64_t CurrentPayload() const;
 
     bool CanBinaryBeSignaled() const;
@@ -124,13 +128,20 @@ class Semaphore : public RefcountedStateObject {
     Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
               const VkSemaphoreCreateInfo *pCreateInfo);
 
-    // Signal queue(s) that need to retire because a wait on this payload has finished
-    void Notify(uint64_t payload);
-
-    std::shared_future<void> Wait(uint64_t payload);
-
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+
+    // Return true if timepoint has no dependencies and can be retired.
+    // If there is unresolved wait then notify signaling queue (if there is registered signal) and return false
+    bool CanRetireBinaryWait(TimePoint &timepoint) const;
+    bool CanRetireTimelineWait(const vvl::Queue *current_queue, uint64_t payload) const;
+
+    // Mark timepoints up to and including payload as completed (notify waiters) and remove them from timeline
+    void RetireTimePoint(uint64_t payload, OpType completed_op, SubmissionReference completed_submit);
+
+    // Waits for the waiter. Unblock parameter must be true if the caller is a validation object and false otherwise.
+    // (validation object has to use {Begin/End}BlockingOperation() when waiting for the timepoint)
+    void WaitTimePoint(std::shared_future<void> &&waiter, uint64_t payload, bool unblock_validation_object, const Location &loc);
 
   private:
     enum Scope scope_ { kInternal };
