@@ -1454,21 +1454,6 @@ void ValidationStateTracker::PreCallRecordSignalSemaphoreKHR(VkDevice device, co
     PreCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
 }
 
-void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
-                                                           const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
-
-    auto semaphore_state = Get<vvl::Semaphore>(pSignalInfo->semaphore);
-    if (semaphore_state) {
-        semaphore_state->Retire(nullptr, record_obj.location, pSignalInfo->value);
-    }
-}
-
-void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
-                                                              const RecordObject &record_obj) {
-    PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
-}
-
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
     if (auto mem_info = Get<vvl::DeviceMemory>(mem)) {
         mem_info->mapped_range.offset = offset;
@@ -1519,7 +1504,8 @@ void ValidationStateTracker::PostCallRecordWaitSemaphores(VkDevice device, const
         const Location wait_info_loc = record_obj.location.dot(vvl::Field::pWaitInfo);
         for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
             if (auto semaphore_state = Get<vvl::Semaphore>(pWaitInfo->pSemaphores[i])) {
-                semaphore_state->NotifyAndWait(wait_info_loc.dot(vvl::Field::pValues, i), pWaitInfo->pValues[i]);
+                Location wait_value_loc = wait_info_loc.dot(vvl::Field::pValues, i);
+                semaphore_state->RetireWait(nullptr, pWaitInfo->pValues[i], wait_value_loc);
             }
         }
     }
@@ -1534,7 +1520,7 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValue(VkDevice dev
                                                                     const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     if (auto semaphore_state = Get<vvl::Semaphore>(semaphore)) {
-        semaphore_state->NotifyAndWait(record_obj.location, *pValue);
+        semaphore_state->RetireWait(nullptr, *pValue, record_obj.location);
     }
 }
 
@@ -5673,9 +5659,11 @@ void ValidationStateTracker::PreCallRecordLatencySleepNV(VkDevice device, VkSwap
     }
 }
 
+// TODO: PostRecord is not needed. Test this. WaitSemaphores will retire the signal.
+// LatencySleepNV does not perform wait but provides information about semaphore to the driver.
 void ValidationStateTracker::PostCallRecordLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain,
                                                           const VkLatencySleepInfoNV *pSleepInfo, const RecordObject &record_obj) {
     if (auto semaphore_state = Get<vvl::Semaphore>(pSleepInfo->signalSemaphore)) {
-        semaphore_state->Retire(nullptr, record_obj.location, pSleepInfo->value);
+        semaphore_state->RetireWait(nullptr, pSleepInfo->value, record_obj.location);
     }
 }

@@ -192,7 +192,7 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
     };
     submission.EndUse();
     for (auto &wait : submission.wait_semaphores) {
-        wait.semaphore->Retire(this, submission.loc.Get(), wait.payload);
+        wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);
     }
     for (auto &cb_state : submission.cbs) {
         auto cb_guard = cb_state->WriteLock();
@@ -203,7 +203,7 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
         cb_state->Retire(submission.perf_submit_pass, is_query_updated_after);
     }
     for (auto &signal : submission.signal_semaphores) {
-        signal.semaphore->Retire(this, submission.loc.Get(), signal.payload);
+        signal.semaphore->RetireSignal(this, signal.payload, submission.loc.Get());
     }
     if (submission.fence) {
         submission.fence->Retire();
