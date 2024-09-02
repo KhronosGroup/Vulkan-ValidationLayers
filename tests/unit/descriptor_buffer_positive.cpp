@@ -100,10 +100,10 @@ TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
     const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
 
-    VkPipelineCreateFlags2CreateInfoKHR pipelineFlags2CreateInfo = vku::InitStructHelper();
-    pipelineFlags2CreateInfo.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT;
+    VkPipelineCreateFlags2CreateInfoKHR flags_2_ci = vku::InitStructHelper();
+    flags_2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT;
 
-    CreatePipelineHelper pipe(*this, &pipelineFlags2CreateInfo);
+    CreatePipelineHelper pipe(*this, &flags_2_ci);
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -117,5 +117,23 @@ TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
     vk::CmdSetDescriptorBufferOffsetsEXT(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDescriptorBuffer, BindingMidBuffer) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    m_commandBuffer->begin();
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
+    dbbi.address = buffer.address() + descriptor_buffer_properties.descriptorBufferOffsetAlignment;
+    dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
     m_commandBuffer->end();
 }
