@@ -211,3 +211,105 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     vk::CmdClearAttachments(secondary.handle(), 1u, &clearAttachment, 1u, &clearRect);
     secondary.end();
 }
+
+TEST_F(PositiveImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
+    TEST_DESCRIPTION(
+        "Specify a fragment shading rate attachment for imageless FB with different view masks and attachment layer "
+        "configurations");
+
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    // Render Pass with view mask (0x4)
+    RenderPass2SingleSubpass rp_view_mask(*this);
+    rp_view_mask.AddAttachmentDescription(VK_FORMAT_R8_UINT);
+    rp_view_mask.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp_view_mask.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp_view_mask.SetViewMask(0x4);
+    rp_view_mask.CreateRenderPass();
+
+    // Render Pass without view mask
+    RenderPass2SingleSubpass rp_no_view_mask(*this);
+    rp_no_view_mask.AddAttachmentDescription(VK_FORMAT_R8_UINT);
+    rp_no_view_mask.AddAttachmentReference(0, VK_IMAGE_LAYOUT_GENERAL);
+    rp_no_view_mask.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
+    rp_no_view_mask.SetViewMask(0);
+    rp_no_view_mask.CreateRenderPass();
+
+    // Framebuffer attachment with layerCount == 2
+    VkFormat viewFormat = VK_FORMAT_R8_UINT;
+    VkFramebufferAttachmentImageInfo fbai_info_layer = vku::InitStructHelper();
+    fbai_info_layer.usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    fbai_info_layer.width = 1;
+    fbai_info_layer.height = 1;
+    fbai_info_layer.layerCount = 2;
+    fbai_info_layer.viewFormatCount = 1;
+    fbai_info_layer.pViewFormats = &viewFormat;
+
+    VkFramebufferAttachmentsCreateInfo fba_info_layer = vku::InitStructHelper();
+    fba_info_layer.attachmentImageInfoCount = 1;
+    fba_info_layer.pAttachmentImageInfos = &fbai_info_layer;
+
+    // Framebuffer attachment with layerCount == 1
+    VkFramebufferAttachmentImageInfo fbai_info_no_layer = vku::InitStructHelper();
+    fbai_info_no_layer.usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    fbai_info_no_layer.width = 1;
+    fbai_info_no_layer.height = 1;
+    fbai_info_no_layer.layerCount = 1;
+    fbai_info_no_layer.viewFormatCount = 1;
+    fbai_info_no_layer.pViewFormats = &viewFormat;
+
+    VkFramebufferAttachmentsCreateInfo fba_info_no_layer = vku::InitStructHelper();
+    fba_info_no_layer.attachmentImageInfoCount = 1;
+    fba_info_no_layer.pAttachmentImageInfos = &fbai_info_no_layer;
+
+    {
+        // Framebuffer with view mask > 0 and attachment layer count == 1
+        VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fba_info_no_layer);
+        fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+        fb_info.renderPass = rp_view_mask.Handle();
+        fb_info.attachmentCount = 1;
+        fb_info.pAttachments = NULL;
+        fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+        fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+        fb_info.layers = 1;
+
+        vkt::Framebuffer fb(*m_device, fb_info);
+    }
+
+    {
+        // Framebuffer with view mask == 0 and attachment layer count > 1
+        VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fba_info_layer);
+        fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+        fb_info.renderPass = rp_no_view_mask.Handle();
+        fb_info.attachmentCount = 1;
+        fb_info.pAttachments = NULL;
+        fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+        fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+        fb_info.layers = 1;
+
+        vkt::Framebuffer fb(*m_device, fb_info);
+    }
+
+    {
+        // Framebuffer with view mask == 0 and attachment layer count == 1
+        VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fba_info_no_layer);
+        fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+        fb_info.renderPass = rp_no_view_mask.Handle();
+        fb_info.attachmentCount = 1;
+        fb_info.pAttachments = NULL;
+        fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+        fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+        fb_info.layers = 1;
+
+        vkt::Framebuffer fb(*m_device, fb_info);
+    }
+}
