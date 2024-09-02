@@ -192,7 +192,7 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
         error_msg_beginning += address_string;
         error_msg_beginning +=
             ") has no buffer(s) associated to it such that valid usage passes. "
-            "At least one buffer associated to this device address must be valid. ";
+            "At least one buffer associated to this device address must be valid.\n";
     }
 
     // For each buffer, and for each violated VUID, build an error message
