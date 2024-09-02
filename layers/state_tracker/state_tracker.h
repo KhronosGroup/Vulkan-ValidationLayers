@@ -1237,6 +1237,8 @@ class ValidationStateTracker : public ValidationObject {
                                            const RecordObject& record_obj) override;
     void PostCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds,
                                          const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
+                                        const RecordObject& record_obj) override;
     void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,

@@ -2956,6 +2956,12 @@ void ValidationStateTracker::PostCallRecordCmdUpdateBuffer(VkCommandBuffer comma
     cb_state->RecordTransferCmd(record_obj.location.function, Get<vvl::Buffer>(dstBuffer));
 }
 
+void ValidationStateTracker::PostCallRecordCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
+                                                            const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    cb_state->RecordSetDeviceMask(record_obj.location.function, deviceMask);
+}
+
 void ValidationStateTracker::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);

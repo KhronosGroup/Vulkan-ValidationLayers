@@ -464,6 +464,7 @@ class CoreChecks : public ValidationStateTracker {
                                            const Location loc, const char* vuid) const;
     bool ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer& cb_state, uint32_t deviceMask, const Location loc,
                                         const char* vuid) const;
+    bool ValidateCurrentDeviceMaskForEventCommand(const vvl::CommandBuffer& cb_state, const Location loc, const char* vuid) const;
 
     bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2* pCreateInfo, const ErrorObject& error_obj) const;
 

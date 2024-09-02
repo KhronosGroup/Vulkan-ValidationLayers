@@ -415,6 +415,7 @@ class CommandBuffer : public RefcountedStateObject {
     bool dirtyStaticState;
 
     uint32_t initial_device_mask;
+    uint32_t current_device_mask;
 
     // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
     std::shared_ptr<vvl::RenderPass> activeRenderPass;
@@ -422,7 +423,8 @@ class CommandBuffer : public RefcountedStateObject {
     AttachmentSource attachment_source;
     std::vector<AttachmentInfo> active_attachments;
     vvl::unordered_set<uint32_t> active_color_attachments_index;
-    uint32_t active_render_pass_device_mask;
+    uint32_t active_render_pass_initial_device_mask;
+    uint32_t active_render_pass_current_device_mask;
     bool has_render_pass_striped;
     uint32_t striped_count;
     // only when not using dynamic rendering
@@ -645,6 +647,7 @@ class CommandBuffer : public RefcountedStateObject {
     void RecordStateCmd(Func command, CBDynamicState dynamic_state);
     void RecordDynamicState(CBDynamicState dynamic_state);
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
+    void RecordSetDeviceMask(Func command, uint32_t deviceMask);
     void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
