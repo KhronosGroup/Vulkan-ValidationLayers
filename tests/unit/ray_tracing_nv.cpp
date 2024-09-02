@@ -13,10 +13,8 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/ray_tracing_objects.h"
 #include "../framework/ray_tracing_helper_nv.h"
 #include "../framework/descriptor_helper.h"
-#include "../layers/utils/vk_layer_utils.h"
 
 void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 /*= nullptr*/,
                                                       VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {
@@ -1890,5 +1888,50 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
                                         dst_as_without_mem.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     vk::CmdCopyAccelerationStructureNV(m_commandBuffer->handle(), src_as.handle(), dst_as_without_mem.handle(),
                                        VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingNV, DescriptorBuffers) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    VkDeviceAddress invalid_buffer = CastToHandle<VkDeviceAddress, uintptr_t>(0xbaadbeef);
+
+    uint8_t buffer[128];
+    VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
+    dai.address = invalid_buffer;
+    dai.range = 64;
+    dai.format = VK_FORMAT_R8_UINT;
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+    dgi.data.pStorageTexelBuffer = &dai;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorGetInfoEXT-type-08029");
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracingNV, DescriptorGetInfo) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
+    RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    uint8_t buffer[128];
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+
+    VkDescriptorGetInfoEXT dgi = vku::InitStructHelper();
+    dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+    dgi.data.accelerationStructure = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorDataEXT-type-08042");
+    vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
     m_errorMonitor->VerifyFound();
 }

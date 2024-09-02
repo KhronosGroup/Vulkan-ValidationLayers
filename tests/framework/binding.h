@@ -987,6 +987,14 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
         info.pBindings = descriptor_set_bindings.data();
         init(dev, info);
     }
+    DescriptorSetLayout(const Device &dev, const VkDescriptorSetLayoutBinding &descriptor_set_binding,
+                        VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = nullptr) {
+        VkDescriptorSetLayoutCreateInfo info = vku::InitStructHelper(pNext);
+        info.flags = flags;
+        info.bindingCount = 1;
+        info.pBindings = &descriptor_set_binding;
+        init(dev, info);
+    }
 
     ~DescriptorSetLayout() noexcept;
     void destroy() noexcept;
