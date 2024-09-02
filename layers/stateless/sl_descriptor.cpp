@@ -573,26 +573,27 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
 bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
                                                                 const Location &create_info_loc) const {
     bool skip = false;
-    const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(create_info.pNext);
 
+    const bool has_descriptor_buffer_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
+    const bool has_push_descriptor_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0;
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (create_info.pBindings != nullptr) {
-        for (uint32_t i = 0; i < create_info.bindingCount; ++i) {
-            if (create_info.pBindings[i].descriptorCount == 0) {
+        const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(create_info.pNext);
+        for (const auto [i, binding] : vvl::enumerate(create_info.pBindings, create_info.bindingCount)) {
+            if (binding->descriptorCount == 0) {
                 continue;
             }
 
             const Location binding_loc = create_info_loc.dot(Field::pBindings, i);
-            VkShaderStageFlags stage_flags = create_info.pBindings[i].stageFlags;
+            VkShaderStageFlags stage_flags = binding->stageFlags;
             if (stage_flags != 0) {
                 if (stage_flags != VK_SHADER_STAGE_ALL && ((stage_flags & (~AllVkShaderStageFlagBitsExcludingStageAll)) != 0)) {
-                    skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorCount-09465", device,
-                                     binding_loc.dot(Field::descriptorCount),
-                                     "is %" PRIu32 " but stageFlags is invalid (0x%" PRIx32 ").",
-                                     create_info.pBindings[i].descriptorCount, stage_flags);
+                    skip |= LogError(
+                        "VUID-VkDescriptorSetLayoutBinding-descriptorCount-09465", device, binding_loc.dot(Field::descriptorCount),
+                        "is %" PRIu32 " but stageFlags is invalid (0x%" PRIx32 ").", binding->descriptorCount, stage_flags);
                 }
 
-                if ((create_info.pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) &&
+                if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) &&
                     (stage_flags != VK_SHADER_STAGE_FRAGMENT_BIT)) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-01510", device,
                                      binding_loc.dot(Field::stageFlags),
@@ -601,7 +602,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                 }
             }
 
-            if (create_info.pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+            if (binding->descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                 if (mutable_descriptor_type) {
                     if (i >= mutable_descriptor_type->mutableDescriptorTypeListCount) {
                         skip |= LogError(
@@ -616,7 +617,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                                      "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but VkMutableDescriptorTypeCreateInfoEXT is not "
                                      "included in the pNext chain.");
                 }
-                if (create_info.pBindings[i].pImmutableSamplers) {
+                if (binding->pImmutableSamplers) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594", device,
                                      binding_loc.dot(Field::descriptorType),
                                      "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but pImmutableSamplers is not NULL.");
@@ -629,19 +630,17 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                 }
             }
 
-            if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR &&
-                create_info.pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+            if (has_push_descriptor_flag && binding->descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                 skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04591", device, binding_loc.dot(Field::descriptorType),
                                  "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but flags includes "
                                  "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR.");
             }
 
-            if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT &&
-                ((create_info.pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
-                 (create_info.pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC))) {
+            if (has_descriptor_buffer_flag && ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+                                               (binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC))) {
                 skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08000", device, binding_loc.dot(Field::descriptorType),
-                                 "is %s, but flags includes VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR.",
-                                 string_VkDescriptorType(create_info.pBindings[i].descriptorType));
+                                 "is %s, but flags includes VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT.",
+                                 string_VkDescriptorType(binding->descriptorType));
             }
         }
 
@@ -650,36 +649,34 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
         }
     }
 
-    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) &&
-        (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT)) {
+    const bool has_host_only_pool_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
+    const bool has_update_after_bind_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0;
+
+    if (has_push_descriptor_flag && has_host_only_pool_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04590", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
-    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
-        (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT)) {
+    if (has_update_after_bind_flag && has_host_only_pool_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04592", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
-    if (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT && !enabled_features.mutableDescriptorType) {
+    if (has_host_only_pool_flag && !enabled_features.mutableDescriptorType) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04596", device, create_info_loc.dot(Field::flags),
                          "is %s, but mutableDescriptorType feature was not enabled.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
 
-    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) &&
-        !(create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
+    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) && !has_descriptor_buffer_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08001", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
 
-    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) &&
-        (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
+    if (has_descriptor_buffer_flag && has_update_after_bind_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08002", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
 
-    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) &&
-        (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+    if (has_descriptor_buffer_flag && (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08003", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
