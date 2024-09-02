@@ -463,6 +463,58 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoSync) {
     }
 }
 
+TEST_F(NegativeWsi, SwapchainAcquireImageSignaledFence) {
+    TEST_DESCRIPTION("Test vkAcquireNextImageKHR with signaled fence");
+
+    AddSurfaceExtension();
+
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    vkt::Fence fence(*m_device);
+
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, fence.handle());
+
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+
+    {
+        m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-fence-01287");
+        uint32_t dummy;
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &dummy);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeWsi, SwapchainAcquireImageSignaledFence2KHR) {
+    TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with signaled fence");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddSurfaceExtension();
+
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    vkt::Fence fence(*m_device);
+
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, fence.handle());
+
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+
+    {
+        m_errorMonitor->SetDesiredError("VUID-VkAcquireNextImageInfoKHR-fence-01289");
+        VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
+        acquire_info.swapchain = m_swapchain;
+        acquire_info.timeout = kWaitTimeout;
+        acquire_info.semaphore = VK_NULL_HANDLE;
+        acquire_info.fence = fence.handle();
+        acquire_info.deviceMask = 0x1;
+
+        uint32_t dummy;
+        vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(NegativeWsi, SwapchainAcquireImageNoSync2KHR) {
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
     SetTargetApiVersion(VK_API_VERSION_1_1);
