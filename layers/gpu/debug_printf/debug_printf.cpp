@@ -564,15 +564,6 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
                                              const Location &loc) {
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-    VkResult result;
-
-    std::vector<VkDescriptorSet> desc_sets;
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    result = desc_set_manager_->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
-    if (result != VK_SUCCESS) {
-        InternalError(cmd_buffer, loc, "Unable to allocate descriptor sets.");
-        return;
-    }
 
     auto cb_state = GetWrite<CommandBuffer>(cmd_buffer);
     if (!cb_state) {
@@ -584,8 +575,24 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     const auto &last_bound = cb_state->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
-    if (!pipeline_state && !last_bound.HasShaderObjects()) {
+    // If there is no DebugPrintf instrumented, there is no reason to allocate buffers
+    if (pipeline_state) {
+        if (!pipeline_state->gpu.was_instrumented && (pipeline_state->linking_shaders == 0)) {
+            cb_state->action_command_count++;
+            return;
+        }
+    } else if (last_bound.HasShaderObjects()) {
+        // TODO - Add same skip for shader object
+    } else {
         InternalError(cmd_buffer, loc, "Neither pipeline state nor shader object states were found.");
+        return;
+    }
+
+    std::vector<VkDescriptorSet> desc_sets;
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    VkResult result = desc_set_manager_->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
+    if (result != VK_SUCCESS) {
+        InternalError(cmd_buffer, loc, "Unable to allocate descriptor sets.");
         return;
     }
 
