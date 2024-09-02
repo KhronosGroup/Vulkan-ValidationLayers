@@ -1100,8 +1100,8 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
 
     if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(device, fence);
-        skip |= ValidateFenceForSubmit(*fence_state, "VUID-vkAcquireNextImageKHR-fence-01287",
-                                       "VUID-vkAcquireNextImageKHR-fence-01287", objlist, loc);
+        const char *vuid = version_2 ? "VUID-VkAcquireNextImageInfoKHR-fence-01289" : "VUID-vkAcquireNextImageKHR-fence-01287";
+        skip |= ValidateFenceForSubmit(*fence_state, vuid, vuid, objlist, loc);
     }
 
     if (auto swapchain_data = Get<vvl::Swapchain>(swapchain)) {
