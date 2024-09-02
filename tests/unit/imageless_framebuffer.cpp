@@ -854,7 +854,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 }
 
 TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
-    TEST_DESCRIPTION("Specify a fragment shading rate attachment without the correct usage");
+    TEST_DESCRIPTION("Specify a fragment shading rate attachment without the correct usage with imageless FB");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -866,10 +866,6 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
-
-    if (fsr_properties.layeredShadingRateAttachments) {
-        GTEST_SKIP() << "requires layeredShadingRateAttachments to be unsupported.";
-    }
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8_UINT);
@@ -899,7 +895,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
-    ;
+
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04587");
     vkt::Framebuffer fb(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
