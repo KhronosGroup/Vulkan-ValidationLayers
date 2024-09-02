@@ -49,6 +49,11 @@ struct ShaderObject : public StateObject {
     const PushConstantRangesId push_constant_ranges;
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
 
+    // TOOD Create a shader object inherited class
+    struct GPU {
+        bool was_instrumented = false;
+    } gpu;
+
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
     bool IsGraphicsShaderState() const { return create_info.stage != VK_SHADER_STAGE_COMPUTE_BIT; };
     VkPrimitiveTopology GetTopology() const;
