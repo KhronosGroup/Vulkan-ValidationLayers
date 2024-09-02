@@ -651,6 +651,8 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
 
     const bool has_host_only_pool_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
     const bool has_update_after_bind_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0;
+    const bool has_embedded_immutable_sampler_flag =
+        (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) != 0;
 
     if (has_push_descriptor_flag && has_host_only_pool_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04590", device, create_info_loc.dot(Field::flags), "is %s.",
@@ -666,7 +668,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
 
-    if ((create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) && !has_descriptor_buffer_flag) {
+    if (has_embedded_immutable_sampler_flag && !has_descriptor_buffer_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08001", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
@@ -676,7 +678,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
 
-    if (has_descriptor_buffer_flag && (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+    if (has_descriptor_buffer_flag && has_host_only_pool_flag) {
         skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08003", device, create_info_loc.dot(Field::flags), "is %s.",
                          string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
     }
