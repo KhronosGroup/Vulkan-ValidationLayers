@@ -577,7 +577,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
 
     // If there is no DebugPrintf instrumented, there is no reason to allocate buffers
     if (pipeline_state) {
-        if (!pipeline_state->gpu.was_instrumented && (pipeline_state->linking_shaders == 0)) {
+        if (!pipeline_state->instrumentation_data.was_instrumented && (pipeline_state->linking_shaders == 0)) {
             cb_state->action_command_count++;
             return;
         }
@@ -588,6 +588,8 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
         return;
     }
 
+    // TODO - use the following when we combine the two command buffer classes
+    // VkDescriptorSet printf_desc_set = cb_state->gpu_resources_manager.GetManagedDescriptorSet(GetDebugDescriptorSetLayout());
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     VkResult result = desc_set_manager_->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);

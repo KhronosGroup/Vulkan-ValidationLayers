@@ -50,9 +50,9 @@ struct ShaderObject : public StateObject {
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
 
     // TOOD Create a shader object inherited class
-    struct GPU {
+    struct InstrumentationData {
         bool was_instrumented = false;
-    } gpu;
+    } instrumentation_data;
 
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
     bool IsGraphicsShaderState() const { return create_info.stage != VK_SHADER_STAGE_COMPUTE_BIT; };
