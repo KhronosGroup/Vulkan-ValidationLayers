@@ -344,7 +344,14 @@ bool CoreChecks::IgnoreAllocationSize(const VkMemoryAllocateInfo &allocate_info)
     if (import_memory_win32 && (import_memory_win32->handleType & ignored_allocation) != 0) {
         return true;
     }
-#endif
+#elif VK_USE_PLATFORM_METAL_EXT
+    const VkExternalMemoryHandleTypeFlags ignored_allocation = VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT |
+                                                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT;
+    const auto import_memory_metal = vku::FindStructInPNextChain<VkImportMemoryMetalHandleInfoEXT>(allocate_info.pNext);
+    if (import_memory_metal && (import_memory_metal->handleType & ignored_allocation) != 0) {
+        return true;
+    }
+#endif // VK_USE_PLATFORM_METAL_EXT
     // Handles 01874 cases
     const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
     if (export_info && (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
@@ -756,6 +763,13 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 #endif
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    if (IsExtEnabled(device_extensions.vk_ext_external_memory_metal)) {
+        skip |= ValidateAllocateMemoryMetal(*pAllocateInfo, dedicated_allocate_info, allocate_info_loc);
+    }
+#endif // VK_USE_PLATFORM_METAL_EXT
+
     return skip;
 }
 

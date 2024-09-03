@@ -1637,6 +1637,12 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetScreenBufferPropertiesQNX,
     InterceptIdPreCallRecordGetScreenBufferPropertiesQNX,
     InterceptIdPostCallRecordGetScreenBufferPropertiesQNX,
+    InterceptIdPreCallValidateGetMemoryMetalHandleEXT,
+    InterceptIdPreCallRecordGetMemoryMetalHandleEXT,
+    InterceptIdPostCallRecordGetMemoryMetalHandleEXT,
+    InterceptIdPreCallValidateGetMemoryMetalHandlePropertiesEXT,
+    InterceptIdPreCallRecordGetMemoryMetalHandlePropertiesEXT,
+    InterceptIdPostCallRecordGetMemoryMetalHandlePropertiesEXT,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -3400,6 +3406,14 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetScreenBufferPropertiesQNX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetScreenBufferPropertiesQNX);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryMetalHandleEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryMetalHandleEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryMetalHandleEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryMetalHandlePropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryMetalHandlePropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryMetalHandlePropertiesEXT);
+#endif  // VK_USE_PLATFORM_METAL_EXT
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

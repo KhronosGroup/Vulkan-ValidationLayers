@@ -766,6 +766,11 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_QNX_external_memory_screen_buffer};
                 }
             }
+            if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT)) {
+                if (!IsExtEnabled(device_extensions.vk_ext_external_memory_metal)) {
+                    return {vvl::Extension::_VK_EXT_external_memory_metal};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkExternalSemaphoreHandleTypeFlagBits:
             if (value & (VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_ZIRCON_EVENT_BIT_FUCHSIA)) {

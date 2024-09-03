@@ -4003,6 +4003,24 @@ void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _s
                                                 VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                          MTLResource_id* pHandle, const RecordObject& record_obj) override;
+
+void PostCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                           MTLResource_id* pHandle, const RecordObject& record_obj) override;
+
+void PreCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                    MTLResource_id handle,
+                                                    VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                    const RecordObject& record_obj) override;
+
+void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                     MTLResource_id handle,
+                                                     VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                     const RecordObject& record_obj) override;
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,
                                                  VkAccelerationStructureKHR* pAccelerationStructure,

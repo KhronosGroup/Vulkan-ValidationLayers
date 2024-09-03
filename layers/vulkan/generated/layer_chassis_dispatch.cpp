@@ -8915,6 +8915,41 @@ VkResult DispatchGetScreenBufferPropertiesQNX(VkDevice device, const struct _scr
     return result;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+VkResult DispatchGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                         MTLResource_id* pHandle) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
+    vku::safe_VkMemoryGetMetalHandleInfoEXT var_local_pGetMetalHandleInfo;
+    vku::safe_VkMemoryGetMetalHandleInfoEXT* local_pGetMetalHandleInfo = nullptr;
+    {
+        if (pGetMetalHandleInfo) {
+            local_pGetMetalHandleInfo = &var_local_pGetMetalHandleInfo;
+            local_pGetMetalHandleInfo->initialize(pGetMetalHandleInfo);
+
+            if (pGetMetalHandleInfo->memory) {
+                local_pGetMetalHandleInfo->memory = layer_data->Unwrap(pGetMetalHandleInfo->memory);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetMemoryMetalHandleEXT(
+        device, (const VkMemoryGetMetalHandleInfoEXT*)local_pGetMetalHandleInfo, pHandle);
+
+    return result;
+}
+
+VkResult DispatchGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                   MTLResource_id handle,
+                                                   VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+
+    VkResult result = layer_data->device_dispatch_table.GetMemoryMetalHandlePropertiesEXT(device, handleType, handle,
+                                                                                          pMemoryMetalHandleProperties);
+
+    return result;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 VkResult DispatchCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,

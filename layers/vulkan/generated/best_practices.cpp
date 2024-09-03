@@ -2994,6 +2994,29 @@ void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, 
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void BestPractices::PostCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                          MTLResource_id* pHandle, const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                                    MTLResource_id handle,
+                                                                    VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                                    const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetMemoryMetalHandlePropertiesEXT(device, handleType, handle,
+                                                                            pMemoryMetalHandleProperties, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                  const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator,

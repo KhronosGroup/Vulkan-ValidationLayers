@@ -26189,6 +26189,93 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_METAL_EXT
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                       MTLResource_id* pHandle) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetMemoryMetalHandleEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetMemoryMetalHandleEXT]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateGetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetMemoryMetalHandleEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryMetalHandleEXT]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordGetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchGetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryMetalHandleEXT]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordGetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                                 MTLResource_id handle,
+                                                                 VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetMemoryMetalHandlePropertiesEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateGetMemoryMetalHandlePropertiesEXT]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateGetMemoryMetalHandlePropertiesEXT(device, handleType, handle,
+                                                                                pMemoryMetalHandleProperties, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetMemoryMetalHandlePropertiesEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemoryMetalHandlePropertiesEXT]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordGetMemoryMetalHandlePropertiesEXT(device, handleType, handle, pMemoryMetalHandleProperties,
+                                                                      record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchGetMemoryMetalHandlePropertiesEXT(device, handleType, handle, pMemoryMetalHandleProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemoryMetalHandlePropertiesEXT]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordGetMemoryMetalHandlePropertiesEXT(device, handleType, handle, pMemoryMetalHandleProperties,
+                                                                       record_obj);
+        }
+    }
+    return result;
+}
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -27933,6 +28020,10 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    {"vkGetMemoryMetalHandleEXT", {kFuncTypeDev, (void*)GetMemoryMetalHandleEXT}},
+    {"vkGetMemoryMetalHandlePropertiesEXT", {kFuncTypeDev, (void*)GetMemoryMetalHandlePropertiesEXT}},
+#endif  // VK_USE_PLATFORM_METAL_EXT
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

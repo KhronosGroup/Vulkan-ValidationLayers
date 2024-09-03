@@ -549,3 +549,133 @@ bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportM
     return skip;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocate_info,
+                                             const VkMemoryDedicatedAllocateInfo *dedicated_allocation_info,
+                                             const Location &allocate_info_loc) const {
+    bool skip = false;
+
+#if VK_USE_PLATFORM_METAL_EXT
+    // When dealing with Metal external memory, we can have the following 3 scenarios:
+    // 1. Allocation will be exported. Contains VkExportMemoryAllocateInfo
+    // 2. Allocation is being imported. Contains VkImportMemoryMetalHandleInfoEXT
+    // 3. Previous 2 combined
+    // Whenever the memory will be used for an image, VK_EXT_external_memory_metal requires that the allocation
+    // is dedicated to that single resource.
+
+    // Case 1 and partially 3
+    if (const auto export_memory_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext)) {
+        if ((export_memory_info->handleTypes == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) && dedicated_allocation_info == nullptr) {
+            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-export", device,
+                             allocate_info_loc.dot(Field::pNext),
+                             "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT requires textures to be imported as a dedicated"
+                             "allocation.");
+        }
+    }
+
+    // Case 2 and remaining 3
+    const auto import_memory_metal_info = vku::FindStructInPNextChain<VkImportMemoryMetalHandleInfoEXT>(allocate_info.pNext);
+    if (import_memory_metal_info == nullptr) {
+        return skip;
+    }
+
+    // Ensure user is importing correct type before checking any other VUID since we will assume correct type
+    if ((import_memory_metal_info->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT) &&
+        (import_memory_metal_info->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT)) {
+        skip |= LogError("VUID-VK_EXT_external_memory-incorrect-handle-type", device,
+                            allocate_info_loc.dot(Struct::VkImportMemoryMetalHandleInfoEXT, Field::handleType),
+                            "current value is %s", string_VkExternalMemoryHandleTypeFlagBits(import_memory_metal_info->handleType));
+        return skip;
+    }
+
+    // Only images require to be created as a dedicated allocation. This allows us to check if the format
+    // used by the image allows for importing such images from external memory. We cannot do that with
+    // buffers since we lack the usage, so it's not possible to know if the device allows import
+    // operations on buffers.
+    if(import_memory_metal_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) {
+        if (dedicated_allocation_info == nullptr) {
+            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-import", device,
+                             allocate_info_loc.dot(Field::pNext),
+                             "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT requires textures to be imported as a dedicated"
+                             "allocation.");
+            // Early out since the image comes from VkMemoryDedicatedAllocateInfoKHR and there's none.
+            return skip;
+        }
+
+        // Unsure if there should be a VUID that enforces image to not be NULL when importing a MTLTEXTURE type
+        if (dedicated_allocation_info->image == VK_NULL_HANDLE) {
+            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-dedicated-null-image-import", device,
+                             allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
+                             "must be a valid image handle.");
+            // Early out since there's no image in VkMemoryDedicatedAllocateInfoKHR.
+            return skip;
+        }
+
+        auto image_state_ptr = Get<vvl::Image>(dedicated_allocation_info->image);
+        VkFormat image_format = image_state_ptr->safe_create_info.format;
+        VkExternalImageFormatProperties external_image_format_properties;
+        external_image_format_properties.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
+        external_image_format_properties.pNext = nullptr;
+        VkFormatProperties2 format_properties;
+        format_properties.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+        format_properties.pNext = &external_image_format_properties;
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties);
+
+        if ((external_image_format_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) == 0u) {
+            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-unsupported-format-import", device,
+                        allocate_info_loc.dot(Struct::VkImportMemoryMetalHandleInfoEXT, Field::handleType),
+                        "does not support importing image with format %s", string_VkFormat(image_format));
+        }
+    }
+#endif // VK_USE_PLATFORM_METAL_EXT
+
+    return skip;
+}
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device,
+                                            const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo, MTLResource_id* pHandle,
+                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    const Location get_metal_handle_info = error_obj.location.dot(Field::pGetMetalHandleInfo);
+    auto memory = Get<vvl::DeviceMemory>(pGetMetalHandleInfo->memory);
+    ASSERT_AND_RETURN_SKIP(memory);
+    auto export_memory_allocate_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory->safe_allocate_info.pNext);
+    if (export_memory_allocate_info == nullptr) {
+        skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-memory-not-created-with-VkExportMemoryAllocateInfo", device,
+                        get_metal_handle_info.dot(Field::memory).dot(Field::pNext),
+                        "device memory missing VkExportMemoryAllocateInfo at creation");
+    }
+    else if ((export_memory_allocate_info->handleTypes & pGetMetalHandleInfo->handleType) == 0u) {
+        skip |= LogError("VUID-VK_EXT_external_memory-memory-allocation-missing-handle-type", device,
+                         get_metal_handle_info.dot(Field::handleType),
+                         "device memory was created with (%s) handle types. Missing %s type",
+                         string_VkExternalMemoryHandleTypeFlags(export_memory_allocate_info->handleTypes).c_str(),
+                         string_VkExternalMemoryHandleTypeFlagBits(pGetMetalHandleInfo->handleType));
+    }
+
+    if ((pGetMetalHandleInfo->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT) &&
+        (pGetMetalHandleInfo->handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT)) {
+        skip |= LogError("VUID-VK_EXT_external_memory-get-handle-incorrect-handle-type", device,
+                            get_metal_handle_info.dot(Field::handleType),
+                            "current value is %s", string_VkExternalMemoryHandleTypeFlagBits(pGetMetalHandleInfo->handleType));
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device,
+                                                      VkExternalMemoryHandleTypeFlagBits handleType, MTLResource_id handle,
+                                                      VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                      const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if ((handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT) &&
+        (handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT)) {
+        skip |= LogError("VUID-VK_EXT_external_memory-get-handle-incorrect-handle-type", device,
+                            error_obj.location.dot(Field::handleType),
+                            "current value is %s", string_VkExternalMemoryHandleTypeFlagBits(handleType));
+    }
+
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT

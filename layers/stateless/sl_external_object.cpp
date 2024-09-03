@@ -377,6 +377,12 @@ ExternalOperationsInfo GetExternalOperationsInfo(const void *pNext) {
     ext.total_import_ops += (import_info_qnx && import_info_qnx->buffer);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    // VK_EXT_external_memory_metal
+    auto import_info_metal = vku::FindStructInPNextChain<VkImportMemoryMetalHandleInfoEXT>(pNext);
+    ext.total_import_ops += (import_info_metal && import_info_metal->handle);
+#endif // VK_USE_PLATFORM_METAL_EXT
+
     return ext;
 }
 }  // namespace

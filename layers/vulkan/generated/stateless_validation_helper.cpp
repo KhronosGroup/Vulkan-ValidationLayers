@@ -9447,6 +9447,23 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkImageAlignmentControlCreateInfoMESA structure members  -- Covers
         // VUID-VkImageAlignmentControlCreateInfoMESA-sType-sType
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+        // Validation code for VkImportMemoryMetalHandleInfoEXT structure members
+        case VK_STRUCTURE_TYPE_IMPORT_MEMORY_METAL_HANDLE_INFO_EXT: {  // Covers VUID-VkImportMemoryMetalHandleInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImportMemoryMetalHandleInfoEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_external_memory_metal)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_EXT_external_memory_metal");
+                }
+                VkImportMemoryMetalHandleInfoEXT* structure = (VkImportMemoryMetalHandleInfoEXT*)header;
+                skip |=
+                    ValidateFlags(pNext_loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+                                  AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit, kVUIDUndefined);
+            }
+        } break;
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
@@ -10177,6 +10194,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(VkDevice device, const V
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
+                                                                     VK_STRUCTURE_TYPE_IMPORT_MEMORY_METAL_HANDLE_INFO_EXT,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA,
@@ -25825,6 +25843,51 @@ bool StatelessValidation::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice d
     return skip;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool StatelessValidation::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device,
+                                                                 const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                                 MTLResource_id* pHandle, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_external_memory_metal))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_external_memory_metal});
+    skip |= ValidateStructType(loc.dot(Field::pGetMetalHandleInfo), pGetMetalHandleInfo,
+                               VK_STRUCTURE_TYPE_MEMORY_GET_METAL_HANDLE_INFO_EXT, true, kVUIDUndefined, kVUIDUndefined);
+    if (pGetMetalHandleInfo != nullptr) {
+        [[maybe_unused]] const Location pGetMetalHandleInfo_loc = loc.dot(Field::pGetMetalHandleInfo);
+        skip |= ValidateStructPnext(pGetMetalHandleInfo_loc, pGetMetalHandleInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                    kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
+
+        skip |= ValidateRequiredHandle(pGetMetalHandleInfo_loc.dot(Field::memory), pGetMetalHandleInfo->memory);
+
+        skip |= ValidateFlags(pGetMetalHandleInfo_loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+                              AllVkExternalMemoryHandleTypeFlagBits, pGetMetalHandleInfo->handleType, kRequiredSingleBit,
+                              kVUIDUndefined, kVUIDUndefined);
+    }
+    skip |= ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle, kVUIDUndefined);
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetMemoryMetalHandlePropertiesEXT(
+    VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, MTLResource_id handle,
+    VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_external_memory_metal))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_external_memory_metal});
+    skip |= ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+                          AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateStructType(loc.dot(Field::pMemoryMetalHandleProperties), pMemoryMetalHandleProperties,
+                               VK_STRUCTURE_TYPE_MEMORY_METAL_HANDLE_PROPERTIES_EXT, true, kVUIDUndefined, kVUIDUndefined);
+    if (pMemoryMetalHandleProperties != nullptr) {
+        [[maybe_unused]] const Location pMemoryMetalHandleProperties_loc = loc.dot(Field::pMemoryMetalHandleProperties);
+        skip |= ValidateStructPnext(pMemoryMetalHandleProperties_loc, pMemoryMetalHandleProperties->pNext, 0, nullptr,
+                                    GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, false);
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                         const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

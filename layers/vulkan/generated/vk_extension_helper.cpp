@@ -400,6 +400,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_shader_replicated_composites", vvl::Extension::_VK_EXT_shader_replicated_composites},
         {"VK_NV_ray_tracing_validation", vvl::Extension::_VK_NV_ray_tracing_validation},
         {"VK_MESA_image_alignment_control", vvl::Extension::_VK_MESA_image_alignment_control},
+        {"VK_EXT_external_memory_metal", vvl::Extension::_VK_EXT_external_memory_metal},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},
         {"VK_KHR_ray_query", vvl::Extension::_VK_KHR_ray_query},
