@@ -217,6 +217,9 @@ const char *DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS = "select_instrumented_
 // These were deprecated after the 1.3.283 SDK release
 const char *DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT = "sync_queue_submit";
 
+// Don't need any setting helper when using self vvl and don't want unused function warnings
+#if !defined(BUILD_SELF_VVL)
+
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
@@ -474,7 +477,6 @@ static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_sett
     return valid;
 }
 
-#if !defined(BUILD_SELF_VVL)
 static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
                                  const DisableFlags feature_disable, const char *setting) {
     if (vkuHasLayerSetting(layer_setting_set, setting)) {
