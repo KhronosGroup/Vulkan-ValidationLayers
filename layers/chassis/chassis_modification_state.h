@@ -49,8 +49,8 @@ struct ShaderObjectInstrumentationData {
     // Need to hold this in memory between the PreCallRecord and the Dispatch
     std::vector<uint32_t> instrumented_spirv;
     // Need to hold this in memory between the PreCallRecord and the PostCallRecord
-    // The value of zero also indicates that nothing was instrumented
     uint32_t unique_shader_id = 0;
+    bool IsInstrumented() { return unique_shader_id != 0; }
 
     std::vector<VkDescriptorSetLayout> new_layouts;
 };
@@ -79,8 +79,8 @@ struct ShaderObject {
 // Contains a single shader stage (ex. VkGraphicsPipelineCreateInfo::pStages[i])
 struct ShaderInstrumentationMetadata {
     // Unique shader ids are used to map SPIR-V to a specific VkShaderModule/VkPipeline/etc handle
-    // The value of zero also indicates that nothing was instrumented
     uint32_t unique_shader_id = 0;
+    bool IsInstrumented() { return unique_shader_id != 0; }
 
     // Used to know if VkShaderModuleCreateInfo is passed down VkPipelineShaderStageCreateInfo
     bool passed_in_shader_stage_ci = false;

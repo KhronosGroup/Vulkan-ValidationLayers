@@ -592,11 +592,11 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
 
         // if the shader for some reason was not instrumented, there is nothing to save
-        if (instrumentation_data.unique_shader_id == 0) {
+        if (!instrumentation_data.IsInstrumented()) {
             continue;
         }
         if (const auto &shader_object_state = Get<vvl::ShaderObject>(pShaders[i])) {
-            shader_object_state->gpu.was_instrumented = true;
+            shader_object_state->instrumentation_data.was_instrumented = true;
         }
 
         shader_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
@@ -811,7 +811,7 @@ void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipe
     }
 
     if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
-        for (auto shader_module : pipeline_state->gpu.instrumented_shader_module) {
+        for (auto shader_module : pipeline_state->instrumentation_data.instrumented_shader_module) {
             DispatchDestroyShaderModule(device, shader_module, pAllocator);
         }
     }
@@ -1039,7 +1039,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &instrumented_shader_module);
                 if (result == VK_SUCCESS) {
                     SetShaderModule(new_pipeline_ci, *stage_state.pipeline_create_info, instrumented_shader_module, i);
-                    pipeline_state.gpu.instrumented_shader_module.emplace_back(instrumented_shader_module);
+                    pipeline_state.instrumentation_data.instrumented_shader_module.emplace_back(instrumented_shader_module);
                 } else {
                     InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
                 }
@@ -1070,10 +1070,10 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
         auto &instrumentation_metadata = shader_instrumentation_metadata[i];
 
         // if the shader for some reason was not instrumented, there is nothing to save
-        if (instrumentation_metadata.unique_shader_id == 0) {
+        if (!instrumentation_metadata.IsInstrumented()) {
             continue;
         }
-        pipeline_state.gpu.was_instrumented = true;
+        pipeline_state.instrumentation_data.was_instrumented = true;
 
         const auto &stage_state = pipeline_state.stage_states[i];
         auto &module_state = stage_state.module_state;
