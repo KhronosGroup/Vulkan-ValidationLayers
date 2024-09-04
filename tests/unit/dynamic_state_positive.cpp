@@ -1015,6 +1015,95 @@ TEST_F(PositiveDynamicState, PrimitiveTopology) {
     m_commandBuffer->end();
 }
 
+TEST_F(PositiveDynamicState, VertexInputMultipleBindings) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8458");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    struct PerVertex {
+        int a;
+        float b;
+    };
+
+    struct PerInstance {
+        uint32_t c;
+        float d;
+    };
+
+    VkVertexInputBindingDescription2EXT bindings[2];
+    bindings[0] = vku::InitStructHelper();
+    bindings[0].binding = 0u;
+    bindings[0].stride = sizeof(PerVertex);
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[0].divisor = 1u;
+    bindings[1] = vku::InitStructHelper();
+    bindings[1].binding = 1u;
+    bindings[1].stride = 0u;
+    bindings[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    bindings[1].divisor = 1u;
+
+    VkVertexInputAttributeDescription2EXT attributes[4];
+    attributes[0] = vku::InitStructHelper();
+    attributes[0].location = 0u;
+    attributes[0].binding = 0u;
+    attributes[0].format = VK_FORMAT_R8_SINT;
+    attributes[0].offset = offsetof(PerVertex, a);
+
+    attributes[1] = vku::InitStructHelper();
+    attributes[1].location = 1u;
+    attributes[1].binding = 0u;
+    attributes[1].format = VK_FORMAT_R32_SFLOAT;
+    attributes[1].offset = offsetof(PerVertex, b);
+
+    attributes[2] = vku::InitStructHelper();
+    attributes[2].location = 2u;
+    attributes[2].binding = 1u;
+    attributes[2].format = VK_FORMAT_R8_UINT;
+    attributes[2].offset = offsetof(PerInstance, c);
+
+    attributes[3] = vku::InitStructHelper();
+    attributes[3].location = 3u;
+    attributes[3].binding = 1u;
+    attributes[3].format = VK_FORMAT_R32_SFLOAT;
+    attributes[3].offset = offsetof(PerInstance, d);
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in int a;
+        layout(location = 1) in float b;
+        layout(location = 2) in uint c;
+        layout(location = 3) in float d;
+
+        void main(){
+            gl_Position = vec4(float(a), b, float(c), d);
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vkt::Buffer instance_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    VkBuffer buffers[2] = {vertex_buffer.handle(), instance_buffer.handle()};
+    VkDeviceSize offsets[2] = {0u, 0u};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 2, buffers, offsets);
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 2, bindings, 4, attributes);
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 3u, 0u, 0u);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(PositiveDynamicState, ColorBlendEquationMultipleAttachments) {
     TEST_DESCRIPTION("Only update some of the dynamic color blend equations");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
