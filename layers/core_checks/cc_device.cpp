@@ -721,7 +721,7 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
     }
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
     const LogObjectList objlist(commandBuffer);
-    skip |= ValidateExtendedDynamicState(cb_state, error_obj.location, VK_TRUE, nullptr, nullptr);
+    skip |= ValidateCmd(cb_state, error_obj.location);
     const Location loc = error_obj.location.dot(Field::deviceMask);
     skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00108");
     skip |= ValidateDeviceMaskToZero(deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00109");
