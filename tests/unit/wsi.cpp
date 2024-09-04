@@ -2056,10 +2056,23 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     // SwapchainCreateInfo->presentMode has to be in VkSurfacePresentModeCompatibilityEXT->pPresentModes
     if (compatible_present_modes.size() > 1) {
         swapchain_create_info.presentMode = compatible_present_modes[1];
+
+        VkSurfacePresentModeEXT present_mode2 = vku::InitStructHelper();
+        present_mode2.presentMode = pdev_surface_present_modes[0];
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info2 = vku::InitStructHelper(&present_mode2);
+        surface_info2.surface = m_surface;
+
+        VkSurfacePresentModeCompatibilityEXT present_mode_compatibility2 = vku::InitStructHelper();
+        present_mode2.presentMode = swapchain_create_info.presentMode;
+        VkSurfaceCapabilities2KHR surface_caps2 = vku::InitStructHelper(&present_mode_compatibility2);
+        vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info2, &surface_caps2);
+
+        swapchain_create_info.minImageCount = surface_caps2.surfaceCapabilities.minImageCount;
         m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentMode-07764");
         vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
         m_errorMonitor->VerifyFound();
     }
+    swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
 
     swapchain_create_info.presentMode = compatible_present_modes[0];
     VkSwapchainPresentScalingCreateInfoEXT present_scaling_info = vku::InitStructHelper();
