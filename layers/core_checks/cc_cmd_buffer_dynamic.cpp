@@ -536,24 +536,28 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
         const uint32_t attachment_count = static_cast<uint32_t>(cb_state.active_attachments.size());
         for (uint32_t i = 0; i < attachment_count; ++i) {
-            if (!cb_state.dynamic_state_value.color_blend_enabled[i]) {
+            const auto& attachment_info = cb_state.active_attachments[i];
+            const auto* attachment = attachment_info.image_view;
+            if (!cb_state.dynamic_state_value.color_blend_enabled[i] || !attachment_info.IsColor() || !attachment) {
                 continue;
             }
+
             if (cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
                 if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
-                    attachment_count > phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
-                    skip |= LogError(
-                        vuid.blend_advanced_07480, objlist, vuid.loc(),
-                        "Color Attachment %" PRIu32 " blending is enabled, but the total color attachment count (%" PRIu32
-                        ") is greater than advancedBlendMaxColorAttachments (%" PRIu32 ").%s",
-                        i, attachment_count, phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
-                        cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
+                    cb_state.active_color_attachments_index.size() >
+                        phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                    skip |= LogError(vuid.blend_advanced_07480, objlist, vuid.loc(),
+                                     "Color Attachment %" PRIu32
+                                     " blending is enabled, but the total active color attachment count (%zu) is greater than "
+                                     "advancedBlendMaxColorAttachments (%" PRIu32 ").%s",
+                                     i, cb_state.active_color_attachments_index.size(),
+                                     phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments,
+                                     cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
                     break;
                 }
             }
 
-            const auto* attachment = cb_state.active_attachments[i].image_view;
-            if (attachment && ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0)) {
+            if ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) {
                 skip |=
                     LogError(vuid.blend_feature_07470, objlist, vuid.loc(),
                              "Color Attachment %" PRIu32

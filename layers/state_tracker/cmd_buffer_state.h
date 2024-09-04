@@ -85,6 +85,7 @@ struct AttachmentInfo {
 
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }
+    bool IsColor() const { return type == Type::Color; }
 
     std::string Describe(AttachmentSource source, uint32_t index) const;
 };
@@ -420,6 +421,8 @@ class CommandBuffer : public RefcountedStateObject {
     std::shared_ptr<vvl::RenderPass> activeRenderPass;
     // Used for both type of renderPass
     AttachmentSource attachment_source;
+    // There is no concept of "attachment index" with dynamic rendering, we use this for both dynamic/non-dynamic rendering though.
+    // The attachments are packed the following: | color | color resolve | depth | depth resolve | stencil | stencil resolve |
     std::vector<AttachmentInfo> active_attachments;
     vvl::unordered_set<uint32_t> active_color_attachments_index;
     uint32_t active_render_pass_device_mask;
