@@ -1108,3 +1108,157 @@ TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8444");
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = color_format;
+    image_ci.extent = {32u, 32u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    vkt::Image image1(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image3(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view1 = image1.CreateView();
+    vkt::ImageView image_view2 = image2.CreateView();
+    vkt::ImageView image_view3 = image3.CreateView();
+
+    vkt::Image depth_image(*m_device, 32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkRenderingAttachmentInfoKHR color_attachments[3];
+    color_attachments[0] = vku::InitStructHelper();
+    color_attachments[0].imageView = image_view1.handle();
+    color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments[1] = color_attachments[0];
+    color_attachments[1].imageView = image_view2.handle();
+    color_attachments[2] = color_attachments[0];
+    color_attachments[2].imageView = image_view3.handle();
+
+    VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depth_image_view.handle();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 3u;
+    rendering_info.pColorAttachments = color_attachments;
+
+    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.depthAttachmentFormat = depth_stencil_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_stencil_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &rendering_info);
+    VkBool32 color_blend_enables[] = {VK_TRUE, VK_TRUE, VK_TRUE};
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 3u, color_blend_enables);
+    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
+
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &rendering_info);
+    VkBool32 color_blend_disabled = VK_FALSE;
+    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 1u, &color_blend_disabled);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3u, 1u, 0u, 0u);
+    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
+
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
+    TEST_DESCRIPTION("Attempt to use the maximum attachments in subpass when advanced blend is enabled");
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_advanced_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(blend_advanced_props);
+    const uint32_t attachment_count = blend_advanced_props.advancedBlendMaxColorAttachments;
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32, 32, 1};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    std::vector<std::unique_ptr<vkt::Image>> images(attachment_count);
+    std::vector<vkt::ImageView> image_views(attachment_count);
+    std::vector<VkRenderingAttachmentInfo> rendering_attachment_info(attachment_count);
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        images[i] = std::make_unique<vkt::Image>(*m_device, image_ci);
+        image_views[i] = images[i]->CreateView();
+        rendering_attachment_info[i] = vku::InitStructHelper();
+        rendering_attachment_info[i].imageView = image_views[i];
+        rendering_attachment_info[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        rendering_attachment_info[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        rendering_attachment_info[i].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        rendering_attachment_info[i].clearValue.color = m_clear_color;
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    pipe.cb_ci_.attachmentCount = 0;
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = attachment_count;
+    rendering_info.pColorAttachments = rendering_attachment_info.data();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(rendering_info);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    for (uint32_t i = 0; i < attachment_count; ++i) {
+        VkBool32 color_blend_enable = i == 0;
+        vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), i, 1u, &color_blend_enable);
+        VkColorBlendAdvancedEXT color_blend_advanced;
+        color_blend_advanced.advancedBlendOp = VK_BLEND_OP_ADD;
+        color_blend_advanced.srcPremultiplied = VK_FALSE;
+        color_blend_advanced.dstPremultiplied = VK_FALSE;
+        color_blend_advanced.blendOverlap = VK_BLEND_OVERLAP_UNCORRELATED_EXT;
+        color_blend_advanced.clampResults = VK_FALSE;
+        vk::CmdSetColorBlendAdvancedEXT(m_commandBuffer->handle(), i, 1u, &color_blend_advanced);
+    }
+
+    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
