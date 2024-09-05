@@ -91,6 +91,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/dynamic_rendering_local_read_positive.cpp
     unit/dynamic_state.cpp
     unit/dynamic_state_positive.cpp
+    unit/external_memory_metal.cpp
     unit/external_memory_sync.cpp
     unit/external_memory_sync_positive.cpp
     unit/fragment_shading_rate.cpp
