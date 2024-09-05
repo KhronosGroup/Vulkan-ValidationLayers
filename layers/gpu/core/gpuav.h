@@ -69,6 +69,9 @@ class Validator : public gpu::GpuShaderInstrumentor {
                                                          VkFormatFeatureFlags2 format_features,
                                                          const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) final;
     std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo* create_info) final;
+    std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
+        VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR* create_info,
+        std::shared_ptr<vvl::Buffer>&& buf_state) final;
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                              const VkCommandBufferAllocateInfo* allocate_info,
                                                              const vvl::CommandPool* pool) final;
