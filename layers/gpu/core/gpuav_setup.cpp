@@ -52,6 +52,12 @@ std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler handle, co
     return std::make_shared<Sampler>(handle, create_info, *desc_heap_);
 }
 
+std::shared_ptr<vvl::AccelerationStructureKHR> Validator::CreateAccelerationStructureState(
+    VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
+    std::shared_ptr<vvl::Buffer> &&buf_state) {
+    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), *desc_heap_);
+}
+
 std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
                                                                    const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
                                                                    uint32_t variable_count) {
