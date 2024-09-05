@@ -434,28 +434,31 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
                                                               chassis::CreatePipelineLayout &chassis_state) {
-    if (chassis_state.modified_create_info.setLayoutCount > desc_set_bind_index_) {
-        std::ostringstream strm;
-        strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
-             << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
-             << "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
-                "pipelines created with it, therefor no validation error will be repored for them by GPU-AV at "
-                "runtime.";
-        InternalWarning(device, record_obj.location, strm.str().c_str());
-    } else {
-        // Modify the pipeline layout by:
-        // 1. Copying the caller's descriptor set desc_layouts
-        // 2. Fill in dummy descriptor layouts up to the max binding
-        // 3. Fill in with the debug descriptor layout at the max binding slot
-        chassis_state.new_layouts.reserve(desc_set_bind_index_ + 1);
-        chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
-                                         &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
-        for (uint32_t i = pCreateInfo->setLayoutCount; i < desc_set_bind_index_; ++i) {
-            chassis_state.new_layouts.push_back(dummy_desc_layout_);
+    if (gpuav_settings.shader_instrumentation_enabled) {
+        if (chassis_state.modified_create_info.setLayoutCount > desc_set_bind_index_) {
+            std::ostringstream strm;
+            strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
+                 << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
+                 << "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
+                    "for "
+                    "pipelines created with it, therefor no validation error will be repored for them by GPU-AV at "
+                    "runtime.";
+            InternalWarning(device, record_obj.location, strm.str().c_str());
+        } else {
+            // Modify the pipeline layout by:
+            // 1. Copying the caller's descriptor set desc_layouts
+            // 2. Fill in dummy descriptor layouts up to the max binding
+            // 3. Fill in with the debug descriptor layout at the max binding slot
+            chassis_state.new_layouts.reserve(desc_set_bind_index_ + 1);
+            chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
+                                             &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
+            for (uint32_t i = pCreateInfo->setLayoutCount; i < desc_set_bind_index_; ++i) {
+                chassis_state.new_layouts.push_back(dummy_desc_layout_);
+            }
+            chassis_state.new_layouts.push_back(debug_desc_layout_);
+            chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
+            chassis_state.modified_create_info.setLayoutCount = desc_set_bind_index_ + 1;
         }
-        chassis_state.new_layouts.push_back(debug_desc_layout_);
-        chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
-        chassis_state.modified_create_info.setLayoutCount = desc_set_bind_index_ + 1;
     }
     BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
 }
@@ -538,6 +541,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                              chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
 
     chassis_state.modified_create_infos.reserve(createInfoCount);
 
@@ -587,6 +591,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
                                                            const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
@@ -620,6 +625,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
     BaseClass::PreCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
+
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
@@ -647,6 +654,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PreCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                    pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
+
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
@@ -675,6 +684,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
                                                                      chassis::CreateRayTracingPipelinesNV &chassis_state) {
     BaseClass::PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                         record_obj, pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
+
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
@@ -701,6 +712,8 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     BaseClass::PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                          pPipelines, record_obj, pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
+
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
 
@@ -740,6 +753,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   chassis::CreateGraphicsPipelines &chassis_state) {
     BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                      pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -757,6 +771,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
                                                                  chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -773,6 +788,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
     PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesNV &chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                          record_obj, pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -790,6 +806,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
+    if (!gpuav_settings.shader_instrumentation_enabled) return;
     PostCallRecordPipelineCreationsRT(record_obj.result, deferredOperation, pAllocator, chassis_state);
 
     for (uint32_t i = 0; i < count; ++i) {
