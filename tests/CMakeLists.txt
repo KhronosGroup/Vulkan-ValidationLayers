@@ -100,6 +100,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av.cpp
     unit/gpu_av_buffer_device_address.cpp
     unit/gpu_av_buffer_device_address_positive.cpp
+    unit/gpu_av_descriptor_buffer_positive.cpp
     unit/gpu_av_descriptor_indexing.cpp
     unit/gpu_av_descriptor_indexing_positive.cpp
     unit/gpu_av_indirect_buffer.cpp

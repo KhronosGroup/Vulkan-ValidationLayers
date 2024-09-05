@@ -301,7 +301,10 @@ void Validator::InitSettings(const Location &loc) {
         InternalWarning(
             device, loc,
             "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
-            "Use of descriptor buffers will result in no descriptor checking");
+            "[Disabling shader_instrumentation_enabled]");
+        // Because of VUs like VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008 we currently would need to rework the entire shader
+        // instrumentation logic
+        gpuav_settings.DisableShaderInstrumentationAndOptions();
     }
 
     if (gpuav_settings.IsBufferValidationEnabled()) {
@@ -312,6 +315,11 @@ void Validator::InitSettings(const Location &loc) {
                 "Device does not support the minimum range of push constants (32 bytes). No indirect buffer checking will be "
                 "attempted");
         }
+    }
+
+    // If we have turned off all the possible things to instrument, turn off everything fully
+    if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
+        gpuav_settings.DisableShaderInstrumentationAndOptions();
     }
 }
 

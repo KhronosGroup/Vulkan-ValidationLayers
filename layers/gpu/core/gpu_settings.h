@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <cstdint>
 // Default values for those settings should match layers/VkLayer_khronos_validation.json.in
 
 struct GpuAVSettings {
@@ -50,6 +51,8 @@ struct GpuAVSettings {
     }
     // Also disables shader caching and select shader instrumentation
     void DisableShaderInstrumentationAndOptions() {
+        shader_instrumentation_enabled = false;
+
         shader_instrumentation.bindless_descriptor = false;
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
