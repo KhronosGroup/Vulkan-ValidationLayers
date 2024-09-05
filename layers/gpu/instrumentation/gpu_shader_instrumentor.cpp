@@ -812,13 +812,54 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     if (!gpuav_settings.shader_instrumentation_enabled) return;
     PostCallRecordPipelineCreationsRT(record_obj.result, deferredOperation, pAllocator, chassis_state);
 
-    for (uint32_t i = 0; i < count; ++i) {
-        UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
+    const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR;
 
-        auto pipeline_state = Get<vvl::Pipeline>(pPipelines[i]);
-        ASSERT_AND_CONTINUE(pipeline_state);
-        auto &shader_instrumentation_metadata = chassis_state->shader_instrumentations_metadata[i];
-        PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (is_operation_deferred) {
+        for (uint32_t i = 0; i < count; ++i) {
+            UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
+        }
+
+        if (wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
+        }
+
+        auto found = layer_data->deferred_operation_post_check.pop(deferredOperation);
+        std::vector<std::function<void(const std::vector<VkPipeline> &)>> deferred_op_post_checks;
+        if (found->first) {
+            deferred_op_post_checks = std::move(found->second);
+        } else {
+            // ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR should have added a lambda in
+            // deferred_operation_post_check for the current deferredOperation.
+            // This lambda is responsible for initializing the pipeline state we maintain,
+            // this state will be accessed in the following lambda.
+            // Given how PostCallRecordPipelineCreationsRT is called in
+            // GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR
+            // conditions holds as of writing. But it is something we need to be aware of.
+            assert(false);
+            return;
+        }
+
+        deferred_op_post_checks.emplace_back([this, held_chassis_state =
+                                                        chassis_state](const std::vector<VkPipeline> &vk_pipelines) mutable {
+            for (size_t i = 0; i < vk_pipelines.size(); ++i) {
+                std::shared_ptr<vvl::Pipeline> pipeline_state =
+                    ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(vk_pipelines[i]);
+                ASSERT_AND_CONTINUE(pipeline_state);
+                auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[i];
+                PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
+            }
+        });
+        layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
+    } else {
+        for (uint32_t i = 0; i < count; ++i) {
+            UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
+
+            auto pipeline_state = Get<vvl::Pipeline>(pPipelines[i]);
+
+            auto &shader_instrumentation_metadata = chassis_state->shader_instrumentations_metadata[i];
+            PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
+        }
     }
 }
 
