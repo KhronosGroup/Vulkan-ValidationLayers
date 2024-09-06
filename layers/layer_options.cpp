@@ -594,7 +594,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
+        const uint32_t default_buffer_size = printf_settings.buffer_size;
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, printf_settings.buffer_size);
+        if (printf_settings.buffer_size == 0) {
+            printf_settings.buffer_size = default_buffer_size;
+            printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %u\n",
+                   VK_LAYER_PRINTF_BUFFER_SIZE, default_buffer_size);
+        }
     }
 
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
@@ -623,7 +629,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                     gpuav_settings.shader_instrumentation.buffer_device_address);
         }
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES)) {
+            const uint32_t default_max_bda_in_use = gpuav_settings.max_bda_in_use;
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, gpuav_settings.max_bda_in_use);
+            if (gpuav_settings.max_bda_in_use == 0) {
+                gpuav_settings.max_bda_in_use = default_max_bda_in_use;
+                printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %u\n",
+                       VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, default_max_bda_in_use);
+            }
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {

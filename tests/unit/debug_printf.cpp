@@ -2640,6 +2640,38 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
+    TEST_DESCRIPTION("go over the default VK_LAYER_PRINTF_BUFFER_SIZE limit... by a LOT");
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+        void main() {
+            for (uint i = 0; i < 2048; i++) {
+                debugPrintfEXT("WorkGroup %v3u | Invocation %v3u\n", gl_WorkGroupID, gl_LocalInvocationID);
+            }
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 4, 4, 1);
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredWarning(
+        "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
 void NegativeDebugPrintf::BasicFormattingTest(const char *shader, bool warning) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());

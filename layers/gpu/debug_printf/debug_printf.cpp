@@ -366,8 +366,13 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
                 << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
         InternalWarning(queue, loc, message.str().c_str());
     }
-    memset(debug_output_buffer, 0,
-           sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize] + gpuav::kDebugPrintfOutputBufferData));
+
+    // Want to do as small as a memset as possible if the user has a large buffer_size but uses only a small portion of it.
+    // Same time want to make sure we don't memset pass the actually VkBuffer allocation
+    uint32_t clear_size =
+        sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize] + gpuav::kDebugPrintfOutputBufferData);
+    clear_size = std::min(printf_settings.buffer_size, clear_size);
+    memset(debug_output_buffer, 0, clear_size);
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
