@@ -173,7 +173,7 @@ const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 // GPU-AV
 // ---
 const char *VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
-const char *VK_LAYER_GPUAV_DESCRIPTORS_CHECKS = "gpuav_descriptor_checks";
+const char *VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
 const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
 const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES = "gpuav_max_buffer_device_addresses";
@@ -605,8 +605,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (!gpuav_settings.shader_instrumentation_enabled) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();
     } else {
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTORS_CHECKS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTORS_CHECKS,
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS,
                                     gpuav_settings.shader_instrumentation.bindless_descriptor);
         }
 
