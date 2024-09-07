@@ -213,8 +213,11 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
     if (api_version > VK_API_VERSION_1_1) {
         if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
-            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
-            features12->timelineSemaphore = VK_TRUE;
+            if (features12->timelineSemaphore == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
+                features12->timelineSemaphore = VK_TRUE;
+            }
         } else {
             add_missing_features();
         }
