@@ -56,8 +56,9 @@ bool StatelessValidation::OutputExtensionError(const Location &loc, const vvl::E
                     "function required extension %s which has not been enabled.\n", String(exentsions).c_str());
 }
 
-bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension) const {
-    if (instance_extensions.vk_khr_get_physical_device_properties2) {
+bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension, bool skip_gpdp2) const {
+    // We don't know here if the caller cares or not about gpdp2
+    if (instance_extensions.vk_khr_get_physical_device_properties2 || skip_gpdp2) {
         // Struct is legal IF it's supported
         const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
         if (dev_exts_enumerated == device_extensions_enumerated.end()) return true;
@@ -238,7 +239,7 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
  */
 bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
                                               const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
-                                              const char *stype_vuid, VkPhysicalDevice caller_physical_device,
+                                              const char *stype_vuid, const VkPhysicalDevice physicalDevice,
                                               const bool is_const_param) const {
     bool skip = false;
 
@@ -297,15 +298,13 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
                             }
                         }
                         // Send Location without pNext field so the pNext() connector can be used
-                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, caller_physical_device, is_const_param);
+                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, physicalDevice, is_const_param);
                         if (loc.function == Func::vkGetPhysicalDeviceProperties2 ||
                             loc.function == Func::vkGetPhysicalDeviceProperties2KHR) {
-                            skip |= ValidatePnextPropertyStructContents(loc, current, pnext_vuid, caller_physical_device,
-                                                                        is_const_param);
+                            skip |= ValidatePnextPropertyStructContents(loc, current, pnext_vuid, physicalDevice, is_const_param);
                         } else if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
                                    loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
-                            skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, caller_physical_device,
-                                                                       is_const_param);
+                            skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, physicalDevice, is_const_param);
                         }
                     }
                 }
@@ -438,9 +437,14 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, vvl::
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
-                                        const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
+                                        const FlagType flag_type, const VkPhysicalDevice physical_device, const char *vuid,
+                                        const char *flags_zero_vuid) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+
+    if (physical_device != VK_NULL_HANDLE && SupportedByPdev(physical_device, vvl::Extension::_VK_KHR_maintenance5, true)) {
+        return skip;
+    }
 
     if ((value & ~all_flags) != 0) {
         skip |= LogError(vuid, device, loc, "contains flag bits (0x%" PRIx32 ") which are not recognized members of %s.", value,
@@ -474,9 +478,14 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
  * @return Boolean value indicating that the call should be skipped.
  */
 bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
-                                        const FlagType flag_type, const char *vuid, const char *flags_zero_vuid) const {
+                                        const FlagType flag_type, const VkPhysicalDevice physical_device, const char *vuid,
+                                        const char *flags_zero_vuid) const {
     bool skip = false;
     skip |= ValidateFlagsImplementation<VkFlags64>(loc, flag_bitmask, all_flags, value, flag_type, vuid, flags_zero_vuid);
+
+    if (physical_device != VK_NULL_HANDLE && SupportedByPdev(physical_device, vvl::Extension::_VK_KHR_maintenance5, true)) {
+        return skip;
+    }
 
     if ((value & ~all_flags) != 0) {
         skip |= LogError(vuid, device, loc, "contains flag bits (0x%" PRIx64 ") which are not recognized members of %s.", value,

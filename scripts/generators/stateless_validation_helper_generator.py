@@ -387,9 +387,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out.append('''
             bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
+                                                                const VkPhysicalDevice physicalDevice, bool is_const_param) const {
                 bool skip = false;
-                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+                const bool is_physdev_api = physicalDevice != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
         guard_helper = PlatformGuardHelper()
@@ -409,9 +409,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out.append('''
             bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
+                                                                const VkPhysicalDevice physicalDevice, bool is_const_param) const {
                 bool skip = false;
-                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+                const bool is_physdev_api = physicalDevice != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
         guard_helper = PlatformGuardHelper()
@@ -432,9 +432,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             // All structs that are not a Feature or Property struct
             bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                VkPhysicalDevice caller_physical_device, bool is_const_param) const {
+                                                                const VkPhysicalDevice physicalDevice, bool is_const_param) const {
                 bool skip = false;
-                const bool is_physdev_api = caller_physical_device != VK_NULL_HANDLE;
+                const bool is_physdev_api = physicalDevice != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
         guard_helper = PlatformGuardHelper()
@@ -915,6 +915,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', f'ParameterValidation: No validation for {callerName} {member.name}')
                 else:
+                    physicalLevel = "VK_NULL_HANDLE" # maintenance5 allows Physical-device-level functions to pass in out of range values
+                    if (isPhysDevice):
+                        physicalLevel = "physicalDevice"
+                    elif structTypeName and 'PhysicalDevice' in structTypeName:
+                        physicalLevel = "physicalDevice"
+
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         vuid = self.GetVuid(member.type, "sType-sType")
                         sType = self.vk.structs[member.type].sType
@@ -948,12 +954,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allFlagsName = 'All' + flagBitsName
                         zeroVuidArg = '' if member.optional else ', ' + zeroVuid
                         condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
-                        usedLines.append(f'skip |= ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
+                        usedLines.append(f'skip |= ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {physicalLevel}, {invalidVuid}{zeroVuidArg});\n')
                     elif member.type == 'VkBool32':
                         usedLines.append(f'skip |= ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.vk.enums and member.type != 'VkStructureType':
                         vuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.name}, {vuid});\n')
+                        usedLines.append(f'skip |= ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.name}, {vuid}, {physicalLevel});\n')
                     # If this is a struct, see if it contains members that need to be checked
                     if member.type in self.validatedStructs:
                         memberNamePrefix = f'{valuePrefix}{member.name}.'
@@ -998,7 +1004,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             pnext_check += f'''
                 if (is_physdev_api) {{
                     VkPhysicalDeviceProperties device_properties = {{}};
-                    DispatchGetPhysicalDeviceProperties(caller_physical_device, &device_properties);
+                    DispatchGetPhysicalDeviceProperties(physicalDevice, &device_properties);
                     if (device_properties.apiVersion < {struct.version.nameApi}) {{
                         APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
                         skip |= LogError(

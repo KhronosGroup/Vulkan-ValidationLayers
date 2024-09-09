@@ -340,8 +340,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfoKHR, Field::flags)
                                                   : create_info_loc.dot(Field::flags);
         if (!create_flags_2) {
-            skip |= ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
-                                  create_info.flags, kOptionalFlags, "VUID-VkGraphicsPipelineCreateInfo-None-09497");
+            skip |=
+                ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits, create_info.flags,
+                              kOptionalFlags, VK_NULL_HANDLE, "VUID-VkGraphicsPipelineCreateInfo-None-09497");
         }
         skip |= ValidateCreateGraphicsPipelinesFlags(flags, flags_loc);
 
@@ -395,7 +396,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                         skip |= ValidateFlags(
                             create_info_loc.pNext(Struct::VkAttachmentSampleCountInfoAMD, Field::pColorAttachmentSamples),
                             vvl::FlagBitmask::VkSampleCountFlagBits, AllVkSampleCountFlagBits,
-                            attachment_sample_count_info->pColorAttachmentSamples[j], kRequiredFlags,
+                            attachment_sample_count_info->pColorAttachmentSamples[j], kRequiredFlags, VK_NULL_HANDLE,
                             "VUID-VkGraphicsPipelineCreateInfo-pColorAttachmentSamples-06592");
                     }
                 }
@@ -1279,7 +1280,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                                   : create_info_loc.dot(Field::flags);
         if (!create_flags_2) {
             skip |= ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
-                                  create_info.flags, kOptionalFlags, "VUID-VkComputePipelineCreateInfo-None-09497");
+                                  create_info.flags, kOptionalFlags, VK_NULL_HANDLE, "VUID-VkComputePipelineCreateInfo-None-09497");
         }
         skip |= ValidateCreateComputePipelinesFlags(flags, flags_loc);
 
