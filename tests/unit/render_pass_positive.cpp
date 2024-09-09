@@ -1365,3 +1365,107 @@ TEST_F(PositiveRenderPass, NestedCommandBuffersFeatureMaintenance7) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8388");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_location_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(sample_location_properties);
+    if (sample_location_properties.variableSampleLocations) {
+        GTEST_SKIP() << "variableSampleLocations must not be supported";
+    }
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attach;
+    subpass.colorAttachmentCount = 1;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    vkt::RenderPass render_pass(*m_device, rpci);
+
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle());
+
+    VkSampleLocationEXT sample_location = {0.5f, 0.5f};
+    VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize = {1u, 1u};
+    sample_locations_info.sampleLocationsCount = 1u;
+    sample_locations_info.pSampleLocations = &sample_location;
+
+    VkPipelineSampleLocationsStateCreateInfoEXT sample_locations_state = vku::InitStructHelper();
+    sample_locations_state.sampleLocationsEnable = VK_TRUE;
+    sample_locations_state.sampleLocationsInfo = sample_locations_info;
+
+    VkPipelineMultisampleStateCreateInfo multi_sample_state = vku::InitStructHelper(&sample_locations_state);
+    multi_sample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multi_sample_state.sampleShadingEnable = VK_FALSE;
+    multi_sample_state.minSampleShading = 1.0;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.pMultisampleState = &multi_sample_state;
+    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkClearValue color_clear_value;
+    color_clear_value.color.float32[0] = 0.0f;
+    color_clear_value.color.float32[1] = 0.0f;
+    color_clear_value.color.float32[2] = 0.0f;
+    color_clear_value.color.float32[3] = 1.0f;
+
+    VkSampleLocationsInfoEXT sample_loc_info = vku::InitStructHelper();
+    sample_loc_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_loc_info.sampleLocationGridSize = {1u, 1u};
+    sample_loc_info.sampleLocationsCount = 1u;
+    sample_loc_info.pSampleLocations = &sample_location;
+
+    VkAttachmentSampleLocationsEXT attachment_sample_loc;
+    attachment_sample_loc.attachmentIndex = 0u;
+    attachment_sample_loc.sampleLocationsInfo = sample_loc_info;
+
+    VkSubpassSampleLocationsEXT subpass_sample_loc;
+    subpass_sample_loc.subpassIndex = 0u;
+    subpass_sample_loc.sampleLocationsInfo = sample_loc_info;
+
+    VkRenderPassSampleLocationsBeginInfoEXT sample_locations_begin_info = vku::InitStructHelper();
+    sample_locations_begin_info.attachmentInitialSampleLocationsCount = 1u;
+    sample_locations_begin_info.pAttachmentInitialSampleLocations = &attachment_sample_loc;
+    sample_locations_begin_info.postSubpassSampleLocationsCount = 1u;
+    sample_locations_begin_info.pPostSubpassSampleLocations = &subpass_sample_loc;
+
+    VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper(&sample_locations_begin_info);
+    render_pass_begin_info.renderPass = render_pass.handle();
+    render_pass_begin_info.framebuffer = framebuffer.handle();
+    render_pass_begin_info.renderArea.extent = {32, 32};
+    render_pass_begin_info.renderArea.offset = {0, 0};
+    render_pass_begin_info.clearValueCount = 1;
+    render_pass_begin_info.pClearValues = &color_clear_value;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+
+    sample_location.x = 1.0f;
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
