@@ -188,10 +188,8 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites(
         {spv::CapabilityRoundingModeRTZ, {0, nullptr, nullptr, "(VkPhysicalDeviceVulkan12Properties::shaderRoundingModeRTZFloat64 & VK_TRUE) != 0"}},
         {spv::CapabilityComputeDerivativeGroupQuadsNV, {0, &DeviceFeatures::computeDerivativeGroupQuads, nullptr, ""}},
         {spv::CapabilityComputeDerivativeGroupLinearNV, {0, &DeviceFeatures::computeDerivativeGroupLinear, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityComputeDerivativeGroupQuadsKHR, {0, &DeviceFeatures::computeDerivativeGroupQuads, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityComputeDerivativeGroupLinearKHR, {0, &DeviceFeatures::computeDerivativeGroupLinear, nullptr, ""}},
+        {spv::CapabilityComputeDerivativeGroupQuadsKHR, {0, &DeviceFeatures::computeDerivativeGroupQuads, nullptr, ""}},
+        {spv::CapabilityComputeDerivativeGroupLinearKHR, {0, &DeviceFeatures::computeDerivativeGroupLinear, nullptr, ""}},
         {spv::CapabilityFragmentBarycentricNV, {0, &DeviceFeatures::fragmentShaderBarycentric, nullptr, ""}},
         {spv::CapabilityImageFootprintNV, {0, &DeviceFeatures::imageFootprint, nullptr, ""}},
         {spv::CapabilityShadingRateNV, {0, &DeviceFeatures::shadingRateImage, nullptr, ""}},
@@ -607,8 +605,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "MeshShadingEXT";
         case spv::CapabilityFragmentBarycentricKHR:
             return "FragmentBarycentricKHR";
-        case spv::CapabilityComputeDerivativeGroupQuadsNV:
-            return "ComputeDerivativeGroupQuadsNV";
+        case spv::CapabilityComputeDerivativeGroupQuadsKHR:
+            return "ComputeDerivativeGroupQuadsKHR";
         case spv::CapabilityFragmentDensityEXT:
             return "FragmentDensityEXT";
         case spv::CapabilityGroupNonUniformPartitionedNV:
@@ -649,8 +647,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "VulkanMemoryModelDeviceScope";
         case spv::CapabilityPhysicalStorageBufferAddresses:
             return "PhysicalStorageBufferAddresses";
-        case spv::CapabilityComputeDerivativeGroupLinearNV:
-            return "ComputeDerivativeGroupLinearNV";
+        case spv::CapabilityComputeDerivativeGroupLinearKHR:
+            return "ComputeDerivativeGroupLinearKHR";
         case spv::CapabilityRayTracingProvisionalKHR:
             return "RayTracingProvisionalKHR";
         case spv::CapabilityCooperativeMatrixNV:
@@ -719,6 +717,8 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "AtomicFloat64AddEXT";
         case spv::CapabilityAtomicFloat16AddEXT:
             return "AtomicFloat16AddEXT";
+        case spv::CapabilitySubgroupBufferPrefetchINTEL:
+            return "SubgroupBufferPrefetchINTEL";
         case spv::CapabilityGroupUniformArithmeticKHR:
             return "GroupUniformArithmeticKHR";
         default:
@@ -927,6 +927,8 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityRoundingModeRTZ, "(VkPhysicalDeviceVulkan12Properties::shaderRoundingModeRTZFloat16 == VK_TRUE) OR (VkPhysicalDeviceVulkan12Properties::shaderRoundingModeRTZFloat32 == VK_TRUE) OR (VkPhysicalDeviceVulkan12Properties::shaderRoundingModeRTZFloat64 == VK_TRUE)"},
     {spv::CapabilityComputeDerivativeGroupQuadsNV, "VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads"},
     {spv::CapabilityComputeDerivativeGroupLinearNV, "VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear"},
+    {spv::CapabilityComputeDerivativeGroupQuadsKHR, "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR::computeDerivativeGroupQuads"},
+    {spv::CapabilityComputeDerivativeGroupLinearKHR, "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR::computeDerivativeGroupLinear"},
     {spv::CapabilityFragmentBarycentricNV, "VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric"},
     {spv::CapabilityImageFootprintNV, "VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint"},
     {spv::CapabilityShadingRateNV, "VkPhysicalDeviceShadingRateImageFeaturesNV::shadingRateImage"},
