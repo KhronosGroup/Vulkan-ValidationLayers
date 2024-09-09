@@ -357,7 +357,9 @@ uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_i
         type = &constant->type_;
     } else {
         const Instruction* inst = block.function_.FindInstruction(id);
-        type = module_.type_manager_.FindTypeById(inst->TypeId());
+        if (inst) {
+            type = module_.type_manager_.FindTypeById(inst->TypeId());
+        }
     }
     if (!type) {
         return id;
