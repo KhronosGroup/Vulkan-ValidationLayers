@@ -1487,6 +1487,9 @@ TEST_F(PositiveSyncObject, WaitTimelineSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (semaphore host signal/wait)";
+    }
     SemBufferRaceData data(*m_device);
 
     data.Run(m_command_pool, *m_errorMonitor);
@@ -2086,3 +2089,196 @@ TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore2) {
     semaphore.Signal(2);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+TEST_F(PositiveSyncObject, TimelineHostWaitThenSubmitSignal) {
+    TEST_DESCRIPTION("Wait on the host then submit signal");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
+    std::thread t(thread);
+
+    // This delay increases the probability that the wait started before the signal.
+    // If the waiting thread was not fast enough this becomes a common signal-then-wait setup.
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    t.join();
+}
+
+TEST_F(PositiveSyncObject, TimelineHostWaitThenSubmitLargerSignal) {
+    TEST_DESCRIPTION("Wait on the host then submit signal with larger value");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
+    std::thread t(thread);
+
+    // This delay increases the probability that the wait started before the signal.
+    // If the waiting thread was not fast enough this becomes a common signal-then-wait setup.
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);
+    t.join();
+}
+
+TEST_F(PositiveSyncObject, TimelineHostWaitThenHostSignal) {
+    TEST_DESCRIPTION("Wait on the host then signal from the host");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
+    }
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
+    std::thread t(thread);
+
+    // This delay increases the probability that the wait started before the signal.
+    // If the waiting thread was not fast enough this becomes a common signal-then-wait setup.
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    semaphore.Signal(1);
+    t.join();
+}
+
+TEST_F(PositiveSyncObject, TimelineHostSignalThenHostWait) {
+    TEST_DESCRIPTION("Signal on the host then wait on the host");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    semaphore.Signal(1);
+    semaphore.Wait(1, kWaitTimeout);
+}
+
+TEST_F(PositiveSyncObject, TimelineSubmitSignalThenHostWaitSmallerValue) {
+    TEST_DESCRIPTION("Submit signal then wait smaller value on the host");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);
+    semaphore.Wait(1, kWaitTimeout);
+}
+
+TEST_F(PositiveSyncObject, TimelineSubmitWaitThenSubmitSignalLargerValue) {
+    TEST_DESCRIPTION("Submit wait then submit signal with larger value, wait on the host for wait completion");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);
+
+    // This should also sync with the second queue because the second queue signals a default one.
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, TimelineSubmitSignalThenSubmitWaitSmallerValue) {
+    TEST_DESCRIPTION("Submit signal then submit wait with smaller value, wait on the host for wait completion");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+
+    // This should also sync with the second queue because the second queue signals a default one.
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, TimelineSubmitWaitThenHostSignal) {
+    TEST_DESCRIPTION("Submit wait then signal on the host, wait on the host for wait completion");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    semaphore.Signal(1);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, TimelineSubmitWaitThenHostSignalLargerValue) {
+    TEST_DESCRIPTION("Submit wait then signal on the host larger value, wait on the host for wait completion");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    semaphore.Signal(2);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait) {
+    TEST_DESCRIPTION("Test that validation selects correct signal");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);
+    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 3);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait2) {
+    TEST_DESCRIPTION("Test that validation selects correct signal");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 3);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, PollSemaphoreCounter) {
+    TEST_DESCRIPTION("Basic semaphore polling test");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (GetSemaphoreCounterValue)";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+
+    uint64_t counter = 0;
+    do {
+        vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter);
+    } while (counter != 1);
+}

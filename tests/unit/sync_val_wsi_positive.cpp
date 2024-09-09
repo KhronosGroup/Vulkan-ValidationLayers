@@ -264,6 +264,12 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
             vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
             vk::ResetFences(device(), 1, &fence.handle());
         }
+        {
+            // We did not synchronize with the presentation request from the last iteration.
+            // Wait on the queue to ensure submit semaphore used by presentation request is not in use.
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            m_default_queue->Wait();
+        }
     }
     thread.join();
 }
