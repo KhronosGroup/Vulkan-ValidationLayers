@@ -72,12 +72,10 @@
     } while (0)
 
 #define ASSERT_AND_CONTINUE(cond) \
-    do {                          \
-        if (!(cond)) {            \
-            assert(false);        \
-            continue;             \
-        }                         \
-    } while (0)
+    if (!(cond)) {                \
+        assert(false);            \
+        continue;                 \
+    }
 
 static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
     VkExtent3D d3 = {d2.width, d2.height, 1};
