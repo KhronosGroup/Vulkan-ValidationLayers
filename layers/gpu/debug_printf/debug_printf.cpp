@@ -368,7 +368,7 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
     }
 
     // Only memset as what is needed, in case we are only using only a small portion of a large buffer_size.
-    // Same time want to make sure we don't memset past the actually VkBuffer allocation
+    // At the same time we want to make sure we don't memset past the actual VkBuffer allocation
     uint32_t clear_size =
         sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize] + gpuav::kDebugPrintfOutputBufferData);
     clear_size = std::min(printf_settings.buffer_size, clear_size);
