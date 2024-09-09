@@ -169,7 +169,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
         }
     }
     skip |= ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
-                          AllVkBuildAccelerationStructureFlagBitsKHR, info.flags, kOptionalFlags,
+                          AllVkBuildAccelerationStructureFlagBitsKHR, info.flags, kOptionalFlags, VK_NULL_HANDLE,
                           "VUID-VkAccelerationStructureInfoNV-flags-parameter");
     return skip;
 }
@@ -381,8 +381,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfoKHR, Field::flags)
                                                   : create_info_loc.dot(Field::flags);
         if (!create_flags_2) {
-            skip |= ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
-                                  create_info.flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoNV-None-09497");
+            skip |=
+                ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits, create_info.flags,
+                              kOptionalFlags, VK_NULL_HANDLE, "VUID-VkRayTracingPipelineCreateInfoNV-None-09497");
         }
         skip |= ValidateCreateRayTracingPipelinesFlagsNV(flags, flags_loc);
 
@@ -483,8 +484,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfoKHR, Field::flags)
                                                   : create_info_loc.dot(Field::flags);
         if (!create_flags_2) {
-            skip |= ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits,
-                                  create_info.flags, kOptionalFlags, "VUID-VkRayTracingPipelineCreateInfoKHR-None-09497");
+            skip |=
+                ValidateFlags(flags_loc, vvl::FlagBitmask::VkPipelineCreateFlagBits, AllVkPipelineCreateFlagBits, create_info.flags,
+                              kOptionalFlags, VK_NULL_HANDLE, "VUID-VkRayTracingPipelineCreateInfoKHR-None-09497");
         }
         skip |= ValidateCreateRayTracingPipelinesFlagsKHR(flags, flags_loc);
 

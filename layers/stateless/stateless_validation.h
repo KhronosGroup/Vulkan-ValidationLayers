@@ -18,7 +18,9 @@
 
 #pragma once
 
+#include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
+#include "generated/error_location_helper.h"
 #include "sync/sync_utils.h"
 #include "utils/vk_layer_utils.h"
 #include "generated/chassis.h"
@@ -353,20 +355,18 @@ class StatelessValidation : public ValidationObject {
 
     bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc, const uint32_t promoted_version) const;
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
-    bool SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension) const;
+    bool SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension, bool skip_gpdp2 = false) const;
 
     bool ValidatePnextFeatureStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                            VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE,
-                                            bool is_const_param = true) const;
+                                            VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
     bool ValidatePnextPropertyStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                             VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE,
-                                             bool is_const_param = true) const;
+                                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
     bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                     VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE, bool is_const_param = true) const;
+                                     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
 
     bool ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
                              uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
-                             VkPhysicalDevice caller_physical_device = VK_NULL_HANDLE, const bool is_const_param = true) const;
+                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, const bool is_const_param = true) const;
 
     bool ValidateBool32(const Location &loc, VkBool32 value) const;
 
@@ -391,8 +391,12 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRangedEnum(const Location &loc, vvl::Enum name, T value, const char *vuid) const {
+    bool ValidateRangedEnum(const Location &loc, vvl::Enum name, T value, const char *vuid,
+                            const VkPhysicalDevice physical_device = VK_NULL_HANDLE) const {
         bool skip = false;
+        if (physical_device != VK_NULL_HANDLE && SupportedByPdev(physical_device, vvl::Extension::_VK_KHR_maintenance5, true)) {
+            return skip;
+        }
         ValidValue result = IsValidEnumValue(value);
 
         if (result == ValidValue::NotFound) {
@@ -471,10 +475,12 @@ class StatelessValidation : public ValidationObject {
                                      const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
 
     bool ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
-                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
+                       const FlagType flag_type, const VkPhysicalDevice physical_device, const char *vuid,
+                       const char *flags_zero_vuid = nullptr) const;
 
     bool ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
-                       const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const;
+                       const FlagType flag_type, const VkPhysicalDevice physical_device, const char *vuid,
+                       const char *flags_zero_vuid = nullptr) const;
 
     bool ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags,
                             uint32_t count, const VkFlags *array, bool count_required, const char *count_required_vuid,
