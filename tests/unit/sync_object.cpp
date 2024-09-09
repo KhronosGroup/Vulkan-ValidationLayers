@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <thread>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/barrier_queue_family.h"
@@ -3673,4 +3674,62 @@ TEST_F(NegativeSyncObject, ImageBarrierStageNotSupportedByQueue) {
     vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_dst_gfx);
     m_errorMonitor->VerifyFound();
     compute_cb.end();
+}
+
+TEST_F(NegativeSyncObject, TimelineHostSignalAndInUseTracking) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8476");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    VkSemaphore handle = semaphore.handle();
+
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    semaphore.Signal(1);  // signal should not initiate forward progress on the queue thread
+
+    // In the case of regression, this delay gives the queue thread additional time to mark
+    // the semaphore as not in use which will fail the following check. If the queue thread
+    // was not fast enough the test will pass without detecting regression (false-negative).
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    m_errorMonitor->SetDesiredError("VUID-vkDestroySemaphore-semaphore-05149");
+    semaphore.destroy();
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+    vk::DestroySemaphore(*m_device, handle, nullptr);
+}
+
+TEST_F(NegativeSyncObject, TimelineSubmitSignalAndInUseTracking) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8370");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    all_queue_count_ = true;
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    VkSemaphore handle = semaphore.handle();
+
+    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    // Waiting for the second (signaling) queue should not initiate queue thread forward
+    // progress on the default (waiting) queue.
+    m_second_queue->Wait();
+
+    // In the case of regression, this delay gives the queue thread additional time to mark
+    // the semaphore as not in use which will fail the following check. If the queue thread
+    // was not fast enough the test will pass without detecting regression (false-negative).
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    m_errorMonitor->SetDesiredError("VUID-vkDestroySemaphore-semaphore-05149");
+    semaphore.destroy();
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+    vk::DestroySemaphore(*m_device, handle, nullptr);
 }
