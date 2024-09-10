@@ -758,13 +758,12 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     const auto &dev_ext = device_extensions;
     auto *phys_dev_props = &phys_dev_ext_props;
 
-    // Vulkan 1.2 / 1.3 can get properties from single struct, otherwise need to add to it per extension
-    if (dev_ext.vk_feature_version_1_2 || dev_ext.vk_feature_version_1_3) {
+    // Vulkan 1.1 and later can get properties from single struct.
+    // The goal is to only use the phys_dev_props_core field and funnel the properties from promoted extensions
+    if (dev_ext.vk_feature_version_1_2) {
+        // 1.1 struct wasn't available until 1.2
         GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_2, &phys_dev_props_core11);
         GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_2, &phys_dev_props_core12);
-        if (dev_ext.vk_feature_version_1_3) {
-            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_3, &phys_dev_props_core13);
-        }
     } else {
         // VkPhysicalDeviceVulkan11Properties
         //
@@ -909,13 +908,60 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         }
     }
 
+    // funnel promoted extensions into a VkPhysicalDeviceVulkan13Properties
+    //
+    // Can ingnore VkPhysicalDeviceShaderIntegerDotProductProperties as it has no validation purpose
+    if (dev_ext.vk_feature_version_1_3) {
+        GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_3, &phys_dev_props_core13);
+    } else {
+        if (dev_ext.vk_ext_subgroup_size_control) {
+            VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_subgroup_size_control, &subgroup_size_props);
+            phys_dev_props_core13.minSubgroupSize = subgroup_size_props.minSubgroupSize;
+            phys_dev_props_core13.maxSubgroupSize = subgroup_size_props.maxSubgroupSize;
+            phys_dev_props_core13.maxComputeWorkgroupSubgroups = subgroup_size_props.maxComputeWorkgroupSubgroups;
+            phys_dev_props_core13.requiredSubgroupSizeStages = subgroup_size_props.requiredSubgroupSizeStages;
+        }
+
+        if (dev_ext.vk_ext_inline_uniform_block) {
+            VkPhysicalDeviceInlineUniformBlockProperties inline_uniform_block_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_inline_uniform_block, &inline_uniform_block_props);
+            phys_dev_props_core13.maxInlineUniformBlockSize = inline_uniform_block_props.maxInlineUniformBlockSize;
+            phys_dev_props_core13.maxPerStageDescriptorInlineUniformBlocks =
+                inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks;
+            phys_dev_props_core13.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks =
+                inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks;
+            phys_dev_props_core13.maxDescriptorSetInlineUniformBlocks =
+                inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks;
+            phys_dev_props_core13.maxDescriptorSetUpdateAfterBindInlineUniformBlocks =
+                inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks;
+        }
+
+        if (dev_ext.vk_ext_texel_buffer_alignment) {
+            VkPhysicalDeviceTexelBufferAlignmentProperties texel_buffer_alignment_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_texel_buffer_alignment, &texel_buffer_alignment_props);
+            phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes =
+                texel_buffer_alignment_props.storageTexelBufferOffsetAlignmentBytes;
+            phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment =
+                texel_buffer_alignment_props.storageTexelBufferOffsetSingleTexelAlignment;
+            phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes =
+                texel_buffer_alignment_props.uniformTexelBufferOffsetAlignmentBytes;
+            phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment =
+                texel_buffer_alignment_props.uniformTexelBufferOffsetSingleTexelAlignment;
+        }
+
+        if (dev_ext.vk_khr_maintenance4) {
+            VkPhysicalDeviceMaintenance4Properties maintenance4_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance4, &maintenance4_props);
+            phys_dev_props_core13.maxBufferSize = maintenance4_props.maxBufferSize;
+        }
+    }
+
     // Extensions with properties to extract to DeviceExtensionProperties
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_push_descriptor, &phys_dev_props->push_descriptor_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_shading_rate_image, &phys_dev_props->shading_rate_image_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_mesh_shader, &phys_dev_props->mesh_shader_props_nv);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_mesh_shader, &phys_dev_props->mesh_shader_props_ext);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_inline_uniform_block,
-                                   &phys_dev_props->inline_uniform_block_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_vertex_attribute_divisor,
                                    &phys_dev_props->vtx_attrib_divisor_props);
     if (!IsExtEnabled(dev_ext.vk_khr_vertex_attribute_divisor)) {
@@ -929,8 +975,6 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props_nv);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_ray_tracing_pipeline, &phys_dev_props->ray_tracing_props_khr);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_acceleration_structure, &phys_dev_props->acc_structure_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_texel_buffer_alignment,
-                                   &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_fragment_density_map,
                                    &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_fragment_density_map2,
@@ -951,8 +995,6 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
                                    &phys_dev_props->blend_operation_advanced_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_conservative_rasterization,
                                    &phys_dev_props->conservative_rasterization_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_subgroup_size_control,
-                                   &phys_dev_props->subgroup_size_control_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_mesa_image_alignment_control,
                                    &phys_dev_props->image_alignment_control_props);

@@ -773,3 +773,23 @@ TEST_F(NegativeBuffer, MaxBufferSize) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-size-06409");
 }
+
+TEST_F(NegativeBuffer, MaxBufferSize13) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8423");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceVulkan13Properties props_1_3 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props_1_3);
+
+    const VkDeviceSize max_test_size = (1ull << 32);
+    if (props_1_3.maxBufferSize >= max_test_size) {
+        GTEST_SKIP() << "maxBufferSize too large to test";
+    }
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.size = props_1_3.maxBufferSize + 1;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-size-06409");
+}

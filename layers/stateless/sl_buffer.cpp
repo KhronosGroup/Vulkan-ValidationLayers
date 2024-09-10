@@ -70,16 +70,6 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
                          string_VkBufferCreateFlags(pCreateInfo->flags).c_str());
     }
 
-    if (enabled_features.maintenance4) {
-        if (pCreateInfo->size > phys_dev_ext_props.maintenance4_props.maxBufferSize) {
-            skip |= LogError("VUID-VkBufferCreateInfo-size-06409", device, create_info_loc.dot(Field::size),
-                             "(%" PRIu64
-                             ") is larger than the maximum allowed buffer size "
-                             "VkPhysicalDeviceMaintenance4Properties.maxBufferSize (%" PRIu64 ").",
-                             pCreateInfo->size, phys_dev_ext_props.maintenance4_props.maxBufferSize);
-        }
-    }
-
     if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
         skip |= ValidateFlags(create_info_loc.dot(Field::usage), vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits,
                               pCreateInfo->usage, kRequiredFlags, VK_NULL_HANDLE, "VUID-VkBufferCreateInfo-None-09499",
