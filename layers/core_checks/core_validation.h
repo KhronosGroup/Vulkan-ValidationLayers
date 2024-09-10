@@ -737,8 +737,8 @@ class CoreChecks : public ValidationStateTracker {
                                        const spirv::ResourceInterfaceVariable& variable, const Location& loc) const;
     bool ValidateConservativeRasterization(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const spirv::StatelessData& stateless_data, const Location& loc) const;
-    bool ValidatePushConstantUsage(const spirv::Module& module_state, const vvl::Pipeline& pipeline,
-                                   const spirv::EntryPoint& entrypoint, const Location& loc) const;
+    bool ValidatePushConstantUsage(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                   const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateBuiltinLimits(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                const vvl::Pipeline* pipeline, const Location& loc) const;
     bool ValidatePrimitiveTopology(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
@@ -756,8 +756,11 @@ class CoreChecks : public ValidationStateTracker {
                                             const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
                                             const Location& create_info_loc) const;
     bool ValidateVariables(const spirv::Module& module_state, const Location& loc) const;
-    bool ValidateShaderDescriptorVariable(const spirv::Module& module_state, const vvl::Pipeline& pipeline,
-                                          const spirv::EntryPoint& entrypoint, const Location& loc) const;
+    bool ValidateShaderInterfaceVariablePipeline(const spirv::Module& module_state, const vvl::Pipeline& pipeline,
+                                                 const spirv::ResourceInterfaceVariable& variable,
+                                                 vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
+    bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::ResourceInterfaceVariable& variable,
+                                         vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateTransformFeedbackDecorations(const spirv::Module& module_state, const Location& loc) const;
