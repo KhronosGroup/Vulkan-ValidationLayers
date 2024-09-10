@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <cinttypes>
+#include <spirv/unified1/spirv.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -249,8 +250,14 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
             }
             return;
         }
+
+        // The OpType are alias, but the Descriptor Types are different
         case spv::OpTypeAccelerationStructureKHR:
-            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+            if (module_state.HasCapability(spv::CapabilityRayTracingNV)) {
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+            } else {
+                descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+            }
             return;
 
         default:
@@ -1764,25 +1771,28 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     bool skip = false;
 
     auto get_vuid_07988 = [&pipeline]() {
-        return pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
-                   ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988"
-               : VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO         ? "VUID-VkComputePipelineCreateInfo-layout-07988"
-               : VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988"
-                                                                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
+        auto sType = pipeline.GetCreateInfoSType();
+        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988"
+               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07988"
+               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                   ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988"
+                   : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
     };
     auto get_vuid_07990 = [&pipeline]() {
-        return pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
-                   ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990"
-               : VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO         ? "VUID-VkComputePipelineCreateInfo-layout-07990"
-               : VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
-                                                                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
+        auto sType = pipeline.GetCreateInfoSType();
+        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990"
+               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07990"
+               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                   ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
+                   : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
     };
     auto get_vuid_07991 = [&pipeline]() {
-        return pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
-                   ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
-               : VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO         ? "VUID-VkComputePipelineCreateInfo-layout-07991"
-               : VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
-                                                                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
+        auto sType = pipeline.GetCreateInfoSType();
+        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
+               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07991"
+               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                   ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
+                   : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
     };
 
     const auto binding =
@@ -1807,12 +1817,16 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
         skip |= LogError(get_vuid_07990(), objlist, loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
-    } else if (binding->descriptorCount < variable.array_length) {
+    } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
         const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
         skip |= LogError(get_vuid_07991(), objlist, loc,
                          "SPIR-V (%s) uses descriptor %s with %" PRIu32 " descriptors, but requires at least %" PRIu32 ".",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          binding->descriptorCount, variable.array_length);
+    }
+
+    if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
+        skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
     }
 
     return skip;
