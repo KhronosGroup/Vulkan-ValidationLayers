@@ -215,7 +215,7 @@ void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, Co
     }
 
     // Save current ray tracing pipeline state
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
     // Push info needed for validation:
     // - the device address indirect data is read from

@@ -216,6 +216,10 @@ class CommandBuffer : public RefcountedStateObject {
         bool depth_test_enable;
         // VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE
         bool depth_bounds_test_enable;
+        // VK_DYNAMIC_STATE_DEPTH_COMPARE_OP
+        VkCompareOp depth_compare_op;
+        // VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT
+        bool depth_clamp_enable;
         // VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE
         bool stencil_test_enable;
         // VK_DYNAMIC_STATE_STENCIL_OP
@@ -227,6 +231,8 @@ class CommandBuffer : public RefcountedStateObject {
         VkStencilOp depth_fail_op_back;
         // VK_DYNAMIC_STATE_CULL_MODE
         VkCullModeFlags cull_mode;
+        // VK_DYNAMIC_STATE_FRONT_FACE
+        VkFrontFace front_face;
         // VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
         VkPrimitiveTopology primitive_topology;
         // VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT
@@ -271,6 +277,11 @@ class CommandBuffer : public RefcountedStateObject {
         // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE
         bool primitive_restart_enable;
 
+        // VK_DYNAMIC_STATE_DEPTH_BIAS
+        float depth_bias_constant_factor;
+        float depth_bias_clamp;
+        float depth_bias_slope_factor;
+
         uint32_t color_write_enable_attachment_count;
 
         // maxColorAttachments is at max 8 on all known implementations currently
@@ -283,6 +294,9 @@ class CommandBuffer : public RefcountedStateObject {
         std::vector<VkColorBlendEquationEXT> color_blend_equations;  // VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT
         std::vector<VkColorComponentFlags> color_write_masks;        // VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT
 
+        // VK_DYNAMIC_STATE_BLEND_CONSTANTS
+        std::array<float, 4> blend_constants;
+
         // VK_DYNAMIC_STATE_VERTEX_INPUT_EXT, key is binding number
         vvl::unordered_map<uint32_t, VertexBindingState> vertex_bindings;
 
@@ -294,6 +308,7 @@ class CommandBuffer : public RefcountedStateObject {
         VkImageAspectFlags attachment_feedback_loop_enable;
 
         // VK_DYNAMIC_STATE_VIEWPORT
+        uint32_t first_viewport;
         std::vector<VkViewport> viewports;
         // and VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT
         uint32_t viewport_count;

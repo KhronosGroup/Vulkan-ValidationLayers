@@ -438,6 +438,124 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
     vmaUnmapMemory(gpuav->vma_allocator_, cmd_errors_counts_buffer_.allocation);
 }
 
+void CommandBuffer::RestoreDynamicStates(const Validator &gpuav_) {
+    for (int dynamic_state = 0; dynamic_state < CB_DYNAMIC_STATE_STATUS_NUM; ++dynamic_state) {
+        if (!dynamic_state_status.cb[dynamic_state]) {
+            continue;
+        }
+
+        switch (dynamic_state) {
+            case CB_DYNAMIC_STATE_VIEWPORT: {
+                DispatchCmdSetViewport(VkHandle(), dynamic_state_value.first_viewport,
+                                       uint32_t(dynamic_state_value.viewports.size()), dynamic_state_value.viewports.data());
+            } break;
+            case CB_DYNAMIC_STATE_DEPTH_BIAS: {
+                DispatchCmdSetDepthBias(VkHandle(), dynamic_state_value.depth_bias_constant_factor,
+                                        dynamic_state_value.depth_bias_clamp, dynamic_state_value.depth_bias_slope_factor);
+            } break;
+            case CB_DYNAMIC_STATE_BLEND_CONSTANTS: {
+                DispatchCmdSetBlendConstants(VkHandle(), dynamic_state_value.blend_constants.data());
+            } break;
+            case CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetDepthTestEnableEXT(VkHandle(), dynamic_state_value.depth_test_enable);
+                } else {
+                    DispatchCmdSetDepthTestEnable(VkHandle(), dynamic_state_value.depth_test_enable);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetDepthWriteEnableEXT(VkHandle(), dynamic_state_value.depth_write_enable);
+                } else {
+                    DispatchCmdSetDepthWriteEnable(VkHandle(), dynamic_state_value.depth_write_enable);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state2)) {
+                    DispatchCmdSetDepthBiasEnableEXT(VkHandle(), dynamic_state_value.depth_bias_enable);
+                } else {
+                    DispatchCmdSetDepthBiasEnable(VkHandle(), dynamic_state_value.depth_bias_enable);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_DEPTH_COMPARE_OP: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetDepthCompareOpEXT(VkHandle(), dynamic_state_value.depth_compare_op);
+                } else {
+                    DispatchCmdSetDepthCompareOp(VkHandle(), dynamic_state_value.depth_compare_op);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_VERTEX_INPUT_EXT: {
+                std::vector<VkVertexInputBindingDescription2EXT> vertex_binding_descs;
+                std::vector<VkVertexInputAttributeDescription2EXT> vertex_attribute_descs;
+                for (const auto &[binding_unused_, vertex_binding_state] : dynamic_state_value.vertex_bindings) {
+                    // Given how dynamic_state_value.vertex_bindings is filled, no need to filter vertex binding descriptions before
+                    // adding them to the list:
+                    // they are not duplicated, and they are all here.
+                    vertex_binding_descs.push_back(*vertex_binding_state.desc.ptr());
+
+                    for (const auto &[location_unused_2, vertex_attribute_state] : vertex_binding_state.locations) {
+                        auto has_same_vertex_attribute =
+                            [lhs = vertex_attribute_state.desc.ptr()](const VkVertexInputAttributeDescription2EXT &rhs) {
+                                return lhs->sType == rhs.sType && lhs->pNext == rhs.pNext && lhs->location == rhs.location &&
+                                       lhs->binding == rhs.binding && lhs->format == rhs.format && lhs->offset == rhs.offset;
+                            };
+                        if (std::find_if(vertex_attribute_descs.begin(), vertex_attribute_descs.end(), has_same_vertex_attribute) ==
+                            vertex_attribute_descs.end()) {
+                            vertex_attribute_descs.push_back(*vertex_attribute_state.desc.ptr());
+                        }
+                    }
+                }
+                DispatchCmdSetVertexInputEXT(VkHandle(), uint32_t(vertex_attribute_descs.size()), vertex_binding_descs.data(),
+                                             uint32_t(vertex_attribute_descs.size()), vertex_attribute_descs.data());
+            } break;
+
+            case CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetPrimitiveRestartEnableEXT(VkHandle(), dynamic_state_value.primitive_restart_enable);
+                } else {
+                    DispatchCmdSetPrimitiveRestartEnable(VkHandle(), dynamic_state_value.primitive_restart_enable);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetPrimitiveTopologyEXT(VkHandle(), dynamic_state_value.primitive_topology);
+                } else {
+                    DispatchCmdSetPrimitiveTopology(VkHandle(), dynamic_state_value.primitive_topology);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT: {
+                DispatchCmdSetDepthClampEnableEXT(VkHandle(), dynamic_state_value.depth_clamp_enable);
+            } break;
+            case CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state2)) {
+                    DispatchCmdSetRasterizerDiscardEnableEXT(VkHandle(), dynamic_state_value.rasterizer_discard_enable);
+                } else {
+                    DispatchCmdSetRasterizerDiscardEnable(VkHandle(), dynamic_state_value.rasterizer_discard_enable);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_POLYGON_MODE_EXT: {
+                DispatchCmdSetPolygonModeEXT(VkHandle(), dynamic_state_value.polygon_mode);
+            } break;
+            case CB_DYNAMIC_STATE_CULL_MODE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetCullModeEXT(VkHandle(), dynamic_state_value.cull_mode);
+                } else {
+                    DispatchCmdSetCullMode(VkHandle(), dynamic_state_value.cull_mode);
+                }
+            } break;
+            case CB_DYNAMIC_STATE_FRONT_FACE: {
+                if (IsExtEnabledByCreateinfo(gpuav_.device_extensions.vk_ext_extended_dynamic_state)) {
+                    DispatchCmdSetFrontFaceEXT(VkHandle(), dynamic_state_value.front_face);
+                } else {
+                    DispatchCmdSetFrontFace(VkHandle(), dynamic_state_value.front_face);
+                }
+            } break;
+            default:
+                break;
+        }
+    }
+}
+
 bool CommandBuffer::PreProcess(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 

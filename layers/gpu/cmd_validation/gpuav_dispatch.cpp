@@ -189,7 +189,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     DispatchUpdateDescriptorSets(gpuav.device, 1, &desc_write, 0, nullptr);
 
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
     if (use_shader_objects) {

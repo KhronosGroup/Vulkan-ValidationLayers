@@ -2371,7 +2371,7 @@ void ValidationStateTracker::PostCallRecordCmdSetViewport(VkCommandBuffer comman
     uint32_t bits = ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->viewportMask |= bits;
     cb_state->trashedViewportMask &= ~bits;
-
+    cb_state->dynamic_state_value.first_viewport = firstViewport;
     if (cb_state->dynamic_state_value.viewports.size() < firstViewport + viewportCount) {
         cb_state->dynamic_state_value.viewports.resize(firstViewport + viewportCount);
     }
@@ -2688,13 +2688,16 @@ void ValidationStateTracker::PostCallRecordCmdSetDepthBias(VkCommandBuffer comma
                                                            const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_BIAS);
+    cb_state->dynamic_state_value.depth_bias_constant_factor = depthBiasConstantFactor;
+    cb_state->dynamic_state_value.depth_bias_clamp = depthBiasClamp;
+    cb_state->dynamic_state_value.depth_bias_slope_factor = depthBiasSlopeFactor;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer,
                                                                const VkDepthBiasInfoEXT *pDepthBiasInfo,
                                                                const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_BIAS);
+    PostCallRecordCmdSetDepthBias(commandBuffer, pDepthBiasInfo->depthBiasConstantFactor, pDepthBiasInfo->depthBiasClamp,
+                                  pDepthBiasInfo->depthBiasSlopeFactor, record_obj);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
@@ -2711,6 +2714,9 @@ void ValidationStateTracker::PostCallRecordCmdSetBlendConstants(VkCommandBuffer 
                                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_BLEND_CONSTANTS);
+    for (int i = 0; i < 4; ++i) {
+        cb_state->dynamic_state_value.blend_constants[i] = blendConstants[i];
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds,
@@ -2877,22 +2883,20 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     ASSERT_AND_RETURN(cb_state);
 
-    LvlBindPoint bind_point = BindPoint_Count;
+    cb_state->RecordCmd(record_obj.location.function);
+    auto layout_state = Get<vvl::PipelineLayout>(layout);
+    cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);
+
     if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        bind_point = BindPoint_Graphics;
+        cb_state->push_constant_latest_used_layout[BindPoint_Graphics] = layout;
     } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        bind_point = BindPoint_Compute;
+        cb_state->push_constant_latest_used_layout[BindPoint_Compute] = layout;
     } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        bind_point = BindPoint_Ray_Tracing;
+        cb_state->push_constant_latest_used_layout[BindPoint_Ray_Tracing] = layout;
     } else {
         // Need to handle new binding point
         assert(false);
     }
-    cb_state->push_constant_latest_used_layout[bind_point] = layout;
-
-    cb_state->RecordCmd(record_obj.location.function);
-    auto layout_state = Get<vvl::PipelineLayout>(layout);
-    cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);
 
     vvl::CommandBuffer::PushConstantData push_constant_data;
     push_constant_data.layout = layout;
@@ -4917,6 +4921,7 @@ void ValidationStateTracker::PostCallRecordCmdSetFrontFace(VkCommandBuffer comma
                                                            const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_FRONT_FACE);
+    cb_state->dynamic_state_value.front_face = frontFace;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer,
@@ -5042,6 +5047,7 @@ void ValidationStateTracker::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer 
                                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    cb_state->dynamic_state_value.depth_compare_op = depthCompareOp;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer,
@@ -5311,6 +5317,7 @@ void ValidationStateTracker::PostCallRecordCmdSetDepthClampEnableEXT(VkCommandBu
                                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
+    cb_state->dynamic_state_value.depth_clamp_enable = depthClampEnable;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,

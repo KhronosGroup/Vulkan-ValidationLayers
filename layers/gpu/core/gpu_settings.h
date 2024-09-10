@@ -30,6 +30,7 @@ struct GpuAVSettings {
     bool validate_indirect_dispatches_buffers = true;
     bool validate_indirect_trace_rays_buffers = true;
     bool validate_buffer_copies = true;
+    bool validate_index_buffers = true;
 
     bool vma_linear_output = true;
 
@@ -62,13 +63,14 @@ struct GpuAVSettings {
     }
     bool IsBufferValidationEnabled() const {
         return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers || validate_indirect_trace_rays_buffers ||
-               validate_buffer_copies;
+               validate_buffer_copies || validate_index_buffers;
     }
     void SetBufferValidationEnabled(bool enabled) {
         validate_indirect_draws_buffers = enabled;
         validate_indirect_dispatches_buffers = enabled;
         validate_indirect_trace_rays_buffers = enabled;
         validate_buffer_copies = enabled;
+        validate_index_buffers = enabled;
     }
 };
 

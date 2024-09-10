@@ -88,13 +88,16 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
 
     void ClearCmdErrorsCountsBuffer(const Location &loc) const;
 
+    void RestoreDynamicStates(const Validator &gpuav);
+
     void Destroy() final;
     void Reset(const Location &loc) final;
 
     gpu::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 192>;
+        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist),
+                                 192 /*enough to store largest logging lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
   private:

@@ -83,16 +83,31 @@ static VkPipeline GetDrawValidationPipeline(Validator &gpuav,
     pipeline_stage_ci.pName = "main";
 
     VkGraphicsPipelineCreateInfo pipeline_ci = vku::InitStructHelper();
+    // As of writing, adding a VkPipelineRenderingCreateInfoKHR is not strictly needed,
+    // if dynamic rendering is used a default empty VkPipelineRenderingCreateInfoKHR
+    // is assumed. Might have to change in the future.
+    // VkPipelineRenderingCreateInfoKHR pipeline_rendering_ci = vku::InitStructHelper();
+    // if (using_dynamic_rendering) pipeline_ci.pNext = &pipeline_rendering_ci;
+
     VkPipelineVertexInputStateCreateInfo vertex_input_state = vku::InitStructHelper();
     VkPipelineInputAssemblyStateCreateInfo input_assembly_state = vku::InitStructHelper();
     input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     VkPipelineRasterizationStateCreateInfo rasterization_state = vku::InitStructHelper();
+    rasterization_state.lineWidth = 1.0;
     rasterization_state.rasterizerDiscardEnable = VK_TRUE;
     VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
 
     pipeline_ci.pVertexInputState = &vertex_input_state;
     pipeline_ci.pInputAssemblyState = &input_assembly_state;
+    pipeline_ci.pTessellationState =
+        nullptr;  // If not null, need to update gpuav::CommandBuffer::RestoreDynamicStates with corresponding dynamic states
+    pipeline_ci.pViewportState =
+        nullptr;  // If not null, need to update gpuav::CommandBuffer::RestoreDynamicStates with corresponding dynamic states
     pipeline_ci.pRasterizationState = &rasterization_state;
+    pipeline_ci.pMultisampleState =
+        nullptr;  // If not null, need to update gpuav::CommandBuffer::RestoreDynamicStates with corresponding dynamic states
+    pipeline_ci.pDepthStencilState =
+        nullptr;  // If not null, need to update gpuav::CommandBuffer::RestoreDynamicStates with corresponding dynamic states
     pipeline_ci.pColorBlendState = &color_blend_state;
     pipeline_ci.renderPass = render_pass;
     pipeline_ci.layout = pipeline_layout;
@@ -267,7 +282,12 @@ void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &lo
 
     if (gpuav.enabled_features.drawIndirectFirstInstance) return;
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        // Unhandled for now
+        return;
+    }
+
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     auto &shared_draw_validation_resources = gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
     if (!shared_draw_validation_resources.valid) return;
@@ -411,7 +431,12 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        // Unhandled for now
+        return;
+    }
+
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     auto &shared_draw_validation_resources = gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
     if (!shared_draw_validation_resources.valid) return;
@@ -552,7 +577,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        // Unhandled for now
+        return;
+    }
+
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];
@@ -808,7 +838,7 @@ static SmallestVertexBufferBinding SmallestVertexAttributesCount(const vvl::Comm
 
 void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, uint32_t index_count, uint32_t first_index,
                  uint32_t vertex_offset, const char *vuid_oob_vertex) {
-    if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
+    if (!gpuav.gpuav_settings.validate_index_buffers) {
         return;
     }
 
@@ -820,13 +850,18 @@ void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
         return;
     }
 
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        // Unhandled for now
+        return;
+    }
+
     const SmallestVertexBufferBinding smallest_vertex_buffer_binding = SmallestVertexAttributesCount(cb_state);
     if (smallest_vertex_buffer_binding.min_vertex_attributes_count == std::numeric_limits<VkDeviceSize>::max()) {
         // cannot overrun index buffer, skip validation
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     auto &shared_draw_validation_resources = gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
     if (!shared_draw_validation_resources.valid) return;
@@ -983,7 +1018,7 @@ struct DrawIndexedIndirectIndexBufferShader {
 void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                                     VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
                                     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_index) {
-    if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
+    if (!gpuav.gpuav_settings.validate_index_buffers) {
         return;
     }
 
@@ -995,7 +1030,12 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, c
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        // Unhandled for now
+        return;
+    }
+
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     auto &shared_draw_validation_resources = gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
     if (!shared_draw_validation_resources.valid) return;
@@ -1150,7 +1190,7 @@ struct DrawIndexedIndirectVertexBufferShader {
 void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                                      VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
                                      VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_vertex) {
-    if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
+    if (!gpuav.gpuav_settings.validate_index_buffers) {
         return;
     }
 
@@ -1162,7 +1202,12 @@ void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, 
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+        // Unhandled for now
+        return;
+    }
+
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     auto &shared_draw_validation_resources = gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
     if (!shared_draw_validation_resources.valid) return;
