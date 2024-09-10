@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_object_helper.h"
 
 class NegativeAtomic : public VkLayerTest {};
 
@@ -142,6 +143,34 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureBuffer) {
     };
 
     CreatePipelineHelper::OneshotTest(*this, info_override, kErrorBit, "VUID-RuntimeSpirv-NonWritable-06340");
+}
+
+TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisableShaderObject) {
+    TEST_DESCRIPTION("Run shader with StoreOp or AtomicOp to verify if vertexPipelineStoresAndAtomics disable.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
+    AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0, rgba8) uniform image2D si0;
+        void main() {
+            imageStore(si0, ivec2(0), vec4(0));
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                                 });
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-NonWritable-06341");
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeAtomic, Int64) {

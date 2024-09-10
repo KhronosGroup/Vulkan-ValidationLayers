@@ -101,8 +101,8 @@ bool CoreChecks::ValidateConservativeRasterization(const spirv::Module &module_s
     return skip;
 }
 
-bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
-                                           const spirv::EntryPoint &entrypoint, const Location &loc) const {
+bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                           const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
 
     // TODO - Workaround for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5911
@@ -167,19 +167,16 @@ bool CoreChecks::ValidatePushConstantUsage(const spirv::Module &module_state, co
     return skip;
 }
 
-static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t type_id, uint32_t &descriptor_count,
-                                    vvl::unordered_set<uint32_t> &descriptor_type_set, bool is_khr) {
+static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t type_id,
+                                    vvl::unordered_set<uint32_t> &descriptor_type_set) {
     const spirv::Instruction *type = module_state.FindDef(type_id);
     bool is_storage_buffer = false;
-    descriptor_count = 1;
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type->IsArray() || type->Opcode() == spv::OpTypePointer) {
         if (type->Opcode() == spv::OpTypeRuntimeArray) {
-            descriptor_count = 0;
             type = module_state.FindDef(type->Word(2));
         } else if (type->Opcode() == spv::OpTypeArray) {
-            descriptor_count *= module_state.GetConstantValueById(type->Word(3));
             type = module_state.FindDef(type->Word(2));
         } else {
             if (type->StorageClass() == spv::StorageClassStorageBuffer) {
@@ -252,9 +249,8 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
             }
             return;
         }
-        case spv::OpTypeAccelerationStructureNV:
-            is_khr ? descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
-                   : descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
+        case spv::OpTypeAccelerationStructureKHR:
+            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
             return;
 
         default:
@@ -1706,125 +1702,119 @@ bool CoreChecks::ValidateVariables(const spirv::Module &module_state, const Loca
     return skip;
 }
 
-bool CoreChecks::ValidateShaderDescriptorVariable(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
-                                                  const spirv::EntryPoint &entrypoint, const Location &loc) const {
+bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_state,
+                                                 const spirv::ResourceInterfaceVariable &variable,
+                                                 vvl::unordered_set<uint32_t> &descriptor_type_set, const Location &loc) const {
     bool skip = false;
 
-    std::string vuid_07988;
-    std::string vuid_07990;
-    std::string vuid_07991;
-    switch (pipeline.GetCreateInfoSType()) {
-        case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-            vuid_07988 = "VUID-VkGraphicsPipelineCreateInfo-layout-07988";
-            vuid_07990 = "VUID-VkGraphicsPipelineCreateInfo-layout-07990";
-            vuid_07991 = "VUID-VkGraphicsPipelineCreateInfo-layout-07991";
-            break;
-        case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-            vuid_07988 = "VUID-VkComputePipelineCreateInfo-layout-07988";
-            vuid_07990 = "VUID-VkComputePipelineCreateInfo-layout-07990";
-            vuid_07991 = "VUID-VkComputePipelineCreateInfo-layout-07991";
-            break;
-        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-            vuid_07988 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988";
-            vuid_07990 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990";
-            vuid_07991 = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991";
-            break;
-        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-            vuid_07988 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
-            vuid_07990 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
-            vuid_07991 = "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
-            break;
-        default:
-            assert(false);
-            break;
+    if ((variable.is_storage_image || variable.is_storage_texel_buffer || variable.is_storage_buffer) &&
+        !variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
+        // If the variable is a struct, all members must contain NonWritable
+        if (!variable.type_struct_info ||
+            !variable.type_struct_info->decorations.AllMemberHave(spirv::DecorationSet::nonwritable_bit)) {
+            switch (variable.stage) {
+                case VK_SHADER_STAGE_FRAGMENT_BIT:
+                    if (!enabled_features.fragmentStoresAndAtomics) {
+                        skip |=
+                            LogError("VUID-RuntimeSpirv-NonWritable-06340", module_state.handle(), loc,
+                                     "SPIR-V (VK_SHADER_STAGE_FRAGMENT_BIT) uses descriptor %s (type %s) which is not "
+                                     "marked with NonWritable, but fragmentStoresAndAtomics was not enabled.",
+                                     variable.DescribeDescriptor().c_str(), string_DescriptorTypeSet(descriptor_type_set).c_str());
+                    }
+                    break;
+                case VK_SHADER_STAGE_VERTEX_BIT:
+                case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+                case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+                case VK_SHADER_STAGE_GEOMETRY_BIT:
+                    if (!enabled_features.vertexPipelineStoresAndAtomics) {
+                        skip |= LogError("VUID-RuntimeSpirv-NonWritable-06341", module_state.handle(), loc,
+                                         "SPIR-V (%s) uses descriptor %s (type %s) which is not marked with NonWritable, but "
+                                         "vertexPipelineStoresAndAtomics was not enabled.",
+                                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                                         string_DescriptorTypeSet(descriptor_type_set).c_str());
+                    }
+                    break;
+                default:
+                    // No feature requirements for writes and atomics for other stages
+                    break;
+            }
+        }
     }
 
-    for (const auto &variable : entrypoint.resource_interface_variables) {
-        const auto &binding =
-            GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
-        uint32_t required_descriptor_count = 1;
-        const bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        vvl::unordered_set<uint32_t> descriptor_type_set;
-        TypeToDescriptorTypeSet(module_state, variable.type_id, required_descriptor_count, descriptor_type_set, is_khr);
+    if (!variable.decorations.Has(spirv::DecorationSet::input_attachment_bit) && variable.info.image_dim == spv::DimSubpassData) {
+        if (variable.array_length != 0) {
+            skip |= LogError("VUID-RuntimeSpirv-OpTypeImage-09644", module_state.handle(), loc,
+                             "the variable is an array of OpTypeImage with Dim::SubpassData, but it is missing the "
+                             "InputAttachmentIndex decoration.\n%s\n",
+                             variable.base_type.Describe().c_str());
+        } else if (!enabled_features.dynamicRenderingLocalRead) {
+            skip |= LogError("VUID-RuntimeSpirv-None-09558", module_state.handle(), loc,
+                             "the variable is a OpTypeImage with Dim::SubpassData, but it is missing the "
+                             "InputAttachmentIndex decoration (dynamicRenderingLocalRead was not enabled).\n%s\n",
+                             variable.base_type.Describe().c_str());
+        }
+    }
+    return skip;
+}
 
-        if (!binding) {
-            const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-            skip |= LogError(vuid_07988, objlist, loc,
-                             "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the pipeline layout.",
-                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                             string_DescriptorTypeSet(descriptor_type_set).c_str());
-        } else if (~binding->stageFlags & variable.stage) {
-            const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-            skip |= LogError(vuid_07988, objlist, loc,
-                             "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
-                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                             string_DescriptorTypeSet(descriptor_type_set).c_str(),
-                             string_VkShaderStageFlags(binding->stageFlags).c_str());
-        } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
-                   (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-            const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-            skip |=
-                LogError(vuid_07990, objlist, loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
+bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
+                                                         const spirv::ResourceInterfaceVariable &variable,
+                                                         vvl::unordered_set<uint32_t> &descriptor_type_set,
+                                                         const Location &loc) const {
+    bool skip = false;
+
+    auto get_vuid_07988 = [&pipeline]() {
+        return pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
+                   ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988"
+               : VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO         ? "VUID-VkComputePipelineCreateInfo-layout-07988"
+               : VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988"
+                                                                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
+    };
+    auto get_vuid_07990 = [&pipeline]() {
+        return pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
+                   ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990"
+               : VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO         ? "VUID-VkComputePipelineCreateInfo-layout-07990"
+               : VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
+                                                                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
+    };
+    auto get_vuid_07991 = [&pipeline]() {
+        return pipeline.GetCreateInfoSType() == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
+                   ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
+               : VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO         ? "VUID-VkComputePipelineCreateInfo-layout-07991"
+               : VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
+                                                                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
+    };
+
+    const auto binding =
+        GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
+
+    if (!binding) {
+        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
+        skip |= LogError(get_vuid_07988(), objlist, loc,
+                         "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the pipeline layout.",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                         string_DescriptorTypeSet(descriptor_type_set).c_str());
+    } else if (~binding->stageFlags & variable.stage) {
+        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
+        skip |=
+            LogError(get_vuid_07988(), objlist, loc,
+                     "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
+                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                     string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
+    } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
+               (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
+        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
+        skip |= LogError(get_vuid_07990(), objlist, loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
-        } else if (binding->descriptorCount < required_descriptor_count) {
-            const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-            skip |= LogError(vuid_07991, objlist, loc,
-                             "SPIR-V (%s) uses descriptor %s with %" PRIu32 " descriptors, but requires at least %" PRIu32 ".",
-                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                             binding->descriptorCount, required_descriptor_count);
-        }
-
-        if ((variable.is_storage_image || variable.is_storage_texel_buffer || variable.is_storage_buffer) &&
-            !variable.decorations.Has(spirv::DecorationSet::nonwritable_bit)) {
-            // If the variable is a struct, all members must contain NonWritable
-            if (!variable.type_struct_info ||
-                !variable.type_struct_info->decorations.AllMemberHave(spirv::DecorationSet::nonwritable_bit)) {
-                switch (variable.stage) {
-                    case VK_SHADER_STAGE_FRAGMENT_BIT:
-                        if (!enabled_features.fragmentStoresAndAtomics) {
-                            skip |= LogError("VUID-RuntimeSpirv-NonWritable-06340", module_state.handle(), loc,
-                                             "SPIR-V (VK_SHADER_STAGE_FRAGMENT_BIT) uses descriptor %s (type %s) which is not "
-                                             "marked with NonWritable, but fragmentStoresAndAtomics was not enabled.",
-                                             variable.DescribeDescriptor().c_str(),
-                                             string_DescriptorTypeSet(descriptor_type_set).c_str());
-                        }
-                        break;
-                    case VK_SHADER_STAGE_VERTEX_BIT:
-                    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-                    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-                    case VK_SHADER_STAGE_GEOMETRY_BIT:
-                        if (!enabled_features.vertexPipelineStoresAndAtomics) {
-                            skip |= LogError("VUID-RuntimeSpirv-NonWritable-06341", module_state.handle(), loc,
-                                             "SPIR-V (%s) uses descriptor %s (type %s) which is not marked with NonWritable, but "
-                                             "vertexPipelineStoresAndAtomics was not enabled.",
-                                             string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
-                                             string_DescriptorTypeSet(descriptor_type_set).c_str());
-                        }
-                        break;
-                    default:
-                        // No feature requirements for writes and atomics for other stages
-                        break;
-                }
-            }
-        }
-
-        if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
-            skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
-        } else if (variable.info.image_dim == spv::DimSubpassData) {
-            if (variable.array_length != 0) {
-                skip |= LogError("VUID-RuntimeSpirv-OpTypeImage-09644", module_state.handle(), loc,
-                                 "the variable is an array of OpTypeImage with Dim::SubpassData, but it is missing the "
-                                 "InputAttachmentIndex decoration.\n%s\n",
-                                 variable.base_type.Describe().c_str());
-            } else if (!enabled_features.dynamicRenderingLocalRead) {
-                skip |= LogError("VUID-RuntimeSpirv-None-09558", module_state.handle(), loc,
-                                 "the variable is a OpTypeImage with Dim::SubpassData, but it is missing the "
-                                 "InputAttachmentIndex decoration (dynamicRenderingLocalRead was not enabled).\n%s\n",
-                                 variable.base_type.Describe().c_str());
-            }
-        }
+    } else if (binding->descriptorCount < variable.array_length) {
+        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
+        skip |= LogError(get_vuid_07991(), objlist, loc,
+                         "SPIR-V (%s) uses descriptor %s with %" PRIu32 " descriptors, but requires at least %" PRIu32 ".",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                         binding->descriptorCount, variable.array_length);
     }
+
     return skip;
 }
 
@@ -2354,6 +2344,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         }
         skip |= ValidatePointSizeShaderState(module_state, entrypoint, *pipeline, stage, loc);
         skip |= ValidatePrimitiveTopology(module_state, entrypoint, *pipeline, loc);
+        skip |= ValidatePushConstantUsage(module_state, entrypoint, *pipeline, loc);
 
         if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && pipeline->GraphicsCreateInfo().renderPass == VK_NULL_HANDLE &&
             module_state.HasCapability(spv::CapabilityInputAttachment) && !enabled_features.dynamicRenderingLocalRead) {
@@ -2392,10 +2383,13 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         skip |= ValidateWorkgroupSharedMemory(module_state, stage, total_workgroup_shared_memory, loc);
     }
 
-    // Validate Push Constants use
-    if (pipeline) {
-        skip |= ValidatePushConstantUsage(module_state, *pipeline, entrypoint, loc);
-        skip |= ValidateShaderDescriptorVariable(module_state, *pipeline, entrypoint, loc);
+    for (const auto &variable : entrypoint.resource_interface_variables) {
+        vvl::unordered_set<uint32_t> descriptor_type_set;
+        TypeToDescriptorTypeSet(module_state, variable.type_id, descriptor_type_set);
+        skip |= ValidateShaderInterfaceVariable(module_state, variable, descriptor_type_set, loc);
+        if (pipeline) {
+            skip |= ValidateShaderInterfaceVariablePipeline(module_state, *pipeline, variable, descriptor_type_set, loc);
+        }
     }
 
     if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
