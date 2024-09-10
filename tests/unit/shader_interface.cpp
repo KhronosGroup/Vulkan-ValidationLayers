@@ -1107,6 +1107,85 @@ TEST_F(NegativeShaderInterface, VsFsMismatchByComponent) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchShaderObject) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out int x;
+        void main(){
+           x = 0;
+           gl_Position = vec4(1);
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float x; /* VS writes int */
+        layout(location=0) out vec4 color;
+        void main(){
+           color = vec4(x);
+        }
+    )glsl";
+
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fsSource));
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpEntryPoint-07754");
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
+TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSizeShaderObject) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec4 x;
+        void main(){
+           gl_Position = vec4(1.0);
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec3 x;
+        layout(location=0) out vec4 color;
+        void main(){
+           color = vec4(1.0);
+        }
+    )glsl";
+
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fsSource));
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maintenance4-06817");
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
+
 TEST_F(NegativeShaderInterface, InputOutputMismatch) {
     TEST_DESCRIPTION("Test mismatch between vertex shader output and fragment shader input.");
 
