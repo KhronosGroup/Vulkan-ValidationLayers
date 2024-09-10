@@ -15,6 +15,7 @@
 #include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_object_helper.h"
 
 class NegativeGeometryTessellation : public VkLayerTest {};
 
@@ -383,6 +384,59 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGs) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpVariable-08746");
+}
+
+TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGsShaderObject) {
+    TEST_DESCRIPTION("Use different number of elements in builtin block interface between VS and GS.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    static const char *gsSource = R"glsl(
+        #version 450
+        layout (points) in;
+        layout (points) out;
+        layout (max_vertices = 1) out;
+        in gl_PerVertex
+        {
+            vec4 gl_Position;
+            float gl_PointSize;
+            float gl_ClipDistance[];
+        } gl_in[];
+        void main()
+        {
+            gl_Position = gl_in[0].gl_Position;
+            gl_PointSize = gl_in[0].gl_PointSize;
+            EmitVertex();
+        }
+    )glsl";
+
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexPointSizeGlsl));
+    const vkt::Shader geomShader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, gsSource));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT};
+    const VkShaderEXT shaders[] = {vertShader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, geomShader.handle(), fragShader.handle()};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5, stages, shaders);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpVariable-08746");
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
 }
 
 TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents) {

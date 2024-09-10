@@ -635,6 +635,7 @@ bool CoreChecks::ValidateDrawShaderObject(const LastBound& last_bound_state, con
 bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const Location loc = vuid.loc();
 
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         if (i == static_cast<uint32_t>(ShaderObjectStage::COMPUTE) || !last_bound_state.shader_object_states[i]) {
@@ -651,7 +652,7 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
             }
             if (!found) {
                 const auto missing_Shader = Get<vvl::ShaderObject>(linked_shader);
-                skip |= LogError(vuid.linked_shaders_08698, cb_state.Handle(), vuid.loc(),
+                skip |= LogError(vuid.linked_shaders_08698, cb_state.Handle(), loc,
                                  "Shader %s (%s) was created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT, but the linked %s "
                                  "shader (%s) is not bound.",
                                  debug_report->FormatHandle(last_bound_state.GetShader(static_cast<ShaderObjectStage>(i))).c_str(),
@@ -662,16 +663,21 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
             }
         }
     }
-    const VkShaderStageFlagBits graphics_stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
-                                                     VK_SHADER_STAGE_FRAGMENT_BIT};
+
+    // In order of how stages are linked together
+    const std::array graphics_stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                        VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                        VK_SHADER_STAGE_FRAGMENT_BIT};
     VkShaderStageFlagBits prev_stage = VK_SHADER_STAGE_ALL;
     VkShaderStageFlagBits next_stage = VK_SHADER_STAGE_ALL;
+    const vvl::ShaderObject* producer = nullptr;
+    const vvl::ShaderObject* consumer = nullptr;
+
     for (const auto stage : graphics_stages) {
-        const auto shader_object = last_bound_state.GetShaderState(VkShaderStageToShaderObjectStage(stage));
-        if (!shader_object) continue;
-        if (next_stage != VK_SHADER_STAGE_ALL && shader_object->create_info.stage != next_stage) {
-            skip |= LogError(vuid.linked_shaders_08699, cb_state.Handle(), vuid.loc(),
+        consumer = last_bound_state.GetShaderState(VkShaderStageToShaderObjectStage(stage));
+        if (!consumer) continue;
+        if (next_stage != VK_SHADER_STAGE_ALL && consumer->create_info.stage != next_stage) {
+            skip |= LogError(vuid.linked_shaders_08699, cb_state.Handle(), loc,
                              "Shaders %s and %s were created with VK_SHADER_CREATE_LINK_STAGE_BIT_EXT without intermediate "
                              "stage %s linked, but %s shader is bound.",
                              string_VkShaderStageFlagBits(prev_stage), string_VkShaderStageFlagBits(next_stage),
@@ -680,15 +686,22 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
         }
 
         next_stage = VK_SHADER_STAGE_ALL;
-        if (!shader_object->linked_shaders.empty()) {
+        if (!consumer->linked_shaders.empty()) {
             prev_stage = stage;
-            for (const auto& linked_shader : shader_object->linked_shaders) {
+            for (const auto& linked_shader : consumer->linked_shaders) {
                 const auto& linked_state = Get<vvl::ShaderObject>(linked_shader);
-                if (linked_state && linked_state->create_info.stage == shader_object->create_info.nextStage) {
-                    next_stage = static_cast<VkShaderStageFlagBits>(shader_object->create_info.nextStage);
+                if (linked_state && linked_state->create_info.stage == consumer->create_info.nextStage) {
+                    next_stage = static_cast<VkShaderStageFlagBits>(consumer->create_info.nextStage);
                     break;
                 }
             }
+        }
+
+        if (!producer) {
+            producer = consumer;  // Will hit if consumer is vertex shader
+        } else if (consumer->spirv && producer->spirv && consumer->entrypoint && producer->entrypoint) {
+            skip |= ValidateInterfaceBetweenStages(*producer->spirv, *producer->entrypoint, *consumer->spirv, *consumer->entrypoint,
+                                                   loc);
         }
     }
 
