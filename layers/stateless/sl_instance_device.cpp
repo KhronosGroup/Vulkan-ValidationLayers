@@ -391,14 +391,6 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
             vertex_attribute_divisor_props.maxVertexAttribDivisor;
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
-        // Get the needed maintenance4 properties
-        VkPhysicalDeviceMaintenance4PropertiesKHR maintance4_props = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&maintance4_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.maintenance4_props = maintance4_props;
-    }
-
     if (IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&fragment_shading_rate_props);

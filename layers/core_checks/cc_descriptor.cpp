@@ -665,15 +665,15 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
                                      binding_loc.dot(Field::descriptorCount), "(%" PRIu32 ") (must be a multiple of 4).",
                                      binding_info.descriptorCount);
                 }
-                if ((binding_info.descriptorCount > phys_dev_ext_props.inline_uniform_block_props.maxInlineUniformBlockSize) &&
+                if ((binding_info.descriptorCount > phys_dev_props_core13.maxInlineUniformBlockSize) &&
                     !(create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
-                    skip |= LogError(
-                        "VUID-VkDescriptorSetLayoutBinding-descriptorType-08004", device, binding_loc.dot(Field::descriptorCount),
-                        "(%" PRIu32 ") but must be less than or equal to maxInlineUniformBlockSize (%" PRIu32
-                        "), but "
-                        "pCreateInfo->flags is %s.",
-                        binding_info.descriptorCount, phys_dev_ext_props.inline_uniform_block_props.maxInlineUniformBlockSize,
-                        string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
+                    skip |= LogError("VUID-VkDescriptorSetLayoutBinding-descriptorType-08004", device,
+                                     binding_loc.dot(Field::descriptorCount),
+                                     "(%" PRIu32 ") but must be less than or equal to maxInlineUniformBlockSize (%" PRIu32
+                                     "), but "
+                                     "pCreateInfo->flags is %s.",
+                                     binding_info.descriptorCount, phys_dev_props_core13.maxInlineUniformBlockSize,
+                                     string_VkDescriptorSetLayoutCreateFlags(create_info.flags).c_str());
                 }
             }
         } else if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
@@ -3974,14 +3974,13 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     }
 
     // Inline uniform blocks
-    if (max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
-        phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
+    if (max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK] > phys_dev_props_core13.maxPerStageDescriptorInlineUniformBlocks) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02214", device, error_obj.location,
                          "max per-stage inline uniform block bindings count (%" PRIu32
                          ") exceeds device "
                          "maxPerStageDescriptorInlineUniformBlocks limit (%" PRIu32 ").",
                          max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK],
-                         phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
+                         phys_dev_props_core13.maxPerStageDescriptorInlineUniformBlocks);
     }
 
     // Acceleration structures
@@ -4113,14 +4112,12 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     }
 
     // Inline uniform blocks
-    if (inline_uniform_block_bindings_all_stages >
-        phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks) {
+    if (inline_uniform_block_bindings_all_stages > phys_dev_props_core13.maxDescriptorSetInlineUniformBlocks) {
         skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02216", device, error_obj.location,
                          "sum of inline uniform block bindings among all stages (%" PRIu32
                          ") exceeds device "
                          "maxDescriptorSetInlineUniformBlocks limit (%" PRIu32 ").",
-                         inline_uniform_block_bindings_all_stages,
-                         phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks);
+                         inline_uniform_block_bindings_all_stages, phys_dev_props_core13.maxDescriptorSetInlineUniformBlocks);
     }
     if (api_version >= VK_API_VERSION_1_3 &&
         sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] > phys_dev_props_core13.maxInlineUniformTotalSize) {
@@ -4227,13 +4224,13 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Inline uniform blocks
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
-            phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks) {
+            phys_dev_props_core13.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02215", device, error_obj.location,
                              "max per-stage inline uniform block bindings count (%" PRIu32
                              ") exceeds device "
                              "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks limit (%" PRIu32 ").",
                              max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK],
-                             phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks);
+                             phys_dev_props_core13.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks);
         }
 
         // Acceleration structures
@@ -4382,14 +4379,13 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         }
 
         // Inline uniform blocks
-        if (inline_uniform_block_bindings >
-            phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
-            skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02217", device, error_obj.location,
-                             "sum of inline uniform block bindings among all stages (%" PRIu32
-                             ") exceeds device "
-                             "maxDescriptorSetUpdateAfterBindInlineUniformBlocks limit (%" PRIu32 ").",
-                             inline_uniform_block_bindings,
-                             phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
+        if (inline_uniform_block_bindings > phys_dev_props_core13.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
+            skip |=
+                LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02217", device, error_obj.location,
+                         "sum of inline uniform block bindings among all stages (%" PRIu32
+                         ") exceeds device "
+                         "maxDescriptorSetUpdateAfterBindInlineUniformBlocks limit (%" PRIu32 ").",
+                         inline_uniform_block_bindings, phys_dev_props_core13.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
         }
 
         // Acceleration structures

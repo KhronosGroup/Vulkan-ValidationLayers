@@ -2606,18 +2606,18 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state,
         skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02755", module_state.handle(), pNext_loc,
                          "the subgroupSizeControl feature was not enabled");
     }
-    if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.GetStage()) == 0) {
+    if ((phys_dev_props_core13.requiredSubgroupSizeStages & stage_state.GetStage()) == 0) {
         skip |=
             LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02755", module_state.handle(), loc,
                      "SPIR-V (%s) is not in requiredSubgroupSizeStages (%s).", string_VkShaderStageFlagBits(stage_state.GetStage()),
-                     string_VkShaderStageFlags(phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages).c_str());
+                     string_VkShaderStageFlags(phys_dev_props_core13.requiredSubgroupSizeStages).c_str());
     }
-    if ((invocations > required_subgroup_size * phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups)) {
+    if ((invocations > required_subgroup_size * phys_dev_props_core13.maxComputeWorkgroupSubgroups)) {
         skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-pNext-02756", module_state.handle(), loc,
                          "SPIR-V Local workgroup size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
                          ") is greater than requiredSubgroupSize (%" PRIu32 ") * maxComputeWorkgroupSubgroups (%" PRIu32 ").",
                          local_size_x, local_size_y, local_size_z, required_subgroup_size,
-                         phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups);
+                         phys_dev_props_core13.maxComputeWorkgroupSubgroups);
     }
     if (stage_state.pipeline_create_info &&
         (stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) > 0) {
@@ -2634,17 +2634,17 @@ bool CoreChecks::ValidateRequiredSubgroupSize(const spirv::Module &module_state,
                          module_state.handle(), pNext_loc.dot(Field::requiredSubgroupSizeStages),
                          "(%" PRIu32 ") is not a power of 2.", required_subgroup_size);
     }
-    if (required_subgroup_size < phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize) {
+    if (required_subgroup_size < phys_dev_props_core13.minSubgroupSize) {
         skip |=
             LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761", module_state.handle(),
                      pNext_loc.dot(Field::requiredSubgroupSizeStages), "(%" PRIu32 ") is less than minSubgroupSize (%" PRIu32 ").",
-                     required_subgroup_size, phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize);
+                     required_subgroup_size, phys_dev_props_core13.minSubgroupSize);
     }
-    if (required_subgroup_size > phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) {
+    if (required_subgroup_size > phys_dev_props_core13.maxSubgroupSize) {
         skip |= LogError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762",
                          module_state.handle(), pNext_loc.dot(Field::requiredSubgroupSizeStages),
                          "(%" PRIu32 ") is greater than maxSubgroupSize (%" PRIu32 ").", required_subgroup_size,
-                         phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
+                         phys_dev_props_core13.maxSubgroupSize);
     }
 
     return skip;
@@ -2679,13 +2679,13 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
         const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
                                     VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
         if ((stage_state.pipeline_create_info->flags & subgroup_flags) == subgroup_flags) {
-            if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
+            if (SafeModulo(local_size_x, phys_dev_props_core13.maxSubgroupSize) != 0) {
                 skip |= LogError(
                     "VUID-VkPipelineShaderStageCreateInfo-flags-02758", module_state.handle(), loc.dot(Field::flags),
                     "(%s), but local workgroup size X dimension (%" PRIu32
                     ") is not a multiple of VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::maxSubgroupSize (%" PRIu32 ").",
                     string_VkPipelineShaderStageCreateFlags(stage_state.pipeline_create_info->flags).c_str(), local_size_x,
-                    phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
+                    phys_dev_props_core13.maxSubgroupSize);
             }
         } else if ((stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) &&
                    (stage_state.pipeline_create_info->flags &
@@ -2707,13 +2707,13 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
         const auto *required_subgroup_size =
             vku::FindStructInPNextChain<VkShaderRequiredSubgroupSizeCreateInfoEXT>(stage_state.GetPNext());
         if (varying && full) {
-            if (SafeModulo(local_size_x, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) != 0) {
+            if (SafeModulo(local_size_x, phys_dev_props_core13.maxSubgroupSize) != 0) {
                 skip |= LogError(
                     "VUID-VkShaderCreateInfoEXT-flags-08416", module_state.handle(), loc.dot(Field::flags),
                     "(%s) but local workgroup size X dimension (%" PRIu32
                     ") is not a multiple of VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::maxSubgroupSize (%" PRIu32 ").",
                     string_VkPipelineShaderStageCreateFlags(stage_state.shader_object_create_info->flags).c_str(), local_size_x,
-                    phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
+                    phys_dev_props_core13.maxSubgroupSize);
             }
         } else if (full && !varying) {
             if (!required_subgroup_size && SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
