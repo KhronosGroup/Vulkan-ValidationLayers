@@ -629,11 +629,15 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
 
             // Add period at end if forgotten
             // This provides better seperation between error message and spec text
-            if (str_plus_spec_text.back() != '.') {
+            if (str_plus_spec_text.back() != '.' && str_plus_spec_text.back() != '\n') {
                 str_plus_spec_text.append(".");
             }
 
-            str_plus_spec_text.append(" The Vulkan spec states: ");
+            // Start Vulkan spec text with a new line to make it easier visually
+            if (str_plus_spec_text.back() != '\n') {
+                str_plus_spec_text.append("\n");
+            }
+            str_plus_spec_text.append("The Vulkan spec states: ");
             str_plus_spec_text.append(spec_text);
             if (0 == spec_type.compare("default")) {
                 str_plus_spec_text.append(" (https://github.com/KhronosGroup/Vulkan-Docs/search?q=)");
