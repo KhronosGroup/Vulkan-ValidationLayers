@@ -608,6 +608,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     const LogObjectList objlist(commandBuffer);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
+    skip |= ValidateCurrentDeviceMaskForEventCommand(*cb_state, error_obj.location, "VUID-vkCmdSetEvent-commandBuffer-01152");
     return skip;
 }
 
@@ -628,6 +629,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
                          "(%s) must be 0.", string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
     }
     skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, *pDependencyInfo);
+    skip |= ValidateCurrentDeviceMaskForEventCommand(*cb_state, error_obj.location, "VUID-vkCmdSetEvent2-commandBuffer-03826");
     return skip;
 }
 
@@ -646,6 +648,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
+    skip |= ValidateCurrentDeviceMaskForEventCommand(*cb_state, error_obj.location, "VUID-vkCmdResetEvent-commandBuffer-01157");
     return skip;
 }
 
@@ -663,6 +666,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, Vk
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidatePipelineStage(objlist, stage_mask_loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(objlist, stage_mask_loc, stageMask);
+    skip |= ValidateCurrentDeviceMaskForEventCommand(*cb_state, error_obj.location, "VUID-vkCmdResetEvent2-commandBuffer-03833");
     return skip;
 }
 
@@ -1123,6 +1127,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
         skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-07308", commandBuffer, error_obj.location.dot(Field::srcStageMask),
                          "is %s.", sync_utils::StringPipelineStageFlags(srcStageMask).c_str());
     }
+    skip |= ValidateCurrentDeviceMaskForEventCommand(*cb_state, error_obj.location, "VUID-vkCmdWaitEvents-commandBuffer-01167");
     return skip;
 }
 
@@ -1145,6 +1150,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
+    skip |= ValidateCurrentDeviceMaskForEventCommand(*cb_state, error_obj.location, "VUID-vkCmdWaitEvents2-commandBuffer-03846");
     return skip;
 }
 

@@ -152,10 +152,23 @@ bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const vvl::CommandBuffer &cb_
 bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_state, uint32_t deviceMask, const Location loc,
                                                 const char *vuid) const {
     bool skip = false;
-    if ((deviceMask & cb_state.active_render_pass_device_mask) != deviceMask) {
+    if ((deviceMask & cb_state.active_render_pass_initial_device_mask) != deviceMask) {
         skip |=
             LogError(vuid, cb_state.Handle(), loc, "(0x%" PRIx32 ") is not a subset of %s device mask (0x%" PRIx32 ").", deviceMask,
-                     FormatHandle(cb_state.activeRenderPass->Handle()).c_str(), cb_state.active_render_pass_device_mask);
+                     FormatHandle(cb_state.activeRenderPass->Handle()).c_str(), cb_state.active_render_pass_initial_device_mask);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateCurrentDeviceMaskForEventCommand(const vvl::CommandBuffer &cb_state, const Location loc,
+                                                          const char *vuid) const {
+    bool skip = false;
+    uint32_t current_device_mask =
+        cb_state.hasRenderPassInstance ? cb_state.active_render_pass_current_device_mask : cb_state.current_device_mask;
+    uint32_t physical_devices_in_mask = GetBitSetCount(current_device_mask);
+    if (physical_devices_in_mask != 1) {
+        skip |= LogError(vuid, cb_state.Handle(), loc, "the current device mask contains %u physical devices.",
+                         physical_devices_in_mask);
     }
     return skip;
 }

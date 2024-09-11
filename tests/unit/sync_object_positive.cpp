@@ -2086,3 +2086,139 @@ TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore2) {
     semaphore.Signal(2);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+
+TEST_F(PositiveSyncObject, EventCmdsValidDeviceMask) {
+    TEST_DESCRIPTION("Valid device mask when using vkCmd*Event calls.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+
+    uint32_t phys_dev_count = 0;
+    if (physical_device_group_count > 0) {
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
+                                                                           {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+        vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
+        VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
+        create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
+        create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+        phys_dev_count = create_device_pnext.physicalDeviceCount;
+        RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
+    } else {
+        phys_dev_count = 1;
+        RETURN_IF_SKIP(InitState(nullptr, nullptr));
+    }
+    InitRenderTarget();
+
+    VkEventCreateInfo event_ci = vku::InitStructHelper{};
+
+    vkt::Event event;
+    event.init(*m_device, event_ci);
+
+    uint32_t phys_dev_mask = (1u << phys_dev_count) - 1;
+    uint32_t valid_device_mask = 1;
+
+    VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = vku::InitStructHelper{};
+    dev_grp_cmd_buf_info.deviceMask = phys_dev_mask;
+
+    VkCommandBufferBeginInfo cmd_buf_info = vku::InitStructHelper(&dev_grp_cmd_buf_info);
+
+    vk::BeginCommandBuffer(m_command_buffer.handle(), &cmd_buf_info);
+
+    // Enable the first and second physical devices in the mask
+    vk::CmdSetDeviceMask(m_command_buffer.handle(), valid_device_mask);
+
+    vk::CmdSetEvent(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdResetEvent(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+    vk::EndCommandBuffer(m_command_buffer.handle());
+
+    m_command_buffer.reset();
+
+    vk::BeginCommandBuffer(m_command_buffer.handle(), &cmd_buf_info);
+
+    VkDeviceGroupRenderPassBeginInfo dev_grp_render_pass_begin_info = vku::InitStructHelper{};
+    dev_grp_render_pass_begin_info.deviceMask = phys_dev_mask;
+    m_renderPassBeginInfo.pNext = &dev_grp_render_pass_begin_info;
+    
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vk::CmdSetDeviceMask(m_command_buffer.handle(), valid_device_mask);
+
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+
+    vk::CmdEndRenderPass(m_command_buffer.handle());
+    vk::EndCommandBuffer(m_command_buffer.handle());
+}
+
+TEST_F(PositiveSyncObject, EventCmds2ValidDeviceMask) {
+    TEST_DESCRIPTION("Valid device mask when using vkCmd*Event2 calls.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+
+    uint32_t phys_dev_count = 0;
+    if (physical_device_group_count > 0) {
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
+                                                                           {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+        vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
+        VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
+        create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
+        create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+        phys_dev_count = create_device_pnext.physicalDeviceCount;
+        RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
+    } else {
+        phys_dev_count = 1;
+        RETURN_IF_SKIP(InitState(nullptr, nullptr));
+    }
+    InitRenderTarget();
+
+    VkEventCreateInfo event_ci = vku::InitStructHelper{};
+
+    vkt::Event event;
+    event.init(*m_device, event_ci);
+
+    uint32_t phys_dev_mask = (1u << phys_dev_count) - 1;
+    uint32_t valid_phys_dev_mask = 1;
+
+    VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = vku::InitStructHelper{};
+    dev_grp_cmd_buf_info.deviceMask = phys_dev_mask;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper{};
+    VkCommandBufferBeginInfo cmd_buf_info = vku::InitStructHelper(&dev_grp_cmd_buf_info);
+
+    vk::BeginCommandBuffer(m_command_buffer.handle(), &cmd_buf_info);
+
+    vk::CmdSetDeviceMask(m_command_buffer.handle(), valid_phys_dev_mask);
+
+    vk::CmdSetEvent2(m_command_buffer.handle(), event.handle(), &dependency_info);
+    vk::CmdWaitEvents2(m_command_buffer.handle(), 1, &event.handle(), &dependency_info);
+    vk::CmdResetEvent2(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+    vk::EndCommandBuffer(m_command_buffer.handle());
+
+    m_command_buffer.reset();
+
+    vk::BeginCommandBuffer(m_command_buffer.handle(), &cmd_buf_info);
+
+    VkDeviceGroupRenderPassBeginInfo dev_grp_render_pass_begin_info = vku::InitStructHelper{};
+    dev_grp_render_pass_begin_info.deviceMask = phys_dev_mask;
+    m_renderPassBeginInfo.pNext = &dev_grp_render_pass_begin_info;
+
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vk::CmdSetDeviceMask(m_command_buffer.handle(), valid_phys_dev_mask);
+
+    vk::CmdWaitEvents2(m_command_buffer.handle(), 1, &event.handle(), &dependency_info);
+
+    vk::CmdEndRenderPass(m_command_buffer.handle());
+    vk::EndCommandBuffer(m_command_buffer.handle());
+}

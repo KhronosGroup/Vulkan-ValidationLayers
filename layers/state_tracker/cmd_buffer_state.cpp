@@ -627,11 +627,9 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     }
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
-    if (chained_device_group_struct) {
-        active_render_pass_device_mask = chained_device_group_struct->deviceMask;
-    } else {
-        active_render_pass_device_mask = initial_device_mask;
-    }
+    uint32_t device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
+    active_render_pass_initial_device_mask = device_mask;
+    active_render_pass_current_device_mask = device_mask;
 
     attachment_source = AttachmentSource::RenderPass;
     active_subpasses.clear();
@@ -688,11 +686,9 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     rendering_attachments.color_indexes.resize(pRenderingInfo->colorAttachmentCount);
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
-    if (chained_device_group_struct) {
-        active_render_pass_device_mask = chained_device_group_struct->deviceMask;
-    } else {
-        active_render_pass_device_mask = initial_device_mask;
-    }
+    uint32_t device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
+    active_render_pass_initial_device_mask = device_mask;
+    active_render_pass_current_device_mask = device_mask;
 
     auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderingInfo->pNext);
     if (rp_striped_begin) {
@@ -1042,11 +1038,11 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     }
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
-    if (chained_device_group_struct) {
-        initial_device_mask = chained_device_group_struct->deviceMask;
-    } else {
-        initial_device_mask = (1 << dev_data.physical_device_count) - 1;
-    }
+    uint32_t device_mask =
+        chained_device_group_struct ? chained_device_group_struct->deviceMask : (1 << dev_data.physical_device_count) - 1;
+    initial_device_mask = device_mask;
+    current_device_mask = device_mask;
+
     performance_lock_acquired = dev_data.performance_lock_acquired;
     updatedQueries.clear();
 }
@@ -1497,6 +1493,16 @@ void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&
     if (buf2) {
         AddChild(buf2);
     }
+}
+
+void CommandBuffer::RecordSetDeviceMask(Func command, uint32_t deviceMask) {
+    RecordCmd(command);
+    if (hasRenderPassInstance) {
+        active_render_pass_current_device_mask = deviceMask;
+        return;
+    }
+
+    current_device_mask = deviceMask;
 }
 
 void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
