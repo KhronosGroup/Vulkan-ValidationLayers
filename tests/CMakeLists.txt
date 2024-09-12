@@ -143,6 +143,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/parent_positive.cpp
     unit/pipeline.cpp
     unit/pipeline_advanced_blend.cpp
+    unit/pipeline_binary.cpp
+    unit/pipeline_binary_positive.cpp
     unit/pipeline_layout.cpp
     unit/pipeline_layout_positive.cpp
     unit/pipeline_positive.cpp
