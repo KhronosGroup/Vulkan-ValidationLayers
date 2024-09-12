@@ -1018,8 +1018,8 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                 continue;
             }
             bool location_provided = false;
-            for (const auto& binding_state : cb_state.dynamic_state_value.vertex_bindings) {
-                const auto* attrib = vvl::Find(binding_state.second.locations, variable_ptr->decorations.location);
+            for (const auto& vertex_binding : cb_state.dynamic_state_value.vertex_bindings) {
+                const auto* attrib = vvl::Find(vertex_binding.second.locations, variable_ptr->decorations.location);
                 if (!attrib) continue;
                 location_provided = true;
 
