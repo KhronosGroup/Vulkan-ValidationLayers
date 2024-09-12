@@ -26,8 +26,16 @@
 namespace syncval_stats {
 
 void Value32::Update(uint32_t new_value) { u32.store(new_value); }
-uint32_t Value32::Add(uint32_t n) { return u32.fetch_add(n); }
-uint32_t Value32::Sub(uint32_t n) { return u32.fetch_sub(n); }
+
+uint32_t Value32::Add(uint32_t n) {
+    // fetch_add returns initial value (before increment), add one to get the new value
+    return u32.fetch_add(n) + 1;
+}
+
+uint32_t Value32::Sub(uint32_t n) {
+    // fetch_sub returns initial value (before the decrement), subtract one to get the new value
+    return u32.fetch_sub(n) - 1;
+}
 
 void ValueMax32::Update(uint32_t new_value) {
     value.Update(new_value);
@@ -39,10 +47,7 @@ void ValueMax32::Add(uint32_t n) {
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
 
-void ValueMax32::Sub(uint32_t n) {
-    uint32_t new_value = value.Sub(n);
-    vvl::atomic_fetch_max(max_value.u32, new_value);
-}
+void ValueMax32::Sub(uint32_t n) { value.Sub(n); }
 
 Stats::~Stats() {
     if (report_on_destruction) {
@@ -53,6 +58,9 @@ Stats::~Stats() {
 
 void Stats::AddCommandBufferContext() { command_buffer_context_counter.Add(1); }
 void Stats::RemoveCommandBufferContext() { command_buffer_context_counter.Sub(1); }
+
+void Stats::AddQueueBatchContext() { queue_batch_context_counter.Add(1); }
+void Stats::RemoveQueueBatchContext() { queue_batch_context_counter.Sub(1); }
 
 void Stats::AddHandleRecord(uint32_t count) { handle_record_counter.Add(count); }
 void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count); }
@@ -68,6 +76,14 @@ std::string Stats::CreateReport() {
         str << "CommandBufferAccessContext:\n";
         str << "\tcount = " << cb_contex << '\n';
         str << "\tmax_count = " << cb_context_max << '\n';
+    }
+    {
+        uint32_t qbc_context = queue_batch_context_counter.value.u32;
+        uint32_t qbc_context_max = queue_batch_context_counter.max_value.u32;
+
+        str << "QueueBatchContext:\n";
+        str << "\tcount = " << qbc_context << "\n";
+        str << "\tmax_count = " << qbc_context_max << "\n";
     }
     {
         uint32_t handle_record = handle_record_counter.value.u32;

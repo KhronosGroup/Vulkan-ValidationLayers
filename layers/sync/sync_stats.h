@@ -34,8 +34,8 @@ namespace syncval_stats {
 struct Value32 {
     std::atomic_uint32_t u32;
     void Update(uint32_t new_value);
-    uint32_t Add(uint32_t n);
-    uint32_t Sub(uint32_t n);
+    uint32_t Add(uint32_t n);  // Returns new counter value
+    uint32_t Sub(uint32_t n);  // Returns new counter value
 };
 
 struct ValueMax32 {
@@ -54,6 +54,10 @@ struct Stats {
     void AddCommandBufferContext();
     void RemoveCommandBufferContext();
 
+    ValueMax32 queue_batch_context_counter;
+    void AddQueueBatchContext();
+    void RemoveQueueBatchContext();
+
     ValueMax32 handle_record_counter;
     void AddHandleRecord(uint32_t count = 1);
     void RemoveHandleRecord(uint32_t count = 1);
@@ -68,6 +72,8 @@ struct Stats {
     void RemoveHandleRecord(uint32_t count = 1) {}
     void AddCommandBufferContext() {}
     void RemoveCommandBufferContext() {}
+    void AddQueueBatchContext() {}
+    void RemoveQueueBatchContext() {}
     void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
