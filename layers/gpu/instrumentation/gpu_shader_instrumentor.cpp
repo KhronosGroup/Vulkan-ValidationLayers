@@ -198,9 +198,11 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
         // submit time
         if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
-            InternalWarning(device, record_obj.location,
-                            "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
-            ts_features->timelineSemaphore = VK_TRUE;
+            if (ts_features->timelineSemaphore == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
+                ts_features->timelineSemaphore = VK_TRUE;
+            }
         } else {
             InternalWarning(device, record_obj.location,
                             "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
