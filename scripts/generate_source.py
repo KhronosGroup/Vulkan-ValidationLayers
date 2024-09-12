@@ -44,7 +44,13 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
     registry_headers_path = os.path.join(scripts_directory_path, scripts)
     sys.path.insert(0, registry_headers_path)
-    from reg import Registry
+    try:
+        from reg import Registry
+    except:
+        print("ModuleNotFoundError: No module named 'reg'") # normal python error message
+        print(f'{registry_headers_path} is not pointing to the Vulkan-Headers registry directory.')
+        print("Inside Vulkan-Headers there is a registry/reg.py file that is used.")
+        sys.exit(1) # Return without call stack so easy to spot error
 
     from generators.base_generator import BaseGeneratorOptions
     from generators.thread_safety_generator import ThreadSafetyOutputGenerator

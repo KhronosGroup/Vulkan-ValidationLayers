@@ -7,6 +7,10 @@ values when the Vulkan Headers or SPIR-V Grammer is updated.
 - [Adding and Editing code generation](#adding-and-editing-code-generation)
 - [How it works](#how-it-works)
 
+# Dependency
+
+`pyparsing` is required so if no installed, you will need to call `pip install pyparsing`
+
 # How to generate the code
 
 - Linux:
