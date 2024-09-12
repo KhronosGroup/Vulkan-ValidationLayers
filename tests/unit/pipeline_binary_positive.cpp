@@ -25,40 +25,22 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromPipeline) {
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
     RETURN_IF_SKIP(Init());
 
-    VkResult err;
-
-    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
-
-    VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
-    compute_create_info.stage = cs.GetStageCreateInfo();
-    compute_create_info.layout = pipeline_layout.handle();
-
     VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
-    compute_create_info.pNext = &flags2;
 
-    VkPipeline test_pipeline1;
-
-    err = vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline1);
-    ASSERT_EQ(VK_SUCCESS, err);
+    CreateComputePipelineHelper pipe(*this, &flags2);
+    pipe.CreateComputePipeline(true, true);
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-    binary_create_info.pipeline = test_pipeline1;
+    binary_create_info.pipeline = pipe.Handle();
 
     VkPipelineBinaryKHR pipeline_binary;
-    VkPipelineBinaryHandlesInfoKHR handlesInfo = vku::InitStructHelper();
-    handlesInfo.pipelineBinaryCount = 1;
-    handlesInfo.pPipelineBinaries = &pipeline_binary;
+    VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
+    handles_info.pipelineBinaryCount = 1;
+    handles_info.pPipelineBinaries = &pipeline_binary;
 
-    err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handlesInfo);
-    ASSERT_EQ(VK_SUCCESS, err);
-
+    vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
     vk::DestroyPipelineBinaryKHR(device(), pipeline_binary, nullptr);
-    vk::DestroyPipeline(device(), test_pipeline1, nullptr);
 }
 
 TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
@@ -72,19 +54,8 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
 
     VkResult err;
 
-    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
-
-    VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
-    compute_create_info.stage = cs.GetStageCreateInfo();
-    compute_create_info.layout = pipeline_layout.handle();
-
     VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
-    compute_create_info.pNext = &flags2;
 
     std::vector<uint8_t> binary_data;
     size_t data_size;
@@ -92,37 +63,33 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
 
     // create binary from pipeline
     {
-        VkPipeline test_pipeline1;
-
-        err = vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline1);
-        ASSERT_EQ(VK_SUCCESS, err);
+        CreateComputePipelineHelper pipe(*this, &flags2);
+        pipe.CreateComputePipeline(true, true);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-        binary_create_info.pipeline = test_pipeline1;
+        binary_create_info.pipeline = pipe.Handle();
 
-        VkPipelineBinaryHandlesInfoKHR handlesInfo = vku::InitStructHelper();
-        handlesInfo.pPipelineBinaries = nullptr;
+        VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
+        handles_info.pPipelineBinaries = nullptr;
 
-        err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handlesInfo);
+        err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
         ASSERT_EQ(VK_SUCCESS, err);
 
-        if (handlesInfo.pipelineBinaryCount != 1) {
-            for (uint32_t i = 0; i < handlesInfo.pipelineBinaryCount; i++) {
-                vk::DestroyPipelineBinaryKHR(device(), handlesInfo.pPipelineBinaries[i], nullptr);
+        if (handles_info.pipelineBinaryCount != 1) {
+            for (uint32_t i = 0; i < handles_info.pipelineBinaryCount; i++) {
+                vk::DestroyPipelineBinaryKHR(device(), handles_info.pPipelineBinaries[i], nullptr);
             }
-
-            vk::DestroyPipeline(device(), test_pipeline1, nullptr);
 
             GTEST_SKIP() << "Test doesn't support multiple binaries";
         }
 
         VkPipelineBinaryKHR pipeline_binary1;
-        handlesInfo.pPipelineBinaries = &pipeline_binary1;
+        handles_info.pPipelineBinaries = &pipeline_binary1;
 
-        err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handlesInfo);
+        err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
         ASSERT_EQ(VK_SUCCESS, err);
 
-        vk::DestroyPipeline(device(), test_pipeline1, nullptr);
+        pipe.Destroy();
 
         VkPipelineBinaryDataInfoKHR data_info = vku::InitStructHelper();
         data_info.pipelineBinary = pipeline_binary1;
@@ -154,14 +121,13 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
         binary_create_info.pKeysAndDataInfo = &keys_data_info;
 
-        VkPipelineBinaryHandlesInfoKHR handlesInfo = vku::InitStructHelper();
-        handlesInfo.pipelineBinaryCount = 1;
-        handlesInfo.pPipelineBinaries = &pipeline_binary2;
+        VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
+        handles_info.pipelineBinaryCount = 1;
+        handles_info.pPipelineBinaries = &pipeline_binary2;
 
-        err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handlesInfo);
+        err = vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
         ASSERT_EQ(VK_SUCCESS, err);
 
-        VkPipeline test_pipeline2;
         VkPipelineBinaryInfoKHR binary_info = vku::InitStructHelper();
 
         binary_info.binaryCount = 1;
@@ -169,11 +135,9 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
 
         flags2.pNext = &binary_info;
 
-        err = vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline2);
-        ASSERT_EQ(VK_SUCCESS, err);
+        CreateComputePipelineHelper pipe2(*this, &flags2);
+        pipe2.CreateComputePipeline(true, true);
 
         vk::DestroyPipelineBinaryKHR(device(), pipeline_binary2, nullptr);
-
-        vk::DestroyPipeline(device(), test_pipeline2, nullptr);
     }
 }

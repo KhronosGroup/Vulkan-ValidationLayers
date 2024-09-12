@@ -279,12 +279,13 @@ void CreatePipelineHelper::LateBindPipelineInfo() {
     }
 }
 
-VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind) {
+VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind, bool no_cache) {
     InitPipelineCache();
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    return vk::CreateGraphicsPipelines(device_->handle(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
+    return vk::CreateGraphicsPipelines(device_->handle(), no_cache ? VK_NULL_HANDLE : pipeline_cache_, 1, &gp_ci_, NULL,
+                                       &pipeline_);
 }
 
 CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
@@ -362,12 +363,12 @@ void CreateComputePipelineHelper::LateBindPipelineInfo() {
     cp_ci_.stage = cs_.get()->GetStageCreateInfo();
 }
 
-VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind) {
+VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind, bool no_cache) {
     InitPipelineCache();
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    return vk::CreateComputePipelines(device_->handle(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
+    return vk::CreateComputePipelines(device_->handle(), no_cache ? VK_NULL_HANDLE : pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
 }
 
 namespace vkt {

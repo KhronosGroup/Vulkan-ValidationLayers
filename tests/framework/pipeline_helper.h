@@ -56,7 +56,7 @@ class CreatePipelineHelper {
     void Destroy();
 
     void LateBindPipelineInfo();
-    VkResult CreateGraphicsPipeline(bool do_late_bind = true);
+    VkResult CreateGraphicsPipeline(bool do_late_bind = true, bool no_cache = false);
 
     void InitVertexInputLibInfo(void *p_next = nullptr);
 
@@ -147,7 +147,7 @@ class CreateComputePipelineHelper {
     void Destroy();
 
     void LateBindPipelineInfo();
-    VkResult CreateComputePipeline(bool do_late_bind = true);
+    VkResult CreateComputePipeline(bool do_late_bind = true, bool no_cache = false);
 
     // Helper function to create a simple test case (positive or negative)
     //
