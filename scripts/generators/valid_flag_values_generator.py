@@ -164,10 +164,41 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                 out.append('}')
 
             out.append('   return {};\n')
-            # out.append('\n')
         out.extend(guard_helper.add_guard(None))
         out.append('''default: return {};
                 }
             }
+
+            std::string StatelessValidation::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const {
+                switch(flag_bitmask) {
             ''')
+        for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and len(x.flags) > 0 and x.bitWidth == 32]:
+            out.extend(guard_helper.add_guard(bitmask.protect))
+            out.append(f'case vvl::FlagBitmask::{bitmask.name}:\n')
+            out.append(f'return string_{bitmask.flagName}(value);\n')
+        out.extend(guard_helper.add_guard(None))
+        out.append('''
+                    default:
+                        std::stringstream ss;
+                        ss << "0x" << std::hex << value;
+                        return ss.str();
+                }
+            }
+
+            std::string StatelessValidation::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const {
+                switch(flag_bitmask) {
+            ''')
+        for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and len(x.flags) > 0 and x.bitWidth == 64]:
+            out.extend(guard_helper.add_guard(bitmask.protect))
+            out.append(f'case vvl::FlagBitmask::{bitmask.name}:\n')
+            out.append(f'return string_{bitmask.flagName}(value);\n')
+        out.extend(guard_helper.add_guard(None))
+        out.append('''
+                    default:
+                        std::stringstream ss;
+                        ss << "0x" << std::hex << value;
+                        return ss.str();
+                }
+            }
+        ''')
         self.write(''.join(out))

@@ -455,8 +455,8 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
         vvl::Extensions required = IsValidFlagValue(flag_bitmask, value, device_extensions);
         if (!required.empty() && device != VK_NULL_HANDLE) {
             // If called from an instance function, there is no device to base extension support off of
-            skip |= LogError(vuid, device, loc, "(0x%" PRIx32 ") has %s values that requires the extensions %s.", value,
-                             String(flag_bitmask), String(required).c_str());
+            skip |= LogError(vuid, device, loc, "has %s values (%s) that requires the extensions %s.", String(flag_bitmask),
+                             DescribeFlagBitmaskValue(flag_bitmask, value).c_str(), String(required).c_str());
         }
     }
     return skip;
@@ -496,8 +496,8 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
         vvl::Extensions required = IsValidFlag64Value(flag_bitmask, value, device_extensions);
         if (!required.empty() && device != VK_NULL_HANDLE) {
             // If called from an instance function, there is no device to base extension support off of
-            skip |= LogError(vuid, device, loc, "(0x%" PRIx64 ") has %s values that requires the extensions %s.", value,
-                             String(flag_bitmask), String(required).c_str());
+            skip |= LogError(vuid, device, loc, "has %s values (%s) that requires the extensions %s.", String(flag_bitmask),
+                             DescribeFlagBitmaskValue64(flag_bitmask, value).c_str(), String(required).c_str());
         }
     }
     return skip;

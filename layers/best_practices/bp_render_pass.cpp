@@ -825,11 +825,12 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
             if (untouched_aspects) {
                 skip |= LogPerformanceWarning(
                     "BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile", commandBuffer, loc,
-                    "%s %s: Render pass was ended, but attachment #%u (format: %u, untouched aspects 0x%x) "
+                    "%s %s: Render pass was ended, but attachment #%u (format: %u, untouched aspects %s) "
                     "was never accessed by a pipeline or clear command. "
                     "On tile-based architectures, LOAD_OP_LOAD and STORE_OP_STORE consume bandwidth and should not be part of the "
                     "render pass if the attachments are not intended to be accessed.",
-                    VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), i, attachment.format, untouched_aspects);
+                    VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorIMG), i, attachment.format,
+                    string_VkImageAspectFlags(untouched_aspects).c_str());
             }
         }
     }
