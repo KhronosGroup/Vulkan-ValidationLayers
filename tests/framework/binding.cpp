@@ -910,6 +910,16 @@ VkResult Semaphore::SignalKHR(uint64_t value) {
     return result;
 }
 
+uint64_t Semaphore::GetCounterValue(bool use_khr) const {
+    uint64_t counter = 0;
+    if (use_khr) {
+        vk::GetSemaphoreCounterValueKHR(device(), handle(), &counter);
+    } else {
+        vk::GetSemaphoreCounterValue(device(), handle(), &counter);
+    }
+    return counter;
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     win32_handle = nullptr;

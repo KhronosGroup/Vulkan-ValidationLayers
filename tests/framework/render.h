@@ -221,10 +221,17 @@ class VkRenderFramework : public VkTestFramework {
     // first graphics queue, used must often, don't overwrite, use Device class
     vkt::Queue *m_default_queue = nullptr;
 
-    // A different queue than a default one. The queue with the most capabilities is selected (graphics > compute > transfer).
-    // It is null if implementation provides the only queue. Capabilities should be checked if necessary (m_second_queue_caps).
+    // A queue different from the default one (can be null).
+    // The queue with the most capabilities is selected (graphics > compute > transfer).
+    // Supports transfer capabilities; check m_second_queue_caps for compute/graphics support.
     vkt::Queue *m_second_queue = nullptr;
     VkQueueFlags m_second_queue_caps = 0;
+
+    // A queue different from the default or the second one (can be null).
+    // The queue with the most capabilities is selected (graphics > compute > transfer).
+    // Supports transfer capabilities; check m_third_queue_caps for compute/graphics support.
+    vkt::Queue *m_third_queue = nullptr;
+    VkQueueFlags m_third_queue_caps = 0;
 
     vkt::CommandPool m_second_command_pool;  // associated with a queue family of the second command queue
     vkt::CommandBuffer m_second_command_buffer;
