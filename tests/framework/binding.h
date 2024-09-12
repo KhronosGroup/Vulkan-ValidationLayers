@@ -420,6 +420,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     VkResult WaitKHR(uint64_t value, uint64_t timeout);
     VkResult Signal(uint64_t value);
     VkResult SignalKHR(uint64_t value);
+    uint64_t GetCounterValue(bool use_khr = false) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VkResult export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);

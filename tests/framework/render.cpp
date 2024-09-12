@@ -651,30 +651,26 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
     }
 
-    m_default_queue = m_device->QueuesWithGraphicsCapability()[0];
-
-    m_second_queue = [this]() -> vkt::Queue * {
-        if (m_device->QueuesWithGraphicsCapability().size() > 1) {
-            return m_device->QueuesWithGraphicsCapability()[1];  // skip default queue
+    std::vector<vkt::Queue *> queues;
+    vvl::Append(queues, m_device->QueuesWithGraphicsCapability());
+    for (vkt::Queue *queue_with_compute_caps : m_device->QueuesWithComputeCapability()) {
+        if (!vvl::Contains(queues, queue_with_compute_caps)) {
+            queues.emplace_back(queue_with_compute_caps);
         }
-        const auto &with_compute_caps = m_device->QueuesWithComputeCapability();
-        if (with_compute_caps.size() > 0 && with_compute_caps[0] != m_default_queue) {
-            return with_compute_caps[0];
+    }
+    for (vkt::Queue *queue_with_transfer_caps : m_device->QueuesWithTransferCapability()) {
+        if (!vvl::Contains(queues, queue_with_transfer_caps)) {
+            queues.emplace_back(queue_with_transfer_caps);
         }
-        if (with_compute_caps.size() > 1) {
-            return with_compute_caps[1];
-        }
-        const auto &with_transfer_caps = m_device->QueuesWithTransferCapability();
-        if (with_transfer_caps.size() > 0 && with_transfer_caps[0] != m_default_queue) {
-            return with_transfer_caps[0];
-        }
-        if (with_transfer_caps.size() > 1) {
-            return with_transfer_caps[1];
-        }
-        return nullptr;
-    }();
-    if (m_second_queue) {
+    }
+    m_default_queue = queues[0];
+    if (queues.size() > 1) {
+        m_second_queue = queues[1];
         m_second_queue_caps = m_device->phy().queue_properties_[m_second_queue->family_index].queueFlags;
+    }
+    if (queues.size() > 2) {
+        m_third_queue = queues[2];
+        m_third_queue_caps = m_device->phy().queue_properties_[m_third_queue->family_index].queueFlags;
     }
 
     m_depthStencil = new vkt::Image();

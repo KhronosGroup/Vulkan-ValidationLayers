@@ -1086,6 +1086,11 @@ const Value &FindExisting(const Container &container, const Key &key) {
     return it->second;
 }
 
+template <typename T>
+void Append(std::vector<T> &dst, const std::vector<T> &src) {
+    dst.insert(dst.end(), src.begin(), src.end());
+}
+
 // EraseIf is not implemented as std::erase(std::remove_if(...), ...) for two reasons:
 //   1) Robin Hood containers don't support two-argument erase functions
 //   2) STL remove_if requires the predicate to be const w.r.t the value-type, and std::erase_if doesn't AFAICT
