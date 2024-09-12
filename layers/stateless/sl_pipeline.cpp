@@ -135,7 +135,7 @@ bool StatelessValidation::ValidatePipelineBinaryInfo(const void *next, VkPipelin
         skip |= LogError(GetPipelineBinaryInfoVUID(flag_loc, vvl::PipelineBinaryInfoError::PNext_09617), device, flag_loc,
                          "(%s) includes VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR while "
                          "pipelineCache is not VK_NULL_HANDLE.",
-                         string_VkPipelineCreateFlags2KHR(flags).c_str());
+                         string_VkPipelineCreateFlags2KHR(create_flags_2).c_str());
     }
 
     const auto binary_info = vku::FindStructInPNextChain<VkPipelineBinaryInfoKHR>(next);
