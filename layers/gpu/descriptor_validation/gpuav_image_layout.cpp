@@ -194,14 +194,14 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
                 for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                     const auto subresource = image_state.subresource_encoder.Decode(index);
                     const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                    skip |= gpuav.LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
-                                           "command buffer %s expects %s (subresource: aspectMask 0x%x array layer %" PRIu32
-                                           ", mip level %" PRIu32
-                                           ") "
-                                           "to be in layout %s--instead, current layout is %s.",
-                                           gpuav.FormatHandle(cb_state).c_str(), gpuav.FormatHandle(image_state).c_str(),
-                                           subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
-                                           string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
+                    skip |= gpuav.LogError(
+                        "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
+                        "command buffer %s expects %s (subresource: aspectMask %s array layer %" PRIu32 ", mip level %" PRIu32
+                        ") "
+                        "to be in layout %s--instead, current layout is %s.",
+                        gpuav.FormatHandle(cb_state).c_str(), gpuav.FormatHandle(image_state).c_str(),
+                        string_VkImageAspectFlags(subresource.aspectMask).c_str(), subresource.arrayLayer, subresource.mipLevel,
+                        string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
                 }
             }
         }

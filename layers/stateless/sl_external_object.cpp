@@ -97,8 +97,8 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice de
         skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-07307", pImportSemaphoreFdInfo->semaphore,
                          info_loc.dot(Field::handleType),
                          "is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT so"
-                         " VK_SEMAPHORE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
-                         pImportSemaphoreFdInfo->flags);
+                         " VK_SEMAPHORE_IMPORT_TEMPORARY_BIT must be set, but flags is %s",
+                         string_VkSemaphoreImportFlags(pImportSemaphoreFdInfo->flags).c_str());
     }
     return skip;
 }
@@ -124,8 +124,8 @@ bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device
         (pImportFenceFdInfo->flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
         skip |= LogError("VUID-VkImportFenceFdInfoKHR-handleType-07306", pImportFenceFdInfo->fence, info_loc.dot(Field::handleType),
                          "is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT so"
-                         " VK_FENCE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
-                         pImportFenceFdInfo->flags);
+                         " VK_FENCE_IMPORT_TEMPORARY_BIT must be set, but flags is %s",
+                         string_VkFenceImportFlags(pImportFenceFdInfo->flags).c_str());
     }
     return skip;
 }
