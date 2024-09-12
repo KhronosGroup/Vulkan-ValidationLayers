@@ -5241,14 +5241,14 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
     }
     auto &vertex_bindings = cb_state->dynamic_state_value.vertex_bindings;
     for (const auto [i, bd] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
-        vertex_bindings.emplace(bd->binding, VertexBindingState(i, bd));
+        vertex_bindings.insert_or_assign(bd->binding, VertexBindingState(i, bd));
 
         cb_state->current_vertex_buffer_binding_info[bd->binding].stride = bd->stride;
     }
 
     for (const auto [i, ad] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
         if (auto *binding_state = vvl::Find(vertex_bindings, ad->binding)) {
-            binding_state->locations.emplace(ad->location, VertexAttrState(i, ad));
+            binding_state->locations.insert_or_assign(ad->location, VertexAttrState(i, ad));
         }
     }
 }

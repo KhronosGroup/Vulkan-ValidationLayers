@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
@@ -900,6 +901,67 @@ TEST_F(PositiveVertexInput, LegacyVertexAttributes) {
     vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveVertexInput, ResetCmdSetVertexInput) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8523");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vs_source_int = R"glsl(
+        #version 450
+        layout(location=0) in uvec4 x;
+        void main(){}
+    )glsl";
+    VkShaderObj vs_int(this, vs_source_int, VK_SHADER_STAGE_VERTEX_BIT);
+
+    char const *vs_source_float = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        void main(){}
+    )glsl";
+    VkShaderObj vs_float(this, vs_source_float, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe_int(*this);
+    pipe_int.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe_int.shader_stages_ = {vs_int.GetStageCreateInfo(), pipe_int.fs_->GetStageCreateInfo()};
+    pipe_int.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_float(*this);
+    pipe_float.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe_float.shader_stages_ = {vs_float.GetStageCreateInfo(), pipe_float.fs_->GetStageCreateInfo()};
+    pipe_float.CreateGraphicsPipeline();
+
+    vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0;
+
+    VkVertexInputBindingDescription2EXT bindings = vku::InitStructHelper();
+    bindings.binding = 0;
+    bindings.divisor = 1;
+    bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attributes = vku::InitStructHelper();
+    attributes.location = 0;
+    attributes.binding = 0;
+    attributes.format = VK_FORMAT_R8G8B8A8_UINT;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &vertex_buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_int.Handle());
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &bindings, 1, &attributes);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
+    m_commandBuffer->EndRenderPass();
+
+    attributes.format = VK_FORMAT_R8G8B8A8_UNORM;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_float.Handle());
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &bindings, 1, &attributes);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }

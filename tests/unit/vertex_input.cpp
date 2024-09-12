@@ -1764,3 +1764,51 @@ TEST_F(NegativeVertexInput, VertextBufferDestroyed) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeVertexInput, ResetCmdSetVertexInput) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8523");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(location=0) in uvec4 x;
+        void main(){}
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0;
+
+    VkVertexInputBindingDescription2EXT bindings = vku::InitStructHelper();
+    bindings.binding = 0;
+    bindings.divisor = 1;
+    bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attributes = vku::InitStructHelper();
+    attributes.location = 0;
+    attributes.binding = 0;
+    attributes.format = VK_FORMAT_R8G8B8A8_UINT;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0u, 1u, &vertex_buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &bindings, 1, &attributes);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
+
+    attributes.format = VK_FORMAT_R8G8B8A8_UNORM;
+    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &bindings, 1, &attributes);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-Input-08734");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 1);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
