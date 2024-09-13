@@ -22,11 +22,130 @@
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpu_shader_resources.h"
 #include "gpu/shaders/gpu_error_header.h"
+#include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
 
-void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
-                                         const Location &loc) {
+// If application is using shader objects, bindings count will be computed from bound shaders
+static uint32_t GetBindingsCountFromLastBoundPipelineOrShader(Validator &gpuav, VkPipelineBindPoint bind_point,
+                                                              CommandBuffer &cb_state, const LastBound &last_bound) {
+    if (last_bound.pipeline_state && last_bound.pipeline_state->PreRasterPipelineLayoutState()) {
+        return static_cast<uint32_t>(last_bound.pipeline_state->PreRasterPipelineLayoutState()->set_layouts.size());
+    }
+
+    if (const vvl::ShaderObject *main_bound_shader = last_bound.GetFirstShader(bind_point)) {
+        return static_cast<uint32_t>(main_bound_shader->set_layouts.size());
+    }
+
+    // Should not get there, it would mean no pipeline nor shader object was bound
+    assert(false);
+    return 0;
+}
+
+static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc,
+                                                            const LastBound &last_bound,
+                                                            VkDescriptorSetLayout dummy_desc_set_layout,
+                                                            VkDescriptorSetLayout instrumentation_desc_set_layout,
+                                                            uint32_t inst_desc_set_binding) {
+    // If not using shader objects, GPU-AV should be able to retrieve a pipeline layout from last bound pipeline
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+    std::shared_ptr<const vvl::PipelineLayout> last_bound_pipeline_pipe_layout;
+    if (last_bound.pipeline_state && last_bound.pipeline_state->PreRasterPipelineLayoutState()) {
+        last_bound_pipeline_pipe_layout = last_bound.pipeline_state->PreRasterPipelineLayoutState();
+    }
+    if (last_bound_pipeline_pipe_layout) {
+        // Application is using classic pipelines, compose a pipeline layout from last bound pipeline
+        // ---
+        pipe_layout_ci.flags = last_bound_pipeline_pipe_layout->create_flags;
+        std::vector<VkPushConstantRange> ranges;
+        if (last_bound_pipeline_pipe_layout->push_constant_ranges_layout) {
+            ranges.reserve(last_bound_pipeline_pipe_layout->push_constant_ranges_layout->size());
+            for (const VkPushConstantRange &range : *last_bound_pipeline_pipe_layout->push_constant_ranges_layout) {
+                ranges.push_back(range);
+            }
+        }
+        pipe_layout_ci.pushConstantRangeCount = static_cast<uint32_t>(ranges.size());
+        pipe_layout_ci.pPushConstantRanges = ranges.data();
+        std::vector<VkDescriptorSetLayout> set_layouts;
+        set_layouts.reserve(inst_desc_set_binding + 1);
+        for (const auto &set_layout : last_bound_pipeline_pipe_layout->set_layouts) {
+            set_layouts.push_back(set_layout->VkHandle());
+        }
+        for (uint32_t set_i = static_cast<uint32_t>(last_bound_pipeline_pipe_layout->set_layouts.size());
+             set_i < inst_desc_set_binding; ++set_i) {
+            set_layouts.push_back(dummy_desc_set_layout);
+        }
+        set_layouts.push_back(instrumentation_desc_set_layout);
+        pipe_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+        pipe_layout_ci.pSetLayouts = set_layouts.data();
+        VkPipelineLayout pipe_layout_handle;
+        VkResult result = DispatchCreatePipelineLayout(gpuav.device, &pipe_layout_ci, VK_NULL_HANDLE, &pipe_layout_handle);
+        if (result != VK_SUCCESS) {
+            gpuav.InternalError(gpuav.device, loc, "Failed to create instrumentation pipeline layout");
+            return VK_NULL_HANDLE;
+        }
+
+        return pipe_layout_handle;
+    } else {
+        // Application is using shader objects, compose a pipeline layout from bound shaders
+        // ---
+
+        const vvl::ShaderObject *main_bound_shader = last_bound.GetFirstShader(bind_point);
+        if (!main_bound_shader) {
+            // Should not get there, it would mean no pipeline nor shader object was bound
+            gpuav.InternalError(gpuav.device, loc, "Could not retrieve last bound computer/vertex/mesh shader");
+            return VK_NULL_HANDLE;
+        }
+
+        // From those VUIDs:
+        // VUID-vkCmdDraw-None-08878:
+        // - All bound graphics shader objects must have been created with identical or identically defined push constant ranges
+        // VUID-vkCmdDraw-None-08879
+        // - All bound graphics shader objects must have been created with identical or identically defined arrays of descriptor set
+        // layouts
+        // => To compose a VkPipelineLayout, only need to get compute or vertex/mesh shader and look at their bindings,
+        // no need to check other shaders.
+        const vvl::ShaderObject::SetLayoutVector *set_layouts = &main_bound_shader->set_layouts;
+        PushConstantRangesId push_constants_layouts = main_bound_shader->push_constant_ranges;
+
+        if (last_bound.desc_set_pipeline_layout) {
+            std::shared_ptr<const vvl::PipelineLayout> last_bound_desc_set_pipe_layout =
+                gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
+            if (last_bound_desc_set_pipe_layout) {
+                pipe_layout_ci.flags = last_bound_desc_set_pipe_layout->CreateFlags();
+            }
+        }
+        std::vector<VkDescriptorSetLayout> set_layout_handles;
+        if (set_layouts) {
+            set_layout_handles.reserve(inst_desc_set_binding + 1);
+            for (const auto &set_layout : *set_layouts) {
+                set_layout_handles.push_back(set_layout->VkHandle());
+            }
+            for (uint32_t set_i = static_cast<uint32_t>(set_layouts->size()); set_i < inst_desc_set_binding; ++set_i) {
+                set_layout_handles.push_back(dummy_desc_set_layout);
+            }
+            set_layout_handles.push_back(instrumentation_desc_set_layout);
+            pipe_layout_ci.setLayoutCount = static_cast<uint32_t>(set_layout_handles.size());
+            pipe_layout_ci.pSetLayouts = set_layout_handles.data();
+        }
+
+        if (push_constants_layouts) {
+            pipe_layout_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constants_layouts->size());
+            pipe_layout_ci.pPushConstantRanges = push_constants_layouts->data();
+        }
+        VkPipelineLayout pipe_layout_handle;
+        VkResult result = DispatchCreatePipelineLayout(gpuav.device, &pipe_layout_ci, VK_NULL_HANDLE, &pipe_layout_handle);
+        if (result != VK_SUCCESS) {
+            gpuav.InternalError(gpuav.device, loc, "Failed to create instrumentation pipeline layout");
+            return VK_NULL_HANDLE;
+        }
+
+        return pipe_layout_handle;
+    }
+}
+
+void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
+                                                const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation_enabled) {
         return;
     }
@@ -36,9 +155,8 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];
-    const auto *pipeline_state = last_bound.pipeline_state;
 
-    if (!pipeline_state && !last_bound.HasShaderObjects()) {
+    if (!last_bound.pipeline_state && !last_bound.HasShaderObjects()) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "Neither pipeline state nor shader object states were found.");
         return;
     }
@@ -151,24 +269,6 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
         DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
     }
 
-    auto pipeline_layout = pipeline_state ? pipeline_state->PipelineLayoutState()
-                                          : gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
-    // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
-    // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state,
-    // or the last specified pipeline layout in vkCmdPushConstantRanges.
-    // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
-    // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
-    // null handle.
-    VkPipelineLayout pipeline_layout_handle = VK_NULL_HANDLE;
-    if (last_bound.desc_set_pipeline_layout) {
-        pipeline_layout_handle = last_bound.desc_set_pipeline_layout;
-    } else if (pipeline_state && !pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
-        pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
-    } else if (cb_state.push_constant_latest_used_layout[lv_bind_point] != VK_NULL_HANDLE) {
-        pipeline_layout_handle = cb_state.push_constant_latest_used_layout[lv_bind_point];
-        pipeline_layout = gpuav.Get<vvl::PipelineLayout>(pipeline_layout_handle);
-    }
-
     uint32_t operation_index = 0;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
         operation_index = cb_state.draw_index++;
@@ -177,33 +277,99 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
         operation_index = cb_state.trace_rays_index++;
 
+    const bool uses_shader_object = last_bound.pipeline_state == nullptr;
+
+    // Bind instrumentation descriptor set, using an appropriate pipeline layout
+    // ---
+
+    // First find this appropriate pipeline layout.
+    // Always try to grab pipeline layout from last bound pipeline. Looking at PreRasterPipelineLayoutState
+    // is enough to get the layout whether the application is using standard pipelines or GPL.
+    // If GPU-AV failed to get a pipeline layout this way, fall back to pipeline layout specified in last
+    // vkCmdBindDescriptorSets, or in last vkCmdPushConstantRanges.
+
+    enum class PipelineLayoutSource { NoPipelineLayout, LastBoundPipeline, LastBoundDescriptorSet, LastPushedConstants };
+    std::shared_ptr<const vvl::PipelineLayout> inst_binding_pipe_layout_state;
+    PipelineLayoutSource inst_binding_pipe_layout_src = PipelineLayoutSource::NoPipelineLayout;
+    if (last_bound.pipeline_state && !last_bound.pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
+        inst_binding_pipe_layout_state = last_bound.pipeline_state->PreRasterPipelineLayoutState();
+        inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundPipeline;
+    } else if (last_bound.desc_set_pipeline_layout) {
+        inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
+        inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
+    } else if (cb_state.push_constant_latest_used_layout[lv_bind_point] != VK_NULL_HANDLE) {
+        inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(cb_state.push_constant_latest_used_layout[lv_bind_point]);
+        inst_binding_pipe_layout_src = PipelineLayoutSource::LastPushedConstants;
+    }
+
     // TODO: Using cb_state.per_command_resources.size() is kind of a hack? Worth considering passing the resource index as a
     // parameter
     const uint32_t error_logger_i = static_cast<uint32_t>(cb_state.per_command_error_loggers.size());
     const std::array<uint32_t, 2> dynamic_offsets = {
         {operation_index * gpuav.indices_buffer_alignment_, error_logger_i * gpuav.indices_buffer_alignment_}};
-    if (pipeline_layout && pipeline_layout_handle != VK_NULL_HANDLE) {
-        // If we were unable to use the layout because it overlaps with the instrumented set, don't dispatch anything or we will
-        // disturb the original bound set
-        if (pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) {
-            DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
-                                          &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
-                                          dynamic_offsets.data());
+    if (inst_binding_pipe_layout_state) {
+        if (inst_binding_pipe_layout_state->set_layouts.size() <= gpuav.instrumentation_desc_set_bind_index_) {
+            switch (inst_binding_pipe_layout_src) {
+                case PipelineLayoutSource::NoPipelineLayout:
+                    // should not get there, because inst_desc_set_binding_pipe_layout_state is not null
+                    assert(false);
+                    break;
+                case PipelineLayoutSource::LastBoundPipeline:
+                    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, inst_binding_pipe_layout_state->VkHandle(),
+                                                  gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                                  static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+                    break;
+                case PipelineLayoutSource::LastBoundDescriptorSet:
+                case PipelineLayoutSource::LastPushedConstants: {
+                    // Currently bound pipeline/set of shader objects may have bindings that are not compatible with last
+                    // bound descriptor sets: GPU-AV may create this incompatibility by adding its empty padding descriptor sets.
+                    // To alleviate that, since we could not get a pipeline layout from last pipeline binding (it was either
+                    // destroyed, or never has been created if using shader objects), a pipeline layout matching bindings of last
+                    // bound pipeline or
+                    // last bound shader objects is created and used.
+                    // If will also be cached: heuristic is next action command will likely need the same.
+
+                    const uint32_t bindings_counts_from_last_pipeline =
+                        GetBindingsCountFromLastBoundPipelineOrShader(gpuav, bind_point, cb_state, last_bound);
+
+                    // If the number of binding of the currently bound pipeline's layout (or the equivalent for shader objects) is
+                    // less that the number of bindings in the pipeline layout used to bind descriptor sets,
+                    // GPU-AV needs to create a temporary pipeline layout matching the the currently bound pipeline's layout
+                    // to bind the instrumentation descriptor set
+                    if (bindings_counts_from_last_pipeline <
+                        static_cast<uint32_t>(inst_binding_pipe_layout_state->set_layouts.size())) {
+                        VkPipelineLayout instrumentation_pipe_layout = CreateInstrumentationPipelineLayout(
+                            gpuav, bind_point, loc, last_bound, gpuav.dummy_desc_layout_,
+                            gpuav.GetInstrumentationDescriptorSetLayout(), gpuav.instrumentation_desc_set_bind_index_);
+
+                        if (instrumentation_pipe_layout != VK_NULL_HANDLE) {
+                            DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, instrumentation_pipe_layout,
+                                                          gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                                          static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+                            DispatchDestroyPipelineLayout(gpuav.device, instrumentation_pipe_layout, nullptr);
+                        } else {
+                            // Could not create instrumentation pipeline layout
+                            return;
+                        }
+                    } else {
+                        // No incompatibility detected, safe to use pipeline layout for last bound descriptor set/push constants.
+                        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, inst_binding_pipe_layout_state->VkHandle(),
+                                                      gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                                      static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
+                    }
+                } break;
+            }
         } else {
-            // Cannot setup instrumentation descriptor set, abort for this command
+            gpuav.InternalWarning(cb_state.Handle(), loc,
+                                  "Unable to bind instrumentation descriptor set, it would override application's bound set");
             return;
         }
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, and no push constants, bind
-        // the debug pipeline layout
-        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, gpuav.GetDebugPipelineLayout(), gpuav.desc_set_bind_index_,
-                                      1, &instrumentation_desc_set, static_cast<uint32_t>(dynamic_offsets.size()),
-                                      dynamic_offsets.data());
-    }
-
-    if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
-        gpuav.InternalError(cb_state.Handle(), loc, "Unable to find pipeline layout to bind debug descriptor set");
-        return;
+        // the instrumentation pipeline layout
+        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, gpuav.GetInstrumentationPipelineLayout(),
+                                      gpuav.instrumentation_desc_set_bind_index_, 1, &instrumentation_desc_set,
+                                      static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
     }
 
     // It is possible to have no descriptor sets bound, for example if using push constants.
@@ -211,11 +377,11 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
         !cb_state.di_input_buffer_list.empty() ? uint32_t(cb_state.di_input_buffer_list.size()) - 1 : vvl::kU32Max;
 
     const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
-                                  (pipeline_state && pipeline_state->uses_pipeline_robustness));
+                                  (last_bound.pipeline_state && last_bound.pipeline_state->uses_pipeline_robustness));
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, desc_binding_index, desc_binding_list = &cb_state.di_input_buffer_list,
                                                    cb_state_handle = cb_state.VkHandle(), bind_point, operation_index,
-                                                   uses_shader_object = pipeline_state == nullptr,
+                                                   uses_shader_object,
                                                    uses_robustness](Validator &gpuav, const uint32_t *error_record,
                                                                     const LogObjectList &objlist) {
         bool skip = false;
@@ -228,6 +394,53 @@ void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_sta
     };
 
     cb_state.per_command_error_loggers.emplace_back(error_logger);
+}
+
+void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
+                                                 const Location &loc) {
+    if (!gpuav.gpuav_settings.shader_instrumentation_enabled) {
+        return;
+    }
+
+    assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
+           bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+
+    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
+
+    // Only need to rebind application desc sets if they have been disturbed by GPU-AV binding its instrumentation desc set.
+    // - Can happen if the pipeline layout used to bind instrumentation descriptor set is not compatible with the one used by the
+    // app to bind the last/all the last desc set. This pipeline layout is referred to as "last_bound_desc_set_pipe_layout_state"
+    // hereinafter.
+    // => We create this incompatibility when we add our empty descriptor set.
+    // See PositiveGpuAVDescriptorIndexing.SharedPipelineLayoutSubsetGraphics for instance
+    if (last_bound.desc_set_pipeline_layout) {
+        std::shared_ptr<const vvl::PipelineLayout> last_bound_desc_set_pipe_layout_state =
+            gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
+        if (last_bound_desc_set_pipe_layout_state) {
+            const uint32_t bindings_counts_from_last_pipeline =
+                GetBindingsCountFromLastBoundPipelineOrShader(gpuav, bind_point, cb_state, last_bound);
+
+            const bool any_disturbed_bindings = bindings_counts_from_last_pipeline <
+                                                static_cast<uint32_t>(last_bound_desc_set_pipe_layout_state->set_layouts.size());
+
+            if (any_disturbed_bindings) {
+                const uint32_t disturbed_bindings_count = static_cast<uint32_t>(
+                    last_bound_desc_set_pipe_layout_state->set_layouts.size() - bindings_counts_from_last_pipeline);
+                const uint32_t first_disturbed_set = bindings_counts_from_last_pipeline;
+
+                for (uint32_t set_i = 0; set_i < disturbed_bindings_count; ++set_i) {
+                    const uint32_t last_bound_set_i = set_i + first_disturbed_set;
+                    VkDescriptorSet desc_set = last_bound.per_set[last_bound_set_i].bound_descriptor_set->VkHandle();
+                    const std::vector<uint32_t> &dynamic_offset = last_bound.per_set[last_bound_set_i].dynamicOffsets;
+                    const uint32_t dynamic_offset_count = static_cast<uint32_t>(dynamic_offset.size());
+                    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point,
+                                                  last_bound_desc_set_pipe_layout_state->VkHandle(), last_bound_set_i, 1, &desc_set,
+                                                  dynamic_offset_count, dynamic_offset.data());
+                }
+            }
+        }
+    }
 }
 
 bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,

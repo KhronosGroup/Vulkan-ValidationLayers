@@ -267,7 +267,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
         std::min(gpu::kMaxAdjustedBoundDescriptorSet, phys_dev_props.limits.maxBoundDescriptorSets);
     // If gpu_validation_reserve_binding_slot: the max slot is where we reserved
     // else: always use the last possible set as least likely to be used
-    desc_set_bind_index_ = adjusted_max_desc_sets_limit - 1;
+    instrumentation_desc_set_bind_index_ = adjusted_max_desc_sets_limit - 1;
 
     // We can't do anything if there is only one.
     // Device probably not a legit Vulkan device, since there should be at least 4. Protect ourselves.
@@ -289,7 +289,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
                                                                     static_cast<uint32_t>(instrumentation_bindings_.size()),
                                                                     instrumentation_bindings_.data()};
 
-    result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr, &debug_desc_layout_);
+    result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, nullptr, &instrumentation_desc_layout_);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal descriptor set");
         Cleanup();
@@ -306,10 +306,11 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
     }
 
     std::vector<VkDescriptorSetLayout> debug_layouts;
-    for (uint32_t j = 0; j < desc_set_bind_index_; ++j) {
+    for (uint32_t j = 0; j < instrumentation_desc_set_bind_index_; ++j) {
         debug_layouts.push_back(dummy_desc_layout_);
     }
-    debug_layouts.push_back(debug_desc_layout_);
+    debug_layouts.push_back(instrumentation_desc_layout_);
+
     const VkPipelineLayoutCreateInfo debug_pipeline_layout_info = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                                                                    nullptr,
                                                                    0u,
@@ -317,7 +318,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
                                                                    debug_layouts.data(),
                                                                    0u,
                                                                    nullptr};
-    result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr, &debug_pipeline_layout_);
+    result = DispatchCreatePipelineLayout(device, &debug_pipeline_layout_info, nullptr, &instrumentation_pipeline_layout_);
     if (result != VK_SUCCESS) {
         InternalError(device, loc, "vkCreateDescriptorSetLayout failed for internal pipeline layout");
         Cleanup();
@@ -326,17 +327,18 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
 }
 
 void GpuShaderInstrumentor::Cleanup() {
-    if (debug_desc_layout_) {
-        DispatchDestroyDescriptorSetLayout(device, debug_desc_layout_, nullptr);
-        debug_desc_layout_ = VK_NULL_HANDLE;
+    if (instrumentation_desc_layout_) {
+        DispatchDestroyDescriptorSetLayout(device, instrumentation_desc_layout_, nullptr);
+        instrumentation_desc_layout_ = VK_NULL_HANDLE;
     }
     if (dummy_desc_layout_) {
         DispatchDestroyDescriptorSetLayout(device, dummy_desc_layout_, nullptr);
         dummy_desc_layout_ = VK_NULL_HANDLE;
     }
-    if (debug_pipeline_layout_) {
-        DispatchDestroyPipelineLayout(device, debug_pipeline_layout_, nullptr);
-        debug_pipeline_layout_ = VK_NULL_HANDLE;
+
+    if (instrumentation_pipeline_layout_) {
+        DispatchDestroyPipelineLayout(device, instrumentation_pipeline_layout_, nullptr);
+        instrumentation_pipeline_layout_ = VK_NULL_HANDLE;
     }
 }
 
@@ -440,10 +442,10 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
                                                               chassis::CreatePipelineLayout &chassis_state) {
     if (gpuav_settings.shader_instrumentation_enabled) {
-        if (chassis_state.modified_create_info.setLayoutCount > desc_set_bind_index_) {
+        if (chassis_state.modified_create_info.setLayoutCount > instrumentation_desc_set_bind_index_) {
             std::ostringstream strm;
             strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
-                 << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
+                 << ") will conflicts with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
                  << "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
                     "for "
                     "pipelines created with it, therefor no validation error will be repored for them by GPU-AV at "
@@ -454,15 +456,15 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
             // 3. Fill in with the debug descriptor layout at the max binding slot
-            chassis_state.new_layouts.reserve(desc_set_bind_index_ + 1);
+            chassis_state.new_layouts.reserve(instrumentation_desc_set_bind_index_ + 1);
             chassis_state.new_layouts.insert(chassis_state.new_layouts.end(), &pCreateInfo->pSetLayouts[0],
                                              &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
-            for (uint32_t i = pCreateInfo->setLayoutCount; i < desc_set_bind_index_; ++i) {
+            for (uint32_t i = pCreateInfo->setLayoutCount; i < instrumentation_desc_set_bind_index_; ++i) {
                 chassis_state.new_layouts.push_back(dummy_desc_layout_);
             }
-            chassis_state.new_layouts.push_back(debug_desc_layout_);
+            chassis_state.new_layouts.push_back(instrumentation_desc_layout_);
             chassis_state.modified_create_info.pSetLayouts = chassis_state.new_layouts.data();
-            chassis_state.modified_create_info.setLayoutCount = desc_set_bind_index_ + 1;
+            chassis_state.modified_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
         }
     }
     BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
@@ -545,10 +547,10 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
         VkShaderCreateInfoEXT new_create_info = pCreateInfos[i];
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
 
-        if (new_create_info.setLayoutCount > desc_set_bind_index_) {
+        if (new_create_info.setLayoutCount > instrumentation_desc_set_bind_index_) {
             std::ostringstream strm;
             strm << "pCreateInfos[" << i << "]::setLayoutCount (" << new_create_info.setLayoutCount
-                 << ") will conflicts with validation's descriptor set at slot " << desc_set_bind_index_ << ". "
+                 << ") will conflicts with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
                  << "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
                     "for VkShaderEXT created with it, therefor no validation error will be repored for them by GPU-AV at "
                     "runtime.";
@@ -558,15 +560,15 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             // 1. Copying the caller's descriptor set desc_layouts
             // 2. Fill in dummy descriptor layouts up to the max binding
             // 3. Fill in with the debug descriptor layout at the max binding slot
-            instrumentation_data.new_layouts.reserve(desc_set_bind_index_ + 1);
+            instrumentation_data.new_layouts.reserve(instrumentation_desc_set_bind_index_ + 1);
             instrumentation_data.new_layouts.insert(instrumentation_data.new_layouts.end(), pCreateInfos[i].pSetLayouts,
                                                     &pCreateInfos[i].pSetLayouts[pCreateInfos[i].setLayoutCount]);
-            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < desc_set_bind_index_; ++j) {
+            for (uint32_t j = pCreateInfos[i].setLayoutCount; j < instrumentation_desc_set_bind_index_; ++j) {
                 instrumentation_data.new_layouts.push_back(dummy_desc_layout_);
             }
-            instrumentation_data.new_layouts.push_back(debug_desc_layout_);
+            instrumentation_data.new_layouts.push_back(instrumentation_desc_layout_);
             new_create_info.pSetLayouts = instrumentation_data.new_layouts.data();
-            new_create_info.setLayoutCount = desc_set_bind_index_ + 1;
+            new_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
         }
 
         PreCallRecordShaderObjectInstrumentation(new_create_info, record_obj.location.dot(vvl::Field::pCreateInfos, i),
@@ -972,11 +974,11 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
 
     // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
     // already instrumented shaders need to be replaced with uninstrumented shaders
-    if (pipeline_state.active_slots.find(desc_set_bind_index_) != pipeline_state.active_slots.end()) {
+    if (pipeline_state.active_slots.find(instrumentation_desc_set_bind_index_) != pipeline_state.active_slots.end()) {
         return false;
     }
     const auto pipeline_layout = pipeline_state.PipelineLayoutState();
-    if (pipeline_layout && pipeline_layout->set_layouts.size() > desc_set_bind_index_) {
+    if (pipeline_layout && pipeline_layout->set_layouts.size() > instrumentation_desc_set_bind_index_) {
         return false;
     }
 
@@ -1346,7 +1348,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     gpu::spirv::Settings module_settings{};
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
     module_settings.shader_id = unique_shader_id;
-    module_settings.output_buffer_descriptor_set = desc_set_bind_index_;
+    module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
     module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     module_settings.max_instrumented_count = gpuav_settings.debug_max_instrumented_count;
     module_settings.support_int64 = enabled_features.shaderInt64;

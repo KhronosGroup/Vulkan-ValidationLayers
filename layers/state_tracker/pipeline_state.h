@@ -731,6 +731,9 @@ struct LastBound {
     bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;
     VkShaderEXT GetShader(ShaderObjectStage stage) const;
     vvl::ShaderObject *GetShaderState(ShaderObjectStage stage) const;
+    const vvl::ShaderObject *GetShaderStateIfValid(ShaderObjectStage stage) const;
+    // Return compute shader for compute pipeline, vertex or mesh shader for graphics
+    const vvl::ShaderObject *GetFirstShader(VkPipelineBindPoint bind_point) const;
     bool HasShaderObjects() const;
     bool IsValidShaderBound(ShaderObjectStage stage) const;
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;

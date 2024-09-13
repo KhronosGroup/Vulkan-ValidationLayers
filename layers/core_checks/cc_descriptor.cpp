@@ -382,7 +382,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
             const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-06563"
                                     : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
             skip |= LogError(vuid, objlist, set_loc,
-                             "(%s) that does not exist, and the layout was not created "
+                             "(%s) does not exist, and the pipeline layout was not created "
                              "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
                              FormatHandle(pDescriptorSets[set_idx]).c_str());
         }
