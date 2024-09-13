@@ -1944,12 +1944,22 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
 
         std::vector<std::shared_ptr<vkt::Buffer>> scratch_buffers(build_info_count);
         std::vector<vkt::as::BuildGeometryInfoKHR> build_infos;
+
+        VkDeviceAddress ref_address = 0;
         for (auto &scratch_buffer : scratch_buffers) {
             scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
             vk::BindBufferMemory(device(), scratch_buffer->handle(), buffer_memory.handle(), 0);
 
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
             blas.SetScratchBuffer(std::move(scratch_buffer));
+            if (ref_address == 0) {
+                ref_address = blas.GetScratchBuffer()->address();
+            } else {
+                if (blas.GetScratchBuffer()->address() != ref_address) {
+                    GTEST_SKIP()
+                        << "Bounding two buffers to the same memory location does not result in identical buffer device addresses";
+                }
+            }
             build_infos.emplace_back(std::move(blas));
         }
 

@@ -681,7 +681,7 @@ void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR() {
 
 VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool use_ppGeometries /*= true*/) {
     // Computer total primitives count, and get pointers to geometries
-    uint32_t primitives_count = 0;
+    std::vector<uint32_t> primitives_count(geometries_.size());
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
 
@@ -691,12 +691,12 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
         geometries.reserve(geometries_.size());
     }
 
-    for (const auto &geometry : geometries_) {
-        primitives_count += geometry.GetFullBuildRange().primitiveCount;
+    for (const auto &[geometry_i, geometry] : vvl::enumerate(geometries_)) {
+        primitives_count[geometry_i] = geometry->GetFullBuildRange().primitiveCount;
         if (use_ppGeometries) {
-            pGeometries.emplace_back(&geometry.GetVkObj());
+            pGeometries.emplace_back(&geometry->GetVkObj());
         } else {
-            geometries.emplace_back(geometry.GetVkObj());
+            geometries.emplace_back(geometry->GetVkObj());
         }
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
@@ -711,7 +711,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
 
     // Get VkAccelerationStructureBuildSizesInfoKHR using this->vk_info_
     VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
-    vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, &primitives_count, &size_info);
+    vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, primitives_count.data(), &size_info);
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
@@ -842,7 +842,8 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 }
 
 namespace blueprint {
-GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device) {
+GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t triangles_count) {
+    assert(triangles_count > 0);
     GeometryKHR triangle_geometry;
 
     triangle_geometry.SetType(GeometryKHR::Type::Triangle);
@@ -856,13 +857,18 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device) {
 
     vkt::Buffer vertex_buffer(device, 1024, buffer_usage,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-    vkt::Buffer index_buffer(device, 1024, buffer_usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &alloc_flags);
+    vkt::Buffer index_buffer(device, 1024 + 3 * triangles_count * sizeof(uint32_t), buffer_usage,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
     // Fill vertex and index buffers with one triangle
-    triangle_geometry.SetPrimitiveCount(1);
+    triangle_geometry.SetPrimitiveCount(triangles_count);
     constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    constexpr std::array<uint32_t, 3> indices = {{0, 1, 2}};
+    std::vector<uint32_t> indices(triangles_count * 3);
+    for (size_t triangle_i = 0; triangle_i < triangles_count; ++triangle_i) {
+        indices[3 * triangle_i + 0] = 0;
+        indices[3 * triangle_i + 1] = 1;
+        indices[3 * triangle_i + 2] = 2;
+    }
 
     auto mapped_vbo_buffer_data = static_cast<float *>(vertex_buffer.memory().map());
     std::copy(vertices.begin(), vertices.end(), mapped_vbo_buffer_data);
