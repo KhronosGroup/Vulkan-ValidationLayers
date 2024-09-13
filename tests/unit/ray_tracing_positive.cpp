@@ -406,15 +406,15 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     m_commandBuffer->begin();
     vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
 
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
+
     for (auto& blas : blas_vec) {
         blas.SetSrcAS(blas.GetDstAS());
         blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
         blas.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
     }
-
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
-    m_device->Wait();
 
     m_commandBuffer->begin();
     vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
@@ -423,29 +423,62 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
     m_device->Wait();
 }
 
-// Test is broken, needs to be updated:
-// - no need for host commands
-// - need to maintain create info alive for duration of deferred operation
-TEST_F(PositiveRayTracing, DISABLED_BuildAccelerationStructuresDeferredOperation) {
-    TEST_DESCRIPTION("Call vkBuildAccelerationStructuresKHR with a valid VkDeferredOperationKHR object");
+TEST_F(PositiveRayTracing, BuildAccelerationStructuresList2) {
+    TEST_DESCRIPTION(
+        "Build a list of destination acceleration structures, with first build having a bigger build range than second.");
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
+
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
+
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "vkGetDeferredOperationResultKHR not supported by MockICD";
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    VkDeferredOperationKHR deferred_op = VK_NULL_HANDLE;
-    vk::CreateDeferredOperationKHR(m_device->handle(), 0, &deferred_op);
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR as_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&as_props);
+    vk::GetPhysicalDeviceProperties2(m_device->phy(), &phys_dev_props);
 
-    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    blas.SetDeferredOp(deferred_op);
-    blas.BuildHost();
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
 
-    vk::DestroyDeferredOperationKHR(m_device->handle(), deferred_op, nullptr);
+    auto scratch_buffer = std::make_shared<vkt::Buffer>(
+        *m_device, 4 * 1024 * 1024, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+
+    std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+
+    auto blas_0 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    std::vector<vkt::as::GeometryKHR> geometries;
+    geometries.emplace_back(vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, 1000));
+    blas_0.SetGeometries(std::move(geometries));
+
+    blas_0.SetScratchBuffer(scratch_buffer);
+
+    auto blas_1 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_1.SetScratchBuffer(scratch_buffer);
+    auto size_info_1 = blas_1.GetSizeInfo();
+
+    // Scratch  buffer used ranges:
+    // buffer start --> | blas_1 | <pad for alignment> | blas_0 |
+    // If scratch size if computed incorrectly, an overlap with scratch memory for blas_0 will be detected for blas_1
+    blas_0.SetDeviceScratchOffset(
+        Align<VkDeviceAddress>(size_info_1.buildScratchSize, as_props.minAccelerationStructureScratchOffsetAlignment));
+
+    blas_vec.emplace_back(std::move(blas_0));
+    blas_vec.emplace_back(std::move(blas_1));
+
+    m_commandBuffer->begin();
+
+    vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
+
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_device->Wait();
 }
 
 TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {

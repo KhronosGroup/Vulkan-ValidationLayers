@@ -253,7 +253,7 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 //    m_commandBuffer->end();
 // }
 namespace blueprint {
-GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device);
+GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, size_t triangles_count = 1);
 GeometryKHR GeometrySimpleOnHostTriangleInfo();
 GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device& device);
 GeometryKHR GeometrySimpleOnHostAABBInfo();
