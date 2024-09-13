@@ -141,3 +141,32 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
         vk::DestroyPipelineBinaryKHR(device(), pipeline_binary2, nullptr);
     }
 }
+
+TEST_F(PositivePipelineBinary, GetPipelineKey) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8540");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineBinaries);
+    RETURN_IF_SKIP(Init());
+
+    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+
+    VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
+    compute_create_info.stage = cs.GetStageCreateInfo();
+    compute_create_info.layout = pipeline_layout.handle();
+
+    VkPipelineBinaryInfoKHR pipeline_binary_info = vku::InitStructHelper();
+    pipeline_binary_info.binaryCount = 0;
+
+    compute_create_info.pNext = &pipeline_binary_info;
+
+    VkPipelineCreateInfoKHR pipeline_create_info = vku::InitStructHelper(&compute_create_info);
+
+    VkPipelineBinaryKeyKHR pipeline_key = vku::InitStructHelper();
+
+    vk::GetPipelineKeyKHR(device(), &pipeline_create_info, &pipeline_key);
+}
