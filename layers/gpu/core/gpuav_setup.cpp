@@ -82,9 +82,11 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Add buffer device address feature
         if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
-            InternalWarning(device, record_obj.location,
-                            "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
-            bda_features->bufferDeviceAddress = VK_TRUE;
+            if (!bda_features->bufferDeviceAddress) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
+                bda_features->bufferDeviceAddress = VK_TRUE;
+            }
         } else {
             InternalWarning(
                 device, record_obj.location,
