@@ -225,6 +225,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
     // The descriptor slot we will be injecting our error buffer into
     uint32_t desc_set_bind_index_ = 0;
+    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
+    VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager_;
@@ -239,8 +241,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
   private:
     void Cleanup();
-    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
-    VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     // These are objects used to inject our descriptor set into the command buffer
     VkDescriptorSetLayout debug_desc_layout_ = VK_NULL_HANDLE;
     VkPipelineLayout debug_pipeline_layout_ = VK_NULL_HANDLE;
