@@ -76,6 +76,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
         out = []
         out.append('''
             #include "stateless/stateless_validation.h"
+            #include <vulkan/vk_enum_string_helper.h>
 
             //  Checking for values is a 2 part process
             //    1. Check if is valid at all
@@ -132,6 +133,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             # Need empty functions to resolve all template variations
             if len(enum.fieldExtensions) <= len(enum.extensions):
                 out.append(f'template<> vvl::Extensions StatelessValidation::GetEnumExtensions({enum.name} value) const {{ return {{}}; }}\n')
+                out.append(f'template<> const char* StatelessValidation::DescribeEnum({enum.name} value) const {{ return nullptr; }}\n')
                 out.extend(guard_helper.add_guard(None, extra_newline=True))
                 continue
 
@@ -158,6 +160,10 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                         };
                     }
                 ''')
+
+            out.append(f'template<> const char* StatelessValidation::DescribeEnum({enum.name} value) const {{\n')
+            out.append(f'   return string_{enum.name}(value);\n')
+            out.append('}\n')
             out.extend(guard_helper.add_guard(None, extra_newline=True))
 
         self.write(''.join(out))
