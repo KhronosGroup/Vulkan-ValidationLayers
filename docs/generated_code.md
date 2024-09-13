@@ -9,7 +9,7 @@ values when the Vulkan Headers or SPIR-V Grammer is updated.
 
 # Dependency
 
-`pyparsing` is required so if no installed, you will need to call `pip install pyparsing`
+`pyparsing` is required, so if it is not installed, you will need to call `pip install pyparsing`
 
 # How to generate the code
 
