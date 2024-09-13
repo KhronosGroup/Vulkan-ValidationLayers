@@ -100,10 +100,17 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             'vkGetDisplayPlaneSupportedDisplaysKHR',
             # need to handle binaries in VkPipelineBinaryHandlesInfoKHR as output, not input.
             'vkCreatePipelineBinariesKHR',
+            'vkGetPipelineKeyKHR',
             ]
 
         # List of all extension structs strings containing handles
-        self.ndo_extension_structs = []
+        self.ndo_extension_structs = [
+            # These are added manually because vkGetPipelineKeyKHR needs to unwrap these (see VUID 09604)
+            "VkComputePipelineCreateInfo",
+            "VkGraphicsPipelineCreateInfo",
+            "VkRayTracingPipelineCreateInfoKHR",
+            "VkExecutionGraphPipelineCreateInfoAMDX",
+        ]
 
         # Dispatch functions that need special state tracking variables passed in
         self.custom_definition = {

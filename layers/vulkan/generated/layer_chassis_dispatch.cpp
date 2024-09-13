@@ -37,6 +37,99 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
         VkBaseOutStructure* header = reinterpret_cast<VkBaseOutStructure*>(cur_pnext);
 
         switch (header->sType) {
+            case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkComputePipelineCreateInfo*>(cur_pnext);
+
+                if (safe_struct->stage.module) {
+                    safe_struct->stage.module = layer_data->Unwrap(safe_struct->stage.module);
+                }
+                UnwrapPnextChainHandles(layer_data, safe_struct->stage.pNext);
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkGraphicsPipelineCreateInfo*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->renderPass) {
+                    safe_struct->renderPass = layer_data->Unwrap(safe_struct->renderPass);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkRayTracingPipelineCreateInfoKHR*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+                if (safe_struct->pLibraryInfo) {
+                    if (safe_struct->pLibraryInfo->pLibraries) {
+                        for (uint32_t index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
+                            safe_struct->pLibraryInfo->pLibraries[index1] =
+                                layer_data->Unwrap(safe_struct->pLibraryInfo->pLibraries[index1]);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkExecutionGraphPipelineCreateInfoAMDX*>(cur_pnext);
+                if (safe_struct->pStages) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->stageCount; ++index0) {
+                        UnwrapPnextChainHandles(layer_data, safe_struct->pStages[index0].pNext);
+
+                        if (safe_struct->pStages[index0].module) {
+                            safe_struct->pStages[index0].module = layer_data->Unwrap(safe_struct->pStages[index0].module);
+                        }
+                    }
+                }
+                if (safe_struct->pLibraryInfo) {
+                    if (safe_struct->pLibraryInfo->pLibraries) {
+                        for (uint32_t index1 = 0; index1 < safe_struct->pLibraryInfo->libraryCount; ++index1) {
+                            safe_struct->pLibraryInfo->pLibraries[index1] =
+                                layer_data->Unwrap(safe_struct->pLibraryInfo->pLibraries[index1]);
+                        }
+                    }
+                }
+
+                if (safe_struct->layout) {
+                    safe_struct->layout = layer_data->Unwrap(safe_struct->layout);
+                }
+                if (safe_struct->basePipelineHandle) {
+                    safe_struct->basePipelineHandle = layer_data->Unwrap(safe_struct->basePipelineHandle);
+                }
+            } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkFrameBoundaryEXT*>(cur_pnext);
                 if (safe_struct->pImages) {
@@ -5192,15 +5285,6 @@ void DispatchDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipel
         pipelineBinary = (VkPipelineBinaryKHR)0;
     }
     layer_data->device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
-}
-
-VkResult DispatchGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
-                                   VkPipelineBinaryKeyKHR* pPipelineKey) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-
-    VkResult result = layer_data->device_dispatch_table.GetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey);
-
-    return result;
 }
 
 VkResult DispatchGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,

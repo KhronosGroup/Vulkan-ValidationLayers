@@ -1638,3 +1638,21 @@ VkResult DispatchCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBina
 
     return result;
 }
+
+VkResult DispatchGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR *pPipelineCreateInfo,
+                                   VkPipelineBinaryKeyKHR *pPipelineKey) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey);
+    vku::safe_VkPipelineCreateInfoKHR var_local_pPipelineCreateInfo;
+    vku::safe_VkPipelineCreateInfoKHR *local_pPipelineCreateInfo = nullptr;
+    {
+        if (pPipelineCreateInfo) {
+            local_pPipelineCreateInfo = &var_local_pPipelineCreateInfo;
+            local_pPipelineCreateInfo->initialize(pPipelineCreateInfo);
+            UnwrapPnextChainHandles(layer_data, local_pPipelineCreateInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetPipelineKeyKHR(
+        device, (const VkPipelineCreateInfoKHR *)local_pPipelineCreateInfo, pPipelineKey);
+    return result;
+}
