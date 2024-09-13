@@ -207,7 +207,7 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
         cb_state->Retire(submission.perf_submit_pass, is_query_updated_after);
     }
     for (auto &signal : submission.signal_semaphores) {
-        signal.semaphore->RetireSignal(this, signal.payload, submission.loc.Get());
+        signal.semaphore->RetireSignal(signal.payload);
     }
     if (submission.fence) {
         submission.fence->Retire();

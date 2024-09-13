@@ -63,7 +63,6 @@ class Semaphore : public RefcountedStateObject {
         std::optional<Func> acquire_command;
         std::promise<void> completed;
         std::shared_future<void> waiter;
-        bool pending_wait = false;  // WORKAROUND when wait can't see a signal (then signal has to see the wait)
 
         TimePoint() : completed(), waiter(completed.get_future()) {}
         bool HasSignaler() const { return signal_submit.has_value() || acquire_command.has_value(); }
@@ -92,7 +91,7 @@ class Semaphore : public RefcountedStateObject {
     void RetireWait(Queue *current_queue, uint64_t payload, const Location &loc, bool queue_thread = false);
 
     // Process signal by retiring timeline timepoints up to the specified payload
-    void RetireSignal(Queue *current_queue, uint64_t payload, const Location &loc);
+    void RetireSignal(uint64_t payload);
 
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(
