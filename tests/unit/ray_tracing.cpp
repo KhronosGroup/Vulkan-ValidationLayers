@@ -3497,7 +3497,7 @@ TEST_F(NegativeRayTracing, DstAsTooSmall) {
     blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
 
     blas.GetDstAS()->SetSize(1);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03675");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-10126");
     blas.BuildCmdBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 
