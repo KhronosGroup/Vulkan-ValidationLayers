@@ -552,13 +552,15 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         }
     }
 
-    if (info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR) {
+    if (info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR &&
+        !(info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
+          (info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR))) {
         if (const auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
             const VkDeviceSize as_minimum_size =
                 rt::ComputeAccelerationStructureSize(rt::BuildType::Device, device, info, geometry_build_ranges);
             if (dst_as_state->create_info.size < as_minimum_size) {
                 const LogObjectList objlist(cmd_buffer, info.dstAccelerationStructure);
-                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03675", objlist,
+                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-10126", objlist,
                                  info_loc.dot(Field::dstAccelerationStructure),
                                  " was created with size (%" PRIu64
                                  "), but an acceleration structure build with corresponding ppBuildRangeInfos[%" PRIu32
@@ -929,16 +931,19 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
             skip |= ValidateAccelStructBufferMemoryIsNotMultiInstance(*dst_as_state, info_loc.dot(Field::dstAccelerationStructure),
                                                                       "VUID-vkBuildAccelerationStructuresKHR-pInfos-03775");
 
-            const VkDeviceSize as_minimum_size =
-                rt::ComputeAccelerationStructureSize(rt::BuildType::Host, device, *info, ppBuildRangeInfos[info_i]);
-            if (dst_as_state->create_info.size < as_minimum_size) {
-                const LogObjectList objlist(info->dstAccelerationStructure);
-                skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03675", objlist,
-                                 info_loc.dot(Field::dstAccelerationStructure),
-                                 " was created with size (%" PRIu64
-                                 "), but an acceleration structure build with corresponding ppBuildRangeInfos[%" PRIu32
-                                 "] requires a minimum size of (%" PRIu64 ").",
-                                 dst_as_state->create_info.size, info_i, as_minimum_size);
+            if (!(info->mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR &&
+                  (info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR))) {
+                const VkDeviceSize as_minimum_size =
+                    rt::ComputeAccelerationStructureSize(rt::BuildType::Host, device, *info, ppBuildRangeInfos[info_i]);
+                if (dst_as_state->create_info.size < as_minimum_size) {
+                    const LogObjectList objlist(info->dstAccelerationStructure);
+                    skip |= LogError("VUID-vkBuildAccelerationStructuresKHR-pInfos-10126", objlist,
+                                     info_loc.dot(Field::dstAccelerationStructure),
+                                     " was created with size (%" PRIu64
+                                     "), but an acceleration structure build with corresponding ppBuildRangeInfos[%" PRIu32
+                                     "] requires a minimum size of (%" PRIu64 ").",
+                                     dst_as_state->create_info.size, info_i, as_minimum_size);
+                }
             }
 
             if (info->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
