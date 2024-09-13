@@ -59,22 +59,6 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
     assert(timeline_.find(payload) == timeline_.end() || !timeline_.find(payload)->second.signal_submit.has_value());
 
     timeline_[payload].signal_submit.emplace(signal_submit);
-
-    // WORKAROUND for situation when WaitSemaphores wait is over but it can't find
-    // registered signal because QueueSubmit PostRecord has not started yet.
-    // For in-use tracking the solution is to register signal in PreRecord,
-    // so subsequent PostRecord calls will have access to the expected state
-    // (One of the PostRecords will retire the signal, but then the others will see
-    // this as part of semaphore completed state, for example, other retire calls
-    // will return early.
-    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        for (auto &[p, t] : timeline_) {
-            if (p <= payload && t.pending_wait && signal_submit.queue) {
-                signal_submit.queue->Notify(signal_submit.seq);
-                break;
-            }
-        }
-    }
 }
 
 void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload) {
@@ -224,26 +208,48 @@ bool vvl::Semaphore::CanRetireBinaryWait(TimePoint &timepoint) const {
 
 bool vvl::Semaphore::CanRetireTimelineWait(const vvl::Queue *current_queue, uint64_t payload) const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
-    // Search for resolving signal
-    for (auto &[p, t] : timeline_) {
-        if (p >= payload && t.signal_submit.has_value()) {
-            // Found host signal that finishes this wait
-            if (t.signal_submit->queue == nullptr) {
-                return true;
-            }
-            // The resolving signal can only be on another queue (the earlier signals on the
-            // current queue are already processed and corresponding timepoints are retired,
-            // the later signals even if they match wait criteria, are blocked by the wait).
-            // Initiate forward progress on signaling queue and ask the caller to wait.
-            if (t.signal_submit->queue != current_queue) {
-                t.Notify();
-                return false;
-            }
+
+    // In the correct program the resolving signal is the next signal on the timeline,
+    // otherwise this violates the rule of strictly increasing signal values.
+    auto it = timeline_.find(payload);
+    assert(it != timeline_.end());
+    for (; it != timeline_.end(); ++it) {
+        const TimePoint &t = it->second;
+        if (!t.signal_submit.has_value()) {
+            continue;
         }
+        // The only exception when the next timeline signal is not a resolving one, when it violates signaling order.
+        // Skip such signals.
+        //
+        // TODO: report validation error (from the queue thread?), use ClosestSignalValueDoesNotFinishWait for testing.
+        //
+        // DETAILS: if the next signal is on the waiting queue, it can't be a resolving signal (blocked by wait).
+        // During retirement phase we know that resolving signal exists -> it has larger value then the next timeline signal.
+        // This scenario can't be handled by the core checks - they detect a subset related to vkSignalSemaphore signals,
+        // but not other cases. Queue thread has more information about ordering.
+        if (t.signal_submit->queue != nullptr && t.signal_submit->queue == current_queue) {
+            continue;
+        }
+        // Found the resolving signal
+        break;
     }
-    // The resolving signal was not found. Retire the wait if it's external semaphore (true),
-    // otherwise ask the caller to wait (false).
-    return scope_ != kInternal;
+
+    // There is always a resolving signal when we reach a retirement phase (CPU successfully finished waiting on GPU).
+    // For external semaphore we might not have visibility of this signal. Just retire the wait.
+    if (it == timeline_.end()) {
+        assert(scope_ != kInternal);
+        return true;
+    }
+
+    // Found host signal that finishes this wait
+    const TimePoint &t = it->second;
+    if (t.signal_submit->queue == nullptr) {
+        return true;
+    }
+
+    // Notify signaling queue and wait for its queue thread
+    t.Notify();
+    return false;
 }
 
 void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, const Location &loc, bool queue_thread) {
@@ -288,12 +294,11 @@ void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, con
         assert(timepoint.waiter.valid());
         // the current timepoint should get destroyed while we're waiting, so copy out the waiter.
         waiter = timepoint.waiter;
-        timepoint.pending_wait = true;
     }
     WaitTimePoint(std::move(waiter), payload, !queue_thread, loc);
 }
 
-void vvl::Semaphore::RetireSignal(vvl::Queue *current_queue, uint64_t payload, const Location &loc) {
+void vvl::Semaphore::RetireSignal(uint64_t payload) {
     auto guard = WriteLock();
     if (payload <= completed_.payload) {
         return;
