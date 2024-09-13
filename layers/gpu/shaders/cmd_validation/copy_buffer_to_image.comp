@@ -109,7 +109,7 @@ void main() {
 
         Texel texel = SearchOobDepthValue(tid, region_i);
         if (texel.value < 0 || texel.value > 1) {
-            GpuavLogError(kErrorGroupGpuCopyBufferToImage, kErrorSubCodePreCopyBufferToImageBufferTexel, texel.byte_offset, 0);
+            GpuavLogError2(kErrorGroupGpuCopyBufferToImage, kErrorSubCodePreCopyBufferToImageBufferTexel, texel.byte_offset, 0);
         }
     }
 }

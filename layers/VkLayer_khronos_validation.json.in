@@ -1142,6 +1142,26 @@
                                                             }
                                                         ]
                                                     }
+                                                },
+                                                {
+                                                    "key": "gpuav_index_buffers",
+                                                    "label": "Index buffers",
+                                                    "type": "BOOL",
+                                                    "default": true,
+                                                    "description": "Validate that indexed draws do not fetch indices outside of the bounds of the index buffer. Also validates that those indices are not out of the bounds of the fetched vertex buffers.",
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "gpuav_buffers_validation",
+                                                                "value": true
+                                                            }
+                                                        ]
+                                                    }
                                                 }
                                             ]
                                         },

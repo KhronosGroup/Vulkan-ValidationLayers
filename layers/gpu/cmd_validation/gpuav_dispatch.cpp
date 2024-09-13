@@ -189,7 +189,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     DispatchUpdateDescriptorSets(gpuav.device, 1, &desc_write, 0, nullptr);
 
     // Save current graphics pipeline state
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    RestorablePipelineState restorable_state(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Insert diagnostic dispatch
     if (use_shader_objects) {
@@ -205,8 +205,8 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_dispatch_resources.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
                              sizeof(push_constants), push_constants);
-    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
-                                    cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindErrorLoggingDescriptorSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
+                                  cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &indirect_buffer_desc_set, 0, nullptr);
     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);

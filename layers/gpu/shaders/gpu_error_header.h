@@ -137,6 +137,8 @@ const int kInstRayQueryParamOffset_0 = kHeaderSize;
 // ---
 const int kPreActionParamOffset_0 = kHeaderSize;
 const int kPreActionParamOffset_1 = kHeaderSize + 1;
+const int kPreActionParamOffset_2 = kHeaderSize + 2;
+const int kPreActionParamOffset_3 = kHeaderSize + 3;
 
 // Sizes/Counts
 // -------------------

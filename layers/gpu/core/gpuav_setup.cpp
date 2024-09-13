@@ -78,10 +78,10 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
 
     // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
 
-    auto add_missing_features = [this, &record_obj, modified_create_info]() {
+    auto add_bda_feature = [this, &record_obj, modified_create_info]() {
         // Add buffer device address feature
         if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
+                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info->pNext))) {
             InternalWarning(device, record_obj.location,
                             "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
             bda_features->bufferDeviceAddress = VK_TRUE;
@@ -104,13 +104,31 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                 features12->bufferDeviceAddress = VK_TRUE;
             }
         } else {
-            add_missing_features();
+            add_bda_feature();
         }
     } else if (api_version == VK_API_VERSION_1_1) {
         // Add our new extensions (will only add if found)
         const std::string_view bda_ext{"VK_KHR_buffer_device_address"};
         vku::AddExtension(*modified_create_info, bda_ext.data());
-        add_missing_features();
+        add_bda_feature();
+    }
+
+    // shaderInt64
+    VkPhysicalDeviceFeatures physical_device_features{};
+    DispatchGetPhysicalDeviceFeatures(physicalDevice, &physical_device_features);
+    if (physical_device_features.shaderInt64) {
+        if (auto enabled_features = const_cast<VkPhysicalDeviceFeatures*>(modified_create_info->pEnabledFeatures)) {
+            enabled_features->shaderInt64 = VK_TRUE;
+        } else if (auto *features = const_cast<VkPhysicalDeviceFeatures2*>(vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
+            features->features.shaderInt64 = VK_TRUE;
+        } else {
+            // Need to add a VkPhysicalDeviceFeatures pointer
+            enabled_features = new VkPhysicalDeviceFeatures;
+            enabled_features->shaderInt64 = VK_TRUE;
+            modified_create_info->pEnabledFeatures = enabled_features;
+        }
+    } else {
+        InternalWarning(device, record_obj.location, "shaderInt64 feature not available, countBuffer (as seen in commands like vkCmdDrawIndexedIndirectCount) validation will not be performed.");
     }
 }
 

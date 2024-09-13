@@ -46,6 +46,9 @@ struct GpuVuidsCmdDrawIndexed : GpuVuid {
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndexed-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexed-None-08613";
         invalid_descriptor = "VUID-vkCmdDrawIndexed-None-08114";
+        // This should be detected on the host by core validation but just in case...
+        index_buffer_size = "VUID-vkCmdDrawIndexedEXT-robustBufferAccess2-08798";
+        vertex_index_oob = "VUID-vkCmdDrawIndexed-None-02721";
     }
 };
 
@@ -56,6 +59,8 @@ struct GpuVuidsCmdDrawMultiIndexedEXT : GpuVuid {
         uniform_access_oob_08612 = "VUID-vkCmdDrawMultiIndexedEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMultiIndexedEXT-None-08613";
         invalid_descriptor = "VUID-vkCmdDrawMultiIndexedEXT-None-08114";
+        index_buffer_size = "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798";
+        vertex_index_oob = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
     }
 };
 
@@ -78,6 +83,8 @@ struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexedIndirect-None-08613";
         invalid_descriptor = "VUID-vkCmdDrawIndexedIndirect-None-08114";
         first_instance_not_zero = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
+        index_buffer_size = "VUID-vkCmdDrawIndexedIndirect-robustBufferAccess2-08798";
+        vertex_index_oob = "VUID-vkCmdDrawIndexedIndirect-None-02721";
     }
 };
 
@@ -128,6 +135,8 @@ struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153";
         count_exceeds_bufsize = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154";
         count_exceeds_device_limit = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717";
+        index_buffer_size = "VUID-vkCmdDrawIndexedIndirectCount-robustBufferAccess2-08798";
+        vertex_index_oob = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
     }
 };
 

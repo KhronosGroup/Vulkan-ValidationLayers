@@ -72,7 +72,8 @@ class GpuResourcesManager {
     std::vector<gpu::DeviceMemoryBlock> mem_blocks_;
 };
 
-class SharedResourcesManager {
+// Cache a single object of type T. Key is *only* based on typeid(T)
+class SharedResourcesCache {
   public:
     template <typename T>
     T *TryGet() {
@@ -84,6 +85,10 @@ class SharedResourcesManager {
         return t;
     }
 
+    // First call to Get<T> will create the object, subsequent calls will retrieve the cached entry.
+    // /!\ The cache key is only based on the type T, not on the passed parameters
+    // => Successive calls to Get<T> with different parameters will NOT give different objects,
+    // only the entry cached upon the first call to Get<T> will be retrieved
     template <typename T, class... ConstructorTypes>
     T &Get(ConstructorTypes &&...args) {
         T *t = TryGet<T>();
@@ -111,6 +116,11 @@ class SharedResourcesManager {
     // Tried to use vvl::unordered_map, but fails to compile on Windows currently
     std::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
+};
+
+struct BoundStorageBuffer {
+    uint32_t binding = vvl::kU32Max;
+    VkDescriptorBufferInfo info{VK_NULL_HANDLE, vvl::kU64Max, 0};
 };
 
 }  // namespace gpu

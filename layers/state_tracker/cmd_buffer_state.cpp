@@ -301,6 +301,10 @@ void CommandBuffer::ResetCBState() {
     label_stack_depth_ = 0;
     label_commands_.clear();
 
+    push_constant_data_chunks.clear();
+    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
+    push_constant_ranges_layout.reset();
+
     nesting_level = 0;
 
     transform_feedback_active = false;
@@ -341,8 +345,9 @@ void CommandBuffer::ResetPushConstantRangesLayoutIfIncompatible(const vvl::Pipel
         return;
     }
 
-    push_constant_ranges_layout = pipeline_layout_state.push_constant_ranges_layout;
     push_constant_data_chunks.clear();
+    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
+    push_constant_ranges_layout = pipeline_layout_state.push_constant_ranges_layout;
 }
 
 void CommandBuffer::Destroy() {
@@ -1723,6 +1728,7 @@ void CommandBuffer::UnbindResources() {
 
     // Push constants
     push_constant_data_chunks.clear();
+    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
     push_constant_ranges_layout.reset();
 
     // Reset status of cb to force rebinding of all resources
