@@ -23,8 +23,11 @@ namespace gpuav {
 
 struct DescSetState;
 
-void SetupShaderInstrumentationResources(Validator& gpuav, CommandBuffer& cmd_buffer, VkPipelineBindPoint bind_point,
-                                         const Location& loc);
+void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
+                                                const Location& loc);
+
+void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBuffer& cb_statee, VkPipelineBindPoint bind_point,
+                                                 const Location& loc);
 
 // Return true iff a error has been found
 bool LogInstrumentationError(Validator& gpuav, VkCommandBuffer cmd_buffer, const LogObjectList& objlist, uint32_t operation_index,

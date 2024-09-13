@@ -18,30 +18,6 @@
 
 class NegativeGpuAV : public GpuAVTest {};
 
-TEST_F(NegativeGpuAV, DestroyedPipelineLayout) {
-    TEST_DESCRIPTION("Check if can catch pipeline layout not being bound");
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    // Destroy pipeline layout after creating pipeline
-    CreatePipelineHelper pipe(*this);
-    {
-        const vkt::PipelineLayout doomed_pipeline_layout(*m_device);
-        pipe.gp_ci_.layout = doomed_pipeline_layout.handle();
-        pipe.CreateGraphicsPipeline();
-    }
-
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("Unable to find pipeline layout to bind debug descriptor set");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-}
-
 TEST_F(NegativeGpuAV, ValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
     RETURN_IF_SKIP(InitGpuAvFramework());

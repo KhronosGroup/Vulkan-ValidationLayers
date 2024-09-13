@@ -600,7 +600,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     // VkDescriptorSet printf_desc_set = cb_state->gpu_resources_manager.GetManagedDescriptorSet(GetDebugDescriptorSetLayout());
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkResult result = desc_set_manager_->GetDescriptorSets(1, &desc_pool, GetDebugDescriptorSetLayout(), &desc_sets);
+    VkResult result = desc_set_manager_->GetDescriptorSets(1, &desc_pool, GetInstrumentationDescriptorSetLayout(), &desc_sets);
     if (result != VK_SUCCESS) {
         InternalError(cmd_buffer, loc, "Unable to allocate descriptor sets.");
         return;
@@ -654,15 +654,15 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
         const auto pipeline_layout_handle = (last_bound.desc_set_pipeline_layout)
                                                 ? last_bound.desc_set_pipeline_layout
                                                 : pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
-        if (pipeline_layout->set_layouts.size() <= desc_set_bind_index_) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index_, 1, desc_sets.data(),
-                                          0, nullptr);
+        if (pipeline_layout->set_layouts.size() <= instrumentation_desc_set_bind_index_) {
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, instrumentation_desc_set_bind_index_, 1,
+                                          desc_sets.data(), 0, nullptr);
         }
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
-        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, GetDebugPipelineLayout(), desc_set_bind_index_, 1, desc_sets.data(),
-                                      0, nullptr);
+        DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, GetInstrumentationPipelineLayout(),
+                                      instrumentation_desc_set_bind_index_, 1, desc_sets.data(), 0, nullptr);
     }
     // Record buffer and memory info in CB state tracking
     cb_state->buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point, cb_state->action_command_count++);

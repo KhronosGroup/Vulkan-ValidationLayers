@@ -210,10 +210,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, bool has_bindless_descriptors,
                           const Location &loc, std::vector<uint32_t> &out_instrumented_spirv);
 
-    VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
-
   public:
-    VkPipelineLayout GetDebugPipelineLayout() { return debug_pipeline_layout_; }
+    VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout() { return instrumentation_desc_layout_; }
+    VkPipelineLayout GetInstrumentationPipelineLayout() { return instrumentation_pipeline_layout_; }
 
     // When aborting we will disconnect all future chassis calls.
     // If we are deep into a call stack, we can use this to return up to the chassis call.
@@ -224,7 +223,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
     // The descriptor slot we will be injecting our error buffer into
-    uint32_t desc_set_bind_index_ = 0;
+    uint32_t instrumentation_desc_set_bind_index_ = 0;
+    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
+    VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager_;
@@ -239,11 +240,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
   private:
     void Cleanup();
-    // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
-    VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     // These are objects used to inject our descriptor set into the command buffer
-    VkDescriptorSetLayout debug_desc_layout_ = VK_NULL_HANDLE;
-    VkPipelineLayout debug_pipeline_layout_ = VK_NULL_HANDLE;
+    VkDescriptorSetLayout instrumentation_desc_layout_ = VK_NULL_HANDLE;
+    VkPipelineLayout instrumentation_pipeline_layout_ = VK_NULL_HANDLE;
     // Make sure we call the right versions of any timeline semaphore functions.
     bool timeline_khr_{false};
 

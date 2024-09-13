@@ -1187,6 +1187,29 @@ vvl::ShaderObject *LastBound::GetShaderState(ShaderObjectStage stage) const {
     return shader_object_states[static_cast<uint32_t>(stage)];
 }
 
+const vvl::ShaderObject *LastBound::GetShaderStateIfValid(ShaderObjectStage stage) const {
+    if (!shader_object_bound[static_cast<uint32_t>(stage)]) {
+        return nullptr;
+    }
+    return shader_object_states[static_cast<uint32_t>(stage)];
+}
+
+const vvl::ShaderObject *LastBound::GetFirstShader(VkPipelineBindPoint bind_point) const {
+    if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        return GetShaderStateIfValid(ShaderObjectStage::COMPUTE);
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        if (const vvl::ShaderObject *vs = GetShaderStateIfValid(ShaderObjectStage::VERTEX)) {
+            return vs;
+        }
+
+        if (const vvl::ShaderObject *ms = GetShaderStateIfValid(ShaderObjectStage::MESH)) {
+            return ms;
+        }
+    }
+
+    return nullptr;
+}
+
 bool LastBound::HasShaderObjects() const {
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         if (GetShader(static_cast<ShaderObjectStage>(i)) != VK_NULL_HANDLE) {
@@ -1196,12 +1219,7 @@ bool LastBound::HasShaderObjects() const {
     return false;
 }
 
-bool LastBound::IsValidShaderBound(ShaderObjectStage stage) const {
-    if (!shader_object_bound[static_cast<uint32_t>(stage)]) {
-        return false;
-    }
-    return shader_object_states[static_cast<uint32_t>(stage)] != nullptr;
-}
+bool LastBound::IsValidShaderBound(ShaderObjectStage stage) const { return GetShaderStateIfValid(stage) != nullptr; }
 
 bool LastBound::IsValidShaderOrNullBound(ShaderObjectStage stage) const {
     return shader_object_bound[static_cast<uint32_t>(stage)];
