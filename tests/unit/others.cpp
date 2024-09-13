@@ -2275,3 +2275,10 @@ TEST_F(VkLayerTest, PhysicalDeviceLayeredApiVulkanPropertiesKHR) {
     vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, UnrecognizedEnumExtension) {
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-format-parameter");
+    vkt::Image image(*m_device, 4, 4, 1, VK_FORMAT_A4B4G4R4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
+    m_errorMonitor->VerifyFound();
+}

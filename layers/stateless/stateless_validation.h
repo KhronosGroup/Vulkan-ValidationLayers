@@ -407,7 +407,8 @@ class StatelessValidation : public ValidationObject {
         } else if (result == ValidValue::NoExtension && device != VK_NULL_HANDLE) {
             // If called from an instance function, there is no device to base extension support off of
             auto extensions = GetEnumExtensions(value);
-            skip |= LogError(vuid, device, loc, "(%" PRIu32 ") requires the extensions %s.", value, String(extensions).c_str());
+            skip |=
+                LogError(vuid, device, loc, "(%s) requires the extensions %s.", DescribeEnum(value), String(extensions).c_str());
         }
 
         return skip;
@@ -455,8 +456,8 @@ class StatelessValidation : public ValidationObject {
                 } else if (result == ValidValue::NoExtension && device != VK_NULL_HANDLE) {
                     // If called from an instance function, there is no device to base extension support off of
                     auto extensions = GetEnumExtensions(array[i]);
-                    skip |= LogError(array_required_vuid, device, array_loc.dot(i), "(%" PRIu32 ") requires the extensions %s.",
-                                     array[i], String(extensions).c_str());
+                    skip |= LogError(array_required_vuid, device, array_loc.dot(i), "(%s) requires the extensions %s.",
+                                     DescribeEnum(array[i]), String(extensions).c_str());
                 }
             }
         }
@@ -489,6 +490,8 @@ class StatelessValidation : public ValidationObject {
     ValidValue IsValidEnumValue(T value) const;
     template <typename T>
     vvl::Extensions GetEnumExtensions(T value) const;
+    template <typename T>
+    const char *DescribeEnum(T value) const;
 
     // VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
     vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions &device_extensions) const;
@@ -594,8 +597,8 @@ class StatelessValidation : public ValidationObject {
                                                     const ErrorObject &error_obj) const;
 
     bool ValidatePipelineShaderStageCreateInfoCommon(const VkPipelineShaderStageCreateInfo &create_info, const Location &loc) const;
-    bool ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags,
-                                    VkPipelineCache pipelineCache, const Location &loc) const;
+    bool ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
+                                    const Location &loc) const;
     bool ValidatePipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo &rendering_struct, const Location &loc) const;
     bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
