@@ -1161,26 +1161,8 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     queue_map_.clear();
 }
 
-static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
-    if (queue_state.found_unbalanced_cmdbuf_label) return;
-    for (const auto &command : cb_state.GetLabelCommands()) {
-        if (command.begin) {
-            queue_state.cmdbuf_label_stack.push_back(command.label_name);
-        } else {
-            if (queue_state.cmdbuf_label_stack.empty()) {
-                queue_state.found_unbalanced_cmdbuf_label = true;
-                return;
-            }
-            queue_state.last_closed_cmdbuf_label = queue_state.cmdbuf_label_stack.back();
-            queue_state.cmdbuf_label_stack.pop_back();
-        }
-    }
-}
-
-void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                                                       VkFence fence, const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
-
+void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                      VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<vvl::Queue>(queue);
 
     std::vector<vvl::QueueSubmission> submissions;
@@ -1219,7 +1201,6 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             if (auto cb_state = Get<vvl::CommandBuffer>(submit->pCommandBuffers[i])) {
-                UpdateCmdBufLabelStack(*cb_state, *queue_state);
                 submission.AddCommandBuffer(std::move(cb_state));
             }
         }
@@ -1228,24 +1209,52 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         }
         submissions.emplace_back(std::move(submission));
     }
-    queue_state->SetupSubmissions(submissions);
-    auto result = queue_state->PostSubmit(std::move(submissions));
+
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
     if (result.has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
 }
 
-void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                           VkFence fence, const RecordObject &record_obj) {
-    PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
+    if (queue_state.found_unbalanced_cmdbuf_label) return;
+    for (const auto &command : cb_state.GetLabelCommands()) {
+        if (command.begin) {
+            queue_state.cmdbuf_label_stack.push_back(command.label_name);
+        } else {
+            if (queue_state.cmdbuf_label_stack.empty()) {
+                queue_state.found_unbalanced_cmdbuf_label = true;
+                return;
+            }
+            queue_state.last_closed_cmdbuf_label = queue_state.cmdbuf_label_stack.back();
+            queue_state.cmdbuf_label_stack.pop_back();
+        }
+    }
 }
 
-void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
-                                                        VkFence fence, const RecordObject &record_obj) {
+void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                       VkFence fence, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
-
     auto queue_state = Get<vvl::Queue>(queue);
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(submit->pCommandBuffers[i])) {
+                UpdateCmdBufLabelStack(*cb_state, *queue_state);
+            }
+        }
+    }
+    queue_state->PostSubmit();
+}
 
+void ValidationStateTracker::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                          VkFence fence, const RecordObject &record_obj) {
+    PreCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                       VkFence fence, const RecordObject &record_obj) {
+    auto queue_state = Get<vvl::Queue>(queue);
     std::vector<vvl::QueueSubmission> submissions;
     submissions.reserve(submitCount);
     if (submitCount == 0) {
@@ -1273,21 +1282,36 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t 
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            if (auto cb_state = GetWrite<vvl::CommandBuffer>(submit->pCommandBufferInfos[i].commandBuffer)) {
-                UpdateCmdBufLabelStack(*cb_state, *queue_state);
-                submission.AddCommandBuffer(std::move(cb_state));
-            }
+            submission.AddCommandBuffer(GetWrite<vvl::CommandBuffer>(submit->pCommandBufferInfos[i].commandBuffer));
         }
         if (submit_idx == (submitCount - 1)) {
             submission.AddFence(Get<vvl::Fence>(fence));
         }
         submissions.emplace_back(std::move(submission));
     }
-    queue_state->SetupSubmissions(submissions);
-    auto result = queue_state->PostSubmit(std::move(submissions));
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
     if (result.has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                           VkFence fence, const RecordObject &record_obj) {
+    PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+}
+
+void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                        VkFence fence, const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    auto queue_state = Get<vvl::Queue>(queue);
+    for (const auto &submit : vvl::make_span(pSubmits, submitCount)) {
+        for (const auto &cmdbuf_info : vvl::make_span(submit.pCommandBufferInfos, submit.commandBufferInfoCount)) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(cmdbuf_info.commandBuffer)) {
+                UpdateCmdBufLabelStack(*cb_state, *queue_state);
+            }
+        }
+    }
+    queue_state->PostSubmit();
 }
 
 void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
@@ -1335,19 +1359,12 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
     Destroy<vvl::DeviceMemory>(mem);
 }
 
-void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                           VkFence fence, const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
+void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
+                                                          VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<vvl::Queue>(queue);
 
     std::vector<vvl::QueueSubmission> submissions;
     submissions.reserve(bindInfoCount);
-    if (bindInfoCount == 0) {
-        vvl::QueueSubmission submission(record_obj.location);
-        submission.AddFence(Get<vvl::Fence>(fence));
-        submissions.emplace_back(std::move(submission));
-    }
-
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; ++bind_idx) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_idx];
         // Track objects tied to memory
@@ -1418,11 +1435,17 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
         submissions.emplace_back(std::move(submission));
     }
 
-    queue_state->SetupSubmissions(submissions);
-    auto result = queue_state->PostSubmit(std::move(submissions));
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
     if (result.has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }
+}
+
+void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
+                                                           VkFence fence, const RecordObject &record_obj) {
+    if (record_obj.result != VK_SUCCESS) return;
+    auto queue_state = Get<vvl::Queue>(queue);
+    queue_state->PostSubmit();
 }
 
 void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
@@ -3822,8 +3845,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     }
 
     auto queue_state = Get<vvl::Queue>(queue);
-    queue_state->SetupSubmissions(present_submissions);
-    auto result = queue_state->PostSubmit(std::move(present_submissions));
+    vvl::PreSubmitResult result = queue_state->PreSubmit(std::move(present_submissions));
+
     if (result.has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
     }

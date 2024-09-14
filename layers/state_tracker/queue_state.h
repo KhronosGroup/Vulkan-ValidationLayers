@@ -76,7 +76,9 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
     return std::chrono::steady_clock::now() + std::chrono::seconds(10);
 }
 
-struct SubmitResult {
+struct PreSubmitResult {
+    uint64_t last_submission_seq = 0;
+
     bool has_external_fence = false;
     uint64_t submission_with_external_fence_seq = 0;
 };
@@ -97,10 +99,10 @@ class Queue : public StateObject {
 
     VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
 
-    void SetupSubmissions(std::vector<QueueSubmission> &submissions);
-
+    // called from the various PreCallRecordQueueSubmit() methods
+    virtual PreSubmitResult PreSubmit(std::vector<QueueSubmission> &&submissions);
     // called from the various PostCallRecordQueueSubmit() methods
-    virtual SubmitResult PostSubmit(std::vector<QueueSubmission> &&submissions);
+    void PostSubmit();
 
     // Tell the queue thread that submissions up to and including the submission with
     // sequence number until_seq have finished. kU64Max means to finish all submissions.

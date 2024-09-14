@@ -49,16 +49,11 @@ void vvl::QueueSubmission::EndUse() {
     }
 }
 
-void vvl::Queue::SetupSubmissions(std::vector<vvl::QueueSubmission> &submissions) {
-    assert(!submissions.empty());
-    for (auto &s : submissions) {
-        s.seq = ++seq_;
+vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
+    if (!submissions.empty()) {
+        submissions.back().end_batch = true;
     }
-    submissions.back().end_batch = true;
-}
-
-vvl::SubmitResult vvl::Queue::PostSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
-    SubmitResult result;
+    PreSubmitResult result;
     for (auto &submission : submissions) {
         for (auto &cb_state : submission.cbs) {
             auto cb_guard = cb_state->WriteLock();
@@ -69,7 +64,10 @@ vvl::SubmitResult vvl::Queue::PostSubmit(std::vector<vvl::QueueSubmission> &&sub
             cb_state->IncrementResources();
             cb_state->Submit(VkHandle(), submission.perf_submit_pass, submission.loc.Get());
         }
-        assert(submission.seq != 0);
+        // seq_ is atomic so we don't need a lock until updating the deque below.
+        // Note that this relies on the external synchonization requirements for the
+        // VkQueue
+        submission.seq = ++seq_;
         submission.BeginUse();
         for (auto &wait : submission.wait_semaphores) {
             wait.semaphore->EnqueueWait(SubmissionReference(this, submission.seq), wait.payload);
@@ -87,7 +85,6 @@ vvl::SubmitResult vvl::Queue::PostSubmit(std::vector<vvl::QueueSubmission> &&sub
         }
         {
             auto guard = Lock();
-            PostSubmit(submission);
             submissions_.emplace_back(std::move(submission));
             if (!thread_) {
                 thread_ = std::make_unique<std::thread>(&Queue::ThreadFunc, this);
@@ -150,6 +147,13 @@ void vvl::Queue::Destroy() {
         dead_thread.reset();
     }
     StateObject::Destroy();
+}
+
+void vvl::Queue::PostSubmit() {
+    auto guard = Lock();
+    if (!submissions_.empty()) {
+        PostSubmit(submissions_.back());
+    }
 }
 
 vvl::QueueSubmission *vvl::Queue::NextSubmission() {
