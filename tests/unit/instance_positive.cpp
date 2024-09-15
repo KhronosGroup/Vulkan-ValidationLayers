@@ -83,3 +83,12 @@ TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     ImageFormatIsSupported(instance(), gpu(), ci, features);
 }
+
+TEST_F(PositiveInstance, EmptyVkLayerSettingEXT) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8541");
+    auto ici = GetInstanceCreateInfo();
+    ici.pNext = nullptr;
+    VkInstance dummy_instance;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &dummy_instance));
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(dummy_instance, nullptr));
+}
