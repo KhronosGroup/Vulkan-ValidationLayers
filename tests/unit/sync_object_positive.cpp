@@ -1313,6 +1313,10 @@ TEST_F(PositiveSyncObject, FenceSemThreadRace) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
+    }
+
     vkt::Fence fence(*m_device);
     vkt::Semaphore sem(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     uint64_t signal_value = 1;
@@ -2096,6 +2100,10 @@ TEST_F(PositiveSyncObject, TimelineHostWaitThenSubmitSignal) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
+    }
+
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
     auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
     std::thread t(thread);
@@ -2113,6 +2121,10 @@ TEST_F(PositiveSyncObject, TimelineHostWaitThenSubmitLargerSignal) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
+    }
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
     auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
@@ -2229,6 +2241,7 @@ TEST_F(PositiveSyncObject, TimelineSubmitWaitThenHostSignalLargerValue) {
     m_default_queue->Wait();
 }
 
+// TODO: non-monotonic signaling order, when validation can detect this convert to a negative test
 TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait) {
     TEST_DESCRIPTION("Test that validation selects correct signal");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2247,6 +2260,7 @@ TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait) {
     m_default_queue->Wait();
 }
 
+// TODO: non-monotonic signaling order, when validation can detect this convert to a negative test
 TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait2) {
     TEST_DESCRIPTION("Test that validation selects correct signal");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2281,4 +2295,49 @@ TEST_F(PositiveSyncObject, PollSemaphoreCounter) {
     do {
         vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter);
     } while (counter != 1);
+}
+
+TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
+    TEST_DESCRIPTION("https://www.khronos.org/blog/vulkan-timeline-semaphores");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD (synchronization dependencies)";
+    }
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    // WORKAROUND for windows nvidia driver 561.09 (it's enough just to record an empty command buffer for the second queue).
+    // Without it submit in thread3 can signal 8 even wait on 7 is not finished (thread 2 did not reach signal(7).
+    m_second_command_buffer.begin();
+    m_second_command_buffer.end();
+    // WORKAROUND end
+
+    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    auto thread1 = [this, &timeline]() {
+        // Can start immediately, wait on 0 is noop
+        m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 0, timeline, 5);
+    };
+    auto thread2 = [&timeline]() {
+        // Wait for thread1's device work to complete.
+        timeline.Wait(4, kWaitTimeout);
+        // Unblock thread3's device work.
+        timeline.Signal(7);
+    };
+    auto thread3 = [this, &timeline]() { m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 7, timeline, 8); };
+
+    std::thread t1(thread1);
+    std::thread t2(thread2);
+    std::thread t3(thread3);
+
+    timeline.Wait(8, kWaitTimeout);
+
+    timeline.destroy();
+
+    t3.join();
+    t2.join();
+    t1.join();
 }
