@@ -243,7 +243,7 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             strm << "(set = " << error_record[kInstBindlessBoundsDescSetOffset]
                  << ", binding = " << error_record[kInstBindlessBoundsDescBindingOffset] << ") Index of "
                  << error_record[kInstBindlessBoundsDescIndexOffset] << " used to index descriptor array of length "
-                 << error_record[kInstBindlessBoundsDescBoundOffset] << ".";
+                 << error_record[kInstBindlessCustomOffset_0] << ".";
             out_vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
             error_found = true;
         } break;
@@ -259,13 +259,6 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
                  << ", binding = " << error_record[kInstBindlessUninitBindingOffset] << ") Descriptor index "
                  << error_record[kInstBindlessUninitDescIndexOffset] << " references a resource that was destroyed.";
             out_vuid_msg = "UNASSIGNED-Descriptor destroyed";
-            error_found = true;
-        } break;
-        case kErrorSubCodeBindlessDescriptorNullPointer: {
-            strm << "(set = " << error_record[kInstBindlessUninitDescSetOffset]
-                 << ", binding = " << error_record[kInstBindlessUninitBindingOffset] << ") Descriptor index "
-                 << error_record[kInstBindlessUninitDescIndexOffset] << " had error getting pointer to descriptor.";
-            out_vuid_msg = "UNASSIGNED-Descriptor Null Pointer";
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorOOB: {

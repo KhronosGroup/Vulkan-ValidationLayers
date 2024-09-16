@@ -96,7 +96,6 @@ const int kInstBindlessCustomOffset_1 = kHeaderSize + 4;
 const int kInstBindlessBoundsDescSetOffset = kInstBindlessDescSetOffset;
 const int kInstBindlessBoundsDescBindingOffset = kInstBindlessDescBindingOffset;
 const int kInstBindlessBoundsDescIndexOffset = kInstBindlessDescIndexOffset;
-const int kInstBindlessBoundsDescBoundOffset = kInstBindlessCustomOffset_0;
 
 // A descriptor uninitialized error will output the index.
 const int kInstBindlessUninitDescSetOffset = kInstBindlessDescSetOffset;
