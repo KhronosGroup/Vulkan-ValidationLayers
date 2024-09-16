@@ -80,10 +80,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
     uint param_1 = 0u;
     do {
         DescriptorLayoutData layout_data = bindless_state_buffer.desc_sets[desc_set].layout_data;
-        if (binding >= layout_data.num_bindings) {
-            error = kErrorSubCodeBindlessDescriptorBounds;
-            break;
-        }
 
         uvec2 binding_state = layout_data.data[binding];
         if (desc_index >= binding_state.x) {
@@ -100,8 +96,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         uint desc_type = (in_data.data[state_index].x & ~kDebugInputBindlessSkipId) >> kDescBitShift;
         if (desc_id == 0u) {
             error = kErrorSubCodeBindlessDescriptorUninit;
-            param_0 = binding_state.y;
-            param_1 = desc_index;
             break;
         }
         if (desc_id == kDebugInputBindlessSkipId) {
@@ -114,8 +108,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         bool is_valid = (bindless_state_buffer.global_state.data[desc_index] & desc_bit) == 0;
         if (is_valid) {
             error = kErrorSubCodeBindlessDescriptorDestroyed;
-            param_0 = binding_state.y;
-            param_1 = desc_index;
             break;
         }
         if (desc_type == kImageSamplerDesc) {
@@ -123,8 +115,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             desc_id = in_data.data[state_index].y;
             if (desc_id == 0u) {
                 error = kErrorSubCodeBindlessDescriptorUninit;
-                param_0 = binding_state.y;
-                param_1 = desc_index;
                 break;
             }
             // check that the resource is still valid
@@ -133,8 +123,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             is_valid = (bindless_state_buffer.global_state.data[desc_index] & desc_bit) == 0;
             if (is_valid) {
                 error = kErrorSubCodeBindlessDescriptorDestroyed;
-                param_0 = binding_state.y;
-                param_1 = desc_index;
                 break;
             }
         } else if (desc_type == kTexelDesc || desc_type == kBufferDesc) {
