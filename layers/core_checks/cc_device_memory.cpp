@@ -2276,6 +2276,19 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                              mem_state->allocate_info.allocationSize);
         }
 
+        // TODO: We cannot validate the requirement size since there is no way
+        // to calculate the size of an optimal tiled arbitrary image region (as of now).
+        const VkMemoryRequirements &requirement = image_state->requirements[0];
+
+        if (SafeModulo(bind.memoryOffset, requirement.alignment) != 0) {
+            skip |= LogError("VUID-VkSparseImageMemoryBind-memory-01105", bind.memory, memory_loc.dot(Field::memoryOffset),
+                             "(%" PRIu64 ") is not a multiple of the required alignment (%" PRIu64 ").", bind.memoryOffset,
+                             requirement.alignment);
+        }
+
+        skip |= ValidateMemoryTypes(*mem_state.get(), requirement.memoryTypeBits, memory_loc.dot(Field::memory),
+                                    "VUID-VkSparseImageMemoryBind-memory-01105");
+
         if (mem_state->IsExport()) {
             if (!(mem_state->export_handle_types & image_state->external_memory_handle_types)) {
                 const LogObjectList objlist(bind.memory, image_state->Handle());
