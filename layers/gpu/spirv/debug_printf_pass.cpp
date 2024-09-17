@@ -528,7 +528,7 @@ bool DebugPrintfPass::Run() {
     return true;
 }
 
-void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass\n\tinstrumentation count: " << instrumented_count_ << '\n'; }
+void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass instrumentation count: " << instrumented_count_ << '\n'; }
 
 // Strictly speaking - the format given in GLSL_EXT_debug_printf is a client side implementation of SPIR-V
 // NonSemantic.DebugPrintf There is nothing stopping someone from creating a debug printf implementation
