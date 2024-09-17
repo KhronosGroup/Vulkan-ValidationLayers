@@ -33,7 +33,6 @@
 
 #if defined __ANDROID__
 #include <android/log.h>
-#define LOGCONSOLE(...) ((void)__android_log_print(ANDROID_LOG_INFO, "VALIDATION", __VA_ARGS__))
 [[maybe_unused]] static const char *kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
 #endif
 

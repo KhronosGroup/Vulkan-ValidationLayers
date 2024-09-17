@@ -502,7 +502,8 @@ void __attribute__((constructor)) CheckAndroidVersion() {
     }
 
     if (queried_version < target_android_api) {
-        LOGCONSOLE("ERROR - Android version is %d and needs to be 26 or above.", queried_version);
+        __android_log_print(ANDROID_LOG_FATAL, "VALIDATION", "ERROR - Android version is %d and needs to be 26 or above.",
+                            queried_version);
     }
 }
 
