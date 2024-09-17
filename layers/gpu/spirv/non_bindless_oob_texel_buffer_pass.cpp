@@ -190,7 +190,7 @@ bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function,
 }
 
 void NonBindlessOOBTexelBufferPass::PrintDebugInfo() {
-    std::cout << "NonBindlessOOBTexelBufferPass\n\tinstrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "NonBindlessOOBTexelBufferPass instrumentation count: " << instrumented_count_ << '\n';
 }
 
 // Created own Run() because need to control finding the largest offset in a given block

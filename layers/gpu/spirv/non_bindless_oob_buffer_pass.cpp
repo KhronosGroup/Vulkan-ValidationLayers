@@ -169,7 +169,7 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
 }
 
 void NonBindlessOOBBufferPass::PrintDebugInfo() {
-    std::cout << "NonBindlessOOBBufferPass\n\tinstrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "NonBindlessOOBBufferPass instrumentation count: " << instrumented_count_ << '\n';
 }
 
 // Created own Run() because need to control finding the largest offset in a given block

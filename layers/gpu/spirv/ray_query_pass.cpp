@@ -67,7 +67,7 @@ bool RayQueryPass::AnalyzeInstruction(const Function& function, const Instructio
     return true;
 }
 
-void RayQueryPass::PrintDebugInfo() { std::cout << "RayQueryPass\n\tinstrumentation count: " << instrumented_count_ << '\n'; }
+void RayQueryPass::PrintDebugInfo() { std::cout << "RayQueryPass instrumentation count: " << instrumented_count_ << '\n'; }
 
 }  // namespace spirv
 }  // namespace gpu
