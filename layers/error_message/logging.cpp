@@ -680,8 +680,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
     std::ostringstream msg_buffer;
-    char msg_severity[30];
-    char msg_type[30];
+    char msg_severity[8];  // larget word is "VERBOSE\0"
+    char msg_type[8];
 
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
@@ -696,13 +696,26 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
                    << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
                    << '\n';
     }
-    const std::string tmp = msg_buffer.str();
-    const char *cstr = tmp.c_str();
-    fprintf((FILE *)user_data, "%s", cstr);
+
+    const std::string msg_buffer_str = msg_buffer.str();
+
+    // Even if this is stdout, we still want to print for android
+    // VVL testing (and probably other systems now) call freopen() to map stdout to dedicated file
+    fprintf((FILE *)user_data, "%s", msg_buffer_str.c_str());
     fflush((FILE *)user_data);
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    LOGCONSOLE("%s", cstr);
+    // If the user uses there own callback, we can let them fix the formatting, but as a default, some error messages will be way to
+    // long for default logcat buffer. While one *can* adjust the logcat size, we assume 1024 is the max and chunk it up here. (note
+    // that \n will automatically print a new line in logcat, but still counts towards the 1024 limit)
+    const size_t chunk_size = 1024;
+    const size_t total_size = msg_buffer_str.size();
+    size_t offset = 0;
+    while (offset < total_size) {
+        size_t bytes_to_print = std::min(chunk_size, total_size - offset);
+        __android_log_print(ANDROID_LOG_INFO, "VALIDATION", "%s", msg_buffer_str.c_str() + offset);
+        offset += bytes_to_print;
+    }
 #endif
 
     return false;
@@ -713,8 +726,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
                                                             const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
                                                             [[maybe_unused]] void *user_data) {
     std::ostringstream msg_buffer;
-    char msg_severity[30];
-    char msg_type[30];
+    char msg_severity[8];  // larget word is "VERBOSE\0"
+    char msg_type[8];
 
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
