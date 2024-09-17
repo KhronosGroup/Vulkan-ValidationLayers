@@ -229,6 +229,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state);
     QueueBatchContext(const SyncValidator &sync_state);
     QueueBatchContext() = delete;
+    ~QueueBatchContext();
     void Trim();
 
     std::string FormatUsage(ResourceUsageTagEx tag_ex) const override;
