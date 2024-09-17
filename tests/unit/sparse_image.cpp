@@ -967,6 +967,21 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
 
+    VkImageCreateInfo invalid_create_info = create_info;
+    vkt::Image invalid_image(*m_device, invalid_create_info, vkt::no_mem);
+
+    VkMemoryRequirements invalid_image_mem_reqs;
+    vk::GetImageMemoryRequirements(m_device->handle(), invalid_image.handle(), &invalid_image_mem_reqs);
+
+    // Make sure that the same memory type is not chosen.
+    invalid_image_mem_reqs.memoryTypeBits = ~image_mem_reqs.memoryTypeBits;
+
+    const auto invalid_image_mem_alloc =
+        vkt::DeviceMemory::get_resource_alloc_info(*m_device, invalid_image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vkt::DeviceMemory invalid_image_mem;
+    invalid_image_mem.init(*m_device, invalid_image_mem_alloc);
+
     uint32_t requirements_count = 0u;
     vk::GetImageSparseMemoryRequirements(m_device->handle(), image.handle(), &requirements_count, nullptr);
 
@@ -981,6 +996,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     VkSparseImageMemoryBind image_bind{};
     image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_bind.memory = image_mem.handle();
+    image_bind.memoryOffset = 0;
     image_bind.extent = granularity;
 
     VkSparseImageMemoryBindInfo image_bind_info{};
@@ -993,6 +1009,21 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     bind_info.pImageBinds = &image_bind_info;
 
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
+
+    // Force invalid device memory
+    image_bind.memory = invalid_image_mem.handle();
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-memory-01105");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.memory = image_mem.handle();
+
+    // Force memoryOffset to invalid value
+    image_bind.memoryOffset = image_mem_reqs.alignment + 1;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSparseImageMemoryBind-memory-01105");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.memoryOffset = 0;
 
     // Force offset.x to invalid value
     image_bind.offset.x = granularity.width - 1;
