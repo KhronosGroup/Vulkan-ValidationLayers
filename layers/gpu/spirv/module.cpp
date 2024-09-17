@@ -615,6 +615,11 @@ void Module::LinkFunction(const LinkInfo& info) {
         if (opcode == spv::OpFunction) {
             new_inst->words_[1] = id_swap_map[new_inst->words_[1]];
             new_inst->words_[2] = info.function_id;
+            // We can easily inject the same function hundreds of times and really don't want to inline it.
+            // Have found that if drivers don't inline, can get a 20x speed-up at compiling large bloated shaders.
+            // There is no way to query this or test if the driver does consume this, also currently most drivers
+            // will ignore this as it is not hooked up... but worth trying
+            new_inst->words_[3] = spv::FunctionControlDontInlineMask;
             new_inst->words_[4] = function_type_id;
         } else if (opcode == spv::OpLabel) {
             uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
