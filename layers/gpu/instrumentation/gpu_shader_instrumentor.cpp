@@ -812,7 +812,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
     if (!gpuav_settings.shader_instrumentation_enabled) return;
-    PostCallRecordPipelineCreationsRT(record_obj.result, deferredOperation, pAllocator, chassis_state);
 
     const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR;
 
@@ -835,7 +834,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
             // deferred_operation_post_check for the current deferredOperation.
             // This lambda is responsible for initializing the pipeline state we maintain,
             // this state will be accessed in the following lambda.
-            // Given how PostCallRecordPipelineCreationsRT is called in
+            // Given how PostCallRecordCreateRayTracingPipelinesKHR is called in
             // GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR
             // conditions holds as of writing. But it is something we need to be aware of.
             assert(false);
@@ -1156,76 +1155,6 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
 
         shader_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(), shader_module_handle,
                                      VK_NULL_HANDLE, std::move(code));
-    }
-}
-
-void GpuShaderInstrumentor::PostCallRecordPipelineCreationsRT(
-    VkResult result, VkDeferredOperationKHR deferredOperation, const VkAllocationCallbacks *pAllocator,
-    std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
-    const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR;
-
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (is_operation_deferred) {
-        if (wrap_handles) {
-            deferredOperation = layer_data->Unwrap(deferredOperation);
-        }
-        auto found = layer_data->deferred_operation_post_check.pop(deferredOperation);
-        std::vector<std::function<void(const std::vector<VkPipeline> &)>> deferred_op_post_checks;
-        if (found->first) {
-            deferred_op_post_checks = std::move(found->second);
-        } else {
-            // ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR should have added a lambda in
-            // deferred_operation_post_check for the current deferredOperation.
-            // This lambda is responsible for initializing the pipeline state we maintain,
-            // this state will be accessed in the following lambda.
-            // Given how PostCallRecordPipelineCreationsRT is called in
-            // GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR
-            // conditions holds as of writing. But it is something we need to be aware of.
-            assert(false);
-        }
-
-        // From the Vulkan spec, section "Deferred Host Operations":
-        // ===`
-        // Parameters to the command requesting a deferred operation may be accessed by the implementation at any time
-        // until the deferred operation enters the complete state.
-        // The application must obey the following rules while a deferred operation is pending:
-        // - Externally synchronized parameters must not be accessed.
-        // - Pointer parameters must not be modified (e.g. reallocated/freed).
-        // - The contents of pointer parameters which may be read by the command must not be modified.
-        // - The contents of pointer parameters which may be written by the command must not be read.
-        // - Vulkan object parameters must not be passed as externally synchronized parameters to any other command.
-        //
-        // => Need to hold onto `chassis_state` until deferred operation completion
-        // ==> Done by copying it into lambda. It will be released after `deferred_operation_post_check` is processed
-        deferred_op_post_checks.emplace_back([&state_tracker = std::as_const(*this), pAllocator,
-                                              held_chassis_state = chassis_state](const std::vector<VkPipeline> &vk_pipelines) {
-            for (size_t vk_pipeline_i = 0; vk_pipeline_i < vk_pipelines.size(); ++vk_pipeline_i) {
-                const VkPipeline vk_pipeline = vk_pipelines[vk_pipeline_i];
-                // This code assumes that a previous function inserted by the ValidationStateTracker in
-                // deferred_operation_post_check has ran, as this function is in charge of initializing pipeline state
-                const auto pipeline_state = state_tracker.Get<vvl::Pipeline>(vk_pipeline);
-                // Per explanation above, we expect a pipeline state.
-                ASSERT_AND_CONTINUE(pipeline_state);
-
-                if (!pipeline_state->stage_states.empty() && !(pipeline_state->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR)) {
-                    const auto pipeline_layout = pipeline_state->PipelineLayoutState();
-                    for (auto &stage_state : pipeline_state->stage_states) {
-                        // If user is asking for the descriptor slot used by instrumentation,
-                        // cannot run GPU-AV, so destroy instrumented shaders
-                        if (pipeline_state->active_slots.find(state_tracker.desc_set_bind_index_) !=
-                                pipeline_state->active_slots.end() ||
-                            (pipeline_layout->set_layouts.size() > state_tracker.desc_set_bind_index_)) {
-                            auto *modified_ci = reinterpret_cast<const VkRayTracingPipelineCreateInfoKHR *>(
-                                held_chassis_state->modified_create_infos[vk_pipeline_i].ptr());
-                            auto instrumented_module = GetShaderModule(*modified_ci, stage_state.GetStage());
-                            assert(instrumented_module != stage_state.module_state->VkHandle());
-                            DispatchDestroyShaderModule(state_tracker.device, instrumented_module, pAllocator);
-                        }
-                    }
-                }
-            }
-        });
-        layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
     }
 }
 
