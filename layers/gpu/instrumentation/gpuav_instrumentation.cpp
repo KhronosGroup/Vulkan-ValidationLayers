@@ -559,7 +559,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
             cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
-            tracker_info, pipeline_bind_point, operation_index);
+            tracker_info, shader_id, pipeline_bind_point, operation_index);
 
         if (uses_robustness && oob_access) {
             if (gpuav.gpuav_settings.warn_on_robust_oob) {

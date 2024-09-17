@@ -184,7 +184,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
                                          uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
                                          uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
-                                         VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const;
+                                         uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
+                                         uint32_t operation_index) const;
 
   protected:
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
