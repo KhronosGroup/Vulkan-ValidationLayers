@@ -168,5 +168,15 @@ TEST_F(PositivePipelineBinary, GetPipelineKey) {
 
     VkPipelineBinaryKeyKHR pipeline_key = vku::InitStructHelper();
 
-    vk::GetPipelineKeyKHR(device(), &pipeline_create_info, &pipeline_key);
+    ASSERT_EQ(VK_SUCCESS, vk::GetPipelineKeyKHR(device(), &pipeline_create_info, &pipeline_key));
+}
+
+TEST_F(PositivePipelineBinary, GetPipelineKeyGlobal) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8544");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineBinaries);
+    RETURN_IF_SKIP(Init());
+    VkPipelineBinaryKeyKHR pipeline_key = vku::InitStructHelper();
+    ASSERT_EQ(VK_SUCCESS, vk::GetPipelineKeyKHR(device(), nullptr, &pipeline_key));
 }
