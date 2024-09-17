@@ -29,6 +29,7 @@ target_sources(VkLayer_utils PRIVATE
     error_message/error_location.h
     error_message/error_strings.h
     error_message/record_object.h
+    error_message/log_message_type.h
     external/xxhash.h
     external/inplace_function.h
     ${API_TYPE}/generated/error_location_helper.cpp

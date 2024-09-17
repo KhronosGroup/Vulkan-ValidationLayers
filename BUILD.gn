@@ -142,6 +142,7 @@ vvl_sources = [
   "layers/error_message/logging.cpp",
   "layers/error_message/logging.h",
   "layers/error_message/record_object.h",
+  "layers/error_message/log_message_type.h",
   "layers/external/inplace_function.h",
   "layers/external/vma/vk_mem_alloc.h",
   "layers/external/vma/vma.cpp",
