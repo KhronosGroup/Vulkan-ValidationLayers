@@ -197,9 +197,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
         const Location &loc, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
     void PostCallRecordPipelineCreationShaderInstrumentation(
         vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
-    void PostCallRecordPipelineCreationsRT(VkResult result, VkDeferredOperationKHR deferredOperation,
-                                           const VkAllocationCallbacks *pAllocator,
-                                           std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state);
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not

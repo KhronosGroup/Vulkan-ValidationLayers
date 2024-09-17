@@ -1276,16 +1276,18 @@ void Pipeline::BuildPipeline() {
     push_constant_range.size = push_constant_range_size_;
 
     // Create pipeline layout
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-    if (push_constant_range_size_ > 0) {
-        pipeline_layout_ci.pushConstantRangeCount = 1;
-        pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
+    if (!pipeline_layout_.initialized()) {
+        VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+        if (push_constant_range_size_ > 0) {
+            pipeline_layout_ci.pushConstantRangeCount = 1;
+            pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
+        }
+        if (desc_set_) {
+            pipeline_layout_ci.setLayoutCount = 1;
+            pipeline_layout_ci.pSetLayouts = &desc_set_->layout_.handle();
+        }
+        pipeline_layout_.init(*device_, pipeline_layout_ci);
     }
-    if (desc_set_) {
-        pipeline_layout_ci.setLayoutCount = 1;
-        pipeline_layout_ci.pSetLayouts = &desc_set_->layout_.handle();
-    }
-    pipeline_layout_.init(*device_, pipeline_layout_ci);
 
     // Assemble shaders information (stages and groups)
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_stage_cis;

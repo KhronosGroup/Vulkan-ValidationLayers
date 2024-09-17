@@ -279,15 +279,15 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto data = static_cast<VkDeviceAddress *>(in_buffer.memory().map());
-    data[0] = block_buffer.address();
-    in_buffer.memory().unmap();
+    vkt::Buffer index_buffer(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    auto data = static_cast<VkDeviceAddress *>(storage_buffer.memory().map());
+    data[0] = index_buffer.address();
+    storage_buffer.memory().unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     // Add one to use the descriptor slot we tried to reserve
@@ -319,7 +319,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
         layout(buffer_reference, std430) readonly buffer IndexBuffer {
             int indices[];
         };
-        layout(set = 0, binding = 0) buffer foo {
+        layout(set = 0, binding = 0) buffer storage_buffer {
             IndexBuffer data;
             int x;
         };

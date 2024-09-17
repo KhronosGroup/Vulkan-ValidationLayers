@@ -325,8 +325,8 @@ class Pipeline {
     // Get
     // ---
     const auto& Handle() { return rt_pipeline_; }
-    const auto& GetPipelineLayout() { return pipeline_layout_; }
-    auto& GetDescriptorSet() {
+    vkt::PipelineLayout& GetPipelineLayout() { return pipeline_layout_; }
+    OneOffDescriptorSet& GetDescriptorSet() {
         assert(desc_set_);
         return *desc_set_;
     }
