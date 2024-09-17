@@ -28,6 +28,7 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
+#include "vulkan/vk_layer.h"
 
 #include "generated/vk_extension_helper.h"
 #include "error_message/logging.h"
@@ -446,8 +447,6 @@ typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_BAD_DATA = 0x00000002,
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
-
-void LayerDebugMessengerActions(DebugReport *debug_report, const char *layer_identifier);
 
 std::string GetTempFilePath();
 

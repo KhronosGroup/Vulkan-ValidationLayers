@@ -17,6 +17,7 @@
  */
 #include "error_monitor.h"
 #include "test_common.h"
+#include "error_message/log_message_type.h"
 #include "generated/vk_function_pointers.h"
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR

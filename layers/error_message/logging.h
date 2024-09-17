@@ -26,7 +26,7 @@
 
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-#include "vk_layer_config.h"
+#include "error_message/log_message_type.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_layer_dispatch_table.h"
 #include "generated/vk_object_types.h"

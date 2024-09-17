@@ -26,6 +26,7 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/buffer_state.h"
 #include "utils/convert_utils.h"
+#include "vk_layer_config.h"
 
 SyncValidator::~SyncValidator() {
     // Instance level SyncValidator does not have much to say

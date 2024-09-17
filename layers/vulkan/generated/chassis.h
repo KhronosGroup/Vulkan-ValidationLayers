@@ -42,7 +42,6 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "utils/cast_utils.h"
-#include "vk_layer_config.h"
 #include "layer_options.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"

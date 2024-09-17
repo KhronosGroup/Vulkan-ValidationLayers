@@ -204,6 +204,10 @@ const char *VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC = "syncval_shader_accesse
 // Message Formatting
 // ---
 const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
+// Until post 1.3.290 SDK release, these were not possible to set via environment variables
+const char *VK_LAYER_LOG_FILENAME = "log_filename";
+const char *VK_LAYER_DEBUG_ACTION = "debug_action";
+const char *VK_LAYER_REPORT_FLAGS = "report_flags";
 
 // These were deprecated after the 1.3.280 SDK release
 const char *DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES = "gpuav_validate_copies";
@@ -442,8 +446,12 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
 // Because VkLayerSettingsCreateInfoEXT/VkLayerSettingEXT are passed in and used before everything else, need to do the stateless
 // validation here as a special exception
 //
+// We want to use the DebugReport object to print VU error messages in here, but we need to parse the settings in
+// VkLayerSettingsCreateInfoEXT in order to configure the DebugReport object. Therefor we just settle with printf in here. These are
+// very unlikely things to hit validation layers messages (as everything after will likely crumble) so should be ok.
+//
 // Returns if valid
-static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_settings, DebugReport *debug_report) {
+static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_settings) {
     bool valid = true;
     if (!layer_settings) return valid;
     const Location loc(vvl::Func::vkCreateInstance, vvl::Field::pCreateInfo);
@@ -454,24 +462,28 @@ static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_sett
         for (const auto [i, setting] : vvl::enumerate(layer_settings->pSettings, layer_settings->settingCount)) {
             const Location setting_loc = create_info_loc.dot(vvl::Field::pSettings, i);
             if (setting->valueCount > 0 && !setting->pValues) {
-                ss << setting_loc.dot(vvl::Field::pValues).Message() << " is NULL";
-                debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingEXT-valueCount-10070");
+                ss << "[ VUID-VkLayerSettingEXT-valueCount-10070 ] " << setting_loc.dot(vvl::Field::pValues).Message()
+                   << " is NULL";
+                printf("Validation Layer Error: %s\n", ss.str().c_str());
                 valid = false;
             }
             if (!setting->pLayerName) {
-                ss << setting_loc.dot(vvl::Field::pLayerName).Message() << " is NULL";
-                debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingEXT-pLayerName-parameter");
+                ss << "[ VUID-VkLayerSettingEXT-pLayerName-parameter ] " << setting_loc.dot(vvl::Field::pLayerName).Message()
+                   << " is NULL";
+                printf("Validation Layer Error: %s\n", ss.str().c_str());
                 valid = false;
             }
             if (!setting->pSettingName) {
-                ss << setting_loc.dot(vvl::Field::pSettingName).Message() << " is NULL";
-                debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingEXT-pSettingName-parameter");
+                ss << "[ VUID-VkLayerSettingEXT-pSettingName-parameter ] " << setting_loc.dot(vvl::Field::pSettingName).Message()
+                   << " is NULL";
+                printf("Validation Layer Error: %s\n", ss.str().c_str());
                 valid = false;
             }
         }
     } else if (layer_settings->settingCount > 0) {
-        ss << create_info_loc.dot(vvl::Field::pSettings).Message() << " is NULL";
-        debug_report->DebugLogMsg(kErrorBit, {}, ss.str().c_str(), "VUID-VkLayerSettingsCreateInfoEXT-pSettings-parameter");
+        ss << "[ VUID-VkLayerSettingsCreateInfoEXT-pSettings-parameter ] " << create_info_loc.dot(vvl::Field::pSettings).Message()
+           << " is NULL";
+        printf("Validation Layer Error: %s\n", ss.str().c_str());
         valid = false;
     }
     return valid;
@@ -508,6 +520,167 @@ static std::string Merge(const std::vector<std::string> &strings) {
     return result;
 }
 
+// If option is NULL or stdout, return stdout, otherwise try to open option
+// as a filename. If successful, return file handle, otherwise stdout
+FILE *GetLayerLogOutput(const char *option) {
+    FILE *log_output = NULL;
+    if (!option || !strcmp("stdout", option)) {
+        log_output = stdout;
+    } else {
+        log_output = fopen(option, "w");
+        if (log_output == NULL) {
+            if (option) {
+                printf("Validation Layers Error: Bad output filename specified: %s. Writing to STDOUT instead\n", option);
+            }
+            log_output = stdout;
+        }
+    }
+    return log_output;
+}
+
+// Definitions for Debug Actions
+enum VkLayerDbgActionBits {
+    VK_DBG_LAYER_ACTION_IGNORE = 0x00000000,
+    VK_DBG_LAYER_ACTION_CALLBACK = 0x00000001,
+    VK_DBG_LAYER_ACTION_LOG_MSG = 0x00000002,
+    VK_DBG_LAYER_ACTION_BREAK = 0x00000004,
+    VK_DBG_LAYER_ACTION_DEBUG_OUTPUT = 0x00000008,
+    VK_DBG_LAYER_ACTION_DEFAULT = 0x40000000,
+};
+using VkLayerDbgActionFlags = VkFlags;
+
+static void ProcessDebugReportSettings(DebugReport *debug_report, VkuLayerSettingSet &layer_setting_set) {
+    // Message ID Filtering
+    std::vector<std::string> message_id_filter;
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER, message_id_filter);
+    }
+    const std::string string_message_id_filter = Merge(message_id_filter);
+    CreateFilterMessageIdList(string_message_id_filter, ",", debug_report->filter_message_ids);
+
+    // Duplicate message limit
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
+        uint32_t config_limit_setting = 0;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
+        if (config_limit_setting != 0) {
+            debug_report->duplicate_message_limit = config_limit_setting;
+        }
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME,
+                                debug_report->message_format_settings.display_application_name);
+    }
+
+    std::string log_filename = "stdout";  // Default
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_LOG_FILENAME)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_LOG_FILENAME, log_filename);
+    }
+    const bool is_stdout = log_filename.compare("stdout") == 0;
+
+    // Default
+    std::vector<std::string> debug_actions_list = {"VK_DBG_LAYER_ACTION_DEFAULT", "VK_DBG_LAYER_ACTION_LOG_MSG"};
+#ifdef WIN32
+    // For Windows, enable message logging AND OutputDebugString
+    debug_actions_list.push_back("VK_DBG_LAYER_ACTION_DEBUG_OUTPUT");
+#endif  // WIN32
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_ACTION)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_DEBUG_ACTION, debug_actions_list);
+    }
+
+    VkLayerDbgActionFlags debug_action = 0;
+    const vvl::unordered_map<std::string, VkFlags> debug_actions_option = {
+        {std::string("VK_DBG_LAYER_ACTION_IGNORE"), VK_DBG_LAYER_ACTION_IGNORE},
+        {std::string("VK_DBG_LAYER_ACTION_CALLBACK"), VK_DBG_LAYER_ACTION_CALLBACK},
+        {std::string("VK_DBG_LAYER_ACTION_LOG_MSG"), VK_DBG_LAYER_ACTION_LOG_MSG},
+        {std::string("VK_DBG_LAYER_ACTION_BREAK"), VK_DBG_LAYER_ACTION_BREAK},
+        {std::string("VK_DBG_LAYER_ACTION_DEBUG_OUTPUT"), VK_DBG_LAYER_ACTION_DEBUG_OUTPUT},
+        {std::string("VK_DBG_LAYER_ACTION_DEFAULT"), VK_DBG_LAYER_ACTION_DEFAULT}};
+    for (const auto &element : debug_actions_list) {
+        auto enum_value = debug_actions_option.find(element);
+        if (enum_value != debug_actions_option.end()) {
+            debug_action |= enum_value->second;
+        } else {
+            printf("Validation Layer Warning - %s was is not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).\n",
+                   element.c_str());
+        }
+    }
+
+    std::vector<std::string> report_flags_list = {"error"};  // Default
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_REPORT_FLAGS)) {
+        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_REPORT_FLAGS, report_flags_list);
+    }
+
+    VkLayerDbgActionFlags report_flags = 0;
+    const vvl::unordered_map<std::string, VkFlags> report_flags_options = {{std::string("warn"), kWarningBit},
+                                                                           {std::string("info"), kInformationBit},
+                                                                           {std::string("perf"), kPerformanceWarningBit},
+                                                                           {std::string("error"), kErrorBit},
+                                                                           {std::string("verbose"), kVerboseBit}};
+    for (const auto &element : report_flags_list) {
+        auto enum_value = report_flags_options.find(element);
+        if (enum_value != report_flags_options.end()) {
+            report_flags |= enum_value->second;
+        } else {
+            printf("Validation Layer Warning - %s was is not a valid option for VK_LAYER_REPORT_FLAGS (ignoring).\n",
+                   element.c_str());
+        }
+    }
+
+    // Flag as default if these settings are not from a vk_layer_settings.txt file
+    const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) != 0;
+
+    VkDebugUtilsMessengerCreateInfoEXT dbg_create_info = vku::InitStructHelper();
+    dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    if (report_flags & kErrorBit) {
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    }
+    if (report_flags & kWarningBit) {
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    }
+    if (report_flags & kPerformanceWarningBit) {
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        dbg_create_info.messageType |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    }
+    if (report_flags & kInformationBit) {
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+    }
+    if (report_flags & kVerboseBit) {
+        dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    }
+
+    VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+    if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
+        FILE *log_output = GetLayerLogOutput(log_filename.c_str());
+        if (log_output != stdout) {
+            printf("Validation Layer Info - Logging validation error to %s\n", log_filename.c_str());
+        }
+        dbg_create_info.pfnUserCallback = MessengerLogCallback;
+        dbg_create_info.pUserData = (void *)log_output;
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
+    } else if (!is_stdout) {
+        printf(
+            "Validation Layer Warning - You have log_filename set to %s but VK_DBG_LAYER_ACTION_LOG_MSG was not set, so it won't "
+            "be sent to the file\n",
+            log_filename.c_str());
+    }
+
+    messenger = VK_NULL_HANDLE;
+    if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
+        dbg_create_info.pfnUserCallback = MessengerWin32DebugOutputMsg;
+        dbg_create_info.pUserData = nullptr;
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
+    }
+
+    messenger = VK_NULL_HANDLE;
+    if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
+        dbg_create_info.pfnUserCallback = MessengerBreakCallback;
+        dbg_create_info.pUserData = nullptr;
+        LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
+    }
+}
+
 static const char *GetDefaultPrefix() {
 #ifdef __ANDROID__
     return "vvl";
@@ -523,7 +696,23 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // so that the layer always defaults to the standard validation options we want,
     // and does not try to process option coming from the VVL we are debugging
 #if defined(BUILD_SELF_VVL)
-    (void)settings_data;
+    // Setup default messenger callback to stdout and just error validaiton messages
+    FILE *log_output = stdout;
+    VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerCreateInfoEXT dbg_create_info = vku::InitStructHelper();
+    dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    dbg_create_info.messageSeverity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    dbg_create_info.pfnUserCallback = MessengerLogCallback;
+    dbg_create_info.pUserData = (void *)log_output;
+    LayerCreateMessengerCallback(settings_data->debug_report, true, &dbg_create_info, &messenger);
+
+#ifdef WIN32
+    messenger = VK_NULL_HANDLE;
+    dbg_create_info.pfnUserCallback = MessengerWin32DebugOutputMsg;
+    dbg_create_info.pUserData = nullptr;
+    LayerCreateMessengerCallback(settings_data->debug_report, true, &dbg_create_info, &messenger);
+#endif  // WIN32
+
     return;
 #else
     // If not cleared, garbage has been seen in some Android run effecting the error message
@@ -531,7 +720,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     VkuLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
     auto layer_setting_create_info = vkuFindLayerSettingsCreateInfo(settings_data->create_info);
-    if (!ValidateLayerSettings(layer_setting_create_info, settings_data->debug_report)) {
+    if (!ValidateLayerSettings(layer_setting_create_info)) {
         return;  // nullptr will crash things
     }
     vkuCreateLayerSettingSet(OBJECT_LAYER_NAME, layer_setting_create_info, nullptr, nullptr, &layer_setting_set);
@@ -561,23 +750,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DEBUG_DISABLE_SPIRV_VAL, global_settings.debug_disable_spirv_val);
-    }
-
-    // Message ID Filtering
-    std::vector<std::string> message_id_filter;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER)) {
-        vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER, message_id_filter);
-    }
-    const std::string string_message_id_filter = Merge(message_id_filter);
-    CreateFilterMessageIdList(string_message_id_filter, ",", settings_data->debug_report->filter_message_ids);
-
-    // Duplicate message limit
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
-        uint32_t config_limit_setting = 0;
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
-        if (config_limit_setting != 0) {
-            settings_data->debug_report->duplicate_message_limit = config_limit_setting;
-        }
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST)) {
@@ -756,10 +928,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                 syncval_settings.shader_accesses_heuristic);
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME,
-                                settings_data->debug_report->message_format_settings.display_application_name);
-    }
+    ProcessDebugReportSettings(settings_data->debug_report, layer_setting_set);
+
     // Grab application name here while we have access to it and know if to save it or not
     if (settings_data->debug_report->message_format_settings.display_application_name) {
         settings_data->debug_report->message_format_settings.application_name =

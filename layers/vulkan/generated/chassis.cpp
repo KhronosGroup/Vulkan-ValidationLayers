@@ -374,36 +374,11 @@ void OutputLayerStatusInfo(ValidationObject* context) {
         list_of_disables.append("None");
     }
 
-    auto settings_info = GetLayerSettingsFileInfo();
-    std::string settings_status;
-    if (!settings_info->file_found) {
-        settings_status = "None. Default location is ";
-        settings_status.append(settings_info->location);
-        settings_status.append(".");
-    } else {
-        settings_status = "Found at ";
-        settings_status.append(settings_info->location);
-        settings_status.append(" specified by ");
-        switch (settings_info->source) {
-            case kEnvVar:
-                settings_status.append("environment variable (VK_LAYER_SETTINGS_PATH).");
-                break;
-            case kVkConfig:
-                settings_status.append("VkConfig application override.");
-                break;
-            case kLocal:  // Intentionally fall through
-            default:
-                settings_status.append("default location (current working directory).");
-                break;
-        }
-    }
-
     Location loc(vvl::Func::vkCreateInstance);
     // Output layer status information message
-    context->LogInfo(
-        "WARNING-CreateInstance-status-message", context->instance, loc,
-        "Khronos Validation Layer Active:\n    Settings File: %s\n    Current Enables: %s.\n    Current Disables: %s.\n",
-        settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
+    context->LogInfo("WARNING-CreateInstance-status-message", context->instance, loc,
+                     "Khronos Validation Layer Active:\n    Current Enables: %s.\n    Current Disables: %s.\n",
+                     list_of_enables.c_str(), list_of_disables.c_str());
 
     // Create warning message if user is running debug layers.
 #ifndef NDEBUG
@@ -516,7 +491,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     auto debug_report = new DebugReport{};
     debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(debug_report);
-    LayerDebugMessengerActions(debug_report, OBJECT_LAYER_DESCRIPTION);
 
     // Set up enable and disable features flags
     CHECK_ENABLED local_enables{};

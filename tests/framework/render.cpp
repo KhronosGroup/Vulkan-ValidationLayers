@@ -26,6 +26,7 @@
 
 #include "generated/vk_extension_helper.h"
 #include "layer_validation_tests.h"
+#include "vk_layer_config.h"
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 #include "apple_wsi.h"

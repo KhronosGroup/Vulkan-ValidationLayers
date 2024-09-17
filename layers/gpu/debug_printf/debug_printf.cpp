@@ -19,6 +19,7 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_header.h"
+#include "vk_layer_config.h"
 
 #include <iostream>
 

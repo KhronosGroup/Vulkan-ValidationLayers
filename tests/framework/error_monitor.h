@@ -22,8 +22,8 @@
 #include <regex>
 #include <cassert>
 
-#include "vk_layer_config.h"
-#include <vulkan/vulkan.h>
+#include "error_message/log_message_type.h"
+#include <vulkan/vulkan_core.h>
 
 // ErrorMonitor Usage:
 //
