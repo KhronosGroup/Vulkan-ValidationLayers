@@ -340,10 +340,10 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
         }
 
         if (verbose) {
-            std::string debug_info_message =
-                GenerateDebugInfoMessage(command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0,
-                                         debug_record->stage_info_1, debug_record->stage_info_2, debug_record->instruction_position,
-                                         tracker_info, buffer_info.pipeline_bind_point, buffer_info.action_command_index);
+            std::string debug_info_message = GenerateDebugInfoMessage(
+                command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0, debug_record->stage_info_1,
+                debug_record->stage_info_2, debug_record->instruction_position, tracker_info, debug_record->shader_id,
+                buffer_info.pipeline_bind_point, buffer_info.action_command_index);
             if (use_stdout) {
                 std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {

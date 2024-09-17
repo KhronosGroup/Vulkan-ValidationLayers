@@ -1578,7 +1578,7 @@ static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
     uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
-    VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
+    uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
     std::ostringstream ss;
     if (instructions.empty() || !tracker_info) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
@@ -1616,15 +1616,16 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
 
         if (tracker_info->shader_module == VK_NULL_HANDLE) {
             ss << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->shader_object)) << "("
-               << HandleToUint64(tracker_info->shader_object) << ")\n";
+               << HandleToUint64(tracker_info->shader_object) << ") (internal ID " << shader_id << ")\n";
         } else {
             ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->pipeline)) << "("
-               << HandleToUint64(tracker_info->pipeline) << ")\n";
+               << HandleToUint64(tracker_info->pipeline) << ")";
             if (tracker_info->shader_module == gpu::kPipelineStageInfoHandle) {
-                ss << "Shader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
+                ss << " (internal ID " << shader_id
+                   << ")\nShader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
             } else {
-                ss << "Shader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->shader_module))
-                   << "(" << HandleToUint64(tracker_info->shader_module) << ")\n";
+                ss << "\nShader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->shader_module))
+                   << "(" << HandleToUint64(tracker_info->shader_module) << ") (internal ID " << shader_id << ")\n";
             }
         }
     }
