@@ -716,6 +716,9 @@ bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipel
                                                   VkPipelineBinaryKeyKHR *pPipelineKey, const ErrorObject &error_obj) const {
     bool skip = false;
 
+    // Used when getting global key
+    if (!pPipelineCreateInfo) return skip;
+
     const VkBaseOutStructure *pipeline_create_info = reinterpret_cast<const VkBaseOutStructure *>(pPipelineCreateInfo->pNext);
     if (pipeline_create_info) {
         if (pipeline_create_info->sType != VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX &&
