@@ -376,6 +376,7 @@ void OutputLayerStatusInfo(ValidationObject* context) {
 
     Location loc(vvl::Func::vkCreateInstance);
     // Output layer status information message
+    // TODO - We should just dump all settings to a file (see https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/188)
     context->LogInfo("WARNING-CreateInstance-status-message", context->instance, loc,
                      "Khronos Validation Layer Active:\n    Current Enables: %s.\n    Current Disables: %s.\n",
                      list_of_enables.c_str(), list_of_disables.c_str());
