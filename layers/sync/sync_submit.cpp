@@ -168,7 +168,9 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const Queu
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
-      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {}
+      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
+    sync_state_->stats.AddQueueBatchContext();
+}
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
     : CommandExecutionContext(&sync_state),
@@ -176,7 +178,11 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
-      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {}
+      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
+    sync_state_->stats.AddQueueBatchContext();
+}
+
+QueueBatchContext::~QueueBatchContext() { sync_state_->stats.RemoveQueueBatchContext(); }
 
 void QueueBatchContext::Trim() {
     // Clean up unneeded access context contents and log information
