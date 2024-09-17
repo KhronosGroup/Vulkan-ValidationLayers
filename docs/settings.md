@@ -26,7 +26,7 @@ instance_ci.pNext = &layer_settings_create_info;
 
 ## vk_layer_settings.txt
 
-There is info [elsewhere](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) to describe this file, but the short answer is to go
+There is info [elsewhere](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) to describe this file, but the short answer is to set the `VK_LAYER_SETTINGS_PATH` like the following:
 
 ```
 # windows
@@ -36,7 +36,7 @@ set VK_LAYER_SETTINGS_PATH=C:\path\to\vk_layer_settings.txt
 export VK_LAYER_SETTINGS_PATH=/path/to/vk_layer_settings.txt
 ```
 
-and it will set things for you there. We have a [default example](../layers/vk_layer_settings.txt) file you can start with
+and it will set things for you in that file. We have a [default example](../layers/vk_layer_settings.txt) file you can start with.
 
 ## Environment Variables
 
@@ -59,7 +59,7 @@ adb setprop debug.vulkan.khronos_validation.message_id_filter=VUID-VkInstanceCre
 
 ## Finding available settings
 
-How I suggest finding them:
+How we suggest finding them:
 
 1. Check VkConfig
 2. View `VkLayer_khronos_validation.json` (it is where we define them all)
