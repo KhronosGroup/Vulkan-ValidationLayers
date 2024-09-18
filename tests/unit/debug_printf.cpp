@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -2423,6 +2424,154 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
         vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
         m_commandBuffer->end();
 
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
+    TEST_DESCRIPTION("Do not reserve a descriptor slot and proceed to use them all anyway so debug printf can't");
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    // First try to use too many sets in the pipeline layout
+    {
+        m_errorMonitor->SetDesiredWarning(
+            "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
+            "pipelines created with it");
+        std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit);
+        for (uint32_t i = 0; i < set_limit; i++) {
+            layouts[i] = &descriptor_set.layout_;
+        }
+        vkt::PipelineLayout pipe_layout(*m_device, layouts);
+        m_errorMonitor->VerifyFound();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.gp_ci_.layout = pipe_layout.handle();
+        pipe.CreateGraphicsPipeline();
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        // Will not print out because no slot was possible to put output buffer
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
+    }
+
+    // Reduce by one (so there is room now) and print something
+    {
+        std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
+        for (uint32_t i = 0; i < set_limit - 1; i++) {
+            layouts[i] = &descriptor_set.layout_;
+        }
+        vkt::PipelineLayout pipe_layout(*m_device, layouts);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.gp_ci_.layout = pipe_layout.handle();
+        pipe.CreateGraphicsPipeline();
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
+    TEST_DESCRIPTION("Do not reserve a descriptor slot and proceed to use them all anyway so debug printf can't");
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            float myfloat = 3.1415f;
+            debugPrintfEXT("float == %f", myfloat);
+        }
+    )glsl";
+
+    const uint32_t set_limit = m_device->phy().limits_.maxBoundDescriptorSets;
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    // First try to use too many sets in the pipeline layout
+    {
+        m_errorMonitor->SetDesiredWarning(
+            "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
+            "pipelines created with it");
+        std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit);
+        for (uint32_t i = 0; i < set_limit; i++) {
+            layouts[i] = &descriptor_set.layout_;
+        }
+        vkt::PipelineLayout pipe_layout(*m_device, layouts);
+        m_errorMonitor->VerifyFound();
+
+        vkt::SimpleGPL pipe(*this, pipe_layout.handle(), shader_source);
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        // Will not print out because no slot was possible to put output buffer
+        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Wait();
+    }
+
+    // Reduce by one (so there is room now) and print something
+    {
+        std::vector<const vkt::DescriptorSetLayout *> layouts(set_limit - 1);
+        for (uint32_t i = 0; i < set_limit - 1; i++) {
+            layouts[i] = &descriptor_set.layout_;
+        }
+        vkt::PipelineLayout pipe_layout(*m_device, layouts);
+        vkt::SimpleGPL pipe(*this, pipe_layout.handle(), shader_source);
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
         m_default_queue->Submit(*m_commandBuffer);
         m_default_queue->Wait();

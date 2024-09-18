@@ -140,6 +140,9 @@ class Pipeline : public StateObject {
         std::vector<VkShaderModule> instrumented_shader_module;
         // TODO - For GPL, this doesn't get passed down from linked shaders
         bool was_instrumented = false;
+        // When we instrument GPL at link time, we need to hold the new libraries until they are done
+        VkPipeline pre_raster_lib = VK_NULL_HANDLE;
+        VkPipeline frag_out_lib = VK_NULL_HANDLE;
     } instrumentation_data;
 
     // Executable or legacy pipeline

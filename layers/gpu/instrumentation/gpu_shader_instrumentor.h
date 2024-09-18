@@ -185,12 +185,25 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties &queueFamilyProperties) override;
 
+    bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state);
+    bool HasBindlessDescriptors(vvl::Pipeline &pipeline_state);
+    bool HasBindlessDescriptors(VkShaderCreateInfoEXT &create_info);
+
     template <typename SafeCreateInfo>
     void PreCallRecordPipelineCreationShaderInstrumentation(
         const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state, SafeCreateInfo &new_pipeline_ci,
         const Location &loc, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
     void PostCallRecordPipelineCreationShaderInstrumentation(
         vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+
+    // We have GPL variations for graphics as they defer instrumentation until linking
+    void PreCallRecordPipelineCreationShaderInstrumentationGPL(
+        const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state,
+        vku::safe_VkGraphicsPipelineCreateInfo &new_pipeline_ci, const Location &loc,
+        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
+    void PostCallRecordPipelineCreationShaderInstrumentationGPL(
+        vvl::Pipeline &pipeline_state, const VkAllocationCallbacks *pAllocator,
+        std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not
