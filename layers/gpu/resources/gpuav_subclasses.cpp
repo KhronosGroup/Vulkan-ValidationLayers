@@ -23,6 +23,7 @@
 #include "gpu/descriptor_validation/gpuav_image_layout.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpu/shaders/gpu_error_header.h"
+#include "gpu/debug_printf/debug_printf.h"
 
 namespace gpuav {
 
@@ -120,9 +121,10 @@ void AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bo
 }
 
 CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
-                             const vvl::CommandPool *pool)
-    : gpu_tracker::CommandBuffer(gpuav, handle, pCreateInfo, pool),
+                             const vvl::CommandPool *pool, bool is_debug_print)
+    : vvl::CommandBuffer(gpuav, handle, pCreateInfo, pool),
       gpu_resources_manager(gpuav.vma_allocator_, *gpuav.desc_set_manager_),
+      is_debug_print(is_debug_print),
       state_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
@@ -159,6 +161,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, gpu::DeviceMemoryBlock &er
 }
 
 void CommandBuffer::AllocateResources(const Location &loc) {
+    if (is_debug_print) return;
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     VkResult result = VK_SUCCESS;
@@ -304,6 +307,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 }
 
 bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
+    if (is_debug_print) return true;
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // By supplying a "date"
@@ -388,8 +392,21 @@ void CommandBuffer::Reset(const Location &loc) {
 
 void CommandBuffer::ResetCBState() {
     auto gpuav = static_cast<Validator *>(&dev_data);
-    // Free the device memory and descriptor set(s) associated with a command buffer.
 
+    if (is_debug_print) {
+        action_command_count = 0;
+        // Free the device memory and descriptor set(s) associated with a command buffer.
+        for (auto &buffer_info : buffer_infos) {
+            vmaDestroyBuffer(gpuav->vma_allocator_, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
+            if (buffer_info.desc_set != VK_NULL_HANDLE) {
+                gpuav->desc_set_manager_->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
+            }
+        }
+        buffer_infos.clear();
+        return;
+    }
+
+    // Free the device memory and descriptor set(s) associated with a command buffer.
     gpu_resources_manager.DestroyResources();
     per_command_error_loggers.clear();
 
@@ -426,6 +443,7 @@ void CommandBuffer::ResetCBState() {
 }
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
+    if (is_debug_print) return;
     auto gpuav = static_cast<Validator *>(&dev_data);
     uint32_t *cmd_errors_counts_buffer_ptr = nullptr;
     VkResult result = vmaMapMemory(gpuav->vma_allocator_, cmd_errors_counts_buffer_.allocation,
@@ -458,6 +476,22 @@ bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsNull(); 
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
+    auto gpuav = static_cast<Validator *>(&dev_data);
+
+    if (is_debug_print) {
+        // For the given command buffer, map its debug data buffers and read their contents for analysis.
+        for (auto &buffer_info : buffer_infos) {
+            char *data;
+
+            VkResult result = vmaMapMemory(gpuav->vma_allocator_, buffer_info.output_mem_block.allocation, (void **)&data);
+            if (result == VK_SUCCESS) {
+                debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, buffer_info, (uint32_t *)data, loc);
+                vmaUnmapMemory(gpuav->vma_allocator_, buffer_info.output_mem_block.allocation);
+            }
+        }
+        return;
+    }
+
     // CommandBuffer::Destroy can happen on an other thread,
     // so when getting here after acquiring command buffer's lock,
     // make sure there are still things to process
@@ -465,7 +499,6 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
         return;
     }
 
-    auto gpuav = static_cast<Validator *>(&dev_data);
     bool skip = false;
     uint32_t *error_output_buffer_ptr = nullptr;
     VkResult result =

@@ -30,6 +30,7 @@
 #include "gpu/shaders/gpu_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/core/gpu_shader_cache_hash.h"
+#include "gpu/debug_printf/debug_printf.h"
 
 // Generated shaders
 #include "generated/gpu_av_shader_hash.h"
@@ -306,6 +307,10 @@ void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t ver
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
 
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -320,6 +325,10 @@ void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint
     if (!cb_state) {
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
+    }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
     }
 
     for (uint32_t i = 0; i < drawCount; i++) {
@@ -337,6 +346,11 @@ void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint3
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -351,6 +365,11 @@ void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffe
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     for (uint32_t i = 0; i < drawCount; i++) {
         // #ARNO_TODO calling Setup drawCount times seems weird...
         SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -366,6 +385,10 @@ void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBu
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
 
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, count, VK_NULL_HANDLE, 0, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -379,6 +402,10 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
     if (!cb_state) {
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
+    }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
     }
 
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, count, VK_NULL_HANDLE, 0, stride);
@@ -403,6 +430,11 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
                                  countBufferOffset, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -419,6 +451,11 @@ void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -441,6 +478,11 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
                                  countBufferOffset, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -454,6 +496,11 @@ void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -466,6 +513,11 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandB
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, drawCount, VK_NULL_HANDLE, 0, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -482,6 +534,11 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer com
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
                                  countBufferOffset, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -495,6 +552,11 @@ void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, 
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
@@ -507,6 +569,11 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer command
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, drawCount, VK_NULL_HANDLE, 0, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -523,6 +590,11 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDrawValidation(*this, record_obj.location, *cb_state, buffer, offset, maxDrawCount, countBuffer,
                                  countBufferOffset, stride);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -537,6 +609,11 @@ void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
@@ -549,6 +626,11 @@ void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, 
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectDispatchValidation(*this, record_obj.location, *cb_state, buffer, offset);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
@@ -564,6 +646,11 @@ void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
@@ -592,6 +679,11 @@ void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuf
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
@@ -609,6 +701,11 @@ void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 
@@ -627,6 +724,11 @@ void Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuff
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     InsertIndirectTraceRaysValidation(*this, record_obj.location, *cb_state, indirectDeviceAddress);
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
@@ -640,6 +742,11 @@ void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuf
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
+    if (enabled[debug_printf_validation]) {
+        debug_printf::AllocateResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        return;  // remove when merged with GPU-AV
+    }
+
     SetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 

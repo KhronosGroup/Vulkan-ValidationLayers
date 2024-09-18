@@ -56,6 +56,9 @@ const int kBindingInstActionIndex = 3;
 const int kBindingInstCmdResourceIndex = 4;
 const int kBindingInstCmdErrorsCount = 5;
 
+// Update to last number when combined GPU-AV and DebugPrintf
+const int kBindingInstDebugPrintf = 6;
+
 // Diagnostic calls
 // ---
 

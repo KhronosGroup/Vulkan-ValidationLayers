@@ -18,6 +18,7 @@
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 
 #include "gpu/core/gpu_state_tracker.h"
+#include "gpu/shaders/gpu_shaders_constants.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_codes.h"
@@ -1365,11 +1366,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     gpu::spirv::Module module(input_spirv, debug_report, module_settings);
 
     // For now, we don't yet support (or have tested) combining GPU-AV and DebugPrintf, so have 2 paths here
-    const bool is_debug_printf = container_type == LayerObjectTypeDebugPrintf;
+    const bool is_debug_printf = enabled[debug_printf_validation];
 
     bool modified = false;
     if (is_debug_printf) {
-        modified |= module.RunPassDebugPrintf(debug_printf_binding_slot_);
+        modified |= module.RunPassDebugPrintf(gpuav::glsl::kBindingInstDebugPrintf);
     } else {
         GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
         // If descriptor indexing is enabled, enable length checks and updated descriptor checks
@@ -1489,9 +1490,8 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
         vmaFreeStatsString(vma_allocator_, stats_string);
     }
 
-    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "DebugPrintf" : "GPU-AV";
-    char const *vuid =
-        container_type == LayerObjectTypeDebugPrintf ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
+    char const *layer_name = enabled[debug_printf_validation] ? "DebugPrintf" : "GPU-AV";
+    char const *vuid = enabled[debug_printf_validation] ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
 
     LogError(vuid, objlist, loc, "Internal Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
 
@@ -1502,7 +1502,7 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
-    char const *vuid = container_type == LayerObjectTypeDebugPrintf ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
+    char const *vuid = enabled[debug_printf_validation] ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
     LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
 }
 
@@ -1674,7 +1674,7 @@ static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
     uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
-    uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
+    uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index, bool is_debug_printf) const {
     std::ostringstream ss;
     if (instructions.empty() || !tracker_info) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
@@ -1752,12 +1752,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
         return ss.str();
     }
 
-    std::string prefix;
-    if (container_type == LayerObjectTypeDebugPrintf) {
-        prefix = "Debug shader printf message generated ";
-    } else {
-        prefix = "Shader validation error occurred ";
-    }
+    std::string prefix = is_debug_printf ? "Debug shader printf message generated " : "Shader validation error occurred ";
 
     // Create message with file information obtained from the OpString pointed to by the discovered OpLine.
     bool found_opstring = false;

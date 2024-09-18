@@ -33,12 +33,31 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"
 
+namespace gpu {
+class GpuShaderInstrumentor;
+}
+
 namespace gpuav {
 
 class Validator;
 struct DescBindingInfo;
 
-class CommandBuffer : public gpu_tracker::CommandBuffer {
+struct DebugPrintfBufferInfo {
+    gpu::DeviceMemoryBlock output_mem_block;
+    VkDescriptorSet desc_set;
+    VkDescriptorPool desc_pool;
+    VkPipelineBindPoint pipeline_bind_point;
+    uint32_t action_command_index;
+    DebugPrintfBufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
+                          VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
+        : output_mem_block(output_mem_block),
+          desc_set(desc_set),
+          desc_pool(desc_pool),
+          pipeline_bind_point(pipeline_bind_point),
+          action_command_index(action_command_index){};
+};
+
+class CommandBuffer : public vvl::CommandBuffer {
   public:
     // per vkCmdBindDescriptorSet() state
     std::vector<DescBindingInfo> di_input_buffer_list;
@@ -48,11 +67,11 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     uint32_t trace_rays_index = 0;
 
     CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const vvl::CommandPool *pool);
+                  const vvl::CommandPool *pool, bool is_debug_print);
     ~CommandBuffer();
 
-    bool PreProcess(const Location &loc) final;
-    void PostProcess(VkQueue queue, const Location &loc) final;
+    bool PreProcess(const Location &loc);
+    void PostProcess(VkQueue queue, const Location &loc);
     [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
@@ -97,6 +116,11 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
+
+    // DebugPrintf - TODO, merge things so we don't need to use this bool to decide inside where we are
+    const bool is_debug_print;
+    std::vector<DebugPrintfBufferInfo> buffer_infos;
+    uint32_t action_command_count = 0;
 
   private:
     void AllocateResources(const Location &loc);

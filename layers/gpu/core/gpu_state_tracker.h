@@ -14,25 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "state_tracker/cmd_buffer_state.h"
+// #pragma once
+// #include "state_tracker/cmd_buffer_state.h"
 
-namespace gpu {
-class GpuShaderInstrumentor;
-}
+// namespace gpu {
+// class GpuShaderInstrumentor;
+// }
 
-// TODO - Remove this file and namespace
-// The only reason we have this is because DebugPrintf and GPU-AV have different command buffers
-namespace gpu_tracker {
+// // TODO - Remove this file and namespace
+// // The only reason we have this is because DebugPrintf and GPU-AV have different command buffers
+// namespace gpu_tracker {
 
-class CommandBuffer : public vvl::CommandBuffer {
-  public:
-    CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkCommandBuffer handle,
-                  const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
+// class CommandBuffer : public vvl::CommandBuffer {
+//   public:
+//     CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkCommandBuffer handle,
+//                   const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
 
-    virtual bool PreProcess(const Location &loc) = 0;
-    virtual void PostProcess(VkQueue queue, const Location &loc) = 0;
-};
-}  // namespace gpu_tracker
+//     virtual bool PreProcess(const Location &loc) = 0;
+//     virtual void PostProcess(VkQueue queue, const Location &loc) = 0;
+// };
+// }  // namespace gpu_tracker
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, vvl::CommandBuffer)
+// VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, vvl::CommandBuffer)

@@ -174,11 +174,16 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     bool IsSelectiveInstrumentationEnabled(const void *pNext);
 
+    // TODO - Create a struct to hold this ever-growing function
+    // Will be easier once DebugPrintf and GPU-AV are combined
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
                                          uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
                                          uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
-                                         uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
-                                         uint32_t operation_index) const;
+                                         uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index,
+                                         bool is_debug_printf) const;
+
+    // TODO - Shouldn't have to be public, need to look when GPU-AV and printf are merged
+    VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
 
   protected:
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
@@ -210,8 +215,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, bool has_bindless_descriptors,
                           const Location &loc, std::vector<uint32_t> &out_instrumented_spirv);
 
-    VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
-
   public:
     VkPipelineLayout GetDebugPipelineLayout() { return debug_pipeline_layout_; }
 
@@ -233,9 +236,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     SpirvCache instrumented_shaders_cache_;
     DeviceMemoryBlock indices_buffer_{};
     unsigned int indices_buffer_alignment_ = 0;
-
-    // DebugPrintf takes the first available slot in the set
-    uint32_t debug_printf_binding_slot_ = 0;
 
   private:
     void Cleanup();

@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include "gpu/core/gpu_state_tracker.h"
-#include "gpu/instrumentation/gpu_shader_instrumentor.h"
+// #include "gpu/core/gpu_state_tracker.h"
+// #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 
-namespace gpu_tracker {
+// namespace gpu_tracker {
 
-CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, VkCommandBuffer handle,
-                             const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
-    : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
+// CommandBuffer::CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor, VkCommandBuffer handle,
+//                              const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool)
+//     : vvl::CommandBuffer(shader_instrumentor, handle, pCreateInfo, pool) {}
 
-}  // namespace gpu_tracker
+// }  // namespace gpu_tracker

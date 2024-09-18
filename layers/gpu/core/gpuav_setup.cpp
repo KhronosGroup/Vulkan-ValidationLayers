@@ -68,7 +68,8 @@ std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorS
 std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
                                                                     const VkCommandBufferAllocateInfo *allocate_info,
                                                                     const vvl::CommandPool *pool) {
-    return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool));
+    return std::static_pointer_cast<vvl::CommandBuffer>(
+        std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool, enabled[debug_printf_validation]));
 }
 
 void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,

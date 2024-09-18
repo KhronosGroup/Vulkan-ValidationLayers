@@ -27,9 +27,7 @@ namespace gpuav {
 
 void SetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                          const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation_enabled) {
-        return;
-    }
+    if (!gpuav.gpuav_settings.shader_instrumentation_enabled) return;
 
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
@@ -552,7 +550,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
             cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
-            tracker_info, shader_id, pipeline_bind_point, operation_index);
+            tracker_info, shader_id, pipeline_bind_point, operation_index, false);
 
         if (uses_robustness && oob_access) {
             if (gpuav.gpuav_settings.warn_on_robust_oob) {
