@@ -29,6 +29,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/queue_state.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"
 
@@ -121,6 +122,26 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     // Buffer storing a snapshot of buffer device address ranges
     gpu::DeviceMemoryBlock bda_ranges_snapshot_ = {};
     uint32_t bda_ranges_snapshot_version_ = 0;
+};
+
+class Queue : public vvl::Queue {
+  public:
+    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
+    virtual ~Queue();
+
+  protected:
+    vvl::PreSubmitResult PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
+    void PostSubmit(vvl::QueueSubmission &) override;
+    void SubmitBarrier(const Location &loc, uint64_t seq);
+    void Retire(vvl::QueueSubmission &) override;
+
+    gpu::GpuShaderInstrumentor &shader_instrumentor_;
+    VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
+    VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
+    VkSemaphore barrier_sem_{VK_NULL_HANDLE};
+    std::deque<std::vector<std::shared_ptr<vvl::CommandBuffer>>> retiring_;
+    const bool timeline_khr_;
 };
 
 class Buffer : public vvl::Buffer {

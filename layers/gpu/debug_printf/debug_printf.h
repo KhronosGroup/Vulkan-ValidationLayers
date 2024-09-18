@@ -153,9 +153,5 @@ class Validator : public gpu::GpuShaderInstrumentor {
 
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                              const vvl::CommandPool* pool) final;
-
-  private:
-    bool verbose = false;
-    bool use_stdout = false;
 };
 }  // namespace debug_printf

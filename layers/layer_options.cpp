@@ -756,25 +756,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST, GetCustomStypeInfo());
     }
 
-    DebugPrintfSettings &printf_settings = *settings_data->printf_settings;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT, printf_settings.to_stdout);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_VERBOSE)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_VERBOSE, printf_settings.verbose);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
-        const uint32_t default_buffer_size = printf_settings.buffer_size;
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, printf_settings.buffer_size);
-        if (printf_settings.buffer_size == 0) {
-            printf_settings.buffer_size = default_buffer_size;
-            printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %u\n",
-                   VK_LAYER_PRINTF_BUFFER_SIZE, default_buffer_size);
-        }
-    }
-
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION,
@@ -910,6 +891,24 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_PRINT_INSTRUMENTATION_INFO)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_PRINT_INSTRUMENTATION_INFO,
                                 gpuav_settings.debug_print_instrumentation_info);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT, gpuav_settings.debug_printf_to_stdout);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_VERBOSE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_VERBOSE, gpuav_settings.debug_printf_verbose);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
+        const uint32_t default_buffer_size = gpuav_settings.debug_printf_buffer_size;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, gpuav_settings.debug_printf_buffer_size);
+        if (gpuav_settings.debug_printf_buffer_size == 0) {
+            gpuav_settings.debug_printf_buffer_size = default_buffer_size;
+            printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %u\n",
+                   VK_LAYER_PRINTF_BUFFER_SIZE, default_buffer_size);
+        }
     }
 
     SyncValSettings &syncval_settings = *settings_data->syncval_settings;

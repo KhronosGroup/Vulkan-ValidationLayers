@@ -18,7 +18,7 @@
 
 #include "containers/custom_containers.h"
 #include "generated/chassis.h"
-#include "gpu/core/gpu_state_tracker.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "gpu/resources/gpu_resources.h"
 #include "gpu/spirv/instruction.h"
 #include "vma/vma.h"

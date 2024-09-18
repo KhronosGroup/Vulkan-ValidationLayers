@@ -70,10 +70,8 @@ struct GpuAVSettings {
         validate_indirect_trace_rays_buffers = enabled;
         validate_buffer_copies = enabled;
     }
-};
 
-struct DebugPrintfSettings {
-    bool to_stdout = false;
-    bool verbose = false;
-    uint32_t buffer_size = 1024;
+    bool debug_printf_to_stdout = false;
+    bool debug_printf_verbose = false;
+    uint32_t debug_printf_buffer_size = 1024;
 };

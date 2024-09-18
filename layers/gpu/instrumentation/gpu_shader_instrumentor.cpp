@@ -25,6 +25,8 @@
 #include "utils/vk_layer_utils.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
+#include "gpu/resources/gpuav_subclasses.h"
+#include "vk_layer_config.h"
 
 #include <cassert>
 #include <regex>
@@ -167,8 +169,8 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
 std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                                                VkDeviceQueueCreateFlags flags,
                                                                const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::static_pointer_cast<vvl::Queue>(std::make_shared<gpu_tracker::Queue>(*this, handle, family_index, queue_index,
-                                                                                     flags, queueFamilyProperties, timeline_khr_));
+    return std::static_pointer_cast<vvl::Queue>(
+        std::make_shared<gpuav::Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
 }
 
 // These are the common things required for anything that deals with shader instrumentation
@@ -255,6 +257,13 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
                       "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
                       "vertex shader.");
         return;
+    }
+
+    // This option was published when DebugPrintf came out, leave to not break people's flow
+    // Deprecated right after the 1.3.280 SDK release
+    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
+        InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
+        gpuav_settings.debug_printf_to_stdout = true;
     }
 
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
