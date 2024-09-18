@@ -947,12 +947,49 @@ TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
     m_commandBuffer->end();
 }
 
+TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
+    TEST_DESCRIPTION("Make sure that GPU-AV enabled uniformAndStorageBuffer8BitAccess on behalf of app");
+
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    if (!DeviceExtensionSupported(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_8BIT_STORAGE_EXTENSION_NAME << " not supported, skipping test";
+    }
+
+    VkPhysicalDevice8BitStorageFeaturesKHR eight_bit_storage_features = vku::InitStructHelper();
+    VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper(&eight_bit_storage_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features_2);
+    if (!eight_bit_storage_features.uniformAndStorageBuffer8BitAccess) {
+        GTEST_SKIP() << "Required feature uniformAndStorageBuffer8BitAccess is not supported, skipping test";
+    }
+
+    m_errorMonitor->SetDesiredWarning(
+        "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess set to VK_TRUE");
+
+    // noise
+    m_errorMonitor->SetAllowedFailureMsg(
+        "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
+    m_errorMonitor->SetAllowedFailureMsg(
+        "Adding a VkPhysicalDeviceBufferDeviceAddressFeatures to pNext with bufferDeviceAddress set to VK_TRUE");
+    m_errorMonitor->SetAllowedFailureMsg(
+        "Buffer device address validation option was enabled, but required buffer device address extension and/or features are not "
+        "enabled");
+    m_errorMonitor->SetAllowedFailureMsg("Ray Query validation option was enabled, but the rayQuery feature is not enabled");
+    m_errorMonitor->SetAllowedFailureMsg(
+        "vkGetDeviceProcAddr(): pName is trying to grab vkGetPhysicalDeviceCalibrateableTimeDomainsKHR which is an instance level "
+        "function");
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAV, CopyBufferToImageD32) {
     TEST_DESCRIPTION(
         "Copy depth buffer to image with some of its depth value being outside of the [0, 1] legal range. Depth image has format "
         "VK_FORMAT_D32_SFLOAT.");
+
     AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::uniformAndStorageBuffer8BitAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

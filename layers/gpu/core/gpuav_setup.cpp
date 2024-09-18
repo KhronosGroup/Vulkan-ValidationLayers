@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <cstring>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
@@ -71,6 +72,34 @@ std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuf
     return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool));
 }
 
+static std::vector<VkExtensionProperties> GetExtensions(VkPhysicalDevice physical_device) {
+    VkResult err;
+    uint32_t extension_count = 512;
+    std::vector<VkExtensionProperties> extensions(extension_count);
+    for (;;) {
+        err = DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, extensions.data());
+        if (err == VK_SUCCESS) {
+            extensions.resize(extension_count);
+            return extensions;
+        } else if (err == VK_INCOMPLETE) {
+            extension_count *= 2;  // wasn't enough space, increase it
+            extensions.resize(extension_count);
+        } else {
+            return {};
+        }
+    }
+}
+
+static bool IsExtensionAvailable(const char *extension_name, const std::vector<VkExtensionProperties> &available_extensions) {
+    for (const VkExtensionProperties &ext : available_extensions) {
+        if (strncmp(extension_name, ext.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                           const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
@@ -78,7 +107,11 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
 
     // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
 
-    auto add_missing_features = [this, &record_obj, modified_create_info]() {
+    std::vector<VkExtensionProperties> available_extensions = GetExtensions(physicalDevice);
+
+    // Force bufferDeviceAddress feature if available
+    // ---
+    auto add_bda_feature = [this, &record_obj, modified_create_info]() {
         // Add buffer device address feature
         if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
@@ -97,7 +130,7 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         }
     };
 
-    if (api_version > VK_API_VERSION_1_1) {
+    if (api_version >= VK_API_VERSION_1_2) {
         if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
             if (!features12->bufferDeviceAddress) {
@@ -106,13 +139,59 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                 features12->bufferDeviceAddress = VK_TRUE;
             }
         } else {
-            add_missing_features();
+            add_bda_feature();
         }
-    } else if (api_version == VK_API_VERSION_1_1) {
-        // Add our new extensions (will only add if found)
-        const std::string_view bda_ext{"VK_KHR_buffer_device_address"};
-        vku::AddExtension(*modified_create_info, bda_ext.data());
-        add_missing_features();
+    } else if (IsExtensionAvailable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, available_extensions)) {
+        // Add our new extensions, only add if not found
+        vku::AddExtension(*modified_create_info, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        add_bda_feature();
+    }
+
+    // Force uniformAndStorageBuffer8BitAccess feature if available and needed
+    // ---
+    if (gpuav_settings.validate_buffer_copies) {
+        VkPhysicalDevice8BitStorageFeatures eight_bit_feature = vku::InitStructHelper();
+        VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper(&eight_bit_feature);
+        DispatchGetPhysicalDeviceFeatures2(physicalDevice, &features_2);
+        // uniformAndStorageBuffer8BitAccess is optional in 1.2. Only force on if available.
+        if (eight_bit_feature.uniformAndStorageBuffer8BitAccess) {
+            auto add_8bit_access_feature = [this, &record_obj, modified_create_info]() {
+                // Add uniformAndStorageBuffer8BitAccess feature
+                if (auto *eight_bit_access_feature = const_cast<VkPhysicalDevice8BitStorageFeatures *>(
+                        vku::FindStructInPNextChain<VkPhysicalDevice8BitStorageFeatures>(modified_create_info))) {
+                    if (!eight_bit_access_feature->uniformAndStorageBuffer8BitAccess) {
+                        InternalWarning(
+                            device, record_obj.location,
+                            "Forcing VkPhysicalDevice8BitStorageFeatures::uniformAndStorageBuffer8BitAccess to VK_TRUE");
+                        eight_bit_access_feature->uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                    }
+                } else {
+                    InternalWarning(device, record_obj.location,
+                                    "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess "
+                                    "set to VK_TRUE");
+                    VkPhysicalDevice8BitStorageFeatures new_bda_features = vku::InitStructHelper();
+                    new_bda_features.uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                    vku::AddToPnext(*modified_create_info, new_bda_features);
+                }
+            };
+
+            if (api_version >= VK_API_VERSION_1_2) {
+                if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                        vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+                    if (!features12->uniformAndStorageBuffer8BitAccess) {
+                        InternalWarning(device, record_obj.location,
+                                        "Forcing VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess to VK_TRUE");
+                        features12->uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                    }
+                } else {
+                    add_8bit_access_feature();
+                }
+            } else if (IsExtensionAvailable(VK_KHR_8BIT_STORAGE_EXTENSION_NAME, available_extensions)) {
+                // Add our new extensions, only if not found
+                vku::AddExtension(*modified_create_info, VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+                add_8bit_access_feature();
+            }
+        }
     }
 }
 

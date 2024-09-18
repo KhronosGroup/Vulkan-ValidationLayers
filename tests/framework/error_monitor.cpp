@@ -239,7 +239,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *vuid, const char *const ms
         }
     }
 
-    if (!found_expected && !allowed_message_strings_.empty()) {
+    if (!found_expected) {
         for (const auto &allowed_msg : allowed_message_strings_) {
             if (error_string.find(allowed_msg) != std::string::npos) {
                 found_expected = true;
