@@ -139,7 +139,6 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
@@ -230,7 +229,6 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
