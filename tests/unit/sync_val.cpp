@@ -5709,63 +5709,6 @@ TEST_F(NegativeSyncVal, QSDebugRegion_Secondary) {
     m_default_queue->Wait();
 }
 
-// TODO: this test should be removed after timeline semaphore support is added to sync validation
-TEST_F(NegativeSyncVal, QSDebugRegion_TimelineStability) {
-    TEST_DESCRIPTION("Timeline semaphores are not supported yet but they should not crash the app");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_features = vku::InitStructHelper();
-    timeline_features.timelineSemaphore = VK_TRUE;
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper(&timeline_features);
-    sync2_features.synchronization2 = VK_TRUE;
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
-
-    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
-    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
-    vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
-    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
-
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
-
-    m_commandBuffer->begin();
-    // Issue a bunch of label commands
-    label.pLabelName = "RegionA";
-    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-    label.pLabelName = "RegionB";
-    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-    // At this point 4 label commands were recorded.
-    vk::CmdCopyBuffer(*m_commandBuffer, buffer_a, buffer_b, 1, &region);
-    m_commandBuffer->end();
-
-    m_default_queue->Submit2WithTimelineSemaphore(*m_commandBuffer, vkt::signal, semaphore, 1);
-
-    // This command will retire the previous submission in Core Validation.
-    // But not in Sync Validation... because it's not supported yet.
-    // Still usage of timeline semaphores should not cause crashes.
-    semaphore.Wait(1, kWaitTimeout);
-
-    // We are free to re-use command buffer after we waited on the semaphore.
-    // Because sync validation does not support timelines yet, it will
-    // detect false hazard of the following write with the previous read.
-    // During error reporting debug label information says that prior read
-    // occured after the 4th label command. Attempt to access those
-    // label commands lead to crash because buffer was reset after timeline
-    // wait. This scenario should not cause crash, even though syncval does
-    // not behave correctly.
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(*m_commandBuffer, buffer_c, buffer_a, 1, &region);
-    m_commandBuffer->end();
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->Submit(*m_commandBuffer);
-    m_errorMonitor->VerifyFound();
-    m_default_queue->Wait();
-}
-
 TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     TEST_DESCRIPTION("SHADER_READ_BIT barrier cannot protect UNIFORM_READ_BIT accesses");
     SetTargetApiVersion(VK_API_VERSION_1_3);
