@@ -2247,7 +2247,6 @@ class ValidationObject {
     CHECK_ENABLED enabled = {};
     GlobalSettings global_settings = {};
     GpuAVSettings gpuav_settings = {};
-    DebugPrintfSettings printf_settings = {};
     SyncValSettings syncval_settings = {};
 
     VkInstance instance = VK_NULL_HANDLE;

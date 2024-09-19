@@ -17,6 +17,7 @@
  */
 
 #include "layer_options.h"
+#include "error_message/log_message_type.h"
 #include "generated/error_location_helper.h"
 #include "utils/hash_util.h"
 #include <vulkan/layer/vk_layer_settings.hpp>
@@ -549,7 +550,8 @@ enum VkLayerDbgActionBits {
 };
 using VkLayerDbgActionFlags = VkFlags;
 
-static void ProcessDebugReportSettings(DebugReport *debug_report, VkuLayerSettingSet &layer_setting_set) {
+static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuLayerSettingSet &layer_setting_set) {
+    DebugReport *debug_report = settings_data->debug_report;
     // Message ID Filtering
     std::vector<std::string> message_id_filter;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_ID_FILTER)) {
@@ -628,6 +630,36 @@ static void ProcessDebugReportSettings(DebugReport *debug_report, VkuLayerSettin
         }
     }
 
+    // Before creating the debug callback, see if other settings interfere
+    if (settings_data->enables[debug_printf_validation]) {
+        if (settings_data->gpuav_settings->debug_printf_to_stdout && (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
+            if (is_stdout) {
+                printf(
+                    "Validation Layer Warning - The debug callback is already logging to stdout, but %s is also enabled. Disabling "
+                    "the debug callback.\n",
+                    VK_LAYER_PRINTF_TO_STDOUT);
+                debug_action &= ~VK_DBG_LAYER_ACTION_LOG_MSG;
+            } else {
+                printf("Validation Layer Warning - The logging to %s will not contain any DebugPrintf info because %s is enabled\n",
+                       log_filename.c_str(), VK_LAYER_PRINTF_TO_STDOUT);
+            }
+        }
+        if (!settings_data->gpuav_settings->debug_printf_to_stdout && ((report_flags & kInformationBit) == 0)) {
+            // Normally it is a lot of spam to use kInformationBit, but if only using DebugPrintf, it should be minimal information
+            // printed
+            printf(
+                "Validation Layer Warning - DebugPrintf logs to the Information message severity, enabling Information level "
+                "logging otherwise the message will not be seen\n");
+            report_flags |= kInformationBit;
+        }
+        if (!settings_data->gpuav_settings->debug_printf_to_stdout && debug_report->duplicate_message_limit != 0) {
+            printf(
+                "Validation Layer Warning - DebugPrintf logs can possibly print many time, but duplicate_message_limit is set to "
+                "%u so no more logs will be shown after.\n",
+                debug_report->duplicate_message_limit);
+        }
+    }
+
     // Flag as default if these settings are not from a vk_layer_settings.txt file
     const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) != 0;
 
@@ -696,7 +728,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // so that the layer always defaults to the standard validation options we want,
     // and does not try to process option coming from the VVL we are debugging
 #if defined(BUILD_SELF_VVL)
-    // Setup default messenger callback to stdout and just error validaiton messages
+    // Setup default messenger callback to stdout and just error validation messages
     FILE *log_output = stdout;
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
     VkDebugUtilsMessengerCreateInfoEXT dbg_create_info = vku::InitStructHelper();
@@ -756,25 +788,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_CUSTOM_STYPE_LIST, GetCustomStypeInfo());
     }
 
-    DebugPrintfSettings &printf_settings = *settings_data->printf_settings;
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT, printf_settings.to_stdout);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_VERBOSE)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_VERBOSE, printf_settings.verbose);
-    }
-
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
-        const uint32_t default_buffer_size = printf_settings.buffer_size;
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, printf_settings.buffer_size);
-        if (printf_settings.buffer_size == 0) {
-            printf_settings.buffer_size = default_buffer_size;
-            printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %u\n",
-                   VK_LAYER_PRINTF_BUFFER_SIZE, default_buffer_size);
-        }
-    }
-
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION,
@@ -805,7 +818,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, gpuav_settings.max_bda_in_use);
             if (gpuav_settings.max_bda_in_use == 0) {
                 gpuav_settings.max_bda_in_use = default_max_bda_in_use;
-                printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %u\n",
+                printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %" PRIu32 "\n",
                        VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, default_max_bda_in_use);
             }
         }
@@ -912,6 +925,24 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                 gpuav_settings.debug_print_instrumentation_info);
     }
 
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT, gpuav_settings.debug_printf_to_stdout);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_VERBOSE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_VERBOSE, gpuav_settings.debug_printf_verbose);
+    }
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
+        const uint32_t default_buffer_size = gpuav_settings.debug_printf_buffer_size;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, gpuav_settings.debug_printf_buffer_size);
+        if (gpuav_settings.debug_printf_buffer_size == 0) {
+            gpuav_settings.debug_printf_buffer_size = default_buffer_size;
+            printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %" PRIu32 "\n",
+                   VK_LAYER_PRINTF_BUFFER_SIZE, default_buffer_size);
+        }
+    }
+
     SyncValSettings &syncval_settings = *settings_data->syncval_settings;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION,
@@ -926,14 +957,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC,
                                 syncval_settings.shader_accesses_heuristic);
-    }
-
-    ProcessDebugReportSettings(settings_data->debug_report, layer_setting_set);
-
-    // Grab application name here while we have access to it and know if to save it or not
-    if (settings_data->debug_report->message_format_settings.display_application_name) {
-        settings_data->debug_report->message_format_settings.application_name =
-            settings_data->create_info->pApplicationInfo ? settings_data->create_info->pApplicationInfo->pApplicationName : "";
     }
 
     const auto *validation_features_ext = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(settings_data->create_info);
@@ -989,6 +1012,22 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, VK_LAYER_OBJECT_LIFETIME);
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, VK_LAYER_CHECK_SHADERS);
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, VK_LAYER_CHECK_SHADERS_CACHING);
+    }
+
+    if (settings_data->enables[gpu_validation] && !settings_data->disables[core_checks]) {
+        printf(
+            "Validation Setting Warning - Both GPU-AV and Normal Core Check validation are enabled, this is not recommend as it "
+            "will be very slow. Once all errors in Core Check are solved, please disable, then only use GPU-AV for best "
+            "performance.\n");
+    }
+
+    // Last as previous settings are needed so we can make sure they line up with the DebugReport settings
+    ProcessDebugReportSettings(settings_data, layer_setting_set);
+
+    // Grab application name here while we have access to it and know if to save it or not
+    if (settings_data->debug_report->message_format_settings.display_application_name) {
+        settings_data->debug_report->message_format_settings.application_name =
+            settings_data->create_info->pApplicationInfo ? settings_data->create_info->pApplicationInfo->pApplicationName : "";
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);

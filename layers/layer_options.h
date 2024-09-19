@@ -87,7 +87,6 @@ struct GlobalSettings {
 
 class DebugReport;
 struct GpuAVSettings;
-struct DebugPrintfSettings;
 struct SyncValSettings;
 struct MessageFormatSettings;
 struct ConfigAndEnvSettings {
@@ -108,7 +107,6 @@ struct ConfigAndEnvSettings {
 
     // Individual settings for different internal layers
     GpuAVSettings *gpuav_settings;
-    DebugPrintfSettings *printf_settings;
     SyncValSettings *syncval_settings;
 };
 const std::vector<std::string> &GetDisableFlagNameHelper();

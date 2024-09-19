@@ -342,7 +342,7 @@ void Validator::InitSettings(const Location &loc) {
         if (!enabled_features.bufferDeviceAddress) {
             shader_instrumentation.bindless_descriptor = false;
             InternalWarning(device, loc,
-                            "Descriptors Indexing validaiton optin was enabled. but the bufferDeviceAddress was not enabled "
+                            "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not enabled "
                             "[Disabling gpuav_descriptor_checks]");
         }
     }
