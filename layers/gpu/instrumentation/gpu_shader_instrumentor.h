@@ -182,9 +182,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index,
                                          bool is_debug_printf) const;
 
-    // TODO - Shouldn't have to be public, need to look when GPU-AV and printf are merged
-    VkDescriptorSetLayout GetDebugDescriptorSetLayout() { return debug_desc_layout_; }
-
   protected:
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                             VkDeviceQueueCreateFlags flags,

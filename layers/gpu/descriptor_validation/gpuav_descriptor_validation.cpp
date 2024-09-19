@@ -21,11 +21,13 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/resources/gpu_shader_resources.h"
+#include "layer_options.h"
 
 namespace gpuav {
 void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) return;
+    if (gpuav.enabled[debug_printf_validation]) return;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];
@@ -61,9 +63,8 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
 
 void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) {
-        return;
-    }
+    if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) return;
+    if (gpuav.enabled[debug_printf_validation]) return;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];

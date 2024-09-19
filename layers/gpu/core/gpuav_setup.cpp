@@ -145,6 +145,14 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
 
+    // override if using DebugPrintf, in future, will just try and append
+    if (enabled[debug_printf_validation]) {
+        instrumentation_bindings_ = {
+            // DebugPrintf Output buffer
+            {glsl::kBindingInstDebugPrintf, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        };
+    }
+
     // Currently, both GPU-AV and DebugPrintf set their own instrumentation_bindings_ that this call will use
     BaseClass::PostCreateDevice(pCreateInfo, loc);
     // We might fail in parent class device creation if global requirements are not met

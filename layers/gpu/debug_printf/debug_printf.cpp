@@ -16,7 +16,7 @@
  */
 
 #include "gpu/debug_printf/debug_printf.h"
-#include <vulkan/vulkan_core.h>
+#include "gpu/instrumentation/gpu_shader_instrumentor.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_header.h"
@@ -25,32 +25,6 @@
 #include "gpu/core/gpuav.h"
 
 #include <iostream>
-
-namespace debug_printf {
-
-void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                          const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
-    BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
-}
-
-// Perform initializations that can be done at Create Device time.
-void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    if (enabled[gpu_validation]) {
-        InternalError(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
-        return;
-    }
-
-    instrumentation_bindings_.emplace_back(VkDescriptorSetLayoutBinding{
-        gpuav::glsl::kBindingInstDebugPrintf, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr});
-
-    // Currently, both GPU-AV and DebugPrintf set their own instrumentation_bindings_ that this call will use
-    BaseClass::PostCreateDevice(pCreateInfo, loc);
-    // We might fail in parent class device creation if global requirements are not met
-    if (aborted_) return;
-}
-
-}  // namespace debug_printf
 
 namespace gpuav {
 namespace debug_printf {
@@ -380,7 +354,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 #endif
 
 void AllocateResources(Validator &gpuav, CommandBuffer &cb_state, const VkPipelineBindPoint bind_point, const Location &loc) {
-    if (gpuav.enabled[debug_printf_validation]) return;
+    if (!gpuav.enabled[debug_printf_validation]) return;
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
@@ -401,15 +375,8 @@ void AllocateResources(Validator &gpuav, CommandBuffer &cb_state, const VkPipeli
         return;
     }
 
-    // TODO - use the following when we combine the two command buffer classes
-    // VkDescriptorSet printf_desc_set = cb_state->gpu_resources_manager.GetManagedDescriptorSet(GetDebugDescriptorSetLayout());
-    std::vector<VkDescriptorSet> desc_sets;
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    VkResult result = gpuav.desc_set_manager_->GetDescriptorSets(1, &desc_pool, gpuav.GetDebugDescriptorSetLayout(), &desc_sets);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalError(cb_state.Handle(), loc, "Unable to allocate descriptor sets.");
-        return;
-    }
+    VkDescriptorSet printf_desc_set =
+        cb_state.gpu_resources_manager.GetManagedDescriptorSet(cb_state.GetInstrumentationDescriptorSetLayout());
 
     // Allocate memory for the output block that the gpu will use to return values for printf
     gpu::DeviceMemoryBlock output_block = {};
@@ -418,7 +385,7 @@ void AllocateResources(Validator &gpuav, CommandBuffer &cb_state, const VkPipeli
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    result =
+    VkResult result =
         vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &output_block.buffer, &output_block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalError(cb_state.Handle(), loc, "Unable to allocate device memory.", true);
@@ -445,7 +412,7 @@ void AllocateResources(Validator &gpuav, CommandBuffer &cb_state, const VkPipeli
     desc_writes.descriptorCount = 1;
     desc_writes.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     desc_writes.pBufferInfo = &output_desc_buffer_info;
-    desc_writes.dstSet = desc_sets[0];
+    desc_writes.dstSet = printf_desc_set;
     desc_writes.dstBinding = gpuav::glsl::kBindingInstDebugPrintf;
     DispatchUpdateDescriptorSets(gpuav.device, 1, &desc_writes, 0, nullptr);
 
@@ -462,16 +429,16 @@ void AllocateResources(Validator &gpuav, CommandBuffer &cb_state, const VkPipeli
                                                 : pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
         if (pipeline_layout->set_layouts.size() <= gpuav.desc_set_bind_index_) {
             DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout_handle, gpuav.desc_set_bind_index_, 1,
-                                          desc_sets.data(), 0, nullptr);
+                                          &printf_desc_set, 0, nullptr);
         }
     } else {
         // If no pipeline layout was bound when using shader objects that don't use any descriptor set, bind the debug pipeline
         // layout
         DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, gpuav.GetDebugPipelineLayout(), gpuav.desc_set_bind_index_,
-                                      1, desc_sets.data(), 0, nullptr);
+                                      1, &printf_desc_set, 0, nullptr);
     }
     // Record buffer and memory info in CB state tracking
-    cb_state.buffer_infos.emplace_back(output_block, desc_sets[0], desc_pool, bind_point, cb_state.action_command_count++);
+    cb_state.debug_printf_buffer_infos.emplace_back(output_block, bind_point, cb_state.action_command_count++);
 }
 
 }  // namespace debug_printf

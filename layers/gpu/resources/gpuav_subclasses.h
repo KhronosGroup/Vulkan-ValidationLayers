@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "external/inplace_function.h"
-#include "gpu/core/gpu_state_tracker.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/resources/gpu_resources.h"
 
@@ -44,15 +43,11 @@ struct DescBindingInfo;
 
 struct DebugPrintfBufferInfo {
     gpu::DeviceMemoryBlock output_mem_block;
-    VkDescriptorSet desc_set;
-    VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
     uint32_t action_command_index;
-    DebugPrintfBufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
-                          VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
+    DebugPrintfBufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkPipelineBindPoint pipeline_bind_point,
+                          uint32_t action_command_index)
         : output_mem_block(output_mem_block),
-          desc_set(desc_set),
-          desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point),
           action_command_index(action_command_index){};
 };
@@ -119,7 +114,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 
     // DebugPrintf - TODO, merge things so we don't need to use this bool to decide inside where we are
     const bool is_debug_print;
-    std::vector<DebugPrintfBufferInfo> buffer_infos;
+    std::vector<DebugPrintfBufferInfo> debug_printf_buffer_infos;
     uint32_t action_command_count = 0;
 
   private:

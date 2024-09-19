@@ -61,7 +61,6 @@ bool wrap_handles = true;
 #include "core_checks/core_validation.h"
 #include "best_practices/best_practices_validation.h"
 #include "gpu/core/gpuav.h"
-#include "gpu/debug_printf/debug_printf.h"
 #include "sync/sync_validation.h"
 
 // This header file must be included after the above validation object class definitions
@@ -101,11 +100,8 @@ static std::vector<ValidationObject*> CreateObjectDispatch(const CHECK_ENABLED& 
     if (enables[best_practices]) {
         object_dispatch.emplace_back(new BestPractices);
     }
-    if (enables[gpu_validation]) {
+    if (enables[gpu_validation] || enables[debug_printf_validation]) {
         object_dispatch.emplace_back(new gpuav::Validator);
-    }
-    if (enables[debug_printf_validation]) {
-        object_dispatch.emplace_back(new debug_printf::Validator);
     }
     if (enables[sync_validation]) {
         object_dispatch.emplace_back(new SyncValidator);
@@ -135,11 +131,8 @@ static void InitDeviceObjectDispatch(ValidationObject* instance_interceptor, Val
     if (enables[best_practices]) {
         device_interceptor->object_dispatch.emplace_back(new BestPractices);
     }
-    if (enables[gpu_validation]) {
+    if (enables[gpu_validation] || enables[debug_printf_validation]) {
         device_interceptor->object_dispatch.emplace_back(new gpuav::Validator);
-    }
-    if (enables[debug_printf_validation]) {
-        device_interceptor->object_dispatch.emplace_back(new debug_printf::Validator);
     }
     if (enables[sync_validation]) {
         device_interceptor->object_dispatch.emplace_back(new SyncValidator);

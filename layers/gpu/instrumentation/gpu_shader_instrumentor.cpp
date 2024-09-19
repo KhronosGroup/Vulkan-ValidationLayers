@@ -17,7 +17,6 @@
 
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 
-#include "gpu/core/gpu_state_tracker.h"
 #include "gpu/shaders/gpu_shaders_constants.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"

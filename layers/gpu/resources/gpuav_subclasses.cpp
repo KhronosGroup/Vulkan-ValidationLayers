@@ -161,7 +161,6 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, gpu::DeviceMemoryBlock &er
 }
 
 void CommandBuffer::AllocateResources(const Location &loc) {
-    if (is_debug_print) return;
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     VkResult result = VK_SUCCESS;
@@ -179,6 +178,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
             return;
         }
     }
+    if (is_debug_print) return;  // uses above descriptor set layout
 
     // Error output buffer
     if (!AllocateErrorLogsBuffer(*gpuav, error_output_buffer_, loc)) {
@@ -395,14 +395,16 @@ void CommandBuffer::ResetCBState() {
 
     if (is_debug_print) {
         action_command_count = 0;
-        // Free the device memory and descriptor set(s) associated with a command buffer.
-        for (auto &buffer_info : buffer_infos) {
+        gpu_resources_manager.DestroyResources();
+        for (auto &buffer_info : debug_printf_buffer_infos) {
             vmaDestroyBuffer(gpuav->vma_allocator_, buffer_info.output_mem_block.buffer, buffer_info.output_mem_block.allocation);
-            if (buffer_info.desc_set != VK_NULL_HANDLE) {
-                gpuav->desc_set_manager_->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
-            }
         }
-        buffer_infos.clear();
+        debug_printf_buffer_infos.clear();
+
+        if (instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
+            DispatchDestroyDescriptorSetLayout(gpuav->device, instrumentation_desc_set_layout_, nullptr);
+            instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
+        }
         return;
     }
 
@@ -458,6 +460,7 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
 
 bool CommandBuffer::PreProcess(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
+    if (is_debug_print) return true;
 
     bool succeeded = UpdateBindlessStateBuffer(*gpuav, *this, loc);
     if (!succeeded) {
@@ -480,7 +483,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     if (is_debug_print) {
         // For the given command buffer, map its debug data buffers and read their contents for analysis.
-        for (auto &buffer_info : buffer_infos) {
+        for (auto &buffer_info : debug_printf_buffer_infos) {
             char *data;
 
             VkResult result = vmaMapMemory(gpuav->vma_allocator_, buffer_info.output_mem_block.allocation, (void **)&data);

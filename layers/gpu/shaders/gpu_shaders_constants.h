@@ -55,9 +55,8 @@ const int kBindingInstBufferDeviceAddress = 2;
 const int kBindingInstActionIndex = 3;
 const int kBindingInstCmdResourceIndex = 4;
 const int kBindingInstCmdErrorsCount = 5;
-
-// Update to last number when combined GPU-AV and DebugPrintf
-const int kBindingInstDebugPrintf = 6;
+// Currently both GPU-AV and DebugPrintf can't be used together so can have duplicate binding slot
+const int kBindingInstDebugPrintf = 0;
 
 // Diagnostic calls
 // ---

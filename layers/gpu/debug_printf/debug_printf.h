@@ -17,10 +17,9 @@
 
 #pragma once
 
-#include "gpu/core/gpu_state_tracker.h"
-#include "gpu/instrumentation/gpu_shader_instrumentor.h"
-#include "gpu/resources/gpu_resources.h"
+#include <vulkan/vulkan_core.h>
 
+struct Location;
 namespace gpuav {
 struct DebugPrintfBufferInfo;
 class CommandBuffer;
@@ -32,16 +31,3 @@ void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer,
                                gpuav::DebugPrintfBufferInfo& buffer_info, uint32_t* const debug_output_buffer, const Location& loc);
 }  // namespace debug_printf
 }  // namespace gpuav
-
-namespace debug_printf {
-class Validator : public gpu::GpuShaderInstrumentor {
-  public:
-    using BaseClass = gpu::GpuShaderInstrumentor;
-    Validator() { container_type = LayerObjectTypeDebugPrintf; }
-
-    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
-                                   vku::safe_VkDeviceCreateInfo* modified_create_info) final;
-    void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
-};
-}  // namespace debug_printf
