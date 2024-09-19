@@ -731,7 +731,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityF
 
     msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
                << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
-    msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
+    if (callback_data->objectCount > 0) {
+        msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
+    }
     for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
         msg_buffer << "        [" << obj << "] " << std::hex << std::showbase
                    << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
@@ -777,7 +779,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
 
     msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
                << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
-    msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
+    if (callback_data->objectCount > 0) {
+        msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
+    }
 
     for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
         msg_buffer << "       [" << obj << "]  " << std::hex << std::showbase

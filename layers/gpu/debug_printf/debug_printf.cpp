@@ -16,6 +16,8 @@
  */
 
 #include "gpu/debug_printf/debug_printf.h"
+#include "error_message/log_message_type.h"
+#include "error_message/logging.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_header.h"
@@ -38,14 +40,11 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         return;
     }
 
-    verbose = printf_settings.verbose;
-    use_stdout = printf_settings.to_stdout;
-
     // This option was published when DebugPrintf came out, leave to not break people's flow
     // Deprecated right after the 1.3.280 SDK release
     if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
         InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
-        use_stdout = true;
+        gpuav_settings.debug_printf_to_stdout = true;
     }
 
     debug_printf_binding_slot_ = (uint32_t)instrumentation_bindings_.size();  // get next free binding
@@ -340,39 +339,42 @@ void Validator::AnalyzeAndGenerateMessage(VkCommandBuffer command_buffer, VkQueu
             shader_message << temp_string.c_str();
         }
 
-        if (verbose) {
+        const bool use_stdout = gpuav_settings.debug_printf_to_stdout;
+        if (gpuav_settings.debug_printf_verbose) {
             std::string debug_info_message = GenerateDebugInfoMessage(
                 command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0, debug_record->stage_info_1,
                 debug_record->stage_info_2, debug_record->instruction_position, tracker_info, debug_record->shader_id,
                 buffer_info.pipeline_bind_point, buffer_info.action_command_index);
             if (use_stdout) {
-                std::cout << "WARNING-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
+                std::cout << "VVL-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {
-                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s\n%s", shader_message.str().c_str(), debug_info_message.c_str());
+                LogObjectList objlist(queue, command_buffer);
+                LogInfo("VVL-DEBUG-PRINTF", objlist, loc, "%s\n%s", shader_message.str().c_str(), debug_info_message.c_str());
             }
 
         } else {
             if (use_stdout) {
                 std::cout << shader_message.str();
             } else {
-                // Don't let LogInfo process any '%'s in the string
-                LogInfo("WARNING-DEBUG-PRINTF", queue, loc, "%s", shader_message.str().c_str());
+                // LogInfo will print out a lot of extra information (Object handles, VUID, hash, etc)
+                // If the user doesn't set "verbose", but wants to use the debug callback, we should limit it to the bare minimum
+                debug_report->DebugLogMsg(kInformationBit, {}, shader_message.str().c_str(), "VVL-DEBUG-PRINTF");
             }
         }
         index += debug_record->size;
     }
     if ((index - gpuav::kDebugPrintfOutputBufferData) != output_record_counts) {
         std::stringstream message;
-        message << "Debug Printf message was truncated due to a buffer size (" << printf_settings.buffer_size
+        message << "Debug Printf message was truncated due to a buffer size (" << gpuav_settings.debug_printf_buffer_size
                 << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
-        InternalWarning(queue, loc, message.str().c_str());
+        InternalWarning(command_buffer, loc, message.str().c_str());
     }
 
     // Only memset what is needed, in case we are only using a small portion of a large buffer_size.
     // At the same time we want to make sure we don't memset past the actual VkBuffer allocation
     uint32_t clear_size =
         sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize] + gpuav::kDebugPrintfOutputBufferData);
-    clear_size = std::min(printf_settings.buffer_size, clear_size);
+    clear_size = std::min(gpuav_settings.debug_printf_buffer_size, clear_size);
     memset(debug_output_buffer, 0, clear_size);
 }
 
@@ -607,7 +609,7 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
     // Allocate memory for the output block that the gpu will use to return values for printf
     gpu::DeviceMemoryBlock output_block = {};
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = printf_settings.buffer_size;
+    buffer_info.size = gpuav_settings.debug_printf_buffer_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -624,12 +626,12 @@ void Validator::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, c
         InternalError(cmd_buffer, loc, "Unable to allocate map memory.", true);
         return;
     }
-    memset(data, 0, printf_settings.buffer_size);
+    memset(data, 0, gpuav_settings.debug_printf_buffer_size);
     vmaUnmapMemory(vma_allocator_, output_block.allocation);
 
     // Write the descriptor
     VkDescriptorBufferInfo output_desc_buffer_info = {};
-    output_desc_buffer_info.range = printf_settings.buffer_size;
+    output_desc_buffer_info.range = gpuav_settings.debug_printf_buffer_size;
     output_desc_buffer_info.buffer = output_block.buffer;
     output_desc_buffer_info.offset = 0;
 

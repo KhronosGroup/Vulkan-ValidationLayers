@@ -498,12 +498,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     CHECK_DISABLED local_disables{};
     GlobalSettings local_global_settings = {};
     GpuAVSettings local_gpuav_settings = {};
-    DebugPrintfSettings local_printf_settings = {};
     SyncValSettings local_syncval_settings = {};
-    ConfigAndEnvSettings config_and_env_settings_data{
-        OBJECT_LAYER_DESCRIPTION, pCreateInfo, local_enables, local_disables, debug_report,
-        // All settings for various internal layers
-        &local_global_settings, &local_gpuav_settings, &local_printf_settings, &local_syncval_settings};
+    ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION, pCreateInfo, local_enables, local_disables,
+                                                      debug_report,
+                                                      // All settings for various internal layers
+                                                      &local_global_settings, &local_gpuav_settings, &local_syncval_settings};
     ProcessConfigAndEnvSettings(&config_and_env_settings_data);
 
     // Create temporary dispatch vector for pre-calls until instance is created
@@ -562,7 +561,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     framework->enabled = local_enables;
     framework->global_settings = local_global_settings;
     framework->gpuav_settings = local_gpuav_settings;
-    framework->printf_settings = local_printf_settings;
     framework->syncval_settings = local_syncval_settings;
 
     framework->instance = *pInstance;
@@ -583,7 +581,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
         intercept->disabled = framework->disabled;
         intercept->global_settings = framework->global_settings;
         intercept->gpuav_settings = framework->gpuav_settings;
-        intercept->printf_settings = framework->printf_settings;
         intercept->syncval_settings = framework->syncval_settings;
         intercept->instance = *pInstance;
     }
@@ -735,7 +732,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         object->enabled = instance_interceptor->enabled;
         object->global_settings = instance_interceptor->global_settings;
         object->gpuav_settings = instance_interceptor->gpuav_settings;
-        object->printf_settings = instance_interceptor->printf_settings;
         object->syncval_settings = instance_interceptor->syncval_settings;
         object->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
         object->instance_extensions = instance_interceptor->instance_extensions;
