@@ -149,11 +149,16 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSet &descript
                                               const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
                                               const VulkanTypedHandle &handle, const uint32_t layoutIndex,
                                               std::string &error_msg) const {
-    auto num_sets = set_layouts.size();
+    size_t num_sets = set_layouts.size();
     if (layoutIndex >= num_sets) {
         std::stringstream error_str;
-        error_str << FormatHandle(handle) << ") only contains " << num_sets << " setLayouts corresponding to sets 0-"
-                  << num_sets - 1 << ", but you're attempting to bind set to index " << layoutIndex;
+        error_str << FormatHandle(handle) << ") only contains ";
+        if (num_sets == 1) {
+            error_str << "1 setLayout, corresponding to index 0";
+        } else {
+            error_str << num_sets << " setLayouts, corresponding to index from 0 to " << num_sets - 1;
+        }
+        error_str << ", but you're attempting to bind set to index " << layoutIndex;
         error_msg = error_str.str();
         return false;
     }
