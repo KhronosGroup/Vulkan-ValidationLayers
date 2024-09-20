@@ -484,7 +484,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, co
                                                              chassis::CreateShaderModule &chassis_state) {
     BaseClass::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
 
-    // By default, we instrument everything, but if the setting is turned on, we only will instrument th{e shaders the app picks
+    // By default, we instrument everything, but if the setting is enabled, we only will instrument the shaders the app picks
     if (gpuav_settings.select_instrumented_shaders && IsSelectiveInstrumentationEnabled(pCreateInfo->pNext)) {
         // If this is being filled up, likely only a few shaders and the app scope is narrowed down, so no need to spend time
         // removing these later

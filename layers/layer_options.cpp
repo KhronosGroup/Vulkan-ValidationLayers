@@ -20,6 +20,8 @@
 #include "error_message/log_message_type.h"
 #include "generated/error_location_helper.h"
 #include "utils/hash_util.h"
+#include <string>
+#include <vector>
 #include <vulkan/layer/vk_layer_settings.hpp>
 
 #include "generated/chassis.h"
@@ -521,17 +523,18 @@ static std::string Merge(const std::vector<std::string> &strings) {
     return result;
 }
 
-// If option is NULL or stdout, return stdout, otherwise try to open option
+// If log_filename is NULL or stdout, return stdout, otherwise try to open log_filename
 // as a filename. If successful, return file handle, otherwise stdout
-FILE *GetLayerLogOutput(const char *option) {
+FILE *GetLayerLogOutput(const char *log_filename, std::vector<std::string> &setting_warnings) {
     FILE *log_output = NULL;
-    if (!option || !strcmp("stdout", option)) {
+    if (!log_filename || !strcmp("stdout", log_filename)) {
         log_output = stdout;
     } else {
-        log_output = fopen(option, "w");
+        log_output = fopen(log_filename, "w");
         if (log_output == NULL) {
-            if (option) {
-                printf("Validation Layers Error: Bad output filename specified: %s. Writing to STDOUT instead\n", option);
+            if (log_filename) {
+                setting_warnings.emplace_back("log_filename (" + std::string(log_filename) +
+                                              ") could not be opened, falling back to stdout instead.");
             }
             log_output = stdout;
         }
@@ -550,7 +553,8 @@ enum VkLayerDbgActionBits {
 };
 using VkLayerDbgActionFlags = VkFlags;
 
-static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuLayerSettingSet &layer_setting_set) {
+static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuLayerSettingSet &layer_setting_set,
+                                       std::vector<std::string> &setting_warnings) {
     DebugReport *debug_report = settings_data->debug_report;
     // Message ID Filtering
     std::vector<std::string> message_id_filter;
@@ -604,8 +608,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         if (enum_value != debug_actions_option.end()) {
             debug_action |= enum_value->second;
         } else {
-            printf("Validation Layer Warning - %s was is not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).\n",
-                   element.c_str());
+            setting_warnings.emplace_back("\"" + element + "\" was not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).");
         }
     }
 
@@ -625,8 +628,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         if (enum_value != report_flags_options.end()) {
             report_flags |= enum_value->second;
         } else {
-            printf("Validation Layer Warning - %s was is not a valid option for VK_LAYER_REPORT_FLAGS (ignoring).\n",
-                   element.c_str());
+            setting_warnings.emplace_back("\"" + element + "\" was not a valid option for VK_LAYER_REPORT_FLAGS (ignoring).");
         }
     }
 
@@ -634,29 +636,28 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
     if (settings_data->enables[debug_printf_validation]) {
         if (settings_data->gpuav_settings->debug_printf_to_stdout && (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
             if (is_stdout) {
-                printf(
-                    "Validation Layer Warning - The debug callback is already logging to stdout, but %s is also enabled. Disabling "
-                    "the debug callback.\n",
-                    VK_LAYER_PRINTF_TO_STDOUT);
-                debug_action &= ~VK_DBG_LAYER_ACTION_LOG_MSG;
+                setting_warnings.emplace_back(
+                    "The debug callback is already logging to stdout, but " + std::string(VK_LAYER_PRINTF_TO_STDOUT) +
+                    " is also enabled. DebugPrintf will skip the debug callback in favor of a direct stdout write.");
             } else {
-                printf("Validation Layer Warning - The logging to %s will not contain any DebugPrintf info because %s is enabled\n",
-                       log_filename.c_str(), VK_LAYER_PRINTF_TO_STDOUT);
+                setting_warnings.emplace_back("The logging to " + log_filename + " will not contain any DebugPrintf info because " +
+                                              std::string(VK_LAYER_PRINTF_TO_STDOUT) + " is enabled.");
             }
         }
         if (!settings_data->gpuav_settings->debug_printf_to_stdout && ((report_flags & kInformationBit) == 0)) {
             // Normally it is a lot of spam to use kInformationBit, but if only using DebugPrintf, it should be minimal information
             // printed
-            printf(
-                "Validation Layer Warning - DebugPrintf logs to the Information message severity, enabling Information level "
-                "logging otherwise the message will not be seen\n");
+            setting_warnings.emplace_back(
+                "DebugPrintf logs to the Information message severity, enabling Information level logging otherwise the message "
+                "will not be seen.");
             report_flags |= kInformationBit;
         }
-        if (!settings_data->gpuav_settings->debug_printf_to_stdout && debug_report->duplicate_message_limit != 0) {
-            printf(
-                "Validation Layer Warning - DebugPrintf logs can possibly print many time, but duplicate_message_limit is set to "
-                "%u so no more logs will be shown after.\n",
-                debug_report->duplicate_message_limit);
+        if (!settings_data->gpuav_settings->debug_printf_to_stdout && settings_data->gpuav_settings->debug_printf_verbose &&
+            debug_report->duplicate_message_limit != 0) {
+            // If verbose is turned off, it bypasses the LogMsgEnabled() check and not important
+            setting_warnings.emplace_back("DebugPrintf logs can possibly print many times, but duplicate_message_limit is set to " +
+                                          std::to_string(debug_report->duplicate_message_limit) +
+                                          " so no more logs will be shown after.");
         }
     }
 
@@ -684,18 +685,27 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
 
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
-        FILE *log_output = GetLayerLogOutput(log_filename.c_str());
+        FILE *log_output = GetLayerLogOutput(log_filename.c_str(), setting_warnings);
         if (log_output != stdout) {
-            printf("Validation Layer Info - Logging validation error to %s\n", log_filename.c_str());
+            // This particular warning is designed to show the user where the debug callback is going (which is important to know!),
+            // so it makes no sense to put the warning in the callback location. For this one only we attempt to print to the
+            // everywhere else possible
+            const std::string tmp = "Validation Layer Info - Logging validation error to " + log_filename + "\n";
+            const char *cstr = tmp.c_str();
+            printf("%s", cstr);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+            OutputDebugString(cstr);
+#endif
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+            __android_log_print(ANDROID_LOG_INFO, "VALIDATION", "%s", cstr);
+#endif
         }
         dbg_create_info.pfnUserCallback = MessengerLogCallback;
         dbg_create_info.pUserData = (void *)log_output;
         LayerCreateMessengerCallback(debug_report, default_layer_callback, &dbg_create_info, &messenger);
     } else if (!is_stdout) {
-        printf(
-            "Validation Layer Warning - You have log_filename set to %s but VK_DBG_LAYER_ACTION_LOG_MSG was not set, so it won't "
-            "be sent to the file\n",
-            log_filename.c_str());
+        setting_warnings.emplace_back("The log_filename was set to " + log_filename +
+                                      " but VK_DBG_LAYER_ACTION_LOG_MSG was not set, so it won't be sent to the file.");
     }
 
     messenger = VK_NULL_HANDLE;
@@ -747,6 +757,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     return;
 #else
+
+    // We need to send all warnings through the DebugCallback (printf will go into the void and likely is not seen for people), but
+    // we also need to get settings setup before creating the DebugCallback. This is the only spot that needs this, so we create a
+    // temp list of strings here and shove them through DebugCallback right after we call it. This function should not be a
+    // bottleneck so some extra string building should be ok here.
+    std::vector<std::string> setting_warnings;
+
     // If not cleared, garbage has been seen in some Android run effecting the error message
     GetCustomStypeInfo().clear();
 
@@ -805,8 +822,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
         } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB)) {
             vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, gpuav_settings.warn_on_robust_oob);
-            printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-                   DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB);
+            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB) +
+                                          " setting was set, use " + std::string(VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB) + " instead.");
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB)) {
@@ -818,8 +835,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, gpuav_settings.max_bda_in_use);
             if (gpuav_settings.max_bda_in_use == 0) {
                 gpuav_settings.max_bda_in_use = default_max_bda_in_use;
-                printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %" PRIu32 "\n",
-                       VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, default_max_bda_in_use);
+                setting_warnings.emplace_back(std::string(VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES) +
+                                              " was set to zero, which is invalid, setting to the default of " +
+                                              std::to_string(default_max_bda_in_use));
             }
         }
 
@@ -834,8 +852,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
             vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
                                     gpuav_settings.cache_instrumented_shaders);
-            printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-                   DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS);
+            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE) +
+                                          " setting was set, use " + std::string(VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS) +
+                                          " instead.");
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
@@ -844,8 +863,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
             vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS,
                                     gpuav_settings.select_instrumented_shaders);
-            printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-                   DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS);
+            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS) +
+                                          " setting was set, use " + std::string(VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS) +
+                                          " instead.");
         }
 
         // No need to enable shader instrumentation options is no instrumentation is done
@@ -877,8 +897,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES)) {
             vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES,
                                     gpuav_settings.validate_buffer_copies);
-            printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-                   DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES, VK_LAYER_GPUAV_BUFFER_COPIES);
+            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES) +
+                                          " setting was set, use " + std::string(VK_LAYER_GPUAV_BUFFER_COPIES) + " instead.");
         }
     }
 
@@ -888,16 +908,16 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT)) {
         SetValidationSetting(layer_setting_set, settings_data->enables, gpu_validation_reserve_binding_slot,
                              DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT);
-        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-               DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT, VK_LAYER_GPUAV_RESERVE_BINDING_SLOT);
+        setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT) +
+                                      " setting was set, use " + std::string(VK_LAYER_GPUAV_RESERVE_BINDING_SLOT) + " instead.");
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
     } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT)) {
         vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
-        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n", DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT,
-               VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT);
+        setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT) + " setting was set, use " +
+                                      std::string(VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT) + " instead.");
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS)) {
@@ -938,8 +958,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, gpuav_settings.debug_printf_buffer_size);
         if (gpuav_settings.debug_printf_buffer_size == 0) {
             gpuav_settings.debug_printf_buffer_size = default_buffer_size;
-            printf("Validation Setting Warning - %s was set to zero, which is invalid, setting default of %" PRIu32 "\n",
-                   VK_LAYER_PRINTF_BUFFER_SIZE, default_buffer_size);
+            setting_warnings.emplace_back(std::string(VK_LAYER_PRINTF_BUFFER_SIZE) +
+                                          " was set to zero, which is invalid, setting to the default of " +
+                                          std::to_string(default_buffer_size));
         }
     }
 
@@ -950,8 +971,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT)) {
         vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT,
                                 syncval_settings.submit_time_validation);
-        printf("Validation Setting Warning - %s was set, this is deprecated, please use %s\n",
-               DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT, VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION);
+        setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT) +
+                                      " setting was set, use " + std::string(VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION) +
+                                      " instead.");
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC)) {
@@ -1015,19 +1037,23 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     if (settings_data->enables[gpu_validation] && !settings_data->disables[core_checks]) {
-        printf(
-            "Validation Setting Warning - Both GPU-AV and Normal Core Check validation are enabled, this is not recommend as it "
-            "will be very slow. Once all errors in Core Check are solved, please disable, then only use GPU-AV for best "
-            "performance.\n");
+        setting_warnings.emplace_back(
+            "Both GPU Assisted Validation and Normal Core Check Validation are enabled, this is not recommend as it  will be very "
+            "slow. Once all "
+            "errors in Core Check are solved, please disable, then only use GPU-AV for best performance.");
     }
 
     // Last as previous settings are needed so we can make sure they line up with the DebugReport settings
-    ProcessDebugReportSettings(settings_data, layer_setting_set);
+    ProcessDebugReportSettings(settings_data, layer_setting_set, setting_warnings);
 
     // Grab application name here while we have access to it and know if to save it or not
     if (settings_data->debug_report->message_format_settings.display_application_name) {
         settings_data->debug_report->message_format_settings.application_name =
             settings_data->create_info->pApplicationInfo ? settings_data->create_info->pApplicationInfo->pApplicationName : "";
+    }
+
+    for (const auto &warning : setting_warnings) {
+        settings_data->debug_report->DebugLogMsg(kWarningBit, {}, warning.c_str(), "VALIDATION-SETTINGS");
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);

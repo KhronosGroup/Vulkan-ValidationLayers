@@ -651,7 +651,7 @@ struct Module {
     VulkanTypedHandle handle_;                            // Will be updated once its known its valid SPIR-V
     VulkanTypedHandle handle() const { return handle_; }  // matches normal convention to get handle
 
-    // Used for when modifying the SPIR-V (spirv-opt, GPU-AV instrumentation, etc) and need reparse it for VVL validaiton
+    // Used for when modifying the SPIR-V (spirv-opt, GPU-AV instrumentation, etc) and need reparse it for VVL validation
     Module(vvl::span<const uint32_t> code) : valid_spirv(true), words_(code.begin(), code.end()), static_data_(*this) {}
 
     // StatelessData is a pointer as we have cases were we don't need it and simpler to just null check the few cases that use it
