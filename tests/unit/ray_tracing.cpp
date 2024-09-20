@@ -3683,7 +3683,7 @@ TEST_F(NegativeRayTracing, HostBuildOverlappingScratchBuffers) {
     constexpr size_t blas_count = 3;
 
     std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
-    auto scratch_data = std::make_shared<std::vector<uint8_t>>(1 << 15, 0);
+    auto scratch_data = std::make_shared<std::vector<uint8_t>>(1u << 15u, uint8_t(0));
     for (size_t i = 0; i < blas_count; ++i) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
         blas.SetHostScratchBuffer(scratch_data);

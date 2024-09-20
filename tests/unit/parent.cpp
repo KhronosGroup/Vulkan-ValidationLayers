@@ -524,7 +524,7 @@ TEST_F(NegativeParent, PhysicalDevice_Display) {
     {
         uint32_t gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
-        ASSERT_GT(gpu_count, 0);
+        ASSERT_GT(gpu_count, 0u);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, physical_devices.data());
         instance2_gpu = physical_devices[0];
@@ -560,7 +560,7 @@ TEST_F(NegativeParent, PhysicalDevice_RegisterDisplayEvent) {
     {
         uint32_t gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
-        ASSERT_GT(gpu_count, 0);
+        ASSERT_GT(gpu_count, 0u);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, physical_devices.data());
         instance2_gpu = physical_devices[0];
@@ -599,7 +599,7 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
     {
         uint32_t gpu_count = 0;
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, nullptr);
-        ASSERT_GT(gpu_count, 0);
+        ASSERT_GT(gpu_count, 0u);
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
         vk::EnumeratePhysicalDevices(instance2, &gpu_count, physical_devices.data());
         instance2_gpu = physical_devices[0];
@@ -779,7 +779,7 @@ TEST_F(NegativeParent, GetDescriptorSetLayoutSupport) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()};
     const VkDescriptorSetLayoutCreateFlags flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1, &binding);
+    const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1u, &binding);
     VkDescriptorSetLayoutSupport support = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkGetDescriptorSetLayoutSupport-pImmutableSamplers-device");
     vk::GetDescriptorSetLayoutSupport(m_second_device->handle(), &dslci, &support);

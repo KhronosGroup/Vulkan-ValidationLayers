@@ -553,7 +553,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
             host_scratch_ = nullptr;
             if (scratch_size > 0) {
                 assert(scratch_size < vvl::kU32Max);
-                host_scratch_ = std::make_shared<std::vector<uint8_t>>(static_cast<size_t>(scratch_size), 0);
+                host_scratch_ = std::make_shared<std::vector<uint8_t>>(static_cast<size_t>(scratch_size), uint8_t(0u));
             }
             vk_info_.scratchData.hostAddress = host_scratch_->data();
         }
