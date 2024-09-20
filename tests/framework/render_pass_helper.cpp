@@ -141,14 +141,14 @@ VkRenderPassCreateInfo2 RenderPass2SingleSubpass::GetCreateInfo() {
 void RenderPass2SingleSubpass::AddAttachmentDescription(VkFormat format, VkImageLayout initialLayout, VkImageLayout finalLayout,
                                                         VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp) {
     attachment_descriptions_.push_back(vku::InitStruct<VkAttachmentDescription2>(
-        nullptr, 0, format, VK_SAMPLE_COUNT_1_BIT, loadOp, storeOp, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        nullptr, 0u, format, VK_SAMPLE_COUNT_1_BIT, loadOp, storeOp, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout));
 }
 
 void RenderPass2SingleSubpass::AddAttachmentDescription(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout,
                                                         VkImageLayout finalLayout) {
     attachment_descriptions_.push_back(vku::InitStruct<VkAttachmentDescription2>(
-        nullptr, 0, format, samples, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        nullptr, 0u, format, samples, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout));
 }
 
