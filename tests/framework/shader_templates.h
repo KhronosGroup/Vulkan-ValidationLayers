@@ -151,10 +151,9 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
 [[maybe_unused]] static char const kRayTracingPayloadMinimalGlsl[] = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : enable
-        layout(location = 0) rayPayloadInEXT float hitValue;
-
+        layout(location = 0) rayPayloadInEXT vec3 hit;
         void main() {
-            hitValue = 1.0;
+            hit = vec3(0.1, 0.2, 0.3);
         }
     )glsl";
 
@@ -337,5 +336,3 @@ static char const kShaderTileImageDepthStencilReadSpv[] = R"(
            imageStore(image, ivec2(gl_LaunchIDEXT.xy), col);
         }
     )glsl";
-
-[[maybe_unused]] static char const *kMissGlsl = kRayTracingPayloadMinimalGlsl;
