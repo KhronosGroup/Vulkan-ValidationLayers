@@ -425,3 +425,201 @@ TEST_F(PositiveCopyBufferImage, BufferCopiesStressTest) {
 
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveCopyBufferImage, CopyCompressed1DImage) {
+    TEST_DESCRIPTION("Copy a 1D image with compressed format");
+
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo imageCreateInfo = vku::InitStructHelper();
+    imageCreateInfo.flags = 0u;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_1D;
+    imageCreateInfo.format = VK_FORMAT_R16G16B16A16_UNORM;
+    imageCreateInfo.extent = {256u, 1u, 1u};
+    imageCreateInfo.mipLevels = 1u;
+    imageCreateInfo.arrayLayers = 1u;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vkt::Image srcImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    imageCreateInfo.format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    VkImageFormatProperties imageFormatProperties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), imageCreateInfo.format,
+                                                              imageCreateInfo.imageType, imageCreateInfo.tiling,
+                                                              imageCreateInfo.usage, imageCreateInfo.flags, &imageFormatProperties);
+    if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "image format not supported for transfer dst.";
+    }
+
+    vkt::Image dstImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    m_commandBuffer->begin();
+    srcImage.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dstImage.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy imageCopy;
+    imageCopy.srcSubresource = {1u, 0u, 0u, 1u};
+    imageCopy.srcOffset = {0, 0, 0};
+    imageCopy.dstSubresource = {1u, 0u, 0u, 1u};
+    imageCopy.dstOffset = {0, 0, 0};
+    imageCopy.extent = {16u, 1u, 1u};
+
+    vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &imageCopy);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyCompressedToCompressed) {
+    TEST_DESCRIPTION("Copy a compressed format to a compressed format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo imageCreateInfo = vku::InitStructHelper();
+    imageCreateInfo.flags = 0u;
+    imageCreateInfo.format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+    imageCreateInfo.mipLevels = 1u;
+    imageCreateInfo.arrayLayers = 1u;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_1D;
+    imageCreateInfo.extent = {256u, 1u, 1u};
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vkt::Image srcImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.extent = {32u, 32u, 1u};
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    VkImageFormatProperties imageFormatProperties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), imageCreateInfo.format,
+                                                              imageCreateInfo.imageType, imageCreateInfo.tiling,
+                                                              imageCreateInfo.usage, imageCreateInfo.flags, &imageFormatProperties);
+    if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "image format not supported for transfer dst.";
+    }
+
+    vkt::Image dstImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    m_commandBuffer->begin();
+    srcImage.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dstImage.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy imageCopy;
+    imageCopy.srcSubresource = {1u, 0u, 0u, 1u};
+    imageCopy.srcOffset = {0, 0, 0};
+    imageCopy.dstSubresource = {1u, 0u, 0u, 1u};
+    imageCopy.dstOffset = {0, 0, 0};
+    imageCopy.extent = {32u, 1u, 1u};
+
+    vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &imageCopy);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyBufferTo1DCompressedImage) {
+    TEST_DESCRIPTION("Copy a buffer to 1D image with compressed format");
+
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkImageCreateInfo imageCreateInfo = vku::InitStructHelper();
+    imageCreateInfo.flags = 0u;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_1D;
+    imageCreateInfo.format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+    imageCreateInfo.extent = {64u, 1u, 1u};
+    imageCreateInfo.mipLevels = 1u;
+    imageCreateInfo.arrayLayers = 1u;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    vkt::Image image(*m_device, imageCreateInfo, vkt::set_layout);
+
+    VkImageFormatProperties imageFormatProperties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), imageCreateInfo.format,
+                                                              imageCreateInfo.imageType, imageCreateInfo.tiling,
+                                                              imageCreateInfo.usage, imageCreateInfo.flags, &imageFormatProperties);
+    if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "image format not supported for transfer dst.";
+    }
+
+    vkt::Image dstImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    VkBufferImageCopy bufferImageCopy;
+    bufferImageCopy.bufferOffset = 0u;
+    bufferImageCopy.bufferRowLength = 64u;
+    bufferImageCopy.bufferImageHeight = 4u;
+    bufferImageCopy.imageSubresource = {1u, 0u, 0u, 1u};
+    bufferImageCopy.imageOffset = {0, 0, 0};
+    bufferImageCopy.imageExtent = {64u, 4u, 1u};
+
+    m_commandBuffer->begin();
+    image.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u,
+                             &bufferImageCopy);
+    m_commandBuffer->end();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyCompress2DTo1D) {
+    TEST_DESCRIPTION("Copy a compressed 2D image to a compressed 1D image");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo imageCreateInfo = vku::InitStructHelper();
+    imageCreateInfo.flags = 0u;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+    imageCreateInfo.extent = {64u, 64u, 1u};
+    imageCreateInfo.mipLevels = 1u;
+    imageCreateInfo.arrayLayers = 1u;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vkt::Image srcImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_1D;
+    imageCreateInfo.extent = {1024u, 1u, 1u};
+    imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    VkImageFormatProperties imageFormatProperties;
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), imageCreateInfo.format,
+                                                              imageCreateInfo.imageType, imageCreateInfo.tiling,
+                                                              imageCreateInfo.usage, imageCreateInfo.flags, &imageFormatProperties);
+    if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "image format not supported for transfer dst.";
+    }
+
+    vkt::Image dstImage(*m_device, imageCreateInfo, vkt::set_layout);
+
+    m_commandBuffer->begin();
+    srcImage.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dstImage.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy imageCopy;
+    imageCopy.srcSubresource = {1u, 0u, 0u, 1u};
+    imageCopy.srcOffset = {0, 0, 0};
+    imageCopy.dstSubresource = {1u, 0u, 0u, 1u};
+    imageCopy.dstOffset = {0, 0, 0};
+    imageCopy.extent = {64u, 4u, 1u};
+
+    vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &imageCopy);
+    m_commandBuffer->end();
+}
