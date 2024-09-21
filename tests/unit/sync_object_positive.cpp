@@ -2303,41 +2303,37 @@ TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD (synchronization dependencies)";
+        GTEST_SKIP() << "Test not supported by MockICD (host synchronization)";
     }
     if (!m_second_queue) {
         GTEST_SKIP() << "Two queues are needed";
     }
 
-    // WORKAROUND for windows nvidia driver 561.09 (it's enough just to record an empty command buffer for the second queue).
-    // Without it submit in thread3 can signal 8 even wait on 7 is not finished (thread 2 did not reach signal(7).
-    m_second_command_buffer.begin();
-    m_second_command_buffer.end();
-    // WORKAROUND end
+    int N = 1000;
 
-    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    for (int i = 0; i < N; i++) {
+        vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    auto thread1 = [this, &timeline]() {
-        // Can start immediately, wait on 0 is noop
-        m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 0, timeline, 5);
-    };
-    auto thread2 = [&timeline]() {
-        // Wait for thread1's device work to complete.
-        timeline.Wait(4, kWaitTimeout);
-        // Unblock thread3's device work.
-        timeline.Signal(7);
-    };
-    auto thread3 = [this, &timeline]() { m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 7, timeline, 8); };
+        auto thread1 = [this, &timeline]() {
+            // Can start immediately, wait on 0 is noop
+            m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 0, timeline, 5);
+        };
+        auto thread2 = [&timeline]() {
+            // Wait for thread1
+            timeline.Wait(4, kWaitTimeout);
+            // Unblock thread3
+            timeline.Signal(7);
+        };
+        auto thread3 = [this, &timeline]() { m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 7, timeline, 8); };
 
-    std::thread t1(thread1);
-    std::thread t2(thread2);
-    std::thread t3(thread3);
+        std::thread t1(thread1);
+        std::thread t2(thread2);
+        std::thread t3(thread3);
 
-    timeline.Wait(8, kWaitTimeout);
+        timeline.Wait(8, kWaitTimeout);
 
-    timeline.destroy();
-
-    t3.join();
-    t2.join();
-    t1.join();
+        t3.join();
+        t2.join();
+        t1.join();
+    }
 }
