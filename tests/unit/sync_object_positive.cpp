@@ -2303,41 +2303,51 @@ TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
     if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD (synchronization dependencies)";
+        GTEST_SKIP() << "Test not supported by MockICD (host synchronization)";
     }
     if (!m_second_queue) {
         GTEST_SKIP() << "Two queues are needed";
     }
 
-    // WORKAROUND for windows nvidia driver 561.09 (it's enough just to record an empty command buffer for the second queue).
-    // Without it submit in thread3 can signal 8 even wait on 7 is not finished (thread 2 did not reach signal(7).
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+
     m_second_command_buffer.begin();
+    m_second_command_buffer.Copy(buffer_b, buffer_c);
     m_second_command_buffer.end();
-    // WORKAROUND end
 
-    vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    int N = 100;
 
-    auto thread1 = [this, &timeline]() {
-        // Can start immediately, wait on 0 is noop
-        m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 0, timeline, 5);
-    };
-    auto thread2 = [&timeline]() {
-        // Wait for thread1's device work to complete.
-        timeline.Wait(4, kWaitTimeout);
-        // Unblock thread3's device work.
-        timeline.Signal(7);
-    };
-    auto thread3 = [this, &timeline]() { m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline, 7, timeline, 8); };
+    for (int i = 0; i < N; i++) {
+        vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    std::thread t1(thread1);
-    std::thread t2(thread2);
-    std::thread t3(thread3);
+        auto thread1 = [this, &timeline]() {
+            // Can start immediately, wait on 0 is noop
+            m_default_queue->SubmitWithTimelineSemaphore(m_command_buffer, timeline, 0, timeline, 5);
+        };
+        auto thread2 = [&timeline]() {
+            // Wait for thread1's device work to complete.
+            timeline.Wait(4, kWaitTimeout);
+            // Unblock thread3's device work.
+            timeline.Signal(7);
+        };
+        auto thread3 = [this, &timeline]() {
+            m_second_queue->SubmitWithTimelineSemaphore(m_second_command_buffer, timeline, 7, timeline, 8);
+        };
 
-    timeline.Wait(8, kWaitTimeout);
+        std::thread t1(thread1);
+        std::thread t2(thread2);
+        std::thread t3(thread3);
 
-    timeline.destroy();
+        timeline.Wait(8, kWaitTimeout);
 
-    t3.join();
-    t2.join();
-    t1.join();
+        t3.join();
+        t2.join();
+        t1.join();
+    }
 }
