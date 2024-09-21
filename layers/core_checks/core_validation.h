@@ -871,7 +871,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool CheckItgExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
                         const VkExtent3D& granularity, const VkExtent3D& subresource_extent, const VkImageType image_type,
-                        const Location& extent_loc, const char* vuid) const;
+                        const VkFormat format, const Location& extent_loc, const char* vuid) const;
 
     bool CheckItgOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity,
                         const Location& offset_loc, const char* vuid) const;
