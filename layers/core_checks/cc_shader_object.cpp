@@ -674,6 +674,7 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
     const vvl::ShaderObject* consumer = nullptr;
 
     for (const auto stage : graphics_stages) {
+        if (skip) break;
         consumer = last_bound_state.GetShaderState(VkShaderStageToShaderObjectStage(stage));
         if (!consumer) continue;
         if (next_stage != VK_SHADER_STAGE_ALL && consumer->create_info.stage != next_stage) {
@@ -697,12 +698,11 @@ bool CoreChecks::ValidateDrawShaderObjectLinking(const LastBound& last_bound_sta
             }
         }
 
-        if (!producer) {
-            producer = consumer;  // Will hit if consumer is vertex shader
-        } else if (consumer->spirv && producer->spirv && consumer->entrypoint && producer->entrypoint) {
+        if (producer && consumer->spirv && producer->spirv && consumer->entrypoint && producer->entrypoint) {
             skip |= ValidateInterfaceBetweenStages(*producer->spirv, *producer->entrypoint, *consumer->spirv, *consumer->entrypoint,
                                                    loc);
         }
+        producer = consumer;
     }
 
     return skip;
