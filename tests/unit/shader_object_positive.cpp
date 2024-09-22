@@ -1562,3 +1562,73 @@ TEST_F(PositiveShaderObject, DisabledColorBlend) {
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
 }
+
+TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
+    TEST_DESCRIPTION("Draw with vertex, geometry and fragment shader objects bound.");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    InitDynamicRenderTarget();
+
+    static const char vert_src[] = R"glsl(
+        #version 450
+
+        void main(void) {
+            vec2 pos = vec2(float(gl_VertexIndex & 1), float((gl_VertexIndex >> 1) & 1));
+            gl_Position = vec4(pos - 0.5f, 0.0f, 1.0f);
+        }
+    )glsl";
+
+    static const char geom_src[] = R"glsl(
+        #version 450
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices = 4) out;
+
+        layout(location = 0) out vec4 color;
+
+        void main(void)
+        {
+            gl_Position = gl_in[0].gl_Position;
+            gl_Position.y *= 1.5f;
+            gl_Position.z = 0.5f;
+            color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+            EmitVertex();
+            gl_Position = gl_in[1].gl_Position;
+            gl_Position.y *= 1.5f;
+            gl_Position.z = 0.5f;
+            color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+            EmitVertex();
+            gl_Position = gl_in[2].gl_Position;
+            gl_Position.y *= 1.5f;
+            gl_Position.z = 0.5f;
+            color = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+            EmitVertex();
+            EndPrimitive();
+        }
+    )glsl";
+
+    static const char frag_src[] = R"glsl(
+        #version 450
+
+        layout(location = 0) in vec4 in_color;
+        layout(location = 0) out vec4 out_color;
+
+        void main(void) {
+            out_color = in_color;
+        }
+    )glsl";
+
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src));
+    const vkt::Shader geomShader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, geom_src));
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    VkShaderStageFlagBits geomStage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &geomShader.handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
