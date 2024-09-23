@@ -180,6 +180,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
                                          uint32_t operation_index) const;
 
+    VkPipelineLayout CreateInternalPipelineLayout(const vvl::PipelineLayout &pipeline_layout_state) const;
+
   protected:
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                             VkDeviceQueueCreateFlags flags,

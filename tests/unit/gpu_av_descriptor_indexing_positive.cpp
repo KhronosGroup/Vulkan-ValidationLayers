@@ -1109,12 +1109,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[0].pBufferInfo = &buffer_info;
-    descriptor_writes[1] = vku::InitStructHelper();
+    descriptor_writes[1] = descriptor_writes[0];
     descriptor_writes[1].dstSet = descriptor_sets[1];
-    descriptor_writes[1].dstBinding = 0;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_writes[1].pBufferInfo = &buffer_info;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -1229,12 +1225,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[0].pBufferInfo = &buffer_info;
-    descriptor_writes[1] = vku::InitStructHelper();
+    descriptor_writes[1] = descriptor_writes[0];
     descriptor_writes[1].dstSet = descriptor_sets[1];
-    descriptor_writes[1].dstBinding = 0;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_writes[1].pBufferInfo = &buffer_info;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -1346,12 +1338,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[0].pBufferInfo = &buffer_info;
-    descriptor_writes[1] = vku::InitStructHelper();
+    descriptor_writes[1] = descriptor_writes[0];
     descriptor_writes[1].dstSet = descriptor_sets[1];
-    descriptor_writes[1].dstBinding = 0;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_writes[1].pBufferInfo = &buffer_info;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -1376,6 +1364,115 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetDestroyedPipelineLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1;
+    flags_create_info.pBindingFlags = &binding_flags;
+
+    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout dsl2(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+                                  &flags_create_info);
+    vkt::DescriptorSetLayout dsl1(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+                                  &flags_create_info);
+    VkDescriptorSetLayout set_layouts[2] = {dsl1.handle(), dsl2.handle()};
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.pSetLayouts = set_layouts;
+
+    pipeline_layout_ci.setLayoutCount = 1;
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, pipeline_layout_ci);
+    pipeline_layout_ci.setLayoutCount = 2;
+    const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
+
+    char const *source_1 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer foo_0 { int a; int b;};
+        void main() {
+            a = b;
+        }
+    )glsl";
+    char const *source_2 = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer foo_0 { int a; };
+        layout(set = 1, binding = 0) buffer foo_1 { int b; };
+        void main() {
+            a = b;
+        }
+    )glsl";
+
+    // Pipeline Layout handles will be destoryed after pipeline in created
+    CreateComputePipelineHelper pipe1(*this);
+    CreateComputePipelineHelper pipe2(*this);
+    {
+        pipeline_layout_ci.setLayoutCount = 1;
+        const vkt::PipelineLayout doomed_pipeline_layout_1(*m_device, pipeline_layout_ci);
+        pipeline_layout_ci.setLayoutCount = 2;
+        const vkt::PipelineLayout doomed_pipeline_layout_2(*m_device, pipeline_layout_ci);
+
+        pipe1.cs_ = std::make_unique<VkShaderObj>(this, source_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe1.cp_ci_.layout = doomed_pipeline_layout_1.handle();
+        pipe1.CreateComputePipeline();
+
+        pipe2.cs_ = std::make_unique<VkShaderObj>(this, source_2, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe2.cp_ci_.layout = doomed_pipeline_layout_2.handle();
+        pipe2.CreateComputePipeline();
+    }
+
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorSetCount = 2;
+    allocate_info.pSetLayouts = set_layouts;
+
+    VkDescriptorSet descriptor_sets[2];
+    vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+
+    VkWriteDescriptorSet descriptor_writes[2];
+    descriptor_writes[0] = vku::InitStructHelper();
+    descriptor_writes[0].dstSet = descriptor_sets[0];
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_writes[0].pBufferInfo = &buffer_info;
+    descriptor_writes[1] = descriptor_writes[0];
+    descriptor_writes[1].dstSet = descriptor_sets[1];
+    vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_commandBuffer->begin(&begin_info);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 0, 2,
+                              descriptor_sets, 0, nullptr);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe2.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe2.Handle());
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+
+    m_commandBuffer->end();
+    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Wait();
+}
+
+// Need more investigation, see Issue 8377 for details
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraphicsShaderObject) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1480,12 +1577,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraph
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     descriptor_writes[0].pBufferInfo = &buffer_info;
-    descriptor_writes[1] = vku::InitStructHelper();
+    descriptor_writes[1] = descriptor_writes[0];
     descriptor_writes[1].dstSet = descriptor_sets[1];
-    descriptor_writes[1].dstBinding = 0;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    descriptor_writes[1].pBufferInfo = &buffer_info;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();

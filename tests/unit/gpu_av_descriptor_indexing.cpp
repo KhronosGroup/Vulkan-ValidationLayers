@@ -2569,3 +2569,51 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BindingOOB) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, DestroyedPipelineLayout) {
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint x[]; };
+        void main() {
+            x[1234] = 0;
+        }
+    )glsl";
+    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    CreatePipelineHelper pipe1(*this);
+    pipe1.shader_stages_[0] = vs.GetStageCreateInfo();
+    pipe1.gp_ci_.layout = pipeline_layout.handle();
+    pipe1.CreateGraphicsPipeline();
+
+    // Destroy pipeline layout after creating pipeline
+    CreatePipelineHelper pipe2(*this);
+    {
+        const vkt::PipelineLayout doomed_pipeline_layout(*m_device);
+        pipe2.gp_ci_.layout = doomed_pipeline_layout.handle();
+        pipe2.CreateGraphicsPipeline();
+    }
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    // We will create a fake pipeline layout underneath here
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
