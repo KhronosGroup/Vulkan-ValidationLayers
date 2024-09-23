@@ -1143,7 +1143,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
 }
 
 void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
-                                           uint32_t set, uint32_t descriptorWriteCount,
+                                           vvl::Func bound_command, uint32_t set, uint32_t descriptorWriteCount,
                                            const VkWriteDescriptorSet *pDescriptorWrites) {
     // Short circuit invalid updates
     if ((set >= pipeline_layout.set_layouts.size()) || !pipeline_layout.set_layouts[set] ||
@@ -1161,7 +1161,8 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
         last_bound.UnbindAndResetPushDescriptorSet(dev_data.CreateDescriptorSet(VK_NULL_HANDLE, nullptr, dsl, 0));
     }
 
-    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr);
+    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, bound_command, set, 1, nullptr, push_descriptor_set, 0,
+                                  nullptr);
     last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
@@ -1265,8 +1266,8 @@ static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                  const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
-                                                  uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                                  const vvl::PipelineLayout &pipeline_layout, vvl::Func bound_command,
+                                                  uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                                   std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
                                                   uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     ASSERT_AND_RETURN((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
@@ -1279,6 +1280,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
     last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
+    last_bound.desc_set_bound_command = bound_command;
     auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.per_set.size()) {

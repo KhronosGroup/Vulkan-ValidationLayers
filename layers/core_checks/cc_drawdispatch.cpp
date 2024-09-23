@@ -1348,10 +1348,13 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             pipe_layouts_log << FormatHandle(*layouts.front());
         }
         objlist.add(last_bound_state.desc_set_pipeline_layout);
+        std::string range =
+            pipeline.max_active_slot == 0 ? "set 0 is" : "all sets 0 to " + std::to_string(pipeline.max_active_slot) + " are";
         skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                          "The %s (created with %s) statically uses descriptor set %" PRIu32
-                         " which is not compatible with the currently bound descriptor set's pipeline layout (%s)\n%s",
-                         FormatHandle(pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline.max_active_slot,
+                         ", but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
+                         FormatHandle(pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline.max_active_slot, range.c_str(),
+                         String(last_bound_state.desc_set_bound_command),
                          FormatHandle(last_bound_state.desc_set_pipeline_layout).c_str(),
                          last_bound_state.DescribeNonCompatibleSet(pipeline.max_active_slot, *pipeline_layout).c_str());
     } else {
@@ -1362,7 +1365,9 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             const auto set_info = last_bound_state.per_set[set_index];
             if (!set_info.bound_descriptor_set) {
                 skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
-                                 "%s uses set #%" PRIu32 " but that set is not bound.", FormatHandle(pipeline).c_str(), set_index);
+                                 "%s uses set #%" PRIu32
+                                 " but that set is not bound. (Need to use a command like vkCmdBindDescriptorSets to bind the set)",
+                                 FormatHandle(pipeline).c_str(), set_index);
             } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, pipeline_layout->set_layouts,
                                                      pipeline_layout->Handle(), set_index, error_string)) {
                 // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
