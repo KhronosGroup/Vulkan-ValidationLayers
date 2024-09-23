@@ -100,9 +100,9 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
         } else if (layout_binding.descriptorType != bound_binding->descriptorType) {
             std::stringstream error_str;
             error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(layout_dsl_handle)
-                      << " from pipeline layout is type '" << string_VkDescriptorType(layout_binding.descriptorType)
-                      << "' but binding " << layout_binding.binding << " for " << FormatHandle(bound_dsl_handle)
-                      << ", which is bound, is type '" << string_VkDescriptorType(bound_binding->descriptorType) << "'";
+                      << " from pipeline layout is type " << string_VkDescriptorType(layout_binding.descriptorType)
+                      << " but binding " << layout_binding.binding << " for " << FormatHandle(bound_dsl_handle)
+                      << ", which is bound, is type " << string_VkDescriptorType(bound_binding->descriptorType) << "";
             error_msg = error_str.str();
             return false;
         } else if (layout_binding.stageFlags != bound_binding->stageFlags) {

@@ -1658,7 +1658,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     m_errorMonitor->VerifyFound();
 
     // 4. same # of descriptors but mismatch in type
-    m_errorMonitor->SetDesiredError(" is type 'VK_DESCRIPTOR_TYPE_SAMPLER' but binding ");
+    m_errorMonitor->SetDesiredError(" is type VK_DESCRIPTOR_TYPE_SAMPLER but binding ");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_five_samp.handle(), 0, 1,
                               &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();

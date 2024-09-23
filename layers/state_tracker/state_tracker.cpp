@@ -2781,8 +2781,8 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
 
     std::shared_ptr<vvl::DescriptorSet> no_push_desc;
 
-    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, *pipeline_layout, firstSet, setCount, pDescriptorSets, no_push_desc,
-                                            dynamicOffsetCount, pDynamicOffsets);
+    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, *pipeline_layout, record_obj.location.function, firstSet, setCount,
+                                            pDescriptorSets, no_push_desc, dynamicOffsetCount, pDynamicOffsets);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
@@ -2798,21 +2798,22 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuf
 
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         cb_state->UpdateLastBoundDescriptorSets(
-            VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, pBindDescriptorSetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, record_obj.location.function, pBindDescriptorSetsInfo->firstSet,
             pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc,
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
         cb_state->UpdateLastBoundDescriptorSets(
-            VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, pBindDescriptorSetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, record_obj.location.function, pBindDescriptorSetsInfo->firstSet,
             pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc,
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         cb_state->UpdateLastBoundDescriptorSets(
-            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, pBindDescriptorSetsInfo->firstSet,
-            pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc,
-            pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets);
+            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, record_obj.location.function,
+            pBindDescriptorSetsInfo->firstSet, pBindDescriptorSetsInfo->descriptorSetCount,
+            pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc, pBindDescriptorSetsInfo->dynamicOffsetCount,
+            pBindDescriptorSetsInfo->pDynamicOffsets);
     }
 }
 
@@ -2824,7 +2825,8 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     ASSERT_AND_RETURN(pipeline_layout);
-    cb_state->PushDescriptorSetState(pipelineBindPoint, *pipeline_layout, set, descriptorWriteCount, pDescriptorWrites);
+    cb_state->PushDescriptorSetState(pipelineBindPoint, *pipeline_layout, record_obj.location.function, set, descriptorWriteCount,
+                                     pDescriptorWrites);
 }
 
 void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
@@ -2834,16 +2836,19 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuff
     auto pipeline_layout = Get<vvl::PipelineLayout>(pPushDescriptorSetInfo->layout);
     ASSERT_AND_RETURN(pipeline_layout);
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, pPushDescriptorSetInfo->set,
-                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites);
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, record_obj.location.function,
+                                         pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
+                                         pPushDescriptorSetInfo->pDescriptorWrites);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, pPushDescriptorSetInfo->set,
-                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites);
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, record_obj.location.function,
+                                         pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
+                                         pPushDescriptorSetInfo->pDescriptorWrites);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, pPushDescriptorSetInfo->set,
-                                         pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites);
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, record_obj.location.function,
+                                         pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
+                                         pPushDescriptorSetInfo->pDescriptorWrites);
     }
 }
 
@@ -4361,7 +4366,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
     const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
     vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
-    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *layout_data, set,
+    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *layout_data, record_obj.location.function, set,
                                      static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                      decoded_template.desc_writes.data());
 }
@@ -4382,9 +4387,9 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
     // Decode the template into a set of write updates
     vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(),
                                                 pPushDescriptorSetWithTemplateInfo->pData, dsl->VkHandle());
-    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *layout_data, pPushDescriptorSetWithTemplateInfo->set,
-                                     static_cast<uint32_t>(decoded_template.desc_writes.size()),
-                                     decoded_template.desc_writes.data());
+    cb_state->PushDescriptorSetState(
+        template_ci.pipelineBindPoint, *layout_data, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
+        static_cast<uint32_t>(decoded_template.desc_writes.size()), decoded_template.desc_writes.data());
 }
 
 void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice,
