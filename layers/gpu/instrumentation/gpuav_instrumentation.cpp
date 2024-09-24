@@ -24,6 +24,7 @@
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpu_shader_resources.h"
 #include "gpu/shaders/gpu_error_header.h"
+#include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
 
@@ -173,23 +174,34 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
         inst_bind_pipeline_layout = gpuav.Get<vvl::PipelineLayout>(pipeline_layout_handle);
     }
 
+    VkPipelineLayout temp_pipeline_layout = VK_NULL_HANDLE;
     // It is possible to bind a Pipeline that uses less descriptor sets than the last bound descriptor.
     // In this case, we will quick bind the layout from pipeline instead, but this will disturb the sets in-between so will need to
     // reset in the PostCall portion
     if (pipeline_state && inst_bind_pipeline_layout->set_layouts.size() < last_bound.per_set.size()) {
-        gpuav.reset_disturbed_sets = true;
+        cb_state.reset_disturbed_sets = true;
 
         // We might need to quickly re-create a pipeline layout if it was destroyed underneath us
         if (inst_bind_pipeline_layout->Destroyed()) {
-            gpuav.temp_pipeline_layout = gpuav.CreateInternalPipelineLayout(*inst_bind_pipeline_layout);
-            pipeline_layout_handle = gpuav.temp_pipeline_layout;
+            temp_pipeline_layout = gpuav.CreateInternalPipelineLayout(*inst_bind_pipeline_layout);
+            pipeline_layout_handle = temp_pipeline_layout;
         } else {
             pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->VkHandle();
         }
     } else if (pipeline_state && pipeline_layout_handle == VK_NULL_HANDLE) {
         // This will occur if shader has no descriptors, and the pipeline layout was destroyed under us
-        gpuav.temp_pipeline_layout = gpuav.CreateInternalPipelineLayout(*inst_bind_pipeline_layout);
-        pipeline_layout_handle = gpuav.temp_pipeline_layout;
+        temp_pipeline_layout = gpuav.CreateInternalPipelineLayout(*inst_bind_pipeline_layout);
+        pipeline_layout_handle = temp_pipeline_layout;
+    } else if (!pipeline_state) {
+        // Need to check descriptor set in ShaderObject, They are required to all be the same, so just need one. Apps are also
+        // required to have either a Vertex or Mesh
+        const vvl::ShaderObject *shader_object = last_bound.GetFirstShaderState();
+        if (shader_object && shader_object->set_layouts.size() < last_bound.per_set.size()) {
+            // Shader Objects has bound shaders with less sets than CmdBindDescriptorSets
+            cb_state.reset_disturbed_sets = true;
+            temp_pipeline_layout = gpuav.CreateInternalPipelineLayout(*shader_object, inst_bind_pipeline_layout->create_flags);
+            pipeline_layout_handle = temp_pipeline_layout;
+        }
     }
 
     uint32_t operation_index = 0;
@@ -248,29 +260,32 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
         return skip;
     };
 
+    if (temp_pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(gpuav.device, temp_pipeline_layout, VK_NULL_HANDLE);
+    }
+
     cb_state.per_command_error_loggers.emplace_back(error_logger);
 }
 
 void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                                  const Location &loc) {
-    if (gpuav.temp_pipeline_layout != VK_NULL_HANDLE) {
-        DispatchDestroyPipelineLayout(gpuav.device, gpuav.temp_pipeline_layout, VK_NULL_HANDLE);
-        gpuav.temp_pipeline_layout = VK_NULL_HANDLE;
-    }
-
     if (!gpuav.gpuav_settings.shader_instrumentation_enabled) {
         return;
     }
 
-    if (gpuav.reset_disturbed_sets) {
-        gpuav.reset_disturbed_sets = false;
+    if (cb_state.reset_disturbed_sets) {
+        cb_state.reset_disturbed_sets = false;
         const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
         auto const &last_bound = cb_state.lastBound[lv_bind_point];
         const auto *pipeline_state = last_bound.pipeline_state;
-        // TODO - Not tested with shader objects yet
-        if (!pipeline_state) return;
+        uint32_t current_set = 0;
+        if (pipeline_state) {
+            current_set = (uint32_t)pipeline_state->PipelineLayoutState()->set_layouts.size();
+        } else {
+            const vvl::ShaderObject *shader_object = last_bound.GetFirstShaderState();
+            current_set = (uint32_t)shader_object->set_layouts.size();
+        }
 
-        uint32_t current_set = (uint32_t)pipeline_state->PipelineLayoutState()->set_layouts.size();
         for (size_t i = current_set; i < last_bound.per_set.size(); i++) {
             const auto &set_info = last_bound.per_set[i];
             const VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();

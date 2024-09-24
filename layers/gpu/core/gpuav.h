@@ -404,11 +404,6 @@ class Validator : public gpu::GpuShaderInstrumentor {
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
     gpu::SharedResourcesManager shared_resources_manager;
 
-    bool reset_disturbed_sets = false;
-    // Only used to build a quick layout between a Pre/Post boundry.
-    // The PostCall function is responsible to destroy clean this up.
-    VkPipelineLayout temp_pipeline_layout = VK_NULL_HANDLE;
-
   private:
     std::string instrumented_shader_cache_path_{};
 };

@@ -19,6 +19,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/shader_object_helper.h"
 
 void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing() {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -1472,8 +1473,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetDestroyedPipel
     m_default_queue->Wait();
 }
 
-// Need more investigation, see Issue 8377 for details
-TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraphicsShaderObject) {
+TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShaderObject) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -1481,19 +1481,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraph
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitDynamicRenderTarget();
-
-    // Create 2 pipeline layouts. Pipeline layout 2 starts the same as pipeline layout 1, with one descriptor set,
-    // but one more descriptor set is added to it, for a total of 2.
-    // Hence, it is valid to bind all descriptor slots from pipeline layout 2,
-    // but use a pipeline create with pipeline layout 1 for rendering.
-    // BUT,
-    // since GPU-AV adds empty descriptor sets to pipeline layouts before adding the
-    // instrumentation descriptor set, it creates an incompatibility between pipeline
-    // layout 1 and 2 at the binding index 1: pipeline layout 1 has one empty descriptor set,
-    // and pipeline layout 2 as an application defined descriptor set.
-    // GPU-AV has to take care of this incompatibility, by picking the right pipeline layout to
-    // bind its instrumentation descriptor set to, and by correctly restoring disturbed application
-    // defined descriptor set bindings.
 
     VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
@@ -1510,8 +1497,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraph
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pSetLayouts = set_layouts.data();
 
-    pipeline_layout_ci.setLayoutCount = 1;
-    const vkt::PipelineLayout pipeline_layout_1(*m_device, pipeline_layout_ci);
     pipeline_layout_ci.setLayoutCount = 2;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
@@ -1523,6 +1508,9 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraph
         }
     )glsl";
     const std::vector<uint32_t> vs_spv_1 = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source_1);
+    VkShaderCreateInfoEXT vs_ci_1 = ShaderCreateInfo(vs_spv_1, VK_SHADER_STAGE_VERTEX_BIT, 1, set_layouts.data(), 0, nullptr);
+    const vkt::Shader vs_1(*m_device, vs_ci_1);
+
     char const *vs_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; };
@@ -1532,24 +1520,33 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraph
         }
     )glsl";
     const std::vector<uint32_t> vs_spv_2 = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source_2);
+    VkShaderCreateInfoEXT vs_ci_2 = ShaderCreateInfo(vs_spv_2, VK_SHADER_STAGE_VERTEX_BIT, 2, set_layouts.data(), 0, nullptr);
+    const vkt::Shader vs_2(*m_device, vs_ci_2);
 
-    VkShaderCreateInfoEXT shader_obj_ci = vku::InitStructHelper();
-    shader_obj_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    shader_obj_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    shader_obj_ci.codeSize = vs_spv_1.size() * sizeof(uint32_t);
-    shader_obj_ci.pCode = vs_spv_1.data();
-    shader_obj_ci.pName = "main";
-    shader_obj_ci.setLayoutCount = 1u;
-    shader_obj_ci.pSetLayouts = set_layouts.data();
-    vkt::Shader vs_1(*m_device, shader_obj_ci);
-    shader_obj_ci.codeSize = vs_spv_2.size() * sizeof(uint32_t);
-    shader_obj_ci.pCode = vs_spv_2.data();
-    shader_obj_ci.setLayoutCount = 2u;
-    vkt::Shader vs_2(*m_device, shader_obj_ci);
+    static const char fs_source_1[] = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) buffer foo_0 { int a; int b;};
+        void main() {}
+    )glsl";
+    const std::vector<uint32_t> fs_spv_1 = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source_1);
+    VkShaderCreateInfoEXT fs_ci_1 = ShaderCreateInfo(fs_spv_1, VK_SHADER_STAGE_FRAGMENT_BIT, 1, set_layouts.data(), 0, nullptr);
+    const vkt::Shader fs_1(*m_device, fs_ci_1);
 
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT};
-    const VkShaderEXT shaders_1[] = {vs_1.handle()};
-    const VkShaderEXT shaders_2[] = {vs_2.handle()};
+    static const char fs_source_2[] = R"glsl(
+        #version 460
+        layout(set = 0, binding = 0) buffer foo_0 { int a; };
+        layout(set = 1, binding = 0) buffer foo_1 { int b; };
+        void main() {}
+    )glsl";
+    const std::vector<uint32_t> fs_spv_2 = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source_2);
+    VkShaderCreateInfoEXT fs_ci_2 = ShaderCreateInfo(fs_spv_2, VK_SHADER_STAGE_FRAGMENT_BIT, 2, set_layouts.data(), 0, nullptr);
+    const vkt::Shader fs_2(*m_device, fs_ci_2);
+
+    const std::array<VkShaderStageFlagBits, 5> stages = {{VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                                          VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                                          VK_SHADER_STAGE_FRAGMENT_BIT}};
+    const std::array<VkShaderEXT, 5> shaders_1 = {{vs_1.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fs_1.handle()}};
+    const std::array<VkShaderEXT, 5> shaders_2 = {{vs_2.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fs_2.handle()}};
 
     VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2};
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
@@ -1584,19 +1581,18 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_SharedPipelineLayoutSubsetGraph
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_2.handle(), 0, 2,
                               descriptor_sets.data(), 0, nullptr);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, stages, shaders_2);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), size32(stages), stages.data(), shaders_2.data());
     SetDefaultDynamicStatesAll(m_commandBuffer->handle());
 
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, stages, shaders_1);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), size32(stages), stages.data(), shaders_1.data());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, stages, shaders_2);
+    vk::CmdBindShadersEXT(m_commandBuffer->handle(), size32(stages), stages.data(), shaders_2.data());
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRendering();

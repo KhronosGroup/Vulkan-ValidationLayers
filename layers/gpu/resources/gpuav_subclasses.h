@@ -97,6 +97,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
         stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
+    bool reset_disturbed_sets = false;
+
   private:
     void AllocateResources(const Location &loc);
     void ResetCBState();

@@ -461,6 +461,36 @@ VkPipelineLayout GpuShaderInstrumentor::CreateInternalPipelineLayout(const vvl::
     return pipeline_layout_handle;
 }
 
+// This is used to re-build a VkPipelineLayout incase the VkShaderObject underlying layout is destroyed on us
+VkPipelineLayout GpuShaderInstrumentor::CreateInternalPipelineLayout(const vvl::ShaderObject &shader_object_state,
+                                                                     VkPipelineLayoutCreateFlags create_flags) const {
+    VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
+
+    pipe_layout_ci.flags = create_flags;
+    // Shader Objects spec forces push constants to be the same regardless (can't have subset)
+    std::vector<VkPushConstantRange> ranges;
+    for (const VkPushConstantRange &range : *shader_object_state.push_constant_ranges) {
+        ranges.push_back(range);
+    }
+    pipe_layout_ci.pushConstantRangeCount = (uint32_t)ranges.size();
+    pipe_layout_ci.pPushConstantRanges = ranges.data();
+
+    std::vector<VkDescriptorSetLayout> set_layouts;
+    set_layouts.reserve(desc_set_bind_index_ + 1);
+    for (const auto &set_layout : shader_object_state.set_layouts) {
+        set_layouts.push_back(set_layout->VkHandle());
+    }
+    for (uint32_t i = (uint32_t)shader_object_state.set_layouts.size(); i < desc_set_bind_index_; ++i) {
+        set_layouts.push_back(dummy_desc_layout_);
+    }
+    set_layouts.push_back(debug_desc_layout_);
+    pipe_layout_ci.setLayoutCount = (uint32_t)set_layouts.size();
+    pipe_layout_ci.pSetLayouts = set_layouts.data();
+    VkPipelineLayout pipeline_layout_handle;
+    DispatchCreatePipelineLayout(device, &pipe_layout_ci, VK_NULL_HANDLE, &pipeline_layout_handle);
+    return pipeline_layout_handle;
+}
+
 void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,

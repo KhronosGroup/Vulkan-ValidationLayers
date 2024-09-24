@@ -1155,6 +1155,14 @@ vvl::ShaderObject *LastBound::GetShaderState(ShaderObjectStage stage) const {
     return shader_object_states[static_cast<uint32_t>(stage)];
 }
 
+// Apps are required to have either a Vertex or Mesh or Compute shader object (when using shader objects).
+vvl::ShaderObject *LastBound::GetFirstShaderState() const {
+    return IsValidShaderBound(ShaderObjectStage::VERTEX)    ? GetShaderState(ShaderObjectStage::VERTEX)
+           : IsValidShaderBound(ShaderObjectStage::MESH)    ? GetShaderState(ShaderObjectStage::MESH)
+           : IsValidShaderBound(ShaderObjectStage::COMPUTE) ? GetShaderState(ShaderObjectStage::COMPUTE)
+                                                            : nullptr;
+}
+
 bool LastBound::HasShaderObjects() const {
     for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
         if (GetShader(static_cast<ShaderObjectStage>(i)) != VK_NULL_HANDLE) {
