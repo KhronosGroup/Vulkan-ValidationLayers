@@ -327,18 +327,14 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr uint64_t max_signal_value = 15'000;
+    constexpr uint64_t max_signal_value = 5'000;  // 15'000 in the original version for stress testing
+    constexpr int waiter_count = 8;               // 24 in the original version for stress testing
 
-    VkSemaphoreTypeCreateInfo semaphore_type_info = vku::InitStructHelper();
-    semaphore_type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&semaphore_type_info);
-    vkt::Semaphore semaphore(*m_device, create_info);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    ThreadTimeoutHelper timeout_helper(waiter_count + 1 /* signaling thread*/);
 
     std::atomic<bool> bailout{false};
     m_errorMonitor->SetBailout(&bailout);
-
-    constexpr int waiter_count = 24;
-    ThreadTimeoutHelper timeout_helper(waiter_count + 1 /* signaling thread*/);
 
     // Start a bunch of waiter threads
     auto waiting_thread = [&]() {
@@ -370,22 +366,10 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         }
     });
 
-    // In the regression case we expect crashes or deadlocks.
-    // Timeout helper will unstack CI machines in case of a deadlock.
-#ifdef NDEBUG
     constexpr int wait_time = 100;
-#else
-    // Use large timeout value in case of bad CI performance.
-    // On Windows debug build on development machine (4 cores) takes less than 10 seconds.
-    // Some CI runs of debug build on Linux machine took around 60 seconds and there were
-    // few timeouts with 100 seconds. Use larger values to test if it's stable enough.
-    // Another option is to reduce thread count or iteration count for debug build.
-    constexpr int wait_time = 300;
-#endif
-
     if (!timeout_helper.WaitForThreads(wait_time)) {
         ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
-        return;
+        bailout.store(true);
     }
     for (auto &waiter : waiters) {
         waiter.join();
