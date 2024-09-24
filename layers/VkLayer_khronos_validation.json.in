@@ -1116,8 +1116,8 @@
                                                     "key": "gpuav_indirect_draws_buffers",
                                                     "label": "Indirect draws parameters",
                                                     "type": "BOOL",
-                                                    "default": true,
-                                                    "description": "Validate buffers containing draw parameters used in indirect draw commands",
+                                                    "default": false,
+                                                    "description": "(Warning - still experimental) Validate buffers containing draw parameters used in indirect draw commands",
                                                     "platforms": [
                                                         "WINDOWS",
                                                         "LINUX"
@@ -1136,8 +1136,8 @@
                                                     "key": "gpuav_indirect_dispatches_buffers",
                                                     "label": "Indirect dispatches parameters",
                                                     "type": "BOOL",
-                                                    "default": true,
-                                                    "description": "Validate buffers containing dispatch parameters used in indirect dispatch commands",
+                                                    "default": false,
+                                                    "description": "(Warning - still experimental) Validate buffers containing dispatch parameters used in indirect dispatch commands",
                                                     "platforms": [
                                                         "WINDOWS",
                                                         "LINUX"
@@ -1156,8 +1156,8 @@
                                                     "key": "gpuav_indirect_trace_rays_buffers",
                                                     "label": "Indirect trace rays parameters",
                                                     "type": "BOOL",
-                                                    "default": true,
-                                                    "description": "Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
+                                                    "default": false,
+                                                    "description": "(Warning - still experimental) Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
                                                     "platforms": [
                                                         "WINDOWS",
                                                         "LINUX"

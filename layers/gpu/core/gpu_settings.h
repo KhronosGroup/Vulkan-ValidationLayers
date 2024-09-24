@@ -26,9 +26,11 @@ struct GpuAVSettings {
     bool select_instrumented_shaders = false;
 
     bool buffers_validation_enabled = true;
-    bool validate_indirect_draws_buffers = true;
-    bool validate_indirect_dispatches_buffers = true;
-    bool validate_indirect_trace_rays_buffers = true;
+    // Turned off until we can fix things
+    // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8579
+    bool validate_indirect_draws_buffers = false;
+    bool validate_indirect_dispatches_buffers = false;
+    bool validate_indirect_trace_rays_buffers = false;
     bool validate_buffer_copies = true;
 
     bool vma_linear_output = true;
