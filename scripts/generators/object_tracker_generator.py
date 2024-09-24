@@ -676,6 +676,12 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return '"UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent"'
         if commandName == 'vkGetAccelerationStructureDeviceAddressKHR' and memberName == 'accelerationStructure':
             return '"UNASSIGNED-VkAccelerationStructureDeviceAddressInfoKHR-accelerationStructure-parent"'
+        if commandName == 'vkCreatePipelineBinariesKHR' and memberName == 'pipeline':
+            return '"UNASSIGNED-VkPipelineBinaryCreateInfoKHR-pipeline-parent"'
+        if commandName == 'vkGetPipelineBinaryDataKHR' and memberName == 'pipelineBinary':
+            return '"UNASSIGNED-VkPipelineBinaryDataInfoKHR-pipelineBinary-parent"'
+        if commandName == 'vkReleaseCapturedPipelineDataKHR' and memberName == 'pipeline':
+            return '"UNASSIGNED-VkReleaseCapturedPipelineDataInfoKHR-pipeline-parent"'
         if commandName.startswith('vkWaitSemaphores') and memberName == 'pSemaphores':
             return '"UNASSIGNED-VkSemaphoreWaitInfo-pSemaphores-parent"'
         if commandName.startswith('vkSignalSemaphore') and memberName == 'semaphore':
@@ -743,6 +749,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return '"UNASSIGNED-VkShaderModuleValidationCacheCreateInfoEXT-validationCache-parent"'
         if structName == 'VkBufferDeviceAddressInfo' and memberName == 'buffer':
             return '"UNASSIGNED-VkBufferDeviceAddressInfo-buffer-parent"'
+        if structName == 'VkPipelineBinaryInfoKHR' and memberName == 'pPipelineBinaries':
+            return '"UNASSIGNED-VkPipelineBinaryInfoKHR-pPipelineBinaries-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
