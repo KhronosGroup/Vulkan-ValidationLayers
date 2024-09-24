@@ -967,6 +967,8 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
         "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess set to VK_TRUE");
 
     // noise
+    m_errorMonitor->SetAllowedFailureMsg("Adding a VkPhysicalDevice8BitStorageFeatures to pNext with shaderInt64 set to VK_TRUE");
+    m_errorMonitor->SetAllowedFailureMsg("Adding a VkPhysicalDeviceRayQueryFeaturesKHR to pNext with rayQuery set to VK_TRUE");
     m_errorMonitor->SetAllowedFailureMsg(
         "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
     m_errorMonitor->SetAllowedFailureMsg(
@@ -978,6 +980,8 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
     m_errorMonitor->SetAllowedFailureMsg(
         "vkGetDeviceProcAddr(): pName is trying to grab vkGetPhysicalDeviceCalibrateableTimeDomainsKHR which is an instance level "
         "function");
+    m_errorMonitor->SetAllowedFailureMsg(
+        "Internal Warning: Ray Query validation option was enabled, but the rayQuery feature is not supported.");
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
 }
