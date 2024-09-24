@@ -58,6 +58,14 @@ struct Stats {
     void AddQueueBatchContext();
     void RemoveQueueBatchContext();
 
+    ValueMax32 timeline_signal_counter;
+    void AddTimelineSignals(uint32_t count);
+    void RemoveTimelineSignals(uint32_t count);
+
+    ValueMax32 unresolved_batch_counter;
+    void AddUnresolvedBatch();
+    void RemoveUnresolvedBatch();
+
     ValueMax32 handle_record_counter;
     void AddHandleRecord(uint32_t count = 1);
     void RemoveHandleRecord(uint32_t count = 1);
@@ -74,6 +82,10 @@ struct Stats {
     void RemoveCommandBufferContext() {}
     void AddQueueBatchContext() {}
     void RemoveQueueBatchContext() {}
+    void AddTimelineSignals(uint32_t count) {}
+    void RemoveTimelineSignals(uint32_t count) {}
+    void AddUnresolvedBatch() {}
+    void RemoveUnresolvedBatch() {}
     void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
