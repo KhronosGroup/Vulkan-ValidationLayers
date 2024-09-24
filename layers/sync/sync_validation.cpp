@@ -71,6 +71,7 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchCo
     for (auto &[semaphore, new_signals] : update.timeline_signals) {
         std::vector<SignalInfo> &signals = timeline_signals_[semaphore];
         vvl::Append(signals, new_signals);
+        stats.AddTimelineSignals((uint32_t)new_signals.size());
 
         // Update host sync points
         std::deque<TimelineHostSyncPoint> &host_sync_points = host_waitable_semaphores_[semaphore];
@@ -103,6 +104,7 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchCo
             if (signal.first_scope.queue == remove_signals_request.queue &&
                 signal.timeline_value < remove_signals_request.signal_threshold_value) {
                 it = signals.erase(it);
+                stats.RemoveTimelineSignals(1);
                 continue;
             }
             ++it;
@@ -204,9 +206,11 @@ void SyncValidator::WaitForSemaphore(VkSemaphore semaphore, uint64_t value) {
 
     // Remove signals before the resolving one (keep the resolving signal).
     std::vector<SignalInfo> &signals = timeline_signals_[semaphore];
+    const size_t initial_signal_count = signals.size();
     vvl::erase_if(signals, [&sync_point](SignalInfo &signal) {
         return signal.first_scope.queue == sync_point.queue_id && signal.timeline_value < sync_point.timeline_value;
     });
+    stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
 
     // We can remove all sync points that are in the scope of current wait.
     // Subsequent attempts to synchronize on the host with already synchronized
@@ -710,7 +714,10 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
 void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
                                                   const RecordObject &record_obj) {
     if (auto sem_state = Get<vvl::Semaphore>(semaphore); sem_state && (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE)) {
-        timeline_signals_.erase(semaphore);
+        if (auto it = timeline_signals_.find(semaphore); it != timeline_signals_.end()) {
+            stats.RemoveTimelineSignals((uint32_t)it->second.size());
+            timeline_signals_.erase(it);
+        }
     }
     StateTracker::PreCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
 }
@@ -3189,7 +3196,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
         std::vector<VkSemaphoreSubmitInfo> unresolved_waits;
         auto resolved_batches = batch->ResolveSubmitWaits(wait_semaphores, unresolved_waits, signals_update);
 
-        // Process unresolved batch
+        // Add unresolved batch
         if (has_unresolved_batches || !unresolved_waits.empty()) {
             UnresolvedBatch unresolved_batch;
             unresolved_batch.batch = std::move(batch);
@@ -3205,6 +3212,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
             unresolved_batch.label_stack = current_label_stack;
             new_unresolved_batches.emplace_back(std::move(unresolved_batch));
             has_unresolved_batches = true;
+            stats.AddUnresolvedBatch();
             continue;
         }
         new_last_batch = batch;
@@ -3333,6 +3341,7 @@ bool SyncValidator::ProcessUnresolvedBatches(std::vector<UnresolvedQueue> &queue
 
             // Remove processed batch from the (local) unresolved list
             queue.unresolved_batches.erase(queue.unresolved_batches.begin());
+            stats.RemoveUnresolvedBatch();
             // Because unresolved list was changed, propagate the change into the queue's (global) unresolved state
             queue.update_unresolved = true;
         }
