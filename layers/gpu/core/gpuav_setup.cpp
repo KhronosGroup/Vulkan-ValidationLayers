@@ -193,6 +193,31 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
             }
         }
     }
+
+    // Force rayQuery feature if available and needed
+    // ---
+    if (gpuav_settings.shader_instrumentation.ray_query) {
+        VkPhysicalDeviceRayQueryFeaturesKHR ray_query_feature_check = vku::InitStructHelper();
+        VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper(&ray_query_feature_check);
+        DispatchGetPhysicalDeviceFeatures2(physicalDevice, &features_2);
+        if (ray_query_feature_check.rayQuery && IsExtensionAvailable(VK_KHR_RAY_QUERY_EXTENSION_NAME, available_extensions)) {
+            vku::AddExtension(*modified_create_info, VK_KHR_RAY_QUERY_EXTENSION_NAME);
+            if (auto *ray_query_feature = const_cast<VkPhysicalDeviceRayQueryFeaturesKHR *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceRayQueryFeaturesKHR>(modified_create_info))) {
+                if (!ray_query_feature->rayQuery) {
+                    InternalWarning(device, record_obj.location,
+                                    "Forcing VkPhysicalDeviceRayQueryFeaturesKHR::rayQuery to VK_TRUE");
+                    ray_query_feature->rayQuery = VK_TRUE;
+                }
+            } else {
+                InternalWarning(device, record_obj.location,
+                                "Adding a VkPhysicalDeviceRayQueryFeaturesKHR to pNext with rayQuery set to VK_TRUE");
+                VkPhysicalDeviceRayQueryFeaturesKHR new_bda_features = vku::InitStructHelper();
+                new_bda_features.rayQuery = VK_TRUE;
+                vku::AddToPnext(*modified_create_info, new_bda_features);
+            }
+        }
+    }
 }
 
 // Perform initializations that can be done at Create Device time.
@@ -334,15 +359,12 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
 // At this point extensions/features may have been turned on by us in PreCallRecord.
 // Now that we have all the information, here is where we might disable GPU-AV settings that are missing requirements
 void Validator::InitSettings(const Location &loc) {
-    VkPhysicalDeviceFeatures supported_features{};
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-
     GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
     if (shader_instrumentation.bindless_descriptor) {
         if (!enabled_features.bufferDeviceAddress) {
             shader_instrumentation.bindless_descriptor = false;
             InternalWarning(device, loc,
-                            "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not enabled "
+                            "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not supported "
                             "[Disabling gpuav_descriptor_checks]");
         }
     }
@@ -350,13 +372,14 @@ void Validator::InitSettings(const Location &loc) {
     if (shader_instrumentation.buffer_device_address) {
         const bool bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
                                                IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                                              supported_features.shaderInt64 && enabled_features.bufferDeviceAddress);
+                                              enabled_features.shaderInt64 && enabled_features.bufferDeviceAddress);
         if (!bda_validation_possible) {
             shader_instrumentation.buffer_device_address = false;
-            if (!supported_features.shaderInt64) {
-                InternalWarning(device, loc,
-                                "Buffer device address validation option was enabled, but the shaderInt64 feature is not enabled. "
-                                "[Disabling gpuav_buffer_address_oob].");
+            if (!enabled_features.shaderInt64) {
+                InternalWarning(
+                    device, loc,
+                    "Buffer device address validation option was enabled, but the shaderInt64 feature is not supported. "
+                    "[Disabling gpuav_buffer_address_oob].");
             } else {
                 InternalWarning(device, loc,
                                 "Buffer device address validation option was enabled, but required buffer device address extension "
@@ -369,7 +392,7 @@ void Validator::InitSettings(const Location &loc) {
         if (!enabled_features.rayQuery) {
             shader_instrumentation.ray_query = false;
             InternalWarning(device, loc,
-                            "Ray Query validation option was enabled, but the rayQuery feature is not enabled. "
+                            "Ray Query validation option was enabled, but the rayQuery feature is not supported. "
                             "[Disabling gpuav_validate_ray_query]");
         }
     }
@@ -379,7 +402,7 @@ void Validator::InitSettings(const Location &loc) {
         if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
             gpuav_settings.validate_buffer_copies = false;
             InternalWarning(device, loc,
-                            "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature is not enabled. "
+                            "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature is not supported. "
                             "[Disabling gpuav_buffer_copies]");
         }
     }

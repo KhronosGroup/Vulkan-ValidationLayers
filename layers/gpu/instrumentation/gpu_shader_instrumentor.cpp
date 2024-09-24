@@ -191,6 +191,10 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
                             "Forcing VkPhysicalDeviceFeatures::vertexPipelineStoresAndAtomics to VK_TRUE");
             enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
         }
+        if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
+            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::shaderInt64 to VK_TRUE");
+            enabled_features->shaderInt64 = VK_TRUE;
+        }
     }
 
     auto add_missing_features = [this, &record_obj, modified_create_info]() {
