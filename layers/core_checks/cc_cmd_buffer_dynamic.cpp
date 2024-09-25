@@ -182,6 +182,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_FRONT_FACE:
                 vuid_str = vuid.dynamic_front_face_07841;
                 break;
+            case CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
+                vuid_str = vuid.set_viewport_coarse_sample_order_09233;
+                break;
             default:
                 assert(false);
                 break;
@@ -288,9 +291,10 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
 
         if (enabled_features.shadingRateImage) {
-            skip |=
-                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, vuid);
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, vuid);
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV, vuid);
         }
+
         if (enabled_features.representativeFragmentTest) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                               CB_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV, vuid);
@@ -1411,8 +1415,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
 
         if (enabled_features.shadingRateImage) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV,
-                                              cb_state, objlist, loc, vuid.set_viewport_coarse_sample_order_09233);
             if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV) &&
                 cb_state.dynamic_state_value.shading_rate_image_enable) {
                 skip |=

@@ -126,7 +126,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetViewportShadingRatePaletteNV"]
     },
     "VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV" : {
-        "command" : ["vkCmdSetCoarseSampleOrderNV"]
+        "command" : ["vkCmdSetCoarseSampleOrderNV"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV" : {
         "command" : ["vkCmdSetExclusiveScissorEnableNV"]
