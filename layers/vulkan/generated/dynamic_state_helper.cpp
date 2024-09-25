@@ -753,6 +753,13 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                       "sampleLocationsEnable was VK_TRUE in the last bound graphics pipeline.\n";
             }
             break;
+        case CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
         case CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
             break;
         case CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:
