@@ -740,6 +740,14 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             break;
+        case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
+                ss << "vkCmdSetViewportWScalingEnableNV last set viewportWScalingEnable to VK_TRUE.\n";
+            } else {
+                ss << "VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportWScalingStateCreateInfoNV::"
+                      "viewportWScalingEnable was VK_TRUE in the last bound graphics pipeline.\n";
+            }
+            break;
         case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 ss << rasterizer_discard_enable_dynamic;

@@ -188,6 +188,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
                 vuid_str = vuid.set_viewport_shading_rate_palette_09234;
                 break;
+            case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
+                vuid_str = vuid.set_clip_space_w_scaling_04138;
+                break;
             default:
                 assert(false);
                 break;
@@ -218,6 +221,16 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         has_pipeline ? (~((cb_state.dynamic_state_status.cb ^ last_bound_state.pipeline_state->dynamic_state) &
                           last_bound_state.pipeline_state->dynamic_state))
                      : cb_state.dynamic_state_status.cb;
+
+    // Some VUs are only if pipeline had the state dynamic (otherwise it is checked at pipeline creation time).
+    // For ShaderObject is always dynamic
+    auto has_dynamic_state = [&last_bound_state](CBDynamicState dynamic_state) {
+        if (const vvl::Pipeline* pipeline = last_bound_state.pipeline_state) {
+            return pipeline->IsDynamic(dynamic_state);
+        } else {
+            return true;
+        }
+    };
 
     skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, vuid);
     if (!last_bound_state.IsRasterizationDisabled()) {
@@ -383,7 +396,21 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
 
     if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, vuid);
+
+        if (last_bound_state.IsViewportWScalingEnable() && has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
+            has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, vuid);
+
+            if (cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
+                skip |=
+                    LogError(vuid.viewport_w_scaling_08636, cb_state.Handle(), vuid.loc(),
+                             "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
+                             " and viewportCount set with vkCmdSetViewportWScalingNV() was %" PRIu32 ".",
+                             cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
+            }
+        }
     }
+
     if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, vuid);
     }
@@ -1386,16 +1413,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                          " and scissorCount set with vkCmdSetScissorWithCount() was %" PRIu32 ".",
                          cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
     }
-    if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling) &&
-        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV) &&
-        cb_state.dynamic_state_value.viewport_w_scaling_enable &&
-        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) &&
-        cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
-        skip |= LogError(vuid.viewport_w_scaling_08636, cb_state.Handle(), loc,
-                         "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                         " and viewportCount set with vkCmdSetViewportWScalingNV() was %" PRIu32 ".",
-                         cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
-    }
 
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
         for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
@@ -1467,13 +1484,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
                                                   cb_state, objlist, loc, vuid.set_line_stipple_enable_08671);
             }
-        }
-    }
-    if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV) &&
-            cb_state.dynamic_state_value.viewport_w_scaling_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, cb_state,
-                                              objlist, loc, vuid.set_clip_space_w_scaling_09232);
         }
     }
     if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) &&

@@ -248,7 +248,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDraw-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDraw-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDraw-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDraw-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDraw-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDraw-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDraw-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDraw-shadingRateImage-09234";
@@ -518,7 +518,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawMultiEXT-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawMultiEXT-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawMultiEXT-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMultiEXT-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMultiEXT-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMultiEXT-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMultiEXT-shadingRateImage-09234";
@@ -789,7 +789,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawIndexed-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndexed-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawIndexed-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawIndexed-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawIndexed-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawIndexed-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawIndexed-shadingRateImage-09234";
@@ -1060,7 +1060,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawMultiIndexedEXT-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawMultiIndexedEXT-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawMultiIndexedEXT-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMultiIndexedEXT-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMultiIndexedEXT-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMultiIndexedEXT-shadingRateImage-09234";
@@ -1331,7 +1331,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawIndirect-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndirect-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawIndirect-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawIndirect-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawIndirect-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawIndirect-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawIndirect-shadingRateImage-09234";
@@ -1601,7 +1601,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawIndexedIndirect-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndexedIndirect-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawIndexedIndirect-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawIndexedIndirect-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawIndexedIndirect-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawIndexedIndirect-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawIndexedIndirect-shadingRateImage-09234";
@@ -1970,7 +1970,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawIndirectCount-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndirectCount-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawIndirectCount-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawIndirectCount-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawIndirectCount-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawIndirectCount-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawIndirectCount-shadingRateImage-09234";
@@ -2243,7 +2243,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawIndexedIndirectCount-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndexedIndirectCount-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawIndexedIndirectCount-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawIndexedIndirectCount-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawIndexedIndirectCount-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawIndexedIndirectCount-shadingRateImage-09234";
@@ -2690,7 +2690,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_viewport_with_count_08642            = "VUID-vkCmdDrawMeshTasksNV-primitiveFragmentShadingRateWithMultipleViewports-08642";
         alpha_component_word_08920               = "VUID-vkCmdDrawMeshTasksNV-alphaToCoverageEnable-08920";
         color_write_mask_09116                   = "VUID-vkCmdDrawMeshTasksNV-None-09116";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMeshTasksNV-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMeshTasksNV-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMeshTasksNV-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMeshTasksNV-shadingRateImage-09234";
@@ -2946,7 +2946,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_viewport_with_count_08642            = "VUID-vkCmdDrawMeshTasksIndirectNV-primitiveFragmentShadingRateWithMultipleViewports-08642";
         alpha_component_word_08920               = "VUID-vkCmdDrawMeshTasksIndirectNV-alphaToCoverageEnable-08920";
         color_write_mask_09116                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09116";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMeshTasksIndirectNV-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMeshTasksIndirectNV-shadingRateImage-09234";
@@ -3205,7 +3205,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_viewport_with_count_08642            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitiveFragmentShadingRateWithMultipleViewports-08642";
         alpha_component_word_08920               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-alphaToCoverageEnable-08920";
         color_write_mask_09116                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09116";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-shadingRateImage-09234";
@@ -3458,7 +3458,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_viewport_with_count_08642            = "VUID-vkCmdDrawMeshTasksEXT-primitiveFragmentShadingRateWithMultipleViewports-08642";
         alpha_component_word_08920               = "VUID-vkCmdDrawMeshTasksEXT-alphaToCoverageEnable-08920";
         color_write_mask_09116                   = "VUID-vkCmdDrawMeshTasksEXT-None-09116";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMeshTasksEXT-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMeshTasksEXT-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMeshTasksEXT-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMeshTasksEXT-shadingRateImage-09234";
@@ -3714,7 +3714,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_viewport_with_count_08642            = "VUID-vkCmdDrawMeshTasksIndirectEXT-primitiveFragmentShadingRateWithMultipleViewports-08642";
         alpha_component_word_08920               = "VUID-vkCmdDrawMeshTasksIndirectEXT-alphaToCoverageEnable-08920";
         color_write_mask_09116                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09116";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMeshTasksIndirectEXT-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMeshTasksIndirectEXT-shadingRateImage-09234";
@@ -3973,7 +3973,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_viewport_with_count_08642            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-primitiveFragmentShadingRateWithMultipleViewports-08642";
         alpha_component_word_08920               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-alphaToCoverageEnable-08920";
         color_write_mask_09116                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09116";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-shadingRateImage-09234";
@@ -4244,7 +4244,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_input_format_08937                = "VUID-vkCmdDrawIndirectByteCountEXT-format-08937";
         vertex_input_format_09203                = "VUID-vkCmdDrawIndirectByteCountEXT-None-09203";
         vertex_input_format_07939                = "VUID-vkCmdDrawIndirectByteCountEXT-Input-07939";
-        set_clip_space_w_scaling_09232           = "VUID-vkCmdDrawIndirectByteCountEXT-None-09232";
+        set_clip_space_w_scaling_04138           = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-04138";
         set_discard_rectangle_09236              = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09236";
         set_viewport_coarse_sample_order_09233   = "VUID-vkCmdDrawIndirectByteCountEXT-shadingRateImage-09233";
         set_viewport_shading_rate_palette_09234  = "VUID-vkCmdDrawIndirectByteCountEXT-shadingRateImage-09234";
