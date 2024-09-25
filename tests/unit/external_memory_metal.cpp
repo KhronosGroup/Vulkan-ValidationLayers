@@ -54,7 +54,7 @@ TEST_F(NegativeExternalMemoryMetal, AllocateExportableImageWithoutDedicatedAlloc
 
     auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(),
                                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
-    m_errorMonitor->SetDesiredError("VUID-UNASSIGNED-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-export");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-00639");
     image.memory().try_init(*m_device, alloc_info);
     m_errorMonitor->VerifyFound();
 }
@@ -166,7 +166,7 @@ TEST_F(NegativeExternalMemoryMetal, AllocateImportableImageWithoutDedicatedAlloc
     metal_import_info.handle = import_handle;
     VkMemoryAllocateInfo import_allocate_info = vku::InitStructHelper(&metal_import_info);
     VkDeviceMemory device_memory = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("VUID-UNASSIGNED-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-import");
+    m_errorMonitor->SetDesiredError("VUID-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-import");
     vk::AllocateMemory(*m_device, &import_allocate_info, nullptr, &device_memory);
     m_errorMonitor->VerifyFound();
 }
@@ -219,7 +219,7 @@ TEST_F(NegativeExternalMemoryMetal, AllocateImportableImageWithoutDedicatedImage
     metal_import_info.handle = import_handle;
     VkMemoryAllocateInfo import_allocate_info = vku::InitStructHelper(&metal_import_info);
     VkDeviceMemory device_memory = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredError("VUID-UNASSIGNED-VK_EXT_external_memory-dedicated-null-image-import");
+    m_errorMonitor->SetDesiredError("VUID-VK_EXT_external_memory-dedicated-null-image-import");
     vk::AllocateMemory(*m_device, &import_allocate_info, nullptr, &device_memory);
     m_errorMonitor->VerifyFound();
 }
@@ -267,7 +267,7 @@ TEST_F(NegativeExternalMemoryMetal, GetResourceHandleWithoutExportStructAtCreati
     VkMemoryGetMetalHandleInfoEXT get_handle_info = vku::InitStructHelper();
     get_handle_info.memory = buffer.memory().handle();
     get_handle_info.handleType = handle_type;
-    m_errorMonitor->SetDesiredError("VUID-UNASSIGNED-VK_EXT_external_memory-memory-not-created-with-VkExportMemoryAllocateInfo");
+    m_errorMonitor->SetDesiredError("VUID-VK_EXT_external_memory-memory-not-created-with-VkExportMemoryAllocateInfo");
     vk::GetMemoryMetalHandleEXT(*m_device, &get_handle_info, &handle);
     m_errorMonitor->VerifyFound();
 }
