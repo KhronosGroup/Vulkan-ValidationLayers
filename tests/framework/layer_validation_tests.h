@@ -160,7 +160,6 @@ class VkLayerTest : public VkLayerTestBase {
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               void *instance_pnext = nullptr);
     void AddSurfaceExtension();
-    vkt::CommandBuffer *CommandBuffer();
 
     template <typename Features>
     VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {

@@ -91,7 +91,7 @@ class GeometryKHR {
     GeometryKHR& SetInstancesDeviceAddress(VkDeviceAddress address);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i);
 	GeometryKHR& SetInstanceHostAddress(void* address);
-    
+
     GeometryKHR& Build();
 
     const auto& GetVkObj() const { return vk_obj_; }
@@ -248,9 +248,9 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 //    as_build_info.GetDstAS().SetBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 //    as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 //
-//    m_commandBuffer->begin();
-//    as_build_info.BuildCmdBuffer(*m_device, m_commandBuffer->handle());
-//    m_commandBuffer->end();
+//    m_command_buffer.begin();
+//    as_build_info.BuildCmdBuffer(*m_device, m_command_buffer.handle());
+//    m_command_buffer.end();
 // }
 namespace blueprint {
 GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, size_t triangles_count = 1);

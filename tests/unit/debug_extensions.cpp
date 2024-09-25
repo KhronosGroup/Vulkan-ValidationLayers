@@ -457,12 +457,12 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    m_commandBuffer->begin();
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }

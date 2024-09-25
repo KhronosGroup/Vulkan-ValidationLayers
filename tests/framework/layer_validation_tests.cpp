@@ -324,8 +324,6 @@ void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatu
     RETURN_IF_SKIP(InitState(features, features2));
 }
 
-vkt::CommandBuffer *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
-
 VkLayerTest::VkLayerTest() {
 #if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

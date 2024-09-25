@@ -52,11 +52,11 @@ TEST_F(NegativeParent, FillBuffer) {
 
     vkt::Buffer buffer(*m_second_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-commonparent");
-    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, VK_WHOLE_SIZE, 0);
+    vk::CmdFillBuffer(m_command_buffer.handle(), buffer, 0, VK_WHOLE_SIZE, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeParent, BindBuffer) {
@@ -171,11 +171,11 @@ TEST_F(NegativeParent, BindPipeline) {
     pipeline_ci.stage = cs.GetStageCreateInfo();
     vkt::Pipeline pipeline(*m_second_device, pipeline_ci);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commonparent");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeParent, PipelineShaderStageCreateInfo) {
@@ -256,11 +256,11 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     m_renderPassBeginInfo.pNext = &render_pass_attachment_bi;
     m_renderPassBeginInfo.framebuffer = fb.handle();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-02780");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeParent, RenderPassCommandBuffer) {
@@ -815,7 +815,7 @@ TEST_F(NegativeParent, CmdPipelineBarrier) {
                                                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent");
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, image_barriers);
     m_errorMonitor->VerifyFound();
 }
@@ -842,11 +842,11 @@ TEST_F(NegativeParent, CmdPipelineBarrier2) {
     buffer_dependency.bufferMemoryBarrierCount = 1;
     buffer_dependency.pBufferMemoryBarriers = &buffer_barrier;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent");
-    vk::CmdPipelineBarrier2(m_commandBuffer->handle(), &buffer_dependency);
+    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &buffer_dependency);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {

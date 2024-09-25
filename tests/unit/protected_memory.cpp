@@ -134,10 +134,10 @@ TEST_F(NegativeProtectedMemory, Submit) {
 
     VkSubmitInfo submit_info = vku::InitStructHelper(&protected_submit_info);
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-queue-06448");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubmitInfo-pNext-04148");
@@ -460,9 +460,9 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->VerifyFound();
 
     CreatePipelineHelper protected_pipe(*this);
@@ -613,7 +613,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
         GTEST_SKIP() << "protectedMemory feature not supported";
     };
 
-    // Turns m_commandBuffer into a protected command buffer
+    // Turns m_command_buffer into a protected command buffer
     RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
 
     InitRenderTarget();
@@ -631,37 +631,37 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-commandBuffer-02711");
-    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711");
-    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, 1,
+    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indexed_indirect_buffer.handle(), 0, 1,
                                sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRenderPass();
+    m_command_buffer.EndRenderPass();
 
     // Query should be outside renderpass
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-commandBuffer-01885");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-commandBuffer-01886");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdEndQuery-None-01923");
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
@@ -858,83 +858,83 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
                                                      VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // will get undefined values, but not invalid if protectedNoFault is supported
     // Will still create an empty command buffer to test submit VUs if protectedNoFault is supported
     if (!protected_memory_properties.protectedNoFault) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-commandBuffer-01834");
-        vk::CmdBlitImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+        vk::CmdBlitImage(m_command_buffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
                          VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-commandBuffer-01835");
-        vk::CmdBlitImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+        vk::CmdBlitImage(m_command_buffer.handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
                          VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-commandBuffer-01805");
-        vk::CmdClearColorImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
+        vk::CmdClearColorImage(m_command_buffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
                                &subresource_range);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-commandBuffer-01822");
-        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_protected.handle(), buffer_unprotected.handle(), 1, &buffer_copy);
+        vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_protected.handle(), buffer_unprotected.handle(), 1, &buffer_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-commandBuffer-01823");
-        vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_unprotected.handle(), buffer_protected.handle(), 1, &buffer_copy);
+        vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_unprotected.handle(), buffer_protected.handle(), 1, &buffer_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-01828");
-        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_protected.handle(), image_unprotected.handle(),
+        vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer_protected.handle(), image_unprotected.handle(),
                                  VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-01829");
-        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_unprotected.handle(), image_protected.handle(),
+        vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer_unprotected.handle(), image_protected.handle(),
                                  VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-01825");
-        vk::CmdCopyImage(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
+        vk::CmdCopyImage(m_command_buffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_unprotected.handle(),
                          VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-01826");
-        vk::CmdCopyImage(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+        vk::CmdCopyImage(m_command_buffer.handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
                          VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-01831");
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+        vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL,
                                  buffer_unprotected.handle(), 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-01832");
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
+        vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image_unprotected.handle(), VK_IMAGE_LAYOUT_GENERAL,
                                  buffer_protected.handle(), 1, &buffer_image_copy);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-commandBuffer-01811");
-        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer_protected.handle(), 0, 4, 0);
+        vk::CmdFillBuffer(m_command_buffer.handle(), buffer_protected.handle(), 0, 4, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-commandBuffer-01813");
-        vk::CmdUpdateBuffer(m_commandBuffer->handle(), buffer_protected.handle(), 0, 4, (void *)update_data);
+        vk::CmdUpdateBuffer(m_command_buffer.handle(), buffer_protected.handle(), 0, 4, (void *)update_data);
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), render_area.extent.width, render_area.extent.height);
+        m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), render_area.extent.width, render_area.extent.height);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-commandBuffer-02504");
-        vk::CmdClearAttachments(m_commandBuffer->handle(), 2, clear_attachments, 2, clear_rect);
+        vk::CmdClearAttachments(m_command_buffer.handle(), 2, clear_attachments, 2, clear_rect);
         m_errorMonitor->VerifyFound();
 
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
                                   1, &g_pipe.descriptor_set_->set_, 0, nullptr);
         VkDeviceSize offset = 0;
-        vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer_protected.handle(), &offset);
-        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer_protected.handle(), 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &buffer_protected.handle(), &offset);
+        vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer_protected.handle(), 0, VK_INDEX_TYPE_UINT16);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // color attachment
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // buffer descriptorSet
@@ -942,12 +942,12 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // vertex
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-02707");  // index
 
-        vk::CmdDrawIndexed(m_commandBuffer->handle(), 1, 0, 0, 0, 0);
+        vk::CmdDrawIndexed(m_command_buffer.handle(), 1, 0, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->EndRenderPass();
+        m_command_buffer.EndRenderPass();
     }
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     // Use unprotected resources in protected command buffer
     g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected.handle(), 0, 1024);
@@ -1018,7 +1018,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     protectedCommandBuffer.end();
 
     // Try submitting together to test only 1 error occurs for the corresponding command buffer
-    VkCommandBuffer comman_buffers[2] = {m_commandBuffer->handle(), protectedCommandBuffer.handle()};
+    VkCommandBuffer comman_buffers[2] = {m_command_buffer.handle(), protectedCommandBuffer.handle()};
 
     VkProtectedSubmitInfo protected_submit_info = vku::InitStructHelper();
     VkSubmitInfo submit_info = vku::InitStructHelper(&protected_submit_info);
@@ -1097,11 +1097,11 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
     vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr,
                                      &raytracing_pipeline);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-06721");
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
@@ -1113,7 +1113,7 @@ TEST_F(NegativeProtectedMemory, RayQuery) {
     AddRequiredFeature(vkt::Feature::rayQuery);
     AddRequiredFeature(vkt::Feature::protectedMemory);
     RETURN_IF_SKIP(InitFramework());
-    // Turns m_commandBuffer into a protected command buffer
+    // Turns m_command_buffer into a protected command buffer
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
     InitRenderTarget();
 
@@ -1147,17 +1147,17 @@ TEST_F(NegativeProtectedMemory, RayQuery) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-commandBuffer-02712");  // color attachment
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-04617");     // rayQuery
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeProtectedMemory, Usage) {
@@ -1212,15 +1212,15 @@ TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected, 0, 256, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02712");  // color attachment
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02712");  // Write to SSBO
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    vk::CmdEndRenderPass(m_command_buffer.handle());
+    m_command_buffer.end();
 }

@@ -73,11 +73,11 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     sparse_queue->Wait();
     // Set up complete
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // This copy is be completely legal as long as we change the memory for buffer_sparse to not overlap with
     // buffer_sparse2's memory on queue submission
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Rebind buffer_mem2 so it does not overlap
     buffer_memory_bind.memory = buffer_mem2.handle();
@@ -95,7 +95,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     submit_info.pWaitSemaphores = &semaphore2.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     // Wait for operations to finish before destroying anything
@@ -161,10 +161,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -173,7 +173,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
@@ -238,9 +238,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -249,7 +249,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
@@ -317,9 +317,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     copy_info.dstOffset = buffer_mem_reqs.alignment / 2;  // dstOffset is the start of buffer_mem_2, or 0 in this space
                                                           // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment / 2;
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -328,7 +328,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
@@ -398,9 +398,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -409,7 +409,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
@@ -501,10 +501,10 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -512,7 +512,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
@@ -601,10 +601,10 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -612,7 +612,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 

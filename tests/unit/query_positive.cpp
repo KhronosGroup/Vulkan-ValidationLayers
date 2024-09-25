@@ -33,13 +33,13 @@ TEST_F(PositiveQuery, OutsideRenderPass) {
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
 
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->EndRenderPass();
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.EndRenderPass();
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveQuery, InsideRenderPass) {
@@ -51,13 +51,13 @@ TEST_F(PositiveQuery, InsideRenderPass) {
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
 
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveQuery, ResetQueryPoolFromDifferentCB) {
@@ -124,39 +124,39 @@ TEST_F(PositiveQuery, BasicQuery) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 2);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
-    m_commandBuffer->EndRenderPass();
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 2, buffer.handle(), 0, sizeof(uint64_t),
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 2);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 1, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 1);
+    m_command_buffer.EndRenderPass();
+    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 2, buffer.handle(), 0, sizeof(uint64_t),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     uint64_t samples_passed[4];
     vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
     // Now reset query pool in a different command buffer than the BeginQuery
-    vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
-    vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
-    m_commandBuffer->begin();
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
+    m_command_buffer.begin();
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -183,21 +183,21 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
     // If VK_QUERY_RESULT_WAIT_BIT is not set, vkGetQueryPoolResults may return VK_NOT_READY
     constexpr VkQueryResultFlags query_flags = VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT;
 
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, query_count);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
-    m_commandBuffer->EndRenderPass();
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, query_count, buffer.handle(), 0, sample_stride,
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0, query_count);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 0);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 1, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 1);
+    m_command_buffer.EndRenderPass();
+    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool, 0, query_count, buffer.handle(), 0, sample_stride,
                                 query_flags);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
 
     VkResult res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, query_count, sizeof_samples_passed,
                                            samples_passed.data(), sample_stride, query_flags);
@@ -336,12 +336,12 @@ TEST_F(PositiveQuery, DestroyQueryPoolAfterGetQueryPoolResults) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
-    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool.handle(), 0);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool.handle(), 0);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
 
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
@@ -366,10 +366,10 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
 
-    m_commandBuffer->begin();
-    vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
-    vk::CmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
+    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
@@ -396,17 +396,17 @@ TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     vk::BeginCommandBuffer(secondary_handle, &cbbi);
     vk::EndCommandBuffer(secondary_handle);
 
-    m_commandBuffer->begin();
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
+    m_command_buffer.begin();
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_handle);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
 
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
 
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_handle);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 0);
-    m_commandBuffer->end();
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_handle);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveQuery, PerformanceQueries) {
@@ -459,11 +459,11 @@ TEST_F(PositiveQuery, PerformanceQueries) {
     vkt::QueryPool query_pool(*m_device, query_pool_ci);
 
     {
-        m_commandBuffer->begin();
-        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
+        m_command_buffer.end();
 
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
     }
 
@@ -535,14 +535,14 @@ TEST_F(PositiveQuery, ReuseSecondaryWithQueryCommand) {
     vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
     secondary_buffer.end();
 
-    m_commandBuffer->begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_buffer.handle());
-    m_commandBuffer->end();
+    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0, 1);
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_buffer.handle());
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     // Submit the command buffer again.
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
 
     m_default_queue->Wait();
 }

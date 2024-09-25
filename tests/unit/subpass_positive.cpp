@@ -83,20 +83,20 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     dependency_info.pImageMemoryBarriers = safe_barrier2.ptr();
 
     // Test vkCmdPipelineBarrier subpass barrier
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &barrier);
-    vk::CmdEndRenderPass(*m_commandBuffer);
-    m_commandBuffer->end();
+    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.end();
 
     // Test vkCmdPipelineBarrier2 subpass barrier
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
-    vk::CmdPipelineBarrier2(*m_commandBuffer, &dependency_info);
-    vk::CmdEndRenderPass(*m_commandBuffer);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSubpass, SubpassWithEventWait) {
@@ -163,25 +163,25 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     // vkCmdWaitEvents inside render pass
     {
         vkt::Event event(*m_device);
-        m_commandBuffer->begin();
-        vk::CmdSetEvent(*m_commandBuffer, event, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-        m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
-        vk::CmdWaitEvents(*m_commandBuffer, 1, &event.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        m_command_buffer.begin();
+        vk::CmdSetEvent(m_command_buffer, event, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+        m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+        vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
-        vk::CmdEndRenderPass(*m_commandBuffer);
-        m_commandBuffer->end();
+        vk::CmdEndRenderPass(m_command_buffer);
+        m_command_buffer.end();
     }
 
     // vkCmdWaitEvents2 inside render pass.
     // It's also a regression test for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4258
     {
         vkt::Event event2(*m_device);
-        m_commandBuffer->begin();
-        vk::CmdSetEvent2(*m_commandBuffer, event2, &dependency_info);
-        m_commandBuffer->BeginRenderPass(render_pass, framebuffer, 32, 32);
-        vk::CmdWaitEvents2(*m_commandBuffer, 1, &event2.handle(), &dependency_info);
-        vk::CmdEndRenderPass(*m_commandBuffer);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vk::CmdSetEvent2(m_command_buffer, event2, &dependency_info);
+        m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
+        vk::CmdWaitEvents2(m_command_buffer, 1, &event2.handle(), &dependency_info);
+        vk::CmdEndRenderPass(m_command_buffer);
+        m_command_buffer.end();
     }
 }
 

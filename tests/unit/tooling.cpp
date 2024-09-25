@@ -177,7 +177,7 @@ TEST_F(NegativeTooling, ValidateNVDeviceDiagnosticCheckpoints) {
 
     uint32_t data = 100;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
-    vk::CmdSetCheckpointNV(m_commandBuffer->handle(), &data);
+    vk::CmdSetCheckpointNV(m_command_buffer.handle(), &data);
     m_errorMonitor->VerifyFound();
 }
 

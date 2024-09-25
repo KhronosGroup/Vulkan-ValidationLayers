@@ -591,19 +591,19 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
         VK_BLEND_FACTOR_ZERO,           VK_BLEND_OP_ADD,
     };
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362");
-    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0u, 1u, &color_blend_equation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
     color_blend_equation.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
     color_blend_equation.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363");
-    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0u, 1u, &color_blend_equation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
