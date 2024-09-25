@@ -564,9 +564,14 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
     // is dedicated to that single resource.
 
     // Case 1 and partially 3
-    if (const auto export_memory_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext)) {
-        if ((export_memory_info->handleTypes == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) && dedicated_allocation_info == nullptr) {
-            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-export", device,
+    // Since we know Metal textures required to be imported as a dedicated allocation, we can do the check directly here instead
+    // of deferring to the binding call.
+    const auto export_memory_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(allocate_info.pNext);
+    const auto export_memory_info_nv = vku::FindStructInPNextChain<VkExportMemoryAllocateInfoNV>(allocate_info.pNext);
+    if (export_memory_info || export_memory_info_nv) {
+        VkExternalMemoryHandleTypeFlags handles = export_memory_info ? export_memory_info->handleTypes : export_memory_info_nv->handleTypes;
+        if ((handles == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) && dedicated_allocation_info == nullptr) {
+            skip |= LogError(" VUID-VkMemoryAllocateInfo-pNext-00639", device,
                              allocate_info_loc.dot(Field::pNext),
                              "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT requires textures to be imported as a dedicated"
                              "allocation.");
@@ -594,7 +599,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
     // operations on buffers.
     if(import_memory_metal_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT) {
         if (dedicated_allocation_info == nullptr) {
-            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-import", device,
+            skip |= LogError("VUID-VK_EXT_external_memory-no-VkMemoryDedicatedAllocateInfo-import", device,
                              allocate_info_loc.dot(Field::pNext),
                              "VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT requires textures to be imported as a dedicated"
                              "allocation.");
@@ -604,7 +609,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
 
         // Unsure if there should be a VUID that enforces image to not be NULL when importing a MTLTEXTURE type
         if (dedicated_allocation_info->image == VK_NULL_HANDLE) {
-            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-dedicated-null-image-import", device,
+            skip |= LogError("VUID-VK_EXT_external_memory-dedicated-null-image-import", device,
                              allocate_info_loc.dot(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
                              "must be a valid image handle.");
             // Early out since there's no image in VkMemoryDedicatedAllocateInfoKHR.
@@ -622,7 +627,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties);
 
         if ((external_image_format_properties.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) == 0u) {
-            skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-unsupported-format-import", device,
+            skip |= LogError("VUID-VK_EXT_external_memory-unsupported-format-import", device,
                         allocate_info_loc.dot(Struct::VkImportMemoryMetalHandleInfoEXT, Field::handleType),
                         "does not support importing image with format %s", string_VkFormat(image_format));
         }
@@ -642,7 +647,7 @@ bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device,
     ASSERT_AND_RETURN_SKIP(memory);
     auto export_memory_allocate_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory->safe_allocate_info.pNext);
     if (export_memory_allocate_info == nullptr) {
-        skip |= LogError("VUID-UNASSIGNED-VK_EXT_external_memory-memory-not-created-with-VkExportMemoryAllocateInfo", device,
+        skip |= LogError("VUID-VK_EXT_external_memory-memory-not-created-with-VkExportMemoryAllocateInfo", device,
                         get_metal_handle_info.dot(Field::memory).dot(Field::pNext),
                         "device memory missing VkExportMemoryAllocateInfo at creation");
     }
