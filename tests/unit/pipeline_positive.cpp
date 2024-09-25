@@ -202,6 +202,62 @@ TEST_F(PositivePipeline, IgnoredMultisampleState) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
+    TEST_DESCRIPTION("Create Compute Pipeline with derivatives");
+
+    RETURN_IF_SKIP(Init());
+
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=2, local_size_y=4) in;
+        void main(){
+        }
+    )glsl";
+
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+
+    VkComputePipelineCreateInfo compute_create_infos[2];
+    compute_create_infos[0] = vku::InitStructHelper();
+    compute_create_infos[0].flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+    compute_create_infos[0].stage = cs.GetStageCreateInfo();
+    compute_create_infos[0].layout = pipeline_layout.handle();
+    compute_create_infos[0].basePipelineHandle = VK_NULL_HANDLE;
+    compute_create_infos[0].basePipelineIndex = -1;
+
+    compute_create_infos[1] = vku::InitStructHelper();
+    compute_create_infos[1].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+    compute_create_infos[1].stage = cs.GetStageCreateInfo();
+    compute_create_infos[1].layout = pipeline_layout.handle();
+
+    // Base pipeline in pipelines[0], derivative in pipelines[1]
+    VkPipeline pipelines[2];
+
+    {
+        // Create a base pipeline and a derivative in a single call, using 0 as the base
+        compute_create_infos[1].basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_infos[1].basePipelineIndex = 0;
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 2, compute_create_infos, nullptr, pipelines);
+
+        // Destroy the derivative pipeline
+        vk::DestroyPipeline(device(), pipelines[1], nullptr);
+    }
+
+    {
+        // Create a derivative pipeline, using base from previous call
+        compute_create_infos[1].basePipelineHandle = pipelines[0];
+        compute_create_infos[1].basePipelineIndex = -1;
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_infos[1], nullptr, &pipelines[1]);
+    }
+
+    for (auto pipeline : pipelines) {
+        vk::DestroyPipeline(device(), pipeline, nullptr);
+    }
+}
+
 TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
     TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
     SetTargetApiVersion(VK_API_VERSION_1_1);
