@@ -185,6 +185,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
                 vuid_str = vuid.set_viewport_coarse_sample_order_09233;
                 break;
+            case CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
+                vuid_str = vuid.set_viewport_shading_rate_palette_09234;
+                break;
             default:
                 assert(false);
                 break;
@@ -293,6 +296,20 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         if (enabled_features.shadingRateImage) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV, vuid);
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV, vuid);
+
+            if (last_bound_state.IsShadingRateImageEnable()) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
+                                                  CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, vuid);
+
+                if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) &&
+                    cb_state.dynamic_state_value.shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
+                    skip |= LogError(
+                        vuid.shading_rate_palette_08637, cb_state.Handle(), vuid.loc(),
+                        "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
+                        " and viewportCount set with vkCmdSetViewportShadingRatePaletteNV() was %" PRIu32 ".",
+                        cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
+                }
+            }
         }
 
         if (enabled_features.representativeFragmentTest) {
@@ -1412,23 +1429,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT,
                                               cb_state, objlist, loc, vuid.set_sample_locations_enable_08664);
-        }
-
-        if (enabled_features.shadingRateImage) {
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV) &&
-                cb_state.dynamic_state_value.shading_rate_image_enable) {
-                skip |=
-                    ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV,
-                                              cb_state, objlist, loc, vuid.set_viewport_shading_rate_palette_09234);
-                if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) &&
-                    cb_state.dynamic_state_value.shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
-                    skip |= LogError(
-                        vuid.shading_rate_palette_08637, cb_state.Handle(), loc,
-                        "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                        " and viewportCount set with vkCmdSetViewportShadingRatePaletteNV() was %" PRIu32 ".",
-                        cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
-                }
-            }
         }
 
         const bool line_rasterization_extension =

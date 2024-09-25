@@ -1109,6 +1109,22 @@ bool LastBound::IsCoverageModulationTableEnable() const {
     return false;
 }
 
+bool LastBound::IsShadingRateImageEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
+            return cb_state.dynamic_state_value.shading_rate_image_enable;
+        }
+    } else {
+        if (auto viewport_state = pipeline_state->ViewportState()) {
+            if (const auto *shading_rate_image_state =
+                    vku::FindStructInPNextChain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(viewport_state->pNext)) {
+                return shading_rate_image_state->shadingRateImageEnable;
+            }
+        }
+    }
+    return false;
+}
+
 VkCoverageModulationModeNV LastBound::GetCoverageModulationMode() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {

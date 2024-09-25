@@ -123,7 +123,8 @@ dynamic_state_map = {
         "dependency" : ["rasterizerDiscardEnable", "sampleLocationsEnable"]
     },
     "VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV" : {
-        "command" : ["vkCmdSetViewportShadingRatePaletteNV"]
+        "command" : ["vkCmdSetViewportShadingRatePaletteNV"],
+        "dependency" : ["rasterizerDiscardEnable", "shadingRateImageEnable"]
     },
     "VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV" : {
         "command" : ["vkCmdSetCoarseSampleOrderNV"],
@@ -519,6 +520,13 @@ class DynamicStateOutputGenerator(BaseGenerator):
                     ss << "vkCmdSetCoverageModulationTableEnableNV last set coverageModulationTableEnable to VK_TRUE.\\n";
                 } else {
                     ss << "VkPipelineMultisampleStateCreateInfo::pNext->VkPipelineCoverageModulationStateCreateInfoNV::coverageModulationTableEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'shadingRateImageEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)) {
+                    ss << "vkCmdSetShadingRateImageEnableNV last set shadingRateImageEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportShadingRateImageStateCreateInfoNV::shadingRateImageEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
 
             out.append('    break;')
