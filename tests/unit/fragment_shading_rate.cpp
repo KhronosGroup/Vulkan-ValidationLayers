@@ -35,43 +35,43 @@ TEST_F(NegativeFragmentShadingRate, Values) {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     fragmentSize.width = 0;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04513");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 0;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04514");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
 
     fragmentSize.width = 3;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04515");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 3;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04516");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
 
     fragmentSize.width = 8;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04517");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 8;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-04518");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeFragmentShadingRate, ValuesNoFeatures) {
@@ -87,11 +87,11 @@ TEST_F(NegativeFragmentShadingRate, ValuesNoFeatures) {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04509");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeFragmentShadingRate, CombinerOpsNoFeatures) {
@@ -116,21 +116,21 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsNoFeatures) {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-primitiveFragmentShadingRate-04510");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
 
     combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-attachmentFragmentShadingRate-04511");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeFragmentShadingRate, CombinerOpsNoPipelineRate) {
@@ -157,16 +157,16 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsNoPipelineRate) {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     fragmentSize.width = 2;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04507");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.width = 1;
 
     fragmentSize.height = 2;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-pipelineFragmentShadingRate-04508");
-    vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
     m_errorMonitor->VerifyFound();
     fragmentSize.height = 1;
 }
@@ -200,11 +200,11 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     if (fsr_features.primitiveFragmentShadingRate) {
         combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
-        vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+        vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
         m_errorMonitor->VerifyFound();
         combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
     }
@@ -212,11 +212,11 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
     if (fsr_features.attachmentFragmentShadingRate) {
         combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
-        vk::CmdSetFragmentShadingRateKHR(m_commandBuffer->handle(), &fragmentSize, combinerOps);
+        vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
         m_errorMonitor->VerifyFound();
         combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
     }
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewportLimitDynamic) {
@@ -264,17 +264,17 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     VkViewport viewports[] = {{0, 0, 16, 16, 0, 1}, {1, 1, 16, 16, 0, 1}};
-    vk::CmdSetViewportWithCountEXT(m_commandBuffer->handle(), 2, viewports);
+    vk::CmdSetViewportWithCountEXT(m_command_buffer.handle(), 2, viewports);
 
     // error produced here.
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitiveFragmentShadingRateWithMultipleViewports-04552");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1285,15 +1285,15 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(rp_bi_no_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(rp_bi_no_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+        vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
         m_errorMonitor->VerifyFound();
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
     }
 
-    m_commandBuffer->reset();
+    m_command_buffer.reset();
     secondary.reset();
 
     // Test case where primary command buffer has FSR attachment but secondary
@@ -1304,16 +1304,16 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+        vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
         m_errorMonitor->VerifyFound();
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
     }
 
-    m_commandBuffer->reset();
+    m_command_buffer.reset();
     secondary.reset();
 
     // Test case where both command buffers have FSR attachments but they are
@@ -1324,17 +1324,17 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+        vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
     }
 
-    m_commandBuffer->reset();
+    m_command_buffer.reset();
     secondary.reset();
 }
 
@@ -1992,11 +1992,11 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         m_vOffsets[1].x = 1;
         m_vOffsets[1].y = 1;
 
-        m_commandBuffer->reset();
-        m_commandBuffer->begin();
+        m_command_buffer.reset();
+        m_command_buffer.begin();
 
         // begin renderpass that uses rbpi1 renderpass begin info
-        vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi1, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginRenderPass(m_command_buffer.handle(), &rpbi1, VK_SUBPASS_CONTENTS_INLINE);
 
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapOffsets-06503");
 
@@ -2016,14 +2016,14 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508");
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511");
-        vk::CmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
+        vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpassEndInfo);
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->reset();
-        m_commandBuffer->begin();
+        m_command_buffer.reset();
+        m_command_buffer.begin();
 
         // begin renderpass that uses rbpi2 renderpass begin info
-        vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi2, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginRenderPass(m_command_buffer.handle(), &rpbi2, VK_SUBPASS_CONTENTS_INLINE);
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-y-06513");
@@ -2037,7 +2037,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508");
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
         m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510");
-        vk::CmdEndRenderPass2KHR(m_commandBuffer->handle(), &subpassEndInfo);
+        vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpassEndInfo);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2193,17 +2193,17 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     // Error trying to convert it to SRI layout
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-oldLayout-02088");
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_errorMonitor->VerifyFound();
 
     // succeed converting it to GENERAL
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
 
     // if the view is non-NULL, it must be R8_UINT, USAGE_SRI, image layout must match, layout must be valid
@@ -2211,7 +2211,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadingRateImageNV-imageView-02061");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadingRateImageNV-imageView-02062");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadingRateImageNV-imageLayout-02063");
-    vk::CmdBindShadingRateImageNV(m_commandBuffer->handle(), nonSRIview, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    vk::CmdBindShadingRateImageNV(m_command_buffer.handle(), nonSRIview, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
 
     VkShadingRatePaletteEntryNV paletteEntries[100] = {};
@@ -2222,12 +2222,12 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067");
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068");
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069");
-    vk::CmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 20, 2, palettes);
+    vk::CmdSetViewportShadingRatePaletteNV(m_command_buffer.handle(), 20, 2, palettes);
     m_errorMonitor->VerifyFound();
 
     // shadingRatePaletteEntryCount must be in range
     m_errorMonitor->SetDesiredError("VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071");
-    vk::CmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 0, 1, palettes);
+    vk::CmdSetViewportShadingRatePaletteNV(m_command_buffer.handle(), 0, 1, palettes);
     m_errorMonitor->VerifyFound();
 
     VkCoarseSampleLocationNV locations[100] = {
@@ -2292,7 +2292,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
             for (uint32_t i = 0; i < test_case.vuids.size(); ++i) {
                 m_errorMonitor->SetDesiredError(test_case.vuids[i].c_str());
             }
-            vk::CmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
+            vk::CmdSetCoarseSampleOrderNV(m_command_buffer.handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
             if (test_case.vuids.size()) {
                 m_errorMonitor->VerifyFound();
             } else {
@@ -2300,11 +2300,11 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         }
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081");
-        vk::CmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_PIXEL_MAJOR_NV, 1, &sampOrdGood);
+        vk::CmdSetCoarseSampleOrderNV(m_command_buffer.handle(), VK_COARSE_SAMPLE_ORDER_TYPE_PIXEL_MAJOR_NV, 1, &sampOrdGood);
         m_errorMonitor->VerifyFound();
     }
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
@@ -2375,19 +2375,19 @@ TEST_F(NegativeFragmentShadingRate, StageUsage) {
     const vkt::Event event(*m_device);
     const vkt::Event event2(*m_device);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent2-stageMask-07316");
-    vk::CmdResetEvent2KHR(*m_commandBuffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vk::CmdResetEvent2KHR(m_command_buffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-07318");
-    vk::CmdSetEvent(*m_commandBuffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vk::CmdSetEvent(m_command_buffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-shadingRateImage-07314");
-    vk::CmdWriteTimestamp(*m_commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
@@ -2402,19 +2402,19 @@ TEST_F(NegativeFragmentShadingRate, StageUsageNV) {
     const vkt::Event event(*m_device);
     const vkt::Event event2(*m_device);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent2-stageMask-07316");
-    vk::CmdResetEvent2KHR(*m_commandBuffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vk::CmdResetEvent2KHR(m_command_buffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-07318");
-    vk::CmdSetEvent(*m_commandBuffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vk::CmdSetEvent(m_command_buffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-shadingRateImage-07314");
-    vk::CmdWriteTimestamp(*m_commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 TEST_F(NegativeFragmentShadingRate, ImageMaxLimitsQCOM) {
     TEST_DESCRIPTION("Tests physical device limits for VK_QCOM_fragment_density_map_offset.");

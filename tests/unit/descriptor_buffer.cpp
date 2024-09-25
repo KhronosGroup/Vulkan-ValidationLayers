@@ -236,13 +236,13 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
         plci.pSetLayouts = &dsl.handle();
         vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-        m_commandBuffer->begin();
+        m_command_buffer.begin();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-None-08068");
-        vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+        vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                        pipeline_layout.handle(), 0);
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->end();
+        m_command_buffer.end();
     }
 }
 
@@ -264,12 +264,12 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledBufferDeviceAddress) {
 
     d_buffer.memory().destroy();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-None-08047");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeDescriptorBuffer, NotEnabledGetBufferOpaqueCaptureDescriptorDataEXT) {
@@ -530,7 +530,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
         GTEST_SKIP() << "bufferlessPushDescriptors is supported";
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     vkt::Buffer d_buffer(*m_device, 4096,
                          VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT |
@@ -553,7 +553,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-bufferlessPushDescriptors-08056",
                                     descriptor_buffer_properties.maxDescriptorBufferBindings + 1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-08051");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), binding_infos.size(), binding_infos.data());
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), binding_infos.size(), binding_infos.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -568,7 +568,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptors) {
         GTEST_SKIP() << "bufferlessPushDescriptors is not supported";
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     vkt::Buffer d_buffer(*m_device, 4096,
                          VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
@@ -592,11 +592,11 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptors) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-08051");
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-bufferlessPushDescriptors-08059",
                                     descriptor_buffer_properties.maxDescriptorBufferBindings + 1);
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), binding_infos.size(), binding_infos.data());
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), binding_infos.size(), binding_infos.data());
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-bufferlessPushDescriptors-08059");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 }
 
@@ -610,7 +610,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferOffsetAlignment) {
         GTEST_SKIP() << "descriptorBufferOffsetAlignment is 1";
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     vkt::Buffer d_buffer(*m_device, 4096,
                          VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT,
@@ -622,7 +622,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferOffsetAlignment) {
                  VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-address-08057");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 }
 
@@ -633,7 +633,7 @@ TEST_F(NegativeDescriptorBuffer, BindingInfoUsage) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     vkt::Buffer buffer(*m_device, 4096, 0, vkt::device_address);
 
@@ -643,13 +643,13 @@ TEST_F(NegativeDescriptorBuffer, BindingInfoUsage) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-usage-08122");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 
     dbbi.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-usage-08123");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 
     dbbi.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -658,7 +658,7 @@ TEST_F(NegativeDescriptorBuffer, BindingInfoUsage) {
     }
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-usage-08124");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 }
 
@@ -669,7 +669,7 @@ TEST_F(NegativeDescriptorBuffer, BindingInfoUsageMultiBuffers) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     vkt::Buffer buffer_good1(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
     vkt::Buffer buffer_good2(*m_device, 4096, VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
@@ -681,7 +681,7 @@ TEST_F(NegativeDescriptorBuffer, BindingInfoUsageMultiBuffers) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-usage-08122");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
     m_errorMonitor->VerifyFound();
 }
 
@@ -689,7 +689,7 @@ TEST_F(NegativeDescriptorBuffer, CmdBindDescriptorBufferEmbeddedSamplers) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     VkDescriptorSetLayoutBinding binding1 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
     vkt::DescriptorSetLayout dsl1(*m_device, binding1, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -707,11 +707,11 @@ TEST_F(NegativeDescriptorBuffer, CmdBindDescriptorBufferEmbeddedSamplers) {
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070");
-    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                    pipeline_layout.handle(), 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08071");
-    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                    pipeline_layout.handle(), 2);
     m_errorMonitor->VerifyFound();
 }
@@ -723,7 +723,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     VkDescriptorSetLayoutBinding binding1 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
     vkt::DescriptorSetLayout dsl1(*m_device, binding1, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -745,7 +745,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = buffer.address();
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
 
     uint32_t index = 0;
     VkDeviceSize offset = 0;
@@ -754,7 +754,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
         index = 0;
         offset = 1;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08061");
-        vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(),
                                              0, 1, &index, &offset);
         m_errorMonitor->VerifyFound();
     }
@@ -763,7 +763,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
     offset = 0;
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08064");
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065");
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                          &index, &offset);
     m_errorMonitor->VerifyFound();
 
@@ -772,7 +772,7 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-08066");
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 3,
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 3,
                                          indices, offsets);
     m_errorMonitor->VerifyFound();
 
@@ -801,12 +801,12 @@ TEST_F(NegativeDescriptorBuffer, CmdSetDescriptorBufferOffsets) {
 
         const uint32_t indices_2[2] = {0, 0};
         const VkDeviceSize offsets_2[2] = {0, 0};
-        vk::CmdBindDescriptorBuffersEXT(*m_commandBuffer, 1, &dbbi);
+        vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
         // complain about set layout for set 0
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006");
         // complain about set layout for set 1
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-firstSet-09006");
-        vk::CmdSetDescriptorBufferOffsetsEXT(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_2, 0, 2, indices_2,
+        vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_2, 0, 2, indices_2,
                                              offsets_2);
         m_errorMonitor->VerifyFound();
     }
@@ -820,7 +820,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     VkDescriptorSetLayoutBinding binding1 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
     vkt::DescriptorSetLayout dsl1(*m_device, binding1, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -878,24 +878,24 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     dbbi.address = common_address;
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
 
     constexpr uint32_t index = 0;
 
     // First call should succeed because offset is small enough to fit in large_buffer
     const VkDeviceSize offset = small_buffer_size;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                          &index, &offset);
 
     large_buffer.destroy();
     // Large buffer has been deleted, its entry in the address to buffers map must have been as well.
     // Since offset is too large to fit in small buffer, vkCmdSetDescriptorBufferOffsetsEXT should fail
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-08063");
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                          &index, &offset);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
@@ -929,21 +929,21 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     CreateComputePipelineHelper pipe(*this);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
 
     uint32_t index = 0;
     VkDeviceSize offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                                          &index, &offset);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08117");
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
@@ -986,17 +986,17 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
     ASSERT_EQ(VK_SUCCESS, pipe.CreateComputePipeline());
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &ds->handle(), 0, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08115");
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeDescriptorBuffer, BindPoint) {
@@ -1598,10 +1598,10 @@ TEST_F(NegativeDescriptorBuffer, Binding) {
                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-08010");
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
@@ -1615,7 +1615,7 @@ TEST_F(NegativeDescriptorBuffer, Binding) {
     bind_ds_info.pDynamicOffsets = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-08010");
-    vk::CmdBindDescriptorSets2KHR(m_commandBuffer->handle(), &bind_ds_info);
+    vk::CmdBindDescriptorSets2KHR(m_command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1640,17 +1640,17 @@ TEST_F(NegativeDescriptorBuffer, InvalidDescriptorBufferUsage) {
     binding_info.address = d_buffer.address();
     binding_info.usage = buffer_ci.usage | 0x80000000;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-None-09499");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1u, &binding_info);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1u, &binding_info);
     m_errorMonitor->VerifyFound();
 
     binding_info.usage = 0u;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferBindingInfoEXT-None-09500");
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1u, &binding_info);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1u, &binding_info);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {

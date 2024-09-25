@@ -1310,7 +1310,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     // Introduce error, do not call vk::BindImageMemory(device(), image, image_mem, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-00003");
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     VkClearColorValue ccv;
     ccv.float32[0] = 1.0f;
     ccv.float32[1] = 1.0f;
@@ -1322,8 +1322,8 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     isr.baseMipLevel = 0;
     isr.layerCount = 1;
     isr.levelCount = 1;
-    vk::CmdClearColorImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &isr);
-    m_commandBuffer->end();
+    vk::CmdClearColorImage(m_command_buffer.handle(), image, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &isr);
+    m_command_buffer.end();
 
     m_errorMonitor->VerifyFound();
 }
@@ -1357,11 +1357,11 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     region.imageExtent.height = 4;
     region.imageExtent.width = 4;
     region.imageExtent.depth = 1;
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeMemory, DedicatedAllocationBinding) {

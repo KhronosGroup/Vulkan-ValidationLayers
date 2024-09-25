@@ -243,12 +243,12 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
@@ -288,15 +288,15 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     VkBool32 color_blend_enabled[2] = {VK_FALSE, VK_FALSE};  // disable any blending
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 2, color_blend_enabled);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0, 2, color_blend_enabled);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {

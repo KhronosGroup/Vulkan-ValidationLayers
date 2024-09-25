@@ -84,10 +84,10 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
         vkt::Buffer ib;
         ib.init(*m_device, buffCI);
 
-        m_commandBuffer->begin();
-        vk::CmdFillBuffer(m_commandBuffer->handle(), ib.handle(), 0, 16, 5);
-        m_commandBuffer->end();
-        m_default_queue->Submit(*m_commandBuffer);
+        m_command_buffer.begin();
+        vk::CmdFillBuffer(m_command_buffer.handle(), ib.handle(), 0, 16, 5);
+        m_command_buffer.end();
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }

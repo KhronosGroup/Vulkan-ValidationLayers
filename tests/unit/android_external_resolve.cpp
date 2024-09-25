@@ -458,11 +458,11 @@ TEST_F(NegativeAndroidExternalResolve, ImagelessFramebuffer) {
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-09354");
-    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    m_command_buffer.BeginRenderPass(render_pass_bi);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeAndroidExternalResolve, ImagelessFramebufferFormat) {
@@ -580,11 +580,11 @@ TEST_F(NegativeAndroidExternalResolve, ImagelessFramebufferFormat) {
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-09353");
-    m_commandBuffer->BeginRenderPass(render_pass_bi);
+    m_command_buffer.BeginRenderPass(render_pass_bi);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
@@ -661,13 +661,13 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
     begin_rendering_info.pDepthAttachment = &ds_attachment;
     begin_rendering_info.pStencilAttachment = &ds_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
     // One for depth and stencil attachment
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pDepthAttachment-09318");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-pStencilAttachment-09319");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.colorAttachmentCount = 2;
@@ -677,7 +677,7 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
     begin_rendering_info.pStencilAttachment = nullptr;
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-colorAttachmentCount-09320");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -751,13 +751,13 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRenderingResolveModeNonNullColor) 
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     color_attachment.resolveImageView = resolve_view.handle();
     color_attachment.imageView = VK_NULL_HANDLE;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-resolveMode-09329");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     color_attachment.imageView = color_view.handle();
@@ -765,7 +765,7 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRenderingResolveModeNonNullColor) 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-resolveMode-09326");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-resolveMode-09327");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -907,11 +907,11 @@ TEST_F(NegativeAndroidExternalResolve, MissingImageUsage) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06865");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-colorAttachmentCount-09476");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -983,21 +983,21 @@ TEST_F(NegativeAndroidExternalResolve, ClearAttachment) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06865");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-09298");
     VkClearAttachment clear_depth_attachment;
     clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
     clear_depth_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {32, 32}}, 0, 1};
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_depth_attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(m_command_buffer.handle(), 1, &clear_depth_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
@@ -1080,21 +1080,21 @@ TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06865");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_2_BIT);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_2_BIT);
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-09363");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09365");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizationSamples-07474");
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
@@ -1162,7 +1162,7 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1181,17 +1181,17 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrier) {
     dependency_info.imageMemoryBarrierCount = 1;
     dependency_info.pImageMemoryBarriers = &barrier;
     // Valid because outside renderpass
-    vk::CmdPipelineBarrier2KHR(*m_commandBuffer, &dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_command_buffer, &dependency_info);
 
-    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-image-09374");
     barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier2KHR(*m_commandBuffer, &dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_command_buffer, &dependency_info);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeAndroidExternalResolve, PipelineBarrierUnused) {
@@ -1269,8 +1269,8 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrierUnused) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle());
 
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -1283,13 +1283,13 @@ TEST_F(NegativeAndroidExternalResolve, PipelineBarrierUnused) {
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-09373");
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &image_barrier);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeAndroidExternalResolve, RenderPassAndFramebuffer) {

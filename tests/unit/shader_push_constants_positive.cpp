@@ -329,83 +329,83 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // case 1 - bind different layout with the same range
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // case 2 - bind layout with same range then push different range
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_b, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_b, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // case 3 - same range same layout then same range from a different layout and same range from the same layout
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_b, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_b, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // case 4 - same range same layout then diff range and same range update
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_c, VK_SHADER_STAGE_VERTEX_BIT, 16, pc_size, data);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_c, VK_SHADER_STAGE_VERTEX_BIT, 16, pc_size, data);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // case 5 - update push constant bind different layout with the same range then bind correct layout
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_b);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // case 6 - update push constant then bind different layout with overlapping range then bind correct layout
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_c);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_c);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // case 7 - bind different layout with different range then update push constant and bind correct layout
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_c);
-    vk::CmdPushConstants(m_commandBuffer->handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_c);
+    vk::CmdPushConstants(m_command_buffer.handle(), layout_a, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size, data);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_a);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
@@ -452,21 +452,21 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // Draw without ever pushing to the unused and empty pipelines
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderPushConstants, OffsetVector) {
@@ -501,9 +501,9 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
 
     const float data[16] = {};  // dummy data to match shader size
 
-    m_commandBuffer->begin();
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, data);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, data);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
@@ -550,9 +550,9 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
 
     const float data[12] = {};  // dummy data to match shader size
 
-    m_commandBuffer->begin();
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 12, data);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 12, data);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
@@ -686,13 +686,13 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
 
     const float data[16] = {};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {

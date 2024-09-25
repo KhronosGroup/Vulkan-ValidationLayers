@@ -108,8 +108,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     }
     vkt::Image image(*m_device, ci, vkt::set_layout);
 
-    m_commandBuffer->reset();
-    m_commandBuffer->begin();
+    m_command_buffer.reset();
+    m_command_buffer.begin();
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -126,10 +126,10 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     for (size_t i = 0; i < aspects.size(); ++i) {
         buffers[i].init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         copy.imageSubresource.aspectMask = aspects[i];
-        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffers[i].handle(), image.handle(),
+        vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffers[i].handle(), image.handle(),
                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     }
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
@@ -176,13 +176,13 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {128, 128, 1};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
-    vk::CmdCopyImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &copyRegion);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -313,13 +313,13 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     copy_region.imageExtent.width = 64;
     copy_region.imageExtent.depth = 1;
 
-    vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
-    m_commandBuffer->begin();
+    vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
+    m_command_buffer.begin();
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+    vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &copy_region);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Test to verify that views of multiplanar images have layouts tracked correctly
@@ -352,7 +352,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
@@ -366,17 +366,17 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -437,14 +437,14 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
@@ -505,12 +505,12 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }

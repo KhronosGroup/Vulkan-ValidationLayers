@@ -1057,21 +1057,21 @@ TEST_F(NegativeRenderPass, BeginRenderArea) {
     m_renderPassBeginInfo.renderArea.extent.height = 256;
 
     const char *vuid = "VUID-VkRenderPassBeginInfo-pNext-02852";
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
     m_renderPassBeginInfo.renderArea.offset.x = 1;
     m_renderPassBeginInfo.renderArea.extent.width = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.width) - 1;
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
     m_renderPassBeginInfo.renderArea.offset.x = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.offset.x);
     m_renderPassBeginInfo.renderArea.extent.width = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.width);
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &m_renderPassBeginInfo, rp2Supported, vuid, vuid);
 
     m_renderPassBeginInfo.renderArea.offset.x = 0;
     m_renderPassBeginInfo.renderArea.extent.width = 256;
     m_renderPassBeginInfo.renderArea.offset.y = 1;
     m_renderPassBeginInfo.renderArea.extent.height = vvl::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.height) - 1;
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &m_renderPassBeginInfo, rp2Supported,
                         "VUID-VkRenderPassBeginInfo-pNext-02853", "VUID-VkRenderPassBeginInfo-pNext-02853");
 }
 
@@ -1083,12 +1083,12 @@ TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
     InitRenderTarget();
 
     // Bind a BeginRenderPass within an active RenderPass
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Just use a dummy Renderpass
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-renderpass");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     m_errorMonitor->VerifyFound();
 
@@ -1096,7 +1096,7 @@ TEST_F(NegativeRenderPass, BeginWithinRenderPass) {
         auto subpassBeginInfo = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass2-renderpass");
-        vk::CmdBeginRenderPass2KHR(m_commandBuffer->handle(), &m_renderPassBeginInfo, &subpassBeginInfo);
+        vk::CmdBeginRenderPass2KHR(m_command_buffer.handle(), &m_renderPassBeginInfo, &subpassBeginInfo);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1137,7 +1137,7 @@ TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
     auto rp_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp2.handle(), fb.handle(), VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
 
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rp_begin, false,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rp_begin, false,
                         "VUID-VkRenderPassBeginInfo-renderPass-00904", nullptr);
 }
 
@@ -1208,7 +1208,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
         vkt::Framebuffer fb_invalid(*m_device, fbci);
         rp_begin.renderPass = rp_invalid.handle();
         rp_begin.framebuffer = fb_invalid.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rp_begin, rp2Supported, rp1_vuid, rp2_vuid);
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rp_begin, rp2Supported, rp1_vuid, rp2_vuid);
     };
 
     // Initial layout is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but attachment doesn't support IMAGE_USAGE_COLOR_ATTACHMENT_BIT
@@ -1330,7 +1330,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
         rp_begin.framebuffer = fb;
         rp_begin.renderArea.extent = {fb_width, fb_height};
 
-        TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rp_begin, true, rp1_vuid, rp2_vuid);
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rp_begin, true, rp1_vuid, rp2_vuid);
     };
 
     test(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, "VUID-vkCmdBeginRenderPass-initialLayout-02842",
@@ -1432,7 +1432,7 @@ TEST_F(NegativeRenderPass, BeginClearOpMismatch) {
     rp_begin.renderArea.extent = {1, 1};
     rp_begin.clearValueCount = 0;  // Should be 1
 
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rp_begin, rp2Supported,
                         "VUID-VkRenderPassBeginInfo-clearValueCount-00902", "VUID-VkRenderPassBeginInfo-clearValueCount-00902");
 }
 
@@ -1489,12 +1489,12 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
         vku::InitStruct<VkRenderPassBeginInfo>(&rp_sl_begin, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
 
     attachment_sample_locations.attachmentIndex = 1;
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rp_begin, false,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rp_begin, false,
                         "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531", nullptr);
     attachment_sample_locations.attachmentIndex = 0;
 
     subpass_sample_locations.subpassIndex = 1;
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rp_begin, false,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rp_begin, false,
                         "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532", nullptr);
 }
 
@@ -1511,12 +1511,12 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer());
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer());
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyRenderPass-renderPass-00873");
     vk::DestroyRenderPass(device(), rp.Handle(), nullptr);
@@ -1618,15 +1618,15 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     sec_cb.begin(&cbbi);
     sec_cb.end();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00099");
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cb.handle());
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &sec_cb.handle());
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, FramebufferIncompatibleNoHandle) {
@@ -1660,14 +1660,14 @@ TEST_F(NegativeRenderPass, NullRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Don't care about RenderPass handle b/c error should be flagged before
     // that
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), NULL, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), NULL, VK_SUBPASS_CONTENTS_INLINE);
 
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
@@ -1715,16 +1715,16 @@ TEST_F(NegativeRenderPass, EndCommandBufferWithinRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::EndCommandBuffer(m_command_buffer.handle());
 
     m_errorMonitor->VerifyFound();
 
     // End command buffer properly to avoid driver issues. This is safe -- the
     // previous vk::EndCommandBuffer should not have reached the driver.
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     // TODO: Add test for VK_COMMAND_BUFFER_LEVEL_SECONDARY
     // TODO: Add test for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
@@ -1762,17 +1762,17 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
     cbii.subpass = 0;
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
-    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::BeginCommandBuffer(m_command_buffer.handle(), &cbbi);
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     // Finalize recording of the command buffer
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->VerifyFound();
 }
@@ -1844,17 +1844,17 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     cbii.subpass = 0;
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
-    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cbbi);
-    m_commandBuffer->BeginRenderPass(rp1.handle(), fb.handle(), 128, 128);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::BeginCommandBuffer(m_command_buffer.handle(), &cbbi);
+    m_command_buffer.BeginRenderPass(rp1.handle(), fb.handle(), 128, 128);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (the error should trigger on the attempt to draw).
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     // Finalize recording of the command buffer
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
     m_errorMonitor->VerifyFound();
 }
 
@@ -1877,11 +1877,11 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
     // Don't call vk::CmdEndRenderPass; as the begin has been "skipped" based on the error condition
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 class RenderPassCreatePotentialFormatFeaturesTest : public NegativeRenderPass {
@@ -2210,33 +2210,33 @@ TEST_F(NegativeRenderPass, RenderArea) {
     rpbinfo.clearValueCount = 1;
     rpbinfo.pClearValues = m_renderPassClearValues.data();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02850");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.offset.x = 0;
     rpbinfo.renderArea.offset.y = -128;
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02851");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.offset.y = 0;
     rpbinfo.renderArea.extent.width = m_width + 128;
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02852");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     rpbinfo.renderArea.extent.width = m_width;
     rpbinfo.renderArea.extent.height = m_height + 1;
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02853");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
@@ -2268,11 +2268,11 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
     rpbinfo.clearValueCount = 1;
     rpbinfo.pClearValues = m_renderPassClearValues.data();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06166");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-offset-06167");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
     renderArea.offset.x = 0;
@@ -2282,10 +2282,10 @@ TEST_F(NegativeRenderPass, DeviceGroupRenderArea) {
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02856");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-02857");
-    m_commandBuffer->BeginRenderPass(rpbinfo);
+    m_command_buffer.BeginRenderPass(rpbinfo);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, RenderPassBeginNullValues) {
@@ -2296,7 +2296,7 @@ TEST_F(NegativeRenderPass, RenderPassBeginNullValues) {
     auto rpbi = m_renderPassBeginInfo;
     rpbi.clearValueCount = 1;
     rpbi.pClearValues = nullptr;  // clearValueCount != 0, but pClearValues = null, leads to 04962
-    TestRenderPassBegin(m_errorMonitor, device(), m_commandBuffer->handle(), &rpbi, false,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &rpbi, false,
                         "VUID-VkRenderPassBeginInfo-clearValueCount-04962", nullptr);
 }
 
@@ -2435,14 +2435,14 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     pipe.ds_ci_.stencilTestEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), width, height, 1, m_renderPassClearValues.data());
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
@@ -2820,13 +2820,13 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
     // ms_render_to_ss.rasterizationSamples != ms_state.rasterizationSamples
     // Valid because never hit draw time
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_helper.Handle());
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_helper.Handle());
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
     VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
@@ -2856,11 +2856,11 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     vkt::ImageView two_count_image_view(*m_device, image_view_ci);
 
     color_attachment.imageView = two_count_image_view.handle();
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Attachments must have a sample count that is either VK_SAMPLE_COUNT_1_BIT or
     // VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples.
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06858");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2871,7 +2871,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     // Attachments with a sample count of VK_SAMPLE_COUNT_1_BIT must have been created with
     // VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06859");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
@@ -2886,14 +2886,14 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.imageView = good_one_count_image_view.handle();
     // If resolveMode is not VK_RESOLVE_MODE_NONE, imageView must not have a sample count of VK_SAMPLE_COUNT_1_BIT
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     color_attachment.imageView = two_count_image_view.handle();
     color_attachment.resolveImageView = VK_NULL_HANDLE;
     // If resolveMode is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.pNext = &ms_render_to_ss;
@@ -2901,7 +2901,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     color_attachment.resolveImageView = good_one_count_image_view.handle();
     // If imageView has a sample count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06863");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
     // Positive Test: Image view with VK_SAMPLE_COUNT_1_BIT should not get error 07285 in pipeline created with attachment with
@@ -2914,20 +2914,20 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     begin_rendering_info.pNext = nullptr;
     color_attachment.resolveImageView = VK_NULL_HANDLE;
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
-    m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
-    m_commandBuffer->EndRendering();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    m_command_buffer.EndRendering();
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
 
     // Positive Test: Same as previous test but using render pass and should not get error 07284
     CreatePipelineHelper test_pipe(*this);
     test_pipe.ms_ci_ = ms_state;
     test_pipe.CreateGraphicsPipeline();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
 
     // Find an image format that can't be sampled
     image_format_prop = vku::InitStructHelper();
@@ -2973,7 +2973,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
         color_attachment.imageView = unsampleable_image_view.handle();
         // Attachment must have a format that supports the sample count specified in rasterizationSamples
         m_errorMonitor->SetDesiredError("VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880");
-        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_command_buffer.BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
 
         attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3023,7 +3023,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
             renderPassBeginInfo.renderArea.extent.height = 64;
             renderPassBeginInfo.framebuffer = imageless_fb.handle();
             m_errorMonitor->SetDesiredError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
-            m_commandBuffer->BeginRenderPass(renderPassBeginInfo);
+            m_command_buffer.BeginRenderPass(renderPassBeginInfo);
             m_errorMonitor->VerifyFound();
             attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
         }
@@ -3146,18 +3146,18 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
     clear_values[0].color = {{0, 0, 0, 0}};
     clear_values[1].color = {{0, 0, 0, 0}};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
-    m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
+    m_command_buffer.BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
-    m_commandBuffer->BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
+    m_command_buffer.BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
@@ -3233,17 +3233,17 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     clear_values[0].color = {{0, 0, 0, 0}};
     clear_values[1].color = {{0, 0, 0, 0}};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
-    m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
+    m_command_buffer.BeginRenderPass(render_pass2.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
-    m_commandBuffer->BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
+    m_command_buffer.BeginRenderPass(render_pass3.handle(), framebuffer.handle(), width, height, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
@@ -3307,21 +3307,21 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
     pipe.gp_ci_.renderPass = render_pass2.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-00904");
-    m_commandBuffer->BeginRenderPass(render_pass2.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
+    m_command_buffer.BeginRenderPass(render_pass2.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->BeginRenderPass(render_pass1.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.BeginRenderPass(render_pass1.handle(), framebuffer.handle(), 32, 32, 2, clear_values);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-02684");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    vk::CmdEndRenderPass(m_command_buffer.handle());
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, SubpassAttachmentImageLayout) {
@@ -3677,50 +3677,50 @@ TEST_F(NegativeRenderPass, BeginInfoWithoutRenderPass) {
     TEST_DESCRIPTION("call VkRenderPassBeginInfo with invalid renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-renderPass-parameter");
     m_renderPassBeginInfo.renderPass = CastFromUint64<VkRenderPass>(0xFFFFEEEE);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
     m_renderPassBeginInfo.renderPass = VK_NULL_HANDLE;
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, BeginInfoWithoutFramebuffer) {
     TEST_DESCRIPTION("call VkRenderPassBeginInfo with invalid framebuffer");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
     m_renderPassBeginInfo.framebuffer = CastFromUint64<VkFramebuffer>(0xFFFFEEEE);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, EndWithoutRenderPass) {
     TEST_DESCRIPTION("call vkCmdEndRenderPass never starting a renderpass");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndRenderPass-renderpass");
-    m_commandBuffer->EndRenderPass();
+    m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, RenderPassBegin) {
     TEST_DESCRIPTION("have an invalid pRenderPassBegin");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), nullptr, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), nullptr, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, IncompatibleFramebuffer) {
@@ -3757,19 +3757,19 @@ TEST_F(NegativeRenderPass, ZeroRenderArea) {
     TEST_DESCRIPTION("renderArea set to zero");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-None-08996");
     m_renderPassBeginInfo.renderArea.extent = {0, 64};
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-None-08997");
     m_renderPassBeginInfo.renderArea.extent = {64, 0};
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, InvalidAttachmentDescriptionDSLayout) {
@@ -3960,13 +3960,13 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     image_memory_barrier.image = image.handle();
     image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
 
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-initialLayout-00900");
-    m_commandBuffer->BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptorSets) {
@@ -4011,9 +4011,9 @@ TEST_F(NegativeRenderPass, ImageSubresourceOverlapBetweenCurrentRenderPassAndDes
 
     VkClearValue clear_values[2] = {m_renderPassClearValues[0], m_renderPassClearValues[0]};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass.handle(), framebuffer(), width, height, 2, clear_values);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(render_pass.handle(), framebuffer(), width, height, 2, clear_values);
+    m_command_buffer.end();
 
     m_errorMonitor->VerifyFound();
 }
@@ -4048,11 +4048,11 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
     m_renderPassBeginInfo.pNext = &rp_stripe_info;
     m_renderPassBeginInfo.renderArea = {{0, 0}, {stripe_width * stripe_count, stripe_height}};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeInfoCount-09450");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     stripe_count = 8;
     stripe_infos.resize(stripe_count);
@@ -4066,13 +4066,13 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i].stripeArea.extent.height = stripe_height;
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     const uint32_t half_stripe_width = stripe_width / 2;
     for (uint32_t i = 0; i < stripe_count; ++i) {
@@ -4082,13 +4082,13 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i].stripeArea.extent.height = stripe_height;
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     const uint32_t non_align_stripe_width = stripe_width - 12;
     m_renderPassBeginInfo.renderArea.extent.width = (stripe_width * (stripe_count - 1)) + non_align_stripe_width + 4;
@@ -4099,12 +4099,12 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i].stripeArea.extent.height = stripe_height;
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-09539");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     m_renderPassBeginInfo.renderArea.extent = {stripe_width, stripe_height * stripe_count};
     const uint32_t half_stripe_height = stripe_height / 2;
@@ -4115,13 +4115,13 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i].stripeArea.extent.height = i == 2 ? half_stripe_height : stripe_height;
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeBeginInfoARM-stripeArea-09451");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     const uint32_t non_align_stripe_height = stripe_height - 12;
     m_renderPassBeginInfo.renderArea.extent.height = (stripe_height * (stripe_count - 1)) + non_align_stripe_height + 4;
@@ -4132,12 +4132,12 @@ TEST_F(NegativeRenderPass, BeginRenderPassWithRenderPassStriped) {
         stripe_infos[i].stripeArea.extent.height = i == 7 ? non_align_stripe_height : stripe_height;
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-pNext-09539");
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
@@ -4228,12 +4228,12 @@ TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-contents-09640");
-    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo,
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo,
                            VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature2) {
@@ -4247,9 +4247,9 @@ TEST_F(NegativeRenderPass, MissingNestedCommandBuffersFeature2) {
     auto subpassBeginInfo =
         vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-VkSubpassBeginInfo-contents-09382");
-    vk::CmdBeginRenderPass2KHR(m_commandBuffer->handle(), &m_renderPassBeginInfo, &subpassBeginInfo);
+    vk::CmdBeginRenderPass2KHR(m_command_buffer.handle(), &m_renderPassBeginInfo, &subpassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }

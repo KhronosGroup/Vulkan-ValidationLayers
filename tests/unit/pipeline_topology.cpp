@@ -310,13 +310,13 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnable) {
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.begin();
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09637");
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    vk::CmdEndRenderPass(m_command_buffer.handle());
+    m_command_buffer.end();
 }

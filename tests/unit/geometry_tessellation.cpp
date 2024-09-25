@@ -428,15 +428,15 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGsShaderObject) {
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {vertShader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, geomShader.handle(), fragShader.handle()};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5, stages, shaders);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5, stages, shaders);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpVariable-08746");
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents) {
@@ -1594,14 +1594,14 @@ TEST_F(NegativeGeometryTessellation, WritingToLayerWithSingleFramebufferLayer) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredWarning("Undefined-Layer-Written");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeGeometryTessellation, DrawDynamicPrimitiveTopology) {
@@ -1642,14 +1642,14 @@ TEST_F(NegativeGeometryTessellation, DrawDynamicPrimitiveTopology) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     // Invalid - matches the Geometry output, but we need to match the input
-    vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicPrimitiveTopologyUnrestricted-07500");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }

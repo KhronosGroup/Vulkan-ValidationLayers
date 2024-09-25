@@ -314,11 +314,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // This copy is not legal since both buffers share same device memory range, and none of them will be rebound
     // to non overlapping device memory ranges. Reported at queue submit
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -327,7 +327,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
@@ -401,10 +401,10 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -413,7 +413,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-pRegions-00117", 3);
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
@@ -485,9 +485,9 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     copy_info.dstOffset = buffer_mem_reqs.alignment / 2;  // dstOffset is the start of buffer_mem_2, or 0 in this space
                                                           // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment;
-    m_commandBuffer->begin();
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -496,7 +496,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
@@ -567,11 +567,11 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy4) {
     ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
     // Set up complete
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // This copy is not legal since both buffers share same device memory range, and none of them will be rebound
     // to non overlapping device memory ranges. Reported at queue submit
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_commandBuffer->end();
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    m_command_buffer.end();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -580,7 +580,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy4) {
     submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &mask;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);

@@ -307,17 +307,17 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maxFragmentDualSrcAttachments-09239");
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {

@@ -200,23 +200,23 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     vk::BindImageMemory(device(), image.handle(), image_memory.handle(), 0);
 
     // Now execute arbitrary commands that use the test buffer and image
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     // Fill buffer with 0
-    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_WHOLE_SIZE, 0);
+    vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_WHOLE_SIZE, 0);
 
     // Transition and clear image
     const auto subresource_range = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
     const auto barrier = image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                                     VK_IMAGE_LAYOUT_GENERAL, subresource_range);
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     const VkClearColorValue color = {};
-    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color, 1, &subresource_range);
+    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color, 1, &subresource_range);
 
     // Submit and verify no validation errors
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -259,23 +259,23 @@ TEST_F(PositiveMemory, BindMemory2) {
     vk::BindImageMemory2KHR(device(), 1, &image_bind_info);
 
     // Now execute arbitrary commands that use the test buffer and image
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     // Fill buffer with 0
-    vk::CmdFillBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_WHOLE_SIZE, 0);
+    vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_WHOLE_SIZE, 0);
 
     // Transition and clear image
     const auto subresource_range = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
     const auto barrier = image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                                     VK_IMAGE_LAYOUT_GENERAL, subresource_range);
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     const VkClearColorValue color = {};
-    vk::CmdClearColorImage(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color, 1, &subresource_range);
+    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color, 1, &subresource_range);
 
     // Submit and verify no validation errors
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 

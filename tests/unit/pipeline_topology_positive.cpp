@@ -445,13 +445,13 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(renderPass(), framebuffer(), 32, 32, m_renderPassClearValues.size(),
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(renderPass(), framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositivePipelineTopology, LineTopologyClasses) {

@@ -47,14 +47,14 @@ TEST_F(PositiveMesh, BasicUsage) {
     pipe.gp_ci_.pInputAssemblyState = nullptr;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveMesh, MeshShaderOnly) {

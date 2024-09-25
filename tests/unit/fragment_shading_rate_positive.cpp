@@ -27,12 +27,12 @@ TEST_F(PositiveFragmentShadingRate, StageInVariousAPIs) {
     const vkt::Event event(*m_device);
     const vkt::Event event2(*m_device);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Different API calls to cover three category of VUIDs: 07316, 07318, 07314
-    vk::CmdResetEvent2KHR(*m_commandBuffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    vk::CmdSetEvent(*m_commandBuffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    vk::CmdWriteTimestamp(*m_commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
-    m_commandBuffer->end();
+    vk::CmdResetEvent2KHR(m_command_buffer, event, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vk::CmdSetEvent(m_command_buffer, event2, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, query_pool, 0);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
@@ -67,11 +67,11 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     imageMemoryBarrier.subresourceRange.layerCount = 1;
     imageMemoryBarrier.subresourceRange.levelCount = 1;
 
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                            VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0u, 0u, nullptr, 0u, nullptr, 1u,
                            &imageMemoryBarrier);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveFragmentShadingRate, Attachments) {

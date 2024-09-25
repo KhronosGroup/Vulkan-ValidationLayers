@@ -239,17 +239,17 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // Copy from input buffer to output buffer through the exported/imported memory
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     VkBufferCopy copy_info = {0, 0, buffer_size};
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_input.handle(), buffer_export.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_input.handle(), buffer_export.handle(), 1, &copy_info);
     // Insert memory barrier to guarantee copy order
     VkMemoryBarrier mem_barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT,
                                    VK_ACCESS_TRANSFER_READ_BIT};
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
                            &mem_barrier, 0, nullptr, 0, nullptr);
-    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 

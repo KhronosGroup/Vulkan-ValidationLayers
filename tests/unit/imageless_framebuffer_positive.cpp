@@ -132,10 +132,10 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(render_pass_bi);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(render_pass_bi);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {

@@ -174,15 +174,15 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
 
     const uint32_t buffer_size = 32;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 4, 8, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 4, 8, VK_INDEX_TYPE_UINT32);
 
-    vk::CmdBindIndexBuffer2KHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer_size, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 0, buffer_size, VK_INDEX_TYPE_UINT32);
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveBuffer, IndexBufferNull) {
@@ -195,15 +195,15 @@ TEST_F(PositiveBuffer, IndexBufferNull) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndexed(m_commandBuffer->handle(), 0, 1, 0, 0, 0);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndexed(m_command_buffer.handle(), 0, 1, 0, 0, 0);
 
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexed(m_commandBuffer->handle(), 0, 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_command_buffer.handle(), 0, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveBuffer, BufferViewUsageBasic) {

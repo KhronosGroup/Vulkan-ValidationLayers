@@ -91,14 +91,14 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "test";
-    vk::CmdBeginDebugUtilsLabelEXT(*m_commandBuffer, &label);
-    vk::CmdEndDebugUtilsLabelEXT(*m_commandBuffer);
-    m_commandBuffer->end();
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
