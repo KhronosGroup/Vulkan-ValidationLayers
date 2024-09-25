@@ -1009,9 +1009,7 @@ bool LastBound::IsColorWriteEnabled(uint32_t i) const {
 }
 
 VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
-    if (!pipeline_state) {
-        return GetShaderState(ShaderObjectStage::VERTEX)->GetTopology();
-    } else if (pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         return cb_state.dynamic_state_value.primitive_topology;
     } else {
         return pipeline_state->topology_at_rasterizer;

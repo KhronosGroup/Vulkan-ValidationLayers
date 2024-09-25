@@ -191,6 +191,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
                 vuid_str = vuid.set_clip_space_w_scaling_04138;
                 break;
+            case CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
+                vuid_str = vuid.patch_control_points_04875;
+                break;
             default:
                 assert(false);
                 break;
@@ -212,8 +215,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     const bool vertex_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
     const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
     const bool geom_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::GEOMETRY);
-    const bool tessev_shader_bound =
-        has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION);
+    const bool tesc_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL);
+    const bool tese_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION);
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer,
     // for Shader Object, everything is dynamic don't need a mask
@@ -377,8 +380,19 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT, vuid);
     }
 
-    if (tessev_shader_bound) {
+    if (tese_shader_bound) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT, vuid);
+    }
+
+    if (tesc_shader_bound) {
+        // Don't call GetPrimitiveTopology() because want to view the Topology from the dynamic state for ShaderObjects
+        const VkPrimitiveTopology topology =
+            (!last_bound_state.pipeline_state || last_bound_state.pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY))
+                ? cb_state.dynamic_state_value.primitive_topology
+                : last_bound_state.pipeline_state->topology_at_rasterizer;
+        if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, vuid);
+        }
     }
 
     if (geom_shader_bound) {
@@ -453,12 +467,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer
     const CBDynamicFlags state_status_cb = ~((cb_state.dynamic_state_status.cb ^ pipeline.dynamic_state) & pipeline.dynamic_state);
-
-    // VK_EXT_extended_dynamic_state2
-    {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, cb_state, objlist, loc,
-                                          vuid.patch_control_points_04875);
-    }
 
     // VK_EXT_extended_dynamic_state3
     {
@@ -1492,10 +1500,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                           vuid.set_line_width_08617);
     }
 
-    if (tessev_shader_bound) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, cb_state,
-                                          objlist, loc, vuid.patch_control_points_04875);
-    }
     if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                           vuid.set_line_width_08619);

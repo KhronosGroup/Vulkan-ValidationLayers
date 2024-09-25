@@ -3348,6 +3348,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
     const VkShaderEXT shaders[] = {vertShader.handle(), tescShader.handle(), teseShader.handle(), VK_NULL_HANDLE,
                                    fragShader.handle()};
     vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
+    vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
