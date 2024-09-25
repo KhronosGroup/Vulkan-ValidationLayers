@@ -1125,6 +1125,22 @@ bool LastBound::IsShadingRateImageEnable() const {
     return false;
 }
 
+bool LastBound::IsViewportWScalingEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
+            return cb_state.dynamic_state_value.viewport_w_scaling_enable;
+        }
+    } else {
+        if (auto viewport_state = pipeline_state->ViewportState()) {
+            if (const auto *viewport_w_scaling_state =
+                    vku::FindStructInPNextChain<VkPipelineViewportWScalingStateCreateInfoNV>(viewport_state->pNext)) {
+                return viewport_w_scaling_state->viewportWScalingEnable;
+            }
+        }
+    }
+    return false;
+}
+
 VkCoverageModulationModeNV LastBound::GetCoverageModulationMode() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {

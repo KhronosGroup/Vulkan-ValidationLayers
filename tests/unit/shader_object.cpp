@@ -2420,7 +2420,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingEnableNV) {
 TEST_F(NegativeShaderObject, MissingCmdSetViewportWScalingNV) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetViewportWScalingNV.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09232");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-04138");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08636");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());

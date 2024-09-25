@@ -267,7 +267,7 @@ struct DrawDispatchVuid {
     const char* vertex_input_format_08937 = kVUIDUndefined;
     const char* vertex_input_format_09203 = kVUIDUndefined;
     const char* vertex_input_format_07939 = kVUIDUndefined;
-    const char* set_clip_space_w_scaling_09232 = kVUIDUndefined;
+    const char* set_clip_space_w_scaling_04138 = kVUIDUndefined;
     const char* set_discard_rectangle_09236 = kVUIDUndefined;
     const char* set_viewport_coarse_sample_order_09233 = kVUIDUndefined;
     const char* set_viewport_shading_rate_palette_09234 = kVUIDUndefined;

@@ -107,7 +107,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetPrimitiveRestartEnable"]
     },
     "VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV" : {
-        "command" : ["vkCmdSetViewportWScalingNV"]
+        "command" : ["vkCmdSetViewportWScalingNV"],
+        "dependency" : ["viewportWScalingEnable"]
     },
     "VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT" : {
         "command" : ["vkCmdSetDiscardRectangleEXT"]
@@ -527,6 +528,13 @@ class DynamicStateOutputGenerator(BaseGenerator):
                     ss << "vkCmdSetShadingRateImageEnableNV last set shadingRateImageEnable to VK_TRUE.\\n";
                 } else {
                     ss << "VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportShadingRateImageStateCreateInfoNV::shadingRateImageEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                }''')
+            if 'viewportWScalingEnable' in dependency:
+                out.append('''
+                if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
+                    ss << "vkCmdSetViewportWScalingEnableNV last set viewportWScalingEnable to VK_TRUE.\\n";
+                } else {
+                    ss << "VkPipelineViewportStateCreateInfo::pNext->VkPipelineViewportWScalingStateCreateInfoNV::viewportWScalingEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
 
             out.append('    break;')
