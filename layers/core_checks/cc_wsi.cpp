@@ -181,7 +181,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
         VkSurfacePresentScalingCapabilitiesEXT scaling_caps =
             surface_state->GetPresentModeScalingCapabilities(physical_device, present_mode);
 
-        if ((scaling_caps.supportedPresentScaling != 0) &&
+        if ((scaling_caps.supportedPresentScaling != 0) && (pres_scale_ci->scalingBehavior != 0) &&
             (scaling_caps.supportedPresentScaling & pres_scale_ci->scalingBehavior) == 0) {
             if (LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-scalingBehavior-07770", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::scalingBehavior),
@@ -193,7 +193,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             }
         }
 
-        if ((scaling_caps.supportedPresentGravityX != 0) &&
+        if ((scaling_caps.supportedPresentGravityX != 0) && (pres_scale_ci->presentGravityX != 0) &&
             (scaling_caps.supportedPresentGravityX & pres_scale_ci->presentGravityX) == 0) {
             if (LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07772", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityX),
@@ -206,7 +206,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
             }
         }
 
-        if ((scaling_caps.supportedPresentGravityY != 0) &&
+        if ((scaling_caps.supportedPresentGravityY != 0) && (pres_scale_ci->presentGravityY != 0) &&
             (scaling_caps.supportedPresentGravityY & pres_scale_ci->presentGravityY) == 0) {
             if (LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07774", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityY),
@@ -242,7 +242,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                 scaling_caps =
                     surface_state->GetPresentModeScalingCapabilities(physical_device, present_modes_ci->pPresentModes[i]);
 
-                if ((scaling_caps.supportedPresentScaling != 0) &&
+                if ((scaling_caps.supportedPresentScaling != 0) && (pres_scale_ci->scalingBehavior != 0) &&
                     (scaling_caps.supportedPresentScaling & pres_scale_ci->scalingBehavior) == 0) {
                     if (LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-scalingBehavior-07771", device,
                                  create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::scalingBehavior),
@@ -255,7 +255,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                     }
                 }
 
-                if ((scaling_caps.supportedPresentGravityX != 0) &&
+                if ((scaling_caps.supportedPresentGravityX != 0) && (pres_scale_ci->presentGravityX != 0) &&
                     (scaling_caps.supportedPresentGravityX & pres_scale_ci->presentGravityX) == 0) {
                     if (LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityX-07773", device,
                                  create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityX),
@@ -268,7 +268,7 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
                     }
                 }
 
-                if ((scaling_caps.supportedPresentGravityY != 0) &&
+                if ((scaling_caps.supportedPresentGravityY != 0) && (pres_scale_ci->presentGravityY != 0) &&
                     (scaling_caps.supportedPresentGravityY & pres_scale_ci->presentGravityY) == 0) {
                     if (LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-presentGravityY-07775", device,
                                  create_info_loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityY),

@@ -3581,3 +3581,30 @@ TEST_F(NegativeWsi, NonSupportedPresentMode) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, SwapchainMaintenance1DeferredMemoryFlags) {
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
+    swapchain_ci.surface = m_surface;
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-flags-parameter");
+    vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &m_swapchain);
+    m_errorMonitor->VerifyFound();
+}
