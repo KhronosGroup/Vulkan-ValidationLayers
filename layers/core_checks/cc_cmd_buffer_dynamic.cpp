@@ -185,6 +185,12 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_FRONT_FACE:
                 vuid_str = vuid.dynamic_front_face_07841;
                 break;
+            case CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT:
+                vuid_str = vuid.viewport_count_03417;
+                break;
+            case CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT:
+                vuid_str = vuid.scissor_count_03418;
+                break;
             case CB_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV:
                 vuid_str = vuid.set_viewport_coarse_sample_order_09233;
                 break;
@@ -376,6 +382,19 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                                   CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, vuid);
             }
+        }
+    }
+
+    if (cb_state.inheritedViewportDepths.empty()) {
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, vuid);
+        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT, vuid);
+    }
+    if (has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && has_dynamic_state(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
+        if (cb_state.dynamic_state_value.viewport_count != cb_state.dynamic_state_value.scissor_count) {
+            skip |= LogError(vuid.viewport_and_scissor_with_count_03419, cb_state.Handle(), vuid.loc(),
+                             "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
+                             " and scissorCount set with vkCmdSetScissorWithCount() was %" PRIu32 ".",
+                             cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
         }
     }
 
@@ -954,43 +973,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& la
                                  missing_scissor_mask);
             }
         }
-
-        const bool dyn_viewport_count = pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        const bool dyn_scissor_count = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-
-        if (dyn_viewport_count && !dyn_scissor_count) {
-            const auto required_viewport_mask = (1 << viewport_state->scissorCount) - 1;
-            const auto missing_viewport_mask = ~cb_state.viewportWithCountMask & required_viewport_mask;
-            if (missing_viewport_mask || !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) {
-                skip |= LogError(vuid.viewport_count_03417, objlist, vuid.loc(),
-                                 "Dynamic viewport with count 0x%x are used by pipeline state object, but were not provided "
-                                 "via calls to vkCmdSetViewportWithCountEXT().",
-                                 missing_viewport_mask);
-            }
-        }
-
-        if (dyn_scissor_count && !dyn_viewport_count) {
-            const auto required_scissor_mask = (1 << viewport_state->viewportCount) - 1;
-            const auto missing_scissor_mask = ~cb_state.scissorWithCountMask & required_scissor_mask;
-            if (missing_scissor_mask || !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
-                skip |= LogError(vuid.scissor_count_03418, objlist, vuid.loc(),
-                                 "Dynamic scissor with count 0x%x are used by pipeline state object, but were not provided via "
-                                 "calls to vkCmdSetScissorWithCountEXT().",
-                                 missing_scissor_mask);
-            }
-        }
-
-        if (dyn_scissor_count && dyn_viewport_count) {
-            if (cb_state.viewportWithCountMask != cb_state.scissorWithCountMask ||
-                !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ||
-                !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
-                skip |= LogError(vuid.viewport_scissor_count_03419, objlist, vuid.loc(),
-                                 "Dynamic viewport and scissor with count 0x%x are used by pipeline state object, but were not "
-                                 "provided via matching calls to "
-                                 "vkCmdSetViewportWithCountEXT and vkCmdSetScissorWithCountEXT().",
-                                 (cb_state.viewportWithCountMask ^ cb_state.scissorWithCountMask));
-            }
-        }
     }
 
     // If inheriting viewports, verify that not using more than inherited.
@@ -1409,18 +1391,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         isLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
     bool geom_shader_line_topology =
         geom_shader_bound && isLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
-
-    if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ||
-        !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
-        skip |= LogError(vuid.viewport_and_scissor_with_count_08635, cb_state.Handle(), loc,
-                         "Graphics shader objects are bound, but vkCmdSetViewportWithCount() and "
-                         "vkCmdSetScissorWithCount() were not both called.");
-    } else if (cb_state.dynamic_state_value.viewport_count != cb_state.dynamic_state_value.scissor_count) {
-        skip |= LogError(vuid.viewport_and_scissor_with_count_08635, cb_state.Handle(), loc,
-                         "Graphics shader objects are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                         " and scissorCount set with vkCmdSetScissorWithCount() was %" PRIu32 ".",
-                         cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
-    }
 
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
         for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {

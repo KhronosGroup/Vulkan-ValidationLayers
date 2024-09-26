@@ -209,7 +209,7 @@ struct DrawDispatchVuid {
     const char* stippled_bresenham_lines_07496 = kVUIDUndefined;
     const char* stippled_smooth_lines_07497 = kVUIDUndefined;
     const char* stippled_default_strict_07498 = kVUIDUndefined;
-    const char* viewport_and_scissor_with_count_08635 = kVUIDUndefined;
+    const char* viewport_and_scissor_with_count_03419 = kVUIDUndefined;
     const char* viewport_w_scaling_08636 = kVUIDUndefined;
     const char* shading_rate_palette_08637 = kVUIDUndefined;
     const char* external_format_resolve_09362 = kVUIDUndefined;
