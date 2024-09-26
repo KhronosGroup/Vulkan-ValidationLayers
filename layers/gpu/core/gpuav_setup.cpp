@@ -342,7 +342,7 @@ void Validator::InitSettings(const Location &loc) {
         if (!enabled_features.bufferDeviceAddress) {
             shader_instrumentation.bindless_descriptor = false;
             InternalWarning(device, loc,
-                            "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not enabled "
+                            "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not supported "
                             "[Disabling gpuav_descriptor_checks]");
         }
     }
@@ -350,13 +350,14 @@ void Validator::InitSettings(const Location &loc) {
     if (shader_instrumentation.buffer_device_address) {
         const bool bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
                                                IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                                              supported_features.shaderInt64 && enabled_features.bufferDeviceAddress);
+                                              enabled_features.shaderInt64 && enabled_features.bufferDeviceAddress);
         if (!bda_validation_possible) {
             shader_instrumentation.buffer_device_address = false;
-            if (!supported_features.shaderInt64) {
-                InternalWarning(device, loc,
-                                "Buffer device address validation option was enabled, but the shaderInt64 feature is not enabled. "
-                                "[Disabling gpuav_buffer_address_oob].");
+            if (!enabled_features.shaderInt64) {
+                InternalWarning(
+                    device, loc,
+                    "Buffer device address validation option was enabled, but the shaderInt64 feature is not supported. "
+                    "[Disabling gpuav_buffer_address_oob].");
             } else {
                 InternalWarning(device, loc,
                                 "Buffer device address validation option was enabled, but required buffer device address extension "
@@ -367,6 +368,7 @@ void Validator::InitSettings(const Location &loc) {
 
     if (shader_instrumentation.ray_query) {
         if (!enabled_features.rayQuery) {
+            // TODO - Force on if possible, issue is we need to potentially enable all the dependency extensions
             shader_instrumentation.ray_query = false;
             InternalWarning(device, loc,
                             "Ray Query validation option was enabled, but the rayQuery feature is not enabled. "
@@ -379,7 +381,7 @@ void Validator::InitSettings(const Location &loc) {
         if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
             gpuav_settings.validate_buffer_copies = false;
             InternalWarning(device, loc,
-                            "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature is not enabled. "
+                            "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature is not supported. "
                             "[Disabling gpuav_buffer_copies]");
         }
     }
