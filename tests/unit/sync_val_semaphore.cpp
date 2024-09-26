@@ -20,31 +20,27 @@
 struct NegativeSyncValTimelineSemaphore : public VkSyncValTest {};
 
 TEST_F(NegativeSyncValTimelineSemaphore, WaitInitialValue) {
-    TEST_DESCRIPTION("Wait on the initial value finishes before signal. This results in WAW hazard");
+    TEST_DESCRIPTION("Wait on the initial value");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    m_command_buffer.begin();
+    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
-    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
-    command_buffer2.begin();
-    command_buffer2.Copy(buffer_a, buffer_b);
-    command_buffer2.end();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
 
-    // Wait for the initial value results in no wait
+    // Wait on the initial value 0 does not synchronize with signal 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_default_queue->Submit2WithTimelineSemaphore(command_buffer2, vkt::wait, semaphore, 0);
+    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 0);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncValTimelineSemaphore, WaitInitialValueTwoQueues) {
-    TEST_DESCRIPTION("Wait on the initial value finishes before signal. This results in WAW hazard");
+    TEST_DESCRIPTION("Wait on the initial value");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_second_queue) {
@@ -62,31 +58,30 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitInitialValueTwoQueues) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
 
-    // Wait for the initial value results in no wait
+    // Wait on the initial value 0 does not synchronize with signal 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
     m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 0);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
 
-TEST_F(NegativeSyncValTimelineSemaphore, SignalThenWaitStageMismatch) {
-    TEST_DESCRIPTION("Hazard due to semaphore stage mask mismatch in signal then wait scenario");
+TEST_F(NegativeSyncValTimelineSemaphore, WaitAfterSignalStageMismatch) {
+    TEST_DESCRIPTION("Hazard due to stage mask mismatch");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    m_command_buffer.begin();
+    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
-    vkt::CommandBuffer command_buffer2(*m_device, m_command_pool);
-    command_buffer2.begin();
-    command_buffer2.Copy(buffer_a, buffer_b);
-    command_buffer2.end();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    // Signal first scope includes only CLEAR commands but not COPY commands
     m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 2, VK_PIPELINE_STAGE_2_CLEAR_BIT);
+
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_default_queue->Submit2WithTimelineSemaphore(command_buffer2, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
+    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -110,8 +105,11 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignal) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+
+    // Resolve waint on the main queue
     m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
 
+    // Writes on the second queue collide with writes on the main queue
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
     m_second_queue->Submit2(m_second_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -119,7 +117,7 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignal) {
 }
 
 TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalEmptyWaitScope) {
-    TEST_DESCRIPTION("Hazard due to semaphore stage mask mismatch in wait before signal scenario");
+    TEST_DESCRIPTION("Hazard due to stage mask mismatch");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_second_queue) {
@@ -136,9 +134,10 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalEmptyWaitScope) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    // Buffer copy starts immediately because wait stage mask does not cover copy operation
+    // Buffer copy starts immediately because VERTEX_SHADER stage does not include copy operation
     m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
 
+    // TODO: this should be detected as WRITE-RACING-WRITE error
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 1);
     m_errorMonitor->VerifyFound();
@@ -149,7 +148,7 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalEmptyWaitScope) {
 }
 
 TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalAfterNoDepsBatch) {
-    TEST_DESCRIPTION("Check that batch without dependencies is processed correctly if followed by wait-before-signal batch");
+    TEST_DESCRIPTION("Batch without dependencies is followed by wait-before-signal batch");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_second_queue) {
@@ -157,7 +156,6 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalAfterNoDepsBatch) {
     }
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
     m_command_buffer.begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
@@ -176,7 +174,7 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalAfterNoDepsBatch) {
     semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     VkSubmitInfo2 submits[2];
-    // the first batch is a regular batch with a copy job
+    // the first batch is a batch with a copy job
     submits[0] = vku::InitStructHelper();
     submits[0].commandBufferInfoCount = 1;
     submits[0].pCommandBufferInfos = &cbuf_info;
@@ -186,26 +184,25 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalAfterNoDepsBatch) {
     submits[1].pWaitSemaphoreInfos = &semaphore_info;
     vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
 
-    // submit signal to resolve wait
+    // Submit signal to resolve the wait
     m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+
+    // Submit one more copy to collide with a copy on the default queue
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    // submit one more copy job to collide with a copy on the default queue
     m_second_queue->Submit2(m_second_command_buffer, vkt::wait, semaphore, 1);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
 
 TEST_F(NegativeSyncValTimelineSemaphore, HostSignal) {
-    TEST_DESCRIPTION("Host semaphore signal breaks synchronization between two submits");
+    TEST_DESCRIPTION("Host signal breaks synchronization between two submits");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_second_queue) {
         GTEST_SKIP() << "Two queues are needed";
     }
-
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
     m_command_buffer.begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
@@ -216,7 +213,7 @@ TEST_F(NegativeSyncValTimelineSemaphore, HostSignal) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
 
-    // Finish the previous wait, so both submits can run in parallel.
+    // Finish the previous wait, so both submits can run in parallel
     semaphore.Signal(1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
@@ -226,7 +223,7 @@ TEST_F(NegativeSyncValTimelineSemaphore, HostSignal) {
 }
 
 TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits) {
-    TEST_DESCRIPTION("Signal resolves two wait-before-signal waits");
+    TEST_DESCRIPTION("One signal resolves two wait-before-signal waits");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_second_queue) {
@@ -234,7 +231,6 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits) {
     }
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
     m_command_buffer.begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
@@ -255,7 +251,35 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits) {
 }
 
 TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits2) {
-    TEST_DESCRIPTION("Signal resolves two wait-before-signal waits");
+    TEST_DESCRIPTION("One signal resolves two wait-before-signal waits");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+    m_second_command_buffer.begin();
+    m_second_command_buffer.Copy(buffer_a, buffer_b);
+    m_second_command_buffer.end();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 2);
+    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
+    semaphore.Signal(2);
+    m_errorMonitor->VerifyFound();
+
+    // Unblock queue threads (the previous call did not reach Record phase)
+    semaphore.Signal(2);
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits3) {
+    TEST_DESCRIPTION("One signal resolves two wait-before-signal waits");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_third_queue) {
@@ -263,7 +287,6 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits2) {
     }
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
     m_command_buffer.begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
@@ -283,8 +306,8 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits2) {
     m_device->Wait();
 }
 
-TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits3) {
-    TEST_DESCRIPTION("Signal resolves two waits");
+TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits4) {
+    TEST_DESCRIPTION("One signal resolves two waits");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
     if (!m_second_queue) {
@@ -292,7 +315,6 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits3) {
     }
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
     m_command_buffer.begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.end();
