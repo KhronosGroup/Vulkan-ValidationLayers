@@ -32,6 +32,7 @@ class FeatureRequirementsGenerator(BaseGenerator):
         # semantically different.  They are given a suffix to be distinguished.
         self.identical_but_different_features = {
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT',
+            'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV',
         }
 
     def generate(self):

@@ -9227,55 +9227,6 @@ void DispatchDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommand
     layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
 }
 
-VkResult DispatchCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator,
-                                               VkIndirectExecutionSetEXT* pIndirectExecutionSet) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.CreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator,
-                                                                               pIndirectExecutionSet);
-    vku::safe_VkIndirectExecutionSetCreateInfoEXT var_local_pCreateInfo;
-    vku::safe_VkIndirectExecutionSetCreateInfoEXT* local_pCreateInfo = nullptr;
-    {
-        if (pCreateInfo) {
-            local_pCreateInfo = &var_local_pCreateInfo;
-            local_pCreateInfo->initialize(pCreateInfo);
-            if (local_pCreateInfo->info.pPipelineInfo) {
-                if (pCreateInfo->info.pPipelineInfo->initialPipeline) {
-                    local_pCreateInfo->info.pPipelineInfo->initialPipeline =
-                        layer_data->Unwrap(pCreateInfo->info.pPipelineInfo->initialPipeline);
-                }
-            }
-            if (local_pCreateInfo->info.pShaderInfo) {
-                if (local_pCreateInfo->info.pShaderInfo->pInitialShaders) {
-                    for (uint32_t index3 = 0; index3 < local_pCreateInfo->info.pShaderInfo->shaderCount; ++index3) {
-                        local_pCreateInfo->info.pShaderInfo->pInitialShaders[index3] =
-                            layer_data->Unwrap(local_pCreateInfo->info.pShaderInfo->pInitialShaders[index3]);
-                    }
-                }
-                if (local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos) {
-                    for (uint32_t index3 = 0; index3 < local_pCreateInfo->info.pShaderInfo->shaderCount; ++index3) {
-                        if (local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts) {
-                            for (uint32_t index4 = 0;
-                                 index4 < local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].setLayoutCount; ++index4) {
-                                local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts[index4] =
-                                    layer_data->Unwrap(
-                                        local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts[index4]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    VkResult result = layer_data->device_dispatch_table.CreateIndirectExecutionSetEXT(
-        device, (const VkIndirectExecutionSetCreateInfoEXT*)local_pCreateInfo, pAllocator, pIndirectExecutionSet);
-    if (VK_SUCCESS == result) {
-        *pIndirectExecutionSet = layer_data->WrapNew(*pIndirectExecutionSet);
-    }
-    return result;
-}
-
 void DispatchDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                             const VkAllocationCallbacks* pAllocator) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);

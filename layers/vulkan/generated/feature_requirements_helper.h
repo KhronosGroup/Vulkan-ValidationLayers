@@ -195,9 +195,9 @@ enum class Feature {
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
     deviceGeneratedComputePipelines,
     // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
-    dynamicGeneratedPipelineLayout,
-    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
     deviceGeneratedCommands,
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
+    dynamicGeneratedPipelineLayout,
     // VkPhysicalDeviceDeviceMemoryReportFeaturesEXT
     deviceMemoryReport,
     // VkPhysicalDeviceDiagnosticsConfigFeaturesNV
