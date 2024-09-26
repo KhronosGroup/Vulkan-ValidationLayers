@@ -32,7 +32,7 @@ SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_st
       timeline_value(timeline_value) {}
 
 SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, uint64_t timeline_value)
-    : semaphore_state(semaphore_state), timeline_value(timeline_value) {}
+    : semaphore_state(semaphore_state), first_scope(kQueueIdInvalid, SyncExecScope{}), timeline_value(timeline_value) {}
 
 SignalInfo::SignalInfo(const std::shared_ptr<const vvl::Semaphore>& semaphore_state, const PresentedImage& presented,
                        ResourceUsageTag acquire_tag)
