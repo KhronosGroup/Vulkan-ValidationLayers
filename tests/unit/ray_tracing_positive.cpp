@@ -66,23 +66,23 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
     AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(Init());
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Build Bottom Level Acceleration Structure
     auto blas =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
-    blas->BuildCmdBuffer(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    blas->BuildCmdBuffer(m_command_buffer.handle());
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
-    tlas.BuildCmdBuffer(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    tlas.BuildCmdBuffer(m_command_buffer.handle());
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
@@ -201,18 +201,18 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
     stridebufregion.stride = ray_tracing_properties.shaderGroupHandleAlignment;
     stridebufregion.size = stridebufregion.stride;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
 
-    vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion, 100, 100,
+    vk::CmdTraceRaysKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion, 100, 100,
                         1);
 
     // pRayGenShaderBindingTable->deviceAddress == 0
     {
         VkStridedDeviceAddressRegionKHR valid_region = stridebufregion;
         valid_region.deviceAddress = 0;
-        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &valid_region, &stridebufregion, &stridebufregion, 100,
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &stridebufregion, &valid_region, &stridebufregion, &stridebufregion, 100,
                             100, 1);
     }
 
@@ -222,13 +222,13 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
         empty_region.deviceAddress += buffer.create_info().size + 128;
         empty_region.size = 0;
         empty_region.stride = 0;
-        vk::CmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &empty_region, &stridebufregion, &stridebufregion, 100,
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &stridebufregion, &empty_region, &stridebufregion, &stridebufregion, 100,
                             100, 1);
     }
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
 
     m_device->Wait();
 
@@ -279,7 +279,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     dependency_info.imageMemoryBarrierCount = 1;
     dependency_info.pImageMemoryBarriers = &image_barrier;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
@@ -293,9 +293,9 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabledRTXEnabled) {
@@ -344,7 +344,7 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     dependency_info.imageMemoryBarrierCount = 1;
     dependency_info.pImageMemoryBarriers = &image_barrier;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     // specify VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR as srcStageMask and dstStageMask
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
@@ -359,9 +359,9 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     image_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
-    vk::CmdPipelineBarrier2KHR(m_commandBuffer->handle(), &dependency_info);
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, BarrierSync1NoCrash) {
@@ -377,10 +377,10 @@ TEST_F(PositiveRayTracing, BarrierSync1NoCrash) {
     barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdPipelineBarrier-srcAccessMask-06257");
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), invalid_src_stage, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 1, &barrier, 0,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), invalid_src_stage, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 1, &barrier, 0,
                            nullptr, 0, nullptr);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
@@ -403,11 +403,11 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
         blas_vec.emplace_back(std::move(blas));
     }
 
-    m_commandBuffer->begin();
-    vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
+    m_command_buffer.begin();
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     for (auto& blas : blas_vec) {
@@ -416,10 +416,10 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList) {
         blas.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
     }
 
-    m_commandBuffer->begin();
-    vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.begin();
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
@@ -472,12 +472,12 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList2) {
     blas_vec.emplace_back(std::move(blas_0));
     blas_vec.emplace_back(std::move(blas_1));
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
-    vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
+    vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
@@ -523,11 +523,11 @@ TEST_F(PositiveRayTracing, AccelerationStructuresOverlappingMemory) {
             blas_vec.emplace_back(std::move(blas));
         }
 
-        m_commandBuffer->begin();
-        vkt::as::BuildAccelerationStructuresKHR(m_commandBuffer->handle(), blas_vec);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
+        m_command_buffer.end();
 
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
     }
 }
@@ -793,9 +793,9 @@ TEST_F(PositiveRayTracing, CmdBuildAccelerationStructuresIndirect) {
     RETURN_IF_SKIP(InitState());
 
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    m_commandBuffer->begin();
-    blas.BuildCmdBufferIndirect(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    blas.BuildCmdBufferIndirect(m_command_buffer.handle());
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
@@ -844,10 +844,10 @@ TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
         GTEST_SKIP() << "Binding two buffers to the same memory does not yield identical buffer addresses, skipping test.";
     }
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     blas.SetScratchBuffer(small_scratch_buffer);
-    blas.BuildCmdBuffer(*m_commandBuffer);
-    m_commandBuffer->end();
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, BasicTraceRays) {
@@ -909,7 +909,7 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -917,15 +917,15 @@ TEST_F(PositiveRayTracing, BasicTraceRays) {
     pipeline.Build();
 
     // Bind descriptor set, pipeline, and trace rays
-    m_commandBuffer->begin();
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+    m_command_buffer.begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
@@ -989,7 +989,7 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDeferredBuild) {
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -998,15 +998,15 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDeferredBuild) {
     RETURN_IF_SKIP(pipeline.Build());
 
     // Bind descriptor set, pipeline, and trace rays
-    m_commandBuffer->begin();
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+    m_command_buffer.begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
@@ -1070,18 +1070,18 @@ TEST_F(PositiveRayTracing, UpdatedFirstVertex) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
 
-    blas.BuildCmdBuffer(m_commandBuffer->handle());
+    blas.BuildCmdBuffer(m_command_buffer.handle());
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
     blas.SetSrcAS(blas.GetDstAS());
@@ -1091,8 +1091,8 @@ TEST_F(PositiveRayTracing, UpdatedFirstVertex) {
     build_range_infos[0].firstVertex = 666;
     blas.SetBuildRanges(build_range_infos);
 
-    blas.BuildCmdBuffer(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    blas.BuildCmdBuffer(m_command_buffer.handle());
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, BindGraphicsPipelineAfterRayTracingPipeline) {
@@ -1153,7 +1153,7 @@ TEST_F(PositiveRayTracing, BindGraphicsPipelineAfterRayTracingPipeline) {
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -1166,17 +1166,17 @@ TEST_F(PositiveRayTracing, BindGraphicsPipelineAfterRayTracingPipeline) {
     graphics_pipeline.CreateGraphicsPipeline();
 
     // Bind descriptor set, pipeline, and trace rays
-    m_commandBuffer->begin();
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+    m_command_buffer.begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.Handle());
-    vk::CmdSetLineWidth(*m_commandBuffer, 1.0f);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline.Handle());
+    vk::CmdSetLineWidth(m_command_buffer, 1.0f);
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
@@ -1194,16 +1194,16 @@ TEST_F(PositiveRayTracing, InstanceBufferBadAddress) {
     auto blas =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
 
-    m_commandBuffer->begin();
-    blas->BuildCmdBuffer(*m_commandBuffer);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    blas->BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     tlas.SetupBuild(*m_device, true);
 
     auto build_range_infos = tlas.GetDefaultBuildRangeInfos();
@@ -1212,8 +1212,8 @@ TEST_F(PositiveRayTracing, InstanceBufferBadAddress) {
 
     tlas.GetGeometries()[0].SetInstancesDeviceAddress(0);
 
-    tlas.VkCmdBuildAccelerationStructuresKHR(*m_commandBuffer);
-    m_commandBuffer->end();
+    tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveRayTracing, WriteAccelerationStructuresPropertiesDevice) {
@@ -1236,22 +1236,22 @@ TEST_F(PositiveRayTracing, WriteAccelerationStructuresPropertiesDevice) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, 1);
 
-    m_commandBuffer->begin();
-    blas.BuildCmdBuffer(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    blas.BuildCmdBuffer(m_command_buffer.handle());
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u);
-    vk::CmdWriteAccelerationStructuresPropertiesKHR(m_commandBuffer->handle(), 1, &blas.GetDstAS()->handle(),
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
+    vk::CmdWriteAccelerationStructuresPropertiesKHR(m_command_buffer.handle(), 1, &blas.GetDstAS()->handle(),
                                                     VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, query_pool.handle(), 0);
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0u, 1u, buffer, 0u, sizeof(uint64_t),
+    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0u, 1u, buffer, 0u, sizeof(uint64_t),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }

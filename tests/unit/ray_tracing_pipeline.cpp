@@ -913,21 +913,21 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), deferredOperation, VK_NULL_HANDLE, 1, &pipeline_ci,
                                                        nullptr, &pipeline);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     if (result == VK_OPERATION_DEFERRED_KHR) {
         result = vk::DeferredOperationJoinKHR(this->m_device->handle(), deferredOperation);
         ASSERT_EQ(result, VK_SUCCESS);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-parameter");
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
         m_errorMonitor->VerifyFound();
     }
 
     result = vk::GetDeferredOperationResultKHR(m_device->handle(), deferredOperation);
     ASSERT_EQ(result, VK_SUCCESS);
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
-    m_commandBuffer->end();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    m_command_buffer.end();
 
     vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
     vk::DestroyDeferredOperationKHR(m_device->handle(), deferredOperation, nullptr);
@@ -1063,7 +1063,7 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     vkt::rt::Pipeline pipeline(*this, m_device);
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
     pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);

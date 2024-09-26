@@ -78,37 +78,37 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vert_descriptor_set.UpdateDescriptorSets();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     // Should get a warning since shader was instrumented
     m_errorMonitor->SetDesiredWarning("VUID-vkCmdDraw-None-08613", 3);
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
     vert_create_info.pNext = nullptr;
     const vkt::Shader vertShader2(*m_device, vert_create_info);
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader2, fragShader);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+    m_command_buffer.BindVertFragShader(vertShader2, fragShader);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     // Should not get a warning since shader was not instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -225,25 +225,25 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     const vkt::Shader fs(*m_device, fs_ci);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_commandBuffer->begin(&begin_info);
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin(&begin_info);
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vs, fs);
+    m_command_buffer.BindVertFragShader(vs, fs);
 
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
                          &push_constants);
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
                          shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
     // Make sure pushing the same push constants twice does not break internal management
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
                          &push_constants);
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
                          shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
-    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.memory().map());
@@ -420,27 +420,27 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Submit commands
     // ---
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
-    m_commandBuffer->BindVertFragShader(vs, fs);
-    m_commandBuffer->BindCompShader(cs);
+    m_command_buffer.BindVertFragShader(vs, fs);
+    m_command_buffer.BindCompShader(cs);
 
-    vk::CmdPushConstants(m_commandBuffer->handle(), graphics_pipeline_layout.handle(),
+    vk::CmdPushConstants(m_command_buffer.handle(), graphics_pipeline_layout.handle(),
                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(graphics_push_constants),
                          &graphics_push_constants);
 
     // Vertex shader will write 4 values to graphics storage buffer, fragment shader another 4
-    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
-    m_commandBuffer->EndRendering();
+    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    m_command_buffer.EndRendering();
 
-    vk::CmdPushConstants(m_commandBuffer->handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+    vk::CmdPushConstants(m_command_buffer.handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
                          sizeof(compute_push_constants), &compute_push_constants);
     // Compute shaders will write 8 values to compute storage buffer
-    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_dispatch_parameters_buffer.handle(), 0);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.memory().map());

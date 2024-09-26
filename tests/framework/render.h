@@ -194,7 +194,6 @@ class VkRenderFramework : public VkTestFramework {
     uint32_t m_gpu_index;
     vkt::Device *m_device;
     vkt::CommandPool m_command_pool;
-    vkt::CommandBuffer *m_commandBuffer;  // DEPRECATED: use m_command_buffer
     vkt::CommandBuffer m_command_buffer;
     VkRenderPass m_renderPass = VK_NULL_HANDLE;
 

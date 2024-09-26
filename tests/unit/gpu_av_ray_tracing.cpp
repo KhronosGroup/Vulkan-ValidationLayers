@@ -139,23 +139,23 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     ray_query_dimensions_buffer_3.memory().unmap();
 
     // Trace rays
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
 
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline_layout.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline_layout.handle(), 0, 1,
                               &desc_set.set_, 0, nullptr);
 
-    vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
                                 ray_query_dimensions_buffer_1.address());
 
-    vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
                                 ray_query_dimensions_buffer_2.address());
 
-    vk::CmdTraceRaysIndirectKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
                                 ray_query_dimensions_buffer_3.address());
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[0]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[0]) <
         uint64_t(vvl::kU32Max)) {
@@ -169,7 +169,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
         uint64_t(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -251,7 +251,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     pipeline.CreateDescriptorSet();
 
     // Create TLAS
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, *m_commandBuffer));
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     // Create uniform_buffer
@@ -295,14 +295,14 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     RETURN_IF_SKIP(pipeline.Build());
 
     // Bind descriptor set, pipeline, and trace rays
-    m_commandBuffer->begin();
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+    m_command_buffer.begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(*m_commandBuffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }

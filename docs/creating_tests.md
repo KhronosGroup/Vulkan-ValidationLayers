@@ -180,7 +180,7 @@ m_errorMonitor->VerifyFound();
 ```cpp
 m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905");
 m_errorMonitor->SetDesiredError("VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907");
-vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 m_errorMonitor->VerifyFound();
 ```
 
@@ -189,7 +189,7 @@ m_errorMonitor->VerifyFound();
 ```cpp
 const char* vuid = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ? "VUID-vkCmdCopyImage-dstImage-01733" : "VUID-vkCmdCopyImage-dstImage-01733";
 m_errorMonitor->SetDesiredError(vuid);
-m_commandBuffer->CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+m_command_buffer.CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 m_errorMonitor->VerifyFound();
 ```
 

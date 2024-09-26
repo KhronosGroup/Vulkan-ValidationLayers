@@ -287,9 +287,9 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     copy_region.extent = {std::min(10u, m_surface_capabilities.minImageExtent.width),
                           std::min(10u, m_surface_capabilities.minImageExtent.height), 1};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain.handle(),
+    vk::CmdCopyImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 }
 
@@ -382,7 +382,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -395,7 +395,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
 
     VkImageCopy copy_region = {};
@@ -404,11 +404,11 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {test_extent_value, test_extent_value, 1};
-    vk::CmdCopyImage(m_commandBuffer->handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image.handle(),
+    vk::CmdCopyImage(m_command_buffer.handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -428,12 +428,12 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
 
     const VkImageMemoryBarrier present_transition =
         TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &present_transition);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -691,21 +691,21 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     vkt::Framebuffer fb1(*m_device, rp1.handle(), 1, &view.handle(), 1, 1);
     vkt::Framebuffer fb2(*m_device, rp2.handle(), 1, &view.handle(), 1, 1);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp1.handle(), fb1.handle());
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->BeginRenderPass(rp2.handle(), fb2.handle());
-    m_commandBuffer->EndRenderPass();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(rp1.handle(), fb1.handle());
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.BeginRenderPass(rp2.handle(), fb2.handle());
+    m_command_buffer.EndRenderPass();
 
     const VkImageMemoryBarrier present_transition =
         TransitionToPresent(swapchainImages[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0);
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(device(), 1, &fence.handle());
-    m_default_queue->Submit(*m_commandBuffer, fence);
+    m_default_queue->Submit(m_command_buffer, fence);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
@@ -1092,7 +1092,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
         GTEST_SKIP() << "protectedMemory feature not supported, skipped.";
     };
 
-    // Turns m_commandBuffer into a unprotected command buffer
+    // Turns m_command_buffer into a unprotected command buffer
     RETURN_IF_SKIP(InitState(nullptr, &protected_memory_features));
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
@@ -1349,11 +1349,11 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
 
     const VkImageMemoryBarrier present_transition = TransitionToPresent(images[imageIndex], VK_IMAGE_LAYOUT_UNDEFINED, 0);
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;
@@ -1376,16 +1376,16 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
 
     // Warm up. Show that we can reset command buffer after waiting on **submit** fence
     {
-        m_commandBuffer->begin();
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.end();
 
         vkt::Fence submit_fence(*m_device);
-        m_default_queue->Submit(*m_commandBuffer, submit_fence);
+        m_default_queue->Submit(m_command_buffer, submit_fence);
 
         vk::WaitForFences(device(), 1, &submit_fence.handle(), VK_TRUE, kWaitTimeout);
 
         // It's safe to reset command buffer because we waited on the fence
-        m_commandBuffer->reset();
+        m_command_buffer.reset();
     }
 
     // Main performance. Show that we can reset command buffer after waiting on **present** fence
@@ -1399,11 +1399,11 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         const VkImageMemoryBarrier present_transition =
             TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
 
-        m_commandBuffer->begin();
-        vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+        m_command_buffer.begin();
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &present_transition);
-        m_commandBuffer->end();
-        m_default_queue->Submit(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
+        m_command_buffer.end();
+        m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
 
         vkt::Fence present_fence(*m_device);
         VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
@@ -1426,7 +1426,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         //      submit semaphore signaled ->
         //      QueueSubmit workload has completed ->
         //      command buffer is no longer in use and we can reset it.
-        m_commandBuffer->reset();
+        m_command_buffer.reset();
     }
     m_default_queue->Wait();
 }

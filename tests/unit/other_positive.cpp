@@ -424,9 +424,9 @@ TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
     VkExtent2D fragment_size = {1, 1};
     std::array combiner_ops = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR, VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
-    m_commandBuffer->begin();
-    vk::CmdSetFragmentShadingRateKHR(*m_commandBuffer, &fragment_size, combiner_ops.data());
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdSetFragmentShadingRateKHR(m_command_buffer, &fragment_size, combiner_ops.data());
+    m_command_buffer.end();
 }
 
 TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
@@ -501,10 +501,10 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
     }
     RETURN_IF_SKIP(InitState());
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     VkBool32 exclusiveScissorEnable = VK_TRUE;
-    vk::CmdSetExclusiveScissorEnableNV(m_commandBuffer->handle(), 0u, 1u, &exclusiveScissorEnable);
-    m_commandBuffer->end();
+    vk::CmdSetExclusiveScissorEnableNV(m_command_buffer.handle(), 0u, 1u, &exclusiveScissorEnable);
+    m_command_buffer.end();
 }
 
 TEST_F(VkPositiveLayerTest, GetCalibratedTimestamps) {

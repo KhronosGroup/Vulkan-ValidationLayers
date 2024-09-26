@@ -9678,9 +9678,9 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
     cb.EndVideoCoding(context.End());
     cb.end();
 
-    m_commandBuffer->begin(&begin_info);
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), context.StatusQueryPool(), 0, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin(&begin_info);
+    vk::CmdResetQueryPool(m_command_buffer.handle(), context.StatusQueryPool(), 0, 1);
+    m_command_buffer.end();
 
     // Will fail as query pool has never been reset before
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pNext-08366");
@@ -9688,7 +9688,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Will succeed this time as we reset the query
@@ -9701,7 +9701,7 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Will succeed again after reset
@@ -9952,9 +9952,9 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
     cb.EndVideoCoding(context.End());
     cb.end();
 
-    m_commandBuffer->begin(&begin_info);
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), context.EncodeFeedbackQueryPool(), 0, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin(&begin_info);
+    vk::CmdResetQueryPool(m_command_buffer.handle(), context.EncodeFeedbackQueryPool(), 0, 1);
+    m_command_buffer.end();
 
     // Will fail as query pool has never been reset before
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pNext-08361");
@@ -9962,7 +9962,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Will succeed this time as we reset the query
@@ -9975,7 +9975,7 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Will succeed again after reset
@@ -12397,19 +12397,19 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBit) {
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09442");
     flags = 0;
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-09443");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(NegativeVideo, ImageLayoutUsageMismatch) {

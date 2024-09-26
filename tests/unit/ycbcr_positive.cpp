@@ -110,7 +110,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
 
     m_command_buffer.reset();
     m_command_buffer.begin();
-    image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     std::array<VkImageAspectFlagBits, 3> aspects = {
@@ -177,7 +177,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     copyRegion.extent = {128, 128, 1};
 
     m_command_buffer.begin();
-    image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
+    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
     vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &copyRegion);
     m_command_buffer.end();
@@ -315,7 +315,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
 
     vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
     m_command_buffer.begin();
-    image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &copy_region);
     m_command_buffer.end();

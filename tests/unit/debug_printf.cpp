@@ -55,13 +55,13 @@ void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *messa
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, message);
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -743,14 +743,14 @@ TEST_F(NegativeDebugPrintf, Empty) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "First printf with a % and no value");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Second printf with a value -135");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -789,17 +789,17 @@ TEST_F(NegativeDebugPrintf, MultipleFunctions) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "START");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "fn1 [0]");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "fn2 x [1]");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "fn2 !x [2]");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "END");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -829,16 +829,16 @@ TEST_F(NegativeDebugPrintf, Fragment) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_FragCoord.xy 10.50, 10.50");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_FragCoord.xy 10.50, 11.50");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -910,14 +910,14 @@ TEST_F(NegativeDebugPrintf, HLSL) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "launchIndex 2, 0");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "launchIndex 3, 0");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -973,14 +973,14 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
     VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.memory().map();
     data[0] = 0;
@@ -988,7 +988,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -998,15 +998,15 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     ptr[1] = 1;
     ptr[2] = 2;
     buffer.memory().unmap();
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     data = (VkDeviceAddress *)buffer_in.memory().map();
     data[0] = 1;
@@ -1014,7 +1014,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a smaller float value 3.14");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1073,16 +1073,16 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawMeshTasksNV(m_command_buffer.handle(), 1, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1160,14 +1160,14 @@ TEST_F(NegativeDebugPrintf, GPL) {
 
     vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), shader_source);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     std::vector<char const *> messages;
     messages.emplace_back("Here are two float values 1.000000, 3.141500");
@@ -1192,7 +1192,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
             m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
             i++;
         }
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -1247,14 +1247,14 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
     VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.memory().map();
     data[0] = 0;
@@ -1262,7 +1262,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -1272,15 +1272,15 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     ptr[1] = 1;
     ptr[2] = 2;
     buffer.memory().unmap();
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     data = (VkDeviceAddress *)buffer_in.memory().map();
     data[0] = 1;
@@ -1288,7 +1288,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a smaller float value 3.14");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1339,20 +1339,20 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
 
     vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), shader_source_int64);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.memory().map();
     data[0] = 0;
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -1361,7 +1361,7 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -1370,7 +1370,7 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     buffer_in.memory().unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1448,18 +1448,18 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vert_shader, frag_shader);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1584,18 +1584,18 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
     vkt::Pipeline pipe(*m_device, exe_pipe_ci);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1620,22 +1620,22 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
     )glsl";
     const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {vs.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_commandBuffer->handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
+    SetDefaultDynamicStatesAll(m_command_buffer.handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "vertex 0 with value 3.141500");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "vertex 1 with value 3.141500");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "vertex 2 with value 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1670,11 +1670,11 @@ TEST_F(NegativeDebugPrintf, ShaderObjects) {
     )glsl";
     const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source));
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1, stages, &cs.handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1, stages, &cs.handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a smaller float value 3.14");
@@ -1686,7 +1686,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjects) {
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a float in sn 3.14e+00");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a float in shortest 3.1415");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's a float in hex 0x1.921cac000p+1");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1712,18 +1712,18 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsInt64) {
     )glsl";
     const vkt::Shader cs(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source));
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1, stages, &cs.handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1, stages, &cs.handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1763,18 +1763,18 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
     VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_commandBuffer->handle());
-    vk::CmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
+    SetDefaultDynamicStatesAll(m_command_buffer.handle());
+    vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -1784,19 +1784,19 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     ptr[1] = 1;
     ptr[2] = 2;
     buffer.memory().unmap();
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_commandBuffer->handle());
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
+    SetDefaultDynamicStatesAll(m_command_buffer.handle());
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1854,8 +1854,8 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     const vkt::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
                          GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, SPV_ENV_VULKAN_1_3));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
@@ -1866,16 +1866,16 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
                                             VK_SHADER_STAGE_MESH_BIT_EXT};
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
                                    VK_NULL_HANDLE, ts.handle(),    ms.handle()};
-    SetDefaultDynamicStatesAll(m_commandBuffer->handle());
-    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 7u, stages, shaders);
-    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    SetDefaultDynamicStatesAll(m_command_buffer.handle());
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 7u, stages, shaders);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from mesh shader");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -1916,18 +1916,18 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
     pipe.vp_state_ci_.pScissors = &scissor;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex value is 4");
     }
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment value is 8");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2029,18 +2029,18 @@ TEST_F(NegativeDebugPrintf, VertexFragmentMultiEntrypoint) {
     pipe.vp_state_ci_.pScissors = &scissor;
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex value is 4");
     }
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment value is 8");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2072,16 +2072,16 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRendering(renderingInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRendering(renderingInfo);
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
-    m_commandBuffer->BindVertFragShader(vert_shader, frag_shader);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2102,13 +2102,13 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
     )glsl";
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BindCompShader(comp_shader);
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BindCompShader(comp_shader);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2154,12 +2154,12 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -2235,13 +2235,13 @@ TEST_F(NegativeDebugPrintf, LocalSizeId) {
                                              &specialization_info);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 32, 32, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 32, 32, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "TEST");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2281,13 +2281,13 @@ TEST_F(NegativeDebugPrintf, Maintenance5) {
     pipe.cp_ci_.layout = layout.handle();
     pipe.CreateComputePipeline(false);
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2327,13 +2327,13 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
         pipe.cp_ci_.layout = pipe_layout.handle();
         pipe.CreateComputePipeline();
 
-        m_commandBuffer->begin();
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
     }
 
@@ -2350,13 +2350,13 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
         pipe.cp_ci_.layout = pipe_layout.handle();
         pipe.CreateComputePipeline();
 
-        m_commandBuffer->begin();
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -2396,13 +2396,13 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
         pipe.cp_ci_.layout = pipe_layout.handle();
         pipe.CreateComputePipeline();
 
-        m_commandBuffer->begin();
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
     }
 
@@ -2419,13 +2419,13 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
         pipe.cp_ci_.layout = pipe_layout.handle();
         pipe.CreateComputePipeline();
 
-        m_commandBuffer->begin();
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -2467,15 +2467,15 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
         pipe.gp_ci_.layout = pipe_layout.handle();
         pipe.CreateGraphicsPipeline();
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
     }
 
@@ -2492,17 +2492,17 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
         pipe.gp_ci_.layout = pipe_layout.handle();
         pipe.CreateGraphicsPipeline();
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -2542,15 +2542,15 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
 
         vkt::SimpleGPL pipe(*this, pipe_layout.handle(), shader_source);
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
     }
 
@@ -2563,17 +2563,17 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
         vkt::SimpleGPL pipe(*this, pipe_layout.handle(), shader_source);
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -2616,13 +2616,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit, layouts.data()));
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BindCompShader(comp_shader);
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BindCompShader(comp_shader);
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
     }
 
@@ -2631,13 +2631,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
         const vkt::Shader comp_shader(*m_device,
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BindCompShader(comp_shader);
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BindCompShader(comp_shader);
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -2679,13 +2679,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit, layouts.data()));
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BindCompShader(comp_shader);
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BindCompShader(comp_shader);
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
     }
 
@@ -2694,13 +2694,13 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
         const vkt::Shader comp_shader(*m_device,
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
 
-        m_commandBuffer->begin();
-        m_commandBuffer->BindCompShader(comp_shader);
-        vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-        m_commandBuffer->end();
+        m_command_buffer.begin();
+        m_command_buffer.BindCompShader(comp_shader);
+        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        m_command_buffer.end();
 
         m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
     }
@@ -2741,17 +2741,17 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRendering(renderingInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRendering(renderingInfo);
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 2, stages, shaders);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 2, stages, shaders);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
@@ -2778,14 +2778,14 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 4, 4, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 4, 4, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredWarning(
         "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2810,14 +2810,14 @@ TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 4, 4, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 4, 4, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredWarning(
         "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3181,12 +3181,12 @@ TEST_F(NegativeDebugPrintf, ValidationAbort) {
     CreateComputePipelineHelper pipe(*this);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -3210,26 +3210,26 @@ TEST_F(NegativeDebugPrintf, DualPipelines) {
     CreateComputePipelineHelper pipe_normal(*this);
     pipe_normal.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // no print
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // no print
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // print
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // print
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // print
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // print
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // no print
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // no print
 
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);  // print
-    m_commandBuffer->end();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // print
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3403,13 +3403,13 @@ TEST_F(NegativeDebugPrintf, DispatchIndirect) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3432,13 +3432,13 @@ TEST_F(NegativeDebugPrintf, DispatchBase) {
     pipe.cp_ci_.flags = VK_PIPELINE_CREATE_DISPATCH_BASE;
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatchBase(m_commandBuffer->handle(), 1, 1, 1, 1, 1, 1);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatchBase(m_command_buffer.handle(), 1, 1, 1, 1, 1, 1);
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float == 3.141500");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3480,19 +3480,19 @@ TEST_F(NegativeDebugPrintf, DrawIndexed) {
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 1, 2});
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexed(m_commandBuffer->handle(), 3, 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_VertexIndex 0");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_VertexIndex 1");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "gl_VertexIndex 2");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Hit Fragment");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3532,16 +3532,16 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirect) {
     indirect_command->firstInstance = 1;
     indirect_buffer.memory().unmap();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Hit Fragment");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3587,16 +3587,16 @@ TEST_F(NegativeDebugPrintf, DrawIndirectCount) {
     *count_ptr = 1;
     count_buffer.memory().unmap();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndirectCount(m_commandBuffer->handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirectCount(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                              sizeof(VkDrawIndirectCommand));
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Hit Fragment");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -3644,17 +3644,17 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirectCount) {
     *count_ptr = 1;
     count_buffer.memory().unmap();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCount(m_commandBuffer->handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirectCount(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                     sizeof(VkDrawIndexedIndirectCommand));
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Hit Fragment");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }

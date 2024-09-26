@@ -59,7 +59,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
 
-    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_commandBuffer, no_gfx_queue, &no_gfx_cb,
+    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_command_buffer, no_gfx_queue, no_gfx_cb,
                            VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
 
     // Change layouts while changing ownership
@@ -73,7 +73,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
         image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
 
-    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, &no_gfx_cb, m_default_queue, m_commandBuffer,
+    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, no_gfx_cb, m_default_queue, m_command_buffer,
                            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, nullptr, &image_barrier);
 }
 

@@ -377,13 +377,13 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Specify 0 for a required array count
     // Expected to trigger an error with StatelessValidation::ValidateArray
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 0, &viewport);
+    vk::CmdSetViewport(m_command_buffer.handle(), 0, 0, &viewport);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-pViewports-parameter");
     // Specify NULL for a required array
     // Expected to trigger an error with StatelessValidation::ValidateArray
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, NULL);
+    vk::CmdSetViewport(m_command_buffer.handle(), 0, 1, NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
@@ -412,7 +412,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilReference-faceMask-requiredbitmask");
     // Specify 0 for a required VkFlags parameter
     // Expected to trigger an error with StatelessValidation::ValidateFlags
-    vk::CmdSetStencilReference(m_commandBuffer->handle(), 0, 0);
+    vk::CmdSetStencilReference(m_command_buffer.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-sType-sType");
@@ -1122,19 +1122,19 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
     vk::GetDeviceQueue(device(), m_device->graphics_queue_node_index_, 0, &queue);
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 5);
-    m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 5);
+    m_command_buffer.begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 5);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryPool-01922");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 1, 0);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 1, 0);
     // Attempt to begin a query that has the same type as an active query
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 3, 0);
-    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool.handle(), 1);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 3, 0);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00061");
-    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
-    vk::EndCommandBuffer(m_commandBuffer->handle());
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::EndCommandBuffer(m_command_buffer.handle());
     m_errorMonitor->VerifyFound();
 }
 
@@ -1142,17 +1142,17 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     TEST_DESCRIPTION("Attempt vkQueueSubmit with a CB in the initial state");
 
     RETURN_IF_SKIP(Init());
-    // never record m_commandBuffer
+    // never record m_command_buffer
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
     // vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    // m_commandBuffer->begin();
-    // vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &cb.handle());
-    // m_commandBuffer->end();
+    // m_command_buffer.begin();
+    // vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &cb.handle());
+    // m_command_buffer.end();
 
     // m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00072");
     // vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
@@ -1706,37 +1706,37 @@ TEST_F(VkLayerTest, RayTracingStageFlagWithoutFeature) {
     m_errorMonitor->VerifyFound();
 
     vkt::Event event(*m_device);
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-07949");
-    vk::CmdSetEvent(m_commandBuffer->handle(), event.handle(), stage);
+    vk::CmdSetEvent(m_command_buffer.handle(), event.handle(), stage);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-stageMask-07949");
-    vk::CmdResetEvent(m_commandBuffer->handle(), event.handle(), stage);
+    vk::CmdResetEvent(m_command_buffer.handle(), event.handle(), stage);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-07949");
-    vk::CmdWaitEvents(m_commandBuffer->handle(), 1u, &event.handle(), stage, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0u, nullptr, 0u,
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1u, &event.handle(), stage, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0u, nullptr, 0u,
                       nullptr, 0u, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-dstStageMask-07949");
-    vk::CmdWaitEvents(m_commandBuffer->handle(), 1u, &event.handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, stage, 0u, nullptr, 0u,
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1u, &event.handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, stage, 0u, nullptr, 0u,
                       nullptr, 0u, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-07949");
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), stage, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr, 0u, nullptr, 0u,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), stage, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr, 0u, nullptr, 0u,
                            nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-07949");
-    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, stage, 0u, 0u, nullptr, 0u, nullptr, 0u,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, stage, 0u, 0u, nullptr, 0u, nullptr, 0u,
                            nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
     m_default_queue->Wait();
 }

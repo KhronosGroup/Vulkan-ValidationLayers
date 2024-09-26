@@ -110,18 +110,18 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
         image_barrier.image = h_image;
 
         image_barrier.subresourceRange = full_image;
-        m_commandBuffer->begin();
-        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+        m_command_buffer.begin();
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &image_barrier);
-        m_commandBuffer->end();
+        m_command_buffer.end();
     };
 
     // Transition swapchain images to PRESENT_SRC layout for presentation
     for (VkImage image : images) {
         write_barrier_cb(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-        m_default_queue->Submit(*m_commandBuffer);
+        m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
-        m_commandBuffer->reset();
+        m_command_buffer.reset();
     }
 
     uint32_t acquired_index = 0;
@@ -132,19 +132,19 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     // Look for errors between the acquire and first use...
     // No sync operations...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-PRESENT");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Sync operations that should ignore present operations
     m_device->Wait();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-PRESENT");
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Finally we wait for the fence associated with the acquire
     REQUIRE_SUCCESS(vk::WaitForFences(m_device->handle(), 1, &fence.handle(), VK_TRUE, kWaitTimeout), "WaitForFences");
     fence.reset();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Release the image back to the present engine, so we don't run out
@@ -153,16 +153,16 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     vkt::Semaphore sem(*m_device);
     REQUIRE_SUCCESS(acquire_used_image(&sem, nullptr, acquired_index), "acquire_used_image");
 
-    m_commandBuffer->reset();
+    m_command_buffer.reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // The wait mask doesn't match the operations in the command buffer
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->Submit(*m_commandBuffer, vkt::wait, sem, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_default_queue->Submit(m_command_buffer, vkt::wait, sem, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 
     // Now then wait mask matches the operations in the command buffer
-    m_default_queue->Submit(*m_commandBuffer, vkt::wait, sem, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_default_queue->Submit(m_command_buffer, vkt::wait, sem, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Try presenting without waiting for the ILT to finish
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
@@ -176,11 +176,11 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     REQUIRE_SUCCESS(acquire_used_image(VK_NULL_HANDLE, &fence, acquired_index), "acquire_used_index");
     REQUIRE_SUCCESS(fence.wait(kWaitTimeout), "WaitForFences");
 
-    m_commandBuffer->reset();
+    m_command_buffer.reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     fence.reset();
-    m_default_queue->Submit(*m_commandBuffer, vkt::signal, sem);
+    m_default_queue->Submit(m_command_buffer, vkt::signal, sem);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
     present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
@@ -224,11 +224,11 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.end();
 
-    m_default_queue->Submit2(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
+    m_default_queue->Submit2(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
@@ -271,12 +271,12 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
     layout_transition.subresourceRange.baseArrayLayer = 0;
     layout_transition.subresourceRange.layerCount = 1;
 
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &layout_transition);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
