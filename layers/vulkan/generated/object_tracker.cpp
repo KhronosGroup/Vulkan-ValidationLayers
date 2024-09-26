@@ -7803,8 +7803,9 @@ bool ObjectLifetimes::PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice d
                            "VUID-vkDestroyIndirectCommandsLayoutEXT-indirectCommandsLayout-parameter",
                            "VUID-vkDestroyIndirectCommandsLayoutEXT-indirectCommandsLayout-parent",
                            error_obj.location.dot(Field::indirectCommandsLayout));
-    skip |= ValidateDestroyObject(indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutEXT, pAllocator, kVUIDUndefined,
-                                  kVUIDUndefined, error_obj.location);
+    skip |= ValidateDestroyObject(indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutEXT, pAllocator,
+                                  "VUID-vkDestroyIndirectCommandsLayoutEXT-indirectCommandsLayout-11115",
+                                  "VUID-vkDestroyIndirectCommandsLayoutEXT-indirectCommandsLayout-11116", error_obj.location);
 
     return skip;
 }
@@ -7814,57 +7815,6 @@ void ObjectLifetimes::PreCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice dev
                                                                     const VkAllocationCallbacks* pAllocator,
                                                                     const RecordObject& record_obj) {
     RecordDestroyObject(indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutEXT);
-}
-
-bool ObjectLifetimes::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
-                                                                   const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
-                                                                   const VkAllocationCallbacks* pAllocator,
-                                                                   VkIndirectExecutionSetEXT* pIndirectExecutionSet,
-                                                                   const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: device: "VUID-vkCreateIndirectExecutionSetEXT-device-parameter"
-    if (pCreateInfo) {
-        [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
-        [[maybe_unused]] const Location info_loc = pCreateInfo_loc.dot(Field::info);
-        if (pCreateInfo->info.pPipelineInfo) {
-            [[maybe_unused]] const Location pPipelineInfo_loc = info_loc.dot(Field::pPipelineInfo);
-            skip |= ValidateObject(pCreateInfo->info.pPipelineInfo->initialPipeline, kVulkanObjectTypePipeline, false,
-                                   "VUID-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-parameter",
-                                   "UNASSIGNED-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-parent",
-                                   pPipelineInfo_loc.dot(Field::initialPipeline));
-        }
-        if (pCreateInfo->info.pShaderInfo) {
-            [[maybe_unused]] const Location pShaderInfo_loc = info_loc.dot(Field::pShaderInfo);
-
-            if ((pCreateInfo->info.pShaderInfo->shaderCount > 0) && (pCreateInfo->info.pShaderInfo->pInitialShaders)) {
-                for (uint32_t index3 = 0; index3 < pCreateInfo->info.pShaderInfo->shaderCount; ++index3) {
-                    skip |= ValidateObject(pCreateInfo->info.pShaderInfo->pInitialShaders[index3], kVulkanObjectTypeShaderEXT,
-                                           false, "VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter",
-                                           "UNASSIGNED-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parent",
-                                           pShaderInfo_loc.dot(Field::pInitialShaders, index3));
-                }
-            }
-            if (pCreateInfo->info.pShaderInfo->pSetLayoutInfos) {
-                for (uint32_t index3 = 0; index3 < pCreateInfo->info.pShaderInfo->shaderCount; ++index3) {
-                    [[maybe_unused]] const Location index3_loc = pShaderInfo_loc.dot(Field::pSetLayoutInfos, index3);
-
-                    if ((pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].setLayoutCount > 0) &&
-                        (pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts)) {
-                        for (uint32_t index4 = 0; index4 < pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].setLayoutCount;
-                             ++index4) {
-                            skip |= ValidateObject(pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts[index4],
-                                                   kVulkanObjectTypeDescriptorSetLayout, true,
-                                                   "VUID-VkIndirectExecutionSetShaderLayoutInfoEXT-pSetLayouts-parameter",
-                                                   "UNASSIGNED-VkIndirectExecutionSetShaderLayoutInfoEXT-pSetLayouts-parent",
-                                                   index3_loc.dot(Field::pSetLayouts, index4));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return skip;
 }
 
 void ObjectLifetimes::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,

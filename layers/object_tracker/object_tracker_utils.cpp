@@ -1530,6 +1530,38 @@ void ObjectLifetimes::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline p
     linked_graphics_pipeline_map.erase(HandleToUint64(pipeline));
 }
 
+bool ObjectLifetimes::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
+                                                                   const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkIndirectExecutionSetEXT *pIndirectExecutionSet,
+                                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (pCreateInfo && pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT &&
+        pCreateInfo->info.pShaderInfo) {
+        const VkIndirectExecutionSetShaderInfoEXT &shader_info = *pCreateInfo->info.pShaderInfo;
+        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+        const Location info_loc = create_info_loc.dot(Field::info);
+        const Location shader_info_loc = info_loc.dot(Field::pShaderInfo);
+        if (shader_info.pSetLayoutInfos) {
+            for (uint32_t i = 0; i < shader_info.shaderCount; ++i) {
+                const Location set_layout_info_loc = shader_info_loc.dot(Field::pSetLayoutInfos, i);
+                const VkIndirectExecutionSetShaderLayoutInfoEXT &layout_info = shader_info.pSetLayoutInfos[i];
+                if ((layout_info.setLayoutCount > 0) && (layout_info.pSetLayouts)) {
+                    for (uint32_t layout_index = 0; layout_index < layout_info.setLayoutCount; ++layout_index) {
+                        skip |= ValidateObject(layout_info.pSetLayouts[layout_index], kVulkanObjectTypeDescriptorSetLayout, true,
+                                               kVUIDUndefined,
+                                               "UNASSIGNED-VkIndirectExecutionSetShaderLayoutInfoEXT-pSetLayouts-parent",
+                                               set_layout_info_loc.dot(Field::pSetLayouts, layout_index));
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device,
                                                                     const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
                                                                     const VkAllocationCallbacks *pAllocator,
