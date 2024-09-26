@@ -260,6 +260,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
                 case VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT:
                 case VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT:
                 case VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT:
+                case VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
                 // VkPipelineTessellationStateCreateInfo
                 case VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
                 case VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:

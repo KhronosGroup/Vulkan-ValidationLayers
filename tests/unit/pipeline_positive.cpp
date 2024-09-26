@@ -1548,9 +1548,15 @@ TEST_F(PositivePipeline, DeviceGeneratedCommands) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::deviceGeneratedCommands);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework());
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV dgc_features = vku::InitStructHelper();
+    auto features2 = GetPhysicalDeviceFeatures2(dgc_features);
+    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
+
+    if (!dgc_features.deviceGeneratedCommands) {
+        GTEST_SKIP() << "deviceGeneratedCommands not supported";
+    }
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
