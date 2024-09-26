@@ -943,6 +943,7 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
         "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess set to VK_TRUE");
 
     // noise
+    m_errorMonitor->SetAllowedFailureMsg("Adding a VkPhysicalDevice8BitStorageFeatures to pNext with shaderInt64 set to VK_TRUE");
     m_errorMonitor->SetAllowedFailureMsg(
         "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
     m_errorMonitor->SetAllowedFailureMsg(
