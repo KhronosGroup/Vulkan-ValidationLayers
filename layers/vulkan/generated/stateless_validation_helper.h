@@ -1720,6 +1720,9 @@ bool PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, 
                                            const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
                                       const VkShaderEXT* pShaders, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                             const VkDepthClampRangeEXT* pDepthClampRange,
+                                             const ErrorObject& error_obj) const override;
 bool PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
                                                      VkTilePropertiesQCOM* pProperties,
                                                      const ErrorObject& error_obj) const override;
@@ -1744,6 +1747,39 @@ bool PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const struct _
                                                  VkScreenBufferPropertiesQNX* pProperties,
                                                  const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+bool PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
+                                                              const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
+                                                              VkMemoryRequirements2* pMemoryRequirements,
+                                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                      const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                      VkCommandBuffer stateCommandBuffer,
+                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                   const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                   const ErrorObject& error_obj) const override;
+bool PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator,
+                                                    VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
+                                                    const ErrorObject& error_obj) const override;
+bool PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                  const ErrorObject& error_obj) const override;
+bool PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   const ErrorObject& error_obj) const override;
+bool PreCallValidateUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                          uint32_t executionSetWriteCount,
+                                                          const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites,
+                                                          const ErrorObject& error_obj) const override;
+bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                        uint32_t executionSetWriteCount,
+                                                        const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
+                                                        const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,

@@ -2993,6 +2993,26 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceRayTracingValidationFeaturesNV *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkGeneratedCommandsPipelineInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_SHADER_INFO_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkGeneratedCommandsShaderInfoEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_FEATURES_MESA:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -3007,6 +3027,16 @@ void PnextChainFree(void *chain) {
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
             delete reinterpret_cast<const VkImageAlignmentControlCreateInfoMESA *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPipelineViewportDepthClampControlCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             PnextChainFree(header->pNext);

@@ -1167,6 +1167,8 @@ void DispatchDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAlloc
 VkResult DispatchGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData);
 void DispatchCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages,
                                const VkShaderEXT* pShaders);
+void DispatchCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                      const VkDepthClampRangeEXT* pDepthClampRange);
 VkResult DispatchGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
                                                   VkTilePropertiesQCOM* pProperties);
 VkResult DispatchGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
@@ -1181,6 +1183,29 @@ void DispatchCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer
 VkResult DispatchGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                               VkScreenBufferPropertiesQNX* pProperties);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void DispatchGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
+                                                       VkMemoryRequirements2* pMemoryRequirements);
+void DispatchCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                               const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                               VkCommandBuffer stateCommandBuffer);
+void DispatchCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                            const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo);
+VkResult DispatchCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout);
+void DispatchDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                              const VkAllocationCallbacks* pAllocator);
+VkResult DispatchCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator,
+                                               VkIndirectExecutionSetEXT* pIndirectExecutionSet);
+void DispatchDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                            const VkAllocationCallbacks* pAllocator);
+void DispatchUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                   uint32_t executionSetWriteCount,
+                                                   const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites);
+void DispatchUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                 uint32_t executionSetWriteCount,
+                                                 const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites);
 VkResult DispatchCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,
                                                 VkAccelerationStructureKHR* pAccelerationStructure);

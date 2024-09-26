@@ -409,6 +409,21 @@ void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext) {
                     safe_struct->buffer = layer_data->Unwrap(safe_struct->buffer);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkGeneratedCommandsPipelineInfoEXT*>(cur_pnext);
+
+                if (safe_struct->pipeline) {
+                    safe_struct->pipeline = layer_data->Unwrap(safe_struct->pipeline);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_SHADER_INFO_EXT: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkGeneratedCommandsShaderInfoEXT*>(cur_pnext);
+                if (safe_struct->pShaders) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->shaderCount; ++index0) {
+                        safe_struct->pShaders[index0] = layer_data->Unwrap(safe_struct->pShaders[index0]);
+                    }
+                }
+            } break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkAccelerationStructureTrianglesDisplacementMicromapNV*>(cur_pnext);
@@ -8946,6 +8961,13 @@ void DispatchCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCoun
     if (local_pShaders != var_local_pShaders) delete[] local_pShaders;
 }
 
+void DispatchCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                      const VkDepthClampRangeEXT* pDepthClampRange) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+
+    layer_data->device_dispatch_table.CmdSetDepthClampRangeEXT(commandBuffer, depthClampMode, pDepthClampRange);
+}
+
 VkResult DispatchGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
                                                   VkTilePropertiesQCOM* pProperties) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -9078,6 +9100,255 @@ VkResult DispatchGetScreenBufferPropertiesQNX(VkDevice device, const struct _scr
     return result;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+void DispatchGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
+                                                       VkMemoryRequirements2* pMemoryRequirements) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.GetGeneratedCommandsMemoryRequirementsEXT(device, pInfo, pMemoryRequirements);
+    vku::safe_VkGeneratedCommandsMemoryRequirementsInfoEXT var_local_pInfo;
+    vku::safe_VkGeneratedCommandsMemoryRequirementsInfoEXT* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->indirectExecutionSet) {
+                local_pInfo->indirectExecutionSet = layer_data->Unwrap(pInfo->indirectExecutionSet);
+            }
+            if (pInfo->indirectCommandsLayout) {
+                local_pInfo->indirectCommandsLayout = layer_data->Unwrap(pInfo->indirectCommandsLayout);
+            }
+            UnwrapPnextChainHandles(layer_data, local_pInfo->pNext);
+        }
+    }
+    layer_data->device_dispatch_table.GetGeneratedCommandsMemoryRequirementsEXT(
+        device, (const VkGeneratedCommandsMemoryRequirementsInfoEXT*)local_pInfo, pMemoryRequirements);
+}
+
+void DispatchCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                               const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                               VkCommandBuffer stateCommandBuffer) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdPreprocessGeneratedCommandsEXT(commandBuffer, pGeneratedCommandsInfo,
+                                                                                   stateCommandBuffer);
+    vku::safe_VkGeneratedCommandsInfoEXT var_local_pGeneratedCommandsInfo;
+    vku::safe_VkGeneratedCommandsInfoEXT* local_pGeneratedCommandsInfo = nullptr;
+    {
+        if (pGeneratedCommandsInfo) {
+            local_pGeneratedCommandsInfo = &var_local_pGeneratedCommandsInfo;
+            local_pGeneratedCommandsInfo->initialize(pGeneratedCommandsInfo);
+
+            if (pGeneratedCommandsInfo->indirectExecutionSet) {
+                local_pGeneratedCommandsInfo->indirectExecutionSet =
+                    layer_data->Unwrap(pGeneratedCommandsInfo->indirectExecutionSet);
+            }
+            if (pGeneratedCommandsInfo->indirectCommandsLayout) {
+                local_pGeneratedCommandsInfo->indirectCommandsLayout =
+                    layer_data->Unwrap(pGeneratedCommandsInfo->indirectCommandsLayout);
+            }
+            UnwrapPnextChainHandles(layer_data, local_pGeneratedCommandsInfo->pNext);
+        }
+    }
+    layer_data->device_dispatch_table.CmdPreprocessGeneratedCommandsEXT(
+        commandBuffer, (const VkGeneratedCommandsInfoEXT*)local_pGeneratedCommandsInfo, stateCommandBuffer);
+}
+
+void DispatchCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                            const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdExecuteGeneratedCommandsEXT(commandBuffer, isPreprocessed,
+                                                                                pGeneratedCommandsInfo);
+    vku::safe_VkGeneratedCommandsInfoEXT var_local_pGeneratedCommandsInfo;
+    vku::safe_VkGeneratedCommandsInfoEXT* local_pGeneratedCommandsInfo = nullptr;
+    {
+        if (pGeneratedCommandsInfo) {
+            local_pGeneratedCommandsInfo = &var_local_pGeneratedCommandsInfo;
+            local_pGeneratedCommandsInfo->initialize(pGeneratedCommandsInfo);
+
+            if (pGeneratedCommandsInfo->indirectExecutionSet) {
+                local_pGeneratedCommandsInfo->indirectExecutionSet =
+                    layer_data->Unwrap(pGeneratedCommandsInfo->indirectExecutionSet);
+            }
+            if (pGeneratedCommandsInfo->indirectCommandsLayout) {
+                local_pGeneratedCommandsInfo->indirectCommandsLayout =
+                    layer_data->Unwrap(pGeneratedCommandsInfo->indirectCommandsLayout);
+            }
+            UnwrapPnextChainHandles(layer_data, local_pGeneratedCommandsInfo->pNext);
+        }
+    }
+    layer_data->device_dispatch_table.CmdExecuteGeneratedCommandsEXT(
+        commandBuffer, isPreprocessed, (const VkGeneratedCommandsInfoEXT*)local_pGeneratedCommandsInfo);
+}
+
+VkResult DispatchCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator,
+                                                                                 pIndirectCommandsLayout);
+    vku::safe_VkIndirectCommandsLayoutCreateInfoEXT var_local_pCreateInfo;
+    vku::safe_VkIndirectCommandsLayoutCreateInfoEXT* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->pipelineLayout) {
+                local_pCreateInfo->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
+            }
+            UnwrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateIndirectCommandsLayoutEXT(
+        device, (const VkIndirectCommandsLayoutCreateInfoEXT*)local_pCreateInfo, pAllocator, pIndirectCommandsLayout);
+    if (VK_SUCCESS == result) {
+        *pIndirectCommandsLayout = layer_data->WrapNew(*pIndirectCommandsLayout);
+    }
+    return result;
+}
+
+void DispatchDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                              const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
+
+    uint64_t indirectCommandsLayout_id = CastToUint64(indirectCommandsLayout);
+    auto iter = unique_id_mapping.pop(indirectCommandsLayout_id);
+    if (iter != unique_id_mapping.end()) {
+        indirectCommandsLayout = (VkIndirectCommandsLayoutEXT)iter->second;
+    } else {
+        indirectCommandsLayout = (VkIndirectCommandsLayoutEXT)0;
+    }
+    layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
+}
+
+VkResult DispatchCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator,
+                                               VkIndirectExecutionSetEXT* pIndirectExecutionSet) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator,
+                                                                               pIndirectExecutionSet);
+    vku::safe_VkIndirectExecutionSetCreateInfoEXT var_local_pCreateInfo;
+    vku::safe_VkIndirectExecutionSetCreateInfoEXT* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+            if (local_pCreateInfo->info.pPipelineInfo) {
+                if (pCreateInfo->info.pPipelineInfo->initialPipeline) {
+                    local_pCreateInfo->info.pPipelineInfo->initialPipeline =
+                        layer_data->Unwrap(pCreateInfo->info.pPipelineInfo->initialPipeline);
+                }
+            }
+            if (local_pCreateInfo->info.pShaderInfo) {
+                if (local_pCreateInfo->info.pShaderInfo->pInitialShaders) {
+                    for (uint32_t index3 = 0; index3 < local_pCreateInfo->info.pShaderInfo->shaderCount; ++index3) {
+                        local_pCreateInfo->info.pShaderInfo->pInitialShaders[index3] =
+                            layer_data->Unwrap(local_pCreateInfo->info.pShaderInfo->pInitialShaders[index3]);
+                    }
+                }
+                if (local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos) {
+                    for (uint32_t index3 = 0; index3 < local_pCreateInfo->info.pShaderInfo->shaderCount; ++index3) {
+                        if (local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts) {
+                            for (uint32_t index4 = 0;
+                                 index4 < local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].setLayoutCount; ++index4) {
+                                local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts[index4] =
+                                    layer_data->Unwrap(
+                                        local_pCreateInfo->info.pShaderInfo->pSetLayoutInfos[index3].pSetLayouts[index4]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateIndirectExecutionSetEXT(
+        device, (const VkIndirectExecutionSetCreateInfoEXT*)local_pCreateInfo, pAllocator, pIndirectExecutionSet);
+    if (VK_SUCCESS == result) {
+        *pIndirectExecutionSet = layer_data->WrapNew(*pIndirectExecutionSet);
+    }
+    return result;
+}
+
+void DispatchDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                            const VkAllocationCallbacks* pAllocator) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
+
+    uint64_t indirectExecutionSet_id = CastToUint64(indirectExecutionSet);
+    auto iter = unique_id_mapping.pop(indirectExecutionSet_id);
+    if (iter != unique_id_mapping.end()) {
+        indirectExecutionSet = (VkIndirectExecutionSetEXT)iter->second;
+    } else {
+        indirectExecutionSet = (VkIndirectExecutionSetEXT)0;
+    }
+    layer_data->device_dispatch_table.DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
+}
+
+void DispatchUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                   uint32_t executionSetWriteCount,
+                                                   const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.UpdateIndirectExecutionSetPipelineEXT(device, indirectExecutionSet,
+                                                                                       executionSetWriteCount, pExecutionSetWrites);
+    vku::safe_VkWriteIndirectExecutionSetPipelineEXT* local_pExecutionSetWrites = nullptr;
+    {
+        indirectExecutionSet = layer_data->Unwrap(indirectExecutionSet);
+        if (pExecutionSetWrites) {
+            local_pExecutionSetWrites = new vku::safe_VkWriteIndirectExecutionSetPipelineEXT[executionSetWriteCount];
+            for (uint32_t index0 = 0; index0 < executionSetWriteCount; ++index0) {
+                local_pExecutionSetWrites[index0].initialize(&pExecutionSetWrites[index0]);
+
+                if (pExecutionSetWrites[index0].pipeline) {
+                    local_pExecutionSetWrites[index0].pipeline = layer_data->Unwrap(pExecutionSetWrites[index0].pipeline);
+                }
+            }
+        }
+    }
+    layer_data->device_dispatch_table.UpdateIndirectExecutionSetPipelineEXT(
+        device, indirectExecutionSet, executionSetWriteCount,
+        (const VkWriteIndirectExecutionSetPipelineEXT*)local_pExecutionSetWrites);
+    if (local_pExecutionSetWrites) {
+        delete[] local_pExecutionSetWrites;
+    }
+}
+
+void DispatchUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                 uint32_t executionSetWriteCount,
+                                                 const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.UpdateIndirectExecutionSetShaderEXT(device, indirectExecutionSet,
+                                                                                     executionSetWriteCount, pExecutionSetWrites);
+    vku::safe_VkWriteIndirectExecutionSetShaderEXT* local_pExecutionSetWrites = nullptr;
+    {
+        indirectExecutionSet = layer_data->Unwrap(indirectExecutionSet);
+        if (pExecutionSetWrites) {
+            local_pExecutionSetWrites = new vku::safe_VkWriteIndirectExecutionSetShaderEXT[executionSetWriteCount];
+            for (uint32_t index0 = 0; index0 < executionSetWriteCount; ++index0) {
+                local_pExecutionSetWrites[index0].initialize(&pExecutionSetWrites[index0]);
+
+                if (pExecutionSetWrites[index0].shader) {
+                    local_pExecutionSetWrites[index0].shader = layer_data->Unwrap(pExecutionSetWrites[index0].shader);
+                }
+            }
+        }
+    }
+    layer_data->device_dispatch_table.UpdateIndirectExecutionSetShaderEXT(
+        device, indirectExecutionSet, executionSetWriteCount,
+        (const VkWriteIndirectExecutionSetShaderEXT*)local_pExecutionSetWrites);
+    if (local_pExecutionSetWrites) {
+        delete[] local_pExecutionSetWrites;
+    }
+}
 
 VkResult DispatchCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,

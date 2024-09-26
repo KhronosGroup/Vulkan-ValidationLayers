@@ -1550,10 +1550,23 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->rayTracingValidation |= enabled->rayTracingValidation == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT: {
+                const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *>(pNext);
+                features->deviceGeneratedCommands |= enabled->deviceGeneratedCommands == VK_TRUE;
+                features->dynamicGeneratedPipelineLayout |= enabled->dynamicGeneratedPipelineLayout == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_FEATURES_MESA: {
                 const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *enabled =
                     reinterpret_cast<const VkPhysicalDeviceImageAlignmentControlFeaturesMESA *>(pNext);
                 features->imageAlignmentControl |= enabled->imageAlignmentControl == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT: {
+                const VkPhysicalDeviceDepthClampControlFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDepthClampControlFeaturesEXT *>(pNext);
+                features->depthClampControl |= enabled->depthClampControl == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {

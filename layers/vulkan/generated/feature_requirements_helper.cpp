@@ -898,6 +898,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->leastRepresentableValueForceUnormRepresentation,
                     "VkPhysicalDeviceDepthBiasControlFeaturesEXT::leastRepresentableValueForceUnormRepresentation"};
         }
+        case Feature::depthClampControl: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDepthClampControlFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDepthClampControlFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDepthClampControlFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->depthClampControl, "VkPhysicalDeviceDepthClampControlFeaturesEXT::depthClampControl"};
+        }
         case Feature::depthClampZeroOne: {
             auto vk_struct = const_cast<VkPhysicalDeviceDepthClampZeroOneFeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceDepthClampZeroOneFeaturesEXT>(*inout_pnext_chain));
@@ -1673,11 +1687,26 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->deviceGeneratedComputePipelines,
                     "VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV::deviceGeneratedComputePipelines"};
         }
-        case Feature::deviceGeneratedCommands: {
-            auto vk_struct = const_cast<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(*inout_pnext_chain));
+        case Feature::dynamicGeneratedPipelineLayout: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV;
+                vk_struct = new VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dynamicGeneratedPipelineLayout,
+                    "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT::dynamicGeneratedPipelineLayout"};
+        }
+        case Feature::deviceGeneratedCommands: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -1686,7 +1715,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 }
             }
             return {&vk_struct->deviceGeneratedCommands,
-                    "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV::deviceGeneratedCommands"};
+                    "VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT::deviceGeneratedCommands"};
         }
         case Feature::deviceMemoryReport: {
             auto vk_struct = const_cast<VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(

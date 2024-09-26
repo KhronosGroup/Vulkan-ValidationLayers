@@ -71,6 +71,8 @@ c_VkBufferCollectionFUCHSIA(kVulkanObjectTypeBufferCollectionFUCHSIA, this),
 c_VkMicromapEXT(kVulkanObjectTypeMicromapEXT, this),
 c_VkOpticalFlowSessionNV(kVulkanObjectTypeOpticalFlowSessionNV, this),
 c_VkShaderEXT(kVulkanObjectTypeShaderEXT, this),
+c_VkIndirectExecutionSetEXT(kVulkanObjectTypeIndirectExecutionSetEXT, this),
+c_VkIndirectCommandsLayoutEXT(kVulkanObjectTypeIndirectCommandsLayoutEXT, this),
     // clang-format on
 
     // NOLINTEND
