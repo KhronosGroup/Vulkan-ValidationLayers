@@ -654,3 +654,35 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitBeforeSignal) {
     }
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesAllSignals) {
+    TEST_DESCRIPTION("Test for manual inspection of registered signals (VK_SYNCVAL_SHOW_STATS can be used)");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    const uint32_t N = 100;
+    for (uint32_t i = 1; i <= N; i++) {
+        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, i);
+        // The maximum number of registered signals will be around 25
+        if (i % 25 == 0) {
+            m_default_queue->Wait();
+        }
+    }
+    m_device->Wait();
+}
+
+TEST_F(PositiveSyncValTimelineSemaphore, DeviceWaitIdleRemovesAllSignals) {
+    TEST_DESCRIPTION("Test for manual inspection of registered signals (VK_SYNCVAL_SHOW_STATS can be used)");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    const uint32_t N = 100;
+    for (uint32_t i = 1; i <= N; i++) {
+        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, i);
+        // The maximum number of registered signals will be around 50
+        if (i % 50 == 0) {
+            m_device->Wait();
+        }
+    }
+    m_device->Wait();
+}
