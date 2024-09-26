@@ -2959,6 +2959,20 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
     QueueId waited_queue = queue_state->GetQueueId();
     ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
 
+    // For each timeline, remove all signals signaled on this queue except the last one.
+    // The last signal is needed to represent the current timeline state.
+    for (auto &[_, signals] : timeline_signals_) {
+        const size_t initial_signal_count = signals.size();
+        auto queue_pred = [waited_queue](const auto &signal) { return signal.first_scope.queue == waited_queue; };
+        auto last_signal_reverse_it = std::find_if(signals.rbegin(), signals.rend(), queue_pred);
+        if (last_signal_reverse_it != signals.rend()) {
+            auto last_signal_it = last_signal_reverse_it.base() - 1;  // convert to forward iterator
+            // removes all queue signals excepts the last one
+            signals.erase(std::remove_if(signals.begin(), last_signal_it, queue_pred), last_signal_it);
+        }
+        stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
+    }
+
     // Eliminate host waitable objects from the current queue.
     vvl::EraseIf(waitable_fences_, [waited_queue](const auto &sf) { return sf.second.queue_id == waited_queue; });
     for (auto &[semaphore, sync_points] : host_waitable_semaphores_) {
@@ -2972,6 +2986,26 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
     // We need to treat this a fence waits for all queues... noting that present engine ops will be preserved.
     ForAllQueueBatchContexts(
         [](const QueueBatchContext::Ptr &batch) { batch->ApplyTaggedWait(kQueueAny, ResourceUsageRecord::kMaxIndex); });
+
+    // For each timeline keep only the last signal per queue.
+    // The last signal is needed to represent the current timeline state.
+    for (auto &[_, signals] : timeline_signals_) {
+        const size_t initial_signal_count = signals.size();
+        std::unordered_map<QueueId, uint32_t> signals_per_queue;
+        for (const SignalInfo &signal : signals) {
+            ++signals_per_queue[signal.first_scope.queue];
+        }
+        for (auto it = signals.begin(); it != signals.end();) {
+            auto &counter = signals_per_queue[it->first_scope.queue];
+            if (counter > 1) {
+                it = signals.erase(it);
+                --counter;
+            } else {
+                ++it;
+            }
+        }
+        stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
+    }
 
     // As we we've waited for everything on device, any waits are mooted. (except for acquires)
     vvl::EraseIf(waitable_fences_, [](const auto &waitable) { return waitable.second.acquired.Invalid(); });

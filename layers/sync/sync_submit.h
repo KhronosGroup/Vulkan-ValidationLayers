@@ -60,10 +60,11 @@ struct SignalInfo {
     // Signaled semaphore. Not null.
     std::shared_ptr<const vvl::Semaphore> semaphore_state;
 
-    // Batch from the signal's first scope. Null if it's a host signal (SignalSemaphore).
+    // Batch from the signal's first scope. It is null for a host signal (vkSignalSemaphore)
     std::shared_ptr<QueueBatchContext> batch;
 
-    // Use the first_scope.valid_accesses for first access scope
+    // Use the first_scope.valid_accesses for the first access scope of non-host signals.
+    // first_scope.queue is kQueueIdInvalid for a host signal (vkSignalSemaphore)
     SemaphoreScope first_scope;
 
     // Value signaled by a timeline semaphore
