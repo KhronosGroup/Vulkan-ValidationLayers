@@ -686,3 +686,54 @@ TEST_F(PositiveSyncValTimelineSemaphore, DeviceWaitIdleRemovesignals) {
     }
     m_device->Wait();
 }
+
+TEST_F(PositiveSyncValTimelineSemaphore, ManyOrphanedSignals) {
+    TEST_DESCRIPTION("Test limit of maximum number of registered signals per timeline");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+
+    VkCommandBufferSubmitInfo cbuf_info = vku::InitStructHelper();
+    cbuf_info.commandBuffer = m_command_buffer;
+
+    VkSemaphoreSubmitInfo wait = vku::InitStructHelper();
+    wait.semaphore = binary_semaphore;
+    wait.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    VkSemaphoreSubmitInfo signals[2];
+    // binary signal
+    signals[0] = vku::InitStructHelper();
+    signals[0].semaphore = binary_semaphore;
+    signals[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    // timeline signal (value is set for each loop iteration)
+    signals[1] = vku::InitStructHelper();
+    signals[1].semaphore = semaphore;
+    signals[1].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    const uint32_t N = 1'000;
+    for (uint32_t i = 1; i <= N; i++) {
+        // signal timeline on each iteration but never wait for it
+        signals[1].value = i;
+
+        VkSubmitInfo2 submit = vku::InitStructHelper();
+        if (i > 1) {
+            // wait binary signal from previous iteration
+            submit.waitSemaphoreInfoCount = 1;
+            submit.pWaitSemaphoreInfos = &wait;
+        }
+        submit.commandBufferInfoCount = 1;
+        submit.pCommandBufferInfos = &cbuf_info;
+        submit.signalSemaphoreInfoCount = 2;
+        submit.pSignalSemaphoreInfos = signals;
+
+        vk::QueueSubmit2(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    }
+    m_device->Wait();
+}
