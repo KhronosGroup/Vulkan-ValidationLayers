@@ -628,7 +628,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
 
         m_command_buffer.begin();
 
-        image_input.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        image_input.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
         m_renderPassBeginInfo.renderPass = rp.handle();

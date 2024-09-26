@@ -68,9 +68,9 @@ TEST_F(PositiveShaderObject, BindShaderObject) {
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
     const vkt::Shader vertShader(*m_device, stage, GLSLToSPV(stage, kVertexMinimalGlsl));
 
-    m_commandBuffer->begin();
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stage, &vertShader.handle());
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &vertShader.handle());
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
@@ -85,13 +85,13 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
@@ -122,13 +122,13 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
     vkt::Shader binaryVertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vertData);
     vkt::Shader binaryFragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, fragData);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(binaryVertShader, binaryFragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(binaryVertShader, binaryFragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
@@ -188,14 +188,14 @@ TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
     const vkt::Shader vertShader(*m_device, stages[0], GLSLToSPV(stages[0], kVertexMinimalGlsl));
     const vkt::Shader fragShader(*m_device, stages[1], GLSLToSPV(stages[1], kFragmentMinimalGlsl));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE});
-    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, VertFragShaderDraw) {
@@ -248,7 +248,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     {
         VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
@@ -264,19 +264,19 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
         imageMemoryBarrier.subresourceRange.levelCount = 1u;
         imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
         imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                                &imageMemoryBarrier);
     }
-    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 2u, shaderStages, shaders);
+    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 2u, shaderStages, shaders);
     for (const auto &unusedShader : unusedShaderStages) {
         VkShaderEXT null_shader = VK_NULL_HANDLE;
-        vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &unusedShader, &null_shader);
+        vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &unusedShader, &null_shader);
     }
     SetDefaultDynamicStatesExclude();
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
     {
         VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
@@ -292,7 +292,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
         imageMemoryBarrier.subresourceRange.levelCount = 1u;
         imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
         imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &imageMemoryBarrier);
     }
 
@@ -302,10 +302,10 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     copyRegion.imageOffset.y = static_cast<int32_t>(m_height / 2) + 1;
     copyRegion.imageExtent = {1, 1, 1};
 
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copyRegion);
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copyRegion);
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -427,7 +427,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     {
         VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
@@ -443,18 +443,18 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
         imageMemoryBarrier.subresourceRange.levelCount = 1u;
         imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
         imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                                &imageMemoryBarrier);
     }
-    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, shaderStages, shaders);
+    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, shaderStages, shaders);
     SetDefaultDynamicStatesExclude();
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -489,16 +489,16 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     const vkt::Shader compShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], comp_src), &descriptorSetLayout);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
                               &descriptor_set.set_, 0u, nullptr);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, shaderStages, &compShader.handle());
-    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, shaderStages, &compShader.handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -572,7 +572,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     begin_rendering_info.colorAttachmentCount = 1u;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     {
         VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
@@ -588,11 +588,11 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
         imageMemoryBarrier.subresourceRange.levelCount = 1u;
         imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
         imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                                &imageMemoryBarrier);
     }
-    vk::CmdBeginRenderingKHR(m_commandBuffer->handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     std::vector<VkShaderStageFlagBits> nullStages = {VK_SHADER_STAGE_VERTEX_BIT};
     if (features.tessellationShader) {
         nullStages.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
@@ -603,16 +603,16 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     }
     for (const auto stage : nullStages) {
         VkShaderEXT nullShader = VK_NULL_HANDLE;
-        vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &stage, &nullShader);
+        vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &nullShader);
     }
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 3u, shaderStages, shaders);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 3u, shaderStages, shaders);
     SetDefaultDynamicStatesExclude();
-    vk::CmdDrawMeshTasksEXT(m_commandBuffer->handle(), 1, 1, 1);
-    vk::CmdEndRenderingKHR(m_commandBuffer->handle());
+    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -754,42 +754,42 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     VkViewport viewport = {0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f};
     VkRect2D scissor = {{0, 0}, {m_width, m_height}};
-    vk::CmdSetViewportWithCountEXT(m_commandBuffer->handle(), 1u, &viewport);
-    vk::CmdSetScissorWithCountEXT(m_commandBuffer->handle(), 1u, &scissor);
-    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetStencilTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetPolygonModeEXT(m_commandBuffer->handle(), VK_POLYGON_MODE_FILL);
-    vk::CmdSetRasterizationSamplesEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdSetViewportWithCountEXT(m_command_buffer.handle(), 1u, &viewport);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer.handle(), 1u, &scissor);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetStencilTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetPolygonModeEXT(m_command_buffer.handle(), VK_POLYGON_MODE_FILL);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_1_BIT);
     VkSampleMask sampleMask = 1u;
-    vk::CmdSetSampleMaskEXT(m_commandBuffer->handle(), VK_SAMPLE_COUNT_1_BIT, &sampleMask);
-    vk::CmdSetAlphaToCoverageEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetCullModeEXT(m_commandBuffer->handle(), VK_CULL_MODE_NONE);
-    vk::CmdSetDepthTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetDepthWriteEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetDepthBoundsTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetDepthBiasEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 0u, nullptr, 0u, nullptr);
-    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdSetSampleMaskEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_1_BIT, &sampleMask);
+    vk::CmdSetAlphaToCoverageEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetCullModeEXT(m_command_buffer.handle(), VK_CULL_MODE_NONE);
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetDepthWriteEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetDepthBoundsTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetDepthBiasEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 0u, nullptr, 0u, nullptr);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_FALSE);
     VkBool32 colorBlendEnable = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 1u, &colorBlendEnable);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0u, 1u, &colorBlendEnable);
     VkColorComponentFlags colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    vk::CmdSetColorWriteMaskEXT(m_commandBuffer->handle(), 0u, 1u, &colorWriteMask);
+    vk::CmdSetColorWriteMaskEXT(m_command_buffer.handle(), 0u, 1u, &colorWriteMask);
     VkColorBlendEquationEXT colorBlendEquation = {
         VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
     };
-    vk::CmdSetColorBlendEquationEXT(m_commandBuffer->handle(), 0u, 1u, &colorBlendEquation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &colorBlendEquation);
 
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
@@ -804,23 +804,23 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     VkViewport viewport = {0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f};
     VkRect2D scissor = {{0, 0}, {m_width, m_height}};
-    vk::CmdSetViewportWithCountEXT(m_commandBuffer->handle(), 1u, &viewport);
-    vk::CmdSetScissorWithCountEXT(m_commandBuffer->handle(), 1u, &scissor);
-    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    vk::CmdSetStencilTestEnableEXT(m_commandBuffer->handle(), VK_FALSE);
-    vk::CmdSetPrimitiveTopologyEXT(m_commandBuffer->handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdSetVertexInputEXT(m_commandBuffer->handle(), 0u, nullptr, 0u, nullptr);
-    vk::CmdSetPrimitiveRestartEnableEXT(m_commandBuffer->handle(), VK_FALSE);
+    vk::CmdSetViewportWithCountEXT(m_command_buffer.handle(), 1u, &viewport);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer.handle(), 1u, &scissor);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdSetStencilTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 0u, nullptr, 0u, nullptr);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_FALSE);
 
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
@@ -882,17 +882,17 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     frag_descriptor_set.WriteDescriptorImageInfo(0, view, sampler.handle());
     frag_descriptor_set.UpdateDescriptorSets();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1u, 1u,
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1u, 1u,
                               &frag_descriptor_set.set_, 0u, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DescriptorBuffer) {
@@ -931,14 +931,14 @@ TEST_F(PositiveShaderObject, DescriptorBuffer) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_spv),
                                  &set_layout.handle());
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &buffer_binding_info);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &buffer_binding_info);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, MultiplePushConstants) {
@@ -985,20 +985,20 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     const vkt::Shader fragShader(*m_device,
                                  ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 2, push_constant_ranges));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     int pos = 1;
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(int), &pos);
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(int), &pos);
     float color = 1.0f;
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(int),
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(int),
                          sizeof(float), &color);
 
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
@@ -1051,14 +1051,14 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
     const vkt::Shader fragShader(
         *m_device, ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr, 0, nullptr, &specialization_info));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, IndirectDraw) {
@@ -1145,8 +1145,8 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
 
     vkt::Buffer indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     SetDefaultDynamicStatesExclude();
 
@@ -1155,11 +1155,11 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {vertShader.handle(), tescShader.handle(), teseShader.handle(), geomShader.handle(),
                                    fragShader.handle()};
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
 
-    vk::CmdDrawIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0u, 1u, 0u);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0u, 1u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
@@ -1190,9 +1190,9 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     command_buffer.EndRendering();
     command_buffer.end();
 
-    m_commandBuffer->begin();
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &command_buffer.handle());
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &command_buffer.handle());
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
@@ -1242,13 +1242,13 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     renderingInfo.colorAttachmentCount = 2u;
     renderingInfo.pColorAttachments = attachments;
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
@@ -1270,15 +1270,15 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
     VkBool32 enabled = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0, 1, &enabled);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0, 1, &enabled);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue) {
@@ -1316,7 +1316,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
     command_buffer.end();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageView = GetDynamicRenderTarget();
@@ -1329,11 +1329,11 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};
 
-    m_commandBuffer->BeginRendering(renderingInfo);
+    m_command_buffer.BeginRendering(renderingInfo);
 
-    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1u, &command_buffer.handle());
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &command_buffer.handle());
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawRebindingShaders) {
@@ -1358,31 +1358,31 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
 
     const VkShaderEXT nullShader = VK_NULL_HANDLE;
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     SetDefaultDynamicStatesExclude();
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &vertStage, &vertShader.handle());
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &tescStage, &nullShader);
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &teseStage, &nullShader);
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &nullShader);
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &fragStage, &fragShader.handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &vertStage, &vertShader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tescStage, &nullShader);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &teseStage, &nullShader);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geomStage, &nullShader);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &fragStage, &fragShader.handle());
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &geomShader.handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geomStage, &geomShader.handle());
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &tescStage, &tescShader.handle());
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &teseStage, &teseShader.handle());
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &nullShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tescStage, &tescShader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &teseStage, &teseShader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geomStage, &nullShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &fragStage, &nullShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &fragStage, &nullShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
@@ -1431,15 +1431,15 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
         vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &binaryShaders[i]);
     }
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, shaderStages, binaryShaders);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, shaderStages, binaryShaders);
 
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     for (uint32_t i = 0; i < 5; ++i) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
@@ -1459,14 +1459,14 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_BOUNDS});
-    vk::CmdSetRasterizerDiscardEnableEXT(m_commandBuffer->handle(), VK_TRUE);
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
@@ -1502,15 +1502,15 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
         vk::CreateShadersEXT(*m_device, 1u, &createInfos[i], nullptr, &shaders[i]);
     }
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 5u, stages, shaders);
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
 
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     for (uint32_t i = 0; i < 5u; ++i) {
         vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
@@ -1530,14 +1530,14 @@ TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRendering(renderingInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRendering(renderingInfo);
 
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 
     m_errorMonitor->VerifyFound();
 }
@@ -1552,15 +1552,15 @@ TEST_F(PositiveShaderObject, DisabledColorBlend) {
 
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT});
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
     VkBool32 colorBlendEnable = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(m_commandBuffer->handle(), 0u, 1u, &colorBlendEnable);
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0u, 1u, &colorBlendEnable);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
@@ -1622,13 +1622,13 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
     const vkt::Shader geomShader(*m_device, VK_SHADER_STAGE_GEOMETRY_BIT, GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, geom_src));
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src));
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_commandBuffer->BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
     VkShaderStageFlagBits geomStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    vk::CmdBindShadersEXT(m_commandBuffer->handle(), 1u, &geomStage, &geomShader.handle());
-    vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
-    m_commandBuffer->EndRendering();
-    m_commandBuffer->end();
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geomStage, &geomShader.handle());
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
 }

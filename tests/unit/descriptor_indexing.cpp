@@ -118,7 +118,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
 
-    vk::EndCommandBuffer(m_commandBuffer->handle());
+    vk::EndCommandBuffer(m_command_buffer.handle());
     m_errorMonitor->VerifyFound();
 }
 

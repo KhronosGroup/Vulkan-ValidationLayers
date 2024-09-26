@@ -1216,7 +1216,7 @@ VkImageAspectFlags Image::aspect_mask(VkFormat format) {
     return image_aspect;
 }
 
-void Image::ImageMemoryBarrier(CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
+void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
                                VkImageLayout image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
     // clang-format on
     const VkImageSubresourceRange subresourceRange =
@@ -1227,11 +1227,11 @@ void Image::ImageMemoryBarrier(CommandBuffer *cmd_buf, VkImageAspectFlags aspect
     VkImageMemoryBarrier *pmemory_barrier = &barrier;
 
     // write barrier to the command buffer
-    vk::CmdPipelineBarrier(cmd_buf->handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
+    vk::CmdPipelineBarrier(cmd_buf.handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
                            pmemory_barrier);
 }
 
-void Image::SetLayout(CommandBuffer *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
     VkFlags src_mask, dst_mask;
     const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1310,7 +1310,7 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
 
     /* Build command buffer to set image layout in the driver */
     cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    SetLayout(&cmd_buf, aspect, image_layout);
+    SetLayout(cmd_buf, aspect, image_layout);
     cmd_buf.end();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];

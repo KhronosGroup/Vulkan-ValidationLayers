@@ -160,16 +160,16 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     clear_rect.layerCount = 1;
     const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT};
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Write 1: Copy to render target's layer 0
-    vk::CmdCopyImage(*m_commandBuffer, image, VK_IMAGE_LAYOUT_GENERAL, rt, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_commandBuffer->BeginRenderPass(render_pass, framebuffer, width, height);
+    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, rt, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, width, height);
     // Write 2: Clear render target's layer 1
-    vk::CmdClearAttachments(*m_commandBuffer, 1, &clear_attachment, 1, &clear_rect);
-    vk::CmdEndRenderPass(*m_commandBuffer);
-    m_commandBuffer->end();
-    m_default_queue->Submit(*m_commandBuffer);
+    vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -207,11 +207,11 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     region.imageExtent.height = height;
     region.imageExtent.depth = 1;
 
-    m_commandBuffer->begin();
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+    m_command_buffer.begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
                            1, &barrier);
-    vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    m_commandBuffer->end();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    m_command_buffer.end();
 }
 
 // Regression test for vkWaitSemaphores timeout while waiting for vkSignalSemaphore.
@@ -392,20 +392,20 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Bind set 0.
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set.set_, 0, nullptr);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Core checks prevent SyncVal from running when error is found. This test has core checks disabled and also invalid
     // setup where a shader uses not bound set 1.
     // Check that syncval does not cause out of bounds access (PerSet has single element (index 0), shader set index is 1).
-    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
-    vk::CmdEndRenderPass(*m_commandBuffer);
-    m_commandBuffer->end();
+    vk::CmdEndRenderPass(m_command_buffer);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
@@ -420,9 +420,9 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     VkBufferCopy region = {};
     region.size = size;
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Perform a copy
-    vk::CmdCopyBuffer(*m_commandBuffer, staging_buffer, buffer, 1, &region);
+    vk::CmdCopyBuffer(m_command_buffer, staging_buffer, buffer, 1, &region);
 
     // Make writes available
     VkBufferMemoryBarrier barrier_a = vku::InitStructHelper();
@@ -430,7 +430,7 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     barrier_a.dstAccessMask = 0;
     barrier_a.buffer = buffer;
     barrier_a.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
                            &barrier_a, 0, nullptr);
 
     // Make writes visible
@@ -439,12 +439,12 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     barrier_b.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier_b.buffer = buffer;
     barrier_b.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
                            &barrier_b, 0, nullptr);
 
     // Perform one more copy. Should not generate WAW.
-    vk::CmdCopyBuffer(*m_commandBuffer, staging_buffer, buffer, 1, &region);
-    m_commandBuffer->end();
+    vk::CmdCopyBuffer(m_command_buffer, staging_buffer, buffer, 1, &region);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
@@ -461,7 +461,7 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
 
     // Copy data from buffer to image
     VkBufferImageCopy region = {};
@@ -470,7 +470,7 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     region.imageExtent.width = 64;
     region.imageExtent.height = 64;
     region.imageExtent.depth = 1;
-    vk::CmdCopyBufferToImage(*m_commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     // Make writes available
     VkImageMemoryBarrier barrier_a = vku::InitStructHelper();
@@ -480,7 +480,7 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     barrier_a.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier_a.image = image;
     barrier_a.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
                            nullptr, 1, &barrier_a);
 
     // Transition to new layout. Available memory should automatically be made visible to the layout transition.
@@ -491,9 +491,9 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     barrier_b.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     barrier_b.image = image;
     barrier_b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier_b);
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
@@ -557,22 +557,22 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Graphics pipeline writes
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
     // Compute pipeline reads
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -628,22 +628,22 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Graphics pipeline writes
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
     // Compute pipeline reads
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -700,22 +700,22 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
+    m_command_buffer.begin();
     // Graphics pipeline writes
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(*m_commandBuffer, 3, 1, 0, 0);
-    m_commandBuffer->EndRenderPass();
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
     // Compute pipeline reads
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.end();
 
-    m_default_queue->Submit(*m_commandBuffer);
+    m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
 
@@ -966,10 +966,10 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
 
-    m_commandBuffer->begin();
-    vk::CmdBeginRendering(*m_commandBuffer, &rendering_info);
-    vk::CmdEndRendering(*m_commandBuffer);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
@@ -1019,10 +1019,10 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     rendering_info.layerCount = 1;
     rendering_info.pDepthAttachment = &depth_attachment;
 
-    m_commandBuffer->begin();
-    vk::CmdBeginRendering(*m_commandBuffer, &rendering_info);
-    vk::CmdEndRendering(*m_commandBuffer);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdBeginRendering(m_command_buffer, &rendering_info);
+    vk::CmdEndRendering(m_command_buffer);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, FillBuffer) {
@@ -1052,11 +1052,11 @@ TEST_F(PositiveSyncVal, FillBuffer) {
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &barrier;
 
-    m_commandBuffer->begin();
-    vk::CmdFillBuffer(*m_commandBuffer, src_buffer, 0, size, 42);
-    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
-    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdFillBuffer(m_command_buffer, src_buffer, 0, size, 42);
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 1, &region);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, UpdateBuffer) {
@@ -1088,11 +1088,11 @@ TEST_F(PositiveSyncVal, UpdateBuffer) {
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &barrier;
 
-    m_commandBuffer->begin();
-    vk::CmdUpdateBuffer(*m_commandBuffer, src_buffer, 0, static_cast<VkDeviceSize>(data.size()), data.data());
-    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
-    vk::CmdCopyBuffer(*m_commandBuffer, src_buffer, dst_buffer, 1, &region);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdUpdateBuffer(m_command_buffer, src_buffer, 0, static_cast<VkDeviceSize>(data.size()), data.data());
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 1, &region);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
@@ -1213,18 +1213,18 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(rp.Handle(), fb);
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
-    vk::CmdDraw(*m_commandBuffer, 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
 
     // This waits for the FRAGMENT_SHADER read before starting with transition.
     // If storeOp other than NONE was used we had to wait for it instead.
-    vk::CmdPipelineBarrier2(*m_commandBuffer, &dep_info);
-    m_commandBuffer->end();
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, ThreadedSubmitAndFenceWait) {
@@ -1321,10 +1321,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImage) {
     buffer_copy[1].imageOffset = {8, 0, 0};
     buffer_copy[1].imageExtent = {8, 8, 1};
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC) {
@@ -1353,10 +1353,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC) {
     buffer_copy[1].imageOffset = {10, 0, 0};
     buffer_copy[1].imageExtent = {10, 10, 1};
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC2) {
@@ -1385,10 +1385,10 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC2) {
     buffer_copy[1].imageOffset = {0, 10, 0};
     buffer_copy[1].imageExtent = {10, 10, 1};
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
-    m_commandBuffer->end();
+    m_command_buffer.begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
@@ -1425,12 +1425,12 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
     barrier.image = dst_image;
     barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    m_commandBuffer->begin();
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdPipelineBarrier(*m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+    m_command_buffer.begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
                            nullptr, 1, &barrier);
-    vk::CmdCopyBufferToImage(*m_commandBuffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
-    m_commandBuffer->end();
+    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOneQueueSubmit) {
@@ -1576,19 +1576,19 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
                               0, nullptr);
 
     // Writes into region [0..127]
     VkBufferCopy region{};
     region.size = copy_dst_area_size;
-    vk::CmdCopyBuffer(*m_commandBuffer, buffer_b, buffer_a, 1, &region);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_b, buffer_a, 1, &region);
 
     // Reads from region [128..159]
-    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
@@ -1633,19 +1633,19 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
     // this ensures copy region does not overlap with uniform data region
     uint32_t dynamic_offset = static_cast<uint32_t>(copy_dst_area_size);
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
                               1, &dynamic_offset);
 
     // Writes into region [0..127]
     VkBufferCopy region{};
     region.size = copy_dst_area_size;
-    vk::CmdCopyBuffer(*m_commandBuffer, buffer_b, buffer_a, 1, &region);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_b, buffer_a, 1, &region);
 
     // Reads from region [128..159]
-    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
-    m_commandBuffer->end();
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
@@ -1692,20 +1692,20 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
     // this ensures copy region does not overlap with uniform data region
     uint32_t dynamic_offset = static_cast<uint32_t>(copy_dst_area_size);
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(*m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+    m_command_buffer.begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
                               1, &dynamic_offset);
 
     // Reads from region [128..159]
-    vk::CmdDispatch(*m_commandBuffer, 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // Writes into region [0..127]
     VkBufferCopy region{};
     region.size = copy_dst_area_size;
-    vk::CmdCopyBuffer(*m_commandBuffer, buffer_b, buffer_a, 1, &region);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_b, buffer_a, 1, &region);
 
-    m_commandBuffer->end();
+    m_command_buffer.end();
 }
 
 TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
