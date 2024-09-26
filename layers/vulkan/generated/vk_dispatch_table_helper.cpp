@@ -1229,6 +1229,7 @@ static VKAPI_ATTR void VKAPI_CALL StubDestroyShaderEXT(VkDevice, VkShaderEXT, co
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetShaderBinaryDataEXT(VkDevice, VkShaderEXT, size_t*, void*) { return VK_SUCCESS; }
 static VKAPI_ATTR void VKAPI_CALL StubCmdBindShadersEXT(VkCommandBuffer, uint32_t, const VkShaderStageFlagBits*,
                                                         const VkShaderEXT*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthClampRangeEXT(VkCommandBuffer, VkDepthClampModeEXT, const VkDepthClampRangeEXT*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetFramebufferTilePropertiesQCOM(VkDevice, VkFramebuffer, uint32_t*,
                                                                            VkTilePropertiesQCOM*) {
     return VK_SUCCESS;
@@ -1253,6 +1254,30 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetScreenBufferPropertiesQNX(VkDevice,
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+static VKAPI_ATTR void VKAPI_CALL StubGetGeneratedCommandsMemoryRequirementsEXT(VkDevice,
+                                                                                const VkGeneratedCommandsMemoryRequirementsInfoEXT*,
+                                                                                VkMemoryRequirements2*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer, const VkGeneratedCommandsInfoEXT*,
+                                                                        VkCommandBuffer) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdExecuteGeneratedCommandsEXT(VkCommandBuffer, VkBool32, const VkGeneratedCommandsInfoEXT*) {
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateIndirectCommandsLayoutEXT(VkDevice, const VkIndirectCommandsLayoutCreateInfoEXT*,
+                                                                          const VkAllocationCallbacks*,
+                                                                          VkIndirectCommandsLayoutEXT*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyIndirectCommandsLayoutEXT(VkDevice, VkIndirectCommandsLayoutEXT,
+                                                                       const VkAllocationCallbacks*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateIndirectExecutionSetEXT(VkDevice, const VkIndirectExecutionSetCreateInfoEXT*,
+                                                                        const VkAllocationCallbacks*, VkIndirectExecutionSetEXT*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyIndirectExecutionSetEXT(VkDevice, VkIndirectExecutionSetEXT,
+                                                                     const VkAllocationCallbacks*) {}
+static VKAPI_ATTR void VKAPI_CALL StubUpdateIndirectExecutionSetPipelineEXT(VkDevice, VkIndirectExecutionSetEXT, uint32_t,
+                                                                            const VkWriteIndirectExecutionSetPipelineEXT*) {}
+static VKAPI_ATTR void VKAPI_CALL StubUpdateIndirectExecutionSetShaderEXT(VkDevice, VkIndirectExecutionSetEXT, uint32_t,
+                                                                          const VkWriteIndirectExecutionSetShaderEXT*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice, const VkAccelerationStructureCreateInfoKHR*,
                                                                          const VkAllocationCallbacks*,
                                                                          VkAccelerationStructureKHR*) {
@@ -1788,6 +1813,7 @@ const auto& GetApiExtensionMap() {
         {"vkDestroyShaderEXT", {vvl::Extension::_VK_EXT_shader_object}},
         {"vkGetShaderBinaryDataEXT", {vvl::Extension::_VK_EXT_shader_object}},
         {"vkCmdBindShadersEXT", {vvl::Extension::_VK_EXT_shader_object}},
+        {"vkCmdSetDepthClampRangeEXT", {vvl::Extension::_VK_EXT_shader_object, vvl::Extension::_VK_EXT_depth_clamp_control}},
         {"vkGetFramebufferTilePropertiesQCOM", {vvl::Extension::_VK_QCOM_tile_properties}},
         {"vkGetDynamicRenderingTilePropertiesQCOM", {vvl::Extension::_VK_QCOM_tile_properties}},
         {"vkSetLatencySleepModeNV", {vvl::Extension::_VK_NV_low_latency2}},
@@ -1797,6 +1823,15 @@ const auto& GetApiExtensionMap() {
         {"vkQueueNotifyOutOfBandNV", {vvl::Extension::_VK_NV_low_latency2}},
         {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state}},
         {"vkGetScreenBufferPropertiesQNX", {vvl::Extension::_VK_QNX_external_memory_screen_buffer}},
+        {"vkGetGeneratedCommandsMemoryRequirementsEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkCmdPreprocessGeneratedCommandsEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkCmdExecuteGeneratedCommandsEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkCreateIndirectCommandsLayoutEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkDestroyIndirectCommandsLayoutEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkCreateIndirectExecutionSetEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkDestroyIndirectExecutionSetEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkUpdateIndirectExecutionSetPipelineEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
+        {"vkUpdateIndirectExecutionSetShaderEXT", {vvl::Extension::_VK_EXT_device_generated_commands}},
         {"vkCreateAccelerationStructureKHR", {vvl::Extension::_VK_KHR_acceleration_structure}},
         {"vkDestroyAccelerationStructureKHR", {vvl::Extension::_VK_KHR_acceleration_structure}},
         {"vkCmdBuildAccelerationStructuresKHR", {vvl::Extension::_VK_KHR_acceleration_structure}},
@@ -3873,6 +3908,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdBindShadersEXT == nullptr) {
         table->CmdBindShadersEXT = (PFN_vkCmdBindShadersEXT)StubCmdBindShadersEXT;
     }
+    table->CmdSetDepthClampRangeEXT = (PFN_vkCmdSetDepthClampRangeEXT)gpa(device, "vkCmdSetDepthClampRangeEXT");
+    if (table->CmdSetDepthClampRangeEXT == nullptr) {
+        table->CmdSetDepthClampRangeEXT = (PFN_vkCmdSetDepthClampRangeEXT)StubCmdSetDepthClampRangeEXT;
+    }
     table->GetFramebufferTilePropertiesQCOM =
         (PFN_vkGetFramebufferTilePropertiesQCOM)gpa(device, "vkGetFramebufferTilePropertiesQCOM");
     if (table->GetFramebufferTilePropertiesQCOM == nullptr) {
@@ -3916,6 +3955,51 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)StubGetScreenBufferPropertiesQNX;
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    table->GetGeneratedCommandsMemoryRequirementsEXT =
+        (PFN_vkGetGeneratedCommandsMemoryRequirementsEXT)gpa(device, "vkGetGeneratedCommandsMemoryRequirementsEXT");
+    if (table->GetGeneratedCommandsMemoryRequirementsEXT == nullptr) {
+        table->GetGeneratedCommandsMemoryRequirementsEXT =
+            (PFN_vkGetGeneratedCommandsMemoryRequirementsEXT)StubGetGeneratedCommandsMemoryRequirementsEXT;
+    }
+    table->CmdPreprocessGeneratedCommandsEXT =
+        (PFN_vkCmdPreprocessGeneratedCommandsEXT)gpa(device, "vkCmdPreprocessGeneratedCommandsEXT");
+    if (table->CmdPreprocessGeneratedCommandsEXT == nullptr) {
+        table->CmdPreprocessGeneratedCommandsEXT = (PFN_vkCmdPreprocessGeneratedCommandsEXT)StubCmdPreprocessGeneratedCommandsEXT;
+    }
+    table->CmdExecuteGeneratedCommandsEXT = (PFN_vkCmdExecuteGeneratedCommandsEXT)gpa(device, "vkCmdExecuteGeneratedCommandsEXT");
+    if (table->CmdExecuteGeneratedCommandsEXT == nullptr) {
+        table->CmdExecuteGeneratedCommandsEXT = (PFN_vkCmdExecuteGeneratedCommandsEXT)StubCmdExecuteGeneratedCommandsEXT;
+    }
+    table->CreateIndirectCommandsLayoutEXT =
+        (PFN_vkCreateIndirectCommandsLayoutEXT)gpa(device, "vkCreateIndirectCommandsLayoutEXT");
+    if (table->CreateIndirectCommandsLayoutEXT == nullptr) {
+        table->CreateIndirectCommandsLayoutEXT = (PFN_vkCreateIndirectCommandsLayoutEXT)StubCreateIndirectCommandsLayoutEXT;
+    }
+    table->DestroyIndirectCommandsLayoutEXT =
+        (PFN_vkDestroyIndirectCommandsLayoutEXT)gpa(device, "vkDestroyIndirectCommandsLayoutEXT");
+    if (table->DestroyIndirectCommandsLayoutEXT == nullptr) {
+        table->DestroyIndirectCommandsLayoutEXT = (PFN_vkDestroyIndirectCommandsLayoutEXT)StubDestroyIndirectCommandsLayoutEXT;
+    }
+    table->CreateIndirectExecutionSetEXT = (PFN_vkCreateIndirectExecutionSetEXT)gpa(device, "vkCreateIndirectExecutionSetEXT");
+    if (table->CreateIndirectExecutionSetEXT == nullptr) {
+        table->CreateIndirectExecutionSetEXT = (PFN_vkCreateIndirectExecutionSetEXT)StubCreateIndirectExecutionSetEXT;
+    }
+    table->DestroyIndirectExecutionSetEXT = (PFN_vkDestroyIndirectExecutionSetEXT)gpa(device, "vkDestroyIndirectExecutionSetEXT");
+    if (table->DestroyIndirectExecutionSetEXT == nullptr) {
+        table->DestroyIndirectExecutionSetEXT = (PFN_vkDestroyIndirectExecutionSetEXT)StubDestroyIndirectExecutionSetEXT;
+    }
+    table->UpdateIndirectExecutionSetPipelineEXT =
+        (PFN_vkUpdateIndirectExecutionSetPipelineEXT)gpa(device, "vkUpdateIndirectExecutionSetPipelineEXT");
+    if (table->UpdateIndirectExecutionSetPipelineEXT == nullptr) {
+        table->UpdateIndirectExecutionSetPipelineEXT =
+            (PFN_vkUpdateIndirectExecutionSetPipelineEXT)StubUpdateIndirectExecutionSetPipelineEXT;
+    }
+    table->UpdateIndirectExecutionSetShaderEXT =
+        (PFN_vkUpdateIndirectExecutionSetShaderEXT)gpa(device, "vkUpdateIndirectExecutionSetShaderEXT");
+    if (table->UpdateIndirectExecutionSetShaderEXT == nullptr) {
+        table->UpdateIndirectExecutionSetShaderEXT =
+            (PFN_vkUpdateIndirectExecutionSetShaderEXT)StubUpdateIndirectExecutionSetShaderEXT;
+    }
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gpa(device, "vkCreateAccelerationStructureKHR");
     if (table->CreateAccelerationStructureKHR == nullptr) {
         table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)StubCreateAccelerationStructureKHR;

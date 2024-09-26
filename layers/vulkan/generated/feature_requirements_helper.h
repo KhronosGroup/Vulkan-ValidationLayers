@@ -128,6 +128,8 @@ enum class Feature {
     floatRepresentation,
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT
     leastRepresentableValueForceUnormRepresentation,
+    // VkPhysicalDeviceDepthClampControlFeaturesEXT
+    depthClampControl,
     // VkPhysicalDeviceDepthClampZeroOneFeaturesEXT
     depthClampZeroOne,
     // VkPhysicalDeviceDepthClipControlFeaturesEXT
@@ -192,7 +194,9 @@ enum class Feature {
     deviceGeneratedComputeCaptureReplay,
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
     deviceGeneratedComputePipelines,
-    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
+    dynamicGeneratedPipelineLayout,
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
     deviceGeneratedCommands,
     // VkPhysicalDeviceDeviceMemoryReportFeaturesEXT
     deviceMemoryReport,

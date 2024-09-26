@@ -1724,12 +1724,33 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdBindShadersEXT-videocoding",
 }},
+{Func::vkCmdSetDepthClampRangeEXT, {
+    "VUID-vkCmdSetDepthClampRangeEXT-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetDepthClampRangeEXT-commandBuffer-cmdpool",
+    CMD_SCOPE_BOTH, "kVUIDUndefined",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetDepthClampRangeEXT-videocoding",
+}},
 {Func::vkCmdSetAttachmentFeedbackLoopEnableEXT, {
     "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-recording",
     nullptr,
     VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-cmdpool",
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-videocoding",
+}},
+{Func::vkCmdPreprocessGeneratedCommandsEXT, {
+    "VUID-vkCmdPreprocessGeneratedCommandsEXT-commandBuffer-recording",
+    "VUID-vkCmdPreprocessGeneratedCommandsEXT-bufferlevel",
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdPreprocessGeneratedCommandsEXT-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdPreprocessGeneratedCommandsEXT-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdPreprocessGeneratedCommandsEXT-videocoding",
+}},
+{Func::vkCmdExecuteGeneratedCommandsEXT, {
+    "VUID-vkCmdExecuteGeneratedCommandsEXT-commandBuffer-recording",
+    "VUID-vkCmdExecuteGeneratedCommandsEXT-bufferlevel",
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdExecuteGeneratedCommandsEXT-commandBuffer-cmdpool",
+    CMD_SCOPE_BOTH, "kVUIDUndefined",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdExecuteGeneratedCommandsEXT-videocoding",
 }},
 {Func::vkCmdBuildAccelerationStructuresKHR, {
     "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording",

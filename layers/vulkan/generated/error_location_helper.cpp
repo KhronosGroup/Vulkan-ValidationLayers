@@ -165,6 +165,7 @@ const char* String(Func func) {
     {"vkCmdEndTransformFeedbackEXT", 29},
     {"vkCmdEndVideoCodingKHR", 23},
     {"vkCmdExecuteCommands", 21},
+    {"vkCmdExecuteGeneratedCommandsEXT", 33},
     {"vkCmdExecuteGeneratedCommandsNV", 32},
     {"vkCmdFillBuffer", 16},
     {"vkCmdInitializeGraphScratchMemoryAMDX", 38},
@@ -176,6 +177,7 @@ const char* String(Func func) {
     {"vkCmdPipelineBarrier", 21},
     {"vkCmdPipelineBarrier2", 22},
     {"vkCmdPipelineBarrier2KHR", 25},
+    {"vkCmdPreprocessGeneratedCommandsEXT", 36},
     {"vkCmdPreprocessGeneratedCommandsNV", 35},
     {"vkCmdPushConstants", 19},
     {"vkCmdPushConstants2KHR", 23},
@@ -218,6 +220,7 @@ const char* String(Func func) {
     {"vkCmdSetDepthBoundsTestEnable", 30},
     {"vkCmdSetDepthBoundsTestEnableEXT", 33},
     {"vkCmdSetDepthClampEnableEXT", 28},
+    {"vkCmdSetDepthClampRangeEXT", 27},
     {"vkCmdSetDepthClipEnableEXT", 27},
     {"vkCmdSetDepthClipNegativeOneToOneEXT", 37},
     {"vkCmdSetDepthCompareOp", 23},
@@ -352,7 +355,9 @@ const char* String(Func func) {
     {"vkCreateImage", 14},
     {"vkCreateImagePipeSurfaceFUCHSIA", 32},
     {"vkCreateImageView", 18},
+    {"vkCreateIndirectCommandsLayoutEXT", 34},
     {"vkCreateIndirectCommandsLayoutNV", 33},
+    {"vkCreateIndirectExecutionSetEXT", 32},
     {"vkCreateInstance", 17},
     {"vkCreateMacOSSurfaceMVK", 24},
     {"vkCreateMetalSurfaceEXT", 24},
@@ -414,7 +419,9 @@ const char* String(Func func) {
     {"vkDestroyFramebuffer", 21},
     {"vkDestroyImage", 15},
     {"vkDestroyImageView", 19},
+    {"vkDestroyIndirectCommandsLayoutEXT", 35},
     {"vkDestroyIndirectCommandsLayoutNV", 34},
+    {"vkDestroyIndirectExecutionSetEXT", 33},
     {"vkDestroyInstance", 18},
     {"vkDestroyMicromapEXT", 21},
     {"vkDestroyOpticalFlowSessionNV", 30},
@@ -519,6 +526,7 @@ const char* String(Func func) {
     {"vkGetFenceStatus", 17},
     {"vkGetFenceWin32HandleKHR", 25},
     {"vkGetFramebufferTilePropertiesQCOM", 35},
+    {"vkGetGeneratedCommandsMemoryRequirementsEXT", 44},
     {"vkGetGeneratedCommandsMemoryRequirementsNV", 43},
     {"vkGetImageDrmFormatModifierPropertiesEXT", 41},
     {"vkGetImageMemoryRequirements", 29},
@@ -711,6 +719,8 @@ const char* String(Func func) {
     {"vkUpdateDescriptorSetWithTemplate", 34},
     {"vkUpdateDescriptorSetWithTemplateKHR", 37},
     {"vkUpdateDescriptorSets", 23},
+    {"vkUpdateIndirectExecutionSetPipelineEXT", 40},
+    {"vkUpdateIndirectExecutionSetShaderEXT", 38},
     {"vkUpdateVideoSessionParametersKHR", 34},
     {"vkWaitForFences", 16},
     {"vkWaitForPresentKHR", 20},
@@ -782,11 +792,13 @@ const char* String(Struct structure) {
     {"VkBindImageMemoryInfo", 22},
     {"VkBindImageMemorySwapchainInfoKHR", 34},
     {"VkBindImagePlaneMemoryInfo", 27},
+    {"VkBindIndexBufferIndirectCommandEXT", 36},
     {"VkBindIndexBufferIndirectCommandNV", 35},
     {"VkBindMemoryStatusKHR", 22},
     {"VkBindPipelineIndirectCommandNV", 32},
     {"VkBindShaderGroupIndirectCommandNV", 35},
     {"VkBindSparseInfo", 17},
+    {"VkBindVertexBufferIndirectCommandEXT", 37},
     {"VkBindVertexBufferIndirectCommandNV", 36},
     {"VkBindVideoSessionMemoryInfoKHR", 32},
     {"VkBlitImageCubicWeightsInfoQCOM", 32},
@@ -879,6 +891,7 @@ const char* String(Struct structure) {
     {"VkDependencyInfo", 17},
     {"VkDepthBiasInfoEXT", 19},
     {"VkDepthBiasRepresentationInfoEXT", 33},
+    {"VkDepthClampRangeEXT", 21},
     {"VkDescriptorAddressInfoEXT", 27},
     {"VkDescriptorBufferBindingInfoEXT", 33},
     {"VkDescriptorBufferBindingPushDescriptorBufferHandleEXT", 55},
@@ -957,6 +970,7 @@ const char* String(Struct structure) {
     {"VkDisplaySurfaceCreateInfoKHR", 30},
     {"VkDrawIndexedIndirectCommand", 29},
     {"VkDrawIndirectCommand", 22},
+    {"VkDrawIndirectCountIndirectCommandEXT", 38},
     {"VkDrawMeshTasksIndirectCommandEXT", 34},
     {"VkDrawMeshTasksIndirectCommandNV", 33},
     {"VkDrmFormatModifierProperties2EXT", 34},
@@ -1010,8 +1024,12 @@ const char* String(Struct structure) {
     {"VkFramebufferAttachmentsCreateInfo", 35},
     {"VkFramebufferCreateInfo", 24},
     {"VkFramebufferMixedSamplesCombinationNV", 39},
+    {"VkGeneratedCommandsInfoEXT", 27},
     {"VkGeneratedCommandsInfoNV", 26},
+    {"VkGeneratedCommandsMemoryRequirementsInfoEXT", 45},
     {"VkGeneratedCommandsMemoryRequirementsInfoNV", 44},
+    {"VkGeneratedCommandsPipelineInfoEXT", 35},
+    {"VkGeneratedCommandsShaderInfoEXT", 33},
     {"VkGeometryAABBNV", 17},
     {"VkGeometryDataNV", 17},
     {"VkGeometryNV", 13},
@@ -1084,9 +1102,21 @@ const char* String(Struct structure) {
     {"VkImportSemaphoreFdInfoKHR", 27},
     {"VkImportSemaphoreWin32HandleInfoKHR", 36},
     {"VkImportSemaphoreZirconHandleInfoFUCHSIA", 41},
+    {"VkIndirectCommandsExecutionSetTokenEXT", 39},
+    {"VkIndirectCommandsIndexBufferTokenEXT", 38},
+    {"VkIndirectCommandsLayoutCreateInfoEXT", 38},
     {"VkIndirectCommandsLayoutCreateInfoNV", 37},
+    {"VkIndirectCommandsLayoutTokenEXT", 33},
     {"VkIndirectCommandsLayoutTokenNV", 32},
+    {"VkIndirectCommandsPushConstantTokenEXT", 39},
     {"VkIndirectCommandsStreamNV", 27},
+    {"VkIndirectCommandsTokenDataEXT", 31},
+    {"VkIndirectCommandsVertexBufferTokenEXT", 39},
+    {"VkIndirectExecutionSetCreateInfoEXT", 36},
+    {"VkIndirectExecutionSetInfoEXT", 30},
+    {"VkIndirectExecutionSetPipelineInfoEXT", 38},
+    {"VkIndirectExecutionSetShaderInfoEXT", 36},
+    {"VkIndirectExecutionSetShaderLayoutInfoEXT", 42},
     {"VkInitializePerformanceApiInfoINTEL", 36},
     {"VkInputAttachmentAspectReference", 33},
     {"VkInstanceCreateInfo", 21},
@@ -1202,6 +1232,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceCustomBorderColorPropertiesEXT", 47},
     {"VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", 59},
     {"VkPhysicalDeviceDepthBiasControlFeaturesEXT", 44},
+    {"VkPhysicalDeviceDepthClampControlFeaturesEXT", 45},
     {"VkPhysicalDeviceDepthClampZeroOneFeaturesEXT", 45},
     {"VkPhysicalDeviceDepthClipControlFeaturesEXT", 44},
     {"VkPhysicalDeviceDepthClipEnableFeaturesEXT", 43},
@@ -1214,7 +1245,9 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV", 55},
     {"VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE", 54},
     {"VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV", 57},
+    {"VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT", 51},
     {"VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV", 50},
+    {"VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT", 53},
     {"VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV", 52},
     {"VkPhysicalDeviceDeviceMemoryReportFeaturesEXT", 46},
     {"VkPhysicalDeviceDiagnosticsConfigFeaturesNV", 44},
@@ -1534,6 +1567,7 @@ const char* String(Struct structure) {
     {"VkPipelineVertexInputDivisorStateCreateInfoKHR", 47},
     {"VkPipelineVertexInputStateCreateInfo", 37},
     {"VkPipelineViewportCoarseSampleOrderStateCreateInfoNV", 53},
+    {"VkPipelineViewportDepthClampControlCreateInfoEXT", 49},
     {"VkPipelineViewportDepthClipControlCreateInfoEXT", 48},
     {"VkPipelineViewportExclusiveScissorStateCreateInfoNV", 52},
     {"VkPipelineViewportShadingRateImageStateCreateInfoNV", 52},
@@ -1790,6 +1824,8 @@ const char* String(Struct structure) {
     {"VkWriteDescriptorSetAccelerationStructureKHR", 45},
     {"VkWriteDescriptorSetAccelerationStructureNV", 44},
     {"VkWriteDescriptorSetInlineUniformBlock", 39},
+    {"VkWriteIndirectExecutionSetPipelineEXT", 39},
+    {"VkWriteIndirectExecutionSetShaderEXT", 37},
     {"VkXYColorEXT", 13},
     {"VkXcbSurfaceCreateInfoKHR", 26},
     {"VkXlibSurfaceCreateInfoKHR", 27},
@@ -1971,6 +2007,7 @@ const char* String(Field field) {
     {"commandBufferCount", 19},
     {"commandBufferInfoCount", 23},
     {"commandBufferInheritance", 25},
+    {"commandCount", 13},
     {"commandPool", 12},
     {"compactedSize", 14},
     {"compareEnable", 14},
@@ -2085,7 +2122,9 @@ const char* String(Field field) {
     {"depthBounds", 12},
     {"depthBoundsTestEnable", 22},
     {"depthClamp", 11},
+    {"depthClampControl", 18},
     {"depthClampEnable", 17},
+    {"depthClampMode", 15},
     {"depthClampZeroOne", 18},
     {"depthClipControl", 17},
     {"depthClipEnable", 16},
@@ -2141,6 +2180,8 @@ const char* String(Field field) {
     {"deviceFault", 12},
     {"deviceFaultVendorBinary", 24},
     {"deviceGeneratedCommands", 24},
+    {"deviceGeneratedCommandsMultiDrawIndirectCount", 46},
+    {"deviceGeneratedCommandsTransformFeedback", 41},
     {"deviceGeneratedCompute", 23},
     {"deviceGeneratedComputeCaptureReplay", 36},
     {"deviceGeneratedComputePipelines", 32},
@@ -2234,6 +2275,7 @@ const char* String(Field field) {
     {"dualSrcBlend", 13},
     {"duration", 9},
     {"dwAccess", 9},
+    {"dynamicGeneratedPipelineLayout", 31},
     {"dynamicOffsetCount", 19},
     {"dynamicPipelineLayout", 22},
     {"dynamicPrimitiveTopologyUnrestricted", 37},
@@ -2262,6 +2304,7 @@ const char* String(Field field) {
     {"executableIndex", 16},
     {"executionGraph", 15},
     {"executionGraphDispatchAddressAlignment", 39},
+    {"executionSetWriteCount", 23},
     {"expectDyadicTemporalLayerPattern", 33},
     {"expectDyadicTemporalSubLayerPattern", 36},
     {"exportFromImportedHandleTypes", 30},
@@ -2542,13 +2585,17 @@ const char* String(Field field) {
     {"indexType", 10},
     {"indexTypeCount", 15},
     {"indexTypeUint8", 15},
+    {"indirectAddress", 16},
+    {"indirectAddressSize", 20},
     {"indirectBufferOffsetAlignment", 30},
     {"indirectCommandsAddress", 24},
     {"indirectCommandsCountAddress", 29},
     {"indirectCommandsLayout", 23},
     {"indirectCopy", 13},
     {"indirectDeviceAddress", 22},
+    {"indirectExecutionSet", 21},
     {"indirectStateFlags", 19},
+    {"indirectStride", 15},
     {"info", 5},
     {"infoCount", 10},
     {"infoType", 9},
@@ -2558,6 +2605,7 @@ const char* String(Field field) {
     {"inheritedViewportScissor2D", 27},
     {"initialDataSize", 16},
     {"initialLayout", 14},
+    {"initialPipeline", 16},
     {"initialValue", 13},
     {"initialVirtualBufferSizeInMs", 29},
     {"inlineUniformBlock", 19},
@@ -2689,6 +2737,7 @@ const char* String(Field field) {
     {"maxDecompressionIndirectCount", 30},
     {"maxDepth", 9},
     {"maxDepthBounds", 15},
+    {"maxDepthClamp", 14},
     {"maxDescriptorBufferBindings", 28},
     {"maxDescriptorSetAccelerationStructures", 39},
     {"maxDescriptorSetInlineUniformBlocks", 36},
@@ -2767,11 +2816,14 @@ const char* String(Field field) {
     {"maxImageDimension3D", 20},
     {"maxImageDimensionCube", 22},
     {"maxImageExtent", 15},
+    {"maxIndirectCommandsIndirectStride", 34},
     {"maxIndirectCommandsStreamCount", 31},
     {"maxIndirectCommandsStreamStride", 32},
     {"maxIndirectCommandsTokenCount", 30},
     {"maxIndirectCommandsTokenOffset", 31},
+    {"maxIndirectPipelineCount", 25},
     {"maxIndirectSequenceCount", 25},
+    {"maxIndirectShaderObjectCount", 29},
     {"maxInlineUniformBlockBindings", 30},
     {"maxInlineUniformBlockSize", 26},
     {"maxInlineUniformTotalSize", 26},
@@ -2827,6 +2879,7 @@ const char* String(Field field) {
     {"maxPerStageDescriptorUpdateAfterBindUniformBuffers", 51},
     {"maxPerStageResources", 21},
     {"maxPerStageUpdateAfterBindResources", 36},
+    {"maxPipelineCount", 17},
     {"maxPipelineRayHitAttributeSize", 31},
     {"maxPipelineRayPayloadSize", 26},
     {"maxPipelineRayRecursionDepth", 29},
@@ -2854,9 +2907,11 @@ const char* String(Field field) {
     {"maxSamplerDescriptorBufferRange", 32},
     {"maxSamplerLodBias", 18},
     {"maxScaledImageExtent", 21},
+    {"maxSequenceCount", 17},
     {"maxSequencesCount", 18},
     {"maxSets", 8},
     {"maxSgprAllocation", 18},
+    {"maxShaderCount", 15},
     {"maxShaderGroupStride", 21},
     {"maxSliceCount", 14},
     {"maxSliceSegmentCount", 21},
@@ -2971,6 +3026,7 @@ const char* String(Field field) {
     {"minCodedExtent", 15},
     {"minDepth", 9},
     {"minDepthBounds", 15},
+    {"minDepthClamp", 14},
     {"minDstExtent", 13},
     {"minDstPosition", 15},
     {"minFilter", 10},
@@ -3205,6 +3261,7 @@ const char* String(Field field) {
     {"pDependencyInfos", 17},
     {"pDepthAttachment", 17},
     {"pDepthBiasInfo", 15},
+    {"pDepthClampRange", 17},
     {"pDepthInputAttachmentIndex", 27},
     {"pDepthStencil", 14},
     {"pDepthStencilAttachment", 24},
@@ -3254,6 +3311,8 @@ const char* String(Field field) {
     {"pExecutableCount", 17},
     {"pExecutableInfo", 16},
     {"pExecuteInfo", 13},
+    {"pExecutionSet", 14},
+    {"pExecutionSetWrites", 20},
     {"pExternalBufferInfo", 20},
     {"pExternalBufferProperties", 26},
     {"pExternalFenceInfo", 19},
@@ -3311,17 +3370,20 @@ const char* String(Field field) {
     {"pImportSemaphoreFdInfo", 23},
     {"pImportSemaphoreWin32HandleInfo", 32},
     {"pImportSemaphoreZirconHandleInfo", 33},
+    {"pIndexBuffer", 13},
     {"pIndexInfo", 11},
     {"pIndexTypeValues", 17},
     {"pIndexTypes", 12},
     {"pIndirectCommandsLayout", 24},
     {"pIndirectDeviceAddresses", 25},
+    {"pIndirectExecutionSet", 22},
     {"pIndirectStrides", 17},
     {"pInfo", 6},
     {"pInfoSize", 10},
     {"pInfos", 7},
     {"pInheritanceInfo", 17},
     {"pInitialData", 13},
+    {"pInitialShaders", 16},
     {"pInitializeInfo", 16},
     {"pInputAssemblyState", 20},
     {"pInputAttachmentImage", 22},
@@ -3435,6 +3497,7 @@ const char* String(Field field) {
     {"pProperties", 12},
     {"pPropertiesCount", 17},
     {"pPropertyCount", 15},
+    {"pPushConstant", 14},
     {"pPushConstantRanges", 20},
     {"pPushConstantsInfo", 19},
     {"pPushDescriptorSetInfo", 23},
@@ -3483,11 +3546,13 @@ const char* String(Field field) {
     {"pSession", 9},
     {"pSetDescriptorBufferOffsetsInfo", 32},
     {"pSetLayout", 11},
+    {"pSetLayoutInfos", 16},
     {"pSetLayouts", 12},
     {"pSettingName", 13},
     {"pSettings", 10},
     {"pSetupReferenceSlot", 20},
     {"pShaderGroupCaptureReplayHandle", 32},
+    {"pShaderInfo", 12},
     {"pShaderModule", 14},
     {"pShaders", 9},
     {"pShadingRatePaletteEntries", 27},
@@ -3578,6 +3643,7 @@ const char* String(Field field) {
     {"pVertexAttributeDescriptions", 29},
     {"pVertexBindingDescriptions", 27},
     {"pVertexBindingDivisors", 23},
+    {"pVertexBuffer", 14},
     {"pVertexInfo", 12},
     {"pVertexInputState", 18},
     {"pVertexOffset", 14},
@@ -3721,6 +3787,7 @@ const char* String(Field field) {
     {"prefersGopRemainingFrames", 26},
     {"prefersLocalInvocationPrimitiveOutput", 38},
     {"prefersLocalInvocationVertexOutput", 35},
+    {"preprocessAddress", 18},
     {"preprocessBuffer", 17},
     {"preprocessOffset", 17},
     {"preprocessSize", 15},
@@ -3949,6 +4016,7 @@ const char* String(Field field) {
     {"separateDepthStencilAttachmentAccess", 37},
     {"separateDepthStencilLayouts", 28},
     {"separateStencilMaskRef", 23},
+    {"sequenceCountAddress", 21},
     {"sequencesCount", 15},
     {"sequencesCountBuffer", 21},
     {"sequencesCountOffset", 21},
@@ -3980,6 +4048,7 @@ const char* String(Field field) {
     {"shaderCoreCount", 16},
     {"shaderCoreFeatures", 19},
     {"shaderCoreMask", 15},
+    {"shaderCount", 12},
     {"shaderCullDistance", 19},
     {"shaderDemoteToHelperInvocation", 31},
     {"shaderDenormFlushToZeroFloat16", 31},
@@ -4055,6 +4124,7 @@ const char* String(Field field) {
     {"shaderSignedZeroInfNanPreserveFloat64", 38},
     {"shaderStage", 12},
     {"shaderStageMask", 16},
+    {"shaderStages", 13},
     {"shaderStorageBufferArrayDynamicIndexing", 40},
     {"shaderStorageBufferArrayNonUniformIndexing", 43},
     {"shaderStorageBufferArrayNonUniformIndexingNative", 49},
@@ -4164,6 +4234,7 @@ const char* String(Field field) {
     {"stageMask", 10},
     {"stages", 7},
     {"standardSampleLocations", 24},
+    {"stateCommandBuffer", 19},
     {"staticInstance", 15},
     {"stdHeaderVersion", 17},
     {"stdPPSCount", 12},
@@ -4248,6 +4319,10 @@ const char* String(Field field) {
     {"supportedEncodeFeedbackFlags", 29},
     {"supportedHintGridSizes", 23},
     {"supportedImageAlignmentMask", 28},
+    {"supportedIndirectCommandsInputModes", 36},
+    {"supportedIndirectCommandsShaderStages", 38},
+    {"supportedIndirectCommandsShaderStagesPipelineBinding", 53},
+    {"supportedIndirectCommandsShaderStagesShaderBinding", 51},
     {"supportedOperations", 20},
     {"supportedOutputGridSizes", 25},
     {"supportedPresentGravityX", 25},
@@ -4350,6 +4425,7 @@ const char* String(Field field) {
     {"unit", 5},
     {"unnormalizedCoordinates", 24},
     {"update", 7},
+    {"updateRange", 12},
     {"updateScratchSize", 18},
     {"updateSequenceCount", 20},
     {"usage", 6},
@@ -4496,6 +4572,7 @@ const char* String(Enum value) {
     {"VkCubicFilterWeightsQCOM", 25},
     {"VkDebugReportObjectTypeEXT", 27},
     {"VkDepthBiasRepresentationEXT", 29},
+    {"VkDepthClampModeEXT", 20},
     {"VkDescriptorType", 17},
     {"VkDescriptorUpdateTemplateType", 31},
     {"VkDeviceAddressBindingTypeEXT", 30},
@@ -4523,7 +4600,9 @@ const char* String(Enum value) {
     {"VkImageType", 12},
     {"VkImageViewType", 16},
     {"VkIndexType", 12},
+    {"VkIndirectCommandsTokenTypeEXT", 31},
     {"VkIndirectCommandsTokenTypeNV", 30},
+    {"VkIndirectExecutionSetInfoTypeEXT", 34},
     {"VkInternalAllocationType", 25},
     {"VkLatencyMarkerNV", 18},
     {"VkLayerSettingTypeEXT", 22},
@@ -4657,6 +4736,8 @@ const char* String(FlagBitmask value) {
     {"VkImageCreateFlagBits", 22},
     {"VkImageUsageFlagBits", 21},
     {"VkImageViewCreateFlagBits", 26},
+    {"VkIndirectCommandsInputModeFlagBitsEXT", 39},
+    {"VkIndirectCommandsLayoutUsageFlagBitsEXT", 41},
     {"VkIndirectCommandsLayoutUsageFlagBitsNV", 40},
     {"VkIndirectStateFlagBitsNV", 26},
     {"VkInstanceCreateFlagBits", 25},
@@ -4789,6 +4870,7 @@ const char* String(Extension extension) {
     {"VK_EXT_debug_report", 20},
     {"VK_EXT_debug_utils", 19},
     {"VK_EXT_depth_bias_control", 26},
+    {"VK_EXT_depth_clamp_control", 27},
     {"VK_EXT_depth_clamp_zero_one", 28},
     {"VK_EXT_depth_clip_control", 26},
     {"VK_EXT_depth_clip_enable", 25},
@@ -4797,6 +4879,7 @@ const char* String(Extension extension) {
     {"VK_EXT_descriptor_indexing", 27},
     {"VK_EXT_device_address_binding_report", 37},
     {"VK_EXT_device_fault", 20},
+    {"VK_EXT_device_generated_commands", 33},
     {"VK_EXT_device_memory_report", 28},
     {"VK_EXT_direct_mode_display", 27},
     {"VK_EXT_directfb_surface", 24},
@@ -5243,6 +5326,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDependencyInfos:
     case Field::pDepthAttachment:
     case Field::pDepthBiasInfo:
+    case Field::pDepthClampRange:
     case Field::pDepthInputAttachmentIndex:
     case Field::pDepthStencil:
     case Field::pDepthStencilAttachment:
@@ -5292,6 +5376,8 @@ bool IsFieldPointer(Field field) {
     case Field::pExecutableCount:
     case Field::pExecutableInfo:
     case Field::pExecuteInfo:
+    case Field::pExecutionSet:
+    case Field::pExecutionSetWrites:
     case Field::pExternalBufferInfo:
     case Field::pExternalBufferProperties:
     case Field::pExternalFenceInfo:
@@ -5349,17 +5435,20 @@ bool IsFieldPointer(Field field) {
     case Field::pImportSemaphoreFdInfo:
     case Field::pImportSemaphoreWin32HandleInfo:
     case Field::pImportSemaphoreZirconHandleInfo:
+    case Field::pIndexBuffer:
     case Field::pIndexInfo:
     case Field::pIndexTypeValues:
     case Field::pIndexTypes:
     case Field::pIndirectCommandsLayout:
     case Field::pIndirectDeviceAddresses:
+    case Field::pIndirectExecutionSet:
     case Field::pIndirectStrides:
     case Field::pInfo:
     case Field::pInfoSize:
     case Field::pInfos:
     case Field::pInheritanceInfo:
     case Field::pInitialData:
+    case Field::pInitialShaders:
     case Field::pInitializeInfo:
     case Field::pInputAssemblyState:
     case Field::pInputAttachmentImage:
@@ -5473,6 +5562,7 @@ bool IsFieldPointer(Field field) {
     case Field::pProperties:
     case Field::pPropertiesCount:
     case Field::pPropertyCount:
+    case Field::pPushConstant:
     case Field::pPushConstantRanges:
     case Field::pPushConstantsInfo:
     case Field::pPushDescriptorSetInfo:
@@ -5521,11 +5611,13 @@ bool IsFieldPointer(Field field) {
     case Field::pSession:
     case Field::pSetDescriptorBufferOffsetsInfo:
     case Field::pSetLayout:
+    case Field::pSetLayoutInfos:
     case Field::pSetLayouts:
     case Field::pSettingName:
     case Field::pSettings:
     case Field::pSetupReferenceSlot:
     case Field::pShaderGroupCaptureReplayHandle:
+    case Field::pShaderInfo:
     case Field::pShaderModule:
     case Field::pShaders:
     case Field::pShadingRatePaletteEntries:
@@ -5616,6 +5708,7 @@ bool IsFieldPointer(Field field) {
     case Field::pVertexAttributeDescriptions:
     case Field::pVertexBindingDescriptions:
     case Field::pVertexBindingDivisors:
+    case Field::pVertexBuffer:
     case Field::pVertexInfo:
     case Field::pVertexInputState:
     case Field::pVertexOffset:

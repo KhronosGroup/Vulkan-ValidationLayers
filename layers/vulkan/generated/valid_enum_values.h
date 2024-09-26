@@ -214,6 +214,8 @@ ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagStageAMD value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkShaderCodeTypeEXT value) const;
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkDepthClampModeEXT value) const;
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkLayerSettingTypeEXT value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkLatencyMarkerNV value) const;
@@ -223,6 +225,10 @@ template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const;
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const;
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>

@@ -7,7 +7,7 @@
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.3.295"
+            "commit": "v1.3.296"
         },
         {
             "name": "Vulkan-Utility-Libraries",
@@ -15,7 +15,7 @@
             "sub_dir": "Vulkan-Utility-Libraries",
             "build_dir": "Vulkan-Utility-Libraries/build",
             "install_dir": "Vulkan-Utility-Libraries/build/install",
-            "commit": "ea5774a13e3017b6d5d79af6fba9f0d72ca5c61a",
+            "commit": "v1.3.296",
             "deps": [
                 {
                     "var_name": "VULKAN_HEADERS_INSTALL_DIR",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "05be5b2466b67317caaaed0d5369fd7f99af05a8"
+            "commit": "6dcc7e350a0b9871a825414d42329e44b0eb8109"
         },
         {
             "name": "robin-hood-hashing",
@@ -95,7 +95,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "12cbda959b6df2af119a76a73ff906c2bed36884",
+            "commit": "46ef757e048e760b46601e6e77ae0cb72c97bd2f",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],
@@ -110,7 +110,7 @@
             "sub_dir": "Vulkan-Loader",
             "build_dir": "Vulkan-Loader/build",
             "install_dir": "Vulkan-Loader/build/install",
-            "commit": "v1.3.295",
+            "commit": "v1.3.296",
             "build_step": "skip",
             "optional": [
                 "tests"
@@ -136,7 +136,7 @@
             "sub_dir": "Vulkan-Tools",
             "build_dir": "Vulkan-Tools/build",
             "install_dir": "Vulkan-Tools/build/install",
-            "commit": "v1.3.295",
+            "commit": "v1.3.296",
             "build_step": "skip",
             "optional": [
                 "tests"

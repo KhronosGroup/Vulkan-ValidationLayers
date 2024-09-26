@@ -179,6 +179,9 @@ ValidValue StatelessValidation::IsValidEnumValue(VkObjectType value) const {
             return IsExtEnabled(device_extensions.vk_ext_shader_object) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return IsExtEnabled(device_extensions.vk_khr_pipeline_binary) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
+        case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
+            return IsExtEnabled(device_extensions.vk_ext_device_generated_commands) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -756,6 +759,8 @@ ValidValue StatelessValidation::IsValidEnumValue(VkDynamicState value) const {
                            IsExtEnabled(device_extensions.vk_ext_line_rasterization)
                        ? ValidValue::Valid
                        : ValidValue::NoExtension;
+        case VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
+            return IsExtEnabled(device_extensions.vk_ext_depth_clamp_control) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -1931,6 +1936,17 @@ ValidValue StatelessValidation::IsValidEnumValue(VkShaderCodeTypeEXT value) cons
 }
 
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkDepthClampModeEXT value) const {
+    switch (value) {
+        case VK_DEPTH_CLAMP_MODE_VIEWPORT_RANGE_EXT:
+        case VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkLayerSettingTypeEXT value) const {
     switch (value) {
         case VK_LAYER_SETTING_TYPE_BOOL32_EXT:
@@ -1998,6 +2014,44 @@ ValidValue StatelessValidation::IsValidEnumValue(VkCubicFilterWeightsQCOM value)
         case VK_CUBIC_FILTER_WEIGHTS_B_SPLINE_QCOM:
         case VK_CUBIC_FILTER_WEIGHTS_MITCHELL_NETRAVALI_QCOM:
             return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const {
+    switch (value) {
+        case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT:
+        case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT value) const {
+    switch (value) {
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_COUNT_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT:
+            return ValidValue::Valid;
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
+            return IsExtEnabled(device_extensions.vk_nv_mesh_shader) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_EXT:
+            return IsExtEnabled(device_extensions.vk_ext_mesh_shader) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT:
+            return IsExtEnabled(device_extensions.vk_khr_ray_tracing_maintenance1) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2130,6 +2184,9 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkObjectType value) const
             return {vvl::Extension::_VK_EXT_shader_object};
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return {vvl::Extension::_VK_KHR_pipeline_binary};
+        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
+        case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
+            return {vvl::Extension::_VK_EXT_device_generated_commands};
         default:
             return {};
     };
@@ -2467,6 +2524,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkDynamicState value) con
             return {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state};
         case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
             return {vvl::Extension::_VK_KHR_line_rasterization, vvl::Extension::_VK_EXT_line_rasterization};
+        case VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
+            return {vvl::Extension::_VK_EXT_depth_clamp_control};
         default:
             return {};
     };
@@ -3343,6 +3402,15 @@ const char* StatelessValidation::DescribeEnum(VkShaderCodeTypeEXT value) const {
 }
 
 template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDepthClampModeEXT value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkDepthClampModeEXT value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkLayerSettingTypeEXT value) const {
     return {};
 }
@@ -3385,6 +3453,35 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkCubicFilterWeightsQCOM 
 template <>
 const char* StatelessValidation::DescribeEnum(VkCubicFilterWeightsQCOM value) const {
     return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkIndirectExecutionSetInfoTypeEXT value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkIndirectExecutionSetInfoTypeEXT value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkIndirectCommandsTokenTypeEXT value) const {
+    switch (value) {
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
+            return {vvl::Extension::_VK_NV_mesh_shader};
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_EXT:
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_EXT:
+            return {vvl::Extension::_VK_EXT_mesh_shader};
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_TRACE_RAYS2_EXT:
+            return {vvl::Extension::_VK_KHR_ray_tracing_maintenance1};
+        default:
+            return {};
+    };
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkIndirectCommandsTokenTypeEXT value) const {
+    return string_VkIndirectCommandsTokenTypeEXT(value);
 }
 
 template <>

@@ -71,6 +71,8 @@ counter<VkBufferCollectionFUCHSIA> c_VkBufferCollectionFUCHSIA;
 counter<VkMicromapEXT> c_VkMicromapEXT;
 counter<VkOpticalFlowSessionNV> c_VkOpticalFlowSessionNV;
 counter<VkShaderEXT> c_VkShaderEXT;
+counter<VkIndirectExecutionSetEXT> c_VkIndirectExecutionSetEXT;
+counter<VkIndirectCommandsLayoutEXT> c_VkIndirectCommandsLayoutEXT;
 // clang-format on
 
 // NOLINTEND

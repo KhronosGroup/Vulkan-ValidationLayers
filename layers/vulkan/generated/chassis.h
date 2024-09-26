@@ -2060,6 +2060,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetShaderBinaryDataEXT(VkDevice device, VkShaderE
 VKAPI_ATTR void VKAPI_CALL CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
                                              const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders);
 
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                    const VkDepthClampRangeEXT* pDepthClampRange);
+
 VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer,
                                                                 uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties);
 
@@ -2086,6 +2089,41 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
                                                             VkScreenBufferPropertiesQNX* pProperties);
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
+                                                                     const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
+                                                                     VkMemoryRequirements2* pMemoryRequirements);
+
+VKAPI_ATTR void VKAPI_CALL CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                             const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                             VkCommandBuffer stateCommandBuffer);
+
+VKAPI_ATTR void VKAPI_CALL CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                          const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo);
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectCommandsLayoutEXT(VkDevice device,
+                                                               const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout);
+
+VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                            const VkAllocationCallbacks* pAllocator);
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateIndirectExecutionSetEXT(VkDevice device,
+                                                             const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             VkIndirectExecutionSetEXT* pIndirectExecutionSet);
+
+VKAPI_ATTR void VKAPI_CALL DestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                          const VkAllocationCallbacks* pAllocator);
+
+VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                                 uint32_t executionSetWriteCount,
+                                                                 const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites);
+
+VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                               uint32_t executionSetWriteCount,
+                                                               const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites);
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -4462,6 +4500,9 @@ class ValidationObject {
         virtual bool PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode, const VkDepthClampRangeEXT* pDepthClampRange, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode, const VkDepthClampRangeEXT* pDepthClampRange, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode, const VkDepthClampRangeEXT* pDepthClampRange, const RecordObject& record_obj) {};
         virtual bool PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties, const RecordObject& record_obj) {};
@@ -4491,6 +4532,33 @@ class ValidationObject {
         virtual void PreCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) {};
         virtual void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer, VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) {};
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+        virtual bool PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo, VkMemoryRequirements2* pMemoryRequirements, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo, VkMemoryRequirements2* pMemoryRequirements, const RecordObject& record_obj) {};
+        virtual void PostCallRecordGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo, VkMemoryRequirements2* pMemoryRequirements, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, VkCommandBuffer stateCommandBuffer, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, VkCommandBuffer stateCommandBuffer, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, VkCommandBuffer stateCommandBuffer, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout, const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {};
+        virtual void PostCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectExecutionSetEXT* pIndirectExecutionSet, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectExecutionSetEXT* pIndirectExecutionSet, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectExecutionSetEXT* pIndirectExecutionSet, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {};
+        virtual void PostCallRecordDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount, const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount, const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, const RecordObject& record_obj) {};
+        virtual void PostCallRecordUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount, const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount, const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount, const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites, const RecordObject& record_obj) {};
+        virtual void PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount, const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites, const RecordObject& record_obj) {};
         virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure, const RecordObject& record_obj) {};

@@ -3032,6 +3032,32 @@ void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, 
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+void BestPractices::PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device,
+                                                                  const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                                  const VkAllocationCallbacks* pAllocator,
+                                                                  VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
+                                                                  const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
+                                                                          record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
+                                                                const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                                const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet,
+                                                                        record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                  const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator,

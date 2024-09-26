@@ -133,6 +133,8 @@ struct DeviceFeatures {
     bool floatRepresentation;
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT
     bool leastRepresentableValueForceUnormRepresentation;
+    // VkPhysicalDeviceDepthClampControlFeaturesEXT
+    bool depthClampControl;
     // VkPhysicalDeviceDepthClampZeroOneFeaturesEXT
     bool depthClampZeroOne;
     // VkPhysicalDeviceDepthClipControlFeaturesEXT
@@ -197,7 +199,9 @@ struct DeviceFeatures {
     bool deviceGeneratedComputeCaptureReplay;
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
     bool deviceGeneratedComputePipelines;
-    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
+    bool dynamicGeneratedPipelineLayout;
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
     bool deviceGeneratedCommands;
     // VkPhysicalDeviceDeviceMemoryReportFeaturesEXT
     bool deviceMemoryReport;

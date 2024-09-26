@@ -71,6 +71,8 @@ WRAPPER(VkBufferCollectionFUCHSIA)
 WRAPPER(VkMicromapEXT)
 WRAPPER(VkOpticalFlowSessionNV)
 WRAPPER(VkShaderEXT)
+WRAPPER(VkIndirectExecutionSetEXT)
+WRAPPER(VkIndirectCommandsLayoutEXT)
 // clang-format on
 
 // NOLINTEND

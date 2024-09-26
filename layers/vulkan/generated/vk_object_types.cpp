@@ -80,6 +80,8 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeMicromapEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeShaderEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectExecutionSetEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeIndirectCommandsLayoutEXT
 };
 
 // Array of object name strings for OBJECT_TYPE enum conversion
@@ -136,6 +138,8 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkMicromapEXT",
     "VkOpticalFlowSessionNV",
     "VkShaderEXT",
+    "VkIndirectExecutionSetEXT",
+    "VkIndirectCommandsLayoutEXT",
 };
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type) { return kDebugReportLookup[type]; }

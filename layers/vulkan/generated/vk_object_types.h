@@ -80,7 +80,9 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeMicromapEXT = 49,
     kVulkanObjectTypeOpticalFlowSessionNV = 50,
     kVulkanObjectTypeShaderEXT = 51,
-    kVulkanObjectTypeMax = 52
+    kVulkanObjectTypeIndirectExecutionSetEXT = 52,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 53,
+    kVulkanObjectTypeMax = 54
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -191,6 +193,10 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
         case kVulkanObjectTypeShaderEXT:
             return VK_OBJECT_TYPE_SHADER_EXT;
+        case kVulkanObjectTypeIndirectExecutionSetEXT:
+            return VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT;
+        case kVulkanObjectTypeIndirectCommandsLayoutEXT:
+            return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT;
         default:
             return VK_OBJECT_TYPE_UNKNOWN;
     }
@@ -301,6 +307,10 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeOpticalFlowSessionNV;
         case VK_OBJECT_TYPE_SHADER_EXT:
             return kVulkanObjectTypeShaderEXT;
+        case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
+            return kVulkanObjectTypeIndirectExecutionSetEXT;
+        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
+            return kVulkanObjectTypeIndirectCommandsLayoutEXT;
         default:
             return kVulkanObjectTypeUnknown;
     }
@@ -1139,6 +1149,30 @@ struct VkHandleInfo<VkShaderEXT> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeShaderEXT> {
     typedef VkShaderEXT Type;
+};
+
+template <>
+struct VkHandleInfo<VkIndirectExecutionSetEXT> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeIndirectExecutionSetEXT;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT;
+    static const char* Typename() { return "VkIndirectExecutionSetEXT"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectExecutionSetEXT> {
+    typedef VkIndirectExecutionSetEXT Type;
+};
+
+template <>
+struct VkHandleInfo<VkIndirectCommandsLayoutEXT> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeIndirectCommandsLayoutEXT;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT;
+    static const char* Typename() { return "VkIndirectCommandsLayoutEXT"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectCommandsLayoutEXT> {
+    typedef VkIndirectCommandsLayoutEXT Type;
 };
 #endif  // TYPESAFE_NONDISPATCHABLE_HANDLES
 

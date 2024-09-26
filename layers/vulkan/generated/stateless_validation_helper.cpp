@@ -4096,6 +4096,26 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT: {  // Covers
+                                                                                          // VUID-VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT, but when "
+                                     "creating VkDevice, the parent extension "
+                                     "(VK_EXT_device_generated_commands) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT* structure =
+                    (VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::deviceGeneratedCommands), structure->deviceGeneratedCommands);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::dynamicGeneratedPipelineLayout), structure->dynamicGeneratedPipelineLayout);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceImageAlignmentControlFeaturesMESA structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ALIGNMENT_CONTROL_FEATURES_MESA: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceImageAlignmentControlFeaturesMESA-sType-sType
@@ -4110,6 +4130,22 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 VkPhysicalDeviceImageAlignmentControlFeaturesMESA* structure =
                     (VkPhysicalDeviceImageAlignmentControlFeaturesMESA*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::imageAlignmentControl), structure->imageAlignmentControl);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceDepthClampControlFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT: {  // Covers
+                                                                                    // VUID-VkPhysicalDeviceDepthClampControlFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthClampControlFeaturesEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_depth_clamp_control)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceDepthClampControlFeaturesEXT, but when creating "
+                                     "VkDevice, the parent extension "
+                                     "(VK_EXT_depth_clamp_control) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceDepthClampControlFeaturesEXT* structure = (VkPhysicalDeviceDepthClampControlFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::depthClampControl), structure->depthClampControl);
             }
         } break;
 
@@ -4860,6 +4896,9 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
 
             // No Validation code for VkPhysicalDeviceLayeredDriverPropertiesMSFT structure members  -- Covers
             // VUID-VkPhysicalDeviceLayeredDriverPropertiesMSFT-sType-sType
+
+            // No Validation code for VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT structure members  -- Covers
+            // VUID-VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT-sType-sType
 
             // No Validation code for VkPhysicalDeviceImageAlignmentControlPropertiesMESA structure members  -- Covers
             // VUID-VkPhysicalDeviceImageAlignmentControlPropertiesMESA-sType-sType
@@ -9542,8 +9581,58 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkExternalFormatQNX structure members  -- Covers VUID-VkExternalFormatQNX-sType-sType
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+        // Validation code for VkGeneratedCommandsPipelineInfoEXT structure members
+        case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT: {  // Covers
+                                                                        // VUID-VkGeneratedCommandsPipelineInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkGeneratedCommandsPipelineInfoEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_EXT_device_generated_commands");
+                }
+                VkGeneratedCommandsPipelineInfoEXT* structure = (VkGeneratedCommandsPipelineInfoEXT*)header;
+                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::pipeline), structure->pipeline);
+            }
+        } break;
+
+        // Validation code for VkGeneratedCommandsShaderInfoEXT structure members
+        case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_SHADER_INFO_EXT: {  // Covers VUID-VkGeneratedCommandsShaderInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkGeneratedCommandsShaderInfoEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_EXT_device_generated_commands");
+                }
+                VkGeneratedCommandsShaderInfoEXT* structure = (VkGeneratedCommandsShaderInfoEXT*)header;
+                skip |= ValidateHandleArray(pNext_loc.dot(Field::shaderCount), pNext_loc.dot(Field::pShaders),
+                                            structure->shaderCount, structure->pShaders, true, true,
+                                            "VUID-VkGeneratedCommandsShaderInfoEXT-shaderCount-arraylength");
+            }
+        } break;
+
         // No Validation code for VkImageAlignmentControlCreateInfoMESA structure members  -- Covers
         // VUID-VkImageAlignmentControlCreateInfoMESA-sType-sType
+
+        // Validation code for VkPipelineViewportDepthClampControlCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT: {  // Covers
+                                                                                         // VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPipelineViewportDepthClampControlCreateInfoEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_depth_clamp_control)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_EXT_depth_clamp_control");
+                }
+                VkPipelineViewportDepthClampControlCreateInfoEXT* structure =
+                    (VkPipelineViewportDepthClampControlCreateInfoEXT*)header;
+                skip |= ValidateRangedEnum(
+                    pNext_loc.dot(Field::depthClampMode), vvl::Enum::VkDepthClampModeEXT, structure->depthClampMode,
+                    "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-depthClampMode-parameter", VK_NULL_HANDLE);
+
+                if (structure->pDepthClampRange != nullptr) {
+                    [[maybe_unused]] const Location pDepthClampRange_loc = pNext_loc.dot(Field::pDepthClampRange);
+                }
+            }
+        } break;
 
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
@@ -9799,6 +9888,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT,
@@ -9807,6 +9897,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_COMPUTE_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_MEMORY_REPORT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DIAGNOSTICS_CONFIG_FEATURES_NV,
@@ -13223,6 +13314,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DISPLACEMENT_MICROMAP_PROPERTIES_NV,
@@ -25850,6 +25942,22 @@ bool StatelessValidation::PreCallValidateCmdBindShadersEXT(VkCommandBuffer comma
     return skip;
 }
 
+bool StatelessValidation::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                                  const VkDepthClampRangeEXT* pDepthClampRange,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!(IsExtEnabled(device_extensions.vk_ext_shader_object) || IsExtEnabled(device_extensions.vk_ext_depth_clamp_control)))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object, vvl::Extension::_VK_EXT_depth_clamp_control});
+    skip |= ValidateRangedEnum(loc.dot(Field::depthClampMode), vvl::Enum::VkDepthClampModeEXT, depthClampMode,
+                               "VUID-vkCmdSetDepthClampRangeEXT-depthClampMode-parameter", VK_NULL_HANDLE);
+    if (pDepthClampRange != nullptr) {
+        [[maybe_unused]] const Location pDepthClampRange_loc = loc.dot(Field::pDepthClampRange);
+        // No xml-driven validation
+    }
+    return skip;
+}
+
 bool StatelessValidation::PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer,
                                                                           uint32_t* pPropertiesCount,
                                                                           VkTilePropertiesQCOM* pProperties,
@@ -26136,6 +26244,252 @@ bool StatelessValidation::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice d
     return skip;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(
+    VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo, VkMemoryRequirements2* pMemoryRequirements,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_EXT,
+                               true, "VUID-vkGetGeneratedCommandsMemoryRequirementsEXT-pInfo-parameter",
+                               "VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        constexpr std::array allowed_structs_VkGeneratedCommandsMemoryRequirementsInfoEXT = {
+            VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_SHADER_INFO_EXT};
+
+        skip |= ValidateStructPnext(pInfo_loc, pInfo->pNext, allowed_structs_VkGeneratedCommandsMemoryRequirementsInfoEXT.size(),
+                                    allowed_structs_VkGeneratedCommandsMemoryRequirementsInfoEXT.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-pNext-pNext",
+                                    "VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-sType-unique", VK_NULL_HANDLE, true);
+
+        skip |= ValidateRequiredHandle(pInfo_loc.dot(Field::indirectCommandsLayout), pInfo->indirectCommandsLayout);
+    }
+    skip |= ValidateStructType(loc.dot(Field::pMemoryRequirements), pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2,
+                               true, "VUID-vkGetGeneratedCommandsMemoryRequirementsEXT-pMemoryRequirements-parameter",
+                               "VUID-VkMemoryRequirements2-sType-sType");
+    if (pMemoryRequirements != nullptr) {
+        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
+        constexpr std::array allowed_structs_VkMemoryRequirements2 = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS};
+
+        skip |= ValidateStructPnext(pMemoryRequirements_loc, pMemoryRequirements->pNext,
+                                    allowed_structs_VkMemoryRequirements2.size(), allowed_structs_VkMemoryRequirements2.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext",
+                                    "VUID-VkMemoryRequirements2-sType-unique", VK_NULL_HANDLE, false);
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                                           const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                                           VkCommandBuffer stateCommandBuffer,
+                                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateStructType(
+        loc.dot(Field::pGeneratedCommandsInfo), pGeneratedCommandsInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_EXT, true,
+        "VUID-vkCmdPreprocessGeneratedCommandsEXT-pGeneratedCommandsInfo-parameter", "VUID-VkGeneratedCommandsInfoEXT-sType-sType");
+    if (pGeneratedCommandsInfo != nullptr) {
+        [[maybe_unused]] const Location pGeneratedCommandsInfo_loc = loc.dot(Field::pGeneratedCommandsInfo);
+        skip |= ValidateFlags(pGeneratedCommandsInfo_loc.dot(Field::shaderStages), vvl::FlagBitmask::VkShaderStageFlagBits,
+                              AllVkShaderStageFlagBits, pGeneratedCommandsInfo->shaderStages, kRequiredFlags, VK_NULL_HANDLE,
+                              "VUID-VkGeneratedCommandsInfoEXT-shaderStages-parameter",
+                              "VUID-VkGeneratedCommandsInfoEXT-shaderStages-requiredbitmask");
+
+        skip |= ValidateRequiredHandle(pGeneratedCommandsInfo_loc.dot(Field::indirectCommandsLayout),
+                                       pGeneratedCommandsInfo->indirectCommandsLayout);
+    }
+    skip |= ValidateRequiredHandle(loc.dot(Field::stateCommandBuffer), stateCommandBuffer);
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                                        const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateBool32(loc.dot(Field::isPreprocessed), isPreprocessed);
+    skip |= ValidateStructType(
+        loc.dot(Field::pGeneratedCommandsInfo), pGeneratedCommandsInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_EXT, true,
+        "VUID-vkCmdExecuteGeneratedCommandsEXT-pGeneratedCommandsInfo-parameter", "VUID-VkGeneratedCommandsInfoEXT-sType-sType");
+    if (pGeneratedCommandsInfo != nullptr) {
+        [[maybe_unused]] const Location pGeneratedCommandsInfo_loc = loc.dot(Field::pGeneratedCommandsInfo);
+        skip |= ValidateFlags(pGeneratedCommandsInfo_loc.dot(Field::shaderStages), vvl::FlagBitmask::VkShaderStageFlagBits,
+                              AllVkShaderStageFlagBits, pGeneratedCommandsInfo->shaderStages, kRequiredFlags, VK_NULL_HANDLE,
+                              "VUID-VkGeneratedCommandsInfoEXT-shaderStages-parameter",
+                              "VUID-VkGeneratedCommandsInfoEXT-shaderStages-requiredbitmask");
+
+        skip |= ValidateRequiredHandle(pGeneratedCommandsInfo_loc.dot(Field::indirectCommandsLayout),
+                                       pGeneratedCommandsInfo->indirectCommandsLayout);
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
+                                                                         const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                                         const VkAllocationCallbacks* pAllocator,
+                                                                         VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
+                                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_EXT,
+                               true, "VUID-vkCreateIndirectCommandsLayoutEXT-pCreateInfo-parameter",
+                               "VUID-VkIndirectCommandsLayoutCreateInfoEXT-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        constexpr std::array allowed_structs_VkIndirectCommandsLayoutCreateInfoEXT = {
+            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+
+        skip |=
+            ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkIndirectCommandsLayoutCreateInfoEXT.size(),
+                                allowed_structs_VkIndirectCommandsLayoutCreateInfoEXT.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkIndirectCommandsLayoutCreateInfoEXT-pNext-pNext",
+                                "VUID-VkIndirectCommandsLayoutCreateInfoEXT-sType-unique", VK_NULL_HANDLE, true);
+
+        skip |= ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsEXT,
+                              AllVkIndirectCommandsLayoutUsageFlagBitsEXT, pCreateInfo->flags, kOptionalFlags, VK_NULL_HANDLE,
+                              "VUID-VkIndirectCommandsLayoutCreateInfoEXT-flags-parameter");
+
+        skip |= ValidateFlags(pCreateInfo_loc.dot(Field::shaderStages), vvl::FlagBitmask::VkShaderStageFlagBits,
+                              AllVkShaderStageFlagBits, pCreateInfo->shaderStages, kRequiredFlags, VK_NULL_HANDLE,
+                              "VUID-VkIndirectCommandsLayoutCreateInfoEXT-shaderStages-parameter",
+                              "VUID-VkIndirectCommandsLayoutCreateInfoEXT-shaderStages-requiredbitmask");
+
+        skip |= ValidateStructTypeArray(
+            pCreateInfo_loc.dot(Field::tokenCount), pCreateInfo_loc.dot(Field::pTokens), pCreateInfo->tokenCount,
+            pCreateInfo->pTokens, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_TOKEN_EXT, true, true,
+            "VUID-VkIndirectCommandsLayoutTokenEXT-sType-sType", "VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-parameter",
+            "VUID-VkIndirectCommandsLayoutCreateInfoEXT-tokenCount-arraylength");
+
+        if (pCreateInfo->pTokens != nullptr) {
+            for (uint32_t tokenIndex = 0; tokenIndex < pCreateInfo->tokenCount; ++tokenIndex) {
+                [[maybe_unused]] const Location pTokens_loc = pCreateInfo_loc.dot(Field::pTokens, tokenIndex);
+                skip |= ValidateRangedEnum(pTokens_loc.dot(Field::type), vvl::Enum::VkIndirectCommandsTokenTypeEXT,
+                                           pCreateInfo->pTokens[tokenIndex].type,
+                                           "VUID-VkIndirectCommandsLayoutTokenEXT-type-parameter", VK_NULL_HANDLE);
+            }
+        }
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= ValidateRequiredPointer(loc.dot(Field::pIndirectCommandsLayout), pIndirectCommandsLayout,
+                                    "VUID-vkCreateIndirectCommandsLayoutEXT-pIndirectCommandsLayout-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device,
+                                                                          VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                                          const VkAllocationCallbacks* pAllocator,
+                                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
+                                                                       const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                                       const VkAllocationCallbacks* pAllocator,
+                                                                       VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_CREATE_INFO_EXT,
+                               true, "VUID-vkCreateIndirectExecutionSetEXT-pCreateInfo-parameter",
+                               "VUID-VkIndirectExecutionSetCreateInfoEXT-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= ValidateRangedEnum(pCreateInfo_loc.dot(Field::type), vvl::Enum::VkIndirectExecutionSetInfoTypeEXT,
+                                   pCreateInfo->type, "VUID-VkIndirectExecutionSetCreateInfoEXT-type-parameter", VK_NULL_HANDLE);
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= ValidateRequiredPointer(loc.dot(Field::pIndirectExecutionSet), pIndirectExecutionSet,
+                                    "VUID-vkCreateIndirectExecutionSetEXT-pIndirectExecutionSet-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device,
+                                                                        VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                                        const VkAllocationCallbacks* pAllocator,
+                                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
+    VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
+    const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateRequiredHandle(loc.dot(Field::indirectExecutionSet), indirectExecutionSet);
+    skip |=
+        ValidateStructTypeArray(loc.dot(Field::executionSetWriteCount), loc.dot(Field::pExecutionSetWrites), executionSetWriteCount,
+                                pExecutionSetWrites, VK_STRUCTURE_TYPE_WRITE_INDIRECT_EXECUTION_SET_PIPELINE_EXT, true, true,
+                                "VUID-VkWriteIndirectExecutionSetPipelineEXT-sType-sType",
+                                "VUID-vkUpdateIndirectExecutionSetPipelineEXT-pExecutionSetWrites-parameter",
+                                "VUID-vkUpdateIndirectExecutionSetPipelineEXT-executionSetWriteCount-arraylength");
+    if (pExecutionSetWrites != nullptr) {
+        for (uint32_t executionSetWriteIndex = 0; executionSetWriteIndex < executionSetWriteCount; ++executionSetWriteIndex) {
+            [[maybe_unused]] const Location pExecutionSetWrites_loc = loc.dot(Field::pExecutionSetWrites, executionSetWriteIndex);
+            skip |= ValidateRequiredHandle(pExecutionSetWrites_loc.dot(Field::pipeline),
+                                           pExecutionSetWrites[executionSetWriteIndex].pipeline);
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateUpdateIndirectExecutionSetShaderEXT(
+    VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
+    const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+    skip |= ValidateRequiredHandle(loc.dot(Field::indirectExecutionSet), indirectExecutionSet);
+    skip |=
+        ValidateStructTypeArray(loc.dot(Field::executionSetWriteCount), loc.dot(Field::pExecutionSetWrites), executionSetWriteCount,
+                                pExecutionSetWrites, VK_STRUCTURE_TYPE_WRITE_INDIRECT_EXECUTION_SET_SHADER_EXT, true, true,
+                                "VUID-VkWriteIndirectExecutionSetShaderEXT-sType-sType",
+                                "VUID-vkUpdateIndirectExecutionSetShaderEXT-pExecutionSetWrites-parameter",
+                                "VUID-vkUpdateIndirectExecutionSetShaderEXT-executionSetWriteCount-arraylength");
+    if (pExecutionSetWrites != nullptr) {
+        for (uint32_t executionSetWriteIndex = 0; executionSetWriteIndex < executionSetWriteCount; ++executionSetWriteIndex) {
+            [[maybe_unused]] const Location pExecutionSetWrites_loc = loc.dot(Field::pExecutionSetWrites, executionSetWriteIndex);
+            skip |= ValidateRequiredHandle(pExecutionSetWrites_loc.dot(Field::shader),
+                                           pExecutionSetWrites[executionSetWriteIndex].shader);
+        }
+    }
+    return skip;
+}
 
 bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                         const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -27148,6 +27502,7 @@ bool StatelessValidation::ValidatePipelineViewportStateCreateInfo(const VkPipeli
 
     constexpr std::array allowed_structs_VkPipelineViewportStateCreateInfo = {
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV,
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT,
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV,
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV,
