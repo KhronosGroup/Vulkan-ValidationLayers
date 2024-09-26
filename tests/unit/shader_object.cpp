@@ -1176,7 +1176,9 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
 TEST_F(NegativeShaderObject, NotSettingViewportAndScissor) {
     TEST_DESCRIPTION("Draw with shader object without setting viewport and scissor.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08635");
+    // not setting the viewport count also registers as a zero
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03417");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03419");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -1199,7 +1201,7 @@ TEST_F(NegativeShaderObject, NotSettingViewportAndScissor) {
 TEST_F(NegativeShaderObject, DifferentViewportAndScissorCount) {
     TEST_DESCRIPTION("Draw with shader object with different viewport and scissor count.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08635");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03419");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();

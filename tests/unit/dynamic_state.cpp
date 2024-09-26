@@ -695,6 +695,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::multiViewport); // needed to have 2 viewport count
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -713,7 +714,6 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
         m_command_buffer.EndRenderPass();
         m_command_buffer.end();
     }
-
     {
         m_command_buffer.begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -742,8 +742,10 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateViewportScissorDraw) {
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-        VkRect2D scissor = {{0, 0}, {1, 1}};
-        vk::CmdSetScissorWithCountEXT(m_command_buffer.handle(), 1, &scissor);
+        VkRect2D scissor[2] = {{{0, 0}, {1, 1}}, {{0, 0}, {1, 1}}};
+        VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
+        vk::CmdSetScissorWithCountEXT(m_command_buffer.handle(), 2, scissor);
+        vk::CmdSetViewportWithCountEXT(m_command_buffer.handle(), 1, &viewport);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03419");
         vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -5746,7 +5748,8 @@ TEST_F(NegativeDynamicState, MissingScissorWithCount) {
     vk::CmdSetViewport(m_command_buffer.handle(), 0u, 1u, &viewport);
     vk::CmdSetScissor(m_command_buffer.handle(), 0u, 1u, &scissor);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03419");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03417");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-scissorCount-03418");
     vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
