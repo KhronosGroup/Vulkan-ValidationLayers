@@ -47,6 +47,31 @@ ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const 
     return reserve;
 }
 
+void SyncValidator::EnsureTimelineSignalsLimit(uint32_t signals_per_queue_limit, QueueId queue) {
+    for (auto &[_, signals] : timeline_signals_) {
+        const size_t initial_signal_count = signals.size();
+        std::unordered_map<QueueId, uint32_t> signals_per_queue;
+        for (const SignalInfo &signal : signals) {
+            ++signals_per_queue[signal.first_scope.queue];
+        }
+        const bool filter_queue = queue != kQueueIdInvalid;
+        for (auto it = signals.begin(); it != signals.end();) {
+            if (filter_queue && it->first_scope.queue != queue) {
+                ++it;
+                continue;
+            }
+            auto &counter = signals_per_queue[it->first_scope.queue];
+            if (counter > signals_per_queue_limit) {
+                it = signals.erase(it);
+                --counter;
+            } else {
+                ++it;
+            }
+        }
+        stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
+    }
+}
+
 void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchContext::Ptr &last_batch) {
     // NOTE: All conserved QueueBatchContexts need to have their access logs reset to use the global
     // logger and the only conserved QBCs are those referenced by unwaited signals and the last batch.
@@ -2959,19 +2984,9 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
     QueueId waited_queue = queue_state->GetQueueId();
     ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
 
-    // For each timeline, remove all signals signaled on this queue except the last one.
+    // For each timeline, remove all signals signaled on the waited queue, except the last one.
     // The last signal is needed to represent the current timeline state.
-    for (auto &[_, signals] : timeline_signals_) {
-        const size_t initial_signal_count = signals.size();
-        auto queue_pred = [waited_queue](const auto &signal) { return signal.first_scope.queue == waited_queue; };
-        auto last_signal_reverse_it = std::find_if(signals.rbegin(), signals.rend(), queue_pred);
-        if (last_signal_reverse_it != signals.rend()) {
-            auto last_signal_it = last_signal_reverse_it.base() - 1;  // convert to forward iterator
-            // removes all queue signals excepts the last one
-            signals.erase(std::remove_if(signals.begin(), last_signal_it, queue_pred), last_signal_it);
-        }
-        stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
-    }
+    EnsureTimelineSignalsLimit(1, waited_queue);
 
     // Eliminate host waitable objects from the current queue.
     vvl::EraseIf(waitable_fences_, [waited_queue](const auto &sf) { return sf.second.queue_id == waited_queue; });
@@ -2989,23 +3004,7 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 
     // For each timeline keep only the last signal per queue.
     // The last signal is needed to represent the current timeline state.
-    for (auto &[_, signals] : timeline_signals_) {
-        const size_t initial_signal_count = signals.size();
-        std::unordered_map<QueueId, uint32_t> signals_per_queue;
-        for (const SignalInfo &signal : signals) {
-            ++signals_per_queue[signal.first_scope.queue];
-        }
-        for (auto it = signals.begin(); it != signals.end();) {
-            auto &counter = signals_per_queue[it->first_scope.queue];
-            if (counter > 1) {
-                it = signals.erase(it);
-                --counter;
-            } else {
-                ++it;
-            }
-        }
-        stats.RemoveTimelineSignals(uint32_t(initial_signal_count - signals.size()));
-    }
+    EnsureTimelineSignalsLimit(1);
 
     // As we we've waited for everything on device, any waits are mooted. (except for acquires)
     vvl::EraseIf(waitable_fences_, [](const auto &waitable) { return waitable.second.acquired.Invalid(); });

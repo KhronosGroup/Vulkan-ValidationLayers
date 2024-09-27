@@ -655,7 +655,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitBeforeSignal) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesAllSignals) {
+TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesSignals) {
     TEST_DESCRIPTION("Test for manual inspection of registered signals (VK_SYNCVAL_SHOW_STATS can be used)");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
@@ -671,7 +671,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesAllSignals) {
     m_device->Wait();
 }
 
-TEST_F(PositiveSyncValTimelineSemaphore, DeviceWaitIdleRemovesAllSignals) {
+TEST_F(PositiveSyncValTimelineSemaphore, DeviceWaitIdleRemovesignals) {
     TEST_DESCRIPTION("Test for manual inspection of registered signals (VK_SYNCVAL_SHOW_STATS can be used)");
     RETURN_IF_SKIP(InitTimelineSemaphore());
 
