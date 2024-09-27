@@ -161,8 +161,6 @@ vvl_sources = [
   "layers/gpu/cmd_validation/gpuav_trace_rays.h",
   "layers/gpu/core/gpu_settings.h",
   "layers/gpu/core/gpu_shader_cache_hash.h",
-  "layers/gpu/core/gpu_state_tracker.cpp",
-  "layers/gpu/core/gpu_state_tracker.h",
   "layers/gpu/core/gpuav.h",
   "layers/gpu/core/gpuav_constants.h",
   "layers/gpu/core/gpuav_record.cpp",
