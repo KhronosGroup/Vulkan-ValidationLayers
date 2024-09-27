@@ -688,7 +688,7 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
                OpFunctionEnd
       )";
 
-    pipeline.SetSpirvRayGenShader(shader_source, "mainRaygen");
+    pipeline.AddSpirvRayGenShader(shader_source, "mainRaygen");
     pipeline.AddSpirvMissShader(shader_source, "mainMiss");
     pipeline.AddSpirvClosestHitShader(shader_source, "mainClosestHit");
 
