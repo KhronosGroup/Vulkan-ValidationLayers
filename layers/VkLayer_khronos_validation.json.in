@@ -125,8 +125,12 @@
                             "value": false
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "value": "GPU_BASED_NONE"
+                            "key": "printf_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_enable",
+                            "value": false
                         },
                         {
                             "key": "validate_best_practices",
@@ -207,8 +211,12 @@
                             "value": false
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "value": "GPU_BASED_NONE"
+                            "key": "printf_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_enable",
+                            "value": false
                         },
                         {
                             "key": "validate_best_practices",
@@ -290,8 +298,12 @@
                             "value": false
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "value": "GPU_BASED_NONE"
+                            "key": "printf_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_enable",
+                            "value": false
                         },
                         {
                             "key": "validate_best_practices",
@@ -375,8 +387,20 @@
                             "value": true
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "value": "GPU_BASED_NONE"
+                            "key": "printf_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_shader_instrumentation",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_buffers_validation",
+                            "value": false
                         },
                         {
                             "key": "validate_best_practices",
@@ -456,8 +480,28 @@
                             "value": false
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "value": "GPU_BASED_GPU_ASSISTED"
+                            "key": "printf_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_enable",
+                            "value": true
+                        },
+                        {
+                            "key": "gpuav_shader_instrumentation",
+                            "value": true
+                        },
+                        {
+                            "key": "gpuav_cache_instrumented_shaders",
+                            "value": true
+                        },
+                        {
+                            "key": "gpuav_select_instrumented_shaders",
+                            "value": false
+                        },
+                        {
+                            "key": "gpuav_buffers_validation",
+                            "value": true
                         },
                         {
                             "key": "gpuav_reserve_binding_slot",
@@ -541,8 +585,12 @@
                             "value": false
                         },
                         {
-                            "key": "validate_gpu_based",
-                            "value": "GPU_BASED_DEBUG_PRINTF"
+                            "key": "gpuav_enable",
+                            "value": false
+                        },
+                        {
+                            "key": "printf_enable",
+                            "value": true
                         },
                         {
                             "key": "validate_best_practices",
@@ -819,10 +867,11 @@
                         {
                             "key": "validate_gpu_based",
                             "label": "GPU Base",
-                            "description": "Setting an option here will enable specialized areas of validation",
+                            "description": "[Deprecated] Setting to choose between DebugPrintf and GPU-AV",
                             "type": "ENUM",
                             "default": "GPU_BASED_NONE",
                             "expanded": true,
+                            "view": "HIDDEN",
                             "status": "STABLE",
                             "platforms": [
                                 "WINDOWS",
@@ -843,12 +892,240 @@
                                     "platforms": [
                                         "WINDOWS",
                                         "LINUX"
+                                    ]
+                                },
+                                {
+                                    "key": "GPU_BASED_GPU_ASSISTED",
+                                    "label": "GPU-Assisted",
+                                    "description": "Check for API usage errors at shader execution time.",
+                                    "url": "${LUNARG_SDK}/gpu_validation.html",
+                                    "status": "STABLE",
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "printf_only_preset",
+                            "label": "Debug Printf only preset",
+                            "description": "A single, quick setting to turn on only DebugPrintf and turn off everything else",
+                            "type": "BOOL",
+                            "default": false,
+                            "view": "HIDDEN",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ]
+                        },
+                        {
+                            "key": "printf_enable",
+                            "label": "Debug Printf",
+                            "description": "Enable DebugPrintf and will print anything use NonSemantic.DebugPrintf in their SPIR-V",
+                            "type": "BOOL",
+                            "url": "${LUNARG_SDK}/debug_printf.html",
+                            "default": false,
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ],
+                            "settings": [
+                                {
+                                    "key": "printf_to_stdout",
+                                    "label": "Redirect Printf messages to stdout",
+                                    "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
                                     ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "printf_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "printf_verbose",
+                                    "label": "Printf verbose",
+                                    "description": "Will print out handles, instruction location, position in command buffer, and more",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "printf_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "printf_buffer_size",
+                                    "label": "Printf buffer size",
+                                    "description": "Set the size in bytes of the buffer per draw/dispatch/traceRays to hold the messages",
+                                    "type": "INT",
+                                    "default": 1024,
+                                    "range": {
+                                        "min": 128,
+                                        "max": 1048576
+                                    },
+                                    "unit": "bytes",
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "printf_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "key": "gpuav_enable",
+                            "label": "GPU Assisted Validation",
+                            "description": "Enable validation that cannot be done the CPU and needs hooks into the GPU execution",
+                            "type": "BOOL",
+                            "default": false,
+                            "expanded": true,
+                            "status": "STABLE",
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ],
+                            "settings": [
+                                {
+                                    "key": "gpuav_shader_instrumentation",
+                                    "label": "Shader instrumentation",
+                                    "description": "Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.",
+                                    "type": "BOOL",
+                                    "expanded": true,
+                                    "default": true,
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "gpuav_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
                                     "settings": [
                                         {
-                                            "key": "printf_to_stdout",
-                                            "label": "Redirect Printf messages to stdout",
-                                            "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
+                                            "key": "gpuav_descriptor_checks",
+                                            "label": "Descriptors indexing",
+                                            "description": "Enable descriptors and buffer out of bounds validation when using descriptor indexing",
+                                            "type": "BOOL",
+                                            "expanded": true,
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_shader_instrumentation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            },
+                                            "settings": [
+                                                {
+                                                    "key": "gpuav_warn_on_robust_oob",
+                                                    "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
+                                                    "description": "Warn on out of bounds accesses even if robustness is enabled",
+                                                    "type": "BOOL",
+                                                    "default": true,
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "gpuav_descriptor_checks",
+                                                                "value": true
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "gpuav_buffer_address_oob",
+                                            "label": "Out of bounds buffer device addresses",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "expanded": true,
+                                            "description": "Check for invalid access using buffer device address",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_shader_instrumentation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            },
+                                            "settings": [
+                                                {
+                                                    "key": "gpuav_max_buffer_device_addresses",
+                                                    "label": "Maximum number of buffer device addresses in use at one time",
+                                                    "description": "",
+                                                    "type": "INT",
+                                                    "default": 10000,
+                                                    "range": {
+                                                        "min": 100,
+                                                        "max": 10000000
+                                                    },
+                                                    "platforms": [
+                                                        "WINDOWS",
+                                                        "LINUX"
+                                                    ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            {
+                                                                "key": "gpuav_buffer_address_oob",
+                                                                "value": true
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "key": "gpuav_validate_ray_query",
+                                            "label": "RayQuery SPIR-V Instructions",
+                                            "description": "Enable shader instrumentation on OpRayQueryInitializeKHR",
                                             "type": "BOOL",
                                             "default": true,
                                             "platforms": [
@@ -859,16 +1136,36 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_DEBUG_PRINTF"
+                                                        "key": "gpuav_shader_instrumentation",
+                                                        "value": true
                                                     }
                                                 ]
                                             }
                                         },
                                         {
-                                            "key": "printf_verbose",
-                                            "label": "Printf verbose",
-                                            "description": "Will print out handles, instruction location, position in command buffer, and more",
+                                            "key": "gpuav_cache_instrumented_shaders",
+                                            "label": "Cache instrumented shaders rather than instrumenting them on every run",
+                                            "description": "Enable instrumented shader caching",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_shader_instrumentation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_select_instrumented_shaders",
+                                            "label": "Enable instrumenting shaders selectively",
+                                            "description": "Select which shaders to instrument passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext",
                                             "type": "BOOL",
                                             "default": false,
                                             "platforms": [
@@ -879,33 +1176,8 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_DEBUG_PRINTF"
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "printf_buffer_size",
-                                            "label": "Printf buffer size",
-                                            "description": "Set the size in bytes of the buffer per draw/dispatch/traceRays to hold the messages",
-                                            "type": "INT",
-                                            "default": 1024,
-                                            "range": {
-                                                "min": 128,
-                                                "max": 1048576
-                                            },
-                                            "unit": "bytes",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_DEBUG_PRINTF"
+                                                        "key": "gpuav_shader_instrumentation",
+                                                        "value": true
                                                     }
                                                 ]
                                             }
@@ -913,19 +1185,151 @@
                                     ]
                                 },
                                 {
-                                    "key": "GPU_BASED_GPU_ASSISTED",
-                                    "label": "GPU-Assisted",
-                                    "description": "Check for API usage errors at shader execution time.",
-                                    "url": "${LUNARG_SDK}/gpu_validation.html",
+                                    "key": "gpuav_buffers_validation",
+                                    "label": "Buffer content validation",
+                                    "description": "Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands",
+                                    "type": "BOOL",
+                                    "default": true,
                                     "platforms": [
                                         "WINDOWS",
                                         "LINUX"
                                     ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "gpuav_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
                                     "settings": [
                                         {
-                                            "key": "gpuav_shader_instrumentation",
-                                            "label": "Shader instrumentation",
-                                            "description": "Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.",
+                                            "key": "gpuav_indirect_draws_buffers",
+                                            "label": "Indirect draws parameters",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "description": "(Warning - still experimental) Validate buffers containing draw parameters used in indirect draw commands",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_buffers_validation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_indirect_dispatches_buffers",
+                                            "label": "Indirect dispatches parameters",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "description": "(Warning - still experimental) Validate buffers containing dispatch parameters used in indirect dispatch commands",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_buffers_validation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_indirect_trace_rays_buffers",
+                                            "label": "Indirect trace rays parameters",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "description": "(Warning - still experimental) Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_buffers_validation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_buffer_copies",
+                                            "label": "Buffer copies",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "description": "Validate copies involving a VkBuffer. Right now only validates copy buffer to image.",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_buffers_validation",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "gpuav_advanced_settings",
+                                    "label": "Advanced Settings",
+                                    "description": "GPU-AV advanced settings",
+                                    "type": "GROUP",
+                                    "view": "ADVANCED",
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "gpuav_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "settings": [
+                                        {
+                                            "key": "gpuav_reserve_binding_slot",
+                                            "label": "Reserve Descriptor Set Binding Slot",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_enable",
+                                                        "value": true
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_vma_linear_output",
+                                            "label": "Linear Memory Allocation Mode",
+                                            "description": "Use VMA linear memory allocations for GPU-AV output buffers instead of finding best place for new allocations among free regions to optimize memory usage. Enabling this setting reduces performance cost but disabling this method minimizes memory usage.",
                                             "type": "BOOL",
                                             "default": true,
                                             "platforms": [
@@ -936,168 +1340,41 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                        "key": "gpuav_enable",
+                                                        "value": true
                                                     }
                                                 ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_descriptor_checks",
-                                                    "label": "Descriptors indexing",
-                                                    "description": "Enable descriptors and buffer out of bounds validation when using descriptor indexing",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_shader_instrumentation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    },
-                                                    "settings": [
-                                                        {
-                                                            "key": "gpuav_warn_on_robust_oob",
-                                                            "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
-                                                            "description": "Warn on out of bounds accesses even if robustness is enabled",
-                                                            "type": "BOOL",
-                                                            "default": true,
-                                                            "platforms": [
-                                                                "WINDOWS",
-                                                                "LINUX"
-                                                            ],
-                                                            "dependence": {
-                                                                "mode": "ALL",
-                                                                "settings": [
-                                                                    {
-                                                                        "key": "gpuav_shader_instrumentation",
-                                                                        "value": true
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "key": "gpuav_buffer_address_oob",
-                                                    "label": "Out of bounds buffer device addresses",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "description": "Check for ",
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_shader_instrumentation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    },
-                                                    "settings": [
-                                                        {
-                                                            "key": "gpuav_max_buffer_device_addresses",
-                                                            "label": "Maximum number of buffer device addresses in use at one time",
-                                                            "description": "",
-                                                            "type": "INT",
-                                                            "default": 10000,
-                                                            "range": {
-                                                                "min": 100,
-                                                                "max": 10000000
-                                                            },
-                                                            "platforms": [
-                                                                "WINDOWS",
-                                                                "LINUX"
-                                                            ],
-                                                            "dependence": {
-                                                                "mode": "ALL",
-                                                                "settings": [
-                                                                    {
-                                                                        "key": "gpuav_shader_instrumentation",
-                                                                        "value": true
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "key": "gpuav_validate_ray_query",
-                                                    "label": "RayQuery SPIR-V Instructions",
-                                                    "description": "Enable shader instrumentation on OpRayQueryInitializeKHR",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_shader_instrumentation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_cache_instrumented_shaders",
-                                                    "label": "Cache instrumented shaders rather than instrumenting them on every run",
-                                                    "description": "Enable instrumented shader caching",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_shader_instrumentation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_select_instrumented_shaders",
-                                                    "label": "Enable instrumenting shaders selectively",
-                                                    "description": "Select which shaders to instrument passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_shader_instrumentation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
-                                        },
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "gpuav_debug_settings",
+                                    "label": "Developer Debug Settings",
+                                    "description": "GPU-AV debug settings",
+                                    "type": "GROUP",
+                                    "view": "ADVANCED",
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            {
+                                                "key": "gpuav_enable",
+                                                "value": true
+                                            }
+                                        ]
+                                    },
+                                    "settings": [
                                         {
-                                            "key": "gpuav_buffers_validation",
-                                            "label": "Buffer content validation",
-                                            "description": "Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands",
+                                            "key": "gpuav_debug_disable_all",
+                                            "label": "Disable all of GPU-AV",
+                                            "description": "Acts as a VkValidationFeatureDisableEXT to override the VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT passed by the user",
                                             "type": "BOOL",
-                                            "default": true,
+                                            "view": "HIDDEN",
+                                            "default": false,
                                             "platforms": [
                                                 "WINDOWS",
                                                 "LINUX"
@@ -1106,100 +1383,18 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                        "key": "gpuav_enable",
+                                                        "value": true
                                                     }
                                                 ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_indirect_draws_buffers",
-                                                    "label": "Indirect draws parameters",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "description": "(Warning - still experimental) Validate buffers containing draw parameters used in indirect draw commands",
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_buffers_validation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_indirect_dispatches_buffers",
-                                                    "label": "Indirect dispatches parameters",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "description": "(Warning - still experimental) Validate buffers containing dispatch parameters used in indirect dispatch commands",
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_buffers_validation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_indirect_trace_rays_buffers",
-                                                    "label": "Indirect trace rays parameters",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "description": "(Warning - still experimental) Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_buffers_validation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_buffer_copies",
-                                                    "label": "Buffer copies",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "description": "Validate copies involving a VkBuffer. Right now only validates copy buffer to image.",
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "gpuav_buffers_validation",
-                                                                "value": true
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
+                                            }
                                         },
                                         {
-                                            "key": "gpuav_advanced_settings",
-                                            "label": "Advanced Settings",
-                                            "description": "GPU-AV advanced settings",
-                                            "type": "GROUP",
-                                            "view": "ADVANCED",
+                                            "key": "gpuav_debug_validate_instrumented_shaders",
+                                            "label": "Validate instrumented shaders",
+                                            "description": "Run spirv-val after doing shader instrumentation",
+                                            "type": "BOOL",
+                                            "default": false,
                                             "platforms": [
                                                 "WINDOWS",
                                                 "LINUX"
@@ -1208,60 +1403,18 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                        "key": "gpuav_enable",
+                                                        "value": true
                                                     }
                                                 ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_reserve_binding_slot",
-                                                    "label": "Reserve Descriptor Set Binding Slot",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_vma_linear_output",
-                                                    "label": "Linear Memory Allocation Mode",
-                                                    "description": "Use VMA linear memory allocations for GPU-AV output buffers instead of finding best place for new allocations among free regions to optimize memory usage. Enabling this setting reduces performance cost but disabling this method minimizes memory usage.",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
+                                            }
                                         },
                                         {
-                                            "key": "gpuav_debug_settings",
-                                            "label": "Developer Debug Settings",
-                                            "description": "GPU-AV debug settings",
-                                            "type": "GROUP",
-                                            "view": "ADVANCED",
+                                            "key": "gpuav_debug_dump_instrumented_shaders",
+                                            "label": "Dump instrumented shaders",
+                                            "description": "Will dump the instrumented shaders (before and after) to working directory",
+                                            "type": "BOOL",
+                                            "default": false,
                                             "platforms": [
                                                 "WINDOWS",
                                                 "LINUX"
@@ -1270,117 +1423,54 @@
                                                 "mode": "ALL",
                                                 "settings": [
                                                     {
-                                                        "key": "validate_gpu_based",
-                                                        "value": "GPU_BASED_GPU_ASSISTED"
+                                                        "key": "gpuav_enable",
+                                                        "value": true
                                                     }
                                                 ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_debug_max_instrumented_count",
+                                            "label": "Limit how many time a pass can instrument the SPIR-V",
+                                            "description": "Zero is same as unlimited",
+                                            "type": "INT",
+                                            "default": 0,
+                                            "range": {
+                                                "min": 0
                                             },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_debug_disable_all",
-                                                    "label": "Disable all of GPU-AV",
-                                                    "description": "Acts as a VkValidationFeatureDisableEXT to override the VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT passed by the user",
-                                                    "type": "BOOL",
-                                                    "view": "HIDDEN",
-                                                    "default": false,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_enable",
+                                                        "value": true
                                                     }
-                                                },
-                                                {
-                                                    "key": "gpuav_debug_validate_instrumented_shaders",
-                                                    "label": "Validate instrumented shaders",
-                                                    "description": "Run spirv-val after doing shader instrumentation",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_debug_print_instrumentation_info",
+                                            "label": "Print SPIR-V instrumentation info",
+                                            "description": "Prints verbose information about the instrumentation of the SPIR-V",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    {
+                                                        "key": "gpuav_enable",
+                                                        "value": true
                                                     }
-                                                },
-                                                {
-                                                    "key": "gpuav_debug_dump_instrumented_shaders",
-                                                    "label": "Dump instrumented shaders",
-                                                    "description": "Will dump the instrumented shaders (before and after) to working directory",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_debug_max_instrumented_count",
-                                                    "label": "Limit how many time a pass can instrument the SPIR-V",
-                                                    "description": "Zero is same as unlimited",
-                                                    "type": "INT",
-                                                    "default": 0,
-                                                    "range": {
-                                                        "min": 0
-                                                    },
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
-                                                    }
-                                                },
-                                                {
-                                                    "key": "gpuav_debug_print_instrumentation_info",
-                                                    "label": "Print SPIR-V instrumentation info",
-                                                    "description": "Prints verbose information about the instrumentation of the SPIR-V",
-                                                    "type": "BOOL",
-                                                    "default": false,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            {
-                                                                "key": "validate_gpu_based",
-                                                                "value": "GPU_BASED_GPU_ASSISTED"
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
+                                                ]
+                                            }
                                         }
                                     ]
                                 }

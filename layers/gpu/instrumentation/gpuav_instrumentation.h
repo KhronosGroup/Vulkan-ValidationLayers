@@ -23,6 +23,9 @@ namespace gpuav {
 
 struct DescSetState;
 
+void UpdateInstrumentationDescSet(Validator& gpuav, CommandBuffer& cb_state, VkDescriptorSet instrumentation_desc_set,
+                                  const Location& loc);
+
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
                                                 const Location& loc);
 

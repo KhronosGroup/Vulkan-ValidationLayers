@@ -55,10 +55,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
     using Field = vvl::Field;
 
   public:
-    Validator() {
-        container_type = LayerObjectTypeGpuAssisted;
-        gpuav_enabled = true;
-    }
+    Validator() { container_type = LayerObjectTypeGpuAssisted; }
 
     // gpuav_setup.cpp
     // -------------

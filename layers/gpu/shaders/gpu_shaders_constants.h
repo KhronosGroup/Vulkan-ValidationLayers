@@ -46,15 +46,17 @@ const uint kLinkShaderId = 0x0DEAD001;
 // This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
 const int kInstDefaultDescriptorSet = 7;
 
-// Inside the descriptor set used by instrumentation validation,
-// binding #0 is reserved for the output, but each check that requires additional input
-// must reserve its own binding slot
-const int kBindingInstErrorBuffer = 0;
-const int kBindingInstBindlessDescriptor = 1;
-const int kBindingInstBufferDeviceAddress = 2;
-const int kBindingInstActionIndex = 3;
-const int kBindingInstCmdResourceIndex = 4;
-const int kBindingInstCmdErrorsCount = 5;
+// Binding index inside the descriptor set used by instrumentation validation.
+// Set to front as people might want to use only DebugPrintf and this can allow us to reduce overhead not binding the other buffers
+const int kBindingInstDebugPrintf = 0;
+// binding #1 is reserved for the output all non-DebugPrintf shaders write out too.
+const int kBindingInstErrorBuffer = 1;
+// Each check that requires additional input/output to be sent must reserve its own binding slot
+const int kBindingInstBindlessDescriptor = 2;
+const int kBindingInstBufferDeviceAddress = 3;
+const int kBindingInstActionIndex = 4;
+const int kBindingInstCmdResourceIndex = 5;
+const int kBindingInstCmdErrorsCount = 6;
 
 // Diagnostic calls
 // ---

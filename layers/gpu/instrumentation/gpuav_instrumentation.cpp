@@ -22,6 +22,7 @@
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpu_shader_resources.h"
 #include "gpu/shaders/gpu_error_header.h"
+#include "gpu/debug_printf/debug_printf.h"
 #include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
@@ -144,11 +145,107 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, Vk
     }
 }
 
+void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
+                                  const Location &loc) {
+    std::vector<VkWriteDescriptorSet> desc_writes = {};
+
+    // Error output buffer
+    VkDescriptorBufferInfo error_output_desc_buffer_info = {};
+    {
+        error_output_desc_buffer_info.range = VK_WHOLE_SIZE;
+        error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBuffer();
+        error_output_desc_buffer_info.offset = 0;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstErrorBuffer;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &error_output_desc_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    // Buffer holding action command index in command buffer
+    VkDescriptorBufferInfo indices_desc_buffer_info = {};
+    {
+        indices_desc_buffer_info.range = sizeof(uint32_t);
+        indices_desc_buffer_info.buffer = gpuav.indices_buffer_.buffer;
+        indices_desc_buffer_info.offset = 0;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstActionIndex;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+        wds.pBufferInfo = &indices_desc_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    // Buffer holding a resource index from the per command buffer command resources list
+    {
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstCmdResourceIndex;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+        wds.pBufferInfo = &indices_desc_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    // Errors count buffer
+    VkDescriptorBufferInfo cmd_errors_counts_desc_buffer_info = {};
+    {
+        cmd_errors_counts_desc_buffer_info.range = VK_WHOLE_SIZE;
+        cmd_errors_counts_desc_buffer_info.buffer = cb_state.GetCmdErrorsCountsBuffer();
+        cmd_errors_counts_desc_buffer_info.offset = 0;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstCmdErrorsCount;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &cmd_errors_counts_desc_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    // Current bindless buffer
+    VkDescriptorBufferInfo di_input_desc_buffer_info = {};
+    if (cb_state.current_bindless_buffer != VK_NULL_HANDLE) {
+        di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
+        di_input_desc_buffer_info.buffer = cb_state.current_bindless_buffer;
+        di_input_desc_buffer_info.offset = 0;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstBindlessDescriptor;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &di_input_desc_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    // BDA snapshot buffer
+    VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
+    if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {
+        bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
+        bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().buffer;
+        bda_input_desc_buffer_info.offset = 0;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstBufferDeviceAddress;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &bda_input_desc_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
+}
+
 void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                                 const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation_enabled) {
-        return;
-    }
+    if (!gpuav.gpuav_settings.IsSpirvModified()) return;
 
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
@@ -168,114 +265,23 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
         return;
     }
 
-    // Update instrumentation descriptor set
-    {
-        // Pathetic way of trying to make sure we take care of updating all
-        // bindings of the instrumentation descriptor set
-        assert(gpuav.instrumentation_bindings_.size() == 6);
-        std::vector<VkWriteDescriptorSet> desc_writes = {};
+    // Pathetic way of trying to make sure we take care of updating all
+    // bindings of the instrumentation descriptor set
+    assert(gpuav.instrumentation_bindings_.size() == 7);
 
-        // Error output buffer
-        VkDescriptorBufferInfo error_output_desc_buffer_info = {};
-        {
-            error_output_desc_buffer_info.range = VK_WHOLE_SIZE;
-            error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBuffer();
-            error_output_desc_buffer_info.offset = 0;
-
-            VkWriteDescriptorSet wds = vku::InitStructHelper();
-            wds.dstBinding = glsl::kBindingInstErrorBuffer;
-            wds.descriptorCount = 1;
-            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            wds.pBufferInfo = &error_output_desc_buffer_info;
-            wds.dstSet = instrumentation_desc_set;
-            desc_writes.emplace_back(wds);
+    if (gpuav.gpuav_settings.debug_printf_enabled) {
+        if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {
+            return;
         }
-
-        // Buffer holding action command index in command buffer
-        VkDescriptorBufferInfo indices_desc_buffer_info = {};
-        {
-            indices_desc_buffer_info.range = sizeof(uint32_t);
-            indices_desc_buffer_info.buffer = gpuav.indices_buffer_.buffer;
-            indices_desc_buffer_info.offset = 0;
-
-            VkWriteDescriptorSet wds = vku::InitStructHelper();
-            wds.dstBinding = glsl::kBindingInstActionIndex;
-            wds.descriptorCount = 1;
-            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-            wds.pBufferInfo = &indices_desc_buffer_info;
-            wds.dstSet = instrumentation_desc_set;
-            desc_writes.emplace_back(wds);
-        }
-
-        // Buffer holding a resource index from the per command buffer command resources list
-        {
-            VkWriteDescriptorSet wds = vku::InitStructHelper();
-            wds.dstBinding = glsl::kBindingInstCmdResourceIndex;
-            wds.descriptorCount = 1;
-            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-            wds.pBufferInfo = &indices_desc_buffer_info;
-            wds.dstSet = instrumentation_desc_set;
-            desc_writes.emplace_back(wds);
-        }
-
-        // Errors count buffer
-        VkDescriptorBufferInfo cmd_errors_counts_desc_buffer_info = {};
-        {
-            cmd_errors_counts_desc_buffer_info.range = VK_WHOLE_SIZE;
-            cmd_errors_counts_desc_buffer_info.buffer = cb_state.GetCmdErrorsCountsBuffer();
-            cmd_errors_counts_desc_buffer_info.offset = 0;
-
-            VkWriteDescriptorSet wds = vku::InitStructHelper();
-            wds.dstBinding = glsl::kBindingInstCmdErrorsCount;
-            wds.descriptorCount = 1;
-            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            wds.pBufferInfo = &cmd_errors_counts_desc_buffer_info;
-            wds.dstSet = instrumentation_desc_set;
-            desc_writes.emplace_back(wds);
-        }
-
-        // Current bindless buffer
-        VkDescriptorBufferInfo di_input_desc_buffer_info = {};
-        if (cb_state.current_bindless_buffer != VK_NULL_HANDLE) {
-            di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-            di_input_desc_buffer_info.buffer = cb_state.current_bindless_buffer;
-            di_input_desc_buffer_info.offset = 0;
-
-            VkWriteDescriptorSet wds = vku::InitStructHelper();
-            wds.dstBinding = glsl::kBindingInstBindlessDescriptor;
-            wds.descriptorCount = 1;
-            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            wds.pBufferInfo = &di_input_desc_buffer_info;
-            wds.dstSet = instrumentation_desc_set;
-            desc_writes.emplace_back(wds);
-        }
-
-        // BDA snapshot buffer
-        VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-        if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {
-            bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-            bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().buffer;
-            bda_input_desc_buffer_info.offset = 0;
-
-            VkWriteDescriptorSet wds = vku::InitStructHelper();
-            wds.dstBinding = glsl::kBindingInstBufferDeviceAddress;
-            wds.descriptorCount = 1;
-            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            wds.pBufferInfo = &bda_input_desc_buffer_info;
-            wds.dstSet = instrumentation_desc_set;
-            desc_writes.emplace_back(wds);
-        }
-
-        DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
+    }
+    if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
+        UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, loc);
     }
 
-    uint32_t operation_index = 0;
-    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
-        operation_index = cb_state.draw_index++;
-    else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
-        operation_index = cb_state.compute_index++;
-    else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-        operation_index = cb_state.trace_rays_index++;
+    const uint32_t operation_index = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)          ? cb_state.draw_index
+                                     : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)         ? cb_state.compute_index
+                                     : (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) ? cb_state.trace_rays_index
+                                                                                              : 0;
 
     const bool uses_shader_object = last_bound.pipeline_state == nullptr;
 
@@ -405,9 +411,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
 void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
                                                  const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation_enabled) {
-        return;
-    }
+    if (!gpuav.gpuav_settings.IsSpirvModified()) return;
 
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);

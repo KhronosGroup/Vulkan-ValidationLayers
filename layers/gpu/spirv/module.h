@@ -88,7 +88,7 @@ class Module {
     bool RunPassNonBindlessOOBTexelBuffer();
     bool RunPassBufferDeviceAddress();
     bool RunPassRayQuery();
-    bool RunPassDebugPrintf(uint32_t binding_slot = 0);
+    bool RunPassDebugPrintf(uint32_t binding_slot);
 
     void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
 

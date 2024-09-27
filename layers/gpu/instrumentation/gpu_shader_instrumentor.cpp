@@ -17,6 +17,7 @@
 
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 
+#include "gpu/shaders/gpu_shaders_constants.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_codes.h"
@@ -24,7 +25,7 @@
 #include "utils/vk_layer_utils.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
-#include "vk_layer_config.h"
+#include "gpu/resources/gpuav_subclasses.h"
 
 #include <cassert>
 #include <regex>
@@ -167,8 +168,8 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
 std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                                                VkDeviceQueueCreateFlags flags,
                                                                const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::static_pointer_cast<vvl::Queue>(std::make_shared<gpu_tracker::Queue>(*this, handle, family_index, queue_index,
-                                                                                     flags, queueFamilyProperties, timeline_khr_));
+    return std::static_pointer_cast<vvl::Queue>(
+        std::make_shared<gpuav::Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
 }
 
 // These are the common things required for anything that deals with shader instrumentation
@@ -238,12 +239,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
 
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
 void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    if (api_version < VK_API_VERSION_1_1) {
-        InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
-        return;
-    }
-
-    // If using 1.0 and doesn't supports VK_KHR_timeline_semaphore, this will error inside, simple fix is to do after the 1.1 check
     BaseClass::PostCreateDevice(pCreateInfo, loc);
 
     VkPhysicalDeviceFeatures supported_features{};
@@ -259,13 +254,6 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
                       "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
                       "vertex shader.");
         return;
-    }
-
-    // This option was published when DebugPrintf came out, leave to not break people's flow
-    // Deprecated right after the 1.3.280 SDK release
-    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
-        InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
-        gpuav_settings.debug_printf_to_stdout = true;
     }
 
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
@@ -361,8 +349,9 @@ void GpuShaderInstrumentor::PreCallRecordDestroyDevice(VkDevice device, const Vk
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
-    if (output_buffer_pool_) {
+    if (output_buffer_pool_ != VK_NULL_HANDLE) {
         vmaDestroyPool(vma_allocator_, output_buffer_pool_);
+        output_buffer_pool_ = VK_NULL_HANDLE;
     }
     if (vma_allocator_) {
         vmaDestroyAllocator(vma_allocator_);
@@ -452,7 +441,7 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj,
                                                               chassis::CreatePipelineLayout &chassis_state) {
-    if (gpuav_settings.shader_instrumentation_enabled) {
+    if (gpuav_settings.IsSpirvModified()) {
         if (chassis_state.modified_create_info.setLayoutCount > instrumentation_desc_set_bind_index_) {
             std::ostringstream strm;
             strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
@@ -547,7 +536,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                              chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.modified_create_infos.reserve(createInfoCount);
 
@@ -597,7 +586,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
                                                            const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
@@ -631,7 +620,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
     BaseClass::PreCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
@@ -669,7 +658,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PreCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                    pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
@@ -703,7 +692,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
                                                                      chassis::CreateRayTracingPipelinesNV &chassis_state) {
     BaseClass::PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                         record_obj, pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
@@ -735,7 +724,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
     BaseClass::PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                          pPipelines, record_obj, pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
     chassis_state.modified_create_infos.resize(count);
@@ -780,7 +769,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
                                                                   chassis::CreateGraphicsPipelines &chassis_state) {
     BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                      pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -806,7 +795,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
                                                                  chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -823,7 +812,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
     PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesNV &chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                          record_obj, pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -841,7 +830,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
-    if (!gpuav_settings.shader_instrumentation_enabled) return;
+    if (!gpuav_settings.IsSpirvModified()) return;
 
     const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR;
 
@@ -1368,33 +1357,33 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     gpu::spirv::Module module(input_spirv, debug_report, module_settings);
 
-    // For now, we don't yet support (or have tested) combining GPU-AV and DebugPrintf, so have 2 paths here
-    const bool is_debug_printf = debug_printf_enabled;
-
     bool modified = false;
-    if (is_debug_printf) {
-        modified |= module.RunPassDebugPrintf(debug_printf_binding_slot_);
-    } else {
-        GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
-        // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-        if (shader_instrumentation.bindless_descriptor) {
-            modified |= module.RunPassBindlessDescriptor();
-            modified |= module.RunPassNonBindlessOOBBuffer();
-            modified |= module.RunPassNonBindlessOOBTexelBuffer();
-        }
 
-        if (shader_instrumentation.buffer_device_address) {
-            modified |= module.RunPassBufferDeviceAddress();
-        }
+    // If descriptor indexing is enabled, enable length checks and updated descriptor checks
+    if (gpuav_settings.shader_instrumentation.bindless_descriptor) {
+        modified |= module.RunPassBindlessDescriptor();
+        modified |= module.RunPassNonBindlessOOBBuffer();
+        modified |= module.RunPassNonBindlessOOBTexelBuffer();
+    }
 
-        if (shader_instrumentation.ray_query) {
-            modified |= module.RunPassRayQuery();
-        }
+    if (gpuav_settings.shader_instrumentation.buffer_device_address) {
+        modified |= module.RunPassBufferDeviceAddress();
+    }
 
-        // If there were GLSL written function injected, we will grab them and link them in here
-        for (const auto &info : module.link_info_) {
-            module.LinkFunction(info);
-        }
+    if (gpuav_settings.shader_instrumentation.ray_query) {
+        modified |= module.RunPassRayQuery();
+    }
+
+    // If there were GLSL written function injected, we will grab them and link them in here
+    for (const auto &info : module.link_info_) {
+        module.LinkFunction(info);
+    }
+
+    // DebugPrintf goes at the end for 2 reasons:
+    // 1. We use buffer device address in it and we don't want to validate the inside of this pass
+    // 2. We might want to debug the above passes and want to inject our own debug printf calls
+    if (gpuav_settings.debug_printf_enabled) {
+        modified |= module.RunPassDebugPrintf(gpuav::glsl::kBindingInstDebugPrintf);
     }
 
     // If nothing was instrumented, leave early to save time
@@ -1430,7 +1419,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     // Run Dead Code elimination
     // If DebugPrintf is the only thing, there will be nothing to eliminate so don't waste time on it
-    if (!is_debug_printf) {
+    if (!gpuav_settings.debug_printf_only) {
         using namespace spvtools;
         OptimizerOptions opt_options;
         opt_options.set_run_validator(false);
@@ -1493,19 +1482,19 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
         vmaFreeStatsString(vma_allocator_, stats_string);
     }
 
-    char const *layer_name = debug_printf_enabled ? "DebugPrintf" : "GPU-AV";
-    char const *vuid = debug_printf_enabled ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
+    char const *layer_name = gpuav_settings.debug_printf_only ? "DebugPrintf" : "GPU-AV";
+    char const *vuid = gpuav_settings.debug_printf_only ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
 
     LogError(vuid, objlist, loc, "Internal Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
 
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
-    ReleaseDeviceDispatchObject(this->container_type);
+    ReleaseDeviceDispatchObject(LayerObjectTypeGpuAssisted);
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
-    char const *vuid = debug_printf_enabled ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
+    char const *vuid = gpuav_settings.debug_printf_only ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
     LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
 }
 
@@ -1755,12 +1744,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
         return ss.str();
     }
 
-    std::string prefix;
-    if (debug_printf_enabled) {
-        prefix = "Debug shader printf message generated ";
-    } else {
-        prefix = "Shader validation error occurred ";
-    }
+    std::string prefix = gpuav_settings.debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ";
 
     // Create message with file information obtained from the OpString pointed to by the discovered OpLine.
     bool found_opstring = false;

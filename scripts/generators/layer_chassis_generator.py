@@ -69,12 +69,7 @@ class APISpecific:
                     {
                         'include': 'gpu/core/gpuav.h',
                         'class': 'gpuav::Validator',
-                        'enabled': 'enables[gpu_validation]'
-                    },
-                    {
-                        'include': 'gpu/debug_printf/debug_printf.h',
-                        'class': 'debug_printf::Validator',
-                        'enabled': 'enables[debug_printf_validation]'
+                        'enabled': 'enables[gpu_validation] || enables[debug_printf_validation]'
                     },
                     {
                         'include': 'sync/sync_validation.h',
@@ -133,7 +128,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                                 typeid(&CoreChecks::name), \\
                                 typeid(&BestPractices::name), \\
                                 typeid(&gpuav::Validator::name), \\
-                                typeid(&debug_printf::Validator::name), \\
                                 typeid(&SyncValidator::name));
 
     auto init_object_dispatch_vector = [this](InterceptId id,
@@ -144,7 +138,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                                               const std::type_info& tcv_typeid,
                                               const std::type_info& tbp_typeid,
                                               const std::type_info& tga_typeid,
-                                              const std::type_info& tdp_typeid,
                                               const std::type_info& tsv_typeid) {
         for (auto item : this->object_dispatch) {
             auto intercept_vector = &this->intercept_vectors[id];
@@ -166,9 +159,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                 break;
             case LayerObjectTypeGpuAssisted:
                 if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeDebugPrintf:
-                if (tdp_typeid != vo_typeid) intercept_vector->push_back(item);
                 break;
             case LayerObjectTypeSyncValidation:
                 if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
@@ -383,7 +373,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 LayerObjectTypeCoreValidation,       // Instance or device core validation layer object
                 LayerObjectTypeBestPractices,        // Instance or device best practices layer object
                 LayerObjectTypeGpuAssisted,          // Instance or device gpu assisted validation layer object
-                LayerObjectTypeDebugPrintf,          // Instance or device shader debug printf layer object
                 LayerObjectTypeSyncValidation,       // Instance or device synchronization validation layer object
                 LayerObjectTypeMaxEnum,              // Max enum count
             };
