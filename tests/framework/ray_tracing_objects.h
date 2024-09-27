@@ -109,7 +109,7 @@ class GeometryKHR {
       private:
         VkAccelerationStructureGeometryKHR vk_obj_;
         Type type_ = Type::_INTERNAL_UNSPECIFIED;
-        uint32_t primitiveCount_ = 0;
+        uint32_t primitive_count_ = 0;
         Triangles triangles_;
         AABBs aabbs_;
         Instances instances_;
@@ -342,6 +342,7 @@ class Pipeline {
         return *desc_set_;
     }
     TraceRaysSbt GetTraceRaysSbt(uint32_t ray_gen_shader_i = 0);
+    vkt::Buffer GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth);
     uint32_t GetShaderGroupsCount();
     std::vector<uint8_t> GetRayTracingShaderGroupHandles();
     std::vector<uint8_t> GetRayTracingCaptureReplayShaderGroupHandles();

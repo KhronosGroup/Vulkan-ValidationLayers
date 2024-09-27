@@ -59,7 +59,7 @@ GeometryKHR &GeometryKHR::SetType(Type type) {
 }
 
 GeometryKHR &GeometryKHR::SetPrimitiveCount(uint32_t primitiveCount) {
-    primitiveCount_ = primitiveCount;
+    primitive_count_ = primitiveCount;
     return *this;
 }
 
@@ -135,7 +135,7 @@ GeometryKHR &GeometryKHR::SetTrianglesMaxVertex(uint32_t max_vertex) {
 
 GeometryKHR &GeometryKHR::SetTrianglesTransformBuffer(vkt::Buffer &&transform_buffer) {
     triangles_.device_transform_buffer = std::move(transform_buffer);
-    vk_obj_.geometry.triangles.transformData.deviceAddress = triangles_.device_transform_buffer.address();
+    vk_obj_.geometry.triangles.transformData.deviceAddress = triangles_.device_transform_buffer.Address();
     return *this;
 }
 
@@ -195,7 +195,7 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
     //     M[2][0] * x + M[2][1] * y + M[2][2] * z + M[2][3] )
 
     instances_.vk_instances.emplace_back(instance).accelerationStructureReference = static_cast<uint64_t>(as_address);
-    ++primitiveCount_;
+    ++primitive_count_;
 
     // Create instance buffer
 
@@ -206,7 +206,7 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_buffer.memory().map());
+    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_buffer.memory().Map());
     for (size_t vk_instance_i = 0; vk_instance_i < instances_.vk_instances.size(); ++vk_instance_i) {
         instance_buffer_ptr[vk_instance_i] = instances_.vk_instances[vk_instance_i];
     }
@@ -215,13 +215,13 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
     instances_.buffer = std::move(instances_buffer);
 
     vk_obj_.geometry.instances.arrayOfPointers = VK_FALSE;
-    vk_obj_.geometry.instances.data.deviceAddress = instances_.buffer.address();
+    vk_obj_.geometry.instances.data.deviceAddress = instances_.buffer.Address();
     return *this;
 }
 
 GeometryKHR &GeometryKHR::AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas) {
     instances_.vk_instances.emplace_back(VkAccelerationStructureInstanceKHR{});
-    ++primitiveCount_;
+    ++primitive_count_;
     instances_.vk_instances.back().accelerationStructureReference = (uint64_t)(blas);
     // leave other instance_ attributes to 0
 
@@ -254,7 +254,7 @@ GeometryKHR &GeometryKHR::Build() { return *this; }
 
 VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const {
     VkAccelerationStructureBuildRangeInfoKHR range_info{};
-    range_info.primitiveCount = primitiveCount_;
+    range_info.primitiveCount = primitive_count_;
     range_info.primitiveOffset = 0;
     range_info.firstVertex = 0;
     range_info.transformOffset = 0;
@@ -302,8 +302,8 @@ AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferMemoryPropert
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferInitNoMem(bool buffer_InitNoMemory) {
-    buffer_InitNoMemory_ = buffer_InitNoMemory;
+AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferInitNoMem(bool buffer_init_no_me) {
+    buffer_init_no_mem_ = buffer_init_no_me;
     return *this;
 }
 
@@ -336,7 +336,7 @@ void AccelerationStructureKHR::Build() {
         VkBufferCreateInfo ci = vku::InitStructHelper();
         ci.size = vk_info_.size;
         ci.usage = buffer_usage_flags_;
-        if (buffer_InitNoMemory_) {
+        if (buffer_init_no_mem_) {
             device_buffer_.InitNoMemory(*device_, ci);
         } else {
             device_buffer_.init(*device_, ci, buffer_memory_property_flags_, &alloc_flags);
@@ -887,11 +887,11 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
         indices[3 * triangle_i + 2] = 2;
     }
 
-    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.memory().map());
+    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
     vertex_buffer.memory().unmap();
 
-    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.memory().map());
+    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
     index_buffer.memory().unmap();
 
@@ -903,7 +903,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
     }};
     // clang-format on
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
     transform_buffer.memory().unmap();
 
@@ -1022,15 +1022,15 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
     vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage,
                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.memory().map());
+    auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
     vertex_buffer.memory().unmap();
 
-    auto index_buffer_ptr = static_cast<TriangleIndices *>(index_buffer.memory().map());
+    auto index_buffer_ptr = static_cast<TriangleIndices *>(index_buffer.memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
     index_buffer.memory().unmap();
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
     transform_buffer.memory().unmap();
 
@@ -1561,7 +1561,7 @@ void Pipeline::BuildSbt() {
     std::cout << "SBT buffer fill:\n";
 #endif
 
-    void *const sbt_buffer_base_ptr = sbt_buffer_.memory().map();
+    void *const sbt_buffer_base_ptr = sbt_buffer_.memory().Map();
     void *sbt_buffer_ptr = sbt_buffer_base_ptr;
     (void)sbt_buffer_base_ptr;
     size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
@@ -1625,8 +1625,7 @@ void Pipeline::BuildSbt() {
 
     // Fill Miss shaders headers
     // ---
-
-    {
+    if (!miss_shaders_.empty()) {
         if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
                         sbt_buffer_space_left)) {
             assert(false);
@@ -1687,64 +1686,64 @@ void Pipeline::BuildSbt() {
 
     // Fill Closest Hit shaders headers
     // ---
-
-    if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
-                    sbt_buffer_space_left)) {
-        assert(false);
-        return;
-    }
-
-    void *closest_hit_sbt = nullptr;
-    for (size_t closest_hit_i = 0; closest_hit_i < closest_hit_shaders_.size(); ++closest_hit_i) {
-        if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+    if (!closest_hit_shaders_.empty()) {
+        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
                         sbt_buffer_space_left)) {
             assert(false);
             return;
         }
-        if (!closest_hit_sbt) closest_hit_sbt = sbt_buffer_ptr;
 
-        std::memcpy(sbt_buffer_ptr, sbt_host_storage_ptr, rt_pipeline_props.shaderGroupHandleSize);
-        sbt_buffer_ptr = (uint8_t *)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
-        sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
+        void *closest_hit_sbt = nullptr;
+        for (size_t closest_hit_i = 0; closest_hit_i < closest_hit_shaders_.size(); ++closest_hit_i) {
+            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+                            sbt_buffer_space_left)) {
+                assert(false);
+                return;
+            }
+            if (!closest_hit_sbt) closest_hit_sbt = sbt_buffer_ptr;
 
-        sbt_host_storage_ptr += rt_pipeline_props.shaderGroupHandleSize;
-    }
-    (void)closest_hit_sbt;
+            std::memcpy(sbt_buffer_ptr, sbt_host_storage_ptr, rt_pipeline_props.shaderGroupHandleSize);
+            sbt_buffer_ptr = (uint8_t *)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
+            sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
+
+            sbt_host_storage_ptr += rt_pipeline_props.shaderGroupHandleSize;
+        }
+        (void)closest_hit_sbt;
 
 #ifdef VVL_DEBUG_LOG_SBT
-    {
-        std::cout << "Closest hit shaders SBT entry: offset = " << ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr)
-                  << " | size = " << closest_hit_shaders_sbt_entry_byte_size << '\n';
-        const uint32_t break_every = rt_pipeline_props.shaderGroupHandleSize;
-        const auto original_fmt_flags = std::cout.flags();
-        std::cout << "Closest hit shader handles:\n";
-        size_t line_i = 0;
-        for (size_t byte_i = 0; byte_i < closest_hit_shaders_.size() * handle_size_aligned; ++byte_i) {
-            if (byte_i > 0 && (byte_i % break_every == 0)) {
-                std::cout << std::endl;
-            }
-            if (byte_i % break_every == 0) {
-                std::cout << std::setw(4) << (break_every * line_i + ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr))
-                          << ": ";
-                ++line_i;
-            }
+        {
+            std::cout << "Closest hit shaders SBT entry: offset = " << ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr)
+                      << " | size = " << closest_hit_shaders_sbt_entry_byte_size << '\n';
+            const uint32_t break_every = rt_pipeline_props.shaderGroupHandleSize;
+            const auto original_fmt_flags = std::cout.flags();
+            std::cout << "Closest hit shader handles:\n";
+            size_t line_i = 0;
+            for (size_t byte_i = 0; byte_i < closest_hit_shaders_.size() * handle_size_aligned; ++byte_i) {
+                if (byte_i > 0 && (byte_i % break_every == 0)) {
+                    std::cout << std::endl;
+                }
+                if (byte_i % break_every == 0) {
+                    std::cout << std::setw(4)
+                              << (break_every * line_i + ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr)) << ": ";
+                    ++line_i;
+                }
 
-            uint32_t byte = ((uint8_t *)closest_hit_sbt)[byte_i];
-            std::cout << std::hex;
-            if (byte == 0)
-                std::cout << "-- ";
-            else {
-                std::cout << std::setw(2);
-                std::cout << byte;
-                std::cout << " ";
+                uint32_t byte = ((uint8_t *)closest_hit_sbt)[byte_i];
+                std::cout << std::hex;
+                if (byte == 0)
+                    std::cout << "-- ";
+                else {
+                    std::cout << std::setw(2);
+                    std::cout << byte;
+                    std::cout << " ";
+                }
+                std::cout << std::dec;
             }
-            std::cout << std::dec;
+            std::cout.flags(original_fmt_flags);
+            std::cout << std::endl;
         }
-        std::cout.flags(original_fmt_flags);
-        std::cout << std::endl;
-    }
 #endif
-
+    }
     sbt_buffer_.Memory().Unmap();
 }
 
@@ -1770,7 +1769,7 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     const uint32_t handle_size_aligned =
         Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
 
-    const VkDeviceAddress sbt_base_address = sbt_buffer_.address();
+    const VkDeviceAddress sbt_base_address = sbt_buffer_.Address();
     VkDeviceAddress sbt_address = sbt_base_address;
 
     assert(sbt_address == Align<VkDeviceAddress>(sbt_address, rt_pipeline_props.shaderGroupBaseAlignment));
@@ -1827,6 +1826,33 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     out.hit_sbt = closest_hit_sbt;
     out.callable_sbt = empty_sbt;
     return out;
+}
+
+vkt::Buffer Pipeline::GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth) {
+    TraceRaysSbt sbt = GetTraceRaysSbt(ray_gen_shader_i);
+
+    vkt::Buffer indirect_rt_buffer(*device_, sizeof(VkTraceRaysIndirectCommand2KHR), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                   vkt::device_address);
+    auto indirect_rt_ptr = (VkTraceRaysIndirectCommand2KHR *)indirect_rt_buffer.memory().Map();
+    *indirect_rt_ptr = {};
+    indirect_rt_ptr->raygenShaderRecordAddress = sbt.ray_gen_sbt.deviceAddress;
+    indirect_rt_ptr->raygenShaderRecordSize = sbt.ray_gen_sbt.size;
+
+    indirect_rt_ptr->missShaderBindingTableAddress = sbt.miss_sbt.deviceAddress;
+    indirect_rt_ptr->missShaderBindingTableSize = sbt.miss_sbt.size;
+    indirect_rt_ptr->missShaderBindingTableStride = sbt.miss_sbt.stride;
+
+    indirect_rt_ptr->hitShaderBindingTableAddress = sbt.hit_sbt.deviceAddress;
+    indirect_rt_ptr->hitShaderBindingTableSize = sbt.hit_sbt.size;
+    indirect_rt_ptr->hitShaderBindingTableStride = sbt.hit_sbt.stride;
+
+    indirect_rt_ptr->width = width;
+    indirect_rt_ptr->height = height;
+    indirect_rt_ptr->depth = depth;
+
+    indirect_rt_buffer.memory().unmap();
+
+    return indirect_rt_buffer;
 }
 
 uint32_t Pipeline::GetShaderGroupsCount() {
