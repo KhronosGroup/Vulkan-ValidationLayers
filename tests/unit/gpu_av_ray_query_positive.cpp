@@ -86,8 +86,8 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
 
         void main() {
             rayQueryEXT query;
-            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0),
-              trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max);
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(100000),
+              trace_rays_params.t_min, vec3(0,1,0), trace_rays_params.t_max);
             rayQueryProceedEXT(query);
         }
     )glsl";
