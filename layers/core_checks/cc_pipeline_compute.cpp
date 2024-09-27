@@ -44,6 +44,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
             skip |= ValidatePipelineShaderStage(*pipeline, *stage_state.pipeline_create_info, pCreateInfos[i].pNext, stage_info);
         }
 
+        skip |= ValidateComputePipelineDerivatives(pipeline_states, i, create_info_loc);
         skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
         skip |= ValidatePipelineIndirectBindableFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),
@@ -60,6 +61,39 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         if (i == 0 && chassis_state.stateless_data.pipeline_pnext_module) {
             skip |= ValidateSpirvStateless(*chassis_state.stateless_data.pipeline_pnext_module, chassis_state.stateless_data,
                                            create_info_loc.dot(Field::stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateComputePipelineDerivatives(PipelineStates &pipeline_states, uint32_t pipe_index,
+                                                    const Location &loc) const {
+    bool skip = false;
+    const auto &pipeline = *pipeline_states[pipe_index].get();
+    // If create derivative bit is set, check that we've specified a base
+    // pipeline correctly, and that the base pipeline was created to allow
+    // derivatives.
+    if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT_KHR) {
+        std::shared_ptr<const vvl::Pipeline> base_pipeline;
+        const auto &pipeline_ci = pipeline.ComputeCreateInfo();
+        const VkPipeline base_handle = pipeline_ci.basePipelineHandle;
+        const int32_t base_index = pipeline_ci.basePipelineIndex;
+        if (base_index != -1 && base_index < static_cast<int32_t>(pipeline_states.size())) {
+            if (static_cast<uint32_t>(base_index) >= pipe_index) {
+                skip |= LogError("VUID-vkCreateComputePipelines-flags-00695", base_handle, loc,
+                                 "base pipeline (index %" PRId32
+                                 ") must occur earlier in array than derivative pipeline (index %" PRIu32 ").",
+                                 base_index, pipe_index);
+            } else {
+                base_pipeline = pipeline_states[base_index];
+            }
+        } else if (base_handle != VK_NULL_HANDLE) {
+            base_pipeline = Get<vvl::Pipeline>(base_handle);
+        }
+
+        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT_KHR)) {
+            skip |= LogError("VUID-vkCreateComputePipelines-flags-00696", base_pipeline->Handle(), loc,
+                             "base pipeline does not allow derivatives.");
         }
     }
     return skip;
