@@ -62,6 +62,7 @@ class ErrorMonitor {
     void SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count = 1);
     // And use this for warnings
     void SetDesiredWarning(const char *msg, uint32_t count = 1);
+    void SetDesiredInfo(const char *msg, uint32_t count = 1);
 
     // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this

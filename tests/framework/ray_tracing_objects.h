@@ -43,6 +43,7 @@ class GeometryKHR {
         std::unique_ptr<float[]> host_vertex_buffer;
         vkt::Buffer device_index_buffer;
         std::unique_ptr<uint32_t[]> host_index_buffer;
+        vkt::Buffer device_transform_buffer;
     };
     struct AABBs {
         vkt::Buffer device_buffer;
@@ -77,6 +78,7 @@ class GeometryKHR {
     GeometryKHR& SetTrianglesIndexType(VkIndexType index_type);
     GeometryKHR& SetTrianglesVertexFormat(VkFormat vertex_format);
     GeometryKHR& SetTrianglesMaxVertex(uint32_t max_vertex);
+    GeometryKHR& SetTrianglesTransformBuffer(vkt::Buffer&& transform_buffer);
     GeometryKHR& SetTrianglesTransformatData(VkDeviceAddress address);
     GeometryKHR& SetTrianglesVertexBufferDeviceAddress(VkDeviceAddress address);
     GeometryKHR& SetTrianglesIndexBufferDeviceAddress(VkDeviceAddress address);
@@ -85,6 +87,7 @@ class GeometryKHR {
     GeometryKHR& SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
     GeometryKHR& SetAABBsStride(VkDeviceSize stride);
     GeometryKHR& SetAABBsDeviceAddress(VkDeviceAddress address);
+
     // Instance
     GeometryKHR& AddInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR blas);
     GeometryKHR& AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas);
@@ -99,6 +102,7 @@ class GeometryKHR {
     const auto& GetTriangles() const { return triangles_; }
     const auto& GetAABBs() const { return aabbs_; }
     auto& GetInstance() { return instance_; }
+    VkGeometryFlagsKHR GetFlags() { return vk_obj_.flags; };
 
   private:
     VkAccelerationStructureGeometryKHR vk_obj_;
@@ -206,7 +210,7 @@ class BuildGeometryInfoKHR {
     auto& GetBottomLevelAS() { return blas_; }
     const auto& GetScratchBuffer() const { return device_scratch_; }
     VkAccelerationStructureBuildSizesInfoKHR GetSizeInfo(bool use_ppGeometries = true);
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> GetDefaultBuildRangeInfos();
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> GetBuildRangeInfosFromGeometries();
 
   private:
     friend void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR>& infos);
@@ -257,7 +261,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, size_t
 GeometryKHR GeometrySimpleOnHostTriangleInfo();
 GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device& device);
 GeometryKHR GeometrySimpleOnHostAABBInfo();
-GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device& device, VkAccelerationStructureKHR device_instance);
+GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device& device, VkAccelerationStructureKHR device_blas);
 GeometryKHR GeometrySimpleHostInstance(VkAccelerationStructureKHR host_instance);
 
 std::shared_ptr<AccelerationStructureKHR> AccelStructNull(const vkt::Device& device);

@@ -79,6 +79,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/debug_extensions_positive.cpp
     unit/debug_printf.cpp
     unit/debug_printf_shader_debug_info.cpp
+    unit/debug_printf_ray_tracing.cpp
     unit/descriptor_buffer.cpp
     unit/descriptor_buffer_positive.cpp
     unit/descriptor_indexing.cpp
