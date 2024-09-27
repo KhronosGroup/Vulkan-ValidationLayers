@@ -1854,6 +1854,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props;
         VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props;
         VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_memory_placed_props;
+        VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR compute_shader_derivatives_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;

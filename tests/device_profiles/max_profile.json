@@ -107,6 +107,10 @@
                 "VkPhysicalDevicePresentIdFeaturesKHR": {
                     "presentId": true
                 },
+                "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR": {
+                    "computeDerivativeGroupQuads": true,
+                    "computeDerivativeGroupLinear": true
+                },
                 "VkPhysicalDevicePresentWaitFeaturesKHR": {
                     "presentWait": true
                 },
@@ -1339,6 +1343,9 @@
                 "VkPhysicalDeviceMapMemoryPlacedPropertiesEXT": {
                     "minPlacedMemoryMapAlignment": 4096
                 },
+                "VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR": {
+                    "meshAndTaskShaderDerivatives": false
+                },
                 "VkPhysicalDeviceConservativeRasterizationPropertiesEXT": {
                     "primitiveUnderestimation": true,
                     "conservativePointAndLineRasterization": true,
@@ -2087,6 +2094,7 @@
                 "VK_KHR_buffer_device_address": 1,
                 "VK_KHR_cooperative_matrix": 1,
                 "VK_KHR_copy_commands2": 1,
+                "VK_KHR_compute_shader_derivatives": 1,
                 "VK_KHR_create_renderpass2": 1,
                 "VK_KHR_dedicated_allocation": 1,
                 "VK_KHR_deferred_host_operations": 1,

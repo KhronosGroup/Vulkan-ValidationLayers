@@ -280,6 +280,12 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeStencilRefReplacingEXT:
             flags |= stencil_ref_replacing_bit;
             break;
+        case spv::ExecutionModeDerivativeGroupLinearKHR:
+            flags |= derivative_group_linear;
+            break;
+        case spv::ExecutionModeDerivativeGroupQuadsKHR:
+            flags |= derivative_group_quads;
+            break;
         default:
             break;
     }

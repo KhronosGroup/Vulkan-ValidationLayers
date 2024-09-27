@@ -1289,6 +1289,21 @@ bool CoreChecks::ValidateExecutionModes(const spirv::Module &module_state, const
         }
     }
 
+    if ((stage == VK_SHADER_STAGE_MESH_BIT_EXT || stage == VK_SHADER_STAGE_TASK_BIT_EXT) &&
+        !phys_dev_ext_props.compute_shader_derivatives_props.meshAndTaskShaderDerivatives) {
+        if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::derivative_group_linear)) {
+            skip |=
+                LogError("VUID-RuntimeSpirv-meshAndTaskShaderDerivatives-10153", module_state.handle(), loc,
+                         "SPIR-V uses DerivativeGroupLinearKHR in a %s shader, but meshAndTaskShaderDerivatives is not supported.",
+                         string_VkShaderStageFlagBits(stage));
+        } else if (entrypoint.execution_mode.Has(spirv::ExecutionModeSet::derivative_group_quads)) {
+            skip |=
+                LogError("VUID-RuntimeSpirv-meshAndTaskShaderDerivatives-10153", module_state.handle(), loc,
+                         "SPIR-V uses DerivativeGroupQuadsKHR in a %s shader, but meshAndTaskShaderDerivatives is not supported.",
+                         string_VkShaderStageFlagBits(stage));
+        }
+    }
+
     return skip;
 }
 

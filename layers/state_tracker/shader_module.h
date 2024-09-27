@@ -127,6 +127,9 @@ struct ExecutionModeSet {
         stencil_ref_replacing_bit = 1 << 25,
 
         fp_fast_math_default = 1 << 26,
+
+        derivative_group_linear = 1 << 27,
+        derivative_group_quads = 1 << 28,
     };
 
     // bits to know if things have been set or not by a Decoration
