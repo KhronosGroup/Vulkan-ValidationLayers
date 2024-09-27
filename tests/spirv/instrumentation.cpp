@@ -19,6 +19,7 @@
 
 static constexpr uint32_t kDefaultShaderId = 23;
 static constexpr uint32_t kInstDefaultDescriptorSet = 3;
+static constexpr uint32_t kInstDefaultDebugPrintfBinding = 0;
 
 static bool timer = false;
 static bool print_debug_info = false;
@@ -169,7 +170,7 @@ int main(int argc, char** argv) {
         module.RunPassRayQuery();
     }
     if (all_passes || debug_printf_pass) {
-        module.RunPassDebugPrintf();
+        module.RunPassDebugPrintf(kInstDefaultDebugPrintfBinding);
     }
 
     for (const auto& info : module.link_info_) {

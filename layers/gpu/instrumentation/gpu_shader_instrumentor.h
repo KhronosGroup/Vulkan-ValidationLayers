@@ -18,7 +18,7 @@
 
 #include "containers/custom_containers.h"
 #include "generated/chassis.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "gpu/resources/gpu_resources.h"
 #include "gpu/spirv/instruction.h"
 #include "vma/vma.h"
@@ -66,7 +66,8 @@ struct GpuAssistedShaderTracker {
     std::vector<uint32_t> instrumented_spirv;
 };
 
-// Interface common to both GPU-AV and DebugPrintF.
+// Historically this was an common interface to both GPU-AV and DebugPrintf before the were merged together.
+// We still keep this as encapsulates the complex code around shader instrumentation.
 // Handles shader instrumentation (reserve a descriptor slot, create descriptor
 // sets, pipeline layout, hook into pipeline creation, etc...)
 class GpuShaderInstrumentor : public ValidationStateTracker {
@@ -234,14 +235,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     SpirvCache instrumented_shaders_cache_;
     DeviceMemoryBlock indices_buffer_{};
     unsigned int indices_buffer_alignment_ = 0;
-
-    // DebugPrintf takes the first available slot in the set
-    uint32_t debug_printf_binding_slot_ = 0;
-
-    // These are here as temp variables until GPU-AV and DebugPrintf are fully merged into a single Validation Object.
-    // Once merged, the single Validation Object can use settings to detect this
-    bool debug_printf_enabled = false;
-    bool gpuav_enabled = false;
 
   private:
     void Cleanup();

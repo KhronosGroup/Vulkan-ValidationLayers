@@ -69,14 +69,6 @@ TEST_F(NegativeGpuAV, ValidationFeatures) {
     m_errorMonitor->SetDesiredError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967");
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
-
-    VkValidationFeatureEnableEXT printf_enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
-                                                     VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
-    features.pEnabledValidationFeatures = printf_enables;
-    features.enabledValidationFeatureCount = 2;
-    m_errorMonitor->SetDesiredError("VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968");
-    vk::CreateInstance(&ici, nullptr, &instance);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {

@@ -205,10 +205,18 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 
+    // If using 1.0 and there is no VK_KHR_timeline_semaphore support, we will error inside ValidationStateTracker::PostCreateDevice
+    if (api_version < VK_API_VERSION_1_1) {
+        InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
+        return;
+    }
+
     // Set up a stub implementation of the descriptor heap in case we abort.
     desc_heap_.emplace(*this, 0, loc);
 
     instrumentation_bindings_ = {
+        // DebugPrintf Output buffer
+        {glsl::kBindingInstDebugPrintf, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Error output buffer
         {glsl::kBindingInstErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Current bindless buffer
@@ -223,7 +231,8 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         {glsl::kBindingInstCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
 
-    // Currently, both GPU-AV and DebugPrintf set their own instrumentation_bindings_ that this call will use
+    // TODO - Now that GPU-AV and DebugPrintf are merged, we should just have a single PostCreateDevice if possible (or at least
+    // better divide what belongs where as it is easy to mess)
     BaseClass::PostCreateDevice(pCreateInfo, loc);
     // We might fail in parent class device creation if global requirements are not met
     if (aborted_) return;
@@ -390,7 +399,7 @@ void Validator::InitSettings(const Location &loc) {
         InternalWarning(
             device, loc,
             "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "
-            "[Disabling shader_instrumentation_enabled]");
+            "[Disabling all shader instrumentation checks]");
         // Because of VUs like VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008 we currently would need to rework the entire shader
         // instrumentation logic
         gpuav_settings.DisableShaderInstrumentationAndOptions();

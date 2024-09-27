@@ -29,6 +29,7 @@
 #include "error_message/logging.h"
 
 #include "sync/sync_settings.h"
+#include "vk_layer_config.h"
 
 // Include new / delete overrides if using mimalloc. This needs to be include exactly once in a file that is
 // part of the VVL but not the layer utils library.
@@ -135,7 +136,8 @@ const char *VK_LAYER_VALIDATE_BEST_PRACTICES_AMD = "validate_best_practices_amd"
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES_IMG = "validate_best_practices_img";
 const char *VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA = "validate_best_practices_nvidia";
 const char *VK_LAYER_VALIDATE_SYNC = "validate_sync";
-const char *VK_LAYER_VALIDATE_GPU_BASED = "validate_gpu_based";
+// These were deprecated after the 1.3.296 SDK release (because it was a flag and now is a boolean)
+const char *DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED = "validate_gpu_based";
 
 // Corresponding to VkValidationFeatureDisableEXT
 // ---
@@ -167,14 +169,19 @@ const char *VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 // Debug settings used for internal development
 const char *VK_LAYER_DEBUG_DISABLE_SPIRV_VAL = "debug_disable_spirv_val";
 
-// DebugPrintf
+// DebugPrintf (which is now part of GPU-AV internally)
 // ---
+// Quick, single setting to turn on DebugPrintf
+const char *VK_LAYER_PRINTF_ONLY_PRESET = "printf_only_preset";
+// Was added a new way to set things without having to use VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+const char *VK_LAYER_PRINTF_ENABLE = "printf_enable";
 const char *VK_LAYER_PRINTF_TO_STDOUT = "printf_to_stdout";
 const char *VK_LAYER_PRINTF_VERBOSE = "printf_verbose";
 const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 
 // GPU-AV
 // ---
+const char *VK_LAYER_GPUAV_ENABLE = "gpuav_enable";
 const char *VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
 const char *VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
@@ -633,7 +640,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
     }
 
     // Before creating the debug callback, see if other settings interfere
-    if (settings_data->enables[debug_printf_validation]) {
+    if (settings_data->gpuav_settings->debug_printf_enabled) {
         if (settings_data->gpuav_settings->debug_printf_to_stdout && (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG)) {
             if (is_stdout) {
                 setting_warnings.emplace_back(
@@ -654,7 +661,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         }
         if (!settings_data->gpuav_settings->debug_printf_to_stdout && settings_data->gpuav_settings->debug_printf_verbose &&
             debug_report->duplicate_message_limit != 0) {
-            // If verbose is turned off, it bypasses the LogMsgEnabled() check and not important
+            // If verbose is disabled, it bypasses the LogMsgEnabled() check and not important
             setting_warnings.emplace_back("DebugPrintf logs can possibly print many times, but duplicate_message_limit is set to " +
                                           std::to_string(debug_report->duplicate_message_limit) +
                                           " so no more logs will be shown after.");
@@ -806,11 +813,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
+    bool shader_instrumentation_enabled = true;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION,
-                                gpuav_settings.shader_instrumentation_enabled);
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, shader_instrumentation_enabled);
     }
-    if (!gpuav_settings.shader_instrumentation_enabled) {
+
+    if (!shader_instrumentation_enabled) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();
     } else {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS)) {
@@ -874,10 +882,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         }
     }
 
+    bool buffers_validation_enabled = true;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_BUFFERS_VALIDATION)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFERS_VALIDATION, gpuav_settings.buffers_validation_enabled);
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFERS_VALIDATION, buffers_validation_enabled);
     }
-    if (!gpuav_settings.buffers_validation_enabled) {
+    if (!buffers_validation_enabled) {
         gpuav_settings.SetBufferValidationEnabled(false);
     } else {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS)) {
@@ -940,6 +949,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                 gpuav_settings.debug_max_instrumented_count);
     }
 
+    // Debug Printf - (which we bundle into GPU-AV internally)
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_ENABLE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_ENABLE, gpuav_settings.debug_printf_enabled);
+    }
+
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_PRINT_INSTRUMENTATION_INFO)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_PRINT_INSTRUMENTATION_INFO,
                                 gpuav_settings.debug_print_instrumentation_info);
@@ -947,6 +961,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_TO_STDOUT, gpuav_settings.debug_printf_to_stdout);
+    }
+
+    // This option was published when DebugPrintf came out, leave to not break people's flow
+    // Deprecated right after the 1.3.280 SDK release
+    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
+        setting_warnings.emplace_back("DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
+        gpuav_settings.debug_printf_to_stdout = true;
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_VERBOSE)) {
@@ -990,15 +1011,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }
 
-    // if app is setting VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, we can use this to disable it for debugging
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DISABLE_ALL)) {
-        bool disable_gpuav = false;
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DISABLE_ALL, disable_gpuav);
-        if (disable_gpuav) {
-            settings_data->enables[gpu_validation] = false;
-        }
-    }
-
     const bool use_fine_grained_settings = disables.empty() && enables.empty();
 
     // Only read the legacy enables flags when used, not their replacement.
@@ -1012,11 +1024,21 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, VK_LAYER_VALIDATE_SYNC);
 
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_VALIDATE_GPU_BASED)) {
+        // These were deprecated after the 1.3.296 SDK release
+        // Before GPU-AV and DebugPrintf were merged, we used this enum to set GPU-AV and DebugPrintf in vkconfig.
+        // This code should in theory be dead since removing it from vkconfig, but keep just incase for a bit
+        if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED)) {
             std::string setting_value;
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_VALIDATE_GPU_BASED, setting_value);
-            settings_data->enables[gpu_validation] = setting_value == "GPU_BASED_GPU_ASSISTED";
-            settings_data->enables[debug_printf_validation] = setting_value == "GPU_BASED_DEBUG_PRINTF";
+            vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED, setting_value);
+            if (setting_value == "GPU_BASED_GPU_ASSISTED") {
+                settings_data->enables[gpu_validation] = true;
+                setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
+                                              " setting was set, use " + std::string(VK_LAYER_GPUAV_ENABLE) + " instead.");
+            } else if (setting_value == "GPU_BASED_DEBUG_PRINTF") {
+                settings_data->enables[debug_printf_validation] = true;
+                setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
+                                              " setting was set, use " + std::string(VK_LAYER_PRINTF_ENABLE) + " instead.");
+            }
         }
     }
 
@@ -1034,6 +1056,63 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, VK_LAYER_OBJECT_LIFETIME);
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, VK_LAYER_CHECK_SHADERS);
         SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, VK_LAYER_CHECK_SHADERS_CACHING);
+    }
+
+    // This is the "original" way to use DebugPrintf before you could use it with GPU-AV
+    // In this case, we want to emulate supporting only for DebugPrintf with GPU-AV disabled
+    if (settings_data->enables[debug_printf_validation]) {
+        gpuav_settings.debug_printf_enabled = true;
+        if (!settings_data->enables[gpu_validation]) {
+            gpuav_settings.SetOnlyDebugPrintf();
+        }
+    } else if (gpuav_settings.debug_printf_enabled) {
+        // enabled the new way, but chassis uses this to create Validation Object
+        settings_data->enables[debug_printf_validation] = true;
+    }
+
+    // New way to override everything to make it easy to use DebugPrintf when VkConfig isn't available
+    bool printf_only_preset = false;
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_ONLY_PRESET)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_ONLY_PRESET, printf_only_preset);
+        if (printf_only_preset) {
+            gpuav_settings.SetOnlyDebugPrintf();
+            // chassis uses this to create Validation Object
+            settings_data->enables[debug_printf_validation] = true;
+            settings_data->enables[gpu_validation] = false;
+
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_ALL_EXT);
+            setting_warnings.emplace_back(
+                "Setting VK_VALIDATION_FEATURE_DISABLE_ALL_EXT so that only DebugPrintf will be used and everything is else is "
+                "disabled.");
+        }
+    }
+
+    if (gpuav_settings.cache_instrumented_shaders && gpuav_settings.debug_printf_enabled) {
+        gpuav_settings.cache_instrumented_shaders = false;
+        setting_warnings.emplace_back(
+            "Debug Printf was enabled, disabling caching of instrumented shaders as it might accidentally not print out the "
+            "expected output.");
+    }
+
+    // This is the "new" way to enable GPU-AV
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_ENABLE)) {
+        bool gpuav_enable = false;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_ENABLE, gpuav_enable);
+        if (printf_only_preset) {
+            setting_warnings.emplace_back(std::string(VK_LAYER_PRINTF_ONLY_PRESET) + " was set, so ignoring " + std::string(VK_LAYER_GPUAV_ENABLE) + ".");
+        } else if (gpuav_enable) {
+            // enabled the new way, but chassis uses this to create Validation Object
+            settings_data->enables[gpu_validation] = true;
+        }
+    }
+
+    // if app is setting VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, we can use this to disable it for debugging
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DISABLE_ALL)) {
+        bool disable_gpuav = false;
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DISABLE_ALL, disable_gpuav);
+        if (disable_gpuav) {
+            settings_data->enables[gpu_validation] = false;
+        }
     }
 
     if (settings_data->enables[gpu_validation] && !settings_data->disables[core_checks]) {

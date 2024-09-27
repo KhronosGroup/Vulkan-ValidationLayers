@@ -1769,7 +1769,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                                 typeid(&CoreChecks::name), \
                                 typeid(&BestPractices::name), \
                                 typeid(&gpuav::Validator::name), \
-                                typeid(&debug_printf::Validator::name), \
                                 typeid(&SyncValidator::name));
 
     auto init_object_dispatch_vector = [this](InterceptId id,
@@ -1780,7 +1779,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                                               const std::type_info& tcv_typeid,
                                               const std::type_info& tbp_typeid,
                                               const std::type_info& tga_typeid,
-                                              const std::type_info& tdp_typeid,
                                               const std::type_info& tsv_typeid) {
         for (auto item : this->object_dispatch) {
             auto intercept_vector = &this->intercept_vectors[id];
@@ -1802,9 +1800,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                 break;
             case LayerObjectTypeGpuAssisted:
                 if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeDebugPrintf:
-                if (tdp_typeid != vo_typeid) intercept_vector->push_back(item);
                 break;
             case LayerObjectTypeSyncValidation:
                 if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);

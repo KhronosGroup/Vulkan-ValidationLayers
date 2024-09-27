@@ -25,7 +25,6 @@ struct GpuAVSettings {
     bool cache_instrumented_shaders = true;
     bool select_instrumented_shaders = false;
 
-    bool buffers_validation_enabled = true;
     // Turned off until we can fix things
     // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8579
     bool validate_indirect_draws_buffers = false;
@@ -40,7 +39,9 @@ struct GpuAVSettings {
     uint32_t debug_max_instrumented_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
 
-    bool shader_instrumentation_enabled = true;
+    // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is reflected
+    // in the settings (which are reflected in VkConfig). To make our lives easier, we just make these settings with the hierarchy
+    // of the settings exposed
     struct ShaderInstrumentation {
         bool bindless_descriptor = true;
         bool buffer_device_address = true;
@@ -51,10 +52,10 @@ struct GpuAVSettings {
         return shader_instrumentation.bindless_descriptor || shader_instrumentation.buffer_device_address ||
                shader_instrumentation.ray_query;
     }
+    bool IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
+
     // Also disables shader caching and select shader instrumentation
     void DisableShaderInstrumentationAndOptions() {
-        shader_instrumentation_enabled = false;
-
         shader_instrumentation.bindless_descriptor = false;
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
@@ -73,6 +74,18 @@ struct GpuAVSettings {
         validate_buffer_copies = enabled;
     }
 
+    // For people who are using VkValidationFeatureEnableEXT to set only DebugPrintf (and want the rest of GPU-AV off)
+    bool debug_printf_only = false;
+    void SetOnlyDebugPrintf() {
+        DisableShaderInstrumentationAndOptions();
+        SetBufferValidationEnabled(false);
+
+        // Turn on the minmal settings for DebugPrintf
+        debug_printf_enabled = true;
+        debug_printf_only = true;
+    }
+
+    bool debug_printf_enabled = false;
     bool debug_printf_to_stdout = false;
     bool debug_printf_verbose = false;
     uint32_t debug_printf_buffer_size = 1024;

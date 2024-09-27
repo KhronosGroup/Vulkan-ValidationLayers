@@ -36,47 +36,23 @@ namespace gpu {
 class GpuShaderInstrumentor;
 }
 
-namespace gpu_tracker {
-
-class Queue : public vvl::Queue {
-  public:
-    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
-    virtual ~Queue();
-
-  protected:
-    vvl::PreSubmitResult PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
-    void PostSubmit(vvl::QueueSubmission &) override;
-    void SubmitBarrier(const Location &loc, uint64_t seq);
-    void Retire(vvl::QueueSubmission &) override;
-
-    gpu::GpuShaderInstrumentor &shader_instrumentor_;
-    VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
-    VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
-    VkSemaphore barrier_sem_{VK_NULL_HANDLE};
-    std::deque<std::vector<std::shared_ptr<vvl::CommandBuffer>>> retiring_;
-    const bool timeline_khr_;
-};
-
-class CommandBuffer : public vvl::CommandBuffer {
-  public:
-    CommandBuffer(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkCommandBuffer handle,
-                  const VkCommandBufferAllocateInfo *pCreateInfo, const vvl::CommandPool *pool);
-
-    virtual bool PreProcess(const Location &loc) = 0;
-    virtual void PostProcess(VkQueue queue, const Location &loc) = 0;
-};
-}  // namespace gpu_tracker
-
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpu_tracker::Queue, vvl::Queue)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpu_tracker::CommandBuffer, vvl::CommandBuffer)
-
 namespace gpuav {
 
 class Validator;
 struct DescBindingInfo;
 
-class CommandBuffer : public gpu_tracker::CommandBuffer {
+struct DebugPrintfBufferInfo {
+    gpu::DeviceMemoryBlock output_mem_block;
+    VkPipelineBindPoint pipeline_bind_point;
+    uint32_t action_command_index;
+    DebugPrintfBufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkPipelineBindPoint pipeline_bind_point,
+                          uint32_t action_command_index)
+        : output_mem_block(output_mem_block),
+          pipeline_bind_point(pipeline_bind_point),
+          action_command_index(action_command_index){};
+};
+
+class CommandBuffer : public vvl::CommandBuffer {
   public:
     // per vkCmdBindDescriptorSet() state
     std::vector<DescBindingInfo> di_input_buffer_list;
@@ -84,13 +60,14 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;
     uint32_t trace_rays_index = 0;
+    uint32_t action_command_count = 0;
 
     CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const vvl::CommandPool *pool);
     ~CommandBuffer();
 
-    bool PreProcess(const Location &loc) final;
-    void PostProcess(VkQueue queue, const Location &loc) final;
+    bool PreProcess(const Location &loc);
+    void PostProcess(VkQueue queue, const Location &loc);
     [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
@@ -126,6 +103,7 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     const gpu::DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
     void ClearCmdErrorsCountsBuffer(const Location &loc) const;
+    void UpdateCommandCount(VkPipelineBindPoint bind_point);
 
     void Destroy() final;
     void Reset(const Location &loc) final;
@@ -135,6 +113,8 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
+
+    std::vector<DebugPrintfBufferInfo> debug_printf_buffer_infos;
 
   private:
     void AllocateResources(const Location &loc);
@@ -160,6 +140,26 @@ class CommandBuffer : public gpu_tracker::CommandBuffer {
     // Buffer storing a snapshot of buffer device address ranges
     gpu::DeviceMemoryBlock bda_ranges_snapshot_ = {};
     uint32_t bda_ranges_snapshot_version_ = 0;
+};
+
+class Queue : public vvl::Queue {
+  public:
+    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
+    virtual ~Queue();
+
+  protected:
+    vvl::PreSubmitResult PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
+    void PostSubmit(vvl::QueueSubmission &) override;
+    void SubmitBarrier(const Location &loc, uint64_t seq);
+    void Retire(vvl::QueueSubmission &) override;
+
+    gpu::GpuShaderInstrumentor &shader_instrumentor_;
+    VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
+    VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
+    VkSemaphore barrier_sem_{VK_NULL_HANDLE};
+    std::deque<std::vector<std::shared_ptr<vvl::CommandBuffer>>> retiring_;
+    const bool timeline_khr_;
 };
 
 class Buffer : public vvl::Buffer {
