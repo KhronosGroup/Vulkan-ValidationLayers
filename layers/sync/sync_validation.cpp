@@ -135,6 +135,11 @@ void SyncValidator::ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchCo
             ++it;
         }
     }
+
+    // Enforce max signals limit in case timeline is signaled multiple times and never/rarely is waited on.
+    // This does not introduce errors/false-positives (check EnsureTimelineSignalsLimit documentation)
+    const uint32_t kMaxTimelineSignalsPerQueue = 100;
+    EnsureTimelineSignalsLimit(kMaxTimelineSignalsPerQueue);
 }
 
 void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
