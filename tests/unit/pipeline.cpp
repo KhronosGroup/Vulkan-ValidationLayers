@@ -2195,7 +2195,7 @@ TEST_F(NegativePipeline, MergePipelineCachesInvalidDst) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
+TEST_F(NegativePipeline, CreateComputePipelineWithBadBasePointer) {
     TEST_DESCRIPTION("Create Compute Pipeline with bad base pointer");
 
     RETURN_IF_SKIP(Init());
@@ -2218,8 +2218,6 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
 
-    vkt::Pipeline test_pipeline(*m_device, compute_create_info);
-
     {
         compute_create_info.basePipelineHandle = VK_NULL_HANDLE;
         compute_create_info.basePipelineIndex = 1;
@@ -2228,13 +2226,97 @@ TEST_F(NegativePipeline, CreateComputesPipelineWithBadBasePointer) {
         vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
+}
 
-    if (test_pipeline.initialized()) {
-        compute_create_info.basePipelineHandle = test_pipeline.handle();
-        compute_create_info.basePipelineIndex = 1;
-        m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-07986");
-        vkt::Pipeline pipeline(*m_device, compute_create_info);
+TEST_F(NegativePipeline, CreateComputePipelineWithDerivatives) {
+    TEST_DESCRIPTION("Create Compute Pipeline with derivatives");
+
+    RETURN_IF_SKIP(Init());
+
+    char const *csSource = R"glsl(
+        #version 450
+        layout(local_size_x=2, local_size_y=4) in;
+        void main(){
+        }
+    )glsl";
+
+    VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+
+    VkComputePipelineCreateInfo compute_create_infos[2];
+    compute_create_infos[0] = vku::InitStructHelper();
+    compute_create_infos[0].stage = cs.GetStageCreateInfo();
+    compute_create_infos[0].layout = pipeline_layout.handle();
+
+    compute_create_infos[1] = vku::InitStructHelper();
+    compute_create_infos[1].stage = cs.GetStageCreateInfo();
+    compute_create_infos[1].layout = pipeline_layout.handle();
+
+    {
+        // Create a base pipeline and a derivative in a single call, using 0 as the base.
+        // Base pipeline lacks the VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT flag
+        compute_create_infos[0].flags = 0;
+        compute_create_infos[0].basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_infos[0].basePipelineIndex = -1;
+        compute_create_infos[1].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+        compute_create_infos[1].basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_infos[1].basePipelineIndex = 0;
+        m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-flags-00696");
+
+        VkPipeline pipelines[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 2, compute_create_infos, nullptr, pipelines);
+
         m_errorMonitor->VerifyFound();
+        for (auto pipeline : pipelines) {
+            vk::DestroyPipeline(device(), pipeline, nullptr);
+        }
+    }
+
+    {
+        // Create a base pipeline and a derivative in a single call, using 1 as the base.
+        compute_create_infos[0].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+        compute_create_infos[0].basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_infos[0].basePipelineIndex = 1;
+        compute_create_infos[1].flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+        compute_create_infos[1].basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_infos[1].basePipelineIndex = -1;
+        m_errorMonitor->SetDesiredError("VUID-vkCreateComputePipelines-flags-00695");
+
+        VkPipeline pipelines[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 2, compute_create_infos, nullptr, pipelines);
+
+        m_errorMonitor->VerifyFound();
+        for (auto pipeline : pipelines) {
+            vk::DestroyPipeline(device(), pipeline, nullptr);
+        }
+    }
+
+    {
+        // Specify both an index and a handle for base pipeline.
+        compute_create_infos[0].flags = VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT;
+        compute_create_infos[0].basePipelineHandle = VK_NULL_HANDLE;
+        compute_create_infos[0].basePipelineIndex = -1;
+
+        vkt::Pipeline test_pipeline(*m_device, compute_create_infos[0]);
+        if (test_pipeline.initialized()) {
+            compute_create_infos[1].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
+            compute_create_infos[1].basePipelineHandle = test_pipeline.handle();
+            compute_create_infos[1].basePipelineIndex = 0;
+
+            m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-07986");
+
+            VkPipeline pipelines[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+            vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 2, compute_create_infos, nullptr, pipelines);
+
+            m_errorMonitor->VerifyFound();
+
+            for (auto pipeline : pipelines) {
+                vk::DestroyPipeline(device(), pipeline, nullptr);
+            }
+        }
     }
 }
 
