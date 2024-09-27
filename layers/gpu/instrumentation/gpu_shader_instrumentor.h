@@ -238,6 +238,11 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // DebugPrintf takes the first available slot in the set
     uint32_t debug_printf_binding_slot_ = 0;
 
+    // These are here as temp variables until GPU-AV and DebugPrintf are fully merged into a single Validation Object.
+    // Once merged, the single Validation Object can use settings to detect this
+    bool debug_printf_enabled = false;
+    bool gpuav_enabled = false;
+
   private:
     void Cleanup();
     // These are objects used to inject our descriptor set into the command buffer

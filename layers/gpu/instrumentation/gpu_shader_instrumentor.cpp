@@ -24,6 +24,7 @@
 #include "utils/vk_layer_utils.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
+#include "vk_layer_config.h"
 
 #include <cassert>
 #include <regex>
@@ -258,6 +259,13 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
                       "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
                       "vertex shader.");
         return;
+    }
+
+    // This option was published when DebugPrintf came out, leave to not break people's flow
+    // Deprecated right after the 1.3.280 SDK release
+    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
+        InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
+        gpuav_settings.debug_printf_to_stdout = true;
     }
 
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
@@ -1361,7 +1369,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     gpu::spirv::Module module(input_spirv, debug_report, module_settings);
 
     // For now, we don't yet support (or have tested) combining GPU-AV and DebugPrintf, so have 2 paths here
-    const bool is_debug_printf = container_type == LayerObjectTypeDebugPrintf;
+    const bool is_debug_printf = debug_printf_enabled;
 
     bool modified = false;
     if (is_debug_printf) {
@@ -1485,9 +1493,8 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
         vmaFreeStatsString(vma_allocator_, stats_string);
     }
 
-    char const *layer_name = container_type == LayerObjectTypeDebugPrintf ? "DebugPrintf" : "GPU-AV";
-    char const *vuid =
-        container_type == LayerObjectTypeDebugPrintf ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
+    char const *layer_name = debug_printf_enabled ? "DebugPrintf" : "GPU-AV";
+    char const *vuid = debug_printf_enabled ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
 
     LogError(vuid, objlist, loc, "Internal Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
 
@@ -1498,7 +1505,7 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
-    char const *vuid = container_type == LayerObjectTypeDebugPrintf ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
+    char const *vuid = debug_printf_enabled ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
     LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
 }
 
@@ -1749,7 +1756,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     }
 
     std::string prefix;
-    if (container_type == LayerObjectTypeDebugPrintf) {
+    if (debug_printf_enabled) {
         prefix = "Debug shader printf message generated ";
     } else {
         prefix = "Shader validation error occurred ";
