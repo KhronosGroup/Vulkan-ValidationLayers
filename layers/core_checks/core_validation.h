@@ -77,6 +77,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkPipelineRenderingCreateInfo* rendering_struct, const Location& loc, int lib_index,
                                       const char* vuid) const;
     bool ValidateGraphicsPipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
+    bool ValidateComputePipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
     bool ValidateMultiViewShaders(const vvl::Pipeline& pipeline, const Location& multiview_loc, uint32_t view_mask,
                                   bool dynamic_rendering) const;
     bool ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
