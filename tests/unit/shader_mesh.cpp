@@ -236,3 +236,61 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxTaskSharedMemorySize-08759");
 }
+
+TEST_F(NegativeShaderMesh, MeshAndTaskShaderDerivatives) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::computeDerivativeGroupQuads);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR derivatives_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(derivatives_properties);
+    if (derivatives_properties.meshAndTaskShaderDerivatives) {
+        GTEST_SKIP() << "meshAndTaskShaderDerivatives is supported";
+    }
+
+    const char *ms_source = R"(
+               OpCapability ComputeDerivativeGroupQuadsKHR
+               OpCapability MeshShadingEXT
+               OpExtension "SPV_EXT_mesh_shader"
+               OpExtension "SPV_KHR_compute_shader_derivatives"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint MeshEXT %main "main" %gl_Position %3
+               OpExecutionMode %main LocalSize 4 4 1
+               OpExecutionMode %main DerivativeGroupQuadsKHR
+               OpExecutionMode %main OutputTrianglesEXT
+               OpExecutionMode %main OutputVertices 3
+               OpExecutionMode %main OutputPrimitivesEXT 1
+               OpSource HLSL 660
+               OpName %main "main"
+               OpDecorate %gl_Position BuiltIn Position
+               OpDecorate %3 BuiltIn PrimitiveTriangleIndicesEXT
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+     %uint_3 = OpConstant %uint 3
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_arr_v4float_uint_3 = OpTypeArray %v4float %uint_3
+%_ptr_Output__arr_v4float_uint_3 = OpTypePointer Output %_arr_v4float_uint_3
+     %uint_1 = OpConstant %uint 1
+%_arr_v3uint_uint_1 = OpTypeArray %v3uint %uint_1
+%_ptr_Output__arr_v3uint_uint_1 = OpTypePointer Output %_arr_v3uint_uint_1
+       %void = OpTypeVoid
+         %15 = OpTypeFunction %void
+%gl_Position = OpVariable %_ptr_Output__arr_v4float_uint_3 Output
+          %3 = OpVariable %_ptr_Output__arr_v3uint_uint_1 Output
+       %main = OpFunction %void None %15
+         %16 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-meshAndTaskShaderDerivatives-10153");
+    VkShaderObj ms(this, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
