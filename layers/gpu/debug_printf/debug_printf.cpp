@@ -21,7 +21,6 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpu_error_header.h"
-#include "vk_layer_config.h"
 
 #include <iostream>
 
@@ -38,13 +37,6 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     if (enabled[gpu_validation]) {
         InternalError(device, loc, "Debug Printf cannot be enabled when gpu assisted validation is enabled.");
         return;
-    }
-
-    // This option was published when DebugPrintf came out, leave to not break people's flow
-    // Deprecated right after the 1.3.280 SDK release
-    if (!GetEnvironment("DEBUG_PRINTF_TO_STDOUT").empty()) {
-        InternalWarning(device, loc, "DEBUG_PRINTF_TO_STDOUT was set, this is deprecated, please use VK_LAYER_PRINTF_TO_STDOUT");
-        gpuav_settings.debug_printf_to_stdout = true;
     }
 
     debug_printf_binding_slot_ = (uint32_t)instrumentation_bindings_.size();  // get next free binding

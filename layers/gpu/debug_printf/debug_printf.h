@@ -65,7 +65,10 @@ namespace debug_printf {
 class Validator : public gpu::GpuShaderInstrumentor {
   public:
     using BaseClass = gpu::GpuShaderInstrumentor;
-    Validator() { container_type = LayerObjectTypeDebugPrintf; }
+    Validator() {
+        container_type = LayerObjectTypeDebugPrintf;
+        debug_printf_enabled = true;
+    }
 
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
