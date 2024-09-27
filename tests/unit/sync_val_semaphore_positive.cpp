@@ -737,3 +737,39 @@ TEST_F(PositiveSyncValTimelineSemaphore, ManyOrphanedSignals) {
     }
     m_device->Wait();
 }
+
+TEST_F(PositiveSyncValTimelineSemaphore, WaitForFencesWithTimelineSignalBatches) {
+    TEST_DESCRIPTION("Check that WaitForFences applies tagged waits to timeline signal batches");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+
+    vkt::Fence fence(*m_device);
+
+    // The first batch context.
+    // Specify VERTEX_SHADER signal scope, so waiting for timeline signal does not protect buffer copy
+    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1,
+                                                  VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT, fence);
+
+    // The second batch context which imports the first one.
+    // The timeline signal in the first submit still references the first batch.
+    m_default_queue->Submit2(vkt::no_cmd);
+
+    // The original omission was that iteration over all batch context did not take into account
+    // batches associated with timeline signals. In the case of regression accesses in the first
+    // batch (stored in timeline signal) will survive the fence wait.
+    fence.wait(kWaitTimeout);
+
+    // Waiting for timeline signal imports the first batch stored in that signal.
+    // In case of regression the first batch will contain unprotected copy writes and
+    // this will cause WRITE-AFTER-WRITE hazard.
+    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+
+    m_default_queue->Wait();
+}
