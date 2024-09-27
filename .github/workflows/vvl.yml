@@ -116,10 +116,15 @@ jobs:
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
       - name: Test Max Core
+        # Thread Sanitize will take about 9x longer to run than Address Sanitize.
+        # The main reason we have Max Core and Min Core is to catch issues with Vulkan 1.x vs Vulkan 1.y version issues.
+        # In effort to reduce the bottle neck time in testing, skipping these for Thread Sanitize.
+        if: ${{ matrix.sanitize != 'thread' }}
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_core.json
       - name: Test Min Core
+        if: ${{ matrix.sanitize != 'thread' }}
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
