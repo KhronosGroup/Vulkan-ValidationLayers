@@ -174,13 +174,20 @@ void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
     // Get last batch from each queue
     std::vector<QueueBatchContext::Ptr> batch_contexts = GetLastBatches([](auto) { return true; });
 
-    // Get batches from signaled binary semaphores
-    for (auto &[_, signal_info] : binary_signals_) {
-        if (!vvl::Contains(batch_contexts, signal_info.batch)) {
-            batch_contexts.emplace_back(signal_info.batch);
+    // Get batches from binary signals
+    for (auto &[_, signal] : binary_signals_) {
+        if (!vvl::Contains(batch_contexts, signal.batch)) {
+            batch_contexts.emplace_back(signal.batch);
         }
     }
-
+    // Get batches from timeline signals
+    for (auto &[_, signals] : timeline_signals_) {
+        for (const auto &signal : signals) {
+            if (signal.batch && !vvl::Contains(batch_contexts, signal.batch)) {
+                batch_contexts.emplace_back(signal.batch);
+            }
+        }
+    }
     // Get present batches
     ForEachShared<vvl::Swapchain>([&batch_contexts](const std::shared_ptr<vvl::Swapchain> &swapchain) {
         auto sync_swapchain = std::static_pointer_cast<syncval_state::Swapchain>(swapchain);
