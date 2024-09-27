@@ -833,15 +833,8 @@ void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, u
 void Validator::PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                                  uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                                  uint32_t groupCountZ, const RecordObject &record_obj) {
-    BaseClass::PostCallRecordCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY,
-                                                groupCountZ, record_obj);
-
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
-        return;
-    }
-    PostCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+    PostCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
+                                  record_obj);
 }
 
 void Validator::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
