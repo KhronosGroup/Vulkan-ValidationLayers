@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "gpu/core/gpu_state_tracker.h"
+#include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/instrumentation/gpu_shader_instrumentor.h"
 #include "gpu/resources/gpu_resources.h"
 
