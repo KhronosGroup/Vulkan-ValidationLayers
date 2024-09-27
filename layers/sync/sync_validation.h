@@ -71,6 +71,17 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     uint32_t debug_reset_count = 1;
     std::string debug_cmdbuf_pattern;
 
+    // Ensures that the number of signals per timeline per queue does not exceed the specified limit.
+    // If `queue` parameter is specified, then only that queue is checked (used by vkQueueWaitIdle).
+    // If the number of signals exceeds the limit, then signals with the smallest values are removed.
+    //
+    // Note, removing registered signals can't introduce errors/false-positives assuming at least
+    // a single signal per timeline is left. That's because if there are more than one matching signal
+    // to resolve a wait then the specification defines that only one signal is selected, which one is
+    // unspecified. In the current implementation we keep multiple signals per timeline to have additional
+    // options of validation, but, for example, keeping only the last signal is sufficient.
+    void EnsureTimelineSignalsLimit(uint32_t signals_per_queue_limit, QueueId queue = kQueueIdInvalid);
+
     // Applies information from update object to binary_signals_/timeline_signals_.
     // The update object is mutable to be able to std::move SignalInfo from it.
     void ApplySignalsUpdate(SignalsUpdate &update, const QueueBatchContext::Ptr &last_batch);
