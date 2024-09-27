@@ -744,7 +744,7 @@ bool CoreChecks::CommonBuildAccelerationStructureValidation(const VkAcceleration
                     objlist.add(info.srcAccelerationStructure);
                     skip |= LogError(vuid, objlist, geom_loc.dot(Field::flags), "is %s but was last specified as %s.",
                                      string_VkGeometryFlagsKHR(updated_geometry.flags).c_str(),
-                                     string_VkGeometryFlagsKHR(last_geometry.geometryType).c_str());
+                                     string_VkGeometryFlagsKHR(last_geometry.flags).c_str());
                 }
 
                 if (updated_geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {

@@ -78,6 +78,7 @@ TEST_F(PositiveRayTracing, AccelerationStructureReference) {
 
     m_command_buffer.begin();
     // Build Top Level Acceleration Structure
+    // ---
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
     tlas.BuildCmdBuffer(m_command_buffer.handle());
     m_command_buffer.end();
@@ -1087,7 +1088,7 @@ TEST_F(PositiveRayTracing, UpdatedFirstVertex) {
     blas.SetSrcAS(blas.GetDstAS());
 
     // Create custom build ranges, with the default valid as a template, then somehow supply it?
-    auto build_range_infos = blas.GetDefaultBuildRangeInfos();
+    auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
     build_range_infos[0].firstVertex = 666;
     blas.SetBuildRanges(build_range_infos);
 
@@ -1206,7 +1207,7 @@ TEST_F(PositiveRayTracing, InstanceBufferBadAddress) {
     m_command_buffer.begin();
     tlas.SetupBuild(*m_device, true);
 
-    auto build_range_infos = tlas.GetDefaultBuildRangeInfos();
+    auto build_range_infos = tlas.GetBuildRangeInfosFromGeometries();
     build_range_infos[0].primitiveCount = 0;
     tlas.SetBuildRanges(build_range_infos);
 

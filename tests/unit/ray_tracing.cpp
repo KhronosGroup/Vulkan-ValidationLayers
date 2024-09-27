@@ -2757,7 +2757,9 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTy
     blas.SetSrcAS(blas.GetDstAS());
     blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
     blas.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
+    const VkGeometryFlagsKHR geometry_flags = blas.GetGeometries()[0].GetFlags();
     blas.GetGeometries()[0] = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device);
+    blas.GetGeometries()[0].SetFlags(geometry_flags);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03761");
     blas.BuildCmdBuffer(m_command_buffer.handle());
@@ -2788,7 +2790,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryFl
     blas.SetSrcAS(blas.GetDstAS());
     blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
     blas.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
-    blas.GetGeometries()[0].SetFlags(VK_GEOMETRY_OPAQUE_BIT_KHR);
+    blas.GetGeometries()[0].SetFlags((VkGeometryFlagsKHR)0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03762");
     blas.BuildCmdBuffer(m_command_buffer.handle());
@@ -2996,7 +2998,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     m_command_buffer.begin();
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
-
+    blas.GetGeometries()[0].SetTrianglesTransformatData(0);
     blas.BuildCmdBuffer(m_command_buffer.handle());
 
     m_command_buffer.end();
@@ -3357,7 +3359,7 @@ TEST_F(NegativeRayTracing, UpdatedFirstPrimitiveCount) {
     blas.SetSrcAS(blas.GetDstAS());
 
     // Create custom build ranges, with the default valid as a template, then somehow supply it?
-    auto build_range_infos = blas.GetDefaultBuildRangeInfos();
+    auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
     build_range_infos[0].primitiveCount = 0;
     blas.SetBuildRanges(build_range_infos);
 

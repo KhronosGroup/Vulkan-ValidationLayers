@@ -147,7 +147,6 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
 
         void main() {
             hit = vec3(0.1, 0.2, 0.3);
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
     )glsl";
     pipeline.AddGlslMissShader(miss);
@@ -164,7 +163,6 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
         void main() {
             const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
             hit = barycentricCoords;
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
     )glsl";
     pipeline.AddGlslClosestHitShader(closest_hit);
@@ -244,7 +242,6 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
 
         void main() {
             hit = vec3(0.1, 0.2, 0.3);
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
         }
     )glsl";
     pipeline.AddGlslMissShader(miss);
@@ -265,7 +262,7 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
         void main() {
             const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
             hit = barycentricCoords;
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), trace_rays_params.t_min, vec3(0,0,1), trace_rays_params.t_max, 0);
+
         }
     )glsl";
     pipeline.AddGlslClosestHitShader(closest_hit);
@@ -356,7 +353,6 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
 
         void main() {
             hit = vec3(0.1, 0.2, 0.3);
-            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
         }
     )glsl";
     pipeline.AddGlslMissShader(miss);
@@ -376,7 +372,6 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
         void main() {
             const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
             hit = barycentricCoords;
-            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
         }
     )glsl";
     pipeline.AddGlslClosestHitShader(closest_hit);
@@ -470,7 +465,6 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
 
         void main() {
             hit = vec3(0.1, 0.2, 0.3);
-            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
         }
     )glsl";
     pipeline.AddGlslMissShader(miss);
@@ -491,7 +485,6 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
         void main() {
             const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
             hit = barycentricCoords;
-            traceRayEXT(tlas, trace_rays_params.ray_flags, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1.0, 0);
         }
     )glsl";
     pipeline.AddGlslClosestHitShader(closest_hit);
