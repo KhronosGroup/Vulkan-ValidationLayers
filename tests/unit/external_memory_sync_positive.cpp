@@ -121,7 +121,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryHost) {
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&import_info);
     alloc_info.allocationSize = alloc_size;
-    if (!m_device->phy().set_memory_type(host_pointer_props.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+    if (!m_device->phy().SetMemoryType(host_pointer_props.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
         free(host_memory);
         GTEST_SKIP() << "Failed to set memory type.";
     }

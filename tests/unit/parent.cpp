@@ -80,7 +80,7 @@ TEST_F(NegativeParent, BindBuffer) {
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
-    m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     vkt::DeviceMemory memory(*m_second_device, mem_alloc);
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
@@ -114,7 +114,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
-    m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     vkt::DeviceMemory memory(*m_second_device, mem_alloc);
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
@@ -742,7 +742,7 @@ TEST_F(NegativeParent, FlushInvalidateMemory) {
     alloc_info.memoryTypeIndex = 0;
     alloc_info.allocationSize = 64;
 
-    bool pass = m_device->phy().set_memory_type(0xFFFFFFFF, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(0xFFFFFFFF, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         GTEST_SKIP() << "Host Visible memory not found";
     }
@@ -873,7 +873,7 @@ TEST_F(NegativeParent, MapMemory2) {
 
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = 64;
-    m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     vkt::DeviceMemory memory(*m_second_device, memory_info);
 
     VkMemoryMapInfoKHR map_info = vku::InitStructHelper();

@@ -147,7 +147,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     }
 
     vkt::DeviceMemory mem;
-    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     // some devices don't give us good memory requirements for the swapchain image
     if (pass) {
         mem.init(*m_device, alloc_info);

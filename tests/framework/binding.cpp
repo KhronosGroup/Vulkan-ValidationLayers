@@ -146,8 +146,8 @@ std::vector<VkExtensionProperties> PhysicalDevice::extensions(const char *pLayer
     }
 }
 
-bool PhysicalDevice::set_memory_type(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkFlags properties,
-                                     const VkFlags forbid) const {
+bool PhysicalDevice::SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkFlags properties,
+                                   const VkFlags forbid) const {
     uint32_t type_mask = type_bits;
     // Search memtypes to find first index with those properties
     for (uint32_t i = 0; i < memory_properties_.memoryTypeCount; i++) {
@@ -788,7 +788,7 @@ VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, co
                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
-    EXPECT_TRUE(dev.phy().set_memory_type(reqs.memoryTypeBits, &alloc_info, mem_props));
+    EXPECT_TRUE(dev.phy().SetMemoryType(reqs.memoryTypeBits, &alloc_info, mem_props));
     return alloc_info;
 }
 

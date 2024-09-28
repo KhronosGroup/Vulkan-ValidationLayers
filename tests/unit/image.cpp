@@ -3941,7 +3941,7 @@ TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
     mem_alloc.allocationSize = mem_reqs.size;
     mem_alloc.memoryTypeIndex = mem_reqs.memoryTypeBits;
 
-    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
         GTEST_SKIP() << "Failed to set memory type.";
     }

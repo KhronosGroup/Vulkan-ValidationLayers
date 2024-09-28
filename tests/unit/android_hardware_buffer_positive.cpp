@@ -180,7 +180,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportBuffer) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&export_memory_info);
     memory_info.allocationSize = mem_reqs.size;
 
-    bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    bool has_memtype = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
@@ -238,7 +238,7 @@ TEST_F(PositiveAndroidHardwareBuffer, ExportImage) {
     memory_info.allocationSize = 0;
 
     // Use any DEVICE_LOCAL memory found
-    bool has_memtype = m_device->phy().set_memory_type(0xFFFFFFFF, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    bool has_memtype = m_device->phy().SetMemoryType(0xFFFFFFFF, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }

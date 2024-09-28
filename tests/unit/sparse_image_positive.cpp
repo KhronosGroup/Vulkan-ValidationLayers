@@ -59,7 +59,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
     // at the end of the first
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = memory_reqs.alignment;
-    bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    bool pass = m_device->phy().SetMemoryType(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory_one(*m_device, memory_info);
     vkt::DeviceMemory memory_two(*m_device, memory_info);
@@ -119,7 +119,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     vk::GetImageMemoryRequirements(device(), image, &memory_reqs);
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = memory_reqs.size;
-    bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    bool pass = m_device->phy().SetMemoryType(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory memory(*m_device, memory_info);
@@ -228,7 +228,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     // Allocate memory for the metadata
     VkMemoryAllocateInfo metadata_memory_info = vku::InitStructHelper();
     metadata_memory_info.allocationSize = metadata_reqs->imageMipTailSize;
-    m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
+    m_device->phy().SetMemoryType(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
     vkt::DeviceMemory metadata_memory(*m_device, metadata_memory_info);
 
     // Bind metadata

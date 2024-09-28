@@ -2552,7 +2552,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&import_info);
     alloc_info.allocationSize = alloc_size;
-    if (!m_device->phy().set_memory_type(host_pointer_props.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+    if (!m_device->phy().SetMemoryType(host_pointer_props.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
         free(host_memory);
         GTEST_SKIP() << "Failed to set memory type.";
     }
@@ -2593,7 +2593,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostMemoryIndex) {
 
     uint32_t unsupported_mem_type =
         ((1 << m_device->phy().memory_properties_.memoryTypeCount) - 1) & ~host_pointer_props.memoryTypeBits;
-    bool found_type = m_device->phy().set_memory_type(unsupported_mem_type, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    bool found_type = m_device->phy().SetMemoryType(unsupported_mem_type, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (unsupported_mem_type == 0 || !found_type) {
         free(host_memory);
         GTEST_SKIP() << "Failed to find unsupported memory type.";

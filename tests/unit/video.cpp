@@ -871,7 +871,7 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        ASSERT_TRUE(m_device->phy().set_memory_type(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
+        ASSERT_TRUE(m_device->phy().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size * 2;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -3197,7 +3197,7 @@ TEST_F(NegativeVideo, BeginCodingSessionMemoryNotBound) {
         if (i == mem_req_count / 2) continue;
 
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        m_device->phy().set_memory_type(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0);
+        m_device->phy().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0);
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -12822,7 +12822,7 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
     // Create non-video-related DeviceMemory
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buf_mem_reqs.size;
-    ASSERT_TRUE(m_device->phy().set_memory_type(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    ASSERT_TRUE(m_device->phy().SetMemoryType(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
     // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR was called

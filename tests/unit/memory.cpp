@@ -45,7 +45,7 @@ TEST_F(NegativeMemory, MapMemory) {
     // Want to make sure entire allocation is aligned to atom size
     static const VkDeviceSize allocation_size = atom_size * 64;
     alloc_info.allocationSize = allocation_size;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
@@ -157,7 +157,7 @@ TEST_F(NegativeMemory, MapMemory) {
     // device memory not atom size aligned
     alloc_info.allocationSize = (atom_size * 4) + 1;
     ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(device(), &buf_info, NULL, &buffer));
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
@@ -173,8 +173,8 @@ TEST_F(NegativeMemory, MapMemory) {
         vk::FlushMappedMemoryRanges(device(), 1, &mmr);
     }
 
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vk::UnmapMemory(device(), mem);
     if (!pass) {
         vk::FreeMemory(device(), mem, NULL);
@@ -204,7 +204,7 @@ TEST_F(NegativeMemory, MapMemory2) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
-    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory memory(*m_device, memory_info);
@@ -255,7 +255,7 @@ TEST_F(NegativeMemory, MapMemoryNullppData) {
 
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = 1024;
-    ASSERT_TRUE(m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    ASSERT_TRUE(m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory memory(*m_device, memory_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkMapMemory-ppData-parameter");
@@ -271,7 +271,7 @@ TEST_F(NegativeMemory, MapMemWithoutHostVisibleBit) {
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 1024;
 
-    if (!m_device->phy().set_memory_type(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+    if (!m_device->phy().SetMemoryType(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
         // If we can't find any unmappable memory this test doesn't make sense
         GTEST_SKIP() << "No unmappable memory types found";
     }
@@ -305,7 +305,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = 1024;
-    if (!m_device->phy().set_memory_type(
+    if (!m_device->phy().SetMemoryType(
             0xFFFFFFFF, &mem_alloc, 0,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {  // If we can't find any unmappable memory this test doesn't make sense
         GTEST_SKIP() << "No unmappable memory types found";
@@ -344,7 +344,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
-    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory memory(*m_device, memory_info);
@@ -402,7 +402,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedEnabled) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
-    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_info);
 
@@ -453,7 +453,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
-    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory memory(*m_device, memory_info);
 
@@ -536,7 +536,7 @@ TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
     mem_alloc.allocationSize = mem_reqs.size;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
 
     // allocate 2 memory objects
@@ -575,9 +575,9 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     image_alloc_info.allocationSize = mem_reqs.size;
 
-    // the last argument is the "forbid" argument for set_memory_type, disallowing
+    // the last argument is the "forbid" argument for SetMemoryType, disallowing
     // that particular memory type rather than requiring it
-    if (!m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &image_alloc_info, 0, VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)) {
+    if (!m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &image_alloc_info, 0, VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)) {
         GTEST_SKIP() << "Failed to set memory type";
     }
     vkt::DeviceMemory mem(*m_device, image_alloc_info);
@@ -652,9 +652,9 @@ TEST_F(NegativeMemory, BindMemory) {
         VkMemoryAllocateInfo image_mem_alloc = vku::InitStructHelper();
         VkMemoryAllocateInfo buffer_mem_alloc = vku::InitStructHelper();
         image_mem_alloc.allocationSize = image_mem_reqs.size;
-        m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_mem_alloc, 0);
+        m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_mem_alloc, 0);
         buffer_mem_alloc.allocationSize = buffer_mem_reqs.size;
-        m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_mem_alloc, 0);
+        m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_mem_alloc, 0);
 
         VkDeviceMemory image_mem = VK_NULL_HANDLE, buffer_mem = VK_NULL_HANDLE;
         vk::AllocateMemory(device(), &image_mem_alloc, nullptr, &image_mem);
@@ -684,8 +684,8 @@ TEST_F(NegativeMemory, BindMemory) {
         VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
-        m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
-        m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+        m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
+        m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
 
         vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
         vkt::DeviceMemory buffer_mem(*m_device, buffer_alloc_info);
@@ -714,8 +714,8 @@ TEST_F(NegativeMemory, BindMemory) {
         // Leave some extra space for alignment wiggle room
         image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size + buffer_mem_reqs.alignment;
-        m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
-        m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+        m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
+        m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
         vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
         vkt::DeviceMemory buffer_mem(*m_device, buffer_alloc_info);
 
@@ -792,7 +792,7 @@ TEST_F(NegativeMemory, BindMemory) {
                     VkMemoryAllocateInfo sparse_mem_alloc = vku::InitStructHelper();
                     sparse_mem_alloc.allocationSize = sparse_mem_reqs.size;
                     sparse_mem_alloc.memoryTypeIndex = 0;
-                    m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
+                    m_device->phy().SetMemoryType(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
                     vkt::DeviceMemory memory(*m_device, sparse_mem_alloc);
                     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01045");
                     vk::BindImageMemory(device(), sparse_image.handle(), memory.handle(), 0);
@@ -816,7 +816,7 @@ TEST_F(NegativeMemory, BindMemory) {
                 VkMemoryAllocateInfo sparse_mem_alloc = vku::InitStructHelper();
                 sparse_mem_alloc.allocationSize = sparse_mem_reqs.size;
                 sparse_mem_alloc.memoryTypeIndex = 0;
-                m_device->phy().set_memory_type(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
+                m_device->phy().SetMemoryType(sparse_mem_reqs.memoryTypeBits, &sparse_mem_alloc, 0);
                 vkt::DeviceMemory memory(*m_device, sparse_mem_alloc);
                 m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01030");
                 vk::BindBufferMemory(device(), sparse_buffer.handle(), memory.handle(), 0);
@@ -850,9 +850,8 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
 
     uint32_t image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
     // can't have protected bit because feature bit is not added
-    bool found_type =
-        m_device->phy().set_memory_type(image_unsupported_mem_type_bits, &image_alloc_info, 0,
-                                        VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+    bool found_type = m_device->phy().SetMemoryType(image_unsupported_mem_type_bits, &image_alloc_info, 0,
+                                                    VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
     if (image_unsupported_mem_type_bits != 0 && found_type) {
         vkt::DeviceMemory memory(*m_device, image_alloc_info);
         m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-01047");
@@ -861,8 +860,8 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
     }
 
     uint32_t buffer_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~buffer_mem_reqs.memoryTypeBits;
-    found_type = m_device->phy().set_memory_type(buffer_unsupported_mem_type_bits, &buffer_alloc_info, 0,
-                                                 VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+    found_type = m_device->phy().SetMemoryType(buffer_unsupported_mem_type_bits, &buffer_alloc_info, 0,
+                                               VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
     if (buffer_unsupported_mem_type_bits != 0 && found_type) {
         vkt::DeviceMemory memory(*m_device, buffer_alloc_info);
         m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-01035");
@@ -895,7 +894,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
         VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
         // Leave some extra space for alignment wiggle room
         buffer_alloc_info.allocationSize = buffer_mem_reqs.size + buffer_mem_reqs.alignment;
-        ASSERT_TRUE(m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0));
+        ASSERT_TRUE(m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0));
         vkt::DeviceMemory buffer_mem(*m_device, buffer_alloc_info);
         vkt::DeviceMemory unchecked_buffer_mem(*m_device, buffer_alloc_info);
 
@@ -929,7 +928,7 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
         VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
         // Leave some extra space for alignment wiggle room
         image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
-        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_TRUE(m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
         vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
         vkt::DeviceMemory unchecked_image_mem(*m_device, image_alloc_info);
 
@@ -994,12 +993,12 @@ TEST_F(NegativeMemory, BindMemoryNoCheck) {
 
         mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
         ASSERT_TRUE(
-            m_device->phy().set_memory_type(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0));
+            m_device->phy().SetMemoryType(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0));
         // Leave some extra space for alignment wiggle room
         mp_image_alloc_info[1].allocationSize =
             mp_image_mem_reqs2[1].memoryRequirements.size + mp_image_mem_reqs2[1].memoryRequirements.alignment;
         ASSERT_TRUE(
-            m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0));
+            m_device->phy().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0));
 
         ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_image_mem[0]));
         ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &mp_image_alloc_info[1], NULL, &mp_image_mem[1]));
@@ -1069,12 +1068,12 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         vk::GetImageMemoryRequirements(device(), image_a, &image_mem_reqs);
         VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
-        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_TRUE(m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
         vkt::DeviceMemory image_a_mem(*m_device, image_alloc_info);
 
         vk::GetImageMemoryRequirements(device(), image_b, &image_mem_reqs);
         image_alloc_info.allocationSize = image_mem_reqs.size;
-        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_TRUE(m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
         vkt::DeviceMemory image_b_mem(*m_device, image_alloc_info);
 
         // Try binding same image twice in array
@@ -1117,7 +1116,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
         vk::GetImageMemoryRequirements(device(), normal_image, &image_mem_reqs);
         VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
         image_alloc_info.allocationSize = image_mem_reqs.size;
-        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_TRUE(m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
         vkt::DeviceMemory normal_image_mem(*m_device, image_alloc_info);
 
         // Create 2 disjoint images with memory backing each plane
@@ -1144,7 +1143,7 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
             VkMemoryAllocateInfo mp_image_alloc_info = vku::InitStructHelper();
             mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
             ASSERT_TRUE(
-                m_device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
+                m_device->phy().SetMemoryType(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
             vk::AllocateMemory(device(), &mp_image_alloc_info, NULL, mp_image_mem);
         };
 
@@ -1235,7 +1234,7 @@ TEST_F(NegativeMemory, BindMemoryToDestroyedObject) {
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
     mem_alloc.allocationSize = mem_reqs.size;
-    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory mem(*m_device, mem_alloc);
@@ -1303,7 +1302,7 @@ TEST_F(NegativeMemory, ImageMemoryNotBound) {
     mem_alloc.memoryTypeIndex = 0;
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
     mem_alloc.allocationSize = mem_reqs.size;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory image_mem(*m_device, mem_alloc);
 
@@ -1344,7 +1343,7 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     alloc_info.allocationSize = 1024;
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
-    if (!m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+    if (!m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
         GTEST_SKIP() << "Failed to set memory type";
     }
 
@@ -1529,7 +1528,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
-    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     vkt::DeviceMemory buffer_mem(*m_device, buffer_alloc_info);
 
     vk::BindBufferMemory(device(), buffer, buffer_mem, 0);
@@ -1601,7 +1600,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
-    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
 
@@ -1671,7 +1670,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
-    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
     VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();

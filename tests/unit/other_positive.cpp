@@ -73,7 +73,7 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     memory_info.allocationSize = memory_reqs.size;
 
     bool pass;
-    pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    pass = m_device->phy().SetMemoryType(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory buffer_memory(*m_device, memory_info);
