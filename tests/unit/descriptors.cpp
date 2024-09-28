@@ -578,7 +578,7 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     VkDeviceSize align_mod = memory_reqs.size % memory_reqs.alignment;
     VkDeviceSize aligned_size = ((align_mod == 0) ? memory_reqs.size : (memory_reqs.size + memory_reqs.alignment - align_mod));
     memory_info.allocationSize = aligned_size * 2;
-    pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    pass = m_device->phy().SetMemoryType(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
     vkt::DeviceMemory image_memory(*m_device, memory_info);
 
@@ -1959,7 +1959,7 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
 
         VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
         mem_alloc.allocationSize = mem_reqs.size;
-        bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+        bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
         if (!pass) {
             printf("Failed to allocate memory in DSBufferLimitErrors; skipped.\n");
             continue;

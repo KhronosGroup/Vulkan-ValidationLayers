@@ -859,7 +859,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = buffer_mem_reqs.size;
-    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &alloc_info, 0);
+    m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &alloc_info, 0);
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Bind those buffers to the same buffer memory

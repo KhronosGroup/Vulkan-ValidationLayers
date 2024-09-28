@@ -492,13 +492,13 @@ TEST_F(NegativeSyncObject, Barriers) {
             // Find a valid memory type index to memory to be allocated from
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             alloc_info.allocationSize = mem_req2.memoryRequirements.size;
-            ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
+            ASSERT_TRUE(m_device->phy().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &plane_0_memory));
 
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
             vk::GetImageMemoryRequirements2KHR(device(), &mem_req_info2, &mem_req2);
             alloc_info.allocationSize = mem_req2.memoryRequirements.size;
-            ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
+            ASSERT_TRUE(m_device->phy().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &plane_1_memory));
 
             VkBindImagePlaneMemoryInfo plane_0_memory_info = vku::InitStructHelper();

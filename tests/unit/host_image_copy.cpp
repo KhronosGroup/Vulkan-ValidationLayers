@@ -1736,13 +1736,13 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutMultiPlanar) {
     // Find a valid memory type index to memory to be allocated from
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_req2.memoryRequirements.size;
-    m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
+    m_device->phy().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
     vk::AllocateMemory(device(), &alloc_info, NULL, &plane_0_memory);
 
     image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
     vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_req2);
     alloc_info.allocationSize = mem_req2.memoryRequirements.size;
-    m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
+    m_device->phy().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
     vk::AllocateMemory(device(), &alloc_info, NULL, &plane_1_memory);
 
     VkBindImagePlaneMemoryInfo plane_0_memory_info = vku::InitStructHelper();

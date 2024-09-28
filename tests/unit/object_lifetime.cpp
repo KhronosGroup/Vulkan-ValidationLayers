@@ -40,7 +40,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
@@ -79,7 +79,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
 
-    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory buffer_mem(*m_device, alloc_info);
@@ -120,7 +120,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
     image_mem.init(*m_device, alloc_info);
@@ -169,7 +169,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
@@ -228,7 +228,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
     err = vk::AllocateMemory(device(), &alloc_info, NULL, &image_mem);

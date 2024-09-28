@@ -36,7 +36,7 @@ TEST_F(PositiveMemory, MapMemory2) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
-    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory memory(*m_device, memory_info);
@@ -90,7 +90,7 @@ TEST_F(PositiveMemory, MapMemoryPlaced) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = allocation_size;
 
-    bool pass = m_device->phy().set_memory_type(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->phy().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory memory(*m_device, memory_info);
@@ -296,14 +296,14 @@ TEST_F(PositiveMemory, NonCoherentMapping) {
     alloc_info.allocationSize = allocation_size;
 
     // Find a memory configurations WITHOUT a COHERENT bit, otherwise exit
-    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if (!pass) {
-        pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info,
-                                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info,
+                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         if (!pass) {
-            pass = m_device->phy().set_memory_type(
+            pass = m_device->phy().SetMemoryType(
                 mem_reqs.memoryTypeBits, &alloc_info,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -432,7 +432,7 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
             VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
             mem_alloc.memoryTypeIndex = 0;
             mem_alloc.allocationSize = mem_reqs.size;
-            const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+            const bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
             ASSERT_TRUE(pass);
 
             vkt::DeviceMemory mem(*m_device, mem_alloc);
@@ -472,7 +472,7 @@ TEST_F(PositiveMemory, DeviceBufferMemoryRequirements) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
     memory_info.allocationSize = memory_reqs2.memoryRequirements.size;
 
-    const bool pass = m_device->phy().set_memory_type(memory_reqs2.memoryRequirements.memoryTypeBits, &memory_info, 0);
+    const bool pass = m_device->phy().SetMemoryType(memory_reqs2.memoryRequirements.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory buffer_memory(*m_device, memory_info);
@@ -500,7 +500,7 @@ TEST_F(PositiveMemory, DeviceImageMemoryRequirements) {
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.memoryTypeIndex = 0;
     mem_alloc.allocationSize = mem_reqs.memoryRequirements.size;
-    const bool pass = m_device->phy().set_memory_type(mem_reqs.memoryRequirements.memoryTypeBits, &mem_alloc, 0);
+    const bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
 
     vkt::DeviceMemory mem(*m_device, mem_alloc);
@@ -533,7 +533,7 @@ TEST_F(PositiveMemory, BindMemoryDX11Handle) {
     memory_import.handle = (HANDLE)0x12345678;  // Use arbitrary non-zero value as DX11 resource handle
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&memory_import);  // Set zero allocation size
-    m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     vkt::DeviceMemory memory(*m_device, alloc_info);
     // This should not trigger VUs that take into accout allocation size (e.g. 01049/01046)
     vk::BindImageMemory(device(), image, memory, 0);
@@ -562,7 +562,7 @@ TEST_F(PositiveMemory, BindMemoryDX12Handle) {
     memory_import.handle = (HANDLE)0x12345678;  // Use arbitrary non-zero value as DX12 resource handle
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&memory_import);  // Set zero allocation size
-    m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     vkt::DeviceMemory memory(*m_device, alloc_info);
     // This should not trigger VUs that take into accout allocation size (e.g. 01049/01046)
     vk::BindImageMemory(device(), image, memory, 0);

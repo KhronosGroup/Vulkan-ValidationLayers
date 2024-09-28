@@ -179,7 +179,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buffer_memory_requirements.size + image_memory_requirements.size;
-    bool has_memtype = m_device->phy().set_memory_type(
+    bool has_memtype = m_device->phy().SetMemoryType(
         buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
@@ -225,7 +225,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     vkt::DeviceMemory mem2;
     alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buffer_memory_requirements.size + image_memory_requirements.size;
-    has_memtype = m_device->phy().set_memory_type(
+    has_memtype = m_device->phy().SetMemoryType(
         buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";

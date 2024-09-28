@@ -346,7 +346,7 @@ class BitstreamBuffer {
 
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             VkMemoryPropertyFlags mem_props = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
-            ASSERT_TRUE(device_->phy().set_memory_type(mem_req.memoryTypeBits, &alloc_info, mem_props));
+            ASSERT_TRUE(device_->phy().SetMemoryType(mem_req.memoryTypeBits, &alloc_info, mem_props));
             alloc_info.allocationSize = mem_req.size;
 
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory_));
@@ -448,7 +448,7 @@ class VideoPictureResource {
 
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             VkMemoryPropertyFlags mem_props = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
-            ASSERT_TRUE(device_->phy().set_memory_type(mem_req.memoryTypeBits, &alloc_info, mem_props));
+            ASSERT_TRUE(device_->phy().SetMemoryType(mem_req.memoryTypeBits, &alloc_info, mem_props));
             alloc_info.allocationSize = mem_req.size;
 
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory_));
@@ -1961,7 +1961,7 @@ class VideoContext {
         for (uint32_t i = 0; i < mem_req_count; ++i) {
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
 
-            ASSERT_TRUE(device_->phy().set_memory_type(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
+            ASSERT_TRUE(device_->phy().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
             alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
             VkDeviceMemory memory = VK_NULL_HANDLE;

@@ -2394,7 +2394,7 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
     vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
-    bool has_memtype = m_device->phy().set_memory_type(
+    bool has_memtype = m_device->phy().SetMemoryType(
         buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
@@ -2617,7 +2617,7 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
     mem_alloc.memoryTypeIndex = 1;
     vk::GetImageMemoryRequirements(device(), depth_image, &mem_reqs);
     mem_alloc.allocationSize = mem_reqs.size;
-    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    bool pass = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     ASSERT_TRUE(pass);
     err = vk::AllocateMemory(device(), &mem_alloc, NULL, &mem1);
     ASSERT_EQ(VK_SUCCESS, err);

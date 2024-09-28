@@ -436,7 +436,7 @@ TEST_F(NegativeBuffer, BindNull) {
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_alloc_info = vku::InitStructHelper();
     buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
-    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    m_device->phy().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     vkt::DeviceMemory memory(*m_device, buffer_alloc_info);
 
     vk::DestroyBuffer(device(), buffer, nullptr);

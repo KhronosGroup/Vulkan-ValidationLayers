@@ -204,16 +204,15 @@ TEST_F(NegativeProtectedMemory, Memory) {
     vk::GetBufferMemoryRequirements(device(), buffer_unprotected.handle(), &mem_reqs_unprotected);
 
     alloc_info.allocationSize = mem_reqs_protected.size;
-    bool found =
-        m_device->phy().set_memory_type(mem_reqs_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    bool found = m_device->phy().SetMemoryType(mem_reqs_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
     if (!found) {
         GTEST_SKIP() << "Memory type not found";
     }
     vkt::DeviceMemory memory_protected(*m_device, alloc_info);
 
     alloc_info.allocationSize = mem_reqs_unprotected.size;
-    found = m_device->phy().set_memory_type(mem_reqs_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                            VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().SetMemoryType(mem_reqs_unprotected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                          VK_MEMORY_PROPERTY_PROTECTED_BIT);
     if (!found) {
         GTEST_SKIP() << "Memory type not found";
     }
@@ -729,15 +728,15 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     vk::GetImageMemoryRequirements(device(), image_unprotected.handle(), &mem_reqs_image_unprotected);
 
     bool found =
-        m_device->phy().set_memory_type(mem_reqs_buffer_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+        m_device->phy().SetMemoryType(mem_reqs_buffer_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
     if (!found) {
         GTEST_SKIP() << "Memory type not found";
     }
     alloc_info.allocationSize = mem_reqs_buffer_protected.size;
     vkt::DeviceMemory memory_buffer_protected(*m_device, alloc_info);
 
-    found = m_device->phy().set_memory_type(mem_reqs_buffer_unprotected.memoryTypeBits, &alloc_info,
-                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().SetMemoryType(mem_reqs_buffer_unprotected.memoryTypeBits, &alloc_info,
+                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_PROTECTED_BIT);
     if (!found) {
         GTEST_SKIP() << "Memory type not found";
     }
@@ -745,14 +744,14 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     vkt::DeviceMemory memory_buffer_unprotected(*m_device, alloc_info);
 
     alloc_info.allocationSize = mem_reqs_image_protected.size;
-    found = m_device->phy().set_memory_type(mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().SetMemoryType(mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT);
     if (!found) {
         GTEST_SKIP() << "Memory type not found";
     }
     vkt::DeviceMemory memory_image_protected(*m_device, alloc_info);
 
-    found = m_device->phy().set_memory_type(mem_reqs_image_unprotected.memoryTypeBits, &alloc_info,
-                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_PROTECTED_BIT);
+    found = m_device->phy().SetMemoryType(mem_reqs_image_unprotected.memoryTypeBits, &alloc_info,
+                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_PROTECTED_BIT);
     if (!found) {
         GTEST_SKIP() << "Memory type not found";
     }

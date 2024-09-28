@@ -1417,7 +1417,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
 
     VkMemoryAllocateInfo as_memory_alloc = vku::InitStructHelper();
     as_memory_alloc.allocationSize = as_memory_requirements.size;
-    ASSERT_TRUE(m_device->phy().set_memory_type(as_memory_requirements.memoryTypeBits, &as_memory_alloc, 0));
+    ASSERT_TRUE(m_device->phy().SetMemoryType(as_memory_requirements.memoryTypeBits, &as_memory_alloc, 0));
 
     // Can not bind already freed memory
     {
@@ -1497,7 +1497,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         uint32_t unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~supported_memory_type_bits;
         if (unsupported_mem_type_bits != 0) {
             VkMemoryAllocateInfo as_memory_alloc_bad_type = as_memory_alloc;
-            ASSERT_TRUE(m_device->phy().set_memory_type(unsupported_mem_type_bits, &as_memory_alloc_bad_type, 0));
+            ASSERT_TRUE(m_device->phy().SetMemoryType(unsupported_mem_type_bits, &as_memory_alloc_bad_type, 0));
 
             VkDeviceMemory as_memory_bad_type = VK_NULL_HANDLE;
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc_bad_type, NULL, &as_memory_bad_type));
