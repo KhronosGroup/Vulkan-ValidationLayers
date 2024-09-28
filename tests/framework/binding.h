@@ -175,10 +175,10 @@ class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
   public:
     explicit PhysicalDevice(VkPhysicalDevice phy)
         : Handle(phy),
-          properties_(properties()),
+          properties_(Properties()),
           limits_(properties_.limits),
-          memory_properties_(memory_properties()),
-          queue_properties_(queue_properties()) {}
+          memory_properties_(MemoryProperties()),
+          queue_properties_(QueueProperties()) {}
 
     void SetName(VkDevice device, const char *name) {
         Handle<VkPhysicalDevice>::SetName(device, VK_OBJECT_TYPE_PHYSICAL_DEVICE, name);
@@ -200,11 +200,9 @@ class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
     const std::vector<VkQueueFamilyProperties> queue_properties_;
 
   private:
-    void add_extension_dependencies(uint32_t dependency_count, VkExtensionProperties *depencency_props,
-                                    std::vector<VkExtensionProperties> &ext_list);
-    VkPhysicalDeviceProperties properties() const;
-    std::vector<VkQueueFamilyProperties> queue_properties() const;
-    VkPhysicalDeviceMemoryProperties memory_properties() const;
+    VkPhysicalDeviceProperties Properties() const;
+    std::vector<VkQueueFamilyProperties> QueueProperties() const;
+    VkPhysicalDeviceMemoryProperties MemoryProperties() const;
 };
 
 class QueueCreateInfoArray {
@@ -297,30 +295,19 @@ class Device : public internal::Handle<VkDevice> {
     VkResult Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout);
     VkResult Wait(const Fence &fence) { return Wait(std::vector<const Fence *>(1, &fence), true, (uint64_t)-1); }
 
-    // vkUpdateDescriptorSets()
-    void update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &writes, const std::vector<VkCopyDescriptorSet> &copies);
-    void update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &writes) {
-        return update_descriptor_sets(writes, std::vector<VkCopyDescriptorSet>());
-    }
-
-    static VkWriteDescriptorSet write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                     VkDescriptorType type, uint32_t count,
-                                                     const VkDescriptorImageInfo *image_info);
-    static VkWriteDescriptorSet write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                     VkDescriptorType type, uint32_t count,
-                                                     const VkDescriptorBufferInfo *buffer_info);
-    static VkWriteDescriptorSet write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                     VkDescriptorType type, uint32_t count, const VkBufferView *buffer_views);
-    static VkWriteDescriptorSet write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                     VkDescriptorType type, const std::vector<VkDescriptorImageInfo> &image_info);
-    static VkWriteDescriptorSet write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                     VkDescriptorType type, const std::vector<VkDescriptorBufferInfo> &buffer_info);
-    static VkWriteDescriptorSet write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                     VkDescriptorType type, const std::vector<VkBufferView> &buffer_views);
-
-    static VkCopyDescriptorSet copy_descriptor_set(const DescriptorSet &src_set, uint32_t src_binding, uint32_t src_array_element,
-                                                   const DescriptorSet &dst_set, uint32_t dst_binding, uint32_t dst_array_element,
-                                                   uint32_t count);
+    static VkWriteDescriptorSet WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                   VkDescriptorType type, uint32_t count, const VkDescriptorImageInfo *image_info);
+    static VkWriteDescriptorSet WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                   VkDescriptorType type, uint32_t count,
+                                                   const VkDescriptorBufferInfo *buffer_info);
+    static VkWriteDescriptorSet WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                   VkDescriptorType type, uint32_t count, const VkBufferView *buffer_views);
+    static VkWriteDescriptorSet WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                   VkDescriptorType type, const std::vector<VkDescriptorImageInfo> &image_info);
+    static VkWriteDescriptorSet WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                   VkDescriptorType type, const std::vector<VkDescriptorBufferInfo> &buffer_info);
+    static VkWriteDescriptorSet WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                   VkDescriptorType type, const std::vector<VkBufferView> &buffer_views);
 
   private:
     enum QueueCapabilityIndex {
@@ -331,7 +318,7 @@ class Device : public internal::Handle<VkDevice> {
         QUEUE_CAPABILITY_COUNT = 4,
     };
 
-    void init_queues(const VkDeviceCreateInfo &info);
+    void InitQueues(const VkDeviceCreateInfo &info);
 
     std::vector<const char *> enabled_extensions_;
 
@@ -1345,9 +1332,9 @@ inline VkShaderModuleCreateInfo ShaderModule::CreateInfo(size_t code_size, const
     return info;
 }
 
-inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                         VkDescriptorType type, uint32_t count,
-                                                         const VkDescriptorImageInfo *image_info) {
+inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                       VkDescriptorType type, uint32_t count,
+                                                       const VkDescriptorImageInfo *image_info) {
     VkWriteDescriptorSet write = vku::InitStructHelper();
     write.dstSet = set.handle();
     write.dstBinding = binding;
@@ -1358,9 +1345,9 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
     return write;
 }
 
-inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                         VkDescriptorType type, uint32_t count,
-                                                         const VkDescriptorBufferInfo *buffer_info) {
+inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                       VkDescriptorType type, uint32_t count,
+                                                       const VkDescriptorBufferInfo *buffer_info) {
     VkWriteDescriptorSet write = vku::InitStructHelper();
     write.dstSet = set.handle();
     write.dstBinding = binding;
@@ -1371,8 +1358,8 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
     return write;
 }
 
-inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                         VkDescriptorType type, uint32_t count, const VkBufferView *buffer_views) {
+inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                       VkDescriptorType type, uint32_t count, const VkBufferView *buffer_views) {
     VkWriteDescriptorSet write = vku::InitStructHelper();
     write.dstSet = set.handle();
     write.dstBinding = binding;
@@ -1383,36 +1370,21 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
     return write;
 }
 
-inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                         VkDescriptorType type,
-                                                         const std::vector<VkDescriptorImageInfo> &image_info) {
-    return write_descriptor_set(set, binding, array_element, type, static_cast<uint32_t>(image_info.size()), &image_info[0]);
+inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                       VkDescriptorType type,
+                                                       const std::vector<VkDescriptorImageInfo> &image_info) {
+    return WriteDescriptorSet(set, binding, array_element, type, static_cast<uint32_t>(image_info.size()), &image_info[0]);
 }
 
-inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                         VkDescriptorType type,
-                                                         const std::vector<VkDescriptorBufferInfo> &buffer_info) {
-    return write_descriptor_set(set, binding, array_element, type, static_cast<uint32_t>(buffer_info.size()), &buffer_info[0]);
+inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                       VkDescriptorType type,
+                                                       const std::vector<VkDescriptorBufferInfo> &buffer_info) {
+    return WriteDescriptorSet(set, binding, array_element, type, static_cast<uint32_t>(buffer_info.size()), &buffer_info[0]);
 }
 
-inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
-                                                         VkDescriptorType type, const std::vector<VkBufferView> &buffer_views) {
-    return write_descriptor_set(set, binding, array_element, type, static_cast<uint32_t>(buffer_views.size()), &buffer_views[0]);
-}
-
-inline VkCopyDescriptorSet Device::copy_descriptor_set(const DescriptorSet &src_set, uint32_t src_binding,
-                                                       uint32_t src_array_element, const DescriptorSet &dst_set,
-                                                       uint32_t dst_binding, uint32_t dst_array_element, uint32_t count) {
-    VkCopyDescriptorSet copy = vku::InitStructHelper();
-    copy.srcSet = src_set.handle();
-    copy.srcBinding = src_binding;
-    copy.srcArrayElement = src_array_element;
-    copy.dstSet = dst_set.handle();
-    copy.dstBinding = dst_binding;
-    copy.dstArrayElement = dst_array_element;
-    copy.descriptorCount = count;
-
-    return copy;
+inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
+                                                       VkDescriptorType type, const std::vector<VkBufferView> &buffer_views) {
+    return WriteDescriptorSet(set, binding, array_element, type, static_cast<uint32_t>(buffer_views.size()), &buffer_views[0]);
 }
 
 class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommandsLayoutEXT> {
