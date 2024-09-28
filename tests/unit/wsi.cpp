@@ -609,7 +609,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
     std::vector<vkt::Fence> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
-        fences[i].init(*m_device, vkt::Fence::create_info());
+        fences[i].init(*m_device, vkt::Fence::CreateInfo());
         uint32_t image_i;
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
@@ -734,7 +734,7 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
     std::vector<vkt::Fence> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
-        fences[i].init(*m_device, vkt::Fence::create_info());
+        fences[i].init(*m_device, vkt::Fence::CreateInfo());
         uint32_t image_i;
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);

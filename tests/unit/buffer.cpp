@@ -171,7 +171,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     // Create a test buffer--buffer must have been created using VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT or
     // VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so use a different usage value instead to cause an error
     const VkDeviceSize resource_size = 1024;
-    const VkBufferCreateInfo bad_buffer_info = vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    const VkBufferCreateInfo bad_buffer_info = vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vkt::Buffer bad_buffer(*m_device, bad_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Create a test buffer view
@@ -182,12 +182,12 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-buffer-00932"});
 
     // Create a better test buffer
-    const VkBufferCreateInfo buffer_info = vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    const VkBufferCreateInfo buffer_info = vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
     buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.offset = buffer.create_info().size;
+    buff_view_ci.offset = buffer.CreateInfo().size;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-00925"});
 
     // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add 1 to ensure it is not
@@ -220,7 +220,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
         const VkDeviceSize large_resource_size =
             2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
         const VkBufferCreateInfo large_buffer_info =
-            vkt::Buffer::create_info(large_resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+            vkt::Buffer::CreateInfo(large_resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
         vkt::Buffer large_buffer(*m_device, large_buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
@@ -247,8 +247,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-format-08778"});
 
     // Create a new buffer using VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
-    const VkBufferCreateInfo storage_buffer_info =
-        vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    const VkBufferCreateInfo storage_buffer_info = vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     vkt::Buffer storage_buffer(*m_device, storage_buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     buff_view_ci.buffer = storage_buffer.handle();
@@ -274,7 +273,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
-    const VkBufferCreateInfo buffer_info = vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    const VkBufferCreateInfo buffer_info = vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
@@ -299,8 +298,8 @@ TEST_F(NegativeBuffer, TexelBufferAlignment) {
     const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
 
     const VkDeviceSize resource_size = 1024;
-    VkBufferCreateInfo buffer_info = vkt::Buffer::create_info(
-        resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    VkBufferCreateInfo buffer_info =
+        vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Create a test buffer view
@@ -417,7 +416,7 @@ TEST_F(NegativeBuffer, IdxBufferAlignmentError) {
 
 TEST_F(NegativeBuffer, DoubleDelete) {
     RETURN_IF_SKIP(Init());
-    VkBufferCreateInfo create_info = vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBufferCreateInfo create_info = vkt::Buffer::CreateInfo(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     VkBuffer buffer = VK_NULL_HANDLE;
     vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
     vk::DestroyBuffer(device(), buffer, nullptr);
@@ -429,7 +428,7 @@ TEST_F(NegativeBuffer, DoubleDelete) {
 
 TEST_F(NegativeBuffer, BindNull) {
     RETURN_IF_SKIP(Init());
-    VkBufferCreateInfo create_info = vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBufferCreateInfo create_info = vkt::Buffer::CreateInfo(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     VkBuffer buffer = VK_NULL_HANDLE;
     vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
 

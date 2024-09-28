@@ -1001,7 +1001,7 @@ TEST_F(NegativeQuery, PoolCreate) {
     VkResult err = vk::CreateDevice(gpu(), &device_create_info, nullptr, &local_device);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     VkQueryPool query_pool;
 
@@ -1119,7 +1119,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     if (features.occlusionQueryPrecise) {
         vkt::Event event(*m_device);
 
-        VkQueryPoolCreateInfo query_pool_create_info = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 3);
+        VkQueryPoolCreateInfo query_pool_create_info = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 3);
         query_pool_create_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
                                                     VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT |
                                                     VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT;
@@ -1619,7 +1619,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
         vkt::CommandBuffer command_buffer(*m_device, command_pool);
         command_buffer.begin();
 
-        VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+        VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
         qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT;
         vkt::QueryPool query_pool(*m_device, qpci);
 
@@ -1636,7 +1636,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
         vkt::CommandBuffer command_buffer(*m_device, command_pool);
         command_buffer.begin();
 
-        VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+        VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
         qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT;
         vkt::QueryPool query_pool(*m_device, qpci);
 
@@ -2317,7 +2317,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics =
         VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT | VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
@@ -2348,7 +2348,7 @@ TEST_F(NegativeQuery, PipelineStatisticsZero) {
     AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = 0;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-09534");
     vkt::QueryPool query_pool(*m_device, qpci);
@@ -2542,7 +2542,7 @@ TEST_F(NegativeQuery, NoInitReset) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
 

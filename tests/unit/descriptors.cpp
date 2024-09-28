@@ -1770,7 +1770,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         ds_type_count[i].descriptorCount = 1;
     }
 
-    vkt::DescriptorPool ds_pool(*m_device, vkt::DescriptorPool::create_info(0, kLocalDescriptorTypeRangeSize, ds_type_count));
+    vkt::DescriptorPool ds_pool(*m_device, vkt::DescriptorPool::CreateInfo(0, kLocalDescriptorTypeRangeSize, ds_type_count));
     ASSERT_TRUE(ds_pool.initialized());
 
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings(1);

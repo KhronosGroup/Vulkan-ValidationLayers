@@ -562,7 +562,7 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_ci.extent.width = 32;
@@ -638,7 +638,7 @@ TEST_F(NegativeMemory, BindMemory) {
 
     VkImageCreateInfo image_create_info =
         vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    auto buffer_create_info = vkt::Buffer::create_info(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    auto buffer_create_info = vkt::Buffer::CreateInfo(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // Create an image/buffer, allocate memory, free it, and then try to bind it
     {
@@ -833,7 +833,7 @@ TEST_F(NegativeMemory, BindMemoryUnsupported) {
         vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    auto buffer_info = vkt::Buffer::create_info(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    auto buffer_info = vkt::Buffer::CreateInfo(4 * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs = {}, buffer_mem_reqs = {};
@@ -1369,7 +1369,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     RETURN_IF_SKIP(Init());
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
-    auto buffer_info = vkt::Buffer::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto buffer_info = vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
     auto buffer_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
     VkMemoryDedicatedAllocateInfoKHR buffer_dedicated_info = vku::InitStructHelper();
@@ -1396,7 +1396,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), 0);
 
     // And for images...
-    auto image_info = vkt::Image::create_info();
+    auto image_info = vkt::Image::CreateInfo();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1436,7 +1436,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
 
-    auto image_info = vkt::Image::create_info();
+    auto image_info = vkt::Image::CreateInfo();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1454,7 +1454,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     // Bind with different but identical image
     vk::BindImageMemory(m_device->handle(), identical_image.handle(), dedicated_image_memory.handle(), 0);
 
-    image_info = vkt::Image::create_info();
+    image_info = vkt::Image::CreateInfo();
     image_info.extent.width = resource_size - 1;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1463,7 +1463,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     // Bind with a smaller image
     vk::BindImageMemory(m_device->handle(), smaller_image.handle(), dedicated_image_memory.handle(), 0);
 
-    image_info = vkt::Image::create_info();
+    image_info = vkt::Image::CreateInfo();
     image_info.extent.width = resource_size + 1;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2178,7 +2178,7 @@ TEST_F(NegativeMemory, BindBufferMemoryDeviceGroup) {
         GTEST_SKIP() << "Test requires a physical device group with more than 1 device";
     }
 
-    auto buffer_info = vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto buffer_info = vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
@@ -2260,7 +2260,7 @@ TEST_F(NegativeMemory, SetDeviceMemoryPriority) {
     AddRequiredExtensions(VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     vkt::DeviceMemory buffer_memory;
     buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));
@@ -2281,7 +2281,7 @@ TEST_F(NegativeMemory, BadMemoryBindMemory2) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent.width = 32;
     image_ci.extent.height = 32;

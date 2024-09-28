@@ -651,7 +651,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     InitRenderTarget();
 
     constexpr int fence_warn_limit = 5;
-    const auto fence_ci = vkt::Fence::create_info();
+    const auto fence_ci = vkt::Fence::CreateInfo();
     std::vector<vkt::Fence> test_fences(fence_warn_limit);
     for (int i = 0; i < fence_warn_limit - 1; ++i) {
         test_fences[i].init(*m_device, fence_ci);

@@ -948,7 +948,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    VkImageCreateInfo create_info = vkt::Image::create_info();
+    VkImageCreateInfo create_info = vkt::Image::CreateInfo();
     create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
     create_info.imageType = VK_IMAGE_TYPE_3D;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1069,7 +1069,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    VkImageCreateInfo create_info = vkt::Image::create_info();
+    VkImageCreateInfo create_info = vkt::Image::CreateInfo();
     create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
     create_info.imageType = VK_IMAGE_TYPE_3D;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1149,7 +1149,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    VkImageCreateInfo create_info = vkt::Image::create_info();
+    VkImageCreateInfo create_info = vkt::Image::CreateInfo();
     create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
     create_info.imageType = VK_IMAGE_TYPE_3D;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1235,7 +1235,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
         GTEST_SKIP() << "Required SPARSE_BINDING queue families not present";
     }
 
-    VkImageCreateInfo create_info = vkt::Image::create_info();
+    VkImageCreateInfo create_info = vkt::Image::CreateInfo();
     create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
     create_info.imageType = VK_IMAGE_TYPE_3D;
     create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;

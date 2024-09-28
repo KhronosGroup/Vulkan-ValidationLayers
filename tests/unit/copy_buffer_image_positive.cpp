@@ -169,7 +169,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
 
     VkDeviceSize buff_size = 32 * 32 * 4;
     vkt::Buffer buffer(*m_device,
-                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                       vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                        vkt::no_mem);
     auto buffer_memory_requirements = buffer.memory_requirements();
 
@@ -215,7 +215,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     // 1 byte per texel
     buff_size = 32 * 32 * 1;
     vkt::Buffer buffer2(*m_device,
-                        vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                        vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                         vkt::no_mem);
     buffer_memory_requirements = buffer.memory_requirements();
 

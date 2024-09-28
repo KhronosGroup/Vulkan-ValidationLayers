@@ -1693,8 +1693,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_a.init(*m_device, buffer_a.create_info(2048, buffer_usage, nullptr), mem_prop);
-    buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
+    buffer_a.init(*m_device, buffer_a.CreateInfo(2048, buffer_usage, nullptr), mem_prop);
+    buffer_b.init(*m_device, buffer_b.CreateInfo(2048, buffer_usage, nullptr), mem_prop);
 
     vkt::BufferView bufferview;
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
@@ -1737,7 +1737,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     )glsl";
 
     vkt::Event event;
-    event.init(*m_device, vkt::Event::create_info(0));
+    event.init(*m_device, vkt::Event::CreateInfo(0));
     VkEvent event_handle = event.handle();
 
     CreateComputePipelineHelper pipe(*this);
@@ -1822,8 +1822,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
     vkt::Buffer vbo, vbo2;
     buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vbo.init(*m_device, vbo.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
-    vbo2.init(*m_device, vbo2.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
+    vbo.init(*m_device, vbo.CreateInfo(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
+    vbo2.init(*m_device, vbo2.CreateInfo(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, csSource, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1903,8 +1903,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     const float ibo_data[3] = {0.f, 0.f, 0.f};
     vkt::Buffer ibo, ibo2;
     buffer_usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    ibo.init(*m_device, ibo.create_info(sizeof(ibo_data), buffer_usage, nullptr), mem_prop);
-    ibo2.init(*m_device, ibo2.create_info(sizeof(ibo_data), buffer_usage, nullptr), mem_prop);
+    ibo.init(*m_device, ibo.CreateInfo(sizeof(ibo_data), buffer_usage, nullptr), mem_prop);
+    ibo2.init(*m_device, ibo2.CreateInfo(sizeof(ibo_data), buffer_usage, nullptr), mem_prop);
 
     m_command_buffer.reset();
     m_command_buffer.begin();
@@ -3478,7 +3478,7 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     VkBufferCopy back2back = {128, 128, 128};
 
     vkt::Event event;
-    event.init(*m_device, vkt::Event::create_info(0));
+    event.init(*m_device, vkt::Event::CreateInfo(0));
     VkEvent event_handle = event.handle();
 
     auto cb = m_command_buffer.handle();
@@ -3562,7 +3562,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     vkt::Image image_c(*m_device, image_ci, vkt::set_layout);
 
     vkt::Event event;
-    event.init(*m_device, vkt::Event::create_info(0));
+    event.init(*m_device, vkt::Event::CreateInfo(0));
     VkEvent event_handle = event.handle();
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
@@ -3672,7 +3672,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     RETURN_IF_SKIP(InitState());
 
     vkt::Event event;
-    event.init(*m_device, vkt::Event::create_info(0));
+    event.init(*m_device, vkt::Event::CreateInfo(0));
 
     const VkEvent event_handle = event.handle();
 
@@ -3778,7 +3778,7 @@ TEST_F(NegativeSyncVal, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
 
     vkt::Event event;
-    event.init(*m_device, vkt::Event::create_info(0));
+    event.init(*m_device, vkt::Event::CreateInfo(0));
     VkEvent event_handle = event.handle();
 
     VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
@@ -4265,8 +4265,8 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_a.init(*m_device, buffer_a.create_info(2048, buffer_usage, nullptr), mem_prop);
-    buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
+    buffer_a.init(*m_device, buffer_a.CreateInfo(2048, buffer_usage, nullptr), mem_prop);
+    buffer_b.init(*m_device, buffer_b.CreateInfo(2048, buffer_usage, nullptr), mem_prop);
 
     vkt::BufferView bufferview;
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
@@ -4315,8 +4315,8 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
     vkt::Buffer vbo, vbo2;
     buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vbo.init(*m_device, vbo.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
-    vbo2.init(*m_device, vbo2.create_info(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
+    vbo.init(*m_device, vbo.CreateInfo(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
+    vbo2.init(*m_device, vbo2.CreateInfo(sizeof(vbo_data), buffer_usage, nullptr), mem_prop);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, csSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);

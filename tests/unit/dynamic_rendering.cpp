@@ -221,7 +221,7 @@ TEST_F(NegativeDynamicRendering, CmdClearAttachmentTests) {
     // (test would not fail if layer count used to do validation was 4)
     assert(!m_renderTargets.empty());
     const auto render_target_ci = vkt::Image::ImageCreateInfo2D(m_renderTargets[0]->width(), m_renderTargets[0]->height(),
-                                                                m_renderTargets[0]->create_info().mipLevels, 4,
+                                                                m_renderTargets[0]->CreateInfo().mipLevels, 4,
                                                                 m_renderTargets[0]->format(), m_renderTargets[0]->usage());
     vkt::Image render_target(*m_device, render_target_ci, vkt::set_layout);
     vkt::ImageView render_target_view =

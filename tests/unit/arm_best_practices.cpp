@@ -31,7 +31,7 @@ class VkConstantBufferObj : public vkt::Buffer {
     VkConstantBufferObj(vkt::Device* device, VkDeviceSize size, const void* data,
                         VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) {
         VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        init(*device, create_info(size, usage), reqs);
+        init(*device, CreateInfo(size, usage), reqs);
 
         void* pData = memory().map();
         memcpy(pData, data, static_cast<size_t>(size));
