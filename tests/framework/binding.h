@@ -374,7 +374,7 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 class Fence : public internal::NonDispHandle<VkFence> {
   public:
     Fence() = default;
-    Fence(const Device &dev) { init(dev, create_info()); }
+    Fence(const Device &dev) { init(dev, CreateInfo()); }
     Fence(const Device &dev, const VkFenceCreateInfo &info) { init(dev, info); }
     Fence(Fence &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     Fence &operator=(Fence &&) noexcept;
@@ -398,8 +398,8 @@ class Fence : public internal::NonDispHandle<VkFence> {
     VkResult export_handle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type);
     VkResult import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
 
-    static VkFenceCreateInfo create_info(VkFenceCreateFlags flags);
-    static VkFenceCreateInfo create_info();
+    static VkFenceCreateInfo CreateInfo(VkFenceCreateFlags flags);
+    static VkFenceCreateInfo CreateInfo();
 };
 
 inline const Fence no_fence;
@@ -457,7 +457,7 @@ class Event : public internal::NonDispHandle<VkEvent> {
                   const std::vector<VkImageMemoryBarrier> &image_barriers);
     void reset();
 
-    static VkEventCreateInfo create_info(VkFlags flags);
+    static VkEventCreateInfo CreateInfo(VkFlags flags);
 };
 
 struct WaitT {};
@@ -523,7 +523,7 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
     QueryPool() = default;
     QueryPool(const Device &dev, const VkQueryPoolCreateInfo &info) { init(dev, info); }
     QueryPool(const Device &dev, VkQueryType query_type, uint32_t query_count) {
-        VkQueryPoolCreateInfo info = create_info(query_type, query_count);
+        VkQueryPoolCreateInfo info = CreateInfo(query_type, query_count);
         init(dev, info);
     }
     ~QueryPool() noexcept;
@@ -536,7 +536,7 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
     // vkGetQueryPoolResults()
     VkResult results(uint32_t first, uint32_t count, size_t size, void *data, size_t stride);
 
-    static VkQueryPoolCreateInfo create_info(VkQueryType type, uint32_t slot_count);
+    static VkQueryPoolCreateInfo CreateInfo(VkQueryType type, uint32_t slot_count);
 };
 
 struct NoMemT {};
@@ -564,7 +564,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;  // always add
         VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
         allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-        init(dev, create_info(size, usage), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        init(dev, CreateInfo(size, usage), VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
              &allocate_flag_info);
     }
 
@@ -591,7 +591,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
               void *alloc_info_pnext = nullptr);
     void init(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_props = 0,
               void *alloc_info_pnext = nullptr, const std::vector<uint32_t> &queue_families = {}) {
-        init(dev, create_info(size, usage, &queue_families), mem_props, alloc_info_pnext);
+        init(dev, CreateInfo(size, usage, &queue_families), mem_props, alloc_info_pnext);
     }
     void init_no_mem(const Device &dev, const VkBufferCreateInfo &info);
     void SetName(const char *name) { NonDispHandle<VkBuffer>::SetName(VK_OBJECT_TYPE_BUFFER, name); }
@@ -610,9 +610,9 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     // Bind to existing memory object
     void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
-    const VkBufferCreateInfo &create_info() const { return create_info_; }
-    static VkBufferCreateInfo create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr,
-                                          void *create_info_pnext = nullptr);
+    const VkBufferCreateInfo &CreateInfo() const { return create_info_; }
+    static VkBufferCreateInfo CreateInfo(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr,
+                                         void *create_info_pnext = nullptr);
 
     VkBufferMemoryBarrier buffer_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,
                                                 VkDeviceSize size) const {
@@ -761,7 +761,7 @@ class Image : public internal::NonDispHandle<VkImage> {
                             VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-    static VkImageCreateInfo create_info();
+    static VkImageCreateInfo CreateInfo();
 
     static VkImageSubresource subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer);
     static VkImageSubresource subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer);
@@ -863,7 +863,7 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
     VkResult init_try(const Device &dev, const VkShaderModuleCreateInfo &info);
     void SetName(const char *name) { NonDispHandle<VkShaderModule>::SetName(VK_OBJECT_TYPE_SHADER_MODULE, name); }
 
-    static VkShaderModuleCreateInfo create_info(size_t code_size, const uint32_t *code, VkFlags flags);
+    static VkShaderModuleCreateInfo CreateInfo(size_t code_size, const uint32_t *code, VkFlags flags);
 };
 
 class Shader : public internal::NonDispHandle<VkShaderEXT> {
@@ -1039,8 +1039,7 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
     DescriptorSet *alloc_sets(const Device &dev, const DescriptorSetLayout &layout);
 
     template <typename PoolSizes>
-    static VkDescriptorPoolCreateInfo create_info(VkDescriptorPoolCreateFlags flags, uint32_t max_sets,
-                                                  const PoolSizes &pool_sizes);
+    static VkDescriptorPoolCreateInfo CreateInfo(VkDescriptorPoolCreateFlags flags, uint32_t max_sets, const PoolSizes &pool_sizes);
 
   private:
     // Track whether this pool's usage is VK_DESCRIPTOR_POOL_USAGE_DYNAMIC
@@ -1048,8 +1047,8 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
 };
 
 template <typename PoolSizes>
-inline VkDescriptorPoolCreateInfo DescriptorPool::create_info(VkDescriptorPoolCreateFlags flags, uint32_t max_sets,
-                                                              const PoolSizes &pool_sizes) {
+inline VkDescriptorPoolCreateInfo DescriptorPool::CreateInfo(VkDescriptorPoolCreateFlags flags, uint32_t max_sets,
+                                                             const PoolSizes &pool_sizes) {
     VkDescriptorPoolCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     info.maxSets = max_sets;
@@ -1122,7 +1121,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void reset(VkCommandBufferResetFlags flags);
     void reset() { reset(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT); }
 
-    static VkCommandBufferAllocateInfo create_info(VkCommandPool const &pool);
+    static VkCommandBufferAllocateInfo CreateInfo(VkCommandPool const &pool);
 
     void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t render_area_width = 1, uint32_t render_area_height = 1,
@@ -1226,8 +1225,8 @@ class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConv
     static VkSamplerYcbcrConversionCreateInfo DefaultConversionInfo(VkFormat format);
 };
 
-inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,
-                                              void *create_info_pnext) {
+inline VkBufferCreateInfo Buffer::CreateInfo(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,
+                                             void *create_info_pnext) {
     VkBufferCreateInfo info = vku::InitStructHelper(create_info_pnext);
     info.size = size;
     info.usage = usage;
@@ -1241,31 +1240,31 @@ inline VkBufferCreateInfo Buffer::create_info(VkDeviceSize size, VkFlags usage, 
     return info;
 }
 
-inline VkFenceCreateInfo Fence::create_info(VkFenceCreateFlags flags) {
+inline VkFenceCreateInfo Fence::CreateInfo(VkFenceCreateFlags flags) {
     VkFenceCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     return info;
 }
 
-inline VkFenceCreateInfo Fence::create_info() {
+inline VkFenceCreateInfo Fence::CreateInfo() {
     VkFenceCreateInfo info = vku::InitStructHelper();
     return info;
 }
 
-inline VkEventCreateInfo Event::create_info(VkFlags flags) {
+inline VkEventCreateInfo Event::CreateInfo(VkFlags flags) {
     VkEventCreateInfo info = vku::InitStructHelper();
     info.flags = flags;
     return info;
 }
 
-inline VkQueryPoolCreateInfo QueryPool::create_info(VkQueryType type, uint32_t slot_count) {
+inline VkQueryPoolCreateInfo QueryPool::CreateInfo(VkQueryType type, uint32_t slot_count) {
     VkQueryPoolCreateInfo info = vku::InitStructHelper();
     info.queryType = type;
     info.queryCount = slot_count;
     return info;
 }
 
-inline VkImageCreateInfo Image::create_info() {
+inline VkImageCreateInfo Image::CreateInfo() {
     VkImageCreateInfo info = vku::InitStructHelper();
     info.extent.width = 1;
     info.extent.height = 1;
@@ -1338,7 +1337,7 @@ inline VkImageSubresourceRange Image::subresource_range(const VkImageSubresource
     return subresource_range(subres.aspectMask, subres.mipLevel, 1, subres.arrayLayer, 1);
 }
 
-inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, const uint32_t *code, VkFlags flags) {
+inline VkShaderModuleCreateInfo ShaderModule::CreateInfo(size_t code_size, const uint32_t *code, VkFlags flags) {
     VkShaderModuleCreateInfo info = vku::InitStructHelper();
     info.codeSize = code_size;
     info.pCode = code;

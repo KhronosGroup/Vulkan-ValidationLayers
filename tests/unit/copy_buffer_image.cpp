@@ -272,7 +272,7 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopy) {
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         // Out-of-range mip levels should fail
-        region.imageSubresource.mipLevel = image_16k.create_info().mipLevels + 1;
+        region.imageSubresource.mipLevel = image_16k.CreateInfo().mipLevels + 1;
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-imageSubresource-07967");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageSubresource-07971");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImageToBuffer-imageSubresource-07972");
@@ -294,7 +294,7 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopy) {
         region.imageSubresource.mipLevel = 0;
 
         // Out-of-range array layers should fail
-        region.imageSubresource.baseArrayLayer = image_16k.create_info().arrayLayers;
+        region.imageSubresource.baseArrayLayer = image_16k.CreateInfo().arrayLayers;
         region.imageSubresource.layerCount = 1;
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-imageSubresource-07968");
         vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
@@ -2384,7 +2384,7 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
 
     VkDeviceSize buff_size = 32 * 32 * 4;
     vkt::Buffer buffer(*m_device,
-                       vkt::Buffer::create_info(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                       vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                        vkt::no_mem);
     const auto buffer_memory_requirements = buffer.memory_requirements();
 
@@ -3056,7 +3056,7 @@ TEST_F(NegativeCopyBufferImage, CompletelyOverlappingBuffer) {
     copy_info.size = 256;
     vkt::Buffer buffer(*m_device, copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
-    vkt::Buffer buffer_shared_memory(*m_device, buffer.create_info(), vkt::no_mem);
+    vkt::Buffer buffer_shared_memory(*m_device, buffer.CreateInfo(), vkt::no_mem);
     buffer_shared_memory.bind_memory(buffer.memory(), 0u);
 
     m_command_buffer.begin();
@@ -3092,7 +3092,7 @@ TEST_F(NegativeCopyBufferImage, InterleavedRegions) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
 
-    vkt::Buffer buffer_shared_memory(*m_device, buffer.create_info(), vkt::no_mem);
+    vkt::Buffer buffer_shared_memory(*m_device, buffer.CreateInfo(), vkt::no_mem);
     buffer_shared_memory.bind_memory(buffer.memory(), 0u);
 
     m_command_buffer.begin();

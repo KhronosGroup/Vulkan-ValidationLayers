@@ -285,7 +285,7 @@ AccelerationStructureKHR &AccelerationStructureKHR::SetBufferUsageFlags(VkBuffer
 VkDeviceAddress AccelerationStructureKHR::GetBufferDeviceAddress() const {
     assert(initialized());
     assert(device_buffer_.initialized());
-    assert(device_buffer_.create_info().size > 0);
+    assert(device_buffer_.CreateInfo().size > 0);
     return device_buffer_.address();
 }
 
@@ -534,8 +534,8 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
                 }
             }
-            if (device_scratch_->create_info().size != 0 &&
-                device_scratch_->create_info().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+            if (device_scratch_->CreateInfo().size != 0 &&
+                device_scratch_->CreateInfo().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
                 const VkDeviceAddress scratch_address = device_scratch_->address();
                 const auto aligned_scratch_address =
                     Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
@@ -544,7 +544,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
                 vk_info_.scratchData.deviceAddress = aligned_scratch_address + device_scratch_offset_;
                 assert(vk_info_.scratchData.deviceAddress <
                        (scratch_address +
-                        device_scratch_->create_info().size));  // Note: This assert may prove overly conservative in the future
+                        device_scratch_->CreateInfo().size));  // Note: This assert may prove overly conservative in the future
             } else {
                 vk_info_.scratchData.deviceAddress = 0;
             }

@@ -1161,7 +1161,7 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
 VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
                                            uint32_t const layers, VkFormat const format, VkFlags const usage,
                                            VkImageTiling const requested_tiling, const std::vector<uint32_t> *queue_families) {
-    VkImageCreateInfo imageCreateInfo = create_info();
+    VkImageCreateInfo imageCreateInfo = CreateInfo();
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
     imageCreateInfo.extent.width = width;
@@ -1694,7 +1694,7 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
 }
 
 void CommandBuffer::Init(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level) {
-    auto create_info = CommandBuffer::create_info(pool.handle());
+    auto create_info = CommandBuffer::CreateInfo(pool.handle());
     create_info.level = level;
     init(dev, create_info);
 }
@@ -1720,7 +1720,7 @@ void CommandBuffer::end() { ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(handle())
 
 void CommandBuffer::reset(VkCommandBufferResetFlags flags) { ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags)); }
 
-VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool const &pool) {
+VkCommandBufferAllocateInfo CommandBuffer::CreateInfo(VkCommandPool const &pool) {
     VkCommandBufferAllocateInfo info = vku::InitStructHelper();
     info.commandPool = pool;
     info.commandBufferCount = 1;
@@ -1832,8 +1832,8 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
 }
 
 void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
-    assert(src.create_info().size == dst.create_info().size);
-    const VkBufferCopy region = {0, 0, src.create_info().size};
+    assert(src.CreateInfo().size == dst.CreateInfo().size);
+    const VkBufferCopy region = {0, 0, src.CreateInfo().size};
     vk::CmdCopyBuffer(handle(), src.handle(), dst.handle(), 1, &region);
 }
 

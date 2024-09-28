@@ -1641,8 +1641,8 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Invalid dst buffer
     {
         auto buffer_ci =
-            vkt::Buffer::create_info(4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                                               VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+            vkt::Buffer::CreateInfo(4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                              VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
         vkt::Buffer invalid_buffer(*m_device, buffer_ci, vkt::no_mem);
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
         blas.GetDstAS()->SetDeviceBuffer(std::move(invalid_buffer));

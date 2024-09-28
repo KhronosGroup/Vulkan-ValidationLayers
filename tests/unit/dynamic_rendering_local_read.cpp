@@ -1164,7 +1164,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, RenderingAttachmentLocationInfoMismatc
     InitDynamicRenderTarget();
 
     const auto render_target_ci = vkt::Image::ImageCreateInfo2D(m_renderTargets[0]->width(), m_renderTargets[0]->height(),
-                                                                m_renderTargets[0]->create_info().mipLevels, 1,
+                                                                m_renderTargets[0]->CreateInfo().mipLevels, 1,
                                                                 m_renderTargets[0]->format(), m_renderTargets[0]->usage());
 
     vkt::Image render_target(*m_device, render_target_ci, vkt::set_layout);
@@ -1253,7 +1253,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, RenderingInputAttachmentIndexInfoMisma
     InitDynamicRenderTarget();
 
     const auto render_target_ci = vkt::Image::ImageCreateInfo2D(m_renderTargets[0]->width(), m_renderTargets[0]->height(),
-                                                                m_renderTargets[0]->create_info().mipLevels, 1,
+                                                                m_renderTargets[0]->CreateInfo().mipLevels, 1,
                                                                 m_renderTargets[0]->format(), m_renderTargets[0]->usage());
 
     vkt::Image render_target(*m_device, render_target_ci, vkt::set_layout);

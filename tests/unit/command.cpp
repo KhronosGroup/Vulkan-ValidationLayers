@@ -1570,7 +1570,7 @@ TEST_F(NegativeCommand, ClearImage) {
 
     // Depth/Stencil image
     VkClearDepthStencilValue clear_value = {0};
-    VkImageCreateInfo ds_image_create_info = vkt::Image::create_info();
+    VkImageCreateInfo ds_image_create_info = vkt::Image::CreateInfo();
     ds_image_create_info.imageType = VK_IMAGE_TYPE_2D;
     ds_image_create_info.format = VK_FORMAT_D16_UNORM;
     ds_image_create_info.extent.width = 64;
@@ -2556,7 +2556,7 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = format;
     image_ci.extent.width = 128;
@@ -2737,7 +2737,7 @@ TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
     RETURN_IF_SKIP(Init());
 
     auto buffer_ci =
-        vkt::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
+        vkt::Buffer::CreateInfo(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
     vkt::Buffer buffer(*m_device, buffer_ci);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = vku::InitStructHelper();
@@ -3371,7 +3371,7 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
     VkClearDepthStencilValue clear_value = {0};
-    VkImageCreateInfo image_create_info = vkt::Image::create_info();
+    VkImageCreateInfo image_create_info = vkt::Image::CreateInfo();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = depth_format;
     image_create_info.extent.width = 64;
@@ -3513,7 +3513,7 @@ TEST_F(NegativeCommand, CmdClearAttachmentTests) {
     // (test would not fail if layer count used to do validation was 4)
     assert(!m_renderTargets.empty());
     const auto render_target_ci = vkt::Image::ImageCreateInfo2D(m_renderTargets[0]->width(), m_renderTargets[0]->height(),
-                                                                m_renderTargets[0]->create_info().mipLevels, 4,
+                                                                m_renderTargets[0]->CreateInfo().mipLevels, 4,
                                                                 m_renderTargets[0]->format(), m_renderTargets[0]->usage());
     vkt::Image render_target(*m_device, render_target_ci, vkt::set_layout);
     vkt::ImageView render_target_view =

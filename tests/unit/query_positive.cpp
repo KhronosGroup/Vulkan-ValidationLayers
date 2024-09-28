@@ -29,7 +29,7 @@ TEST_F(PositiveQuery, OutsideRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
 
@@ -47,7 +47,7 @@ TEST_F(PositiveQuery, InsideRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
     qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
     vkt::QueryPool query_pool(*m_device, qpci);
 
@@ -173,7 +173,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 
     constexpr uint32_t query_count = 2;
 
-    VkQueryPoolCreateInfo query_pool_info = vkt::QueryPool::create_info(VK_QUERY_TYPE_OCCLUSION, query_count);
+    VkQueryPoolCreateInfo query_pool_info = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_OCCLUSION, query_count);
     VkQueryPool query_pool;
     vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
 

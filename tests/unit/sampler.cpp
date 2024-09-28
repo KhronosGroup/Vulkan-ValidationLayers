@@ -498,7 +498,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
     InitRenderTarget();
 
-    VkImageCreateInfo image_info = vkt::Image::create_info();
+    VkImageCreateInfo image_info = vkt::Image::CreateInfo();
     image_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;

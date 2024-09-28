@@ -84,7 +84,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     RETURN_IF_SKIP(Init());
 
     VkDeviceSize buff_size = 256;
-    auto buffer = std::make_unique<vkt::Buffer>(*m_device, vkt::Buffer::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
+    auto buffer = std::make_unique<vkt::Buffer>(*m_device, vkt::Buffer::CreateInfo(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
                                                 vkt::no_mem);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -346,7 +346,7 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
 TEST_F(PositiveImage, SubresourceLayout) {
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent.width = 64;
     image_ci.extent.height = 64;
@@ -597,7 +597,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
 
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;

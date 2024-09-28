@@ -2308,7 +2308,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
     }
 
     {
-        auto image_ci = vkt::Image::create_info();
+        auto image_ci = vkt::Image::CreateInfo();
         image_ci.arrayLayers = 18;
         image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -2394,7 +2394,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     VkPhysicalDeviceFeatures device_features = {};
     GetPhysicalDeviceFeatures(&device_features);
 
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -4693,7 +4693,7 @@ TEST_F(NegativeImage, TransitionNonSparseImageLayoutWithoutBoundMemory) {
 
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo info = vkt::Image::create_info();
+    VkImageCreateInfo info = vkt::Image::CreateInfo();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, info, vkt::no_mem);
@@ -4710,7 +4710,7 @@ TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo info = vkt::Image::create_info();
+    VkImageCreateInfo info = vkt::Image::CreateInfo();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage =
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
@@ -5389,7 +5389,7 @@ TEST_F(NegativeImage, ResolveDepthImage) {
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
 
-    VkImageCreateInfo image_ci = vkt::Image::create_info();
+    VkImageCreateInfo image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = depth_format;
     image_ci.extent.width = 32u;

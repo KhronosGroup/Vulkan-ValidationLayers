@@ -364,11 +364,11 @@ TEST_F(NegativeSyncObject, Barriers) {
     }
 
     // Exceed the buffer size
-    conc_test.buffer_barrier_.offset = conc_test.buffer_.create_info().size + 1;
+    conc_test.buffer_barrier_.offset = conc_test.buffer_.CreateInfo().size + 1;
     conc_test("", "VUID-VkBufferMemoryBarrier-offset-01187");
 
     conc_test.buffer_barrier_.offset = 0;
-    conc_test.buffer_barrier_.size = conc_test.buffer_.create_info().size + 1;
+    conc_test.buffer_barrier_.size = conc_test.buffer_.CreateInfo().size + 1;
     // Size greater than total size
     conc_test("", "VUID-VkBufferMemoryBarrier-size-01189");
 
@@ -879,11 +879,11 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     }
 
     // Exceed the buffer size
-    conc_test.buffer_barrier_.offset = conc_test.buffer_.create_info().size + 1;
+    conc_test.buffer_barrier_.offset = conc_test.buffer_.CreateInfo().size + 1;
     conc_test("", "VUID-VkBufferMemoryBarrier2-offset-01187");
 
     conc_test.buffer_barrier_.offset = 0;
-    conc_test.buffer_barrier_.size = conc_test.buffer_.create_info().size + 1;
+    conc_test.buffer_barrier_.size = conc_test.buffer_.CreateInfo().size + 1;
     // Size greater than total size
     conc_test("", "VUID-VkBufferMemoryBarrier2-size-01189");
 
@@ -2068,7 +2068,7 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     AddDisabledFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo info = vkt::Image::create_info();
+    VkImageCreateInfo info = vkt::Image::CreateInfo();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     vkt::Image image(*m_device, info, vkt::set_layout);

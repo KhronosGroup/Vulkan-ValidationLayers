@@ -152,7 +152,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     // Verify the core validation layer has captured the physical device features by creating a a query pool.
     if (features2.features.pipelineStatisticsQuery) {
         VkQueryPool query_pool;
-        VkQueryPoolCreateInfo qpci = vkt::QueryPool::create_info(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+        VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
         qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
         err = vk::CreateQueryPool(device, &qpci, nullptr, &query_pool);
         ASSERT_EQ(VK_SUCCESS, err);

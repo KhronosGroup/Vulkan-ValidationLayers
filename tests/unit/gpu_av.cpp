@@ -1083,7 +1083,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     auto ptr = static_cast<uint8_t *>(copy_src_buffer.memory().map());
-    std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.create_info().size));
+    std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
         auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
         if (i == 64 * 64 - 1) {
@@ -1133,7 +1133,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     auto ptr = static_cast<uint8_t *>(copy_src_buffer.memory().map());
-    std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.create_info().size));
+    std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
         auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
         if (i == 64 * 64 - 1) {

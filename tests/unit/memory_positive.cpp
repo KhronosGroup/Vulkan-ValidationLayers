@@ -163,9 +163,8 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
 
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    vkt::Buffer buffer(*m_device,
-                       vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT),
-                       vkt::no_mem);
+    vkt::Buffer buffer(
+        *m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     // Use extension to get buffer memory requirements
     VkBufferMemoryRequirementsInfo2KHR buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
@@ -179,7 +178,7 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
 
     // Create a test image
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent.width = 32;
     image_ci.extent.height = 32;
@@ -228,7 +227,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer(*m_device, vkt::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     // Allocate buffer memory
     vkt::DeviceMemory buffer_memory;
@@ -240,7 +239,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     vk::BindBufferMemory2KHR(device(), 1, &buffer_bind_info);
 
     // Create a test image
-    auto image_ci = vkt::Image::create_info();
+    auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent.width = 32;
     image_ci.extent.height = 32;
