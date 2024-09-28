@@ -49,13 +49,13 @@
 
 namespace vkt {
 
-VkPhysicalDeviceProperties PhysicalDevice::properties() const {
+VkPhysicalDeviceProperties PhysicalDevice::Properties() const {
     VkPhysicalDeviceProperties info;
     vk::GetPhysicalDeviceProperties(handle(), &info);
     return info;
 }
 
-std::vector<VkQueueFamilyProperties> PhysicalDevice::queue_properties() const {
+std::vector<VkQueueFamilyProperties> PhysicalDevice::QueueProperties() const {
     uint32_t count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(handle(), &count, nullptr);
     std::vector<VkQueueFamilyProperties> info(count);
@@ -63,7 +63,7 @@ std::vector<VkQueueFamilyProperties> PhysicalDevice::queue_properties() const {
     return info;
 }
 
-VkPhysicalDeviceMemoryProperties PhysicalDevice::memory_properties() const {
+VkPhysicalDeviceMemoryProperties PhysicalDevice::MemoryProperties() const {
     VkPhysicalDeviceMemoryProperties info;
     vk::GetPhysicalDeviceMemoryProperties(handle(), &info);
     return info;
@@ -264,10 +264,10 @@ void Device::init(const VkDeviceCreateInfo &info) {
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(phy_.handle(), &info, NULL, &dev));
     Handle::init(dev);
 
-    init_queues(info);
+    InitQueues(info);
 }
 
-void Device::init_queues(const VkDeviceCreateInfo &info) {
+void Device::InitQueues(const VkDeviceCreateInfo &info) {
     uint32_t queue_node_count = phy_.queue_properties_.size();
 
     queue_families_.resize(queue_node_count);
@@ -424,12 +424,6 @@ VkResult Device::Wait(const std::vector<const Fence *> &fences, bool wait_all, u
     EXPECT_TRUE(err == VK_SUCCESS || err == VK_TIMEOUT);
 
     return err;
-}
-
-void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &writes,
-                                    const std::vector<VkCopyDescriptorSet> &copies) {
-    vk::UpdateDescriptorSets(handle(), static_cast<uint32_t>(writes.size()), writes.data(), static_cast<uint32_t>(copies.size()),
-                             copies.data());
 }
 
 VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
