@@ -74,6 +74,10 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
         const auto &other_ds_layouts = *other.set_layouts_id.get();
         for (uint32_t i = 0; i <= set; i++) {
             if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
+                if (!descriptor_set_layouts[i] || !other_ds_layouts[i]) {
+                    ss << "Set " << i << " contains a null set which is considered non-compatible\n";
+                    break;
+                }
                 return descriptor_set_layouts[i]->DescribeDifference(i, *other_ds_layouts[i]);
             }
         }
