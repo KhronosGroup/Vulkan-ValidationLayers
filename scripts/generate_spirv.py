@@ -304,9 +304,13 @@ def main():
         words = compile(gpu_shaders_dir, shader, glslang, spirv_opt, args.targetenv)
         write(words, shader, args.api, args.outdir)
 
-    # Don't want to hash if just generating a single shader for testings
-    if (len(shaders_to_compile) > 1):
-        write_inst_hash(shaders_to_compile, args.outdir)
+    # Hash after we have generated the output
+    shaders_to_hash = []
+    generated_cpp = common_ci.RepoRelative('layers/vulkan/generated/')
+    for filename in os.listdir(generated_cpp):
+        if (filename.startswith('cmd_validation') or filename.startswith('instrumentation_')) and filename.split(".")[-1] == 'cpp':
+            shaders_to_hash.append(os.path.join(generated_cpp, filename))
+    write_inst_hash(shaders_to_hash, args.outdir)
 
 if __name__ == '__main__':
   main()
