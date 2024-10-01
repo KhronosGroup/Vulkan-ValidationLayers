@@ -116,6 +116,29 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignal) {
     m_device->Wait();
 }
 
+TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalBatchFollowedByOneMoreBatch) {
+    TEST_DESCRIPTION("Hazard between wait-before-signal batch and the next batch on the same queue");
+    RETURN_IF_SKIP(InitTimelineSemaphore());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.end();
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit2(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
 TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalEmptyWaitScope) {
     TEST_DESCRIPTION("Hazard due to stage mask mismatch");
     RETURN_IF_SKIP(InitTimelineSemaphore());
