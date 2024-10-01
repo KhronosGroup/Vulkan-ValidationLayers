@@ -1097,8 +1097,12 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
     // Make sure that the same memory type is not chosen.
     invalid_image_mem_reqs.memoryTypeBits = ~image_mem_reqs.memoryTypeBits;
 
-    const auto invalid_image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, invalid_image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkMemoryAllocateInfo invalid_image_mem_alloc = vku::InitStructHelper();
+    invalid_image_mem_alloc.allocationSize = invalid_image_mem_reqs.size;
+    if (!m_device->phy().SetMemoryType(invalid_image_mem_reqs.memoryTypeBits, &invalid_image_mem_alloc,
+                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+        GTEST_SKIP() << "Could not find required memory type";
+    }
 
     vkt::DeviceMemory invalid_image_mem;
     invalid_image_mem.init(*m_device, invalid_image_mem_alloc);
@@ -1181,8 +1185,12 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
     // Make sure that the same memory type is not chosen.
     invalid_image_mem_reqs.memoryTypeBits = ~image_mem_reqs.memoryTypeBits;
 
-    const auto invalid_image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, invalid_image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkMemoryAllocateInfo invalid_image_mem_alloc = vku::InitStructHelper();
+    invalid_image_mem_alloc.allocationSize = invalid_image_mem_reqs.size;
+    if (!m_device->phy().SetMemoryType(invalid_image_mem_reqs.memoryTypeBits, &invalid_image_mem_alloc,
+                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+        GTEST_SKIP() << "Could not find required memory type";
+    }
 
     vkt::DeviceMemory invalid_image_mem;
     invalid_image_mem.init(*m_device, invalid_image_mem_alloc);
