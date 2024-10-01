@@ -1377,6 +1377,9 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
     if (sample_location_properties.variableSampleLocations) {
         GTEST_SKIP() << "variableSampleLocations must not be supported";
     }
+    if ((sample_location_properties.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        GTEST_SKIP() << "sampleLocationSampleCounts does not contain VK_SAMPLE_COUNT_1_BIT";
+    }
 
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
