@@ -300,10 +300,19 @@ void Device::InitQueues(const VkDeviceCreateInfo &info) {
             if (queue_family_prop.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
                 queues_[SPARSE].push_back(queue_storage.back().get());
             }
+
+            if (queue_family_prop.queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) {
+                queues_[VIDEO_DECODE].push_back(queue_storage.back().get());
+            }
+
+            if (queue_family_prop.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) {
+                queues_[VIDEO_ENCODE].push_back(queue_storage.back().get());
+            }
         }
     }
 
-    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() || !queues_[SPARSE].empty());
+    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() || !queues_[SPARSE].empty() ||
+                !queues_[VIDEO_DECODE].empty() || !queues_[VIDEO_ENCODE].empty());
 }
 
 const Device::QueueFamilyQueues &Device::QueuesFromFamily(uint32_t queue_family) const {
