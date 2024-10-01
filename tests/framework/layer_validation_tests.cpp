@@ -341,6 +341,12 @@ VkLayerTest::VkLayerTest() {
         instance_layers_.push_back(kSynchronization2LayerName);
     }
 
+    // If self validation is detected (ex. in CI) then we will add it.
+    // It is VERY important this is the last layer.
+    if (InstanceLayerSupported("VK_LAYER_DEV_self_validation")) {
+        instance_layers_.push_back("VK_LAYER_DEV_self_validation");
+    }
+
     app_info_ = vku::InitStructHelper();
     app_info_.pApplicationName = "layer_tests";
     app_info_.applicationVersion = 1;
