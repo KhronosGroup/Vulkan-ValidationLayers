@@ -315,7 +315,9 @@ class Device : public internal::Handle<VkDevice> {
         COMPUTE = 1,
         TRANSFER = 2,
         SPARSE = 3,
-        QUEUE_CAPABILITY_COUNT = 4,
+        VIDEO_DECODE = 4,
+        VIDEO_ENCODE = 5,
+        QUEUE_CAPABILITY_COUNT = 6,
     };
 
     void InitQueues(const VkDeviceCreateInfo &info);
