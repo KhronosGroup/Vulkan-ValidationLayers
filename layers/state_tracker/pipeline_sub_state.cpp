@@ -84,6 +84,10 @@ PreRasterState::PreRasterState(const vvl::Pipeline &p, const ValidationStateTrac
         all_stages |= stage;
 
         auto module_state = state_data.Get<vvl::ShaderModule>(stage_ci.module);
+        if (!module_state && p.pipeline_cache) {
+            // Attempt to look up the pipeline cache for shader module data
+            module_state = p.pipeline_cache->GetStageModule(p, i);
+        }
         if (!module_state) {
             // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
             // module is part of a library and the state must be created.
@@ -193,12 +197,16 @@ std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI
 }
 
 template <typename CreateInfo>
-void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
-                                  const CreateInfo &create_info,
+void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
+                                  const ValidationStateTracker &state_data, const CreateInfo &create_info,
                                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
             auto module_state = state_data.Get<vvl::ShaderModule>(create_info.pStages[i].module);
+            if (!module_state && pipeline_state.pipeline_cache) {
+                // Attempt to look up the pipeline cache for shader module data
+                module_state = pipeline_state.pipeline_cache->GetStageModule(pipeline_state, i);
+            }
             if (!module_state) {
                 // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                 // module is part of a library and the state must be created
@@ -239,17 +247,19 @@ void SetFragmentShaderInfoPrivate(FragmentShaderState &fs_state, const Validatio
 }
 
 // static
-void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
+void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
+                                                const ValidationStateTracker &state_data,
                                                 const VkGraphicsPipelineCreateInfo &create_info,
                                                 spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
-    SetFragmentShaderInfoPrivate(fs_state, state_data, create_info, stateless_data);
+    SetFragmentShaderInfoPrivate(pipeline_state, fs_state, state_data, create_info, stateless_data);
 }
 
 // static
-void FragmentShaderState::SetFragmentShaderInfo(FragmentShaderState &fs_state, const ValidationStateTracker &state_data,
+void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
+                                                const ValidationStateTracker &state_data,
                                                 const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
                                                 spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
-    SetFragmentShaderInfoPrivate(fs_state, state_data, create_info, stateless_data);
+    SetFragmentShaderInfoPrivate(pipeline_state, fs_state, state_data, create_info, stateless_data);
 }
 
 FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const ValidationStateTracker &dev_data,
