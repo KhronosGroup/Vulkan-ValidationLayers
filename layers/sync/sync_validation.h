@@ -59,6 +59,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     std::vector<std::shared_ptr<QueueSyncState>> queue_sync_states_;
     QueueId queue_id_limit_ = 0;
 
+    mutable std::mutex queue_submit_mutex_;
+
     // Semaphore signal registry
     vvl::unordered_map<VkSemaphore, SignalInfo> binary_signals_;
     vvl::unordered_map<VkSemaphore, std::vector<SignalInfo>> timeline_signals_;
@@ -586,7 +588,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                              const ErrorObject &error_obj) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                     const ErrorObject &error_obj) const override;
-    void RecordQueueSubmit(VkQueue queue, VkFence fence, const RecordObject &record_obj);
+    void RecordQueueSubmit(VkQueue queue, VkFence fence, QueueSubmitCmdState *cmd_state);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                    const RecordObject &record_obj) override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
