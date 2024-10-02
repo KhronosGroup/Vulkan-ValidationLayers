@@ -471,23 +471,23 @@ static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all w
     SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT
 );
 
-// Bit order mask of stage_access bit for each stage
+// Bit order mask of stage_access bit for each stage. Order matters, don't try to use vvl::unordered_map
 const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit();
 
-// Bit order mask of stage_access bit for each access
+// Bit order mask of stage_access bit for each access. Order matters, don't try to use vvl::unordered_map
 const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit();
 
 // Direct VkPipelineStageFlags to valid VkAccessFlags lookup table
-const std::map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask();
+const vvl::unordered_map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask();
 
 // Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT for each VkQueueFlagBits
-const std::map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags();
+const vvl::unordered_map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags();
 
 // Masks of logically earlier stage flags for a given stage flag
-const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages();
+const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages();
 
 // Masks of logically later stage flags for a given stage flag
-const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
+const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
 // clang-format on
 
 // NOLINTEND

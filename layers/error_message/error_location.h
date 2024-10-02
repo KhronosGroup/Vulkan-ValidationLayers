@@ -24,6 +24,7 @@
 #include "logging.h"
 #include "containers/custom_containers.h"
 #include "chassis/chassis_handle_data.h"
+#include "utils/hash_util.h"
 
 // Holds the 'Location' of where the code is inside a function/struct/etc
 // see docs/error_object.md for more details
@@ -143,9 +144,20 @@ struct Key {
         : function(fn), structure(Struct::Empty), field(f), recurse_field(recurse) {}
     Key(Func fn, Struct r, Field f = Field::Empty, bool recurse = false)
         : function(fn), structure(r), field(f), recurse_field(recurse) {}
+
+    struct hash {
+      public:
+        std::size_t operator()(const Key& key) const {
+            hash_util::HashCombiner hc;
+            hc << static_cast<uint32_t>(key.function) << static_cast<uint32_t>(key.structure) << static_cast<uint32_t>(key.field)
+               << key.recurse_field;
+            return hc.Value();
+        }
+    };
 };
 
 bool operator<(const Key& lhs, const Key& rhs);
+bool operator==(const Key& lhs, const Key& rhs);
 bool operator==(const Key& key, const Location& loc);
 
 // Entry in a VUID lookup table
