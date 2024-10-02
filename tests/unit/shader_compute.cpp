@@ -74,19 +74,11 @@ TEST_F(NegativeShaderCompute, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout
     TEST_DESCRIPTION(
         "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "
         "VK_KHR_workgroup_memory_explicit_layout");
+    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
-
-    VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR explicit_layout_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(explicit_layout_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
-        GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported";
-    }
+    AddRequiredFeature(vkt::Feature::workgroupMemoryExplicitLayout);
+    RETURN_IF_SKIP(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;

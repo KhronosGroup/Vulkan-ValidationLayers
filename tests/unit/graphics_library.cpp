@@ -1583,12 +1583,11 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     TEST_DESCRIPTION("Test for VK_EXT_shader_module_identifier extension with missing features.");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddDisabledFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddDisabledFeature(vkt::Feature::shaderModuleIdentifier);
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePipelineCreationCacheControlFeatures pipeline_cache_control_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(pipeline_cache_control_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();

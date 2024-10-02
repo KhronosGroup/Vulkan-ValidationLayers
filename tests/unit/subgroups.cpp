@@ -473,17 +473,10 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierGraphics) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePipelineCreationCacheControlFeatures shader_cache_control_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_id_features =
-        vku::InitStructHelper(&shader_cache_control_features);
-    GetPhysicalDeviceFeatures2(shader_module_id_features);
-
-    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT subgroup_size_control_features = vku::InitStructHelper();
-    subgroup_size_control_features.subgroupSizeControl = VK_FALSE;
-    shader_cache_control_features.pNext = &subgroup_size_control_features;
-    RETURN_IF_SKIP(InitState(nullptr, &shader_module_id_features));
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    AddDisabledFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
@@ -520,16 +513,10 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDevicePipelineCreationCacheControlFeatures shader_cache_control_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_id_features =
-        vku::InitStructHelper(&shader_cache_control_features);
-    GetPhysicalDeviceFeatures2(shader_module_id_features);
-
-    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT subgroup_size_control_features = vku::InitStructHelper();
-    subgroup_size_control_features.subgroupSizeControl = VK_FALSE;
-    shader_cache_control_features.pNext = &subgroup_size_control_features;
-    RETURN_IF_SKIP(InitState(nullptr, &shader_module_id_features));
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    AddDisabledFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(Init());
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -566,14 +553,10 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlStage) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(sscf);
-    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
-        GTEST_SKIP() << "Required features are not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
@@ -651,14 +634,10 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(sscf);
-    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
-        GTEST_SKIP() << "Required features are not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(subgroup_properties);
@@ -732,27 +711,15 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMaintenance4Features m4f = vku::InitStructHelper();
-    VkPhysicalDeviceMeshShaderFeaturesEXT msf = vku::InitStructHelper(&m4f);
-    VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = vku::InitStructHelper(&msf);
-    auto features2 = GetPhysicalDeviceFeatures2(sscf);
-    if (m4f.maintenance4 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance4 not supported";
-    }
-    if (msf.taskShader == VK_FALSE) {
-        GTEST_SKIP() << "taskShader not supported";
-    }
-    if (msf.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "meshShader not supported";
-    }
-    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
-        GTEST_SKIP() << "Required features are not supported";
-    }
-    msf.multiviewMeshShader = VK_FALSE;
-    msf.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_properties = vku::InitStructHelper();

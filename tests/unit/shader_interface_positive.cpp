@@ -216,15 +216,8 @@ TEST_F(PositiveShaderInterface, UboStd430Layout) {
     TEST_DESCRIPTION("Create a shader that requires UBO std430 layout.");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniform_buffer_standard_layout_features = vku::InitStructHelper(NULL);
-    uniform_buffer_standard_layout_features.uniformBufferStandardLayout = VK_TRUE;
-    GetPhysicalDeviceFeatures2(uniform_buffer_standard_layout_features);
-
-    VkPhysicalDeviceFeatures2 set_features2 = vku::InitStructHelper(&uniform_buffer_standard_layout_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &set_features2));
+    AddRequiredFeature(vkt::Feature::uniformBufferStandardLayout);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Vertex shader requiring std430 in a uniform buffer.
@@ -692,10 +685,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     TEST_DESCRIPTION("Input Attachment sharing same variable, but different aspect");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 

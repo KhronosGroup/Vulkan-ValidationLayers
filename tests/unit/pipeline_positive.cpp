@@ -75,15 +75,9 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(fsr_features);
-    if (fsr_features.pipelineFragmentShadingRate == VK_FALSE || fsr_features.primitiveFragmentShadingRate == VK_FALSE) {
-        GTEST_SKIP() << "Test requires (unsupported) pipelineFragmentShadingRate and primitiveFragmentShadingRate";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     char const *csSource = R"glsl(
         #version 450
@@ -872,15 +866,8 @@ TEST_F(PositivePipeline, ConditionalRendering) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceConditionalRenderingFeaturesEXT cond_rendering_feature = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(cond_rendering_feature);
-    if (cond_rendering_feature.conditionalRendering == VK_FALSE) {
-        GTEST_SKIP() << "conditionalRendering feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::conditionalRendering);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // A renderpass with a single subpass that declared a self-dependency
@@ -1336,16 +1323,8 @@ TEST_F(PositivePipeline, DualBlendShader) {
     TEST_DESCRIPTION("Test drawing with dual source blending with too many fragment output attachments.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-
-    if (features2.features.dualSrcBlend == VK_FALSE) {
-        GTEST_SKIP() << "dualSrcBlend feature is not available";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::dualSrcBlend);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     char const *fsSource = R"glsl(
@@ -1412,14 +1391,10 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
     TEST_DESCRIPTION("Create a pipeline using a shader module identifier");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDevicePipelineCreationCacheControlFeatures shader_cache_control_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_id_features =
-        vku::InitStructHelper(&shader_cache_control_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shader_module_id_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1502,29 +1477,14 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
 
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
-    features2.features.depthBiasClamp =
-        VK_FALSE;  // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not
-                   // rely on depthBiasClamp being enabled
-
-    if (!depth_bias_control_features.depthBiasControl) {
-        GTEST_SKIP() << "depthBiasControl not supported";
-    }
-
-    if (!depth_bias_control_features.leastRepresentableValueForceUnormRepresentation) {
-        GTEST_SKIP() << "leastRepresentableValueForceUnormRepresentation not supported";
-    }
-    if (!depth_bias_control_features.floatRepresentation) {
-        GTEST_SKIP() << "floatRepresentation not supported";
-    }
-    if (!depth_bias_control_features.depthBiasExact) {
-        GTEST_SKIP() << "depthBiasExact not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::depthBiasControl);
+    AddRequiredFeature(vkt::Feature::leastRepresentableValueForceUnormRepresentation);
+    AddRequiredFeature(vkt::Feature::floatRepresentation);
+    AddRequiredFeature(vkt::Feature::depthBiasExact);
+    // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
+    // depthBiasClamp being enabled
+    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {

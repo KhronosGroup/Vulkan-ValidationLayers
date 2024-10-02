@@ -1364,15 +1364,9 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTPrimitiveGenerated) {
 
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(primitives_generated_features);
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_properties);
@@ -1396,9 +1390,6 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTPrimitiveGenerated) {
                               transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
-    if (!primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams) {
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06691");
-    }
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06690");
     vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), pg_query_pool.handle(), 0, 0,
                                 transform_feedback_properties.maxTransformFeedbackStreams);
@@ -1530,15 +1521,8 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     TEST_DESCRIPTION("Test CmdBeginQuery in subpass with multiview");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features_1_1 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features_1_1);
-    if (!features_1_1.multiview) {
-        GTEST_SKIP() << "Test requires VkPhysicalDeviceVulkan11Features::multiview feature.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     VkAttachmentDescription attach = {};
     attach.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1669,16 +1653,10 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(primitives_generated_features);
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported";
-    }
-    primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(transform_feedback_properties);
 
@@ -1724,12 +1702,9 @@ TEST_F(NegativeQuery, PrimitivesGeneratedFeature) {
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
+    AddDisabledFeature(vkt::Feature::primitivesGeneratedQuery);
     RETURN_IF_SKIP(Init());
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(primitives_generated_features);
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported";
-    }
+
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
     m_command_buffer.begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-06688");
@@ -1746,14 +1721,9 @@ TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(primitives_generated_features);
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported";
-    }
-    primitives_generated_features.primitivesGeneratedQueryWithRasterizerDiscard = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithRasterizerDiscard);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineRasterizationStateCreateInfo rs_ci = vku::InitStructHelper();
@@ -1790,28 +1760,17 @@ TEST_F(NegativeQuery, PrimitivesGeneratedStreams) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+    RETURN_IF_SKIP(Init());
+
     VkPhysicalDeviceTransformFeedbackPropertiesEXT xfb_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(xfb_props);
     if (!xfb_props.transformFeedbackRasterizationStreamSelect) {
         GTEST_SKIP() << "VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedbackRasterizationStreamSelect is VK_FALSE";
     }
-
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features = vku::InitStructHelper();
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features =
-        vku::InitStructHelper(&transform_feedback_features);
-    auto features2 = GetPhysicalDeviceFeatures2(primitives_generated_features);
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported.";
-    }
-    if (transform_feedback_features.geometryStreams == VK_FALSE) {
-        GTEST_SKIP() << "geometryStreams feature not supported, skipping tests.";
-    }
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "geometryStreams feature not supported, skipping tests.";
-    }
-    primitives_generated_features.primitivesGeneratedQueryWithNonZeroStreams = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkPipelineRasterizationStateStreamCreateInfoEXT rasterization_streams = vku::InitStructHelper();
@@ -2090,21 +2049,11 @@ TEST_F(NegativeQuery, CmdExecuteCommandsActiveQueries) {
     TEST_DESCRIPTION("Check query types when calling vkCmdExecuteCommands");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(primitives_generated_features);
-    if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
-        GTEST_SKIP() << "primitivesGeneratedQuery feature is not supported.";
-    }
-    if (features2.features.inheritedQueries == VK_FALSE) {
-        GTEST_SKIP() << "inheritedQueries feature is not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    RETURN_IF_SKIP(Init());
 
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -2165,16 +2114,8 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    auto performance_query_features = vku::InitStruct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
-    auto features2 = GetPhysicalDeviceFeatures2(performance_query_features);
-
-    if (!performance_query_features.performanceCounterQueryPools) {
-        GTEST_SKIP() << "Test requires (unsupported) performanceCounterQueryPools";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
+    RETURN_IF_SKIP(Init());
 
     uint32_t counterCount = 0u;
     vk::EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device->phy(), m_device->graphics_queue_node_index_,

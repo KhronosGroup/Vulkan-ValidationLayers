@@ -74,18 +74,13 @@ TEST_F(NegativeGpuAV, ValidationFeatures) {
 TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     TEST_DESCRIPTION("GPU validation: Validate selection of which shaders get instrumented for GPU-AV");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
     const VkBool32 value = true;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                        &value};
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                &setting};
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
-
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.robustBufferAccess) {
-        GTEST_SKIP() << "Not safe to write outside of buffer memory";
-    }
     // Robust buffer access will be on by default
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     InitState(nullptr, nullptr, pool_flags);
@@ -322,16 +317,9 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");
 
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-
+    AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    if (atomic_float_features.shaderImageFloat32Atomics == VK_FALSE) {
-        GTEST_SKIP() << "shaderImageFloat32Atomics not supported.";
-    }
+    RETURN_IF_SKIP(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT;
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;  // The format doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT to
@@ -831,13 +819,9 @@ TEST_F(NegativeGpuAV, ShareOpSampledImage) {
 TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
     TEST_DESCRIPTION("Do OpImageFetch on a Ycbcr COMBINED_IMAGE_SAMPLER.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(InitGpuAvFramework());
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features11);
-    if (!features11.samplerYcbcrConversion) {
-        GTEST_SKIP() << "samplerYcbcrConversion not supported, skipping test";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features11));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
     const VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
 

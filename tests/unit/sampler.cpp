@@ -550,17 +550,10 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     TEST_DESCRIPTION(
         "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
 
-    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "SamplerYcbcrConversion not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    AddRequiredFeature(vkt::Feature::samplerAnisotropy);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -631,7 +624,8 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     BadSampler.init(*m_device, sci);
     m_errorMonitor->VerifyFound();
 
-    if (features2.features.samplerAnisotropy == VK_TRUE) {
+    {
+        // samplerAnisotropy
         sci.unnormalizedCoordinates = VK_FALSE;
         sci.anisotropyEnable = VK_TRUE;
         m_errorMonitor->SetDesiredError("VUID-VkSamplerCreateInfo-addressModeU-01646");
@@ -797,18 +791,9 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_custom_border_color");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceCustomBorderColorFeaturesEXT border_color_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(border_color_features);
-    if (border_color_features.customBorderColors != VK_TRUE) {
-        GTEST_SKIP() << "customBorderColors feature not supported";
-    }
-
-    // Disable without format
-    border_color_features.customBorderColorWithoutFormat = 0;
-
-    RETURN_IF_SKIP(InitState(nullptr, &border_color_features));
+    AddRequiredFeature(vkt::Feature::customBorderColors);
+    AddDisabledFeature(vkt::Feature::customBorderColorWithoutFormat);
+    RETURN_IF_SKIP(Init());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
@@ -860,15 +845,9 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     TEST_DESCRIPTION("Tests for VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceCustomBorderColorFeaturesEXT border_color_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(border_color_features);
-    if (!border_color_features.customBorderColors || !border_color_features.customBorderColorWithoutFormat) {
-        GTEST_SKIP() << "Custom border color feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &border_color_features));
+    AddRequiredFeature(vkt::Feature::customBorderColors);
+    AddRequiredFeature(vkt::Feature::customBorderColorWithoutFormat);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -1516,11 +1495,8 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
 
     AddRequiredExtensions(VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT non_seamless_cube_map_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(non_seamless_cube_map_features);
-    non_seamless_cube_map_features.nonSeamlessCubeMap = false;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddDisabledFeature(vkt::Feature::nonSeamlessCubeMap);
+    RETURN_IF_SKIP(Init());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.flags = VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT;

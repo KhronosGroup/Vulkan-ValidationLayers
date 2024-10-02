@@ -312,12 +312,8 @@ TEST_F(PositiveShaderCompute, ZeroInitializeWorkgroupMemoryFeature) {
     TEST_DESCRIPTION("Enable and use shaderZeroInitializeWorkgroupMemory feature");
 
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(zero_initialize_work_group_memory_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &zero_initialize_work_group_memory_features));
+    AddRequiredFeature(vkt::Feature::shaderZeroInitializeWorkgroupMemory);
+    RETURN_IF_SKIP(Init());
 
     const char *spv_source = R"(
                OpCapability Shader

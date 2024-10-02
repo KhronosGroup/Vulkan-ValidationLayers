@@ -97,17 +97,8 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 with feature bit enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    features12.drawIndirectCount = VK_TRUE;
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (features12.drawIndirectCount != VK_TRUE) {
-        printf("drawIndirectCount not supported, skipping test\n");
-        return;
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,

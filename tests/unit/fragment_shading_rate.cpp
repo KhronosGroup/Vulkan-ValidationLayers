@@ -100,16 +100,10 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsNoFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
-
-    fsr_features.pipelineFragmentShadingRate = VK_TRUE;
-    fsr_features.primitiveFragmentShadingRate = VK_FALSE;
-    fsr_features.attachmentFragmentShadingRate = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRate);
+    AddDisabledFeature(vkt::Feature::attachmentFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkExtent2D fragmentSize = {1, 1};
@@ -139,18 +133,10 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsNoPipelineRate) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
-
-    if (fsr_features.attachmentFragmentShadingRate == VK_FALSE && fsr_features.primitiveFragmentShadingRate == VK_FALSE) {
-        GTEST_SKIP() << "requires attachmentFragmentShadingRate or primitiveFragmentShadingRate";
-    }
-
-    fsr_features.pipelineFragmentShadingRate = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    AddDisabledFeature(vkt::Feature::pipelineFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkExtent2D fragmentSize = {1, 1};
@@ -177,23 +163,15 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
         GTEST_SKIP() << "requires fragmentShadingRateNonTrivialCombinerOps to be unsupported.";
     }
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
-
-    if (!fsr_features.primitiveFragmentShadingRate && !fsr_features.attachmentFragmentShadingRate) {
-        GTEST_SKIP() << "requires primitiveFragmentShadingRate or attachmentFragmentShadingRate to be supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkExtent2D fragmentSize = {1, 1};
@@ -201,7 +179,8 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
                                                          VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
 
     m_command_buffer.begin();
-    if (fsr_features.primitiveFragmentShadingRate) {
+    {
+        // primitiveFragmentShadingRate
         combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
         vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
@@ -209,7 +188,8 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsLimit) {
         combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
     }
 
-    if (fsr_features.attachmentFragmentShadingRate) {
+    {
+        // attachmentFragmentShadingRate
         combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR;
         m_errorMonitor->SetDesiredError("VUID-vkCmdSetFragmentShadingRateKHR-fragmentSizeNonTrivialCombinerOps-04512");
         vk::CmdSetFragmentShadingRateKHR(m_command_buffer.handle(), &fragmentSize, combinerOps);
@@ -225,7 +205,10 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
     // Enable KHR_fragment_shading_rate and all of its required extensions
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsr_properties);
@@ -233,20 +216,6 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveFragmentShadingRateWriteMultiViewpo
     if (fsr_properties.primitiveFragmentShadingRateWithMultipleViewports) {
         GTEST_SKIP() << "Test requires primitiveFragmentShadingRateWithMultipleViewports to be unsupported.";
     }
-
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT eds_features = vku::InitStructHelper();
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper(&eds_features);
-    auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
-
-    if (!fsr_features.primitiveFragmentShadingRate) {
-        GTEST_SKIP() << "Test requires primitiveFragmentShadingRate to be supported.";
-    }
-
-    if (!features2.features.multiViewport) {
-        GTEST_SKIP() << "%s requires multiViewport to be supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     char const *vsSource = R"glsl(
@@ -450,20 +419,9 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayerCount) {
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper(&multiview_features);
-    auto features2 = GetPhysicalDeviceFeatures2(fdm_features);
-
-    if (fdm_features.fragmentDensityMap != VK_TRUE) {
-        GTEST_SKIP() << "requires fragmentDensityMap feature";
-    } else if (multiview_features.multiview != VK_TRUE) {
-        GTEST_SKIP() << "requires multiview feature";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    RETURN_IF_SKIP(Init());
 
     VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1712,15 +1670,8 @@ TEST_F(NegativeFragmentShadingRate, Ops) {
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
-    if (!fsr_features.primitiveFragmentShadingRate) {
-        GTEST_SKIP() << "primitiveFragmentShadingRate not available";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = vku::InitStructHelper();
@@ -1787,15 +1738,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
 
     AddRequiredExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
-    if (multiview_features.multiview == VK_FALSE) {
-        GTEST_SKIP() << "multiview feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-    bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
@@ -1976,7 +1920,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
     auto rpbi2 =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp2[1].handle(), fb2.handle(), VkRect2D{{0, 0}, {16u, 16u}}, 0u, nullptr);
 
-    if (rp2Supported) {
+    {
         VkSubpassFragmentDensityMapOffsetEndInfoQCOM offsetting = vku::InitStructHelper();
         VkSubpassEndInfoKHR subpassEndInfo = vku::InitStructHelper(&offsetting);
         VkOffset2D m_vOffsets[2];
@@ -2878,13 +2822,8 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapNonSubsampledImages) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    AddDisabledFeature(vkt::Feature::fragmentDensityMapNonSubsampledImages);
     RETURN_IF_SKIP(Init());
-
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(fdm_features);
-    if (fdm_features.fragmentDensityMapNonSubsampledImages) {
-        GTEST_SKIP() << "requires fragmentDensityMapNonSubsampledImages to be unsupported";
-    }
 
     VkFramebuffer fb;
 

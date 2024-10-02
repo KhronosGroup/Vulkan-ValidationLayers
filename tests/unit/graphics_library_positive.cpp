@@ -1206,22 +1206,10 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     TEST_DESCRIPTION("Create pipeline sub-state that references shader module identifiers");
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT gpl_features = vku::InitStructHelper();
-    VkPhysicalDevicePipelineCreationCacheControlFeatures pipeline_cache_control_features = vku::InitStructHelper(&gpl_features);
-    VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT shader_module_id_features =
-        vku::InitStructHelper(&pipeline_cache_control_features);
-    GetPhysicalDeviceFeatures2(shader_module_id_features);
-
-    if (!gpl_features.graphicsPipelineLibrary) {
-        GTEST_SKIP() << "graphicsPipelineLibrary feature not supported";
-    }
-    if (!shader_module_id_features.shaderModuleIdentifier) {
-        GTEST_SKIP() << "shaderModuleIdentifier feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &shader_module_id_features));
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Create a pre-raster pipeline referencing a VS via identifier, with the VS identifier queried from a shader module

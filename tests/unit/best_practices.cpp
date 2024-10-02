@@ -1156,17 +1156,8 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Create a device that enables descriptorBindingStorageBufferUpdateAfterBind
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
-
-    if (VK_FALSE == indexing_features.descriptorBindingStorageBufferUpdateAfterBind) {
-        GTEST_SKIP() << "Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {

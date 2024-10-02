@@ -3164,15 +3164,8 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
-    if (multiview_features.multiview == VK_FALSE) {
-        GTEST_SKIP() << "multiview feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
 
     const uint32_t width = 32;
     const uint32_t height = 32;
@@ -3250,13 +3243,8 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
     TEST_DESCRIPTION("Two renderpasses with different VkSubpassDescriptionFlagBits");
 
     AddRequiredExtensions(VK_EXT_LEGACY_DITHERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceLegacyDitheringFeaturesEXT dithering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dithering_features);
-    if (dithering_features.legacyDithering == VK_FALSE) {
-        GTEST_SKIP() << "legacyDithering feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dithering_features));
+    AddRequiredFeature(vkt::Feature::legacyDithering);
+    RETURN_IF_SKIP(Init());
 
     VkAttachmentReference attach_ref = {};
     attach_ref.attachment = 0;

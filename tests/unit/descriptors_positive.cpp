@@ -472,13 +472,10 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR acc_struct_features = vku::InitStructHelper(&mutable_descriptor_type_features);
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bda_features = vku::InitStructHelper(&acc_struct_features);
-    GetPhysicalDeviceFeatures2(bda_features);
-    RETURN_IF_SKIP(InitState(nullptr, &bda_features));
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
 
     std::array descriptor_types = {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR};
 
@@ -942,13 +939,8 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     TEST_DESCRIPTION("Read from image with layout attachment feedback loop");
 
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT afll_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(afll_features);
-    if (!afll_features.attachmentFeedbackLoopLayout) {
-        GTEST_SKIP() << "attachmentFeedbackLoopLayout not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &afll_features));
+    AddRequiredFeature(vkt::Feature::attachmentFeedbackLoopLayout);
+    RETURN_IF_SKIP(Init());
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     vkt::Image image(
