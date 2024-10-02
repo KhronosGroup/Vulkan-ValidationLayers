@@ -582,9 +582,9 @@ TEST_F(NegativeDescriptors, CmdBufferDescriptorSetImageSamplerDestroyed) {
     ASSERT_TRUE(pass);
     vkt::DeviceMemory image_memory(*m_device, memory_info);
 
-    tmp_image.bind_memory(image_memory, 0);
+    tmp_image.BindMemory(image_memory, 0);
     // Bind second image to memory right after first image
-    image2.bind_memory(image_memory, aligned_size);
+    image2.BindMemory(image_memory, aligned_size);
 
     // First test deletes this view
     vkt::ImageView tmp_view = tmp_image.CreateView();
@@ -884,8 +884,8 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
             cmd_buf.begin();
             // record layout different than actual descriptor layout.
             const VkFlags read_write = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
-            auto image_barrier = image->image_memory_barrier(read_write, read_write, VK_IMAGE_LAYOUT_UNDEFINED, image_layout,
-                                                             image->subresource_range(aspect_mask));
+            auto image_barrier = image->ImageMemoryBarrier(read_write, read_write, VK_IMAGE_LAYOUT_UNDEFINED, image_layout,
+                                                           image->SubresourceRange(aspect_mask));
             vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
                                    nullptr, 0, nullptr, 1, &image_barrier);
             image->Layout(image_layout);
@@ -1790,7 +1790,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     for (uint32_t i = 0; i < kLocalDescriptorTypeRangeSize; ++i) {
         dsl_bindings[0].descriptorType = VkDescriptorType(i);
         ds_layouts.push_back(UpDescriptorSetLayout(new vkt::DescriptorSetLayout(*m_device, dsl_bindings)));
-        descriptor_sets.push_back(UpDescriptorSet(ds_pool.alloc_sets(*m_device, *ds_layouts.back())));
+        descriptor_sets.push_back(UpDescriptorSet(ds_pool.AllocateSets(*m_device, *ds_layouts.back())));
         ASSERT_TRUE(descriptor_sets.back()->initialized());
     }
 

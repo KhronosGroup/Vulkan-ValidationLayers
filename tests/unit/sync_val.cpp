@@ -601,7 +601,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     vkt::Image image_c(*m_device, image_ci);
 
     vkt::Image image_c_alias(*m_device, image_ci, vkt::no_mem);
-    image_c_alias.bind_memory(image_c.memory(), 0);
+    image_c_alias.BindMemory(image_c.memory(), 0);
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
     VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};

@@ -1423,7 +1423,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
         &formProps);
 
     // If not, skip this part of the test.
-    if (res || !m_device->phy().features().sparseBinding || !maintenance1_support) {
+    if (res || !m_device->phy().Features().sparseBinding || !maintenance1_support) {
         GTEST_SKIP() << "Missing supported features";
     }
 

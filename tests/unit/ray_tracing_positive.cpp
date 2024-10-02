@@ -835,11 +835,11 @@ TEST_F(PositiveRayTracing, ScratchBufferCorrectAddressSpaceOpBuild) {
     small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
     auto small_scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
-    small_scratch_buffer->bind_memory(buffer_memory, 0);
+    small_scratch_buffer->BindMemory(buffer_memory, 0);
 
     small_buffer_ci.size = alloc_info.allocationSize;
     auto big_scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
-    big_scratch_buffer->bind_memory(buffer_memory, 0);
+    big_scratch_buffer->BindMemory(buffer_memory, 0);
     const VkDeviceAddress big_scratch_address = big_scratch_buffer->address();
     if (big_scratch_address != small_scratch_buffer->address()) {
         GTEST_SKIP() << "Binding two buffers to the same memory does not yield identical buffer addresses, skipping test.";

@@ -379,7 +379,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
         GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
 
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
 
     DebugUtilsLabelCheckData callback_data;

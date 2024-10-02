@@ -43,7 +43,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
@@ -136,7 +136,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
@@ -203,7 +203,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkBufferCopy copy_info;
     copy_info.srcOffset = 0;                          // srcOffset is the start of buffer_mem_1, or 0 in this space.
@@ -283,7 +283,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.init_no_mem(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory buffer_mem_1(*m_device, buffer_mem_alloc);
     vkt::DeviceMemory buffer_mem_2(*m_device, buffer_mem_alloc);
@@ -369,12 +369,12 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     buffer_sparse_mem_reqs.memoryTypeBits &= buffer_not_sparse_mem_reqs.memoryTypeBits;
 
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_sparse_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_sparse_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
-    buffer_not_sparse.bind_memory(buffer_mem, 0);  // Bind not sparse buffer on first part of memory
+    buffer_not_sparse.BindMemory(buffer_mem, 0);  // Bind not sparse buffer on first part of memory
 
     VkSparseMemoryBind buffer_memory_bind = {};
     buffer_memory_bind.size = 0x10000;
@@ -475,7 +475,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory buffer_mem;
     buffer_mem.init(*m_device, buffer_mem_alloc);
@@ -568,7 +568,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     std::vector<vkt::DeviceMemory> memory_chunks(memory_chunks_count);
 

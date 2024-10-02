@@ -816,7 +816,7 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     queue_info.pQueuePriorities = &priorities[0];
 
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_info;
     device_create_info.enabledLayerCount = 0;
@@ -1171,7 +1171,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     const char *extension_names[2] = {"VK_KHR_maintenance1", "VK_AMD_negative_viewport_height"};
     VkDevice testDevice;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     device_create_info.queueCreateInfoCount = queue_info.size();
     device_create_info.pQueueCreateInfos = queue_info.data();
     device_create_info.enabledLayerCount = 0;
@@ -1196,7 +1196,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
     RETURN_IF_SKIP(InitFramework());
 
     vkt::PhysicalDevice physical_device(gpu_);
-    VkPhysicalDeviceFeatures features = physical_device.features();
+    VkPhysicalDeviceFeatures features = physical_device.Features();
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     const char *extension_names[1] = {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
     VkDevice testDevice;

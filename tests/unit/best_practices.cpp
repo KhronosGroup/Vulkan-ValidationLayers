@@ -508,8 +508,8 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     vkt::Image image(*m_device, image_info, vkt::no_mem);
 
     vkt::DeviceMemory mem;
-    mem.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(),
-                                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+    mem.init(*m_device,
+             vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.memory_requirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
     vk::BindImageMemory(device(), image.handle(), mem.handle(), 0);
 
     m_errorMonitor->VerifyFound();

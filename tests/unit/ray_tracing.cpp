@@ -621,9 +621,9 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureOverlappingMemory) {
                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     vkt::Buffer buffer_1(*m_device, blas_buffer_ci, vkt::no_mem);
-    buffer_1.bind_memory(buffer_memory, 0);
+    buffer_1.BindMemory(buffer_memory, 0);
     vkt::Buffer buffer_2(*m_device, blas_buffer_ci, vkt::no_mem);
-    buffer_2.bind_memory(buffer_memory, 0);
+    buffer_2.BindMemory(buffer_memory, 0);
 
     auto blas_1 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas_1.GetDstAS()->SetDeviceBuffer(std::move(buffer_1));
@@ -2094,11 +2094,11 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
 
         for (size_t i = 0; i < build_info_count; ++i) {
             src_blas_buffers[i].init_no_mem(*m_device, blas_buffer_ci);
-            src_blas_buffers[i].bind_memory(buffer_memory, 0);
+            src_blas_buffers[i].BindMemory(buffer_memory, 0);
 
             scratch_buffers[i] = std::make_shared<vkt::Buffer>();
             scratch_buffers[i]->init_no_mem(*m_device, scratch_buffer_ci);
-            scratch_buffers[i]->bind_memory(buffer_memory, 0);
+            scratch_buffers[i]->BindMemory(buffer_memory, 0);
 
             // 1st step: build destination acceleration struct
             auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -3398,7 +3398,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpBuild) {
     small_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
     auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, small_buffer_ci, vkt::no_mem);
-    scratch_buffer->bind_memory(buffer_memory, 0);
+    scratch_buffer->BindMemory(buffer_memory, 0);
 
     m_command_buffer.begin();
     blas.SetScratchBuffer(scratch_buffer);
@@ -3479,7 +3479,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
     alloc_info.allocationSize = scratch_buffer->memory_requirements().size;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
-    scratch_buffer->bind_memory(buffer_memory, 0);
+    scratch_buffer->BindMemory(buffer_memory, 0);
 
     m_command_buffer.begin();
     blas.SetScratchBuffer(scratch_buffer);

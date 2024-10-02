@@ -150,7 +150,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
             0xFF,
             0,
             VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV,
-            bot_level_as.opaque_handle(),
+            bot_level_as.OpaqueHandle(),
         },
     };
 
@@ -174,15 +174,15 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     vkt::AccelerationStructureNV top_level_as(*m_device, top_level_as_create_info);
 
-    VkDeviceSize scratch_buffer_size = std::max(bot_level_as.build_scratch_memory_requirements().memoryRequirements.size,
-                                                top_level_as.build_scratch_memory_requirements().memoryRequirements.size);
+    VkDeviceSize scratch_buffer_size = std::max(bot_level_as.BuildScratchMemoryRequirements().memoryRequirements.size,
+                                                top_level_as.BuildScratchMemoryRequirements().memoryRequirements.size);
     vkt::Buffer scratch_buffer(*m_device, scratch_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     ray_tracing_command_buffer.begin();
 
     // Build bot level acceleration structure
-    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &bot_level_as.info(), VK_NULL_HANDLE, 0, VK_FALSE,
+    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &bot_level_as.Info(), VK_NULL_HANDLE, 0, VK_FALSE,
                                         bot_level_as.handle(), VK_NULL_HANDLE, scratch_buffer.handle(), 0);
 
     // Barrier to prevent using scratch buffer for top level build before bottom level build finishes
@@ -193,7 +193,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
 
     // Build top level acceleration structure
-    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &top_level_as.info(), instance_buffer.handle(), 0,
+    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &top_level_as.Info(), instance_buffer.handle(), 0,
                                         VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, scratch_buffer.handle(), 0);
 
     ray_tracing_command_buffer.end();
@@ -1410,7 +1410,7 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
 
     vkt::AccelerationStructureNV as(*m_device, as_create_info, false);
 
-    VkMemoryRequirements as_memory_requirements = as.memory_requirements().memoryRequirements;
+    VkMemoryRequirements as_memory_requirements = as.MemoryRequirements().memoryRequirements;
 
     VkBindAccelerationStructureMemoryInfoNV as_bind_info = vku::InitStructHelper();
     as_bind_info.accelerationStructure = as.handle();
@@ -1590,7 +1590,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
 
     vkt::AccelerationStructureNV bot_level_as(*m_device, bot_level_as_create_info);
 
-    const vkt::Buffer bot_level_as_scratch = bot_level_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer bot_level_as_scratch = bot_level_as.CreateScratchBuffer(*m_device);
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording");
@@ -1669,7 +1669,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     // invalid scratch buffer (invalid usage)
     VkBufferCreateInfo create_info = vku::InitStructHelper();
     create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
-    const vkt::Buffer bot_level_as_invalid_scratch = bot_level_as.create_scratch_buffer(*m_device, &create_info);
+    const vkt::Buffer bot_level_as_invalid_scratch = bot_level_as.CreateScratchBuffer(*m_device, &create_info);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureInfoNV-scratch-02781");
     vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_invalid_scratch.handle(), 0);
@@ -1712,7 +1712,7 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
 
     vkt::AccelerationStructureNV bot_level_as(*m_device, bot_level_as_create_info);
 
-    const vkt::Buffer bot_level_as_scratch = bot_level_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer bot_level_as_scratch = bot_level_as.CreateScratchBuffer(*m_device);
 
     m_command_buffer.begin();
     vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
@@ -1807,7 +1807,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     bot_level_as_create_info.info.geometryCount = 1;
     bot_level_as_create_info.info.pGeometries = &geometry;
 
-    const vkt::Buffer bot_level_as_scratch = src_as.create_scratch_buffer(*m_device);
+    const vkt::Buffer bot_level_as_scratch = src_as.CreateScratchBuffer(*m_device);
 
     m_command_buffer.begin();
 
@@ -1865,9 +1865,9 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     vkt::DeviceMemory host_memory;
-    host_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(
-                                    *m_device, dst_as_without_mem.memory_requirements().memoryRequirements,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    host_memory.init(*m_device,
+                     vkt::DeviceMemory::GetResourceAllocInfo(*m_device, dst_as_without_mem.MemoryRequirements().memoryRequirements,
+                                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
     VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
     bind_info.accelerationStructure = dst_as_without_mem.handle();
@@ -1883,7 +1883,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-buffer-03718");
-    const vkt::Buffer bot_level_as_scratch2 = dst_as_without_mem.create_scratch_buffer(*m_device);
+    const vkt::Buffer bot_level_as_scratch2 = dst_as_without_mem.CreateScratchBuffer(*m_device);
     vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         dst_as_without_mem.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), src_as.handle(), dst_as_without_mem.handle(),

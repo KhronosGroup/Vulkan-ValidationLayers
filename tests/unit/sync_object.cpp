@@ -2216,41 +2216,41 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueueFamilies) {
     vkt::Event event(*m_device);
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VkBufferMemoryBarrier buffer_memory_barrier = vku::InitStructHelper();
-    buffer_memory_barrier.srcAccessMask = 0;
-    buffer_memory_barrier.dstAccessMask = 0;
-    buffer_memory_barrier.buffer = buffer.handle();
-    buffer_memory_barrier.offset = 0;
-    buffer_memory_barrier.size = 256;
-    buffer_memory_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    buffer_memory_barrier.dstQueueFamilyIndex = no_gfx.value();
+    VkBufferMemoryBarrier BufferMemoryBarrier = vku::InitStructHelper();
+    BufferMemoryBarrier.srcAccessMask = 0;
+    BufferMemoryBarrier.dstAccessMask = 0;
+    BufferMemoryBarrier.buffer = buffer.handle();
+    BufferMemoryBarrier.offset = 0;
+    BufferMemoryBarrier.size = 256;
+    BufferMemoryBarrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    BufferMemoryBarrier.dstQueueFamilyIndex = no_gfx.value();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
-    image_memory_barrier.srcAccessMask = 0;
-    image_memory_barrier.dstAccessMask = 0;
-    image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_memory_barrier.image = image.handle();
-    image_memory_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    image_memory_barrier.dstQueueFamilyIndex = no_gfx.value();
-    image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_memory_barrier.subresourceRange.baseArrayLayer = 0;
-    image_memory_barrier.subresourceRange.baseMipLevel = 0;
-    image_memory_barrier.subresourceRange.layerCount = 1;
-    image_memory_barrier.subresourceRange.levelCount = 1;
+    VkImageMemoryBarrier ImageMemoryBarrier = vku::InitStructHelper();
+    ImageMemoryBarrier.srcAccessMask = 0;
+    ImageMemoryBarrier.dstAccessMask = 0;
+    ImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    ImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    ImageMemoryBarrier.image = image.handle();
+    ImageMemoryBarrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    ImageMemoryBarrier.dstQueueFamilyIndex = no_gfx.value();
+    ImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    ImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    ImageMemoryBarrier.subresourceRange.layerCount = 1;
+    ImageMemoryBarrier.subresourceRange.levelCount = 1;
 
     m_command_buffer.begin();
     vk::CmdSetEvent(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803");
     vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 1, &buffer_memory_barrier, 0, nullptr);
+                      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 1, &BufferMemoryBarrier, 0, nullptr);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcQueueFamilyIndex-02803");
     vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 1, &image_memory_barrier);
+                      VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 1, &ImageMemoryBarrier);
     m_errorMonitor->VerifyFound();
     m_command_buffer.end();
 }

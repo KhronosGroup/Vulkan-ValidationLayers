@@ -26,14 +26,14 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buf_info.size = 2048;
 
-    if (m_device->phy().features().sparseResidencyBuffer) {
+    if (m_device->phy().Features().sparseResidencyBuffer) {
         buf_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
         CreateBufferTest(*this, &buf_info, "VUID-VkBufferCreateInfo-flags-00918");
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
-    if (m_device->phy().features().sparseResidencyAliased) {
+    if (m_device->phy().Features().sparseResidencyAliased) {
         buf_info.flags = VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
         CreateBufferTest(*this, &buf_info, "VUID-VkBufferCreateInfo-flags-00918");
     } else {
@@ -53,14 +53,14 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    if (m_device->phy().features().sparseResidencyImage2D) {
+    if (m_device->phy().Features().sparseResidencyImage2D) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
         CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-00987");
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
     }
 
-    if (m_device->phy().features().sparseResidencyAliased) {
+    if (m_device->phy().Features().sparseResidencyAliased) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
         CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-00987");
     } else {
@@ -222,7 +222,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 0x10000;
 
-    if (m_device->phy().features().sparseResidencyBuffer) {
+    if (m_device->phy().Features().sparseResidencyBuffer) {
         buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
@@ -242,7 +242,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    if (m_device->phy().features().sparseResidencyImage2D) {
+    if (m_device->phy().Features().sparseResidencyImage2D) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
@@ -252,7 +252,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     buffer_mem_alloc.allocationSize =
         (buffer_mem_alloc.allocationSize + buffer_mem_reqs.alignment - 1) & ~(buffer_mem_reqs.alignment - 1);
     vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
@@ -261,7 +261,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
     VkMemoryAllocateInfo image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     image_mem_alloc.allocationSize =
         (image_mem_alloc.allocationSize + image_mem_reqs.alignment - 1) & ~(image_mem_reqs.alignment - 1);
     vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
@@ -638,7 +638,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     buffer_export_mem_alloc_info.handleTypes = GetCompatibleHandleTypes(gpu(), buffer_create_info, buffer_exportable_type);
     VkMemoryRequirements buffer_mem_reqs{};
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
-    const VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+    const VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(
         *m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &buffer_export_mem_alloc_info);
     vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
@@ -669,7 +669,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     image_export_mem_alloc_info.handleTypes = GetCompatibleHandleTypes(gpu(), image_create_info, image_exportable_type);
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(
         *m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image_export_mem_alloc_info);
     vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
 
@@ -799,7 +799,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     buffer_create_info.size = 1024;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0);
+    VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0);
     VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper();
     export_info.handleTypes = handle_type;
     buffer_mem_alloc.pNext = &export_info;
@@ -861,7 +861,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     image_import_memory_fd_info.handleType = handle_type;
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::get_resource_alloc_info(
+    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(
         *m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image_import_memory_fd_info);
     vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
 
@@ -962,7 +962,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
     const auto image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
@@ -1083,7 +1083,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
     const auto image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
@@ -1171,7 +1171,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
     }
 
     const auto image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);
@@ -1257,7 +1257,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(m_device->handle(), image.handle(), &image_mem_reqs);
     const auto image_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     vkt::DeviceMemory image_mem;
     image_mem.init(*m_device, image_mem_alloc);

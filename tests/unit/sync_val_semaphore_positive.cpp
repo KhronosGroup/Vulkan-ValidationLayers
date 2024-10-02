@@ -640,8 +640,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitBeforeSignal) {
     vkt::Semaphore import_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     HANDLE win32_handle = NULL;
-    export_semaphore.export_handle(win32_handle, handle_type);
-    import_semaphore.import_handle(win32_handle, handle_type);
+    export_semaphore.ExportHandle(win32_handle, handle_type);
+    import_semaphore.ImportHandle(win32_handle, handle_type);
 
     // This test is for manual inspection. Without special handling the wait-before-signal with an
     // external semaphore accumulates unresolved batches and registered signals (it's not possible

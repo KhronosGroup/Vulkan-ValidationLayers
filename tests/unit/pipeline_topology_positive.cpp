@@ -313,7 +313,7 @@ TEST_F(PositivePipelineTopology, PolygonModeValid) {
     InitRenderTarget();
 
     std::vector<const char *> device_extension_names;
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     // Artificially disable support for non-solid fill modes
     features.fillModeNonSolid = false;
     // The sacrificial device object

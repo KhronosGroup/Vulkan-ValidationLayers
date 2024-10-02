@@ -1298,7 +1298,7 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
-    if (!m_device->phy().features().shaderInt64) {
+    if (!m_device->phy().Features().shaderInt64) {
         GTEST_SKIP() << "shaderInt64 not supported";
     }
     InitRenderTarget();

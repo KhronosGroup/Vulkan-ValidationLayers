@@ -83,7 +83,7 @@ TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkPrivateDataSlot data_slot;
