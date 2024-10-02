@@ -1065,7 +1065,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer draw_buffer(*m_device, buffer_create_info, vkt::no_mem);
-    draw_buffer.allocate_and_bind_memory(*m_device);
+    draw_buffer.AllocateAndBindMemory(*m_device);
 
     VkBufferCreateInfo count_buffer_create_info = vku::InitStructHelper();
     count_buffer_create_info.size = 64;

@@ -47,7 +47,7 @@ TEST_F(NegativeParent, FillBuffer) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::Buffer buffer(*m_second_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -64,7 +64,7 @@ TEST_F(NegativeParent, BindBuffer) {
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -100,7 +100,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
 
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -131,7 +131,7 @@ TEST_F(NegativeParent, ImageView) {
     TEST_DESCRIPTION("Test VUID-*-commonparent checks not sharing the same Device");
 
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -156,7 +156,7 @@ TEST_F(NegativeParent, BindPipeline) {
     TEST_DESCRIPTION("Test binding pipeline from another device");
 
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -180,7 +180,7 @@ TEST_F(NegativeParent, BindPipeline) {
 
 TEST_F(NegativeParent, PipelineShaderStageCreateInfo) {
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -203,7 +203,7 @@ TEST_F(NegativeParent, RenderPassFramebuffer) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Renderpass created on first device
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-commonparent");
@@ -220,7 +220,7 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     RETURN_IF_SKIP(InitState(nullptr, &imageless_framebuffer));
 
     InitRenderTarget();
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -268,7 +268,7 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Renderpass created on first device
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::CommandPool command_pool(*m_second_device, m_device->graphics_queue_node_index_, 0);
@@ -286,7 +286,7 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
 
 TEST_F(NegativeParent, FreeCommandBuffer) {
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::CommandPool command_pool_1(*m_device, m_device->graphics_queue_node_index_, 0);
@@ -677,7 +677,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::Buffer buffer(*m_second_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -696,7 +696,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::Image image(*m_second_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -716,7 +716,7 @@ TEST_F(NegativeParent, DescriptorSetLayout) {
     TEST_DESCRIPTION("Create pipeline layout from a descriptor set layout that was created on a different device");
     RETURN_IF_SKIP(Init());
 
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -735,7 +735,7 @@ TEST_F(NegativeParent, DescriptorSetLayout) {
 
 TEST_F(NegativeParent, FlushInvalidateMemory) {
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
@@ -773,7 +773,7 @@ TEST_F(NegativeParent, GetDescriptorSetLayoutSupport) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -788,7 +788,7 @@ TEST_F(NegativeParent, GetDescriptorSetLayoutSupport) {
 
 TEST_F(NegativeParent, BufferView) {
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::Buffer buffer(*m_second_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -803,16 +803,16 @@ TEST_F(NegativeParent, BufferView) {
 
 TEST_F(NegativeParent, CmdPipelineBarrier) {
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::Image image(*m_second_device, image_ci, vkt::set_layout);
 
-    VkImageSubresource image_sub = vkt::Image::subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
-    VkImageSubresourceRange image_sub_range = vkt::Image::subresource_range(image_sub);
-    VkImageMemoryBarrier image_barriers[] = {image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
+    VkImageSubresource image_sub = vkt::Image::Subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
+    VkImageSubresourceRange image_sub_range = vkt::Image::SubresourceRange(image_sub);
+    VkImageMemoryBarrier image_barriers[] = {image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent");
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
@@ -824,7 +824,7 @@ TEST_F(NegativeParent, CmdPipelineBarrier2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     vkt::Buffer buffer(*m_second_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -853,7 +853,7 @@ TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     OneOffDescriptorSet descriptor_set(m_second_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -868,7 +868,7 @@ TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {
 TEST_F(NegativeParent, MapMemory2) {
     AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper();

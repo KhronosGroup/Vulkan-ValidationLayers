@@ -158,7 +158,7 @@ class NonDispHandle : public Handle<T> {
         dev_handle_ = dev;
     }
 
-    void set_device(VkDevice device) { dev_handle_ = device; }
+    void SetDevice(VkDevice device) { dev_handle_ = device; }
 
     void destroy() noexcept { dev_handle_ = VK_NULL_HANDLE; }
 
@@ -183,16 +183,16 @@ class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
     void SetName(VkDevice device, const char *name) {
         Handle<VkPhysicalDevice>::SetName(device, VK_OBJECT_TYPE_PHYSICAL_DEVICE, name);
     }
-    VkPhysicalDeviceFeatures features() const;
+    VkPhysicalDeviceFeatures Features() const;
 
     bool SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkMemoryPropertyFlags properties,
                        const VkMemoryPropertyFlags forbid = 0) const;
 
     // vkEnumerateDeviceExtensionProperties()
-    std::vector<VkExtensionProperties> extensions(const char *pLayerName = nullptr) const;
+    std::vector<VkExtensionProperties> Extensions(const char *pLayerName = nullptr) const;
 
     // vkEnumerateLayers()
-    std::vector<VkLayerProperties> layers() const;
+    std::vector<VkLayerProperties> Layers() const;
 
     const VkPhysicalDeviceProperties properties_;
     const VkPhysicalDeviceLimits limits_;
@@ -351,13 +351,12 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 
     // vkUnmapMemory()
     void unmap() const;
-	const auto &get_memory_allocate_info() { return memory_allocate_info_; }
 
-        static VkMemoryAllocateInfo get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
-                                                            VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
+    static VkMemoryAllocateInfo GetResourceAllocInfo(const Device &dev, const VkMemoryRequirements &reqs,
+                                                     VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
 
-      private:
-        VkMemoryAllocateInfo memory_allocate_info_{};
+  private:
+    VkMemoryAllocateInfo memory_allocate_info_{};
 };
 
 class Fence : public internal::NonDispHandle<VkFence> {
@@ -381,11 +380,11 @@ class Fence : public internal::NonDispHandle<VkFence> {
     VkResult reset();
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    VkResult export_handle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type);
-    VkResult import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
+    VkResult ExportHandle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type);
+    VkResult ImportHandle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
 #endif
-    VkResult export_handle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type);
-    VkResult import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
+    VkResult ExportHandle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type);
+    VkResult ImportHandle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
 
     static VkFenceCreateInfo CreateInfo(VkFenceCreateFlags flags);
     static VkFenceCreateInfo CreateInfo();
@@ -414,12 +413,11 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     uint64_t GetCounterValue(bool use_khr = false) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    VkResult export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
-    VkResult import_handle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
-                           VkSemaphoreImportFlags flags = 0);
+    VkResult ExportHandle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    VkResult ImportHandle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags = 0);
 #endif
-    VkResult export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
-    VkResult import_handle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags = 0);
+    VkResult ExportHandle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+    VkResult ImportHandle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags = 0);
 };
 
 class Event : public internal::NonDispHandle<VkEvent> {
@@ -594,17 +592,17 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
     // Allocate and bind memory
     // The assumption that this object was created in no_mem configuration
-    void allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr);
+    void AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr);
 
     // Bind to existing memory object
-    void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
+    void BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
     const VkBufferCreateInfo &CreateInfo() const { return create_info_; }
     static VkBufferCreateInfo CreateInfo(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr,
                                          void *create_info_pnext = nullptr);
 
-    VkBufferMemoryBarrier buffer_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,
-                                                VkDeviceSize size) const {
+    VkBufferMemoryBarrier BufferMemoryBarrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,
+                                              VkDeviceSize size) const {
         VkBufferMemoryBarrier barrier = vku::InitStructHelper();
         barrier.buffer = handle();
         barrier.srcAccessMask = output_mask;
@@ -618,9 +616,9 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         return barrier;
     }
 
-    VkBufferMemoryBarrier2KHR buffer_memory_barrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
-                                                    VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkDeviceSize offset,
-                                                    VkDeviceSize size) const {
+    VkBufferMemoryBarrier2KHR BufferMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
+                                                  VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkDeviceSize offset,
+                                                  VkDeviceSize size) const {
         VkBufferMemoryBarrier2KHR barrier = vku::InitStructHelper();
         barrier.buffer = handle();
         barrier.srcStageMask = src_stage;
@@ -704,18 +702,18 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     // Allocate and bind memory
     // The assumption that this object was created in no_mem configuration
-    void allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr);
+    void AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props = 0, void *alloc_info_pnext = nullptr);
 
     // Bind to existing memory object
-    void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
+    void BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
     uint32_t width() const { return create_info_.extent.width; }
     uint32_t height() const { return create_info_.extent.height; }
     VkFormat format() const { return create_info_.format; }
     VkImageUsageFlags usage() const { return create_info_.usage; }
 
-    VkImageMemoryBarrier image_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkImageLayout old_layout,
-                                              VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
+    VkImageMemoryBarrier ImageMemoryBarrier(VkFlags output_mask, VkFlags input_mask, VkImageLayout old_layout,
+                                            VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
         VkImageMemoryBarrier barrier = vku::InitStructHelper();
         barrier.srcAccessMask = output_mask;
         barrier.dstAccessMask = input_mask;
@@ -728,10 +726,10 @@ class Image : public internal::NonDispHandle<VkImage> {
         return barrier;
     }
 
-    VkImageMemoryBarrier2KHR image_memory_barrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
-                                                  VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access,
-                                                  VkImageLayout old_layout, VkImageLayout new_layout,
-                                                  const VkImageSubresourceRange &range) const {
+    VkImageMemoryBarrier2KHR ImageMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
+                                                VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access,
+                                                VkImageLayout old_layout, VkImageLayout new_layout,
+                                                const VkImageSubresourceRange &range) const {
         VkImageMemoryBarrier2KHR barrier = vku::InitStructHelper();
         barrier.srcStageMask = src_stage;
         barrier.dstStageMask = dst_stage;
@@ -752,27 +750,27 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     static VkImageCreateInfo CreateInfo();
 
-    static VkImageSubresource subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer);
-    static VkImageSubresource subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer);
-    static VkImageSubresourceLayers subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
+    static VkImageSubresource Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer);
+    static VkImageSubresource Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer);
+    static VkImageSubresourceLayers Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
                                                 uint32_t array_size);
-    static VkImageSubresourceLayers subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
+    static VkImageSubresourceLayers Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
                                                 uint32_t array_size);
 
-    VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
-    static VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect_mask, uint32_t base_mip_level, uint32_t mip_levels,
-                                                     uint32_t base_array_layer, uint32_t num_layers);
-    static VkImageSubresourceRange subresource_range(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask);
-    static VkImageSubresourceRange subresource_range(const VkImageSubresource &subres);
+    VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect) const { return SubresourceRange(create_info_, aspect); }
+    static VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask, uint32_t base_mip_level, uint32_t mip_levels,
+                                                    uint32_t base_array_layer, uint32_t num_layers);
+    static VkImageSubresourceRange SubresourceRange(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask);
+    static VkImageSubresourceRange SubresourceRange(const VkImageSubresource &subres);
 
-    static VkImageAspectFlags aspect_mask(VkFormat format);
+    static VkImageAspectFlags AspectMask(VkFormat format);
 
     void Layout(VkImageLayout const layout) { image_layout_ = layout; }
     VkImageLayout Layout() const { return image_layout_; }
 
     void SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
     void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
-    void SetLayout(VkImageLayout image_layout) { SetLayout(aspect_mask(format()), image_layout); };
+    void SetLayout(VkImageLayout image_layout) { SetLayout(AspectMask(format()), image_layout); };
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const;
     ImageView CreateView(VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, void *pNext = nullptr) const;
@@ -822,17 +820,15 @@ class AccelerationStructureNV : public internal::NonDispHandle<VkAccelerationStr
         NonDispHandle<VkAccelerationStructureNV>::SetName(VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV, name);
     }
     // vkGetAccelerationStructureMemoryRequirementsNV()
-    VkMemoryRequirements2 memory_requirements() const;
-    VkMemoryRequirements2 build_scratch_memory_requirements() const;
+    VkMemoryRequirements2 MemoryRequirements() const;
+    VkMemoryRequirements2 BuildScratchMemoryRequirements() const;
 
-    uint64_t opaque_handle() const { return opaque_handle_; }
+    uint64_t OpaqueHandle() const { return opaque_handle_; }
 
-    const VkAccelerationStructureInfoNV &info() const { return info_; }
+    const VkAccelerationStructureInfoNV &Info() const { return info_; }
 
-    const VkDevice &dev() const { return device(); }
-
-    [[nodiscard]] Buffer create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
-                                               bool buffer_device_address = false) const;
+    [[nodiscard]] Buffer CreateScratchBuffer(const Device &device, VkBufferCreateInfo *pCreateInfo = nullptr,
+                                             bool buffer_device_address = false) const;
 
   private:
     VkAccelerationStructureInfoNV info_;
@@ -912,9 +908,6 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
     // vkCreateGraphicsPipeline with error return
     VkResult init_try(const Device &dev, const VkGraphicsPipelineCreateInfo &info);
     void SetName(const char *name) { NonDispHandle<VkPipeline>::SetName(VK_OBJECT_TYPE_PIPELINE, name); }
-
-    // vkStorePipeline()
-    size_t store(size_t size, void *data);
 };
 
 class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
@@ -1019,13 +1012,12 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
     void reset();
 
     // vkFreeDescriptorSet()
-    void setDynamicUsage(bool isDynamic) { dynamic_usage_ = isDynamic; }
-    bool getDynamicUsage() { return dynamic_usage_; }
+    bool GetDynamicUsage() { return dynamic_usage_; }
 
     // vkAllocateDescriptorSets()
-    std::vector<DescriptorSet *> alloc_sets(const Device &dev, const std::vector<const DescriptorSetLayout *> &layouts);
-    std::vector<DescriptorSet *> alloc_sets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count);
-    DescriptorSet *alloc_sets(const Device &dev, const DescriptorSetLayout &layout);
+    std::vector<DescriptorSet *> AllocateSets(const Device &dev, const std::vector<const DescriptorSetLayout *> &layouts);
+    std::vector<DescriptorSet *> AllocateSets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count);
+    DescriptorSet *AllocateSets(const Device &dev, const DescriptorSetLayout &layout);
 
     template <typename PoolSizes>
     static VkDescriptorPoolCreateInfo CreateInfo(VkDescriptorPoolCreateFlags flags, uint32_t max_sets, const PoolSizes &pool_sizes);
@@ -1264,7 +1256,7 @@ inline VkImageCreateInfo Image::CreateInfo() {
     return info;
 }
 
-inline VkImageSubresource Image::subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer) {
+inline VkImageSubresource Image::Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer) {
     VkImageSubresource subres = {};
     if (aspect == 0) {
         assert(false && "Invalid VkImageAspectFlags");
@@ -1275,11 +1267,11 @@ inline VkImageSubresource Image::subresource(VkImageAspectFlags aspect, uint32_t
     return subres;
 }
 
-inline VkImageSubresource Image::subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer) {
-    return subresource(range.aspectMask, range.baseMipLevel + mip_level, range.baseArrayLayer + array_layer);
+inline VkImageSubresource Image::Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer) {
+    return Subresource(range.aspectMask, range.baseMipLevel + mip_level, range.baseArrayLayer + array_layer);
 }
 
-inline VkImageSubresourceLayers Image::subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
+inline VkImageSubresourceLayers Image::Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
                                                    uint32_t array_size) {
     VkImageSubresourceLayers subres = {};
     switch (aspect) {
@@ -1299,13 +1291,13 @@ inline VkImageSubresourceLayers Image::subresource(VkImageAspectFlags aspect, ui
     return subres;
 }
 
-inline VkImageSubresourceLayers Image::subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
+inline VkImageSubresourceLayers Image::Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
                                                    uint32_t array_size) {
-    return subresource(range.aspectMask, range.baseMipLevel + mip_level, range.baseArrayLayer + array_layer, array_size);
+    return Subresource(range.aspectMask, range.baseMipLevel + mip_level, range.baseArrayLayer + array_layer, array_size);
 }
 
-inline VkImageSubresourceRange Image::subresource_range(VkImageAspectFlags aspect_mask, uint32_t base_mip_level,
-                                                        uint32_t mip_levels, uint32_t base_array_layer, uint32_t num_layers) {
+inline VkImageSubresourceRange Image::SubresourceRange(VkImageAspectFlags aspect_mask, uint32_t base_mip_level, uint32_t mip_levels,
+                                                       uint32_t base_array_layer, uint32_t num_layers) {
     VkImageSubresourceRange range = {};
     if (aspect_mask == 0) {
         assert(false && "Invalid VkImageAspectFlags");
@@ -1318,12 +1310,12 @@ inline VkImageSubresourceRange Image::subresource_range(VkImageAspectFlags aspec
     return range;
 }
 
-inline VkImageSubresourceRange Image::subresource_range(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask) {
-    return subresource_range(aspect_mask, 0, info.mipLevels, 0, info.arrayLayers);
+inline VkImageSubresourceRange Image::SubresourceRange(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask) {
+    return SubresourceRange(aspect_mask, 0, info.mipLevels, 0, info.arrayLayers);
 }
 
-inline VkImageSubresourceRange Image::subresource_range(const VkImageSubresource &subres) {
-    return subresource_range(subres.aspectMask, subres.mipLevel, 1, subres.arrayLayer, 1);
+inline VkImageSubresourceRange Image::SubresourceRange(const VkImageSubresource &subres) {
+    return SubresourceRange(subres.aspectMask, subres.mipLevel, 1, subres.arrayLayer, 1);
 }
 
 inline VkShaderModuleCreateInfo ShaderModule::CreateInfo(size_t code_size, const uint32_t *code, VkFlags flags) {

@@ -779,7 +779,7 @@ TEST_F(NegativeMemory, BindMemory) {
                                                                   sparse_image_create_info.imageType,
                                                                   sparse_image_create_info.tiling, sparse_image_create_info.usage,
                                                                   sparse_image_create_info.flags, &image_format_properties);
-        if (!m_device->phy().features().sparseResidencyImage2D || err == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        if (!m_device->phy().Features().sparseResidencyImage2D || err == VK_ERROR_FORMAT_NOT_SUPPORTED) {
             // most likely means sparse formats aren't supported here; skip this test.
         } else {
             if (image_format_properties.maxExtent.width == 0) {
@@ -806,7 +806,7 @@ TEST_F(NegativeMemory, BindMemory) {
     {
         VkBufferCreateInfo sparse_buffer_create_info = buffer_create_info;
         sparse_buffer_create_info.flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        if (!m_device->phy().features().sparseResidencyBuffer) {
+        if (!m_device->phy().Features().sparseResidencyBuffer) {
             // most likely means sparse formats aren't supported here; skip this test.
         } else {
             vkt::Buffer sparse_buffer(*m_device, sparse_buffer_create_info, vkt::no_mem);
@@ -1370,7 +1370,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     const VkDeviceSize resource_size = 1024;
     auto buffer_info = vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
-    auto buffer_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
+    auto buffer_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), mem_flags);
     VkMemoryDedicatedAllocateInfoKHR buffer_dedicated_info = vku::InitStructHelper();
     buffer_dedicated_info.buffer = buffer.handle();
     buffer_alloc_info.pNext = &buffer_dedicated_info;
@@ -1404,7 +1404,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
 
     VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image.handle();
-    auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
+    auto image_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
     vkt::DeviceMemory dedicated_image_memory;
     dedicated_image_memory.init(*m_device, image_alloc_info);
@@ -1445,7 +1445,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
 
     VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image.handle();
-    auto image_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
+    auto image_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.memory_requirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
     vkt::DeviceMemory dedicated_image_memory;
     dedicated_image_memory.init(*m_device, image_alloc_info);
@@ -1786,7 +1786,7 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), disjoint_format, &format_properties);
 
-    bool sparse_support = (m_device->phy().features().sparseBinding == VK_TRUE);
+    bool sparse_support = (m_device->phy().Features().sparseBinding == VK_TRUE);
     bool disjoint_support = ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) != 0);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -2262,7 +2262,7 @@ TEST_F(NegativeMemory, SetDeviceMemoryPriority) {
     vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     vkt::DeviceMemory buffer_memory;
-    buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));
+    buffer_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0));
 
     m_errorMonitor->SetDesiredError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258");
     vk::SetDeviceMemoryPriorityEXT(*m_device, buffer_memory.handle(), -0.01f);
@@ -2316,7 +2316,7 @@ TEST_F(NegativeMemory, DISABLED_PartialBoundBuffer) {
     vkt::Buffer buffer_0(*m_device, buffer_create_info, vkt::no_mem);
     vkt::Buffer buffer_1(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkMemoryAllocateInfo alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_0.memory_requirements(), 0);
+    VkMemoryAllocateInfo alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_0.memory_requirements(), 0);
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     VkBindBufferMemoryInfo bind_buffer_infos[2];

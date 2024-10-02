@@ -69,7 +69,7 @@ VkPhysicalDeviceMemoryProperties PhysicalDevice::MemoryProperties() const {
     return info;
 }
 
-VkPhysicalDeviceFeatures PhysicalDevice::features() const {
+VkPhysicalDeviceFeatures PhysicalDevice::Features() const {
     VkPhysicalDeviceFeatures features;
     vk::GetPhysicalDeviceFeatures(handle(), &features);
     return features;
@@ -128,7 +128,7 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
  * Return list of PhysicalDevice extensions provided by the specified layer
  * If pLayerName is NULL, will return extensions for ICD / loader.
  */
-std::vector<VkExtensionProperties> PhysicalDevice::extensions(const char *pLayerName) const {
+std::vector<VkExtensionProperties> PhysicalDevice::Extensions(const char *pLayerName) const {
     VkResult err;
     uint32_t extension_count = 512;
     std::vector<VkExtensionProperties> extensions(extension_count);
@@ -169,7 +169,7 @@ bool PhysicalDevice::SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInf
 /*
  * Return list of PhysicalDevice layers
  */
-std::vector<VkLayerProperties> PhysicalDevice::layers() const {
+std::vector<VkLayerProperties> PhysicalDevice::Layers() const {
     VkResult err;
     uint32_t layer_count = 32;
     std::vector<VkLayerProperties> layers(layer_count);
@@ -250,7 +250,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
             dev_info.pEnabledFeatures = features;
         } else {
             // request all supportable features enabled
-            all_features = phy().features();
+            all_features = phy().Features();
             dev_info.pEnabledFeatures = &all_features;
         }
     }
@@ -793,8 +793,8 @@ void *DeviceMemory::map(VkFlags flags) {
 
 void DeviceMemory::unmap() const { vk::UnmapMemory(device(), handle()); }
 
-VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, const VkMemoryRequirements &reqs,
-                                                           VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+VkMemoryAllocateInfo DeviceMemory::GetResourceAllocInfo(const Device &dev, const VkMemoryRequirements &reqs,
+                                                        VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
     EXPECT_TRUE(dev.phy().SetMemoryType(reqs.memoryTypeBits, &alloc_info, mem_props));
@@ -822,14 +822,14 @@ VkResult Fence::reset() {
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-VkResult Fence::export_handle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
+VkResult Fence::ExportHandle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
     VkFenceGetWin32HandleInfoKHR ghi = vku::InitStructHelper();
     ghi.fence = handle();
     ghi.handleType = handle_type;
     return vk::GetFenceWin32HandleKHR(device(), &ghi, &win32_handle);
 }
 
-VkResult Fence::import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
+VkResult Fence::ImportHandle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
     VkImportFenceWin32HandleInfoKHR ifi = vku::InitStructHelper();
     ifi.fence = handle();
     ifi.handleType = handle_type;
@@ -839,14 +839,14 @@ VkResult Fence::import_handle(HANDLE win32_handle, VkExternalFenceHandleTypeFlag
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Fence::export_handle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
+VkResult Fence::ExportHandle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
     VkFenceGetFdInfoKHR gfi = vku::InitStructHelper();
     gfi.fence = handle();
     gfi.handleType = handle_type;
     return vk::GetFenceFdKHR(device(), &gfi, &fd_handle);
 }
 
-VkResult Fence::import_handle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
+VkResult Fence::ImportHandle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
     VkImportFenceFdInfoKHR ifi = vku::InitStructHelper();
     ifi.fence = handle();
     ifi.handleType = handle_type;
@@ -924,7 +924,7 @@ uint64_t Semaphore::GetCounterValue(bool use_khr) const {
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+VkResult Semaphore::ExportHandle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     win32_handle = nullptr;
     VkSemaphoreGetWin32HandleInfoKHR ghi = vku::InitStructHelper();
     ghi.semaphore = handle();
@@ -932,8 +932,8 @@ VkResult Semaphore::export_handle(HANDLE &win32_handle, VkExternalSemaphoreHandl
     return vk::GetSemaphoreWin32HandleKHR(device(), &ghi, &win32_handle);
 }
 
-VkResult Semaphore::import_handle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
-                                  VkSemaphoreImportFlags flags) {
+VkResult Semaphore::ImportHandle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                 VkSemaphoreImportFlags flags) {
     VkImportSemaphoreWin32HandleInfoKHR ihi = vku::InitStructHelper();
     ihi.semaphore = handle();
     ihi.handleType = handle_type;
@@ -943,7 +943,7 @@ VkResult Semaphore::import_handle(HANDLE win32_handle, VkExternalSemaphoreHandle
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Semaphore::export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+VkResult Semaphore::ExportHandle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     fd_handle = -1;
     VkSemaphoreGetFdInfoKHR ghi = vku::InitStructHelper();
     ghi.semaphore = handle();
@@ -951,7 +951,7 @@ VkResult Semaphore::export_handle(int &fd_handle, VkExternalSemaphoreHandleTypeF
     return vk::GetSemaphoreFdKHR(device(), &ghi, &fd_handle);
 }
 
-VkResult Semaphore::import_handle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
+VkResult Semaphore::ImportHandle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
     // Import opaque handle exported above
     VkImportSemaphoreFdInfoKHR ihi = vku::InitStructHelper();
     ihi.semaphore = handle();
@@ -1004,10 +1004,10 @@ NON_DISPATCHABLE_HANDLE_DTOR(Buffer, vk::DestroyBuffer)
 void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     init_no_mem(dev, info);
 
-    auto alloc_info = DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext);
+    auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext);
     internal_mem_.init(dev, alloc_info);
 
-    bind_memory(internal_mem_, 0);
+    BindMemory(internal_mem_, 0);
 }
 
 void Buffer::init_no_mem(const Device &dev, const VkBufferCreateInfo &info) {
@@ -1023,13 +1023,13 @@ VkMemoryRequirements Buffer::memory_requirements() const {
     return reqs;
 }
 
-void Buffer::allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Buffer::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     assert(!internal_mem_.initialized());
-    internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext));
-    bind_memory(internal_mem_, 0);
+    internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext));
+    BindMemory(internal_mem_, 0);
 }
 
-void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
+void Buffer::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
@@ -1085,7 +1085,7 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : dev
         newLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
 
-    VkImageAspectFlags image_aspect = aspect_mask(info.format);
+    VkImageAspectFlags image_aspect = AspectMask(info.format);
     SetLayout(image_aspect, newLayout);
 }
 
@@ -1093,9 +1093,9 @@ void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPrope
     init_no_mem(dev, info);
 
     if (initialized()) {
-        auto alloc_info = DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext);
+        auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext);
         internal_mem_.init(dev, alloc_info);
-        bind_memory(internal_mem_, 0);
+        BindMemory(internal_mem_, 0);
     }
 }
 
@@ -1192,20 +1192,20 @@ VkMemoryRequirements Image::memory_requirements() const {
     return reqs;
 }
 
-void Image::allocate_and_bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Image::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     assert(!internal_mem_.initialized());
-    internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props, alloc_info_pnext));
-    bind_memory(internal_mem_, 0);
+    internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext));
+    BindMemory(internal_mem_, 0);
 }
 
-void Image::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
+void Image::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindImageMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
-VkImageAspectFlags Image::aspect_mask(VkFormat format) {
+VkImageAspectFlags Image::AspectMask(VkFormat format) {
     VkImageAspectFlags image_aspect;
     if (vkuFormatIsDepthAndStencil(format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -1223,9 +1223,9 @@ void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect
                                VkImageLayout image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
     // clang-format on
     const VkImageSubresourceRange subresourceRange =
-        subresource_range(aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers);
+        SubresourceRange(aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers);
     VkImageMemoryBarrier barrier;
-    barrier = image_memory_barrier(output_mask, input_mask, image_layout_, image_layout, subresourceRange);
+    barrier = ImageMemoryBarrier(output_mask, input_mask, image_layout_, image_layout, subresourceRange);
 
     VkImageMemoryBarrier *pmemory_barrier = &barrier;
 
@@ -1369,7 +1369,7 @@ void AccelerationStructureNV::destroy() noexcept {
 }
 AccelerationStructureNV::~AccelerationStructureNV() noexcept { destroy(); }
 
-VkMemoryRequirements2 AccelerationStructureNV::memory_requirements() const {
+VkMemoryRequirements2 AccelerationStructureNV::MemoryRequirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
         (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
@@ -1382,7 +1382,7 @@ VkMemoryRequirements2 AccelerationStructureNV::memory_requirements() const {
     return memoryRequirements;
 }
 
-VkMemoryRequirements2 AccelerationStructureNV::build_scratch_memory_requirements() const {
+VkMemoryRequirements2 AccelerationStructureNV::BuildScratchMemoryRequirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
         (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
@@ -1407,8 +1407,8 @@ void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStruct
     info_ = info.info;
 
     if (init_memory) {
-        memory_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements().memoryRequirements,
-                                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        memory_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements().memoryRequirements,
+                                                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
             (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
@@ -1426,9 +1426,9 @@ void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStruct
     }
 }
 
-Buffer AccelerationStructureNV::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
-                                                      bool buffer_device_address /*= false*/) const {
-    VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
+Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
+                                                    bool buffer_device_address /*= false*/) const {
+    VkMemoryRequirements scratch_buffer_memory_requirements = BuildScratchMemoryRequirements().memoryRequirements;
     VkBufferCreateInfo create_info = {};
     create_info.size = scratch_buffer_memory_requirements.size;
     if (pCreateInfo) {
@@ -1574,7 +1574,7 @@ void Pipeline::InitDeferred(const Device &dev, const VkRayTracingPipelineCreateI
     const VkResult result =
         vk::CreateRayTracingPipelinesKHR(dev.handle(), deferred_op, VK_NULL_HANDLE, 1, &info, nullptr, &handle());
     ASSERT_TRUE(result == VK_OPERATION_DEFERRED_KHR || result == VK_OPERATION_NOT_DEFERRED_KHR || result == VK_SUCCESS);
-    NonDispHandle::set_device(dev.handle());
+    NonDispHandle::SetDevice(dev.handle());
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
@@ -1607,14 +1607,14 @@ void DescriptorSetLayout::init(const Device &dev, const VkDescriptorSetLayoutCre
 NON_DISPATCHABLE_HANDLE_DTOR(DescriptorPool, vk::DestroyDescriptorPool)
 
 void DescriptorPool::init(const Device &dev, const VkDescriptorPoolCreateInfo &info) {
-    setDynamicUsage(info.flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
+    dynamic_usage_ = (info.flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT) != 0;
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorPool, dev, &info);
 }
 
 void DescriptorPool::reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
 
-std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
-                                                        const std::vector<const DescriptorSetLayout *> &layouts) {
+std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev,
+                                                          const std::vector<const DescriptorSetLayout *> &layouts) {
     const std::vector<VkDescriptorSetLayout> layout_handles = MakeVkHandles<VkDescriptorSetLayout>(layouts);
 
     std::vector<VkDescriptorSet> set_handles;
@@ -1636,12 +1636,12 @@ std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
     return sets;
 }
 
-std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count) {
-    return alloc_sets(dev, std::vector<const DescriptorSetLayout *>(count, &layout));
+std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count) {
+    return AllocateSets(dev, std::vector<const DescriptorSetLayout *>(count, &layout));
 }
 
-DescriptorSet *DescriptorPool::alloc_sets(const Device &dev, const DescriptorSetLayout &layout) {
-    std::vector<DescriptorSet *> set = alloc_sets(dev, layout, 1);
+DescriptorSet *DescriptorPool::AllocateSets(const Device &dev, const DescriptorSetLayout &layout) {
+    std::vector<DescriptorSet *> set = AllocateSets(dev, layout, 1);
     return (set.empty()) ? NULL : set[0];
 }
 void DescriptorSet::destroy() noexcept {
@@ -1649,7 +1649,7 @@ void DescriptorSet::destroy() noexcept {
         return;
     }
     // Only call vk::Free* on sets allocated from pool with usage *_DYNAMIC
-    if (containing_pool_->getDynamicUsage()) {
+    if (containing_pool_->GetDynamicUsage()) {
         VkDescriptorSet sets[1] = {handle()};
         ASSERT_EQ(VK_SUCCESS, vk::FreeDescriptorSets(device(), containing_pool_->handle(), 1, sets));
     }

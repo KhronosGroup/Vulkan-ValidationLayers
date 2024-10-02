@@ -186,8 +186,8 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     }
     mem.init(*m_device, alloc_info);
 
-    buffer.bind_memory(mem, 0);
-    image.bind_memory(mem, buffer_memory_requirements.size);
+    buffer.BindMemory(mem, 0);
+    image.BindMemory(mem, buffer_memory_requirements.size);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
@@ -233,8 +233,8 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
 
     mem2.init(*m_device, alloc_info);
 
-    buffer2.bind_memory(mem2, 0);
-    image2.bind_memory(mem2, buffer_memory_requirements.size);
+    buffer2.BindMemory(mem2, 0);
+    image2.BindMemory(mem2, buffer_memory_requirements.size);
 
     m_command_buffer.begin();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image2.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer2.handle(), 1, &region);
@@ -388,12 +388,12 @@ TEST_F(PositiveCopyBufferImage, BufferCopiesStressTest) {
     VkMemoryRequirements buffer_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), src_buffer.handle(), &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
-        vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     buffer_mem_alloc.allocationSize *= 2;
 
     vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
-    src_buffer.bind_memory(buffer_mem, 0);
-    dst_buffer.bind_memory(buffer_mem, 1024);
+    src_buffer.BindMemory(buffer_mem, 0);
+    dst_buffer.BindMemory(buffer_mem, 1024);
 
     constexpr VkDeviceSize copy_size = 1024 / 4;
     std::vector<VkBufferCopy> copy_info_list(4);

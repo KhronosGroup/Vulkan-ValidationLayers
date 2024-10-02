@@ -831,7 +831,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
 
     // Create a second device with the feature enabled.
     vkt::QueueCreateInfoArray queue_info(m_device->phy().queue_properties_);
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
 
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&host_query_reset_features);
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -988,7 +988,7 @@ TEST_F(NegativeQuery, PoolCreate) {
 
     VkDevice local_device;
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     // Intentionally disable pipeline stats
     features.pipelineStatisticsQuery = VK_FALSE;
     device_create_info.queueCreateInfoCount = queue_info.size();
@@ -1113,7 +1113,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     RETURN_IF_SKIP(Init());
 
     std::vector<const char *> device_extension_names;
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
 
     // Test for precise bit when query type is not OCCLUSION
     if (features.occlusionQueryPrecise) {

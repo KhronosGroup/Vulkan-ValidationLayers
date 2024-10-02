@@ -152,7 +152,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
 
-    bool sparse_support = (m_device->phy().features().sparseBinding == VK_TRUE);
+    bool sparse_support = (m_device->phy().Features().sparseBinding == VK_TRUE);
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;

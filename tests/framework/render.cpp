@@ -123,9 +123,9 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
 
     const auto enabled_layers = instance_layers_;  // assumes instance_layers_ contains enabled layers
 
-    auto extensions = device_obj.extensions();
+    auto extensions = device_obj.Extensions();
     for (const auto &layer : enabled_layers) {
-        const auto layer_extensions = device_obj.extensions(layer);
+        const auto layer_extensions = device_obj.Extensions(layer);
         extensions.insert(extensions.end(), layer_extensions.begin(), layer_extensions.end());
     }
 

@@ -244,7 +244,7 @@ TEST_F(NegativeWsi, SwapchainImage) {
     CreateImageTest(*this, &image_create_info, vuid);
 
     // flags
-    if (m_device->phy().features().sparseBinding) {
+    if (m_device->phy().Features().sparseBinding) {
         image_create_info = good_create_info;
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
         CreateImageTest(*this, &image_create_info, vuid);

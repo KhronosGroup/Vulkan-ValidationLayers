@@ -3952,17 +3952,17 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     VkClearValue clear_value;
     clear_value.color = {{0, 0, 0, 0}};
 
-    VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
-    image_memory_barrier.srcAccessMask = VK_ACCESS_NONE;
-    image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    image_memory_barrier.image = image.handle();
-    image_memory_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    VkImageMemoryBarrier ImageMemoryBarrier = vku::InitStructHelper();
+    ImageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
+    ImageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    ImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    ImageMemoryBarrier.image = image.handle();
+    ImageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
 
     m_command_buffer.begin();
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &ImageMemoryBarrier);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-initialLayout-00900");
     m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     m_errorMonitor->VerifyFound();

@@ -487,8 +487,8 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     vkt::DeviceMemory *image_memory = new vkt::DeviceMemory;
-    image_memory->init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
-    image.bind_memory(*image_memory, 0);
+    image_memory->init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.memory_requirements(), 0));
+    image.BindMemory(*image_memory, 0);
 
     VkImageViewCreateInfo ivci = {
         VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -1023,7 +1023,7 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
     VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore export_semaphore(*m_device, create_info);
     int fd = -1;
-    ASSERT_EQ(VK_SUCCESS, export_semaphore.export_handle(fd, handle_type));
+    ASSERT_EQ(VK_SUCCESS, export_semaphore.ExportHandle(fd, handle_type));
 
     // Create a new semaphore and put it to work
     vkt::Semaphore semaphore(*m_device);
@@ -1034,7 +1034,7 @@ TEST_F(NegativeObjectLifetime, ImportFdSemaphoreInUse) {
 
     // Try to import fd handle while semaphore is still in use
     m_errorMonitor->SetDesiredError("VUID-vkImportSemaphoreFdKHR-semaphore-01142");
-    semaphore.import_handle(fd, handle_type);
+    semaphore.ImportHandle(fd, handle_type);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -1056,7 +1056,7 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore export_semaphore(*m_device, create_info);
     HANDLE handle = NULL;
-    ASSERT_EQ(VK_SUCCESS, export_semaphore.export_handle(handle, handle_type));
+    ASSERT_EQ(VK_SUCCESS, export_semaphore.ExportHandle(handle, handle_type));
 
     // Create a new semaphore and put it to work
     vkt::Semaphore semaphore(*m_device);
@@ -1068,7 +1068,7 @@ TEST_F(NegativeObjectLifetime, ImportWin32SemaphoreInUse) {
     // Try to import Win32 handle while semaphore is still in use
     // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507
     m_errorMonitor->SetDesiredError("VUID_Undefined");
-    semaphore.import_handle(handle, handle_type);
+    semaphore.ImportHandle(handle, handle_type);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -1129,7 +1129,7 @@ TEST_F(NegativeObjectLifetime, LeakABuffer) {
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
-    auto features = vkt::PhysicalDevice(gpu()).features();
+    auto features = vkt::PhysicalDevice(gpu()).Features();
     if (!features.sparseBinding) {
         GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
     }

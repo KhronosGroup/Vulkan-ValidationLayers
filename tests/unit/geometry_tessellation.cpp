@@ -28,7 +28,7 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     InitRenderTarget();
 
     std::vector<const char *> device_extension_names;
-    auto features = m_device->phy().features();
+    auto features = m_device->phy().Features();
     // Make sure gs & ts are disabled
     features.geometryShader = false;
     features.tessellationShader = false;

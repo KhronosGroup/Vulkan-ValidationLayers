@@ -972,7 +972,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
     ASSERT_TRUE(pool.initialized());
 
-    std::unique_ptr<vkt::DescriptorSet> ds(pool.alloc_sets(*m_device, dsl));
+    std::unique_ptr<vkt::DescriptorSet> ds(pool.AllocateSets(*m_device, dsl));
     ASSERT_TRUE(ds);
 
     VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
@@ -1231,12 +1231,12 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfoAddressRange) {
 
     VkMemoryAllocateFlagsInfo memflagsinfo = vku::InitStructHelper();
     memflagsinfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    auto mem_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, mem_reqs, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    auto mem_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, mem_reqs, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     mem_alloc_info.pNext = &memflagsinfo;
 
     vkt::DeviceMemory mem(*m_device, mem_alloc_info);
 
-    d_buffer.bind_memory(mem, 0);
+    d_buffer.BindMemory(mem, 0);
 
     dai.address = d_buffer.address();
     dai.range = 4096 * buffer_ci.size;
@@ -1333,7 +1333,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferCaptureReplay) {
         VkMemoryRequirements mem_reqs;
         vk::GetBufferMemoryRequirements(device(), d_buffer.handle(), &mem_reqs);
 
-        auto mem_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, mem_reqs, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        auto mem_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, mem_reqs, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         // no alloc flags
         vkt::DeviceMemory mem(*m_device, mem_alloc_info);
 
@@ -1362,7 +1362,7 @@ TEST_F(NegativeDescriptorBuffer, DescriptorBufferCaptureReplay) {
         VkMemoryRequirements mem_reqs;
         vk::GetImageMemoryRequirements(device(), temp_image.handle(), &mem_reqs);
 
-        auto mem_alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        auto mem_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         // no allocate flags
         vkt::DeviceMemory mem(*m_device, mem_alloc_info);
 

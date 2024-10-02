@@ -42,9 +42,9 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    auto image_subres = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
-    auto image_barrier = image.image_memory_barrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
-                                                    image.Layout(), image.Layout(), image_subres);
+    auto image_subres = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
+    auto image_barrier = image.ImageMemoryBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                                                  image.Layout(), image.Layout(), image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
 
@@ -82,9 +82,8 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     vkt::CommandBuffer no_gfx_cb(*m_device, no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    auto buffer_barrier =
-        buffer.buffer_memory_barrier(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR, VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
-                                     VK_ACCESS_2_NONE_KHR, VK_ACCESS_2_NONE_KHR, 0, VK_WHOLE_SIZE);
+    auto buffer_barrier = buffer.BufferMemoryBarrier(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR, VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
+                                                     VK_ACCESS_2_NONE_KHR, VK_ACCESS_2_NONE_KHR, 0, VK_WHOLE_SIZE);
 
     // Let gfx own it.
     buffer_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -767,8 +766,8 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
-    export_semaphore.export_handle(ext_handle, handle_type);
-    import_semaphore.import_handle(ext_handle, handle_type);
+    export_semaphore.ExportHandle(ext_handle, handle_type);
+    import_semaphore.ImportHandle(ext_handle, handle_type);
 
     // Signal the exported semaphore and wait on the imported semaphore
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
@@ -783,7 +782,7 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
 
     vk::QueueSubmit(m_default_queue->handle(), si.size(), si.data(), VK_NULL_HANDLE);
 
-    if (m_device->phy().features().sparseBinding) {
+    if (m_device->phy().Features().sparseBinding) {
         // Signal the imported semaphore and wait on the exported semaphore
         std::vector<VkBindSparseInfo> bi(4, vku::InitStruct<VkBindSparseInfo>());
         bi[0].signalSemaphoreCount = 1;
@@ -851,8 +850,8 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     vkt::Semaphore import_semaphore(*m_device, sci);
 
     ExternalHandle ext_handle{};
-    export_semaphore.export_handle(ext_handle, handle_type);
-    import_semaphore.import_handle(ext_handle, handle_type);
+    export_semaphore.ExportHandle(ext_handle, handle_type);
+    import_semaphore.ImportHandle(ext_handle, handle_type);
 
     uint64_t wait_value = 1;
     uint64_t signal_value = 12345;
@@ -925,8 +924,8 @@ TEST_F(PositiveSyncObject, ExternalFence) {
 
     // Export fence payload to an opaque handle
     ExternalHandle ext_fence{};
-    export_fence.export_handle(ext_fence, handle_type);
-    import_fence.import_handle(ext_fence, handle_type);
+    export_fence.ExportHandle(ext_fence, handle_type);
+    import_fence.ImportHandle(ext_fence, handle_type);
 
     // Signal the exported fence and wait on the imported fence
     vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, export_fence.handle());
@@ -991,7 +990,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
 
         vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, export_fence.handle());
         int fd_handle = -1;
-        export_fence.export_handle(fd_handle, handle_type);
+        export_fence.ExportHandle(fd_handle, handle_type);
 #ifndef VK_USE_PLATFORM_WIN32_KHR
         close(fd_handle);
 #endif
@@ -1039,7 +1038,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
         vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, export_fence.handle());
 
         int fd_handle = -1;
-        export_fence.export_handle(fd_handle, handle_type);
+        export_fence.ExportHandle(fd_handle, handle_type);
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
         // Wait until command buffer is finished using the exported handle.
@@ -1159,14 +1158,14 @@ TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkImageSubresource image_sub = vkt::Image::subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
-    VkImageSubresourceRange image_sub_range = vkt::Image::subresource_range(image_sub);
+    VkImageSubresource image_sub = vkt::Image::Subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
+    VkImageSubresourceRange image_sub_range = vkt::Image::SubresourceRange(image_sub);
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     m_command_buffer.begin();
 
     {
-        VkImageMemoryBarrier image_barriers[] = {image.image_memory_barrier(
+        VkImageMemoryBarrier image_barriers[] = {image.ImageMemoryBarrier(
             0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
 
         vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
@@ -1177,10 +1176,10 @@ TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     // Is it undefined behavior? Write a comment and provide references to the spec if that's allowed.
     {
         VkImageMemoryBarrier image_barriers[] = {
-            image.image_memory_barrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, image_sub_range),
-            image.image_memory_barrier(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_GENERAL,
-                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, image_sub_range)};
+            image.ImageMemoryBarrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, image_sub_range),
+            image.ImageMemoryBarrier(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_GENERAL,
+                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, image_sub_range)};
 
         vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                0, nullptr, 0, nullptr, 2, image_barriers);
@@ -1528,7 +1527,7 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
 
     // This caused original issue: exported semaphore failed to retire queue operations.
     HANDLE win32_handle = NULL;
-    ASSERT_EQ(VK_SUCCESS, semaphore.export_handle(win32_handle, handle_type));
+    ASSERT_EQ(VK_SUCCESS, semaphore.ExportHandle(win32_handle, handle_type));
 
     // Put semaphore to work
     const uint64_t signal_value = 1;
@@ -1925,11 +1924,11 @@ TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
     signal_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     ExternalHandle ext_handle{};
-    semaphore.export_handle(ext_handle, handle_type);
+    semaphore.ExportHandle(ext_handle, handle_type);
 
     // Wait semaphore is imported from the signaling one.
     vkt::Semaphore semaphore2(*m_device);
-    semaphore2.import_handle(ext_handle, handle_type);
+    semaphore2.ImportHandle(ext_handle, handle_type);
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphore = semaphore2;
     // Specify some payload value, even if it's a binary semaphore. It should be ignored.
@@ -2047,7 +2046,7 @@ TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore) {
     const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore semaphore(*m_device, create_info);
     HANDLE win32_handle = NULL;
-    semaphore.export_handle(win32_handle, handle_type);
+    semaphore.ExportHandle(win32_handle, handle_type);
 
     // The problem was that GetSemaphoreCounterValue creates temporary signal to make forward progress,
     // but the code path for external semaphore failed to retire that signal. Being stuck that signal
@@ -2084,7 +2083,7 @@ TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore2) {
     const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Semaphore semaphore(*m_device, create_info);
     HANDLE win32_handle = NULL;
-    semaphore.export_handle(win32_handle, handle_type);
+    semaphore.ExportHandle(win32_handle, handle_type);
 
     // Slight variation of the previous test to ensure that issue was not related to semaphore initial value
     semaphore.Signal(1);

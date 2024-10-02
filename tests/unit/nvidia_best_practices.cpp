@@ -127,7 +127,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
-    if (!m_device->phy().features().sparseBinding) {
+    if (!m_device->phy().Features().sparseBinding) {
         GTEST_SKIP() << "Test requires sparseBinding";
     }
 

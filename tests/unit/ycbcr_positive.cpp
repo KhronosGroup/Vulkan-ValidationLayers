@@ -164,7 +164,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 
     vkt::Image image(*m_device, ci, vkt::no_mem);
     vkt::DeviceMemory mem_obj;
-    mem_obj.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
+    mem_obj.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.memory_requirements(), 0));
 
     vk::BindImageMemory(device(), image, mem_obj, 0);
 

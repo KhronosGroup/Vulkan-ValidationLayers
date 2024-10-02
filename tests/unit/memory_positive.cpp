@@ -174,7 +174,7 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
 
     // Allocate and bind buffer memory
     vkt::DeviceMemory buffer_memory;
-    buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_reqs.memoryRequirements, 0));
+    buffer_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_reqs.memoryRequirements, 0));
     vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
 
     // Create a test image
@@ -195,7 +195,7 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
 
     // Allocate and bind image memory
     vkt::DeviceMemory image_memory;
-    image_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image_reqs.memoryRequirements, 0));
+    image_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_reqs.memoryRequirements, 0));
     vk::BindImageMemory(device(), image.handle(), image_memory.handle(), 0);
 
     // Now execute arbitrary commands that use the test buffer and image
@@ -205,9 +205,9 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_WHOLE_SIZE, 0);
 
     // Transition and clear image
-    const auto subresource_range = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
-    const auto barrier = image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                    VK_IMAGE_LAYOUT_GENERAL, subresource_range);
+    const auto subresource_range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    const auto barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                  VK_IMAGE_LAYOUT_GENERAL, subresource_range);
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     const VkClearColorValue color = {};
@@ -231,7 +231,7 @@ TEST_F(PositiveMemory, BindMemory2) {
 
     // Allocate buffer memory
     vkt::DeviceMemory buffer_memory;
-    buffer_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0));
+    buffer_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0));
 
     // Bind buffer memory with extension
     VkBindBufferMemoryInfoKHR buffer_bind_info = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO_KHR, nullptr, buffer.handle(),
@@ -250,7 +250,7 @@ TEST_F(PositiveMemory, BindMemory2) {
 
     // Allocate image memory
     vkt::DeviceMemory image_memory;
-    image_memory.init(*m_device, vkt::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), 0));
+    image_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.memory_requirements(), 0));
 
     // Bind image memory with extension
     VkBindImageMemoryInfoKHR image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image.handle(),
@@ -264,9 +264,9 @@ TEST_F(PositiveMemory, BindMemory2) {
     vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_WHOLE_SIZE, 0);
 
     // Transition and clear image
-    const auto subresource_range = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
-    const auto barrier = image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                    VK_IMAGE_LAYOUT_GENERAL, subresource_range);
+    const auto subresource_range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    const auto barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                  VK_IMAGE_LAYOUT_GENERAL, subresource_range);
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     const VkClearColorValue color = {};

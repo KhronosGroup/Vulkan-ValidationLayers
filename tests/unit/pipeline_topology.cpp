@@ -242,7 +242,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
-    if (m_device->phy().features().tessellationShader) {
+    if (m_device->phy().Features().tessellationShader) {
         topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
                                       "VUID-VkGraphicsPipelineCreateInfo-topology-08889"};

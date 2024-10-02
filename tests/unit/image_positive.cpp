@@ -54,8 +54,8 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    auto image_subres = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
-    auto image_barrier = image.image_memory_barrier(0, 0, image.Layout(), image.Layout(), image_subres);
+    auto image_subres = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
+    auto image_barrier = image.ImageMemoryBarrier(0, 0, image.Layout(), image.Layout(), image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
 
@@ -119,7 +119,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     std::memset(pData, 0xCADECADE, static_cast<size_t>(buff_size));
     mem.unmap();
 
-    buffer->bind_memory(mem, 0);
+    buffer->BindMemory(mem, 0);
 
     // NOW, destroy the buffer. Obviously, the resource no longer occupies this
     // memory. In fact, it was never used by the GPU.
@@ -128,7 +128,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     m_device->Wait();
 
     // VALIDATION FAILURE:
-    image.bind_memory(mem, 0);
+    image.BindMemory(mem, 0);
 }
 
 TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) {
@@ -358,9 +358,9 @@ TEST_F(PositiveImage, SubresourceLayout) {
     vkt::Image image(*m_device, image_ci);
 
     m_command_buffer.begin();
-    const auto subresource_range = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
-    auto barrier = image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresource_range);
+    const auto subresource_range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    auto barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresource_range);
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;

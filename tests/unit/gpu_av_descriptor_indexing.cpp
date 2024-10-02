@@ -640,7 +640,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
-    if (!m_device->phy().features().tessellationShader) {
+    if (!m_device->phy().Features().tessellationShader) {
         GTEST_SKIP() << "Tessellation not supported";
     }
 
@@ -758,7 +758,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
-    if (!m_device->phy().features().geometryShader) {
+    if (!m_device->phy().Features().geometryShader) {
         GTEST_SKIP() << "Geometry shaders not supported";
     }
 

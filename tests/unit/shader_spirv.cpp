@@ -1388,7 +1388,7 @@ TEST_F(NegativeShaderSpirv, SpecializationSizeMismatch) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
-    if (m_device->phy().features().shaderFloat64) {
+    if (m_device->phy().Features().shaderFloat64) {
         float64_support = true;
     }
 

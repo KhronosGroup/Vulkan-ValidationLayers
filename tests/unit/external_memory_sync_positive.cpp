@@ -70,7 +70,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFd) {
 
     VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper(&dedicated_info);
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0, &export_info);
 
     vkt::DeviceMemory memory_export;
     memory_export.init(*m_device, alloc_info);
@@ -86,7 +86,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFd) {
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     import_info.fd = fd;
 
-    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &import_info);
+    alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0, &import_info);
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
 }
 
@@ -180,7 +180,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     vkt::Buffer buffer_import(*m_device, buffer_info, vkt::no_mem);
 
     // Allocation info
-    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_export.memory_requirements(), mem_flags);
 
     // Add export allocation info to pNext chain
     VkExportMemoryAllocateInfoKHR export_info = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR, nullptr, handle_type};
@@ -198,7 +198,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     memory_export.init(*m_device, alloc_info);
 
     // Bind exported memory
-    buffer_export.bind_memory(memory_export, 0);
+    buffer_export.BindMemory(memory_export, 0);
 
 #ifdef _WIN32
     // Export memory to handle
@@ -219,13 +219,13 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
 #endif
 
     // Import memory
-    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import.memory_requirements(), mem_flags);
+    alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_import.memory_requirements(), mem_flags);
     alloc_info.pNext = &import_info;
     vkt::DeviceMemory memory_import;
     memory_import.init(*m_device, alloc_info);
 
     // Bind imported memory
-    buffer_import.bind_memory(memory_import, 0);
+    buffer_import.BindMemory(memory_import, 0);
 
     // Create test buffers and fill input buffer
     vkt::Buffer buffer_input(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -283,7 +283,7 @@ TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {
     VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&dedicated_info);
     export_memory_info.handleTypes = handle_type;
 
-    buffer.allocate_and_bind_memory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
+    buffer.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
 }
 
 TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
@@ -321,10 +321,10 @@ TEST_F(PositiveExternalMemorySync, SyncFdSemaphore) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &si, VK_NULL_HANDLE);
 
     int fd_handle = -1;
-    binary_sem.export_handle(fd_handle, handle_type);
+    binary_sem.ExportHandle(fd_handle, handle_type);
 
     vkt::Semaphore import_semaphore(*m_device);
-    import_semaphore.import_handle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
+    import_semaphore.ImportHandle(fd_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
 
     m_default_queue->Wait();
 }
@@ -476,18 +476,18 @@ TEST_F(PositiveExternalMemorySync, ExportFromImportedFence) {
     const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
     vkt::Fence fence(*m_device, create_info);
     HANDLE handle = NULL;
-    fence.export_handle(handle, handle_type);
+    fence.ExportHandle(handle, handle_type);
 
     // create fence and import payload
     VkExportFenceCreateInfo export_info2 = vku::InitStructHelper();  // prepare to export from imported fence
     export_info2.handleTypes = handle_type;
     const VkFenceCreateInfo create_info2 = vku::InitStructHelper(&export_info2);
     vkt::Fence import_fence(*m_device, create_info2);
-    import_fence.import_handle(handle, handle_type);
+    import_fence.ImportHandle(handle, handle_type);
 
     // export from imported fence
     HANDLE handle2 = NULL;
-    import_fence.export_handle(handle2, handle_type);
+    import_fence.ExportHandle(handle2, handle_type);
 
     ::CloseHandle(handle);
     if (handle2 != handle) {
@@ -521,7 +521,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
 
     VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper(&dedicated_info);
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0, &export_info);
 
     vkt::DeviceMemory memory_export;
     memory_export.init(*m_device, alloc_info);
@@ -540,7 +540,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     import_info.handle = handle;
 
-    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer2.memory_requirements(), 0, &import_info);
+    alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer2.memory_requirements(), 0, &import_info);
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
 
     // "For handle types defined as NT handles, the handles returned by vkGetFenceWin32HandleKHR are owned by the application. To
@@ -569,8 +569,8 @@ TEST_F(PositiveExternalMemorySync, MultipleExportOpaqueFd) {
     vkt::Semaphore semaphore(*m_device, create_info);
 
     int handle = 0;
-    semaphore.export_handle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
-    semaphore.export_handle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
+    semaphore.ExportHandle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
+    semaphore.ExportHandle(handle, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
 }
 
 TEST_F(PositiveExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
@@ -603,7 +603,7 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
 
     VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper(&dedicated_info);
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-    auto alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), 0, &export_info);
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.memory_requirements(), 0, &export_info);
 
     vkt::DeviceMemory memory_export;
     memory_export.init(*m_device, alloc_info);
@@ -623,6 +623,6 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     import_info.fd = fd;
 
-    alloc_info = vkt::DeviceMemory::get_resource_alloc_info(*m_device, buffer2.memory_requirements(), 0, &import_info);
+    alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer2.memory_requirements(), 0, &import_info);
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
 }

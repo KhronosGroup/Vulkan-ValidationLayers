@@ -1684,7 +1684,7 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
         }
     } else {
         RETURN_IF_SKIP(InitState());
-        if (!m_device->phy().features().sampleRateShading) {
+        if (!m_device->phy().Features().sampleRateShading) {
             GTEST_SKIP() << "sampleRateShading not supported";
         }
     }
