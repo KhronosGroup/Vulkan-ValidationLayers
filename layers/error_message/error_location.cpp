@@ -121,6 +121,11 @@ bool operator<(const Key& lhs, const Key& rhs) {
     return false;
 }
 
+bool operator==(const Key& lhs, const Key& rhs) {
+    return lhs.function == rhs.function && lhs.structure == rhs.structure && lhs.field == rhs.field &&
+           lhs.recurse_field == rhs.recurse_field;
+}
+
 bool operator==(const Key& key, const Location& loc) {
     assert(key.function != Func::Empty || key.structure != Struct::Empty);
     assert(loc.function != Func::Empty);

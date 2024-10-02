@@ -140,8 +140,8 @@ VkAccessFlags2KHR CompatibleAccessMask(VkPipelineStageFlags2KHR stage_mask) {
     return result;
 }
 
-VkPipelineStageFlags2KHR RelatedPipelineStages(VkPipelineStageFlags2KHR stage_mask,
-                                               const std::map<VkPipelineStageFlags2KHR, VkPipelineStageFlags2KHR> &map) {
+static VkPipelineStageFlags2KHR RelatedPipelineStages(
+    VkPipelineStageFlags2 stage_mask, const vvl::unordered_map<VkPipelineStageFlags2KHR, VkPipelineStageFlags2KHR> &map) {
     VkPipelineStageFlags2KHR unscanned = stage_mask;
     VkPipelineStageFlags2KHR related = 0;
     for (const auto &entry : map) {
@@ -203,7 +203,7 @@ std::string StringAccessFlags(VkAccessFlags2KHR mask) {
 }
 
 ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {
-    static const std::map<VkShaderStageFlagBits, ShaderStageAccesses> map = {
+    static const vvl::unordered_map<VkShaderStageFlagBits, ShaderStageAccesses> map = {
         // clang-format off
         {VK_SHADER_STAGE_VERTEX_BIT, {
             SYNC_VERTEX_SHADER_SHADER_SAMPLED_READ,
