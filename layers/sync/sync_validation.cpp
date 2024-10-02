@@ -3211,9 +3211,13 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!syncval_settings.submit_time_validation) return skip;
 
+    std::lock_guard lock_guard(queue_submit_mutex_);
+
     ClearPending();
 
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, *this);
+    QueueSubmitCmdState cmd_state_obj(*this);
+    QueueSubmitCmdState* cmd_state = &cmd_state_obj;
+
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -3297,6 +3301,10 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Check if timeline signals resolve existing wait-before-signal dependencies
     if (new_timeline_signals) {
         skip |= PropagateTimelineSignals(signals_update, error_obj);
+    }
+
+    if (!skip) {
+        const_cast<SyncValidator *>(this)->RecordQueueSubmit(queue, fence, cmd_state);
     }
 
     // Note that if we skip, guard cleans up for us, but cannot release the reserved tag range
@@ -3402,20 +3410,13 @@ bool SyncValidator::ProcessUnresolvedBatches(std::vector<UnresolvedQueue> &queue
 void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                               const RecordObject &record_obj) {
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
-
-    RecordQueueSubmit(queue, fence, record_obj);
 }
 
-void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, const RecordObject &record_obj) {
+void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, QueueSubmitCmdState *cmd_state) {
     // If this return is above the TlsGuard, then the Validate phase return must also be.
     if (!syncval_settings.submit_time_validation) return;  // Queue submit validation disabled
 
-    // The earliest return (when enabled), must be *after* the TlsGuard, as it is the TlsGuard that cleans up the cmd_state
-    // static payload
-    vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
-
-    if (VK_SUCCESS != record_obj.result) return;  // dispatched QueueSubmit failed
-    if (!cmd_state->queue) return;     // Validation couldn't find a valid queue object
+    if (!cmd_state->queue) return;  // Validation couldn't find a valid queue object
 
     // Don't need to look up the queue state again, but we need a non-const version
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
@@ -3451,7 +3452,6 @@ void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submit
 void SyncValidator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                                const RecordObject &record_obj) {
     StateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
-    RecordQueueSubmit(queue, fence, record_obj);
 }
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject &record_obj) {
