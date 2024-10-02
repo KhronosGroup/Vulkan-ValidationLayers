@@ -154,6 +154,7 @@ static VkPipeline GetDrawValidationPipeline(Validator &gpuav, SharedDrawValidati
     input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkPipelineRasterizationStateCreateInfo rasterization_state = vku::InitStructHelper();
     rasterization_state.rasterizerDiscardEnable = VK_TRUE;
+    rasterization_state.lineWidth = 1.0f; // Incase lineWidth is not enabled
     VkPipelineColorBlendStateCreateInfo color_blend_state = vku::InitStructHelper();
 
     pipeline_ci.pVertexInputState = &vertex_input_state;
