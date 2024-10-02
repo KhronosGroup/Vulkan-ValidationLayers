@@ -552,7 +552,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
 TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::wideLines);
+    AddDisabledFeature(vkt::Feature::wideLines); // silence MacOS issue
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
 
     AddDisabledFeature(vkt::Feature::drawIndirectFirstInstance);
@@ -576,6 +576,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.rs_state_ci_.lineWidth = 1.0f;
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->SetDesiredError("VUID-VkDrawIndirectCommand-firstInstance-00501");
