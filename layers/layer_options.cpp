@@ -1080,10 +1080,18 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             settings_data->enables[debug_printf_validation] = true;
             settings_data->enables[gpu_validation] = false;
 
-            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_ALL_EXT);
+            // Tried to use VK_VALIDATION_FEATURE_DISABLE_ALL_EXT but when running on Android
+            // (--gtest_filter="NegativeGpuAVDebugPrintf.BasicLayerSettingsPrintfPreset:NegativeWsi.UseDestroyedSwapchain")
+            // Was getting asserts in VulkanTypedHandle::Cast() Simple fix was to just not disable
+            // VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT);
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT);
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT);
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT);
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT);
+            SetValidationFeatureDisable(settings_data->disables, VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT);
             setting_warnings.emplace_back(
-                "Setting VK_VALIDATION_FEATURE_DISABLE_ALL_EXT so that only DebugPrintf will be used and everything is else is "
-                "disabled.");
+                "Disabling as much of normal validation as possible so that only DebugPrintf will be running.");
         }
     }
 
