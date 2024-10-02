@@ -2473,21 +2473,10 @@ TEST_F(NegativeDescriptors, InlineUniformBlockEXT) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Enable descriptor indexing if supported, but don't require it.
-    bool has_descriptor_indexing =
-        IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_features = vku::InitStructHelper();
-    void *pNext = has_descriptor_indexing ? &descriptor_indexing_features : nullptr;
-    // Create a device that enables inline_uniform_block
-    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block_features = vku::InitStructHelper(pNext);
-    auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(inline_uniform_props);
@@ -2907,15 +2896,8 @@ TEST_F(NegativeDescriptors, NullDescriptorsDisabled) {
 TEST_F(NegativeDescriptors, NullDescriptorsEnabled) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
-
-    if (!robustness2_features.nullDescriptor) {
-        GTEST_SKIP() << "nullDescriptor feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -3995,13 +3977,8 @@ TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
-    if (indexing_features.descriptorBindingVariableDescriptorCount == VK_FALSE) {
-        GTEST_SKIP() << "descriptorBindingVariableDescriptorCount feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
 
     VkDescriptorBindingFlagsEXT flags[2] = {0, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();

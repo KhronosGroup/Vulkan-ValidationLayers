@@ -548,13 +548,9 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
     // VK_EXT_load_store_op_none is needed to disable render pass load/store accesses, so clearing
     // attachment inside a render pass can create hazards with the copy operations outside render pass.
     AddRequiredExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     ClearAttachmentHazardHelper helper(*this, *m_device, *m_default_queue, m_command_buffer);
 
@@ -1553,13 +1549,9 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
 TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     TEST_DESCRIPTION("Copying to attachment creates hazard with attachment load operation");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -1604,13 +1596,9 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
 TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     TEST_DESCRIPTION("Copying to attachment creates hazard with attachment store operation");
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
-    if (!dynamic_rendering_features.dynamicRendering) {
-        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &dynamic_rendering_features));
+    RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
     m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);

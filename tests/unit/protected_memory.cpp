@@ -601,20 +601,11 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
 
     // protect memory added in VK 1.1
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
+    AddRequiredFeature(vkt::Feature::protectedMemory);
     RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceProtectedMemoryFeatures protected_memory_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
-
-    if (protected_memory_features.protectedMemory == VK_FALSE) {
-        GTEST_SKIP() << "protectedMemory feature not supported";
-    };
-
     // Turns m_command_buffer into a protected command buffer
-    RETURN_IF_SKIP(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
 
     InitRenderTarget();
 

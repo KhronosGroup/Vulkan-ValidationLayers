@@ -579,12 +579,8 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
 TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using constant indices. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
-    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -650,12 +646,8 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     TEST_DESCRIPTION("Access different elements of the texel buffer array using constant indices. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (!features2.features.fragmentStoresAndAtomics) {
-        GTEST_SKIP() << "Test requires (unsupported) fragmentStoresAndAtomics";
-    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 

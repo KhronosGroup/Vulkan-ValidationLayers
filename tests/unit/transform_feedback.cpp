@@ -637,23 +637,10 @@ TEST_F(NegativeTransformFeedback, RuntimeSpirv) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
-        vku::InitStructHelper();
-    transform_feedback_features.transformFeedback = VK_TRUE;
-    transform_feedback_features.geometryStreams = VK_TRUE;
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper(&transform_feedback_features);
-
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (features2.features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "Device does not support the required geometry shader features";
-    }
-    if (!transform_feedback_features.transformFeedback || !transform_feedback_features.geometryStreams) {
-        GTEST_SKIP() << "transformFeedback or geometryStreams feature is not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddRequiredFeature(vkt::Feature::geometryStreams);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();

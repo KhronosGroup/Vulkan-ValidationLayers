@@ -3274,17 +3274,9 @@ TEST_F(NegativeImage, Stencil) {
 TEST_F(NegativeImage, AstcDecodeMode) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_astc_decode_mode");
     AddRequiredExtensions(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceASTCDecodeFeaturesEXT astc_decode_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(astc_decode_features);
-    if (!features2.features.textureCompressionASTC_LDR) {
-        GTEST_SKIP() << "textureCompressionASTC_LDR feature not supported";
-    }
-
-    // Disable feature
-    astc_decode_features.decodeModeSharedExponent = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::textureCompressionASTC_LDR);
+    AddDisabledFeature(vkt::Feature::decodeModeSharedExponent);
+    RETURN_IF_SKIP(Init());
 
     const VkFormat rgba_format = VK_FORMAT_R8G8B8A8_UNORM;
     const VkFormat ldr_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
@@ -3413,18 +3405,9 @@ TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
 
 TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
     TEST_DESCRIPTION("Do not use VkSamplerYcbcrConversionInfo when required for an image view.");
-
-    // Use 1.1 to get VK_KHR_sampler_ycbcr_conversion easier
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features11);
-    if (features11.samplerYcbcrConversion != VK_TRUE) {
-        printf("samplerYcbcrConversion not supported, skipping test\n");
-        return;
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
@@ -4062,15 +4045,8 @@ TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcrFeatures = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(ycbcrFeatures);
-    if (ycbcrFeatures.samplerYcbcrConversion != VK_TRUE) {
-        printf("samplerYcbcrConversion not supported, skipping test\n");
-        return;
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
 
@@ -4232,17 +4208,9 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     TEST_DESCRIPTION("Checks for invalid use of 2D views of 3D images");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceImage2DViewOf3DFeaturesEXT image_2D_view_of_3D_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_2D_view_of_3D_features);
-    if (!image_2D_view_of_3D_features.image2DViewOf3D) {
-        GTEST_SKIP() << "Test requires unsupported image2DViewOf3D feature";
-    }
-    if (!image_2D_view_of_3D_features.sampler2DViewOf3D) {
-        GTEST_SKIP() << "Test requires unsupported sampler2DViewOf3D feature";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::image2DViewOf3D);
+    AddRequiredFeature(vkt::Feature::sampler2DViewOf3D);
+    RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
@@ -4301,13 +4269,9 @@ TEST_F(NegativeImage, Image2DViewOf3DFeature) {
     TEST_DESCRIPTION("Checks for image image_2d_view_of_3d features");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceImage2DViewOf3DFeaturesEXT image_2D_view_of_3D_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_2D_view_of_3D_features);
-    image_2D_view_of_3D_features.image2DViewOf3D = VK_FALSE;
-    image_2D_view_of_3D_features.sampler2DViewOf3D = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddDisabledFeature(vkt::Feature::image2DViewOf3D);
+    AddDisabledFeature(vkt::Feature::sampler2DViewOf3D);
+    RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -4352,13 +4316,8 @@ TEST_F(NegativeImage, ImageViewMinLod) {
     TEST_DESCRIPTION("Checks for image view minimum level of detail.");
 
     AddRequiredExtensions(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceImageViewMinLodFeaturesEXT image_view_min_lod_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_view_min_lod_features);
-    if (image_view_min_lod_features.minLod == VK_FALSE) {
-        GTEST_SKIP() << "Test requires unsupported minLod feature";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::minLod);
+    RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -5433,13 +5392,9 @@ TEST_F(NegativeImage, ImageCompressionControlPlaneCount) {
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceImageCompressionControlFeaturesEXT icc_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(icc_features);
-    if (!icc_features.imageCompressionControl) {
-        GTEST_SKIP() << "imageCompressionControl not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &icc_features));
+    AddRequiredFeature(vkt::Feature::imageCompressionControl);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     VkImageCompressionFixedRateFlagsEXT image_compression_fixed_rage_flags[] = {0u, 0u};
 

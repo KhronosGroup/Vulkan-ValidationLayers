@@ -1274,15 +1274,10 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
     TEST_DESCRIPTION("Use geometry shader with geometryStreams capability, but geometryStreams feature not enabled");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceTransformFeedbackFeaturesEXT xfb_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(xfb_features);
-    if (!xfb_features.transformFeedback) {
-        GTEST_SKIP() << "transformFeedback not supported";
-    }
-    xfb_features.geometryStreams = VK_FALSE;
-    features2.features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::transformFeedback);
+    AddDisabledFeature(vkt::Feature::geometryStreams);
+    AddDisabledFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT xfb_props = vku::InitStructHelper();

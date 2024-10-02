@@ -478,13 +478,10 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    features2.features.tessellationShader = VK_FALSE;
-    features2.features.geometryShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddDisabledFeature(vkt::Feature::tessellationShader);
+    AddDisabledFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08419");
@@ -953,18 +950,11 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    if (!shaderObjectFeatures.shaderObject) {
-        GTEST_SKIP() << "Test requires (unsupported) shaderObject , skipping.";
-    }
-    features2.features.tessellationShader = VK_FALSE;
-    features2.features.geometryShader = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddDisabledFeature(vkt::Feature::tessellationShader);
+    AddDisabledFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
 
@@ -2789,19 +2779,10 @@ TEST_F(NegativeShaderObject, MissingTessellationControlBind) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    if (!shaderObjectFeatures.shaderObject) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
-    if (features2.features.tessellationShader == VK_FALSE) {
-        GTEST_SKIP() << "tessellationShader not supported.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2830,19 +2811,10 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationBind) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    if (!shaderObjectFeatures.shaderObject) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
-    if (features2.features.tessellationShader == VK_FALSE) {
-        GTEST_SKIP() << "tessellationShader not supported.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
+    RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -2871,19 +2843,10 @@ TEST_F(NegativeShaderObject, MissingGeometryBind) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shaderObjectFeatures);
-    if (!shaderObjectFeatures.shaderObject) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
-    if (features2.features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported.";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -4510,16 +4473,10 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = vku::InitStructHelper();
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper(&shaderObjectFeatures);
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    features12.vulkanMemoryModelDeviceScope = VK_FALSE;
-    if (features12.vulkanMemoryModel == VK_FALSE) {
-        GTEST_SKIP() << "vulkanMemoryModel feature is not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    RETURN_IF_SKIP(Init());
 
     char const* cs_src = R"glsl(
         #version 450
@@ -6107,25 +6064,11 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT pgq_features = vku::InitStructHelper();
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&pgq_features);
-    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
-    auto features2 = GetPhysicalDeviceFeatures2(shader_object_features);
-
-    pgq_features.primitivesGeneratedQueryWithRasterizerDiscard = VK_FALSE;
-
-    if (!shader_object_features.shaderObject) {
-        GTEST_SKIP() << "shaderObject not supported.";
-    }
-    if (!pgq_features.primitivesGeneratedQuery) {
-        GTEST_SKIP() << "primitivesGeneratedQuery not supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
+    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithRasterizerDiscard);
+    RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
     VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};

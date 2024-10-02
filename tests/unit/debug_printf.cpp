@@ -1019,7 +1019,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDebugPrintf, MeshTaskShaders) {
+TEST_F(NegativeDebugPrintf, MeshTaskShadersNV) {
     TEST_DESCRIPTION("Test debug printf in mesh and task shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -1809,22 +1809,16 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
+    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
-
-    // Create a device that enables mesh_shader
-    VkPhysicalDeviceMaintenance4Features maintenance_4_features = vku::InitStructHelper();
-    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features = vku::InitStructHelper(&maintenance_4_features);
-    VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features = vku::InitStructHelper(&dynamic_rendering_features);
-    VkPhysicalDeviceMultiviewFeaturesKHR multiview_features = vku::InitStructHelper(&shader_object_features);
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR shading_rate_features = vku::InitStructHelper(&multiview_features);
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper(&shading_rate_features);
-    GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (!mesh_shader_features.taskShader || !mesh_shader_features.meshShader) {
-        GTEST_SKIP() << "Task or mesh shader not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
+    RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
     static const char *taskShaderText = R"glsl(

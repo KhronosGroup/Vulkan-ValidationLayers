@@ -22,16 +22,10 @@ bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &sr
 void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &create_info) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    // Assumes VK_KHR_sampler_ycbcr_conversion and VK_EXT_separate_stencil_usage,
+    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
+    AddRequiredFeature(vkt::Feature::hostImageCopy);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features = vku::InitStructHelper();
-    VkPhysicalDeviceHostImageCopyFeaturesEXT host_copy_features = vku::InitStructHelper(&separate_depth_stencil_layouts_features);
-    GetPhysicalDeviceFeatures2(host_copy_features);
-    if (!host_copy_features.hostImageCopy) {
-        GTEST_SKIP() << "Test requires (unsupported) hostImageCopy";
-    }
-    separate_depth_stencil = separate_depth_stencil_layouts_features.separateDepthStencilLayouts;
     VkPhysicalDeviceFeatures device_features = {};
     GetPhysicalDeviceFeatures(&device_features);
     compressed_format = VK_FORMAT_UNDEFINED;
@@ -43,7 +37,6 @@ void HostImageCopyTest::InitHostImageCopyTest(const VkImageCreateInfo &create_in
         compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
     }
 
-    RETURN_IF_SKIP(InitState(nullptr, &host_copy_features));
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), create_info.format,
                                                                  create_info.imageType, create_info.tiling, create_info.usage,

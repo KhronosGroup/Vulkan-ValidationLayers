@@ -428,15 +428,8 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     // require to make enable logic simpler
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16int8_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
-    if (float16int8_features.shaderInt8 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt8 feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (IsPlatformMockICD()) {
@@ -896,15 +889,8 @@ TEST_F(PositiveShaderSpirv, SpecializeInt8) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFloat16Int8FeaturesKHR float16int8_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
-    if (float16int8_features.shaderInt8 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt8 feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -954,14 +940,8 @@ TEST_F(PositiveShaderSpirv, SpecializeInt16) {
     TEST_DESCRIPTION("Test int16 specialization.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (features2.features.shaderInt16 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt16 feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -1059,15 +1039,8 @@ TEST_F(PositiveShaderSpirv, SpecializeInt64) {
     TEST_DESCRIPTION("Test int64 specialization.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features2);
-    if (features2.features.shaderInt64 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *fs_src = R"(
@@ -1678,15 +1651,8 @@ TEST_F(PositiveShaderSpirv, PhysicalStorageBufferStructRecursion) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (VK_TRUE != features12.bufferDeviceAddress) {
-        GTEST_SKIP() << "VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *cs_src = R"glsl(
@@ -1719,15 +1685,8 @@ TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
     // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (VK_TRUE != features12.shaderStorageTexelBufferArrayNonUniformIndexing) {
-        GTEST_SKIP()
-            << "VkPhysicalDeviceVulkan12Features::shaderStorageTexelBufferArrayNonUniformIndexing not supported and is required";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderStorageTexelBufferArrayNonUniformIndexing);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *vertex_source = R"glsl(

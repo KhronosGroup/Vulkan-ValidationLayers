@@ -1774,13 +1774,9 @@ TEST_F(NegativeCopyBufferImage, ImageMultiPlaneSizeExceeded) {
 }
 
 TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch) {
-    // Enable KHR multiplane req'd extensions
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR mp_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(mp_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
@@ -1841,10 +1837,8 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch) {
     }
 
     // DstImage is a mismatched plane of a multi-planar format
-    if (!mp_features.samplerYcbcrConversion) {
-        printf("No multi-planar support; section of tests skipped.\n");
-    } else if (FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                          VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                   VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
         vkt::Image image_8b_16b_420_unorm(*m_device, image_create_info, vkt::set_layout);
 

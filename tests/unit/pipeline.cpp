@@ -3130,23 +3130,14 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
 
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceDepthBiasControlFeaturesEXT depth_bias_control_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(depth_bias_control_features);
-
-    if (!depth_bias_control_features.depthBiasControl) {
-        GTEST_SKIP() << "depthBiasControl not supported";
-    }
-
-    features2.features.depthBiasClamp =
-        VK_FALSE;  // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not
-                   // rely on depthBiasClamp being enabled
-    depth_bias_control_features.leastRepresentableValueForceUnormRepresentation = VK_FALSE;
-    depth_bias_control_features.floatRepresentation = VK_FALSE;
-    depth_bias_control_features.depthBiasExact = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::depthBiasControl);
+    AddDisabledFeature(vkt::Feature::leastRepresentableValueForceUnormRepresentation);
+    AddDisabledFeature(vkt::Feature::floatRepresentation);
+    AddDisabledFeature(vkt::Feature::depthBiasExact);
+    // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
+    // depthBiasClamp being enabled
+    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
@@ -3570,17 +3561,9 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = vku::InitStructHelper();
-    cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
-    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(maintenance5_features);
-    if (maintenance5_features.maintenance5 == VK_FALSE) {
-        GTEST_SKIP() << "maintenance5 not supported";
-    }
-    maintenance5_features.pNext = &cache_control_features;
-    RETURN_IF_SKIP(InitState(nullptr, &maintenance5_features));
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddDisabledFeature(vkt::Feature::pipelineCreationCacheControl);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
