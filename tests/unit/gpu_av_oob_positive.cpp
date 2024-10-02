@@ -391,6 +391,136 @@ TEST_F(PositiveGpuAVOOB, GPLNonInlined) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveGpuAVOOB, GPLFragmentIndependentSets) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkDeviceSize buffer_size = 4;
+    vkt::Buffer vs_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+    vkt::Buffer fs_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+
+    OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+    OneOffDescriptorSet fragment_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+
+    // Independent sets
+    const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, nullptr}, {},
+                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const auto vs_layout = pipeline_layout_vs.handle();
+    const vkt::PipelineLayout pipeline_layout_fs(*m_device, {nullptr, &fragment_set.layout_}, {},
+                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const auto fs_layout = pipeline_layout_fs.handle();
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &fragment_set.layout_}, {},
+                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const auto layout = pipeline_layout.handle();
+
+    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vertex_set.UpdateDescriptorSets();
+    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.UpdateDescriptorSets();
+
+    {
+        vvl::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
+                                      static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
+        for (auto &v : vert_data) {
+            v = 0x01030507;
+        }
+        vs_buffer.memory().unmap();
+    }
+    {
+        vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
+                                      static_cast<uint32_t>(buffer_size) / sizeof(uint32_t));
+        for (auto &v : frag_data) {
+            v = 0x02040608;
+        }
+        fs_buffer.memory().unmap();
+    }
+
+    const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
+        const vec2 vertices[3] = vec2[](
+            vec2(-1.0, -1.0),
+            vec2(1.0, -1.0),
+            vec2(0.0, 1.0)
+        );
+        void main() {
+            if (gl_VertexIndex == 0) {
+                const uint t = v_in.u_buffer[0];
+            }
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
+    vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    CreatePipelineHelper pre_raster_lib(*this);
+    pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+    pre_raster_lib.vp_state_ci_.pViewports = &viewport;
+    pre_raster_lib.vp_state_ci_.pScissors = &scissor;
+    pre_raster_lib.gp_ci_.layout = vs_layout;
+    pre_raster_lib.CreateGraphicsPipeline(false);
+
+    static const char frag_shader[] = R"glsl(
+        #version 450
+        layout(set = 1, binding = 0) buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
+        layout(location = 0) out vec4 c_out;
+        void main() {
+            c_out = vec4(1.0);
+            const uint t = f_in.u_buffer[0];
+        }
+    )glsl";
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
+    vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+    frag_shader_lib.gp_ci_.layout = fs_layout;
+    frag_shader_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.Handle(),
+        pre_raster_lib.Handle(),
+        frag_shader_lib.Handle(),
+        frag_out_lib.Handle(),
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
+    vkt::Pipeline pipe(*m_device, exe_pipe_ci);
+
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
+                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveGpuAVOOB, VertexFragmentMultiEntrypoint) {
     TEST_DESCRIPTION("Same as negative test, but buffer are large enough");
     AddDisabledFeature(vkt::Feature::robustBufferAccess);
