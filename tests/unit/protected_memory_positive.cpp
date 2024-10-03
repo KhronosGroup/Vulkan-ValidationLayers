@@ -36,9 +36,9 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     VkQueueFamilyProperties queue_properties;  // selected queue family used
     uint32_t queue_family_index = 0;
     uint32_t queue_family_count = 0;
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_families.data());
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_families.data());
 
     for (size_t i = 0; i < queue_families.size(); i++) {
         // need to have at least 2 queues to use
@@ -77,7 +77,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     device_create_info.pEnabledFeatures = nullptr;
     device_create_info.enabledLayerCount = 0;
     device_create_info.enabledExtensionCount = 0;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, nullptr, &test_device));
 
     VkQueue test_queue_protected = VK_NULL_HANDLE;
     VkQueue test_queue_unprotected = VK_NULL_HANDLE;

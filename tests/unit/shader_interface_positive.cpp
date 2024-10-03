@@ -697,7 +697,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     GetPhysicalDeviceFeatures2(features12);
     RETURN_IF_SKIP(InitState(nullptr, &features12));
 
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
@@ -907,7 +907,7 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     VkBuffer buffer_handle = buffer.handle();
     VkDeviceSize offset = 0;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &buffer_handle, &offset);
@@ -917,7 +917,7 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveShaderInterface, NestedStructs) {
@@ -1016,7 +1016,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1219,7 +1219,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1250,7 +1250,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1281,7 +1281,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1314,7 +1314,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (m_device->phy().limits_.maxFragmentOutputAttachments < 9) {
+    if (m_device->Physical().limits_.maxFragmentOutputAttachments < 9) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is too low";
     }
 

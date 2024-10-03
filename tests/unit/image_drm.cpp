@@ -44,12 +44,12 @@ TEST_F(NegativeImageDrm, Basic) {
     drm_format_mod_info.drmFormatModifier = mods[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_format_info.pNext = (void *)&drm_format_mod_info;
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info, &image_format_prop);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
 
     {
         VkImageFormatProperties dummy_props;
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248");
-        vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_info.format, image_info.imageType,
+        vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), image_info.format, image_info.imageType,
                                                    image_info.tiling, image_info.usage, image_info.flags, &dummy_props);
         m_errorMonitor->VerifyFound();
     }
@@ -83,7 +83,8 @@ TEST_F(NegativeImageDrm, Basic) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.drmFormatModifier = mods[1];
     image_format_info.pNext = &drm_format_modifier;
-    VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info, &image_format_prop);
+    VkResult result =
+        vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
     if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         printf("Format VK_FORMAT_R8G8B8A8_UNORM not supported with format modifiers, Skipping the remaining tests.\n");
         return;
@@ -123,13 +124,13 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
 
     VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     image_format_info.pNext = nullptr;
     image_format_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02249");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 
     VkImageFormatListCreateInfo format_list = vku::InitStructHelper(&image_drm_format_modifier);
@@ -137,7 +138,7 @@ TEST_F(NegativeImageDrm, ImageFormatInfo) {
     image_format_info.pNext = &format_list;
     image_format_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_properties);
     m_errorMonitor->VerifyFound();
 }
 
@@ -177,7 +178,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
         image_info.usage = create_info.usage;
         image_info.flags = create_info.flags;
         VkImageFormatProperties2 image_properties = vku::InitStructHelper();
-        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+        if (vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             // Works with Mesa, Pixel 7 doesn't support this combo
             GTEST_SKIP() << "Required formats/features not supported";
         }
@@ -234,7 +235,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    if (!FormatFeaturesAreSupported(gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), mp_format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -365,13 +366,13 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfo) {
     VkImageFormatProperties2 image_properties = vku::InitStructHelper();
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02315");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 
     drm_format_modifier.queueFamilyIndexCount = 2;
     drm_format_modifier.pQueueFamilyIndices = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 }
 
@@ -381,7 +382,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     RETURN_IF_SKIP(InitBasicImageDrm());
 
     uint32_t queue_family_property_count = 0;
-    vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &queue_family_property_count, nullptr);
+    vk::GetPhysicalDeviceQueueFamilyProperties2(Gpu(), &queue_family_property_count, nullptr);
     if (queue_family_property_count < 2) {
         GTEST_SKIP() << "pQueueFamilyPropertyCount is not 2 or more";
     }
@@ -407,7 +408,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     // Count too large
     queue_family_indices[0] = queue_family_property_count + 1;
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 
     // Not unique indices
@@ -415,7 +416,7 @@ TEST_F(NegativeImageDrm, PhysicalDeviceImageDrmFormatModifierInfoQuery) {
     queue_family_indices[1] = 0;
     drm_format_modifier.queueFamilyIndexCount = queue_family_property_count;
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02316");
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties);
     m_errorMonitor->VerifyFound();
 }
 
@@ -455,7 +456,7 @@ TEST_F(NegativeImageDrm, MultiPlanarGetImageMemoryRequirements) {
         image_info.usage = create_info.usage;
         image_info.flags = create_info.flags;
         auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
-        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+        if (vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             GTEST_SKIP() << "Required formats/features not supported";
         }
     }
@@ -514,7 +515,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
         image_info.usage = create_info.usage;
         image_info.flags = create_info.flags;
         auto image_properties = vku::InitStruct<VkImageFormatProperties2>();
-        if (vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties) != VK_SUCCESS) {
+        if (vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties) != VK_SUCCESS) {
             GTEST_SKIP() << "Required formats/features not supported";
         }
     }
@@ -538,7 +539,7 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
     vk::GetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
     uint32_t mem_type = 0;
     auto phys_mem_props2 = vku::InitStruct<VkPhysicalDeviceMemoryProperties2>();
-    vk::GetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
+    vk::GetPhysicalDeviceMemoryProperties2(Gpu(), &phys_mem_props2);
     for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {
         if ((mem_reqs2.memoryRequirements.memoryTypeBits & (1 << mem_type)) &&
             ((phys_mem_props2.memoryProperties.memoryTypes[mem_type].propertyFlags & mem_props) == mem_props)) {

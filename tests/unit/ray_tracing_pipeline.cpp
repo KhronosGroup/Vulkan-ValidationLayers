@@ -913,7 +913,7 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), deferredOperation, VK_NULL_HANDLE, 1, &pipeline_ci,
                                                        nullptr, &pipeline);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     if (result == VK_OPERATION_DEFERRED_KHR) {
         result = vk::DeferredOperationJoinKHR(this->m_device->handle(), deferredOperation);
         ASSERT_EQ(result, VK_SUCCESS);
@@ -927,7 +927,7 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     ASSERT_EQ(result, VK_SUCCESS);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
     vk::DestroyDeferredOperationKHR(m_device->handle(), deferredOperation, nullptr);
@@ -955,14 +955,14 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
 
     const uint32_t maxPerStageResources = 4;
     VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     props.limits.maxPerStageResources = maxPerStageResources;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
 
     RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->phy().limits_.maxPerStageResources, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->Physical().limits_.maxPerStageResources, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
          nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}};
 

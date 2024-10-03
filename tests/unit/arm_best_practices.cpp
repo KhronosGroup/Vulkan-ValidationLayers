@@ -33,9 +33,9 @@ class VkConstantBufferObj : public vkt::Buffer {
         VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         init(*device, CreateInfo(size, usage), reqs);
 
-        void* pData = memory().map();
+        void* pData = Memory().Map();
         memcpy(pData, data, static_cast<size_t>(size));
-        memory().unmap();
+        Memory().Unmap();
     }
 };
 
@@ -265,7 +265,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
 
     // NOTE: VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT should be set for all tests in this file because
     // otherwise BestPractices-vkBeginCommandBuffer-one-time-submit will be triggered.
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
 
     m_errorMonitor->VerifyFound();
@@ -296,7 +296,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     pipe.ms_ci_ = pipe_ms_state_ci;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -309,7 +309,7 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
@@ -444,14 +444,14 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         pr_pipe.CreateGraphicsPipeline();
 
         vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
-        m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
         vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
         // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
-        ibo.memory().map();
+        ibo.Memory().Map();
         if (expect_error) {
             m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCmdDrawIndexed-sparse-index-buffer");
         }
@@ -460,7 +460,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
             m_errorMonitor->VerifyFound();
         } else {
         }
-        ibo.memory().unmap();
+        ibo.Memory().Unmap();
 
         if (expect_error) {
             m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCmdDrawIndexed-sparse-index-buffer");
@@ -468,15 +468,15 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pr_pipe.Handle());
         vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
-        ibo.memory().map();
+        ibo.Memory().Map();
         vk::CmdDrawIndexed(m_command_buffer.handle(), index_count, 0, 0, 0, 0);
         if (expect_error) {
             m_errorMonitor->VerifyFound();
         }
-        ibo.memory().unmap();
+        ibo.Memory().Unmap();
 
         m_command_buffer.EndRenderPass();
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         m_errorMonitor->Reset();
     };
@@ -507,7 +507,7 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -537,21 +537,21 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), worst_ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
     // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
-    worst_ibo.memory().map();
+    worst_ibo.Memory().Map();
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "BestPractices-Arm-vkCmdDrawIndexed-post-transform-cache-thrashing");
     vk::CmdDrawIndexed(m_command_buffer.handle(), worst_indices.size(), 0, 0, 0, 0);
     m_errorMonitor->VerifyFound();
-    worst_ibo.memory().unmap();
+    worst_ibo.Memory().Unmap();
 
     // make sure that the best-case indices don't throw a warning
     VkConstantBufferObj best_ibo(m_device, best_indices.size() * sizeof(uint16_t), best_indices.data(),
                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), best_ibo.handle(), static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
 
-    best_ibo.memory().map();
+    best_ibo.Memory().Map();
     vk::CmdDrawIndexed(m_command_buffer.handle(), best_indices.size(), 0, 0, 0, 0);
-    best_ibo.memory().unmap();
+    best_ibo.Memory().Unmap();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
@@ -564,7 +564,7 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     InitSwapchainInfo();
 
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
         GTEST_SKIP() << "Graphics queue does not support present, skipping test";
     }
@@ -656,13 +656,13 @@ TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
     VkPhysicalDeviceFeatures supported_features;
-    vk::GetPhysicalDeviceFeatures(this->gpu(), &supported_features);
+    vk::GetPhysicalDeviceFeatures(this->Gpu(), &supported_features);
     if (supported_features.robustBufferAccess) {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCreateDevice-RobustBufferAccess");
         VkPhysicalDeviceFeatures device_features = {};
         device_features.robustBufferAccess = VK_TRUE;
         dev_info.pEnabledFeatures = &device_features;
-        vk::CreateDevice(this->gpu(), &dev_info, nullptr, &local_device);
+        vk::CreateDevice(this->Gpu(), &dev_info, nullptr, &local_device);
         m_errorMonitor->VerifyFound();
     } else {
         GTEST_SKIP() << "robustBufferAccess is not available, skipping test";
@@ -673,7 +673,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -723,7 +723,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     VkConstantBufferObj ibo(m_device, sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     // record a command buffer which doesn't use enough depth pre-passes or geometry to matter
@@ -790,7 +790,7 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
         m_errorMonitor->VerifyFound();
     }
 
-    if (m_device->phy().limits_.maxComputeWorkGroupInvocations > 128) {
+    if (m_device->Physical().limits_.maxComputeWorkGroupInvocations > 128) {
         char const* csSource = R"glsl(
             #version 450
             layout(local_size_x = 16, local_size_y = 9, local_size_z = 1) in;
@@ -973,11 +973,11 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
     const auto execute_work = [&](const std::function<void(vkt::CommandBuffer & command_buffer)>& work) {
         vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
-        m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
         work(m_command_buffer);
 
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
@@ -1061,7 +1061,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
     VkImageSubresourceRange subresource_range = {};
@@ -1086,7 +1086,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
 
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1155,7 +1155,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
     VkImageSubresourceRange subresource_range = {};
@@ -1180,7 +1180,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
 
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1290,7 +1290,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     VkClearColorValue clear_color_value = {};
     VkImageSubresourceRange subresource_range = {};
@@ -1335,7 +1335,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     }
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1356,7 +1356,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
@@ -1446,7 +1446,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     // subtest 1: bind in the wrong subpass
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), WIDTH, HEIGHT);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -1463,10 +1463,10 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     // One of these formats must be supported.
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), ds_format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), ds_format, &format_props);
     if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
         ds_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        vk::GetPhysicalDeviceFormatProperties(gpu(), ds_format, &format_props);
+        vk::GetPhysicalDeviceFormatProperties(Gpu(), ds_format, &format_props);
         ASSERT_TRUE((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0);
     }
 
@@ -1504,7 +1504,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
     pipe_stencil.ds_ci_.stencilTestEnable = VK_TRUE;
     pipe_stencil.CreateGraphicsPipeline();
 
-    m_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
     // Nothing is redundant.
     {
@@ -1565,5 +1565,5 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         m_command_buffer.EndRenderPass();
     }
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

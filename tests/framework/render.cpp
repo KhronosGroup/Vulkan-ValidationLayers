@@ -66,12 +66,12 @@ VkRenderFramework::~VkRenderFramework() {
     m_errorMonitor->Finish();
 }
 
-VkPhysicalDevice VkRenderFramework::gpu() const {
+VkPhysicalDevice VkRenderFramework::Gpu() const {
     EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
     return gpu_;
 }
 
-const VkPhysicalDeviceProperties &VkRenderFramework::physDevProps() const {
+const VkPhysicalDeviceProperties &VkRenderFramework::PhysicalDeviceProps() const {
     EXPECT_NE((VkPhysicalDevice)0, gpu_);  // Invalid to request physical device properties before gpu
     return physDevProps_;
 }
@@ -438,7 +438,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
         return true;
     }
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, dev_ext_name)) {
+    if (!DeviceExtensionSupported(Gpu(), nullptr, dev_ext_name)) {
         return false;
     }
     m_device_extension_names.push_back(dev_ext_name);
@@ -453,7 +453,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
 }
 
 bool VkRenderFramework::IsPromotedDeviceExtension(const char *dev_ext_name) const {
-    auto device_version = std::min(m_target_api_version, APIVersion(physDevProps().apiVersion));
+    auto device_version = std::min(m_target_api_version, APIVersion(PhysicalDeviceProps().apiVersion));
     if (!device_version.Valid()) return false;
 
     const auto promotion_info_map = GetDevicePromotionInfoMap();
@@ -525,7 +525,7 @@ void VkRenderFramework::ShutdownFramework() {
 ErrorMonitor &VkRenderFramework::Monitor() { return monitor_; }
 
 void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
-    vk::GetPhysicalDeviceFeatures(gpu(), features);
+    vk::GetPhysicalDeviceFeatures(Gpu(), features);
 }
 
 // static
@@ -541,7 +541,7 @@ bool VkRenderFramework::IsPlatformMockICD() {
     if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
-        return 0 == mock_icd_device_name.compare(physDevProps().deviceName);
+        return 0 == mock_icd_device_name.compare(PhysicalDeviceProps().deviceName);
     }
 }
 
@@ -614,9 +614,9 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     if (!features) {
         if (feature_requirements_.HasFeatures2()) {
             if (vk::GetPhysicalDeviceFeatures2KHR) {
-                vk::GetPhysicalDeviceFeatures2KHR(gpu(), feature_requirements_.GetFeatures2());
+                vk::GetPhysicalDeviceFeatures2KHR(Gpu(), feature_requirements_.GetFeatures2());
             } else {
-                vk::GetPhysicalDeviceFeatures2(gpu(), feature_requirements_.GetFeatures2());
+                vk::GetPhysicalDeviceFeatures2(Gpu(), feature_requirements_.GetFeatures2());
             }
         } else {
             GetPhysicalDeviceFeatures(feature_requirements_.GetFeatures());
@@ -665,11 +665,11 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
     m_default_queue = queues[0];
     if (queues.size() > 1) {
         m_second_queue = queues[1];
-        m_second_queue_caps = m_device->phy().queue_properties_[m_second_queue->family_index].queueFlags;
+        m_second_queue_caps = m_device->Physical().queue_properties_[m_second_queue->family_index].queueFlags;
     }
     if (queues.size() > 2) {
         m_third_queue = queues[2];
-        m_third_queue_caps = m_device->phy().queue_properties_[m_third_queue->family_index].queueFlags;
+        m_third_queue_caps = m_device->Physical().queue_properties_[m_third_queue->family_index].queueFlags;
     }
 
     m_depthStencil = new vkt::Image();
@@ -828,7 +828,7 @@ void VkRenderFramework::InitSwapchainInfo() {
 // Makes query to get information about swapchain needed to create a valid swapchain object each test creating a swapchain will
 // need
 SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surface) {
-    const VkPhysicalDevice physicalDevice = gpu();
+    const VkPhysicalDevice physicalDevice = Gpu();
 
     assert(surface != VK_NULL_HANDLE);
 
@@ -880,7 +880,7 @@ bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags
                                         VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain,
                                         VkSwapchainKHR oldSwapchain) {
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, surface, &supported);
     if (!supported) {
         // Graphics queue does not support present
         return false;
@@ -975,7 +975,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
         m_renderPassClearValues.push_back(clear);
 
         VkFormatProperties props;
-        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), m_render_target_fmt, &props);
+        vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), m_render_target_fmt, &props);
 
         VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
         if (props.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {

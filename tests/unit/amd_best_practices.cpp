@@ -132,12 +132,12 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 
     InitRenderTarget();
 
-    if (m_device->phy().queue_properties_.size() < 2) {
+    if (m_device->Physical().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Test not supported by a single queue family device";
     }
 
-    std::vector<uint32_t> queueFamilies(m_device->phy().queue_properties_.size());
-    for (size_t i = 0; i < m_device->phy().queue_properties_.size(); i++) {
+    std::vector<uint32_t> queueFamilies(m_device->Physical().queue_properties_.size());
+    for (size_t i = 0; i < m_device->Physical().queue_properties_.size(); i++) {
         queueFamilies[i] = i;
     }
 
@@ -382,7 +382,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       VK_IMAGE_LAYOUT_UNDEFINED};
         vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearColorValue clear_value = {{0.0f, 0.0f, 0.0f, 0.0f}};
@@ -397,7 +397,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                &image_range);
         m_errorMonitor->VerifyFound();
 
-        m_command_buffer.end();
+        m_command_buffer.End();
     }
 
     vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
@@ -421,7 +421,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
         vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -437,7 +437,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       &clear_value, 1, &image_range);
         m_errorMonitor->VerifyFound();
 
-        m_command_buffer.end();
+        m_command_buffer.End();
     }
 }
 
@@ -470,7 +470,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
         GTEST_SKIP() << "Could not initilize Linear image, skipping image to image copy test";
     }
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     image1D_1.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidImageToImageCopy");
@@ -483,7 +483,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     vk::CmdCopyImage(m_command_buffer.handle(), image1D_1.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_1D_2.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
@@ -537,7 +537,7 @@ TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
     device_ci.pEnabledFeatures = &features;
 
     VkDevice test_device;
-    vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &test_device);
 
     m_errorMonitor->VerifyFound();
 }
@@ -565,7 +565,7 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
         VK_IMAGE_LAYOUT_UNDEFINED};
     vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     // check for read-to-read barrier
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
     image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -586,7 +586,7 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
@@ -701,7 +701,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     binfo.pInheritanceInfo = &iinfo;
     binfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     // record a secondary command buffer
-    secondary_cmd_buf.begin(&binfo);
+    secondary_cmd_buf.Begin(&binfo);
 
     vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkDeviceSize offset = 0;
@@ -722,9 +722,9 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
 
     vk::CmdClearAttachments(secondary_cmd_buf.handle(), 1, &color_attachment, 1, &clear_rect);
 
-    secondary_cmd_buf.end();
+    secondary_cmd_buf.End();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-ClearCmdBeforeDraw");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-VkCommandBuffer-AvoidSecondaryCmdBuffers");

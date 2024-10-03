@@ -86,18 +86,18 @@ TEST_F(PositiveGpuAV, RobustBuffer) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
-    uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.memory().unmap();
+    offset_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -124,7 +124,7 @@ TEST_F(PositiveGpuAV, ReserveBinding) {
 
     VkPhysicalDeviceProperties properties;
     vk::GetPhysicalDeviceProperties(phys_devices[m_gpu_index], &properties);
-    if (m_device->phy().limits_.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1) {
+    if (m_device->Physical().limits_.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1) {
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     }
     vk::DestroyInstance(test_inst, nullptr);
@@ -203,20 +203,20 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     pipe1.cp_ci_.layout = pipeline_layout.handle();
     pipe1.CreateComputePipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    uint32_t *data = (uint32_t *)buffer.Memory().Map();
     ASSERT_TRUE(*data = test_data);
     *data = 0;
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
@@ -277,7 +277,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
-    const uint32_t set_count = m_device->phy().limits_.maxBoundDescriptorSets + 1;  // account for reserved set
+    const uint32_t set_count = m_device->Physical().limits_.maxBoundDescriptorSets + 1;  // account for reserved set
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(inline_uniform_props);
     if (inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks < set_count) {
@@ -314,22 +314,22 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         pipe.cp_ci_.layout = pl_layout.handle();
         pipe.CreateComputePipeline();
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pl_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
 
         pl_layout.destroy();
 
-        uint32_t *data = (uint32_t *)buffer.memory().map();
+        uint32_t *data = (uint32_t *)buffer.Memory().Map();
         if (*data != test_data)
             m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
         *data = 0;
-        buffer.memory().unmap();
+        buffer.Memory().Unmap();
     }
 
     // Now make sure we can still use the shader with instrumentation
@@ -340,18 +340,18 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
         pipe.cp_ci_.layout = pipeline_layout.handle();
         pipe.CreateComputePipeline();
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
-        uint32_t *data = (uint32_t *)buffer.memory().map();
+        uint32_t *data = (uint32_t *)buffer.Memory().Map();
         if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
         *data = 0;
-        buffer.memory().unmap();
+        buffer.Memory().Unmap();
     }
 }
 
@@ -362,7 +362,7 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
     InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
-    vk::GetPhysicalDeviceProperties(gpu(), &properties);
+    vk::GetPhysicalDeviceProperties(Gpu(), &properties);
     if (properties.limits.maxBoundDescriptorSets < 8) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
@@ -405,12 +405,12 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(1, buffer_1.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -424,7 +424,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
-    vk::GetPhysicalDeviceProperties(gpu(), &properties);
+    vk::GetPhysicalDeviceProperties(Gpu(), &properties);
     if (properties.limits.maxBoundDescriptorSets < 8) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
@@ -486,13 +486,13 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     VkDescriptorBufferInfo buffer_info_1 = {buffer_1.handle(), 0, 1024};
     descriptor_writes[1].pBufferInfo = &buffer_info_1;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 2,
                                 descriptor_writes);
 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -537,7 +537,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
     InitRenderTarget();
 
     VkPhysicalDeviceProperties properties = {};
-    vk::GetPhysicalDeviceProperties(gpu(), &properties);
+    vk::GetPhysicalDeviceProperties(Gpu(), &properties);
     if (properties.limits.maxBoundDescriptorSets < 8) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
@@ -627,13 +627,13 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
     descriptor_copy.dstArrayElement = 0;
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &descriptor_copy);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &descriptor_set_0.set_, 0, nullptr);
 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -647,7 +647,7 @@ TEST_F(PositiveGpuAV, MaxDescriptorsClamp) {
     auto desc_indexing_props = vku::InitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
     auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&desc_indexing_props);
 
-    vk::GetPhysicalDeviceProperties2(gpu(), &props2);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
 
     ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
@@ -661,7 +661,7 @@ TEST_F(PositiveGpuAV, MaxDescriptorsClamp13) {
     auto vk12_props = vku::InitStruct<VkPhysicalDeviceVulkan12Properties>();
     auto props2 = vku::InitStruct<VkPhysicalDeviceProperties2>(&vk12_props);
 
-    vk::GetPhysicalDeviceProperties2(gpu(), &props2);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
 
     ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, vk12_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
@@ -711,14 +711,14 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     // Should not get a warning since buggy vertex shader wasn't instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
     m_default_queue->Submit(m_command_buffer);
@@ -755,9 +755,9 @@ TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    uint32_t *data = (uint32_t*)buffer.memory().map();
+    uint32_t *data = (uint32_t *)buffer.Memory().Map();
     data[0] = 0;
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
@@ -783,7 +783,7 @@ TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -791,7 +791,7 @@ TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexed(m_command_buffer.handle(), 1, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -848,7 +848,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -857,7 +857,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
     vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGpuAV, FirstInstance) {
@@ -870,7 +870,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
+    auto draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -878,25 +878,25 @@ TEST_F(PositiveGpuAV, FirstInstance) {
         draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         draw_ptr++;
     }
-    draw_buffer.memory().unmap();
+    draw_buffer.Memory().Unmap();
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDrawIndirect(m_command_buffer.handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -905,9 +905,9 @@ TEST_F(PositiveGpuAV, FirstInstance) {
         indexed_draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         indexed_draw_ptr++;
     }
-    indexed_draw_buffer.memory().unmap();
+    indexed_draw_buffer.Memory().Unmap();
 
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -915,7 +915,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -933,7 +933,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    float *ptr = static_cast<float *>(copy_src_buffer.memory().map());
+    float *ptr = static_cast<float *>(copy_src_buffer.Memory().Map());
     for (size_t i = 0; i < 64 * 64; ++i) {
         if (i % 2) {
             ptr[i] = 1.0f;
@@ -941,13 +941,13 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
             ptr[i] = 0.0f;
         }
     }
-    copy_src_buffer.memory().unmap();
+    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, 1, VK_FORMAT_D32_SFLOAT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkBufferImageCopy buffer_image_copy_1;
     buffer_image_copy_1.bufferOffset = 0;
@@ -967,7 +967,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &buffer_image_copy_2);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     vk::DeviceWaitIdle(*m_device);
 }
@@ -984,7 +984,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    auto ptr = static_cast<uint8_t *>(copy_src_buffer.memory().map());
+    auto ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
         auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
@@ -995,13 +995,13 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
         }
     }
 
-    copy_src_buffer.memory().unmap();
+    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkBufferImageCopy buffer_image_copy;
     buffer_image_copy.bufferOffset = 0;
@@ -1014,7 +1014,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &buffer_image_copy);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     vk::DeviceWaitIdle(*m_device);
 }
@@ -1040,14 +1040,14 @@ TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
     region.imageExtent = {32, 32, 1};
     region.bufferOffset = 0;
 
-    cb_0.begin();
+    cb_0.Begin();
     vk::CmdCopyBufferToImage(cb_0.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
-    cb_0.end();
+    cb_0.End();
     m_default_queue->Submit(cb_0);
     m_default_queue->Wait();
 
-    cb_1.begin();
-    cb_1.end();
+    cb_1.Begin();
+    cb_1.End();
     m_default_queue->Submit(cb_1);
     m_default_queue->Wait();
 }
@@ -1091,9 +1091,9 @@ TEST_F(PositiveGpuAV, AliasImageBinding) {
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    uint32_t *data = (uint32_t *)buffer.Memory().Map();
     *data = 0;
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, float_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL, 0);
@@ -1102,12 +1102,12 @@ TEST_F(PositiveGpuAV, AliasImageBinding) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     vk::DeviceWaitIdle(*m_device);
 }
@@ -1157,9 +1157,9 @@ TEST_F(PositiveGpuAV, AliasImageBindingNonFixed) {
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    uint32_t *data = (uint32_t *)buffer.memory().map();
+    uint32_t *data = (uint32_t *)buffer.Memory().Map();
     *data = 0;
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, float_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL, 0);
@@ -1168,12 +1168,12 @@ TEST_F(PositiveGpuAV, AliasImageBindingNonFixed) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     vk::DeviceWaitIdle(*m_device);
 }
@@ -1191,7 +1191,7 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
     {
         auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
         ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
-        fence.wait(vvl::kU32Max);
+        fence.Wait(vvl::kU32Max);
     }
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -1233,7 +1233,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.memory().map());
+    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -1241,25 +1241,25 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
         draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         draw_ptr++;
     }
-    draw_buffer.memory().unmap();
+    draw_buffer.Memory().Unmap();
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDrawIndirect(m_command_buffer.handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.memory().map();
+    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -1268,9 +1268,9 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
         indexed_draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         indexed_draw_ptr++;
     }
-    indexed_draw_buffer.memory().unmap();
+    indexed_draw_buffer.Memory().Unmap();
 
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -1278,7 +1278,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -1345,13 +1345,13 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
 
-    indirect_draw_parameters_buffer.memory().unmap();
+    indirect_draw_parameters_buffer.Memory().Unmap();
 
     constexpr int32_t int_count = 16;
     vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -1368,8 +1368,8 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
         int32_t integers_2[int_count / 2];
     } push_constants;
 
-    push_constants.storage_buffer_ptr_1 = storage_buffer.address();
-    push_constants.storage_buffer__ptr_2 = storage_buffer.address() + sizeof(int32_t) * (int_count / 2);
+    push_constants.storage_buffer_ptr_1 = storage_buffer.Address();
+    push_constants.storage_buffer__ptr_2 = storage_buffer.Address() + sizeof(int32_t) * (int_count / 2);
     for (int32_t i = 0; i < int_count / 2; ++i) {
         push_constants.integers_1[i] = i;
         push_constants.integers_2[i] = (int_count / 2) + i;
@@ -1442,7 +1442,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -1458,15 +1458,15 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
     vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.memory().map());
+    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
-    storage_buffer.memory().unmap();
+    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
@@ -1552,19 +1552,19 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
                                         vkt::device_address);
 
     PushConstants graphics_push_constants;
-    graphics_push_constants.storage_buffer = graphics_storage_buffer.address();
+    graphics_push_constants.storage_buffer = graphics_storage_buffer.Address();
     for (int32_t i = 0; i < int_count; ++i) {
         graphics_push_constants.integers[i] = i;
     }
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
-    indirect_draw_parameters_buffer.memory().unmap();
+    indirect_draw_parameters_buffer.Memory().Unmap();
 
     CreatePipelineHelper graphics_pipe(*this);
     graphics_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1607,7 +1607,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
                                        vkt::device_address);
 
     PushConstants compute_push_constants;
-    compute_push_constants.storage_buffer = compute_storage_buffer.address();
+    compute_push_constants.storage_buffer = compute_storage_buffer.Address();
     for (int32_t i = 0; i < int_count; ++i) {
         compute_push_constants.integers[i] = int_count + i;
     }
@@ -1620,17 +1620,17 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     auto &indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.memory().map());
+        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
-    indirect_dispatch_parameters_buffer.memory().unmap();
+    indirect_dispatch_parameters_buffer.Memory().Unmap();
 
     // Submit commands
     // ---
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe.Handle());
@@ -1648,21 +1648,21 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
                          sizeof(compute_push_constants), &compute_push_constants);
     // Compute shaders will write 8 values to compute storage buffer
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.memory().map());
+    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
-    compute_storage_buffer.memory().unmap();
+    compute_storage_buffer.Memory().Unmap();
 
-    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.memory().map());
+    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
-    graphics_storage_buffer.memory().unmap();
+    graphics_storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
@@ -1675,13 +1675,13 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
 
-    indirect_draw_parameters_buffer.memory().unmap();
+    indirect_draw_parameters_buffer.Memory().Unmap();
 
     VkPushConstantRange push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int)};
     VkPipelineLayoutCreateInfo pipe_layout_ci_1 = vku::InitStructHelper();
@@ -1706,7 +1706,7 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     pipe_2.descriptor_set_->UpdateDescriptorSets();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // CmdPushConstants with layout 1 (is associated to pipeline 1, only has a push constant range)
@@ -1725,7 +1725,7 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -1795,7 +1795,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
 
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 0, 2,
                               descriptor_sets, 0, nullptr);
@@ -1803,7 +1803,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -1822,12 +1822,12 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout) {
         pipe.CreateGraphicsPipeline();
     }
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
@@ -1861,14 +1861,14 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
         pipe.CreateGraphicsPipeline();
     }
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGpuAV, DeviceGeneratedCommandsIES) {
@@ -1988,31 +1988,31 @@ TEST_F(PositiveGpuAV, DeviceGeneratedCommandsIES) {
     buffer_ci.size = pre_process_size;
     vkt::Buffer pre_process_buffer(*m_device, buffer_ci, 0, &allocate_flag_info);
 
-    uint32_t *block_buffer_ptr = (uint32_t *)block_buffer.memory().map();
+    uint32_t *block_buffer_ptr = (uint32_t *)block_buffer.Memory().Map();
     block_buffer_ptr[0] = 2;  // pick pipeline 2
     VkDispatchIndirectCommand *indirect_command_ptr = (VkDispatchIndirectCommand *)(block_buffer_ptr + 1);
     indirect_command_ptr->x = 1;
     indirect_command_ptr->y = 1;
     indirect_command_ptr->z = 1;
-    block_buffer.memory().unmap();
+    block_buffer.Memory().Unmap();
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
     generated_commands_info.indirectExecutionSet = exe_set.handle();
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = sizeof(uint32_t) + sizeof(VkDispatchIndirectCommand);
-    generated_commands_info.indirectAddress = block_buffer.address();
-    generated_commands_info.preprocessAddress = pre_process_buffer.address();
+    generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.preprocessAddress = pre_process_buffer.Address();
     generated_commands_info.preprocessSize = pre_process_size;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxSequenceCount = 1;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, init_pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, init_pipe.pipeline_layout_.handle(), 0, 1,
                               &init_pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();

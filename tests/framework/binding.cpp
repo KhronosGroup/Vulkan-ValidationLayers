@@ -215,17 +215,17 @@ Device::~Device() noexcept { destroy(); }
 void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                   bool all_queue_count) {
     // request all queues
-    QueueCreateInfoArray queue_info(phy_.queue_properties_, all_queue_count);
-    for (uint32_t i = 0; i < (uint32_t)phy_.queue_properties_.size(); i++) {
-        if (phy_.queue_properties_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    QueueCreateInfoArray queue_info(physical_device_.queue_properties_, all_queue_count);
+    for (uint32_t i = 0; i < (uint32_t)physical_device_.queue_properties_.size(); i++) {
+        if (physical_device_.queue_properties_[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             graphics_queue_node_index_ = i;
             break;
         }
     }
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
-    auto qci = queue_info.data();
-    for (uint32_t j = 0; j < queue_info.size(); ++j) {
+    auto qci = queue_info.Data();
+    for (uint32_t j = 0; j < queue_info.Size(); ++j) {
         if (qci[j].queueCount) {
             create_queue_infos.push_back(qci[j]);
         }
@@ -250,7 +250,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
             dev_info.pEnabledFeatures = features;
         } else {
             // request all supportable features enabled
-            all_features = phy().Features();
+            all_features = Physical().Features();
             dev_info.pEnabledFeatures = &all_features;
         }
     }
@@ -261,20 +261,20 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 void Device::init(const VkDeviceCreateInfo &info) {
     VkDevice dev;
 
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(phy_.handle(), &info, NULL, &dev));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device_.handle(), &info, NULL, &dev));
     Handle::init(dev);
 
     InitQueues(info);
 }
 
 void Device::InitQueues(const VkDeviceCreateInfo &info) {
-    uint32_t queue_node_count = phy_.queue_properties_.size();
+    uint32_t queue_node_count = physical_device_.queue_properties_.size();
 
     queue_families_.resize(queue_node_count);
     for (uint32_t i = 0; i < info.queueCreateInfoCount; i++) {
         const auto &queue_create_info = info.pQueueCreateInfos[i];
         auto queue_family_i = queue_create_info.queueFamilyIndex;
-        const auto &queue_family_prop = phy_.queue_properties_[queue_family_i];
+        const auto &queue_family_prop = physical_device_.queue_properties_[queue_family_i];
 
         QueueFamilyQueues &queue_storage = queue_families_[queue_family_i];
         queue_storage.reserve(queue_create_info.queueCount);
@@ -321,9 +321,9 @@ const Device::QueueFamilyQueues &Device::QueuesFromFamily(uint32_t queue_family)
 }
 
 std::optional<uint32_t> Device::QueueFamily(VkQueueFlags with, VkQueueFlags without) const {
-    for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
-        if (phy_.queue_properties_[i].queueCount > 0) {
-            const auto flags = phy_.queue_properties_[i].queueFlags;
+    for (uint32_t i = 0; i < physical_device_.queue_properties_.size(); i++) {
+        if (physical_device_.queue_properties_[i].queueCount > 0) {
+            const auto flags = physical_device_.queue_properties_[i].queueFlags;
             const bool matches = (flags & with) == with;
             if (matches && ((flags & without) == 0)) {
                 return i;
@@ -334,9 +334,9 @@ std::optional<uint32_t> Device::QueueFamily(VkQueueFlags with, VkQueueFlags with
 }
 
 std::optional<uint32_t> Device::QueueFamilyWithoutCapabilities(VkQueueFlags without) const {
-    for (uint32_t i = 0; i < phy_.queue_properties_.size(); i++) {
-        if (phy_.queue_properties_[i].queueCount > 0) {
-            const auto flags = phy_.queue_properties_[i].queueFlags;
+    for (uint32_t i = 0; i < physical_device_.queue_properties_.size(); i++) {
+        if (physical_device_.queue_properties_[i].queueCount > 0) {
+            const auto flags = physical_device_.queue_properties_[i].queueFlags;
             if ((flags & without) == 0) {
                 return i;
             }
@@ -389,11 +389,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesLinear(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        vk::GetPhysicalDeviceFormatProperties2(phy().handle(), format, &fmt_props_2);
+        vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
         return fmt_props_3.linearTilingFeatures;
     } else {
         VkFormatProperties format_properties;
-        vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &format_properties);
+        vk::GetPhysicalDeviceFormatProperties(Physical().handle(), format, &format_properties);
         return format_properties.linearTilingFeatures;
     }
 }
@@ -402,11 +402,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesOptimal(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        vk::GetPhysicalDeviceFormatProperties2(phy().handle(), format, &fmt_props_2);
+        vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
         return fmt_props_3.optimalTilingFeatures;
     } else {
         VkFormatProperties format_properties;
-        vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &format_properties);
+        vk::GetPhysicalDeviceFormatProperties(Physical().handle(), format, &format_properties);
         return format_properties.optimalTilingFeatures;
     }
 }
@@ -415,11 +415,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     if (IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
-        vk::GetPhysicalDeviceFormatProperties2(phy().handle(), format, &fmt_props_2);
+        vk::GetPhysicalDeviceFormatProperties2(Physical().handle(), format, &fmt_props_2);
         return fmt_props_3.bufferFeatures;
     } else {
         VkFormatProperties format_properties;
-        vk::GetPhysicalDeviceFormatProperties(phy().handle(), format, &format_properties);
+        vk::GetPhysicalDeviceFormatProperties(Physical().handle(), format, &format_properties);
         return format_properties.bufferFeatures;
     }
 }
@@ -764,7 +764,7 @@ void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
     memory_allocate_info_ = info;
 }
 
-VkResult DeviceMemory::try_init(const Device &dev, const VkMemoryAllocateInfo &info) {
+VkResult DeviceMemory::TryInit(const Device &dev, const VkMemoryAllocateInfo &info) {
     assert(!initialized());
     VkDeviceMemory handle = VK_NULL_HANDLE;
     auto result = vk::AllocateMemory(dev.handle(), &info, nullptr, &handle);
@@ -774,7 +774,7 @@ VkResult DeviceMemory::try_init(const Device &dev, const VkMemoryAllocateInfo &i
     return result;
 }
 
-const void *DeviceMemory::map(VkFlags flags) const {
+const void *DeviceMemory::Map(VkFlags flags) const {
     void *data;
     VkResult result = vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data);
     EXPECT_EQ(VK_SUCCESS, result);
@@ -782,7 +782,7 @@ const void *DeviceMemory::map(VkFlags flags) const {
     return data;
 }
 
-void *DeviceMemory::map(VkFlags flags) {
+void *DeviceMemory::Map(VkFlags flags) {
     void *data;
     VkResult result = vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data);
     EXPECT_EQ(VK_SUCCESS, result);
@@ -791,13 +791,13 @@ void *DeviceMemory::map(VkFlags flags) {
     return data;
 }
 
-void DeviceMemory::unmap() const { vk::UnmapMemory(device(), handle()); }
+void DeviceMemory::Unmap() const { vk::UnmapMemory(device(), handle()); }
 
 VkMemoryAllocateInfo DeviceMemory::GetResourceAllocInfo(const Device &dev, const VkMemoryRequirements &reqs,
                                                         VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
-    EXPECT_TRUE(dev.phy().SetMemoryType(reqs.memoryTypeBits, &alloc_info, mem_props));
+    EXPECT_TRUE(dev.Physical().SetMemoryType(reqs.memoryTypeBits, &alloc_info, mem_props));
     return alloc_info;
 }
 
@@ -811,12 +811,12 @@ Fence &Fence::operator=(Fence &&rhs) noexcept {
 
 void Fence::init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
 
-VkResult Fence::wait(uint64_t timeout) const {
+VkResult Fence::Wait(uint64_t timeout) const {
     VkFence fence = handle();
     return vk::WaitForFences(device(), 1, &fence, VK_TRUE, timeout);
 }
 
-VkResult Fence::reset() {
+VkResult Fence::Reset() {
     VkFence fence = handle();
     return vk::ResetFences(device(), 1, &fence);
 }
@@ -965,26 +965,26 @@ NON_DISPATCHABLE_HANDLE_DTOR(Event, vk::DestroyEvent)
 
 void Event::init(const Device &dev, const VkEventCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateEvent, dev, &info); }
 
-void Event::set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
+void Event::Set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
 
-void Event::cmd_set(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
+void Event::CmdSet(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
     vk::CmdSetEvent(cmd.handle(), handle(), stage_mask);
 }
 
-void Event::cmd_reset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
+void Event::CmdReset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
     vk::CmdResetEvent(cmd.handle(), handle(), stage_mask);
 }
 
-void Event::cmd_wait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                     const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
-                     const std::vector<VkImageMemoryBarrier> &image_barriers) {
+void Event::CmdWait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                    const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
+                    const std::vector<VkImageMemoryBarrier> &image_barriers) {
     VkEvent event_handle = handle();
     vk::CmdWaitEvents(cmd.handle(), 1, &event_handle, src_stage_mask, dst_stage_mask, static_cast<uint32_t>(memory_barriers.size()),
                       memory_barriers.data(), static_cast<uint32_t>(buffer_barriers.size()), buffer_barriers.data(),
                       static_cast<uint32_t>(image_barriers.size()), image_barriers.data());
 }
 
-void Event::reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetEvent(device(), handle())); }
+void Event::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetEvent(device(), handle())); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)
 
@@ -992,7 +992,7 @@ void QueryPool::init(const Device &dev, const VkQueryPoolCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateQueryPool, dev, &info);
 }
 
-VkResult QueryPool::results(uint32_t first, uint32_t count, size_t size, void *data, size_t stride) {
+VkResult QueryPool::Results(uint32_t first, uint32_t count, size_t size, void *data, size_t stride) {
     VkResult err = vk::GetQueryPoolResults(device(), handle(), first, count, size, data, stride, 0);
     EXPECT_TRUE(err == VK_SUCCESS || err == VK_NOT_READY);
 
@@ -1002,20 +1002,20 @@ VkResult QueryPool::results(uint32_t first, uint32_t count, size_t size, void *d
 NON_DISPATCHABLE_HANDLE_DTOR(Buffer, vk::DestroyBuffer)
 
 void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
-    init_no_mem(dev, info);
+    InitNoMemory(dev, info);
 
-    auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext);
+    auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext);
     internal_mem_.init(dev, alloc_info);
 
     BindMemory(internal_mem_, 0);
 }
 
-void Buffer::init_no_mem(const Device &dev, const VkBufferCreateInfo &info) {
+void Buffer::InitNoMemory(const Device &dev, const VkBufferCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateBuffer, dev, &info);
     create_info_ = info;
 }
 
-VkMemoryRequirements Buffer::memory_requirements() const {
+VkMemoryRequirements Buffer::MemoryRequirements() const {
     VkMemoryRequirements reqs;
 
     vk::GetBufferMemoryRequirements(device(), handle(), &reqs);
@@ -1025,7 +1025,7 @@ VkMemoryRequirements Buffer::memory_requirements() const {
 
 void Buffer::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     assert(!internal_mem_.initialized());
-    internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext));
+    internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext));
     BindMemory(internal_mem_, 0);
 }
 
@@ -1036,7 +1036,7 @@ void Buffer::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
 }
 
-VkDeviceAddress Buffer::address() const {
+VkDeviceAddress Buffer::Address() const {
     VkBufferDeviceAddressInfo bdai = vku::InitStructHelper();
     bdai.buffer = handle();
     if (vk::GetBufferDeviceAddressKHR) {
@@ -1067,7 +1067,7 @@ Image::Image(const Device &dev, uint32_t const width, uint32_t const height, uin
     Init(dev, width, height, mip_levels, format, usage);
 }
 
-Image::Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : device_(&dev) { init_no_mem(dev, info); }
+Image::Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : device_(&dev) { InitNoMemory(dev, info); }
 
 // If you find yourself wanting to expand this or making another overload, then you might really just want to call
 //     SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -1090,10 +1090,10 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : dev
 }
 
 void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
-    init_no_mem(dev, info);
+    InitNoMemory(dev, info);
 
     if (initialized()) {
-        auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext);
+        auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext);
         internal_mem_.init(dev, alloc_info);
         BindMemory(internal_mem_, 0);
     }
@@ -1106,7 +1106,7 @@ void Image::Init(const Device &dev, uint32_t const width, uint32_t const height,
 }
 
 // Currently all init call here, so can set things for all path
-void Image::init_no_mem(const Device &dev, const VkImageCreateInfo &info) {
+void Image::InitNoMemory(const Device &dev, const VkImageCreateInfo &info) {
     if (!device_) {
         device_ = &dev;
     }
@@ -1184,7 +1184,7 @@ VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const 
     return imageCreateInfo;
 }
 
-VkMemoryRequirements Image::memory_requirements() const {
+VkMemoryRequirements Image::MemoryRequirements() const {
     VkMemoryRequirements reqs;
 
     vk::GetImageMemoryRequirements(device(), handle(), &reqs);
@@ -1194,7 +1194,7 @@ VkMemoryRequirements Image::memory_requirements() const {
 
 void Image::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     assert(!internal_mem_.initialized());
-    internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, memory_requirements(), mem_props, alloc_info_pnext));
+    internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext));
     BindMemory(internal_mem_, 0);
 }
 
@@ -1324,7 +1324,7 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
 VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) const {
     VkImageViewCreateInfo ci = vku::InitStructHelper();
     ci.image = handle();
-    ci.format = format();
+    ci.format = Format();
     ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ci.components.r = VK_COMPONENT_SWIZZLE_R;
     ci.components.g = VK_COMPONENT_SWIZZLE_G;
@@ -1456,7 +1456,7 @@ void ShaderModule::init(const Device &dev, const VkShaderModuleCreateInfo &info)
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateShaderModule, dev, &info);
 }
 
-VkResult ShaderModule::init_try(const Device &dev, const VkShaderModuleCreateInfo &info) {
+VkResult ShaderModule::InitTry(const Device &dev, const VkShaderModuleCreateInfo &info) {
     VkShaderModule mod;
 
     VkResult err = vk::CreateShaderModule(dev.handle(), &info, NULL, &mod);
@@ -1471,7 +1471,7 @@ void Shader::init(const Device &dev, const VkShaderCreateInfoEXT &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateShadersEXT, dev, 1u, &info);
 }
 
-VkResult Shader::init_try(const Device &dev, const VkShaderCreateInfoEXT &info) {
+VkResult Shader::InitTry(const Device &dev, const VkShaderCreateInfoEXT &info) {
     VkShaderEXT mod;
 
     VkResult err = vk::CreateShadersEXT(dev.handle(), 1u, &info, NULL, &mod);
@@ -1536,7 +1536,7 @@ void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info)
     }
 }
 
-VkResult Pipeline::init_try(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
+VkResult Pipeline::InitTry(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
     VkPipeline pipe;
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
@@ -1611,7 +1611,7 @@ void DescriptorPool::init(const Device &dev, const VkDescriptorPoolCreateInfo &i
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorPool, dev, &info);
 }
 
-void DescriptorPool::reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
+void DescriptorPool::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
 
 std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev,
                                                           const std::vector<const DescriptorSetLayout *> &layouts) {
@@ -1702,9 +1702,9 @@ void CommandBuffer::Init(const Device &dev, const CommandPool &pool, VkCommandBu
     init(dev, create_info);
 }
 
-void CommandBuffer::begin(const VkCommandBufferBeginInfo *info) { ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info)); }
+void CommandBuffer::Begin(const VkCommandBufferBeginInfo *info) { ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info)); }
 
-void CommandBuffer::begin(VkCommandBufferUsageFlags flags) {
+void CommandBuffer::Begin(VkCommandBufferUsageFlags flags) {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo hinfo = vku::InitStructHelper();
     info.flags = flags;
@@ -1719,9 +1719,9 @@ void CommandBuffer::begin(VkCommandBufferUsageFlags flags) {
     begin(&info);
 }
 
-void CommandBuffer::end() { ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(handle())); }
+void CommandBuffer::End() { ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(handle())); }
 
-void CommandBuffer::reset(VkCommandBufferResetFlags flags) { ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags)); }
+void CommandBuffer::Reset(VkCommandBufferResetFlags flags) { ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags)); }
 
 VkCommandBufferAllocateInfo CommandBuffer::CreateInfo(VkCommandPool const &pool) {
     VkCommandBufferAllocateInfo info = vku::InitStructHelper();

@@ -35,7 +35,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     // Calls AllocateCommandBuffers
     vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
 
-    commandBuffer.begin();
+    commandBuffer.Begin();
 
     vkt::Event event(*m_device);
     VkResult err;
@@ -67,7 +67,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     AddToCommandBuffer(&data);
 
     thread2.join();
-    commandBuffer.end();
+    commandBuffer.End();
 
     m_errorMonitor->SetBailout(NULL);
 

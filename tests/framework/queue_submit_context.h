@@ -102,10 +102,10 @@ struct QSTestContext {
     void Submit1Signal(vkt::CommandBuffer& cb, VkPipelineStageFlags signal_mask) {
         Submit1(cb, VK_NULL_HANDLE, 0U, semaphore.handle());
     }
-    void SetEvent(VkPipelineStageFlags src_mask) { event.cmd_set(*current_cb, src_mask); }
+    void SetEvent(VkPipelineStageFlags src_mask) { event.CmdSet(*current_cb, src_mask); }
     void WaitEventBufferTransfer(vkt::Buffer& buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask);
 
-    void ResetEvent(VkPipelineStageFlags src_mask) { event.cmd_reset(*current_cb, src_mask); }
+    void ResetEvent(VkPipelineStageFlags src_mask) { event.CmdReset(*current_cb, src_mask); }
 
     void QueueWait(VkQueue q) { vk::QueueWaitIdle(q); }
     void QueueWait0() { QueueWait(q0); }

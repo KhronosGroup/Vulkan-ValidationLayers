@@ -182,13 +182,13 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommands) {
     generated_commands_info.indirectExecutionSet = exe_set.handle();
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
-    generated_commands_info.indirectAddress = block_buffer.address();
+    generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetPipeline) {
@@ -283,15 +283,15 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsEXT) {
     generated_commands_info.indirectExecutionSet = exe_set.handle();
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
-    generated_commands_info.indirectAddress = block_buffer.address();
+    generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
@@ -350,17 +350,17 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     generated_commands_info.indirectExecutionSet = exe_set.handle();
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
-    generated_commands_info.indirectAddress = block_buffer.address();
+    generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT};
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, stages, shaders);
     SetDefaultDynamicStatesAll(m_command_buffer.handle());
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

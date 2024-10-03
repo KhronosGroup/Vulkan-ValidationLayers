@@ -21,7 +21,7 @@ TEST_F(NegativePortabilitySubset, Device) {
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    vkt::PhysicalDevice phys_device(gpu());
+    vkt::PhysicalDevice phys_device(Gpu());
 
     // request all queues
     const std::vector<VkQueueFamilyProperties> queue_props = phys_device.queue_properties_;
@@ -29,8 +29,8 @@ TEST_F(NegativePortabilitySubset, Device) {
 
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
-    auto qci = queue_info.data();
-    for (uint32_t j = 0; j < queue_info.size(); ++j) {
+    auto qci = queue_info.Data();
+    for (uint32_t j = 0; j < queue_info.Size(); ++j) {
         if (qci[j].queueCount) {
             create_queue_infos.push_back(qci[j]);
         }
@@ -47,7 +47,7 @@ TEST_F(NegativePortabilitySubset, Device) {
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pProperties-04451");
     VkDevice device;
-    vk::CreateDevice(gpu(), &dev_info, nullptr, &device);
+    vk::CreateDevice(Gpu(), &dev_info, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
 
@@ -222,7 +222,7 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
     portability_feature.triangleFans = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -255,7 +255,7 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
     ASSERT_TRUE(portability_properties.minVertexInputBindingStrideAlignment > 0);
     auto vertex_stride = portability_properties.minVertexInputBindingStrideAlignment - 1;
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -289,7 +289,7 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     portability_feature.vertexAttributeAccessBeyondStride = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -370,7 +370,7 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     portability_feature.separateStencilMaskRef = VK_FALSE;
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -591,7 +591,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
         VK_BLEND_FACTOR_ZERO,           VK_BLEND_OP_ADD,
     };
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362");
     vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_equation);
@@ -603,7 +603,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
     vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
@@ -641,22 +641,22 @@ TEST_F(VkPortabilitySubsetTest, FeatureWithoutExtension) {
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR feature = vku::InitStructHelper();
 
-    vkt::PhysicalDevice physical_device(gpu());
+    vkt::PhysicalDevice physical_device(Gpu());
     vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
-    auto qci = queue_info.data();
-    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+    auto qci = queue_info.Data();
+    for (uint32_t i = 0; i < queue_info.Size(); ++i) {
         if (qci[i].queueCount) {
             create_queue_infos.push_back(qci[i]);
         }
     }
 
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&feature);
-    device_create_info.queueCreateInfoCount = queue_info.size();
-    device_create_info.pQueueCreateInfos = queue_info.data();
+    device_create_info.queueCreateInfoCount = queue_info.Size();
+    device_create_info.pQueueCreateInfos = queue_info.Data();
     VkDevice testDevice;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(Gpu(), &device_create_info, NULL, &testDevice);
     m_errorMonitor->VerifyFound();
 }

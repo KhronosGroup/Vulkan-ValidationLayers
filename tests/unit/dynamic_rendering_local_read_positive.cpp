@@ -81,7 +81,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkImageMemoryBarrier pre_barriers[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
     pre_barriers[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -129,7 +129,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
 
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
@@ -151,7 +151,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
     color_attachments[1] = vku::InitStructHelper();
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
@@ -186,7 +186,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearDepthAttachment) {
 
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     vkt::Image depthImage(*m_device, 32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depthImageView = depthImage.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -221,10 +221,10 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearDepthAttachment) {
     rect.baseArrayLayer = 0u;
     rect.layerCount = 1u;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(renderingInfo);
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &locationInfo);
     vk::CmdClearAttachments(m_command_buffer.handle(), 1u, &attachment, 1u, &rect);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

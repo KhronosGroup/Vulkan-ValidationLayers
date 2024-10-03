@@ -25,7 +25,7 @@ TEST_F(PositiveTooling, InfoExt) {
     }
 
     uint32_t tool_count = 0;
-    auto result = vk::GetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, nullptr);
+    auto result = vk::GetPhysicalDeviceToolPropertiesEXT(Gpu(), &tool_count, nullptr);
 
     if (tool_count <= 0) {
         m_errorMonitor->SetError("Expected layer tooling data but received none");
@@ -39,7 +39,7 @@ TEST_F(PositiveTooling, InfoExt) {
     bool found_validation_layer = false;
 
     if (result == VK_SUCCESS) {
-        result = vk::GetPhysicalDeviceToolPropertiesEXT(gpu(), &tool_count, tool_properties.data());
+        result = vk::GetPhysicalDeviceToolPropertiesEXT(Gpu(), &tool_count, tool_properties.data());
 
         for (uint32_t i = 0; i < tool_count; i++) {
             if (strcmp(tool_properties[0].name, "Khronos Validation Layer") == 0) {
@@ -63,7 +63,7 @@ TEST_F(PositiveTooling, InfoCore) {
     }
 
     uint32_t tool_count = 0;
-    auto result = vk::GetPhysicalDeviceToolProperties(gpu(), &tool_count, nullptr);
+    auto result = vk::GetPhysicalDeviceToolProperties(Gpu(), &tool_count, nullptr);
 
     if (tool_count <= 0) {
         m_errorMonitor->SetError("Expected layer tooling data but received none");
@@ -77,7 +77,7 @@ TEST_F(PositiveTooling, InfoCore) {
     bool found_validation_layer = false;
 
     if (result == VK_SUCCESS) {
-        result = vk::GetPhysicalDeviceToolProperties(gpu(), &tool_count, tool_properties.data());
+        result = vk::GetPhysicalDeviceToolProperties(Gpu(), &tool_count, tool_properties.data());
 
         for (uint32_t i = 0; i < tool_count; i++) {
             if (strcmp(tool_properties[0].name, "Khronos Validation Layer") == 0) {

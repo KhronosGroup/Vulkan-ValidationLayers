@@ -92,7 +92,7 @@ void QSTestContext::Begin(vkt::CommandBuffer& cb) {
 }
 
 void QSTestContext::End() {
-    current_cb->end();
+    current_cb->End();
     current_cb = nullptr;
 }
 
@@ -178,8 +178,8 @@ void QSTestContext::SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait,
 
 void QSTestContext::WaitEventBufferTransfer(vkt::Buffer& buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask) {
     std::vector<VkBufferMemoryBarrier> buffer_barriers(1, InitBufferBarrierWAR(buffer));
-    event.cmd_wait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
-                   std::vector<VkImageMemoryBarrier>());
+    event.CmdWait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
+                  std::vector<VkImageMemoryBarrier>());
 }
 
 void QSTestContext::RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region) {

@@ -740,7 +740,7 @@ TEST_F(NegativeAndroidHardwareBuffer, PhysDevImageFormatProp2) {
 
     // AHB_usage chained to input without a matching external image format struc chained to output
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868");
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &pdifi, &ifp);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &pdifi, &ifp);
     m_errorMonitor->VerifyFound();
 
     // output struct chained, but does not include VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID usage
@@ -748,7 +748,7 @@ TEST_F(NegativeAndroidHardwareBuffer, PhysDevImageFormatProp2) {
     pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
     pdifi.pNext = &pdeifi;
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868");
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &pdifi, &ifp);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &pdifi, &ifp);
     m_errorMonitor->VerifyFound();
 }
 
@@ -986,7 +986,8 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportBufferAllocationSize) {
     VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&export_memory_info);
     memory_info.allocationSize = 0;
 
-    bool has_memtype = m_device->phy().SetMemoryType(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    bool has_memtype =
+        m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
@@ -1035,7 +1036,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportImageNonBound) {
     memory_info.allocationSize = 0;
 
     // Use any DEVICE_LOCAL memory found
-    bool has_memtype = m_device->phy().SetMemoryType(0xFFFFFFFF, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    bool has_memtype = m_device->Physical().SetMemoryType(0xFFFFFFFF, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         GTEST_SKIP() << "No valid memory type index could be found";
     }
@@ -1303,7 +1304,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NullAHBImport) {
     // Android implemenetations "should have" a DEVICE_LOCAL only index designed for AHB
     VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkPhysicalDeviceMemoryProperties gpu_memory_props;
-    vk::GetPhysicalDeviceMemoryProperties(gpu(), &gpu_memory_props);
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &gpu_memory_props);
     memory_allocate_info.memoryTypeIndex = gpu_memory_props.memoryTypeCount + 1;
     for (uint32_t i = 0; i < gpu_memory_props.memoryTypeCount; i++) {
         if ((ahb_props.memoryTypeBits & (1 << i)) && ((gpu_memory_props.memoryTypes[i].propertyFlags & property) == property)) {

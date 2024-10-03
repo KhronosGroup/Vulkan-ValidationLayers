@@ -30,10 +30,10 @@ TEST_F(NegativeShaderInterface, MaxVertexComponentsWithBuiltins) {
     }
 
     VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     props.limits.maxVertexOutputComponents = 128;
     props.limits.maxFragmentInputComponents = 128;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
 
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -105,10 +105,10 @@ TEST_F(NegativeShaderInterface, MaxFragmentComponentsWithBuiltins) {
     }
 
     VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     props.limits.maxVertexOutputComponents = 128;
     props.limits.maxFragmentInputComponents = 128;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
 
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -169,7 +169,7 @@ TEST_F(NegativeShaderInterface, MaxVertexOutputComponents) {
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
-        const uint32_t maxVsOutComp = m_device->phy().limits_.maxVertexOutputComponents + overflow;
+        const uint32_t maxVsOutComp = m_device->Physical().limits_.maxVertexOutputComponents + overflow;
         std::string vsSourceStr = "#version 450\n\n";
         const uint32_t numVec4 = maxVsOutComp / 4;
         uint32_t location = 0;
@@ -228,7 +228,8 @@ TEST_F(NegativeShaderInterface, MaxComponentsBlocks) {
     InitRenderTarget();
 
     // To make the test simple, just make sure max is 128 or less (most HW is 64 or 128)
-    if (m_device->phy().limits_.maxVertexOutputComponents > 128 || m_device->phy().limits_.maxFragmentInputComponents > 128) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents > 128 ||
+        m_device->Physical().limits_.maxFragmentInputComponents > 128) {
         GTEST_SKIP() << "maxVertexOutputComponents or maxFragmentInputComponents too high for test";
     }
     // vec4 == 4 components
@@ -288,7 +289,7 @@ TEST_F(NegativeShaderInterface, MaxFragmentInputComponents) {
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
-        const uint32_t maxFsInComp = m_device->phy().limits_.maxFragmentInputComponents + overflow;
+        const uint32_t maxFsInComp = m_device->Physical().limits_.maxFragmentInputComponents + overflow;
         std::string fsSourceStr = "#version 450\n\n";
         const uint32_t numVec4 = maxFsInComp / 4;
         uint32_t location = 0;
@@ -689,7 +690,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructInnerArraySize) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -749,7 +750,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuterArraySize) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -808,7 +809,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructArraySizeVertex) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -868,7 +869,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchBlockStructOuter2DArraySize) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1136,7 +1137,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchShaderObject) {
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource));
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fsSource));
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
@@ -1144,7 +1145,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchShaderObject) {
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSizeShaderObject) {
@@ -1175,7 +1176,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSizeShaderObject) {
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource));
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fsSource));
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
@@ -1183,7 +1184,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSizeShaderObject) {
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderInterface, InputOutputMismatch) {
@@ -1541,7 +1542,7 @@ TEST_F(NegativeShaderInterface, MultidimensionalArray) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1572,7 +1573,7 @@ TEST_F(NegativeShaderInterface, MultidimensionalArrayDim) {
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    if (m_device->phy().limits_.maxVertexOutputComponents <= 64) {
+    if (m_device->Physical().limits_.maxVertexOutputComponents <= 64) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
@@ -1605,7 +1606,7 @@ TEST_F(NegativeShaderInterface, MultidimensionalArray64bit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (m_device->phy().limits_.maxFragmentOutputAttachments < 25) {
+    if (m_device->Physical().limits_.maxFragmentOutputAttachments < 25) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is too low";
     }
 

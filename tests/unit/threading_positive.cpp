@@ -28,19 +28,19 @@ TEST_F(PositiveThreading, DisplayObjects) {
     RETURN_IF_SKIP(Init());
 
     uint32_t prop_count = 0;
-    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &prop_count, nullptr);
     if (prop_count == 0) {
         GTEST_SKIP() << "No VkDisplayKHR properties to query";
     }
 
     std::vector<VkDisplayPropertiesKHR> display_props{prop_count};
     // Create a VkDisplayKHR object
-    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &prop_count, display_props.data());
     ASSERT_NE(prop_count, 0U);
 
     // Now use this new object in an API call that thread safety will track
     prop_count = 0;
-    vk::GetDisplayModePropertiesKHR(gpu(), display_props[0].display, &prop_count, nullptr);
+    vk::GetDisplayModePropertiesKHR(Gpu(), display_props[0].display, &prop_count, nullptr);
 }
 
 TEST_F(PositiveThreading, DisplayPlaneObjects) {
@@ -51,16 +51,16 @@ TEST_F(PositiveThreading, DisplayPlaneObjects) {
     RETURN_IF_SKIP(Init());
 
     uint32_t prop_count = 0;
-    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
+    vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &prop_count, nullptr);
     if (prop_count != 0) {
         // only grab first plane property
         prop_count = 1;
         VkDisplayPlanePropertiesKHR display_plane_props = {};
         // Create a VkDisplayKHR object
-        vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, &display_plane_props);
+        vk::GetPhysicalDeviceDisplayPlanePropertiesKHR(Gpu(), &prop_count, &display_plane_props);
         // Now use this new object in an API call
         prop_count = 0;
-        vk::GetDisplayModePropertiesKHR(gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
+        vk::GetDisplayModePropertiesKHR(Gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
     }
 }
 
@@ -224,12 +224,12 @@ TEST_F(PositiveThreading, DebugObjectNames) {
         }
     };
     const auto bind_descriptor = [&]() {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         for (uint32_t i = 0; i < count; ++i) {
             vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
                                       &descriptor_sets[i], 0u, nullptr);
         }
-        m_command_buffer.end();
+        m_command_buffer.End();
     };
 
     std::thread thread2(bind_descriptor);
@@ -271,8 +271,8 @@ TEST_F(PositiveThreading, Queue) {
     vkt::CommandBuffer mock_cmdbuff(*m_device, cbai);
     const VkCommandBufferBeginInfo cbbi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                         VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
-    mock_cmdbuff.begin(&cbbi);
-    mock_cmdbuff.end();
+    mock_cmdbuff.Begin(&cbbi);
+    mock_cmdbuff.End();
 
     std::mutex queue_mutex;
 

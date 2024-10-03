@@ -22,7 +22,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsInput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (m_device->phy().limits_.maxSampleMaskWords > 1) {
+    if (m_device->Physical().limits_.maxSampleMaskWords > 1) {
         GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
     }
 
@@ -84,7 +84,7 @@ TEST_F(NegativeShaderLimits, MaxSampleMaskWordsOutput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (m_device->phy().limits_.maxSampleMaskWords > 1) {
+    if (m_device->Physical().limits_.maxSampleMaskWords > 1) {
         GTEST_SKIP() << "maxSampleMaskWords is greater than 1";
     }
 
@@ -140,7 +140,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelGatherOffset) {
 
     RETURN_IF_SKIP(Init());
 
-    if (m_device->phy().limits_.minTexelGatherOffset <= -100 || m_device->phy().limits_.maxTexelGatherOffset >= 100) {
+    if (m_device->Physical().limits_.minTexelGatherOffset <= -100 || m_device->Physical().limits_.maxTexelGatherOffset >= 100) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
     }
 
@@ -209,7 +209,7 @@ TEST_F(NegativeShaderLimits, MinAndMaxTexelOffset) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (m_device->phy().limits_.minTexelOffset <= -100 || m_device->phy().limits_.maxTexelOffset >= 100) {
+    if (m_device->Physical().limits_.minTexelOffset <= -100 || m_device->Physical().limits_.maxTexelOffset >= 100) {
         GTEST_SKIP() << "test needs minTexelGatherOffset greater than -100 and maxTexelGatherOffset less than 100";
     }
 
@@ -279,7 +279,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const uint32_t count = m_device->Physical().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }
@@ -307,7 +307,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -317,7 +317,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
@@ -329,7 +329,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     AddRequiredFeature(vkt::Feature::workgroupMemoryExplicitLayout);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t max_shared_memory_size = m_device->phy().limits_.maxComputeSharedMemorySize;
+    const uint32_t max_shared_memory_size = m_device->Physical().limits_.maxComputeSharedMemorySize;
 
     // layout(constant_id = 0) const uint value = 4;
     // shared X {
@@ -379,7 +379,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
 
 TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+    if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
@@ -406,7 +406,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachments) {
 
 TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+    if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
@@ -425,7 +425,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArray) {
 
 TEST_F(NegativeShaderLimits, MaxFragmentOutputAttachmentsArrayAtEnd) {
     RETURN_IF_SKIP(Init());
-    if (m_device->phy().limits_.maxFragmentOutputAttachments != 4) {
+    if (m_device->Physical().limits_.maxFragmentOutputAttachments != 4) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
@@ -450,9 +450,9 @@ TEST_F(NegativeShaderLimits, MaxFragmentCombinedOutputResources) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
     VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     props.limits.maxFragmentCombinedOutputResources = 4;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     RETURN_IF_SKIP(InitState());
 
     char const *fsSource = R"glsl(

@@ -32,7 +32,7 @@ TEST_F(NegativePipelineBinary, CacheControl) {
         GTEST_SKIP() << "pipelineBinaryInternalCacheControl is VK_TRUE";
     }
 
-    const auto q_props = vkt::PhysicalDevice(gpu()).queue_properties_;
+    const auto q_props = vkt::PhysicalDevice(Gpu()).queue_properties_;
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
@@ -59,7 +59,7 @@ TEST_F(NegativePipelineBinary, CacheControl) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-VkDevicePipelineBinaryInternalCacheControlKHR-disableInternalCache-09602");
-    vk::CreateDevice(gpu(), &device_ci, nullptr, &testDevice);
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &testDevice);
     m_errorMonitor->VerifyFound();
 }
 
@@ -378,7 +378,7 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
     VkResult err = vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);

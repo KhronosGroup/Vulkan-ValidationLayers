@@ -128,7 +128,7 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     AccelerationStructureKHR& SetDeviceBuffer(vkt::Buffer&& buffer);
     AccelerationStructureKHR& SetDeviceBufferMemoryAllocateFlags(VkMemoryAllocateFlags memory_allocate_flags);
     AccelerationStructureKHR& SetDeviceBufferMemoryPropertyFlags(VkMemoryAllocateFlags memory_property_flags);
-    AccelerationStructureKHR& SetDeviceBufferInitNoMem(bool buffer_init_no_mem);
+    AccelerationStructureKHR& SetDeviceBufferInitNoMem(bool buffer_InitNoMemory);
     // Set it to 0 to skip buffer initialization at Build() step
     AccelerationStructureKHR& SetBufferUsageFlags(VkBufferUsageFlags usage_flags);
 
@@ -152,7 +152,7 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     VkMemoryAllocateFlags buffer_memory_allocate_flags_{};
     VkMemoryPropertyFlags buffer_memory_property_flags_{};
     VkBufferUsageFlags buffer_usage_flags_{};
-    bool buffer_init_no_mem_ = false;
+    bool buffer_InitNoMemory_ = false;
 };
 
 class BuildGeometryInfoKHR {

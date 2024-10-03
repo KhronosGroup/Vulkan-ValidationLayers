@@ -242,7 +242,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
-    if (m_device->phy().Features().tessellationShader) {
+    if (m_device->Physical().Features().tessellationShader) {
         topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
                                       "VUID-VkGraphicsPipelineCreateInfo-topology-08889"};
@@ -310,7 +310,7 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnable) {
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_TRUE);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -318,5 +318,5 @@ TEST_F(NegativePipelineTopology, DynamicPrimitiveRestartEnable) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     vk::CmdEndRenderPass(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

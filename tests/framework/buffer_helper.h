@@ -26,9 +26,9 @@ template <typename VertexT>
 Buffer VertexBuffer(const Device &dev, const std::vector<float> &vertices) {
     vkt::Buffer vertex_buffer(dev, vertices.size() * sizeof(VertexT), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    auto *vertex_buffer_ptr = static_cast<VertexT *>(vertex_buffer.memory().map());
+    auto *vertex_buffer_ptr = static_cast<VertexT *>(vertex_buffer.Memory().Map());
     std::copy(vertices.data(), vertices.data() + vertices.size(), vertex_buffer_ptr);
-    vertex_buffer.memory().unmap();
+    vertex_buffer.Memory().Unmap();
     return vertex_buffer;
 }
 
@@ -36,9 +36,9 @@ template <typename IndexT>
 Buffer IndexBuffer(const Device &dev, const std::vector<IndexT> &indices) {
     vkt::Buffer index_buffer(dev, indices.size() * sizeof(IndexT), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    auto *index_buffer_ptr = static_cast<IndexT *>(index_buffer.memory().map());
+    auto *index_buffer_ptr = static_cast<IndexT *>(index_buffer.Memory().Map());
     std::copy(indices.data(), indices.data() + indices.size(), index_buffer_ptr);
-    index_buffer.memory().unmap();
+    index_buffer.Memory().Unmap();
     return index_buffer;
 }
 

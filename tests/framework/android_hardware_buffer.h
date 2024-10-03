@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ inline bool SetAllocationInfoImportAHB(vkt::Device *device, VkAndroidHardwareBuf
     // Set index to match one of the bits in ahb_props that is also only Device Local
     // Android implemenetations "should have" a DEVICE_LOCAL only index designed for AHB
     VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkPhysicalDeviceMemoryProperties mem_props = device->phy().memory_properties_;
+    VkPhysicalDeviceMemoryProperties mem_props = device->Physical().memory_properties_;
     // AHB object hold the real allocationSize needed
     info.allocationSize = ahb_props.allocationSize;
     info.memoryTypeIndex = mem_props.memoryTypeCount + 1;

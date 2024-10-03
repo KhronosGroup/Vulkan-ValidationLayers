@@ -48,11 +48,11 @@ TEST_F(NegativeTooling, PrivateDataSetNonDevice) {
 
     static const uint64_t data_value = 0x70AD;
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t)gpu(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t)Gpu(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (uint64_t)gpu(), data_slot, data_value);
+    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (uint64_t)Gpu(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
@@ -83,7 +83,7 @@ TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
     AddRequiredFeature(vkt::Feature::privateData);
     RETURN_IF_SKIP(Init());
 
-    auto features = m_device->phy().Features();
+    auto features = m_device->Physical().Features();
     vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkPrivateDataSlot data_slot;
@@ -119,11 +119,11 @@ TEST_F(NegativeTooling, PrivateDataGetNonDevice) {
 
     uint64_t data;
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectType-04018");
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t)gpu(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t)Gpu(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPrivateData-objectType-04018");
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (uint64_t)gpu(), data_slot, &data);
+    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_UNKNOWN, (uint64_t)Gpu(), data_slot, &data);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);

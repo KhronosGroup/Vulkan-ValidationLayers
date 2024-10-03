@@ -15,7 +15,7 @@ void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
     vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_);
     vkt::CommandBuffer cmd_buf(*m_device, pool);
 
-    cmd_buf.begin();
+    cmd_buf.Begin();
     VkImageMemoryBarrier layout_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                                         nullptr,
                                         0,
@@ -29,7 +29,7 @@ void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
 
     vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &layout_barrier);
-    cmd_buf.end();
+    cmd_buf.End();
     m_default_queue->Submit(cmd_buf);
     m_default_queue->Wait();
 }
@@ -225,7 +225,7 @@ TEST_F(PositiveWsi, GetPhysicalDeviceSurfaceCapabilities2KHRWithFullScreenEXT) {
     surface_info.surface = m_surface;
 
     VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->phy(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->Physical(), &surface_info, &surface_caps);
 }
 #endif
 
@@ -287,7 +287,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     copy_region.extent = {std::min(10u, m_surface_capabilities.minImageExtent.width),
                           std::min(10u, m_surface_capabilities.minImageExtent.height), 1};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdCopyImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
@@ -382,7 +382,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -407,7 +407,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     vk::CmdCopyImage(m_command_buffer.handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -428,10 +428,10 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
 
     const VkImageMemoryBarrier present_transition =
         TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &present_transition);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
 
@@ -567,8 +567,8 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
         vk::ResetFences(device(), 1, &acquire_fence.handle());
 
         // There should not be in-use errors when we re-use command buffer that corresponds to the acquired image index.
-        command_buffers[image_index].begin();
-        command_buffers[image_index].end();
+        command_buffers[image_index].Begin();
+        command_buffers[image_index].End();
 
         m_default_queue->Submit(command_buffers[image_index], vkt::signal, submit_semaphores[image_index]);
 
@@ -605,8 +605,8 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
     vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(device(), 1, &acquire_fence.handle());
-    command_buffers[image_index].begin();
-    command_buffers[image_index].end();
+    command_buffers[image_index].Begin();
+    command_buffers[image_index].End();
 
     m_default_queue->Submit(command_buffers[image_index], vkt::signal, submit_semaphores[image_index]);
 
@@ -640,8 +640,8 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(device(), 1, &acquire_fence.handle());
 
-    command_buffers[image_index].begin();
-    command_buffers[image_index].end();
+    command_buffers[image_index].Begin();
+    command_buffers[image_index].End();
     m_default_queue->Wait();
 }
 
@@ -656,7 +656,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     {
         auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
         ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
-        fence.wait(vvl::kU32Max);
+        fence.Wait(vvl::kU32Max);
     }
 
     VkAttachmentDescription attach[] = {
@@ -691,7 +691,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     vkt::Framebuffer fb1(*m_device, rp1.handle(), 1, &view.handle(), 1, 1);
     vkt::Framebuffer fb2(*m_device, rp2.handle(), 1, &view.handle(), 1, 1);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp1.handle(), fb1.handle());
     m_command_buffer.EndRenderPass();
     m_command_buffer.BeginRenderPass(rp2.handle(), fb2.handle());
@@ -701,7 +701,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
         TransitionToPresent(swapchainImages[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0);
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(device(), 1, &fence.handle());
@@ -721,7 +721,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     InitSwapchainInfo();
 
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
         GTEST_SKIP() << "Graphics queue does not support present";
     }
@@ -743,7 +743,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     VkSurfaceCapabilities2KHR capabilities = vku::InitStructHelper(&shared_present_capabilities);
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
     surface_info.surface = m_surface;
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &capabilities);
 
     // This was recently added to CTS, but some drivers might not correctly advertise the flag
     if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
@@ -907,13 +907,13 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     VkSurfaceFormatKHR format_tmp;
     {
         uint32_t format_count = 1;
-        const VkResult err = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, &format_tmp);
+        const VkResult err = vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface, &format_count, &format_tmp);
         ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
     }
     const VkFormat format = format_tmp.format;
 
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_props);
     if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
         GTEST_SKIP() << "We need VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT feature";
     }
@@ -958,7 +958,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     {
         auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
         ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
-        fence.wait(vvl::kU32Max);
+        fence.Wait(vvl::kU32Max);
     }
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -970,7 +970,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle(), 1, 1);
 
     vkt::CommandBuffer cmdbuff(*m_device, m_command_pool);
-    cmdbuff.begin();
+    cmdbuff.Begin();
     cmdbuff.BeginRenderPass(render_pass.handle(), framebuffer.handle());
 
     vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -985,7 +985,7 @@ TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     InitSwapchainInfo();
 
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
         GTEST_SKIP() << "Graphics queue does not support present";
     }
@@ -1054,7 +1054,7 @@ TEST_F(PositiveWsi, DestroySwapchainWithBoundImages) {
 
     int i = 0;
     for (auto &image : images) {
-        image.init_no_mem(*m_device, image_create_info);
+        image.InitNoMemory(*m_device, image_create_info);
         VkBindImageMemorySwapchainInfoKHR bind_swapchain_info = vku::InitStructHelper();
         bind_swapchain_info.swapchain = m_swapchain;
         bind_swapchain_info.imageIndex = i++;
@@ -1099,7 +1099,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
 
     // Create protected swapchain
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
         GTEST_SKIP() << "Graphics queue does not support present, skipping test";
     }
@@ -1183,7 +1183,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     vkt::CommandPool protectedCommandPool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     vkt::CommandBuffer protectedCommandBuffer(*m_device, protectedCommandPool);
 
-    protectedCommandBuffer.begin();
+    protectedCommandBuffer.Begin();
     VkRect2D render_area = {{0, 0}, swapchain_create_info.imageExtent};
     VkRenderPassBeginInfo render_pass_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, fb.handle(), render_area, 0u, nullptr);
@@ -1192,7 +1192,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     // This should be valid since the framebuffer color attachment is a protected swapchain image
     vk::CmdDraw(protectedCommandBuffer.handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(protectedCommandBuffer.handle());
-    protectedCommandBuffer.end();
+    protectedCommandBuffer.End();
 }
 
 TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
@@ -1215,7 +1215,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
     surface_info.surface = m_surface;
 
     VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->phy(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->Physical(), &surface_info, &surface_caps);
 
     VkSwapchainPresentModesCreateInfoEXT swapchain_present_mode_create_info = vku::InitStructHelper();
     swapchain_present_mode_create_info.presentModeCount = 1;
@@ -1245,13 +1245,13 @@ TEST_F(PositiveWsi, RegisterDisplayEvent) {
     RETURN_IF_SKIP(Init());
 
     uint32_t prop_count = 0;
-    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &prop_count, nullptr);
     if (prop_count == 0) {
         GTEST_SKIP() << "No VkDisplayKHR properties to query";
     }
 
     std::vector<VkDisplayPropertiesKHR> display_props{prop_count};
-    vk::GetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, display_props.data());
+    vk::GetPhysicalDeviceDisplayPropertiesKHR(Gpu(), &prop_count, display_props.data());
     VkDisplayKHR display = display_props[0].display;
 
     VkDisplayEventInfoEXT event_info = vku::InitStructHelper();
@@ -1276,13 +1276,13 @@ TEST_F(PositiveWsi, SurfacelessQueryTest) {
     // Use the VK_GOOGLE_surfaceless_query extension to query the available formats and
     // colorspaces by using a VK_NULL_HANDLE for the VkSurfaceKHR handle.
     uint32_t count;
-    vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), VK_NULL_HANDLE, &count, nullptr);
     std::vector<VkSurfaceFormatKHR> surface_formats(count);
-    vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, surface_formats.data());
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), VK_NULL_HANDLE, &count, surface_formats.data());
 
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), VK_NULL_HANDLE, &count, nullptr);
     std::vector<VkPresentModeKHR> present_modes(count);
-    vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, present_modes.data());
+    vk::GetPhysicalDeviceSurfacePresentModesKHR(Gpu(), VK_NULL_HANDLE, &count, present_modes.data());
 }
 
 TEST_F(PositiveWsi, PhysicalDeviceSurfaceSupport) {
@@ -1293,11 +1293,11 @@ TEST_F(PositiveWsi, PhysicalDeviceSurfaceSupport) {
     RETURN_IF_SKIP(InitSurface());
 
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), 0, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), 0, m_surface, &supported);
 
     if (supported) {
         uint32_t count;
-        vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &count, nullptr);
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface, &count, nullptr);
     }
 }
 
@@ -1310,7 +1310,7 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     RETURN_IF_SKIP(InitSurface());
 
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
         GTEST_SKIP() << "Surface not supported.";
     }
@@ -1349,10 +1349,10 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
 
     const VkImageMemoryBarrier present_transition = TransitionToPresent(images[imageIndex], VK_IMAGE_LAYOUT_UNDEFINED, 0);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                            0, nullptr, 0, nullptr, 1, &present_transition);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
@@ -1376,8 +1376,8 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
 
     // Warm up. Show that we can reset command buffer after waiting on **submit** fence
     {
-        m_command_buffer.begin();
-        m_command_buffer.end();
+        m_command_buffer.Begin();
+        m_command_buffer.End();
 
         vkt::Fence submit_fence(*m_device);
         m_default_queue->Submit(m_command_buffer, submit_fence);
@@ -1385,7 +1385,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         vk::WaitForFences(device(), 1, &submit_fence.handle(), VK_TRUE, kWaitTimeout);
 
         // It's safe to reset command buffer because we waited on the fence
-        m_command_buffer.reset();
+        m_command_buffer.Reset();
     }
 
     // Main performance. Show that we can reset command buffer after waiting on **present** fence
@@ -1399,10 +1399,10 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         const VkImageMemoryBarrier present_transition =
             TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &present_transition);
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
 
         vkt::Fence present_fence(*m_device);
@@ -1426,7 +1426,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         //      submit semaphore signaled ->
         //      QueueSubmit workload has completed ->
         //      command buffer is no longer in use and we can reset it.
-        m_command_buffer.reset();
+        m_command_buffer.Reset();
     }
     m_default_queue->Wait();
 }
@@ -1471,7 +1471,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
     for (uint32_t i = 0; i < 500; i++) {
         // Remove completed frames
         for (auto it = frames.begin(); it != frames.end();) {
-            if (it->present_finished_fence.status() == VK_SUCCESS) {
+            if (it->present_finished_fence.GetStatus() == VK_SUCCESS) {
                 // NOTE: Root cause of the issue. The present fence processed regular queue submissions,
                 // but not the one associated with a present operation. The present batch usually was
                 // lucky enough to get through, before we start the following "erase", which deletes the
@@ -1524,10 +1524,10 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
     const auto present_transition = TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &present_transition);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
 
     vkt::Fence present_fence(*m_device);
@@ -1547,7 +1547,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     m_default_queue->Wait();
 
     // This should not report in-use error
-    present_fence.reset();
+    present_fence.Reset();
 }
 
 TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
@@ -1597,8 +1597,8 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
 
     m_default_queue->Wait();
 
-    present_fence.reset();
-    present_fence2.reset();
+    present_fence.Reset();
+    present_fence2.Reset();
 
     vk::DestroySwapchainKHR(device(), swapchain2, nullptr);
     DestroySurface(surface2);
@@ -1631,13 +1631,13 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
     VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
     surface_info.surface = surface;
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     const uint32_t general_min_image_count = surface_caps.surfaceCapabilities.minImageCount;
 
     VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_caps);
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
     const uint32_t per_present_mode_min_image_count = surface_caps.surfaceCapabilities.minImageCount;
 
     if (per_present_mode_min_image_count >= general_min_image_count) {

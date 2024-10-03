@@ -41,7 +41,7 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
         #extension GL_EXT_debug_printf : enable
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
         layout(location = 0) rayPayloadEXT vec3 hit;
-       
+
         void main() {
             debugPrintfEXT("In Raygen\n");
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
@@ -60,14 +60,14 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
 
     pipeline.Build();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "In Raygen");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -92,18 +92,18 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle));
 
     // Build Bottom Level Acceleration Structure
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     blas->BuildCmdBuffer(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     tlas.BuildCmdBuffer(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
@@ -111,9 +111,9 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     // Buffer used to count invocations for the 3 shader types
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -130,7 +130,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         };
 
         layout(location = 0) rayPayloadEXT vec3 hit;
-       
+
         void main() {
             debugPrintfEXT("In Raygen\n");
             atomicAdd(debug_buffer[0], 1);
@@ -138,21 +138,21 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
             vec3 ray_origin = vec3(0,0,-50);
             vec3 ray_direction = vec3(0,0,1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             // Will miss
             ray_origin = vec3(0,0,-50);
             ray_direction = vec3(0,0,-1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             // Will miss
             ray_origin = vec3(0,0,50);
             ray_direction = vec3(0,0,1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             ray_origin = vec3(0,0,50);
             ray_direction = vec3(0,0,-1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             // Will miss
             ray_origin = vec3(0,0,0);
             ray_direction = vec3(0,0,1);
@@ -216,7 +216,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
 
     uint32_t frames_count = 250;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
                                   0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
@@ -225,7 +225,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         vk::CmdTraceRaysKHR(m_command_buffer.handle(), &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt,
                             &trace_rays_sbt.hit_sbt, &trace_rays_sbt.callable_sbt, 1, 1, 1);
 
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->SetDesiredInfo("In Raygen");
         m_errorMonitor->SetDesiredInfo("In Miss", 3);
         m_errorMonitor->SetDesiredInfo("In Closest Hit", 2);
@@ -234,9 +234,9 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     }
     m_errorMonitor->VerifyFound();
 
-    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     ASSERT_EQ(debug_buffer_ptr[0], frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 3 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], 2 * frames_count);
-    debug_buffer.memory().unmap();
+    debug_buffer.Memory().Unmap();
 }

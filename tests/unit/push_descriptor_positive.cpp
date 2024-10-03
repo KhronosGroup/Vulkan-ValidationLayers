@@ -58,7 +58,7 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = 0;  // Should not cause a validation error
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
@@ -114,7 +114,7 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, data_size);
     descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -128,7 +128,7 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
@@ -160,7 +160,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
                                                   VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     ASSERT_TRUE(push_ds_layout.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     CreatePipelineHelper pipe0(*this);
@@ -226,7 +226,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
     }
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
@@ -312,10 +312,10 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     descriptor_write.dstSet = descriptor_set.set_;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                 &descriptor_write);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositivePushDescriptor, TemplateBasic) {
@@ -361,10 +361,10 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
                                             &update_template_data);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
@@ -404,7 +404,7 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                 &descriptor_write);
 
@@ -412,7 +412,7 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     descriptor_write.dstSet = null_set;
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                 &descriptor_write);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
@@ -463,10 +463,10 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 1,
                                             &update_template_data);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }

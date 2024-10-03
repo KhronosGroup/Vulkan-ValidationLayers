@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2023 Valve Corporation
- * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -775,7 +775,7 @@ VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkSha
 
 bool VkShaderObj::InitFromGLSL(const void *pNext) {
     std::vector<uint32_t> spv;
-    m_framework.GLSLtoSPV(&m_device.phy().limits_, m_stage_info.stage, m_source, spv, m_spv_env);
+    m_framework.GLSLtoSPV(&m_device.Physical().limits_, m_stage_info.stage, m_source, spv, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
     moduleCreateInfo.pNext = pNext;
@@ -794,14 +794,14 @@ VkResult VkShaderObj::InitFromGLSLTry(const vkt::Device *custom_device) {
     std::vector<uint32_t> spv;
     // 99% of tests just use the framework's VkDevice, but this allows for tests to use custom device object
     // Can't set at contructor time since all reference members need to be initialized then.
-    VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->phy().limits_ : m_device.phy().limits_;
+    VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->Physical().limits_ : m_device.Physical().limits_;
     m_framework.GLSLtoSPV(&limits, m_stage_info.stage, m_source, spv, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = vku::InitStructHelper();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
-    const auto result = init_try(((custom_device) ? *custom_device : m_device), moduleCreateInfo);
+    const auto result = InitTry(((custom_device) ? *custom_device : m_device), moduleCreateInfo);
     m_stage_info.module = handle();
     return result;
 }
@@ -827,7 +827,7 @@ VkResult VkShaderObj::InitFromASMTry() {
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
-    const auto result = init_try(m_device, moduleCreateInfo);
+    const auto result = InitTry(m_device, moduleCreateInfo);
     m_stage_info.module = handle();
     return result;
 }
