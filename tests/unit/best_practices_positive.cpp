@@ -423,5 +423,5 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     swapchain_create_info.oldSwapchain = 0;
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_swapchain.Init(*m_device, swapchain_create_info);
 }

@@ -80,6 +80,7 @@ class DescriptorSetPool;
 class DescriptorSet;
 class CommandBuffer;
 class CommandPool;
+class Swapchain;
 class IndirectCommandsLayout;
 class IndirectExecutionSet;
 
@@ -882,7 +883,7 @@ class Shader : public internal::NonDispHandle<VkShaderEXT> {
   public:
     Shader(const Device &dev, const VkShaderCreateInfoEXT &info) { init(dev, info); }
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
-           const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange* pushConstRange = nullptr);
+           const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
     ~Shader() noexcept;
@@ -940,13 +941,10 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
 class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
   public:
     PipelineLayout() noexcept : NonDispHandle() {}
-    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info,
-                   const std::vector<const DescriptorSetLayout *> &layouts) {
+    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info, const std::vector<const DescriptorSetLayout *> &layouts) {
         init(dev, info, layouts);
     }
-    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info) {
-        init(dev, info);
-    }
+    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info) { init(dev, info); }
     PipelineLayout(const Device &dev, const std::vector<const DescriptorSetLayout *> &layouts = {},
                    const std::vector<VkPushConstantRange> &push_constant_ranges = {},
                    VkPipelineLayoutCreateFlags flags = static_cast<VkPipelineLayoutCreateFlags>(0)) {
@@ -1195,7 +1193,6 @@ class RenderPass : public internal::NonDispHandle<VkRenderPass> {
     void SetName(const char *name) { NonDispHandle<VkRenderPass>::SetName(VK_OBJECT_TYPE_RENDER_PASS, name); }
 };
 
-
 class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
   public:
     Framebuffer() = default;
@@ -1223,12 +1220,8 @@ class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
 class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConversion> {
   public:
     SamplerYcbcrConversion() = default;
-    SamplerYcbcrConversion(const Device &dev, VkFormat format) {
-        init(dev, DefaultConversionInfo(format));
-    }
-    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info) {
-        init(dev, info);
-    }
+    SamplerYcbcrConversion(const Device &dev, VkFormat format) { init(dev, DefaultConversionInfo(format)); }
+    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info) { init(dev, info); }
     ~SamplerYcbcrConversion() noexcept;
     void destroy() noexcept;
 
@@ -1415,6 +1408,19 @@ inline VkWriteDescriptorSet Device::WriteDescriptorSet(const DescriptorSet &set,
                                                        VkDescriptorType type, const std::vector<VkBufferView> &buffer_views) {
     return WriteDescriptorSet(set, binding, array_element, type, static_cast<uint32_t>(buffer_views.size()), &buffer_views[0]);
 }
+
+class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
+  public:
+    explicit Swapchain() = default;
+    explicit Swapchain(const Device &dev, const VkSwapchainCreateInfoKHR &info) { Init(dev, info); }
+    Swapchain(Swapchain &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
+    Swapchain &operator=(Swapchain &&) = default;
+    ~Swapchain() noexcept;
+    void destroy() noexcept;
+
+    void Init(const Device &dev, const VkSwapchainCreateInfoKHR &info);
+    void SetName(const char *name) { NonDispHandle<VkSwapchainKHR>::SetName(VK_OBJECT_TYPE_SWAPCHAIN_KHR, name); }
+};
 
 class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommandsLayoutEXT> {
   public:

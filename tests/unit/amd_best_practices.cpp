@@ -632,7 +632,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     present_info.waitSemaphoreCount = 0;
     present_info.pWaitSemaphores = &image_acquired.handle();
     present_info.swapchainCount = 1;
-    present_info.pSwapchains = &m_swapchain;
+    present_info.pSwapchains = &m_swapchain.handle();
     present_info.pImageIndices = &current_buffer;
     present_info.pResults = NULL;
 

@@ -873,17 +873,17 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
 
 void VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform) {
     RETURN_IF_SKIP(InitSurface());
-    ASSERT_TRUE(CreateSwapchain(m_surface, imageUsage, preTransform, m_swapchain));
+    m_swapchain = CreateSwapchain(m_surface, imageUsage, preTransform);
+    ASSERT_TRUE(m_swapchain.initialized());
 }
 
-bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
-                                        VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain,
-                                        VkSwapchainKHR oldSwapchain) {
+vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
+                                                  VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR oldSwapchain) {
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, surface, &supported);
     if (!supported) {
         // Graphics queue does not support present
-        return false;
+        return vkt::Swapchain{};
     }
 
     SurfaceInformation info = GetSwapchainInfo(surface);
@@ -911,8 +911,8 @@ bool VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = oldSwapchain;
 
-    VkResult result = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    return result == VK_SUCCESS;
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
+    return swapchain;
 }
 
 std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR swapchain) {
@@ -927,9 +927,8 @@ std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR 
 void VkRenderFramework::DestroySwapchain() {
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->Wait();
-        if (m_swapchain != VK_NULL_HANDLE) {
-            vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
-            m_swapchain = VK_NULL_HANDLE;
+        if (m_swapchain.initialized()) {
+            m_swapchain.destroy();
         }
     }
 }

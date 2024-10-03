@@ -350,9 +350,7 @@ Queue *Device::QueueWithoutCapabilities(VkQueueFlags without) const {
     return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
 }
 
-std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const {
-    return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
-}
+std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const { return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT); }
 
 Queue *Device::ComputeOnlyQueue() const {
     auto family_index = ComputeOnlyQueueFamily();
@@ -1918,6 +1916,22 @@ void SamplerYcbcrConversion::destroy() noexcept {
 }
 
 SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { destroy(); }
+
+NON_DISPATCHABLE_HANDLE_DTOR(Swapchain, vk::DestroySwapchainKHR)
+
+void Swapchain::Init(const Device &dev, const VkSwapchainCreateInfoKHR &info) {
+    assert(!initialized());
+    VkSwapchainKHR handle = VK_NULL_HANDLE;
+    auto result = vk::CreateSwapchainKHR(dev.handle(), &info, nullptr, &handle);
+    // NOTE: Swapchain creation has more error codes comparing to other objects that use NON_DISPATCHABLE_HANDLE_INIT macro
+    ASSERT_TRUE((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT) || (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) ||
+                (result == VK_ERROR_OUT_OF_HOST_MEMORY) || (result == VK_ERROR_SURFACE_LOST_KHR) ||
+                (result == VK_ERROR_DEVICE_LOST) || (result == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR) ||
+                (result == VK_ERROR_INITIALIZATION_FAILED));
+    if (result == VK_SUCCESS) {
+        NonDispHandle::init(dev.handle(), handle);
+    }
+}
 
 NON_DISPATCHABLE_HANDLE_DTOR(IndirectCommandsLayout, vk::DestroyIndirectCommandsLayoutEXT)
 void IndirectCommandsLayout::Init(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info) {
