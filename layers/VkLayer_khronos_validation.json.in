@@ -140,7 +140,7 @@
                         },
                         {
                             "key": "debug_action",
-                            "value": "VK_DBG_LAYER_ACTION_LOG_MSG"
+                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
                         },
                         {
                             "key": "enable_message_limit",
@@ -222,7 +222,7 @@
                         },
                         {
                             "key": "debug_action",
-                            "value": "VK_DBG_LAYER_ACTION_LOG_MSG"
+                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
                         },
                         {
                             "key": "enable_message_limit",
@@ -307,7 +307,7 @@
                         },
                         {
                             "key": "debug_action",
-                            "value": "VK_DBG_LAYER_ACTION_LOG_MSG"
+                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
                         },
                         {
                             "key": "enable_message_limit",
@@ -390,7 +390,7 @@
                         },
                         {
                             "key": "debug_action",
-                            "value": "VK_DBG_LAYER_ACTION_LOG_MSG"
+                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
                         },
                         {
                             "key": "enable_message_limit",
@@ -475,7 +475,7 @@
                         },
                         {
                             "key": "debug_action",
-                            "value": "VK_DBG_LAYER_ACTION_LOG_MSG"
+                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
                         },
                         {
                             "key": "enable_message_limit",
@@ -557,7 +557,7 @@
                         },
                         {
                             "key": "debug_action",
-                            "value": ""
+                            "value": []
                         },
                         {
                             "key": "enable_message_limit",
