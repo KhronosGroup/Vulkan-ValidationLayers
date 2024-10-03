@@ -41,7 +41,7 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image image_b(*m_device, ci, vkt::set_layout);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -59,7 +59,7 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     copy_region.dstSubresource.layerCount = 6;
     vk::CmdCopyImage(m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveCopyBufferImage, ImageTypeExtentMismatchMaintenance5) {
@@ -95,10 +95,10 @@ TEST_F(PositiveCopyBufferImage, ImageTypeExtentMismatchMaintenance5) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer.handle(), image_1D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveCopyBufferImage, ImageLayerCount) {
@@ -111,7 +111,7 @@ TEST_F(PositiveCopyBufferImage, ImageLayerCount) {
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkImageCopy copyRegion;
     copyRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_REMAINING_ARRAY_LAYERS};
@@ -121,7 +121,7 @@ TEST_F(PositiveCopyBufferImage, ImageLayerCount) {
     copyRegion.extent = {16, 16, 1};
     vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &copyRegion);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveCopyBufferImage, BufferToRemaingImageLayers) {
@@ -153,9 +153,9 @@ TEST_F(PositiveCopyBufferImage, BufferToRemaingImageLayers) {
     copy_buffer_to_image.regionCount = 1u;
     copy_buffer_to_image.pRegions = &region;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBufferToImage2KHR(m_command_buffer.handle(), &copy_buffer_to_image);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
@@ -171,15 +171,15 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     vkt::Buffer buffer(*m_device,
                        vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                        vkt::no_mem);
-    auto buffer_memory_requirements = buffer.memory_requirements();
+    auto buffer_memory_requirements = buffer.MemoryRequirements();
 
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
-    auto image_memory_requirements = image.memory_requirements();
+    auto image_memory_requirements = image.MemoryRequirements();
 
     vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buffer_memory_requirements.size + image_memory_requirements.size;
-    bool has_memtype = m_device->phy().SetMemoryType(
+    bool has_memtype = m_device->Physical().SetMemoryType(
         buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
@@ -197,16 +197,16 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     region.bufferOffset = 0;
 
     region.imageExtent = {32, 32, 1};
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     auto compressed_image2_ci =
         vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_BC7_UNORM_BLOCK,
                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
     VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_BC7_UNORM_BLOCK, &format_properties);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC7_UNORM_BLOCK, &format_properties);
     if (((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0) ||
         ((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0)) {
         printf("VK_FORMAT_BC7_UNORM_BLOCK with linear tiling not supported - skipping compressed format test.\n");
@@ -217,15 +217,15 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     vkt::Buffer buffer2(*m_device,
                         vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                         vkt::no_mem);
-    buffer_memory_requirements = buffer.memory_requirements();
+    buffer_memory_requirements = buffer.MemoryRequirements();
 
     vkt::Image image2(*m_device, compressed_image2_ci, vkt::no_mem);
-    image_memory_requirements = image2.memory_requirements();
+    image_memory_requirements = image2.MemoryRequirements();
 
     vkt::DeviceMemory mem2;
     alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buffer_memory_requirements.size + image_memory_requirements.size;
-    has_memtype = m_device->phy().SetMemoryType(
+    has_memtype = m_device->Physical().SetMemoryType(
         buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
@@ -236,10 +236,10 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     buffer2.BindMemory(mem2, 0);
     image2.BindMemory(mem2, buffer_memory_requirements.size);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image2.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer2.handle(), 1, &region);
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer2.handle(), image2.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
@@ -248,9 +248,9 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
 
     // Verify format support
     // Size-compatible (64-bit) formats. Uncompressed is 64 bits per texel, compressed is 64 bits per 4x4 block (or 4bpt).
-    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR) ||
-        !FormatFeaturesAreSupported(gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
         GTEST_SKIP() << "Required formats/features not supported - UncompressedToCompressedImageCopy";
     }
@@ -274,7 +274,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     // Copy from uncompressed to compressed
     copy_region.extent = {10, 10, 1};  // Dimensions in (uncompressed) texels
@@ -297,7 +297,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     vk::CmdCopyImage(m_command_buffer.handle(), comp_10x10b_40x40t_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
                      uncomp_10x10t_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveCopyBufferImage, ImageSubresource) {
@@ -319,7 +319,7 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     auto dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     auto final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     auto cb = m_command_buffer.handle();
 
@@ -338,12 +338,12 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
                            image_barriers);
     VkClearColorValue clear_color{};
     vk::CmdClearColorImage(cb, image.handle(), dst_layout, &clear_color, 1, &src_range);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     image_barriers[0].oldLayout = dst_layout;
     image_barriers[0].newLayout = src_layout;
@@ -368,7 +368,7 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     image_barriers[1].newLayout = final_layout;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 2,
                            image_barriers);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -419,9 +419,9 @@ TEST_F(PositiveCopyBufferImage, BufferCopiesStressTest) {
         copy_info_list[i + 4] = copy_info_list[i % 4];
     }
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdCopyBuffer(m_command_buffer, src_buffer.handle(), dst_buffer.handle(), size32(copy_info_list), copy_info_list.data());
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

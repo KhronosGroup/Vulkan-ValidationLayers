@@ -111,7 +111,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
     // Verify VK_FORMAT_R8_UNORM supports VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
     const VkFormat format_texel_case = VK_FORMAT_R8_UNORM;
     VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), format_texel_case, &format_properties);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), format_texel_case, &format_properties);
     if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires to support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT";
     }
@@ -259,7 +259,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -269,7 +269,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     sampler.destroy();
 }
@@ -343,7 +343,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
 
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Create PSO to be used for draw-time errors below
@@ -373,7 +373,7 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
@@ -620,7 +620,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     descriptor_set2.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set2.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -629,7 +629,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
                               &descriptor_set2.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDescriptors, UpdateImageDescriptorSetThatHasImageViewUsage) {
@@ -714,10 +714,10 @@ TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
     OneOffDescriptorSet empty_ds(m_device, {});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&empty_ds.layout_});
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &empty_ds.set_, 0, nullptr);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
@@ -770,7 +770,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_renderPassBeginInfo.renderPass = rp.Handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -782,7 +782,7 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
@@ -868,13 +868,13 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         // Bind set A to a command buffer and submit the command buffer;
         {
             auto &cb = use_single_command_buffer ? m_command_buffer : cb0;
-            cb.begin();
+            cb.Begin();
             vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &set_A, 0, nullptr);
             vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             cb.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdDraw(cb, 0, 0, 0, 0);
             vk::CmdEndRenderPass(cb);
-            cb.end();
+            cb.End();
             m_default_queue->Submit(cb);
         }
 
@@ -884,13 +884,13 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         // Bind set B to a command buffer and submit the command buffer;
         {
             auto &cb = use_single_command_buffer ? m_command_buffer : cb1;
-            cb.begin();
+            cb.Begin();
             vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &set_B, 0, nullptr);
             vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             cb.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdDraw(cb, 0, 0, 0, 0);
             vk::CmdEndRenderPass(cb);
-            cb.end();
+            cb.End();
             m_default_queue->Submit(cb);
         }
 
@@ -912,7 +912,7 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
 
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
     VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), buffer_format, &format_properties);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), buffer_format, &format_properties);
     if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT for this format";
     }
@@ -999,14 +999,14 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0u, 1u,
                               &descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
     vk::CmdEndRenderPass(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDescriptors, VariableDescriptorCount) {
@@ -1188,12 +1188,12 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
                                             VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

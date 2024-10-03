@@ -129,12 +129,12 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveAtomic, Float) {
@@ -819,10 +819,10 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
     }
 
     VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), format, &formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
     formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
     formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
@@ -863,12 +863,12 @@ TEST_F(PositiveAtomic, OpImageTexelPointerWithNoAtomic) {
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveAtomic, ImageFloat16Vector) {

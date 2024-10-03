@@ -73,11 +73,11 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     sparse_queue->Wait();
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     // This copy is be completely legal as long as we change the memory for buffer_sparse to not overlap with
     // buffer_sparse2's memory on queue submission
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Rebind buffer_mem2 so it does not overlap
     buffer_memory_bind.memory = buffer_mem2.handle();
@@ -158,13 +158,13 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -201,7 +201,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
     buffer_sparse.destroy();
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
-    buffer_sparse.init_no_mem(*m_device, buffer_ci);
+    buffer_sparse.InitNoMemory(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -235,12 +235,12 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -281,7 +281,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     }
     buffer_sparse.destroy();
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
-    buffer_sparse.init_no_mem(*m_device, buffer_ci);
+    buffer_sparse.InitNoMemory(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -309,7 +309,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
     VkBufferCopy copy_info;
@@ -317,9 +317,9 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     copy_info.dstOffset = buffer_mem_reqs.alignment / 2;  // dstOffset is the start of buffer_mem_2, or 0 in this space
                                                           // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment / 2;
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -360,8 +360,8 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
-    VkMemoryRequirements buffer_sparse_mem_reqs = buffer_sparse.memory_requirements();
-    const VkMemoryRequirements buffer_not_sparse_mem_reqs = buffer_not_sparse.memory_requirements();
+    VkMemoryRequirements buffer_sparse_mem_reqs = buffer_sparse.MemoryRequirements();
+    const VkMemoryRequirements buffer_not_sparse_mem_reqs = buffer_not_sparse.MemoryRequirements();
 
     if ((buffer_sparse_mem_reqs.memoryTypeBits & buffer_not_sparse_mem_reqs.memoryTypeBits) == 0) {
         GTEST_SKIP() << "Could not find common memory type for sparse and not sparse buffer, skipping test";
@@ -395,12 +395,12 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -498,13 +498,13 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -598,13 +598,13 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     VkSubmitInfo submit_info = vku::InitStructHelper();

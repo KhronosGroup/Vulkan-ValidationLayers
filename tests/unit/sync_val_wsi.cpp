@@ -61,9 +61,9 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     auto present_image = [this](uint32_t index, vkt::Semaphore* sem, vkt::Fence* fence) {
         VkResult result = VK_SUCCESS;
         if (fence) {
-            result = fence->wait(kWaitTimeout);
+            result = fence->Wait(kWaitTimeout);
             if (VK_SUCCESS == result) {
-                fence->reset();
+                fence->Reset();
             }
         }
 
@@ -110,10 +110,10 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
         image_barrier.image = h_image;
 
         image_barrier.subresourceRange = full_image;
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &image_barrier);
-        m_command_buffer.end();
+        m_command_buffer.End();
     };
 
     // Transition swapchain images to PRESENT_SRC layout for presentation
@@ -121,7 +121,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
         write_barrier_cb(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
         m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
-        m_command_buffer.reset();
+        m_command_buffer.Reset();
     }
 
     uint32_t acquired_index = 0;
@@ -143,7 +143,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
     // Finally we wait for the fence associated with the acquire
     REQUIRE_SUCCESS(vk::WaitForFences(m_device->handle(), 1, &fence.handle(), VK_TRUE, kWaitTimeout), "WaitForFences");
-    fence.reset();
+    fence.Reset();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
@@ -153,7 +153,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     vkt::Semaphore sem(*m_device);
     REQUIRE_SUCCESS(acquire_used_image(&sem, nullptr, acquired_index), "acquire_used_image");
 
-    m_command_buffer.reset();
+    m_command_buffer.Reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // The wait mask doesn't match the operations in the command buffer
@@ -174,12 +174,12 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
 
     REQUIRE_SUCCESS(acquire_used_image(VK_NULL_HANDLE, &fence, acquired_index), "acquire_used_index");
-    REQUIRE_SUCCESS(fence.wait(kWaitTimeout), "WaitForFences");
+    REQUIRE_SUCCESS(fence.Wait(kWaitTimeout), "WaitForFences");
 
-    m_command_buffer.reset();
+    m_command_buffer.Reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    fence.reset();
+    fence.Reset();
     m_default_queue->Submit(m_command_buffer, vkt::signal, sem);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
@@ -224,9 +224,9 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit2(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -271,10 +271,10 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
     layout_transition.subresourceRange.baseArrayLayer = 0;
     layout_transition.subresourceRange.layerCount = 1;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &layout_transition);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
 

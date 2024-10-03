@@ -78,7 +78,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vert_descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
@@ -86,7 +86,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
                               &vert_descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Should get a warning since shader was instrumented
     m_errorMonitor->SetDesiredWarning("VUID-vkCmdDraw-None-08613", 3);
@@ -96,7 +96,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 
     vert_create_info.pNext = nullptr;
     const vkt::Shader vertShader2(*m_device, vert_create_info);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader2, fragShader);
@@ -104,7 +104,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
                               &vert_descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Should not get a warning since shader was not instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
@@ -124,13 +124,13 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
 
-    indirect_draw_parameters_buffer.memory().unmap();
+    indirect_draw_parameters_buffer.Memory().Unmap();
 
     constexpr int32_t int_count = 16;
     vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -147,8 +147,8 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
         int32_t integers_2[int_count / 2];
     } push_constants;
 
-    push_constants.storage_buffer_ptr_1 = storage_buffer.address();
-    push_constants.storage_buffer_ptr_2 = storage_buffer.address() + sizeof(int32_t) * (int_count / 2);
+    push_constants.storage_buffer_ptr_1 = storage_buffer.Address();
+    push_constants.storage_buffer_ptr_2 = storage_buffer.Address() + sizeof(int32_t) * (int_count / 2);
     for (int32_t i = 0; i < int_count / 2; ++i) {
         push_constants.integers_1[i] = i;
         push_constants.integers_2[i] = (int_count / 2) + i;
@@ -225,7 +225,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     const vkt::Shader fs(*m_device, fs_ci);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    m_command_buffer.begin(&begin_info);
+    m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vs, fs);
@@ -242,15 +242,15 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
     vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.memory().map());
+    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
-    storage_buffer.memory().unmap();
+    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
@@ -339,19 +339,19 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
                                         vkt::device_address);
 
     PushConstants graphics_push_constants;
-    graphics_push_constants.storage_buffer = graphics_storage_buffer.address();
+    graphics_push_constants.storage_buffer = graphics_storage_buffer.Address();
     for (int32_t i = 0; i < int_count; ++i) {
         graphics_push_constants.integers[i] = i;
     }
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.memory().map());
+    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
-    indirect_draw_parameters_buffer.memory().unmap();
+    indirect_draw_parameters_buffer.Memory().Unmap();
 
     VkShaderCreateInfoEXT vs_ci =
         ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
@@ -398,7 +398,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
                                        vkt::device_address);
 
     PushConstants compute_push_constants;
-    compute_push_constants.storage_buffer = compute_storage_buffer.address();
+    compute_push_constants.storage_buffer = compute_storage_buffer.Address();
     for (int32_t i = 0; i < int_count; ++i) {
         compute_push_constants.integers[i] = int_count + i;
     }
@@ -411,16 +411,16 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     auto &indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.memory().map());
+        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
-    indirect_dispatch_parameters_buffer.memory().unmap();
+    indirect_dispatch_parameters_buffer.Memory().Unmap();
 
     // Submit commands
     // ---
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
@@ -439,19 +439,19 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
                          sizeof(compute_push_constants), &compute_push_constants);
     // Compute shaders will write 8 values to compute storage buffer
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.memory().map());
+    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
-    compute_storage_buffer.memory().unmap();
+    compute_storage_buffer.Memory().Unmap();
 
-    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.memory().map());
+    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
-    graphics_storage_buffer.memory().unmap();
+    graphics_storage_buffer.Memory().Unmap();
 }

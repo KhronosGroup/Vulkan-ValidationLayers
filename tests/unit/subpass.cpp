@@ -313,7 +313,7 @@ TEST_F(NegativeSubpass, NextSubpassExcessive) {
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     InitRenderTarget();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass-None-00909");
@@ -331,7 +331,7 @@ TEST_F(NegativeSubpass, NextSubpassExcessive) {
     }
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
@@ -350,7 +350,7 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     vkt::RenderPass rp(*m_device, rcpi);
     vkt::Framebuffer fb(*m_device, rp.handle(), 0u, nullptr, 16, 16);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 16, 16);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndRenderPass-None-00910");
@@ -360,8 +360,8 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     if (rp2Supported) {
         VkSubpassEndInfoKHR subpassEndInfo = vku::InitStructHelper();
 
-        m_command_buffer.reset();
-        m_command_buffer.begin();
+        m_command_buffer.Reset();
+        m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 16, 16);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdEndRenderPass2-None-03103");
@@ -451,7 +451,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     // subtest 1: bind in the wrong subpass
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
@@ -473,7 +473,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
 
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
@@ -526,7 +526,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-04073");
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -626,7 +626,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe.descriptor_set_->UpdateDescriptorSets();
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
 
         image_input.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -642,7 +642,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
         m_command_buffer.EndRenderPass();
-        m_command_buffer.end();
+        m_command_buffer.End();
     }
 }
 
@@ -752,7 +752,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     VkClearValue clear_value = {};
     clear_value.color = {{0, 0, 0, 0}};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass.handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-subpass-02685");
@@ -772,7 +772,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
@@ -1119,12 +1119,12 @@ TEST_F(NegativeSubpass, SubpassInputWithoutFormat) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features;
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     features.shaderStorageImageReadWithoutFormat = VK_FALSE;
     RETURN_IF_SKIP(InitState(&features));
     InitRenderTarget();
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+    if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
     }
 
@@ -1181,7 +1181,7 @@ TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass-renderpass");
     m_command_buffer.NextSubpass();
     m_errorMonitor->VerifyFound();
@@ -1192,7 +1192,7 @@ TEST_F(NegativeSubpass, NextSubpassNoRenderPass) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass-renderpass");
     m_command_buffer.NextSubpass();
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
@@ -1200,7 +1200,7 @@ TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if ((m_device->phy().limits_.framebufferNoAttachmentsSampleCounts & VK_SAMPLE_COUNT_8_BIT) != 0) {
+    if ((m_device->Physical().limits_.framebufferNoAttachmentsSampleCounts & VK_SAMPLE_COUNT_8_BIT) != 0) {
         GTEST_SKIP() << "Need framebufferNoAttachmentsSampleCounts with no support";
     }
 

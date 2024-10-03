@@ -62,7 +62,7 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
                                      });
 
     const VkFormat format = VK_FORMAT_R32G32_UINT;  // Rg32ui
-    if (!BufferFormatAndFeaturesSupported(gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
@@ -82,11 +82,11 @@ TEST_F(PositiveShaderStorageTexel, BufferWriteMoreComponent) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateComputePipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 

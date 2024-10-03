@@ -79,12 +79,12 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     descriptor_set.UpdateDescriptorSets();
     descriptor_set.Clear();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &buffer, &offset);
     vk::CmdBindVertexBuffers2EXT(m_command_buffer.handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveRobustness, PipelineRobustnessRobustImageAccessExposed) {

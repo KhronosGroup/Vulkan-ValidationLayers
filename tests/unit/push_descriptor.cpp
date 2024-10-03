@@ -38,7 +38,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     // Create a buffer to be used for invalid updates
     VkBufferCreateInfo buff_ci = vku::InitStructHelper();
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buff_ci.size = m_device->phy().limits_.minUniformBufferOffsetAlignment;
+    buff_ci.size = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
     vkt::Buffer buffer(*m_device, buff_ci);
 
     VkDescriptorBufferInfo buff_info = {};
@@ -103,10 +103,10 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError(desired_failure);
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout->handle(), 0, 1,
                                     &descriptor_write);
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->VerifyFound();
 
         update_template_data.buff_info = buff_info;  // copy the test case information into our "pData"
@@ -115,10 +115,10 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError(desired_failure);
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), push_template, pipeline_layout->handle(), 0,
                                                 &update_template_data);
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->VerifyFound();
     };
 
@@ -172,7 +172,7 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstSet-00320");
@@ -180,7 +180,7 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
@@ -233,12 +233,12 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686");
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout, 0, &update_template_data);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
     vk::DestroyPipelineLayout(device(), pipeline_layout, nullptr);
@@ -296,7 +296,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
     descriptor_write.dstBinding = 0;
 
     for (uint32_t i = 0; i < 2; i++) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         if (i == 1) {
             // Test path where image layout in command buffer is known at draw time
             image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_SHADER_WRITE_BIT,
@@ -319,7 +319,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
         m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
         vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
         m_command_buffer.EndRenderPass();
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
@@ -599,7 +599,7 @@ TEST_F(NegativePushDescriptor, DescriptorUpdateTemplateEntryWithInlineUniformBlo
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
-    vkt::Buffer buffer(*m_device, m_device->phy().limits_.minUniformBufferOffsetAlignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, m_device->Physical().limits_.minUniformBufferOffsetAlignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;
@@ -663,7 +663,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
         ASSERT_TRUE(command_pool.initialized());
         vkt::CommandBuffer command_buffer(*m_device, command_pool);
         ASSERT_TRUE(command_buffer.initialized());
-        command_buffer.begin();
+        command_buffer.Begin();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363");
         m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
@@ -674,7 +674,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
         vk::CmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                     &descriptor_write);
         m_errorMonitor->VerifyFound();
-        command_buffer.end();
+        command_buffer.End();
 
         // If we succeed in testing only one condition above, we need to test the other below.
         if (transfer_qfi && err_qfi != transfer_qfi.value()) {
@@ -683,7 +683,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
             ASSERT_TRUE(tran_command_pool.initialized());
             vkt::CommandBuffer tran_command_buffer(*m_device, tran_command_pool);
             ASSERT_TRUE(tran_command_buffer.initialized());
-            tran_command_buffer.begin();
+            tran_command_buffer.Begin();
 
             // We can't avoid getting *both* errors in this case
             m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363");
@@ -692,12 +692,12 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
             vk::CmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                                         1, &descriptor_write);
             m_errorMonitor->VerifyFound();
-            tran_command_buffer.end();
+            tran_command_buffer.End();
         }
     }
 
     // Push to the non-push binding
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-set-00365");
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
                                 &descriptor_write);
@@ -708,7 +708,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // TODO: Add VALIDATION_ERROR_ code support to core_validation::ValidateCmd
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording");
@@ -728,7 +728,7 @@ TEST_F(NegativePushDescriptor, DestoryLayout) {
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     VkPipelineLayout invalid_layout = CastToHandle<VkPipelineLayout, uintptr_t>(0xbaadbeef);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-layout-parameter");
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, invalid_layout, 1, 1,
@@ -742,7 +742,7 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
 
     RETURN_IF_SKIP(Init());
 
-    auto const min_alignment = m_device->phy().limits_.minUniformBufferOffsetAlignment;
+    auto const min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
     if (min_alignment == 0) {
         GTEST_SKIP() << "minUniformBufferOffsetAlignment is zero";
     }
@@ -761,13 +761,13 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00327");
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePushDescriptor, DescriptorWriteMissingImageInfo) {
@@ -790,12 +790,12 @@ TEST_F(NegativePushDescriptor, DescriptorWriteMissingImageInfo) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     descriptor_write.pImageInfo = nullptr;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494");
     vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
@@ -849,12 +849,12 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
 
-    command_buffer.begin();
+    command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366");
     vk::CmdPushDescriptorSetWithTemplateKHR(command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
                                             &update_template_data);
     m_errorMonitor->VerifyFound();
-    command_buffer.end();
+    command_buffer.End();
 
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
@@ -902,12 +902,12 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994");
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
                                             &update_template_data);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
@@ -964,7 +964,7 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993");
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout2.handle(), 0,
@@ -984,7 +984,7 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
                                             &update_template_data);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
     vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template2, nullptr);

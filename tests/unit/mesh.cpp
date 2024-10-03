@@ -670,7 +670,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-None-08606");
@@ -682,7 +682,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeMesh, ExtensionDisabledNV) {
@@ -706,7 +706,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     const auto event = event_obj.handle();
     ASSERT_TRUE(event_obj.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-04095");
     vk::CmdSetEvent(m_command_buffer.handle(), event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
@@ -748,7 +748,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
                            0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     vkt::Semaphore semaphore_obj(*m_device);
     const auto semaphore = semaphore_obj.handle();
@@ -913,7 +913,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     CreatePipelineHelper pipe1(*this);
     pipe1.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -944,12 +944,12 @@ TEST_F(NegativeMesh, DrawCmds) {
     vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
-    if (m_device->phy().limits_.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->phy().limits_.maxDrawIndirectCount)) {
+    if (m_device->Physical().limits_.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->Physical().limits_.maxDrawIndirectCount)) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
         vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0,
-                                        m_device->phy().limits_.maxDrawIndirectCount + 1,
+                                        m_device->Physical().limits_.maxDrawIndirectCount + 1,
                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_errorMonitor->VerifyFound();
     }
@@ -981,7 +981,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeMesh, MultiDrawIndirect) {
@@ -1051,7 +1051,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     pipe.shader_stages_[0] = mesh_shader.GetStageCreateInfo();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -1099,7 +1099,7 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeMesh, DrawCmdsNV) {
@@ -1149,7 +1149,7 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     CreatePipelineHelper pipe1(*this);
     pipe1.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -1176,7 +1176,7 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
@@ -1362,7 +1362,7 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     vkt::QueryPool xfb_query_pool(*m_device, VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 1);
     vkt::QueryPool pg_query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -1379,7 +1379,7 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     vk::CmdEndQuery(m_command_buffer.handle(), pg_query_pool.handle(), 0u);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeMesh, DrawIndexMesh) {

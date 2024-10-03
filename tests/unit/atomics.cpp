@@ -366,7 +366,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
@@ -374,7 +374,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-SampledType-04471");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
@@ -416,7 +416,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
@@ -424,7 +424,7 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-SampledType-04470");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
@@ -485,14 +485,14 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-sparseImageInt64Atomics-04474");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeAtomic, ImageInt64Mesh32) {
@@ -552,7 +552,7 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
                                                    VK_IMAGE_LAYOUT_GENERAL);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
@@ -561,7 +561,7 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
     vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeAtomic, Float) {
@@ -1267,14 +1267,14 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
                                                        // cause DesiredFailure. VK_FORMAT_R32_UINT is right format.
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, image_format, usage);
 
-    if (ImageFormatIsSupported(instance(), gpu(), image_ci, VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
+    if (ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
         GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT not supported.";
     }
 
     VkFormat buffer_view_format =
         VK_FORMAT_R8_UNORM;  // The format doesn't support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT to
                              // cause DesiredFailure. VK_FORMAT_R32_UINT is right format.
-    if (BufferFormatAndFeaturesSupported(gpu(), buffer_view_format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
+    if (BufferFormatAndFeaturesSupported(Gpu(), buffer_view_format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
         GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT not supported.";
     }
     m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-format-08779");
@@ -1330,7 +1330,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     g_pipe.descriptor_set_->WriteDescriptorBufferView(0, buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
@@ -1342,7 +1342,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeAtomic, ImageFloat16Vector) {

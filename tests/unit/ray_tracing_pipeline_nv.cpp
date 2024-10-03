@@ -172,7 +172,7 @@ TEST_F(NegativeRayTracingPipelineNV, BindPoint) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipe.Handle());
 
     m_errorMonitor->VerifyFound();

@@ -101,23 +101,23 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    const auto buffer_memory_requirements = buffer->memory_requirements();
-    const auto image_memory_requirements = image.memory_requirements();
+    const auto buffer_memory_requirements = buffer->MemoryRequirements();
+    const auto image_memory_requirements = image.MemoryRequirements();
 
     vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
     bool has_memtype =
-        m_device->phy().SetMemoryType(buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits,
-                                      &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        m_device->Physical().SetMemoryType(buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits,
+                                           &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a host visible memory type for both a buffer and an image";
     }
     mem.init(*m_device, alloc_info);
 
-    auto pData = mem.map();
+    auto pData = mem.Map();
     std::memset(pData, 0xCADECADE, static_cast<size_t>(buff_size));
-    mem.unmap();
+    mem.Unmap();
 
     buffer->BindMemory(mem, 0);
 
@@ -166,7 +166,7 @@ TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
     TEST_DESCRIPTION("Ensure barriers' new and old VkImageLayout are compatible with their images' VkImageUsageFlags");
 
     RETURN_IF_SKIP(Init());
-    auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    auto depth_format = FindSupportedDepthStencilFormat(Gpu());
     InitRenderTarget();
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -207,10 +207,10 @@ TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
         };
         const uint32_t layout_count = sizeof(buffer_layouts) / sizeof(buffer_layouts[0]);
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         for (uint32_t i = 0; i < layout_count; ++i) {
             img_barrier.image = buffer_layouts[i].image_obj.handle();
-            const VkImageUsageFlags usage = buffer_layouts[i].image_obj.usage();
+            const VkImageUsageFlags usage = buffer_layouts[i].image_obj.Usage();
             img_barrier.subresourceRange.aspectMask = (usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
                                                           ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
                                                           : VK_IMAGE_ASPECT_COLOR_BIT;
@@ -225,7 +225,7 @@ TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
             vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0,
                                    nullptr, 0, nullptr, 1, &img_barrier);
         }
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -357,7 +357,7 @@ TEST_F(PositiveImage, SubresourceLayout) {
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     vkt::Image image(*m_device, image_ci);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     const auto subresource_range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     auto barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresource_range);
@@ -378,7 +378,7 @@ TEST_F(PositiveImage, SubresourceLayout) {
     barrier.subresourceRange.baseMipLevel = 2;
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -502,10 +502,10 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
                                                VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);
 
     // RenderPass should change the image layout of both the swapchain image and the aliased image to PRESENT_SRC_KHR
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(renderPassBeginInfo);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -544,7 +544,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkImageFormatProperties image_properties;
-    VkResult err = vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
+    VkResult err = vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
                                                               image_ci.usage, image_ci.flags, &image_properties);
     // Test not supported by driver
     if (err != VK_SUCCESS) {
@@ -595,7 +595,7 @@ TEST_F(PositiveImage, ImageCompressionControl) {
     VkImageCompressionPropertiesEXT compression_properties = vku::InitStructHelper();
     VkImageFormatProperties2 image_format_properties = vku::InitStructHelper(&compression_properties);
 
-    vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_format_info, &image_format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_properties);
 
     auto image_ci = vkt::Image::CreateInfo();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -835,7 +835,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
         auto init_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
 
-        cmd_buf.begin();
+        cmd_buf.Begin();
         image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         image_barrier.image = image.handle();
@@ -860,10 +860,10 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
 
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
-            cmd_buf.end();
+            cmd_buf.End();
             m_default_queue->Submit(cmd_buf);
             m_default_queue->Wait();
-            cmd_buf.begin();
+            cmd_buf.Begin();
         }
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
@@ -874,7 +874,7 @@ TEST_F(PositiveImage, DescriptorSubresourceLayout) {
         vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
         cmd_buf.EndRenderPass();
-        cmd_buf.end();
+        cmd_buf.End();
 
         // Submit cmd buffer
         m_default_queue->Submit(cmd_buf);
@@ -1009,7 +1009,7 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
 
         vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view_2d.handle(), kWidth, kHeight);
 
-        cmd_buf.begin();
+        cmd_buf.Begin();
         image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         image_barrier.image = image_3d.handle();
@@ -1025,10 +1025,10 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
 
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
-            cmd_buf.end();
+            cmd_buf.End();
             m_default_queue->Submit(cmd_buf);
             m_default_queue->Wait();
-            cmd_buf.begin();
+            cmd_buf.Begin();
         }
 
         m_renderPassBeginInfo.renderPass = rp.handle();
@@ -1042,7 +1042,7 @@ TEST_F(PositiveImage, Descriptor3D2DSubresourceLayout) {
         vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
         cmd_buf.EndRenderPass();
-        cmd_buf.end();
+        cmd_buf.End();
 
         // Submit cmd buffer
         m_default_queue->Submit(cmd_buf);
@@ -1058,7 +1058,7 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     ;
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
-    if (!FormatFeaturesAreSupported(gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         GTEST_SKIP() << "No blit feature format support";
     }
@@ -1082,7 +1082,7 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     blitRegion.dstOffsets[0] = {32, 32, 0};
     blitRegion.dstOffsets[1] = {64, 64, 1};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
                      VK_FILTER_NEAREST);
@@ -1119,7 +1119,7 @@ TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
     if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         GTEST_SKIP() << "Image usage and format not compatible on device";
     }
@@ -1209,7 +1209,7 @@ TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
     if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         GTEST_SKIP() << "Image usage and format not compatible on device";
     }

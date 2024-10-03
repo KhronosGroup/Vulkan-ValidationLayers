@@ -65,15 +65,19 @@ class VkRenderFramework : public VkTestFramework {
     VkInstance instance() const { return instance_; }
     VkDevice device() const { return m_device->handle(); }
     vkt::Device *DeviceObj() const { return m_device; }
-    VkPhysicalDevice gpu() const;
-    VkRenderPass renderPass() const { return m_renderPass; }
-    VkFramebuffer framebuffer() const { return m_framebuffer->handle(); }
+    VkPhysicalDevice Gpu() const;
+    // Deprecated, use Gpu()
+    VkPhysicalDevice gpu() const { return Gpu(); }
+    VkRenderPass RenderPass() const { return m_renderPass; }
+    VkFramebuffer Framebuffer() const { return m_framebuffer->handle(); }
 
     vkt::Queue *DefaultQueue() const { return m_default_queue; }
     vkt::Queue *SecondQueue() const { return m_second_queue; }
 
     ErrorMonitor &Monitor();
-    const VkPhysicalDeviceProperties &physDevProps() const;
+    const VkPhysicalDeviceProperties &PhysicalDeviceProps() const;
+    // Deprecated, use PhysicalDeviceProps()
+    const VkPhysicalDeviceProperties &physDevProps() const { return PhysicalDeviceProps(); }
 
     bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
     bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
@@ -154,7 +158,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code,
                                     const spv_target_env env = SPV_ENV_VULKAN_1_0) {
         std::vector<uint32_t> spv;
-        GLSLtoSPV(&m_device->phy().limits_, stage, code, spv, env);
+        GLSLtoSPV(&m_device->Physical().limits_, stage, code, spv, env);
         return spv;
     }
 

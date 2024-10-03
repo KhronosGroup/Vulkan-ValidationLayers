@@ -448,4 +448,4 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, const std::string &code = "");
 
-void print_android(const char *c);
+void PrintAndroid(const char *c);

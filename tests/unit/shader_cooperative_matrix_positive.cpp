@@ -52,11 +52,11 @@ void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(Init());
     uint32_t props_count = 0;
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, nullptr);
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, nullptr);
     for (uint32_t i = 0; i < props_count; i++) {
         coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
     }
-    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu(), &props_count, coop_matrix_props.data());
+    vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, coop_matrix_props.data());
 }
 
 bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {

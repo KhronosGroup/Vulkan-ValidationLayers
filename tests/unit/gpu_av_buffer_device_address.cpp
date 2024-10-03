@@ -53,12 +53,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vkt::Buffer buffer(*m_device, 64, 0, vkt::device_address);
-    VkDeviceAddress u_info_ptr = buffer.address();
+    VkDeviceAddress u_info_ptr = buffer.Address();
     // Will dereference the wrong ptr address
     VkDeviceAddress push_constants[2] = {u_info_ptr - 16, 4};
     vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants),
@@ -66,7 +66,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
 
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
@@ -75,12 +75,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.Memory().Map());
     for (int i = 0; i < 3; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
@@ -118,12 +118,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vkt::Buffer buffer(*m_device, 64, 0, vkt::device_address);
-    VkDeviceAddress u_info_ptr = buffer.address();
+    VkDeviceAddress u_info_ptr = buffer.Address();
     // will go over a[4] by one
     VkDeviceAddress push_constants[2] = {u_info_ptr, 5};
     vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants),
@@ -131,7 +131,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
 
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -139,12 +139,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.Memory().Map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
@@ -161,15 +161,15 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     descriptor_set.UpdateDescriptorSets();
 
     vkt::Buffer buffer(*m_device, 64, 0, vkt::device_address);
-    VkDeviceAddress u_info_ptr = buffer.address();
+    VkDeviceAddress u_info_ptr = buffer.Address();
     // Will dereference the wrong ptr address
     VkDeviceAddress invalid_buffer_address = u_info_ptr - 16;
     uint32_t n_writes = 4;
 
-    uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.memory().map();
+    uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.Memory().Map();
     memcpy(uniform_buffer_ptr, &invalid_buffer_address, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
-    uniform_buffer.memory().unmap();
+    uniform_buffer.Memory().Unmap();
 
     char const *shader_source = R"glsl(
         #version 450
@@ -195,14 +195,14 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
@@ -211,12 +211,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.Memory().Map());
     for (int i = 0; i < 3; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
@@ -233,14 +233,14 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     descriptor_set.UpdateDescriptorSets();
 
     vkt::Buffer buffer(*m_device, 64, 0, vkt::device_address);
-    VkDeviceAddress u_info_ptr = buffer.address();
+    VkDeviceAddress u_info_ptr = buffer.Address();
     // will go over a[4] by one
     uint32_t n_writes = 5;
 
-    uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.memory().map();
+    uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.Memory().Map();
     memcpy(uniform_buffer_ptr, &u_info_ptr, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
-    uniform_buffer.memory().unmap();
+    uniform_buffer.Memory().Unmap();
 
     char const *shader_source = R"glsl(
         #version 450
@@ -266,14 +266,14 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -281,12 +281,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
-    auto *buffer_ptr = static_cast<uint32_t *>(buffer.memory().map());
+    auto *buffer_ptr = static_cast<uint32_t *>(buffer.Memory().Map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.memory().unmap();
+    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
@@ -325,23 +325,23 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
 
     // Hold only 3 indices
     vkt::Buffer block_buffer(*m_device, 36, 0, vkt::device_address);
-    VkDeviceAddress block_ptr = block_buffer.address();
+    VkDeviceAddress block_ptr = block_buffer.Address();
     const uint32_t n_reads = 4;  // uvec3[0] to uvec3[3]
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
-    in_buffer.memory().unmap();
+    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(m_command_buffer);
@@ -379,8 +379,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
 
     std::vector<uint32_t> vert_shader;
     std::vector<uint32_t> frag_shader;
-    this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl, vert_shader);
-    this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, frag_shader);
+    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl, vert_shader);
+    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, frag_shader);
 
     VkShaderModuleCreateInfo module_create_info_vert = vku::InitStructHelper();
     module_create_info_vert.pCode = vert_shader.data();
@@ -413,25 +413,25 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
-    VkDeviceAddress block_ptr = block_buffer.address();
+    VkDeviceAddress block_ptr = block_buffer.Address();
     const uint32_t n_reads = 64;  // way too large
 
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
-    in_buffer.memory().unmap();
+    in_buffer.Memory().Unmap();
 
     descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 6);
     m_default_queue->Submit(m_command_buffer);
@@ -479,28 +479,28 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer block_buffer(*m_device, 32, 0, vkt::device_address);
-    VkDeviceAddress block_ptr = block_buffer.address();
+    VkDeviceAddress block_ptr = block_buffer.Address();
 
     vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    uint8_t *buffer_ptr = (uint8_t *)storage_buffer.memory().map();
+    uint8_t *buffer_ptr = (uint8_t *)storage_buffer.Memory().Map();
     const uint32_t index = 8;  // out of bounds
     memcpy(buffer_ptr, &index, sizeof(uint32_t));
     memcpy(buffer_ptr + (1 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (2 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (3 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
-    storage_buffer.memory().unmap();
+    storage_buffer.Memory().Unmap();
 
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(m_command_buffer);
@@ -545,23 +545,23 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Make another buffer to write to
     const uint32_t storage_buffer_size = 16 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = storage_buffer.address();
+    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    data[0] = storage_buffer.Address();
     data[1] = 5;
-    uniform_buffer.memory().unmap();
+    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -569,12 +569,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.Memory().Map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
     }
-    storage_buffer.memory().unmap();
+    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
@@ -614,14 +614,14 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Make another buffer to write to
     const uint32_t storage_buffer_size = 16 * 4;
@@ -629,14 +629,14 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
 
     // Get device address of buffer to write to
     using AddrRange = sparse_container::range<VkDeviceAddress>;
-    const VkDeviceAddress storage_buffer_addr = storage_buffer.address();
+    const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
     const AddrRange shader_writes_range(storage_buffer_addr, storage_buffer_addr + storage_buffer_size + 4);
 
     // Create storage buffers for the sake of storing multiple device address ranges
     std::vector<vkt::Buffer> dummy_storage_buffers;
     for (int i = 0; i < 1024; ++i) {
         const VkDeviceAddress addr =
-            dummy_storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).address();
+            dummy_storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).Address();
         const AddrRange addr_range(addr, addr + storage_buffer_size);
         // If new buffer address range overlaps with storage buffer range,
         // writes past its end may be valid, so remove dummy buffer
@@ -645,10 +645,10 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
         }
     }
 
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     data[0] = storage_buffer_addr;
     data[1] = 5;  // Will provoke a 4 bytes write past buffer end
-    uniform_buffer.memory().unmap();
+    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -656,12 +656,12 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.Memory().Map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
     }
-    storage_buffer.memory().unmap();
+    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
@@ -701,23 +701,23 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Make another buffer to write to
     const uint32_t storage_buffer_size = 4 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = storage_buffer.address();
+    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    data[0] = storage_buffer.Address();
     data[1] = 5;
-    uniform_buffer.memory().unmap();
+    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -725,11 +725,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
-    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.memory().map());
+    auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.Memory().Map());
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], 42);
     }
-    storage_buffer.memory().unmap();
+    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
@@ -822,22 +822,22 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
                               &pipeline.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     const uint32_t storage_buffer_size = 3 * sizeof(float);  // only can fit 3 floats
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
-    const VkDeviceAddress storage_buffer_addr = storage_buffer.address();
+    const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
 
     // Base buffer address is (storage_buffer_addr), so expect writing to `v.z` to cause an OOB access
     {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
         data[0] = storage_buffer_addr;
-        uniform_buffer.memory().unmap();
+        uniform_buffer.Memory().Unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
         m_default_queue->Submit(m_command_buffer);
@@ -845,16 +845,16 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to float
-        auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
+        auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
         ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
-        storage_buffer.memory().unmap();
+        storage_buffer.Memory().Unmap();
     }
 
     // Base buffer address is (storage_buffer_addr - 4), so expect writing to `f` to cause an OOB access
     {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
         data[0] = storage_buffer_addr - sizeof(float);
-        uniform_buffer.memory().unmap();
+        uniform_buffer.Memory().Unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
         m_default_queue->Submit(m_command_buffer);
@@ -862,11 +862,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to vec3
-        auto storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
+        auto storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
         ASSERT_EQ(storage_buffer_ptr[0], 1.0f);
         ASSERT_EQ(storage_buffer_ptr[1], 2.0f);
         ASSERT_EQ(storage_buffer_ptr[2], 3.0f);
-        storage_buffer.memory().unmap();
+        storage_buffer.Memory().Unmap();
     }
 }
 
@@ -911,22 +911,22 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
                               &pipeline.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     const uint32_t storage_buffer_size = 3 * sizeof(float);  // can only hold 3 floats, when SSBO uses 4
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
-    const VkDeviceAddress storage_buffer_addr = storage_buffer.address();
+    const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
 
     // Base buffer address is (storage_buffer_addr), so expect writing to `v.z` to cause an OOB access
     {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
         data[0] = storage_buffer_addr;
-        uniform_buffer.memory().unmap();
+        uniform_buffer.Memory().Unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
         m_default_queue->Submit(m_command_buffer);
@@ -934,16 +934,16 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to float
-        auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
+        auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
         ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
-        storage_buffer.memory().unmap();
+        storage_buffer.Memory().Unmap();
     }
 
     // Base buffer address is (storage_buffer_addr - 4), so expect writing to `f` to cause an OOB access
     {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
         data[0] = storage_buffer_addr - sizeof(float);
-        uniform_buffer.memory().unmap();
+        uniform_buffer.Memory().Unmap();
 
         m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
         m_default_queue->Submit(m_command_buffer);
@@ -951,11 +951,11 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
         m_errorMonitor->VerifyFound();
 
         // Make sure shader wrote to vec3
-        auto storage_buffer_ptr = static_cast<float *>(storage_buffer.memory().map());
+        auto storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
         ASSERT_EQ(storage_buffer_ptr[0], 1.0f);
         ASSERT_EQ(storage_buffer_ptr[1], 2.0f);
         ASSERT_EQ(storage_buffer_ptr[2], 3.0f);
-        storage_buffer.memory().unmap();
+        storage_buffer.Memory().Unmap();
     }
 }
 
@@ -1003,30 +1003,30 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
                               &pipeline.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     constexpr size_t nodes_count = 3;
 
     // Make a list of storage buffers, each one holding a Node
     uint32_t storage_buffer_size = (4 * sizeof(float)) + sizeof(VkDeviceAddress);
     std::vector<vkt::Buffer> storage_buffers;
-    auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
+    auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     for (size_t i = 0; i < nodes_count; ++i) {
         // Last node's memory only holds 2 * sizeof(float), so writing to v.z is illegal
         if (i == nodes_count - 1) {
             storage_buffer_size = 2 * sizeof(float);
         }
 
-        const VkDeviceAddress addr = storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).address();
+        const VkDeviceAddress addr = storage_buffers.emplace_back(*m_device, storage_buffer_size, 0, vkt::device_address).Address();
         uniform_buffer_ptr[i] = addr;
     }
 
-    uniform_buffer.memory().unmap();
+    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
     m_default_queue->Submit(m_command_buffer);
@@ -1035,13 +1035,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
     // Make sure shader wrote values to all nodes but the last
     for (auto [buffer_i, buffer] : vvl::enumerate(storage_buffers.data(), nodes_count - 1)) {
-        auto storage_buffer_ptr = static_cast<float *>(buffer->memory().map());
+        auto storage_buffer_ptr = static_cast<float *>(buffer->Memory().Map());
 
         ASSERT_EQ(storage_buffer_ptr[0], float(3 * buffer_i + 1));
         ASSERT_EQ(storage_buffer_ptr[1], float(3 * buffer_i + 2));
         ASSERT_EQ(storage_buffer_ptr[2], float(3 * buffer_i + 3));
 
-        buffer->memory().unmap();
+        buffer->Memory().Unmap();
     }
 }
 
@@ -1089,20 +1089,20 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ProxyStructLoad) {
     vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkDeviceAddress buffer_ptr = bda_buffer.address();
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    VkDeviceAddress buffer_ptr = bda_buffer.Address();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.memory().unmap();
+    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // One for each of the 2 access
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 2);
@@ -1153,20 +1153,20 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkDeviceAddress buffer_ptr = bda_buffer.address();
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    VkDeviceAddress buffer_ptr = bda_buffer.Address();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.memory().unmap();
+    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(m_command_buffer);
@@ -1215,20 +1215,20 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     vkt::Buffer in_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    VkDeviceAddress buffer_ptr = bda_buffer.address() + 256;  // wrong
-    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.memory().map();
+    VkDeviceAddress buffer_ptr = bda_buffer.Address() + 256;  // wrong
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.memory().unmap();
+    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(m_command_buffer);

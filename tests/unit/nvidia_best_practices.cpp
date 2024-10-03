@@ -43,7 +43,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-CreateDevice-PageableDeviceLocalMemory");
         VkDevice test_device = VK_NULL_HANDLE;
-        VkResult err = vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
+        VkResult err = vk::CreateDevice(Gpu(), &device_ci, nullptr, &test_device);
         m_errorMonitor->VerifyFound();
         if (err == VK_SUCCESS) {
             vk::DestroyDevice(test_device, nullptr);
@@ -57,7 +57,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, PageableDeviceLocalMemory) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-CreateDevice-PageableDeviceLocalMemory");
-        vkt::Device test_device(gpu(), device_ci);
+        vkt::Device test_device(Gpu(), device_ci);
         m_errorMonitor->Finish();
     }
 }
@@ -127,7 +127,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
 
-    if (!m_device->phy().Features().sparseBinding) {
+    if (!m_device->Physical().Features().sparseBinding) {
         GTEST_SKIP() << "Test requires sparseBinding";
     }
 
@@ -171,7 +171,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
     device_ci.pQueueCreateInfos = queue_cis;
     device_ci.pEnabledFeatures = &features;
 
-    vkt::Device test_device(gpu(), device_ci);
+    vkt::Device test_device(Gpu(), device_ci);
 
     VkQueue graphics_queue = VK_NULL_HANDLE;
     VkQueue transfer_queue = VK_NULL_HANDLE;
@@ -188,7 +188,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, QueueBindSparse_NotAsync) {
 
     vkt::Buffer sparse_buffer(test_device, sparse_buffer_ci, vkt::no_mem);
 
-    const VkMemoryRequirements memory_requirements = sparse_buffer.memory_requirements();
+    const VkMemoryRequirements memory_requirements = sparse_buffer.MemoryRequirements();
     ASSERT_NE(memory_requirements.memoryTypeBits, 0);
 
     // Find first valid bit, whatever it is
@@ -270,7 +270,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
         vkt::CommandPool compute_pool(*m_device, queue->family_index);
         vkt::CommandBuffer cmd_buffer(*m_device, compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-        cmd_buffer.begin();
+        cmd_buffer.Begin();
 
         // Those 3 are triggered when allocating memory for the destination acceleration structure buffer and the scratch buffer.
         // This is expected.
@@ -287,7 +287,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
             m_errorMonitor->VerifyFound();
         }
 
-        cmd_buffer.end();
+        cmd_buffer.End();
     }
 }
 
@@ -372,7 +372,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     device_ci.enabledExtensionCount = m_device_extension_names.size();
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    vkt::Device test_device(gpu(), device_ci);
+    vkt::Device test_device(Gpu(), device_ci);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 0x100000;
@@ -380,7 +380,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     vkt::Buffer buffer_a(test_device, buffer_ci, vkt::no_mem);
     vkt::Buffer buffer_b(test_device, buffer_ci, vkt::no_mem);
 
-    const VkMemoryRequirements memory_requirements = buffer_a.memory_requirements();
+    const VkMemoryRequirements memory_requirements = buffer_a.MemoryRequirements();
     ASSERT_NE(memory_requirements.memoryTypeBits, 0);
 
     // Find first valid bit, whatever it is
@@ -438,7 +438,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     device_ci.enabledExtensionCount = m_device_extension_names.size();
     device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    vkt::Device test_device(gpu(), device_ci);
+    vkt::Device test_device(Gpu(), device_ci);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 0x100000;
@@ -446,7 +446,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_StaticPriority) {
     vkt::Buffer buffer_a(test_device, buffer_ci, vkt::no_mem);
     vkt::Buffer buffer_b(test_device, buffer_ci, vkt::no_mem);
 
-    const VkMemoryRequirements memory_requirements = buffer_a.memory_requirements();
+    const VkMemoryRequirements memory_requirements = buffer_a.MemoryRequirements();
     ASSERT_NE(memory_requirements.memoryTypeBits, 0);
 
     // Find first valid bit, whatever it is
@@ -526,7 +526,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_SeparateSampler) {
 TEST_F(VkNvidiaBestPracticesLayerTest, CreatePipelineLayout_LargePipelineLayout) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
     RETURN_IF_SKIP(InitState());
-    if (m_device->phy().limits_.maxPerStageDescriptorStorageBuffers < 16) {
+    if (m_device->Physical().limits_.maxPerStageDescriptorStorageBuffers < 16) {
         GTEST_SKIP() << "maxPerStageDescriptorStorageBuffers of 16 required";
     }
 
@@ -587,7 +587,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    if (m_device->phy().limits_.maxGeometryOutputVertices <= 3) {
+    if (m_device->Physical().limits_.maxGeometryOutputVertices <= 3) {
         GTEST_SKIP() << "Device doesn't support requried maxGeometryOutputVertices";
     }
 
@@ -618,7 +618,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
     vgsPipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     vgsPipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     {
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
@@ -719,7 +719,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
     pipe.CreateGraphicsPipeline();
 
     auto cmd = m_command_buffer.handle();
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDepthTestEnable(cmd, VK_TRUE);
@@ -996,7 +996,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
         m_errorMonitor->Finish();
     }
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
@@ -1052,7 +1052,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
 
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBeginRendering(m_command_buffer.handle(), &begin_rendering_info);
 
     {
@@ -1100,7 +1100,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed)
         m_errorMonitor->VerifyFound();
     }
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
@@ -1126,8 +1126,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-vkBeginCommandBuffer-one-time-submit");
 
-        command_buffer0.begin(&begin_info);
-        command_buffer0.end();
+        command_buffer0.Begin(&begin_info);
+        command_buffer0.End();
 
         m_default_queue->Submit(command_buffer0);
         m_device->Wait();
@@ -1138,8 +1138,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
     {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-vkBeginCommandBuffer-one-time-submit");
 
-        command_buffer1.begin(&begin_info);
-        command_buffer1.end();
+        command_buffer1.Begin(&begin_info);
+        command_buffer1.End();
 
         for (int i = 0; i < 2; ++i) {
             m_default_queue->Submit(command_buffer1);
@@ -1153,8 +1153,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-vkBeginCommandBuffer-one-time-submit");
 
-        command_buffer2.begin(&begin_info);
-        command_buffer2.end();
+        command_buffer2.Begin(&begin_info);
+        command_buffer2.End();
 
         m_default_queue->Submit(command_buffer2);
         m_device->Wait();

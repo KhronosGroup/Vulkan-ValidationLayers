@@ -86,7 +86,7 @@ GeometryKHR &GeometryKHR::SetTrianglesDeviceVertexBuffer(vkt::Buffer &&vertex_bu
                                                          VkDeviceSize stride /*= 3 * sizeof(float)*/) {
     triangles_.device_vertex_buffer = std::move(vertex_buffer);
     vk_obj_.geometry.triangles.vertexFormat = vertex_format;
-    vk_obj_.geometry.triangles.vertexData.deviceAddress = triangles_.device_vertex_buffer.address();
+    vk_obj_.geometry.triangles.vertexData.deviceAddress = triangles_.device_vertex_buffer.Address();
     vk_obj_.geometry.triangles.maxVertex = max_vertex;
     vk_obj_.geometry.triangles.vertexStride = stride;
     return *this;
@@ -106,7 +106,7 @@ GeometryKHR &GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer &&index_buff
                                                         VkIndexType index_type /*= VK_INDEX_TYPE_UINT32*/) {
     triangles_.device_index_buffer = std::move(index_buffer);
     vk_obj_.geometry.triangles.indexType = index_type;
-    vk_obj_.geometry.triangles.indexData.deviceAddress = triangles_.device_index_buffer.address();
+    vk_obj_.geometry.triangles.indexData.deviceAddress = triangles_.device_index_buffer.Address();
     return *this;
 }
 
@@ -134,7 +134,7 @@ GeometryKHR &GeometryKHR::SetTrianglesMaxVertex(uint32_t max_vertex) {
 
 GeometryKHR &GeometryKHR::SetTrianglesTransformBuffer(vkt::Buffer &&transform_buffer) {
     triangles_.device_transform_buffer = std::move(transform_buffer);
-    vk_obj_.geometry.triangles.transformData.deviceAddress = triangles_.device_transform_buffer.address();
+    vk_obj_.geometry.triangles.transformData.deviceAddress = triangles_.device_transform_buffer.Address();
     return *this;
 }
 
@@ -155,7 +155,7 @@ GeometryKHR &GeometryKHR::SetTrianglesIndexBufferDeviceAddress(VkDeviceAddress a
 
 GeometryKHR &GeometryKHR::SetAABBsDeviceBuffer(vkt::Buffer &&buffer, VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
     aabbs_.device_buffer = std::move(buffer);
-    vk_obj_.geometry.aabbs.data.deviceAddress = aabbs_.device_buffer.address();
+    vk_obj_.geometry.aabbs.data.deviceAddress = aabbs_.device_buffer.Address();
     vk_obj_.geometry.aabbs.stride = stride;
     return *this;
 }
@@ -216,14 +216,14 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instance_.buffer.memory().map());
+    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instance_.buffer.Memory().Map());
     for (size_t vk_instance_i = 0; vk_instance_i < instance_.vk_instances.size(); ++vk_instance_i) {
         instance_buffer_ptr[vk_instance_i] = instance_.vk_instances[vk_instance_i];
     }
-    instance_.buffer.memory().unmap();
+    instance_.buffer.Memory().Unmap();
 
     vk_obj_.geometry.instances.arrayOfPointers = VK_FALSE;
-    vk_obj_.geometry.instances.data.deviceAddress = instance_.buffer.address();
+    vk_obj_.geometry.instances.data.deviceAddress = instance_.buffer.Address();
     return *this;
 }
 
@@ -305,8 +305,8 @@ AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferMemoryPropert
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferInitNoMem(bool buffer_init_no_mem) {
-    buffer_init_no_mem_ = buffer_init_no_mem;
+AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferInitNoMem(bool buffer_InitNoMemory) {
+    buffer_InitNoMemory_ = buffer_InitNoMemory;
     return *this;
 }
 
@@ -319,7 +319,7 @@ VkDeviceAddress AccelerationStructureKHR::GetBufferDeviceAddress() const {
     assert(initialized());
     assert(device_buffer_.initialized());
     assert(device_buffer_.CreateInfo().size > 0);
-    return device_buffer_.address();
+    return device_buffer_.Address();
 }
 
 VkDeviceAddress AccelerationStructureKHR::GetAccelerationStructureDeviceAddress() const {
@@ -339,8 +339,8 @@ void AccelerationStructureKHR::Build() {
         VkBufferCreateInfo ci = vku::InitStructHelper();
         ci.size = vk_info_.size;
         ci.usage = buffer_usage_flags_;
-        if (buffer_init_no_mem_) {
-            device_buffer_.init_no_mem(*device_, ci);
+        if (buffer_InitNoMemory_) {
+            device_buffer_.InitNoMemory(*device_, ci);
         } else {
             device_buffer_.init(*device_, ci, buffer_memory_property_flags_, &alloc_flags);
         }
@@ -555,7 +555,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
             // Get minAccelerationStructureScratchOffsetAlignment
             VkPhysicalDeviceAccelerationStructurePropertiesKHR as_props = vku::InitStructHelper();
             VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&as_props);
-            vk::GetPhysicalDeviceProperties2(device_->phy(), &phys_dev_props);
+            vk::GetPhysicalDeviceProperties2(device_->Physical(), &phys_dev_props);
 
             assert(device_scratch_);  // So far null pointers are not supported
             if (!device_scratch_->initialized()) {
@@ -570,7 +570,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
             }
             if (device_scratch_->CreateInfo().size != 0 &&
                 device_scratch_->CreateInfo().usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-                const VkDeviceAddress scratch_address = device_scratch_->address();
+                const VkDeviceAddress scratch_address = device_scratch_->Address();
                 const auto aligned_scratch_address =
                     Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
                 assert(aligned_scratch_address >= scratch_address);
@@ -651,7 +651,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    auto *ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR *>(indirect_buffer_->memory().map());
+    auto *ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR *>(indirect_buffer_->Memory().Map());
 
     // fill vk_info_ with geometry data, and get build ranges
     std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
@@ -667,12 +667,12 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     } else {
         vk_info_.ppGeometries = pGeometries.data();
     }
-    indirect_buffer_->memory().unmap();
+    indirect_buffer_->Memory().Unmap();
 
     std::vector<uint32_t> p_max_primitive_counts(vk_info_.geometryCount, 1);
     const uint32_t *pp_max_primitive_counts = p_max_primitive_counts.data();
 
-    const VkDeviceAddress indirect_address = indirect_buffer_address_ ? *indirect_buffer_address_ : indirect_buffer_->address();
+    const VkDeviceAddress indirect_address = indirect_buffer_address_ ? *indirect_buffer_address_ : indirect_buffer_->Address();
 
     vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_address, &indirect_stride_,
                                                   &pp_max_primitive_counts);
@@ -911,13 +911,13 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
         indices[3 * triangle_i + 2] = 2;
     }
 
-    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.memory().map());
+    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
-    vertex_buffer.memory().unmap();
+    vertex_buffer.Memory().Unmap();
 
-    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.memory().map());
+    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
-    index_buffer.memory().unmap();
+    index_buffer.Memory().Unmap();
 
     // clang-format off
     VkTransformMatrixKHR transform_matrix = {{
@@ -927,9 +927,9 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
     }};
     // clang-format on
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.Memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
-    transform_buffer.memory().unmap();
+    transform_buffer.Memory().Unmap();
 
     // Assign vertex and index buffers to out geometry
     triangle_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3));
@@ -985,9 +985,9 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device &device) {
 
     // Fill buffer with one AABB
     aabb_geometry.SetPrimitiveCount(static_cast<uint32_t>(aabbs.size()));
-    auto mapped_aabb_buffer_data = static_cast<VkAabbPositionsKHR *>(aabb_buffer.memory().map());
+    auto mapped_aabb_buffer_data = static_cast<VkAabbPositionsKHR *>(aabb_buffer.Memory().Map());
     std::copy(aabbs.begin(), aabbs.end(), mapped_aabb_buffer_data);
-    aabb_buffer.memory().unmap();
+    aabb_buffer.Memory().Unmap();
 
     aabb_geometry.SetAABBsDeviceBuffer(std::move(aabb_buffer));
 
@@ -1446,7 +1446,7 @@ void Pipeline::BuildSbt() {
     std::cout << "SBT buffer fill:\n";
 #endif
 
-    void *const sbt_buffer_base_ptr = sbt_buffer_.memory().map();
+    void *const sbt_buffer_base_ptr = sbt_buffer_.Memory().Map();
     void *sbt_buffer_ptr = sbt_buffer_base_ptr;
     (void)sbt_buffer_base_ptr;
     size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
@@ -1496,7 +1496,7 @@ void Pipeline::BuildSbt() {
     sbt_buffer_space_left -= closest_hit_shaders_.size() * handle_size_aligned;
     sbt_host_storage_ptr += closest_hit_shaders_.size() * rt_pipeline_props.shaderGroupHandleSize;
 
-    sbt_buffer_.memory().unmap();
+    sbt_buffer_.Memory().Unmap();
 }
 
 void Pipeline::DeferBuild() {
@@ -1511,12 +1511,12 @@ void Pipeline::DeferBuild() {
 vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt() {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
-    vk::GetPhysicalDeviceProperties2(device_->phy(), &props2);
+    vk::GetPhysicalDeviceProperties2(device_->Physical(), &props2);
 
     const uint32_t handle_size_aligned =
         Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
 
-    const VkDeviceAddress sbt_base_address = sbt_buffer_.address();
+    const VkDeviceAddress sbt_base_address = sbt_buffer_.Address();
     VkDeviceAddress sbt_address = sbt_base_address;
 
     assert(sbt_address == Align<VkDeviceAddress>(sbt_address, rt_pipeline_props.shaderGroupBaseAlignment));

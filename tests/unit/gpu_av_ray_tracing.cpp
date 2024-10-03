@@ -100,7 +100,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
 
-    const VkDeviceAddress sbt_address = sbt_buffer.address();
+    const VkDeviceAddress sbt_address = sbt_buffer.Address();
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
     stridebufregion.deviceAddress = sbt_address;
@@ -114,9 +114,9 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     VkTraceRaysIndirectCommandKHR ray_query_dimensions{vvl::kU32Max, 1, 1};
 
-    uint8_t *ray_query_dimensions_buffer_1_ptr = (uint8_t *)ray_query_dimensions_buffer_1.memory().map();
+    uint8_t *ray_query_dimensions_buffer_1_ptr = (uint8_t *)ray_query_dimensions_buffer_1.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_1_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
-    ray_query_dimensions_buffer_1.memory().unmap();
+    ray_query_dimensions_buffer_1.Memory().Unmap();
 
     ray_query_dimensions = {1, vvl::kU32Max, 1};
 
@@ -124,9 +124,9 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
         *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)ray_query_dimensions_buffer_2.memory().map();
+    uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)ray_query_dimensions_buffer_2.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_2_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
-    ray_query_dimensions_buffer_2.memory().unmap();
+    ray_query_dimensions_buffer_2.Memory().Unmap();
 
     ray_query_dimensions = {1, 1, vvl::kU32Max};
 
@@ -134,12 +134,12 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
         *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
 
-    uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)ray_query_dimensions_buffer_3.memory().map();
+    uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)ray_query_dimensions_buffer_3.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_3_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
-    ray_query_dimensions_buffer_3.memory().unmap();
+    ray_query_dimensions_buffer_3.Memory().Unmap();
 
     // Trace rays
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
 
@@ -147,25 +147,28 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
                               &desc_set.set_, 0, nullptr);
 
     vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
-                                ray_query_dimensions_buffer_1.address());
+                                ray_query_dimensions_buffer_1.Address());
 
     vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
-                                ray_query_dimensions_buffer_2.address());
+                                ray_query_dimensions_buffer_2.Address());
 
     vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
-                                ray_query_dimensions_buffer_3.address());
+                                ray_query_dimensions_buffer_3.Address());
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 
-    if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[0]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[0]) <
+    if (uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupCount[0]) *
+            uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupSize[0]) <
         uint64_t(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03638");
     }
-    if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[1]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[1]) <
+    if (uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupCount[1]) *
+            uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupSize[1]) <
         uint64_t(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-height-03639");
     }
-    if (uint64_t(physDevProps().limits.maxComputeWorkGroupCount[2]) * uint64_t(physDevProps().limits.maxComputeWorkGroupSize[2]) <
+    if (uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupCount[2]) *
+            uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupSize[2]) <
         uint64_t(vvl::kU32Max)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
     }
@@ -258,15 +261,15 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     vkt::Buffer rt_params_buffer(*m_device, 4 * sizeof(float), 0, vkt::device_address);  // missing space for Tmin and Tmax
     vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.memory().map());
-    data[0] = rt_params_buffer.address();
-    uniform_buffer.memory().unmap();
+    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    data[0] = rt_params_buffer.Address();
+    uniform_buffer.Memory().Unmap();
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     // Add one to use the descriptor slot GPU-AV tried to reserve
-    const uint32_t max_bound_desc_sets = m_device->phy().limits_.maxBoundDescriptorSets + 1;
+    const uint32_t max_bound_desc_sets = m_device->Physical().limits_.maxBoundDescriptorSets + 1;
 
     // First try to use too many sets in the pipeline layout
     {
@@ -295,14 +298,14 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     RETURN_IF_SKIP(pipeline.Build());
 
     // Bind descriptor set, pipeline, and trace rays
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }

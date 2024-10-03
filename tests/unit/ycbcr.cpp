@@ -55,10 +55,10 @@ TEST_F(NegativeYcbcr, Sampler) {
     // Force the multi-planar format support desired format features
     VkFormat mp_format = VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM;
     VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, &formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, &formatProps);
     formatProps.linearTilingFeatures = 0;
     formatProps.optimalTilingFeatures = 0;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
 
     // Check that errors are caught when format feature don't exist
     sycci.format = mp_format;
@@ -74,7 +74,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     // Cosited feature supported, but midpoint samples set
     formatProps.linearTilingFeatures = 0;
     formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
     sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
@@ -84,7 +84,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     // Moving support to Linear to test that it checks either linear or optimal
     formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
     formatProps.optimalTilingFeatures = 0;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
     sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
     sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     m_errorMonitor->SetDesiredError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
@@ -109,7 +109,7 @@ TEST_F(NegativeYcbcr, Sampler) {
     // Add linear feature bit so can create valid SamplerYcbcrConversion
     formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
     formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
     vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
     // Try to create a Sampler with non-matching filters without feature bit set
@@ -135,7 +135,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
 
     // Make sure components doesn't affect _444 formats
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), mp_format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), mp_format, &format_props);
     if ((format_props.optimalTilingFeatures &
          (VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT | VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT)) == 0) {
         GTEST_SKIP() << "Device does not support chroma sampling of 3plane 420 format";
@@ -242,7 +242,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;  // reset
 
     // Make sure components doesn't affect _444 formats
-    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, &format_props);
     if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT) != 0) {
         sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;
         sycci.components = identity;
@@ -284,17 +284,17 @@ TEST_F(NegativeYcbcr, Formats) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
-    if (!FormatIsSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
+    if (!FormatIsSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
         GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
     }
 
     // Set format features as needed for tests
     VkFormatProperties formatProps;
     const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, &formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, &formatProps);
     formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
     formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_DISJOINT_BIT;
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
 
     // Create ycbcr image with all valid values
     // Each test changes needed values and returns them back after
@@ -312,7 +312,7 @@ TEST_F(NegativeYcbcr, Formats) {
     VkImageCreateInfo reset_create_info = image_create_info;
 
     VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(gpu(), &image_create_info, &img_limits));
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_create_info, &img_limits));
 
     // invalid mipLevels
     if (img_limits.maxMipLevels == 1) {
@@ -330,7 +330,7 @@ TEST_F(NegativeYcbcr, Formats) {
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     // Might need to add extra validation because implementation probably doesn't support YUV
     VkImageFormatProperties image_format_props;
-    vk::GetPhysicalDeviceImageFormatProperties(gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
+    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
                                                image_create_info.usage, image_create_info.flags, &image_format_props);
     if ((image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-samples-02258");
@@ -351,7 +351,7 @@ TEST_F(NegativeYcbcr, Formats) {
     // invalid imageType
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
     // Check that image format is valid
-    if (vk::GetPhysicalDeviceImageFormatProperties(gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
+    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
                                                    image_create_info.usage, image_create_info.flags,
                                                    &image_format_props) == VK_SUCCESS) {
         // Can't just set height to 1 as stateless validation will hit 04713 first
@@ -372,7 +372,7 @@ TEST_F(NegativeYcbcr, ImageViewFormat) {
     RETURN_IF_SKIP(InitBasicYcbcr());
     InitRenderTarget();
 
-    if (!FormatIsSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
+    if (!FormatIsSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
         GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
     }
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -425,7 +425,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
 
     // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Single-plane _422 image format not supported";
@@ -439,7 +439,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     vkt::Image image_ucmp(*m_device, ci, vkt::set_layout);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkImageCopy copy_region;
     copy_region.extent = {48, 48, 1};
@@ -480,7 +480,7 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     copy_region.dstOffset = {0, 0, 0};
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
@@ -504,11 +504,11 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
 
     // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
     ci.format = VK_FORMAT_D24_UNORM_S8_UINT;
-    supported = supported && ImageFormatIsSupported(instance(), gpu(), ci, features);
+    supported = supported && ImageFormatIsSupported(instance(), Gpu(), ci, features);
     ci.format = mp3_format;
-    supported = supported && ImageFormatIsSupported(instance(), gpu(), ci, features);
+    supported = supported && ImageFormatIsSupported(instance(), Gpu(), ci, features);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image formats or optimally tiled depth-stencil buffers not supported";
@@ -523,7 +523,7 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
     ci.format = VK_FORMAT_D24_UNORM_S8_UINT;
     vkt::Image sp_image(*m_device, ci, vkt::set_layout);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkImageCopy copy_region;
     copy_region.extent = {128, 128, 1};
@@ -572,7 +572,7 @@ TEST_F(NegativeYcbcr, CopyImageMultiplaneAspectBits) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
@@ -624,13 +624,13 @@ TEST_F(NegativeYcbcr, ClearColorImageFormat) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.arrayLayers = 1;
 
-    bool supported = ImageFormatIsSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (supported == false) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
     vkt::Image mp_image(*m_device, image_create_info, vkt::set_layout);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     VkClearColorValue color_clear_value = {};
     VkImageSubresourceRange clear_range;
@@ -650,7 +650,7 @@ TEST_F(NegativeYcbcr, WriteDescriptorSet) {
     TEST_DESCRIPTION("Attempt to use VkSamplerYcbcrConversion ImageView to update descriptors that are not allowed.");
     RETURN_IF_SKIP(InitBasicYcbcr());
 
-    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
@@ -700,9 +700,9 @@ TEST_F(NegativeYcbcr, MultiplaneImageLayoutAspectFlags) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     // Verify formats
-    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
-    supported = supported && ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    supported = supported && ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
@@ -745,7 +745,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
     // Try to bind an image created with Disjoint bit
     VkFormatProperties format_properties;
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_properties);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), mp_format, &format_properties);
     // Need to make sure disjoint is supported for format
     // Also need to support an arbitrary image usage feature
     constexpr VkFormatFeatureFlags disjoint_sampled = VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
@@ -779,7 +779,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         // Find a valid memory type index to memory to be allocated from
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.allocationSize = mem_req2.memoryRequirements.size;
-        ASSERT_TRUE(m_device->phy().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
+        ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
         ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
@@ -843,7 +843,7 @@ TEST_F(NegativeYcbcr, BindMemory) {
         // Find a valid memory type index to memory to be allocated from
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.allocationSize = mem_req2.memoryRequirements.size;
-        ASSERT_TRUE(m_device->phy().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
+        ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
 
         VkDeviceMemory image_memory;
         ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
@@ -900,7 +900,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     bool mp_disjoint_support = false;
     if (mp_supported) {
         VkFormatProperties mp_format_properties;
-        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &mp_format_properties);
+        vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), mp_format, &mp_format_properties);
         if ((mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) &&
             (mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
             mp_disjoint_support = true;
@@ -915,7 +915,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     // Leave some extra space for alignment wiggle room
     image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
-    m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
+    m_device->Physical().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
     vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
 
     // Keep values outside scope so multiple tests cases can reuse
@@ -924,7 +924,7 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
     VkMemoryRequirements2 mp_image_mem_reqs2[2];
     VkMemoryAllocateInfo mp_image_alloc_info[2];
     if (mp_disjoint_support) {
-        mp_image.init_no_mem(*m_device, mp_image_create_info);
+        mp_image.InitNoMemory(*m_device, mp_image_create_info);
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -944,11 +944,11 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         // plane 0
         mp_image_alloc_info[0].allocationSize =
             mp_image_mem_reqs2[0].memoryRequirements.size + mp_image_mem_reqs2[0].memoryRequirements.alignment;
-        m_device->phy().SetMemoryType(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0);
+        m_device->Physical().SetMemoryType(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0);
         // Exact size as VU will always be for plane 1
         // plane 1
         mp_image_alloc_info[1].allocationSize = mp_image_mem_reqs2[1].memoryRequirements.size;
-        m_device->phy().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
+        m_device->Physical().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
 
         mp_image_mem[0].init(*m_device, mp_image_alloc_info[0]);
         mp_image_mem[1].init(*m_device, mp_image_alloc_info[1]);
@@ -1100,7 +1100,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
     bool mp_disjoint_support = false;
     if (mp_supported) {
         VkFormatProperties mp_format_properties;
-        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &mp_format_properties);
+        vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), mp_format, &mp_format_properties);
         if ((mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) &&
             (mp_format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
             mp_disjoint_support = true;
@@ -1115,7 +1115,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     // Leave some extra space for alignment wiggle room
     image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
-    m_device->phy().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
+    m_device->Physical().SetMemoryType(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0);
     vkt::DeviceMemory image_mem(*m_device, image_alloc_info);
 
     // Keep values outside scope so multiple tests cases can reuse
@@ -1124,7 +1124,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
     VkMemoryRequirements2 mp_image_mem_reqs2[2];
     VkMemoryAllocateInfo mp_image_alloc_info[2];
     if (mp_disjoint_support) {
-        mp_image.init_no_mem(*m_device, mp_image_create_info);
+        mp_image.InitNoMemory(*m_device, mp_image_create_info);
 
         VkImagePlaneMemoryRequirementsInfo image_plane_req = vku::InitStructHelper();
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1144,11 +1144,11 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         // plane 0
         mp_image_alloc_info[0].allocationSize =
             mp_image_mem_reqs2[0].memoryRequirements.size + mp_image_mem_reqs2[0].memoryRequirements.alignment;
-        m_device->phy().SetMemoryType(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0);
+        m_device->Physical().SetMemoryType(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0);
         // Exact size as VU will always be for plane 1
         // plane 1
         mp_image_alloc_info[1].allocationSize = mp_image_mem_reqs2[1].memoryRequirements.size;
-        m_device->phy().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
+        m_device->Physical().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
 
         mp_image_mem[0].init(*m_device, mp_image_alloc_info[0]);
         mp_image_mem[1].init(*m_device, mp_image_alloc_info[1]);
@@ -1165,7 +1165,7 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
 
     // Create a mask of available memory types *not* supported by these resources, and try to use one of them.
     VkPhysicalDeviceMemoryProperties memory_properties = {};
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy().handle(), &memory_properties);
+    vk::GetPhysicalDeviceMemoryProperties(m_device->Physical().handle(), &memory_properties);
 
     // single-plane image
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
@@ -1181,8 +1181,8 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         uint32_t image2_unsupported_mem_type_bits =
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mem_req2.memoryRequirements.memoryTypeBits;
         bool found_type =
-            m_device->phy().SetMemoryType(image2_unsupported_mem_type_bits, &image_alloc_info, 0,
-                                          VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+            m_device->Physical().SetMemoryType(image2_unsupported_mem_type_bits, &image_alloc_info, 0,
+                                               VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
         if (image2_unsupported_mem_type_bits != 0 && found_type) {
             vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             bind_image_info.memory = image_mem_tmp.handle();
@@ -1194,8 +1194,8 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         // Same as 01047 but with bindImageMemory2 call
         uint32_t image_unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~image_mem_reqs.memoryTypeBits;
         bool found_type =
-            m_device->phy().SetMemoryType(image_unsupported_mem_type_bits, &image_alloc_info, 0,
-                                          VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+            m_device->Physical().SetMemoryType(image_unsupported_mem_type_bits, &image_alloc_info, 0,
+                                               VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
         if (image_unsupported_mem_type_bits != 0 && found_type) {
             vkt::DeviceMemory image_mem_tmp(*m_device, image_alloc_info);
             bind_image_info.memory = image_mem_tmp.handle();
@@ -1218,8 +1218,8 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         uint32_t mp_image_unsupported_mem_type_bits =
             ((1 << memory_properties.memoryTypeCount) - 1) & ~mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits;
         bool found_type =
-            m_device->phy().SetMemoryType(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0,
-                                          VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
+            m_device->Physical().SetMemoryType(mp_image_unsupported_mem_type_bits, &mp_image_alloc_info[0], 0,
+                                               VK_MEMORY_PROPERTY_PROTECTED_BIT | VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD);
         if (mp_image_unsupported_mem_type_bits != 0 && found_type) {
             mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
             vkt::DeviceMemory mp_image_mem_tmp(*m_device, mp_image_alloc_info[0]);
@@ -1284,7 +1284,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitBasicYcbcr());
 
-    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
@@ -1317,7 +1317,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
 
     const VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-    bool supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
     // Verify format 3 Plane format
     if (!supported) {
         printf("Multiplane image format not supported.  Skipping test.\n");
@@ -1355,7 +1355,7 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     }
 
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    supported = ImageFormatIsSupported(instance(), gpu(), ci, features);
+    supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
     // Verify format 2 Plane format
     if (!supported) {
         printf("Multiplane image format not supported.  Skipping test.\n");
@@ -1463,14 +1463,14 @@ TEST_F(NegativeYcbcr, MultiplaneAspectBits) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBasicYcbcr());
 
-    if (!FormatFeaturesAreSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // commonly supported multi-planar format
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), mp_format, &format_props);
     if (!vkt::Image::IsCompatible(*m_device, VK_IMAGE_USAGE_SAMPLED_BIT, format_props.optimalTilingFeatures)) {
         GTEST_SKIP() << "multi-planar format cannot be sampled for optimalTiling.";
     }
@@ -1537,14 +1537,14 @@ TEST_F(NegativeYcbcr, DisjointImageWithDrmFormatModifier) {
     std::vector<uint64_t> mods;
     VkDrmFormatModifierPropertiesListEXT mod_props = vku::InitStructHelper();
     VkFormatProperties2 format_props = vku::InitStructHelper(&mod_props);
-    vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props);
     if (mod_props.drmFormatModifierCount == 0) {
         GTEST_SKIP() << "drmFormatModifierCount is 0.";
     }
 
     std::vector<VkDrmFormatModifierPropertiesEXT> mod_props_length(mod_props.drmFormatModifierCount);
     mod_props.pDrmFormatModifierProperties = mod_props_length.data();
-    vk::GetPhysicalDeviceFormatProperties2(gpu(), format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props);
 
     for (uint32_t i = 0; i < mod_props.drmFormatModifierCount; ++i) {
         auto &mod = mod_props.pDrmFormatModifierProperties[i];
@@ -1603,7 +1603,7 @@ TEST_F(NegativeYcbcr, DrawFetch) {
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    if (!ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -1644,7 +1644,7 @@ TEST_F(NegativeYcbcr, DrawFetch) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -1653,7 +1653,7 @@ TEST_F(NegativeYcbcr, DrawFetch) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeYcbcr, DrawConstOffset) {
@@ -1672,7 +1672,7 @@ TEST_F(NegativeYcbcr, DrawConstOffset) {
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    if (!ImageFormatIsSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -1743,7 +1743,7 @@ TEST_F(NegativeYcbcr, DrawConstOffset) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -1752,5 +1752,5 @@ TEST_F(NegativeYcbcr, DrawConstOffset) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

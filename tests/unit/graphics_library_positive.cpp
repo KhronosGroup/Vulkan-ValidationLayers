@@ -186,7 +186,7 @@ TEST_F(PositiveGraphicsLibrary, CombinedShaderSubsets) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = shader_lib.gp_ci_.layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 }
 
@@ -268,7 +268,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Draw with pipeline created with null set
@@ -278,7 +278,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
@@ -286,7 +286,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     VkPhysicalDeviceProperties device_props = {};
-    vk::GetPhysicalDeviceProperties(gpu(), &device_props);
+    vk::GetPhysicalDeviceProperties(Gpu(), &device_props);
     if (device_props.limits.maxVertexInputAttributeOffset == 0xFFFFFFFF) {
         GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
     }
@@ -295,7 +295,7 @@ TEST_F(PositiveGraphicsLibrary, VertexInputAttributeDescriptionOffset) {
 
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.binding = 0;
-    vertex_input_binding_description.stride = m_device->phy().limits_.maxVertexInputBindingStride;
+    vertex_input_binding_description.stride = m_device->Physical().limits_.maxVertexInputBindingStride;
     vertex_input_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     // Test when offset is greater than maximum.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
@@ -450,7 +450,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdSetPrimitiveTopology(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
@@ -458,7 +458,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
@@ -537,7 +537,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdSetPrimitiveTopology(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
@@ -545,7 +545,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
@@ -614,11 +614,11 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdSetPrimitiveTopology(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
@@ -626,7 +626,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
@@ -691,7 +691,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
@@ -699,7 +699,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
@@ -764,7 +764,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
@@ -772,7 +772,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, FragmentShaderNoStageCount) {
@@ -870,7 +870,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -942,7 +942,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1029,12 +1029,12 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     begin_rendering_info.pDepthAttachment = &depth_attachment;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveGraphicsLibrary, DepthState) {
@@ -1044,7 +1044,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1106,7 +1106,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
 
         VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
         exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
-        exe_pipe_ci.renderPass = renderPass();
+        exe_pipe_ci.renderPass = RenderPass();
         vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
         ASSERT_TRUE(exe_pipe.initialized());
     }
@@ -1136,7 +1136,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pr_lib.gp_ci_.layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -1148,7 +1148,7 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -1290,7 +1290,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&link_info);
     pipe_ci.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe_ci.layout = pipe.gp_ci_.layout;
-    pipe_ci.renderPass = renderPass();
+    pipe_ci.renderPass = RenderPass();
     VkPipeline pipeline;
     VkResult result = vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1u, &pipe_ci, nullptr, &pipeline);
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_PIPELINE_COMPILE_REQUIRED);
@@ -1430,7 +1430,7 @@ TEST_F(PositiveGraphicsLibrary, PipelineLibraryNoRendering) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
@@ -1512,7 +1512,7 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
 
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
@@ -1555,7 +1555,7 @@ TEST_F(PositiveGraphicsLibrary, PushConstant) {
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
-    lib_ci.renderPass = renderPass();
+    lib_ci.renderPass = RenderPass();
     vkt::Pipeline lib(*m_device, lib_ci);
 }
 
@@ -1594,7 +1594,7 @@ TEST_F(PositiveGraphicsLibrary, PushConstantOneLibrary) {
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
     lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     lib_ci.layout = pre_raster_lib.gp_ci_.layout;
-    lib_ci.renderPass = renderPass();
+    lib_ci.renderPass = RenderPass();
     vkt::Pipeline lib(*m_device, lib_ci);
 }
 
@@ -1703,7 +1703,7 @@ TEST_F(PositiveGraphicsLibrary, LinkWithNoLayout) {
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo(&link_info);
     vertex_input_lib.gp_ci_.layout = VK_NULL_HANDLE;
-    vertex_input_lib.gp_ci_.renderPass = renderPass();
+    vertex_input_lib.gp_ci_.renderPass = RenderPass();
     vertex_input_lib.CreateGraphicsPipeline(false);
 }
 
@@ -1781,7 +1781,7 @@ TEST_F(PositiveGraphicsLibrary, MultisampleStateSampleMaskArray) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 }
 
@@ -1856,7 +1856,7 @@ TEST_F(PositiveGraphicsLibrary, RasterizerDiscardEnable) {
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = pre_raster_lib.gp_ci_.layout;
-    exe_pipe_ci.renderPass = renderPass();
+    exe_pipe_ci.renderPass = RenderPass();
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }

@@ -31,7 +31,7 @@ TEST_F(NegativePipeline, NotBound) {
 
     VkPipeline badPipeline = CastToHandle<VkPipeline, uintptr_t>(0xbaadb1be);
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, badPipeline);
 
     m_errorMonitor->VerifyFound();
@@ -48,7 +48,7 @@ TEST_F(NegativePipeline, WrongBindPointGraphics) {
     CreateComputePipelineHelper pipe(*this);
     pipe.CreateComputePipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->VerifyFound();
@@ -74,7 +74,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
@@ -94,7 +94,7 @@ TEST_F(NegativePipeline, WrongBindPointCompute) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     m_errorMonitor->VerifyFound();
@@ -201,9 +201,9 @@ TEST_F(NegativePipeline, CmdBufferPipelineDestroyed) {
         helper.CreateGraphicsPipeline();
 
         // Bind helper pipeline to command buffer
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         // pipeline will be destroyed when helper goes out of scope
     }
@@ -239,7 +239,7 @@ TEST_F(NegativePipeline, BadPipelineObject) {
 
     // Attempt to bind an invalid Pipeline to a valid Command Buffer
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipeline-parameter");
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, bad_pipeline);
     m_errorMonitor->VerifyFound();
 
@@ -313,13 +313,13 @@ TEST_F(NegativePipeline, NoPipelineDynamicState) {
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08606");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, ShaderStageName) {
@@ -473,7 +473,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     subpass.pColorAttachments = attachmentRefs.data();
 
     VkAttachmentDescription attach_desc = {};
-    attach_desc.format = m_renderTargets[0]->format();
+    attach_desc.format = m_renderTargets[0]->Format();
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -490,8 +490,8 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
 
     auto render_target_view = m_renderTargets[0]->CreateView();
 
-    const uint32_t fb_width = m_renderTargets[0]->width();
-    const uint32_t fb_height = m_renderTargets[0]->height();
+    const uint32_t fb_width = m_renderTargets[0]->Width();
+    const uint32_t fb_height = m_renderTargets[0]->Height();
     vkt::Framebuffer framebuffer(*m_device, renderpass, 1, &render_target_view.handle(), fb_width, fb_height);
 
     CreatePipelineHelper pipeline_1(*this);
@@ -504,7 +504,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     pipeline_2.gp_ci_.renderPass = renderpass.handle();
     pipeline_2.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(renderpass.handle(), framebuffer, fb_width, fb_height);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.Handle());
@@ -517,7 +517,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
@@ -624,7 +624,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
 TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
     TEST_DESCRIPTION("Create Graphics Pipeline with fragment shader and rasterizer discard");
     RETURN_IF_SKIP(Init());
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -694,7 +694,7 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
 
     RETURN_IF_SKIP(Init());
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -829,7 +829,7 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
     m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -838,7 +838,7 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
 
     // Finalize recording of the command buffer
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_errorMonitor->VerifyFound();
 }
@@ -1058,7 +1058,7 @@ TEST_F(NegativePipeline, NullStagepNameMaintenance5) {
     InitRenderTarget();
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
+    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
@@ -1086,7 +1086,7 @@ TEST_F(NegativePipeline, NullStagepNameMaintenance5Compute) {
     RETURN_IF_SKIP(Init());
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->phy().limits_, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl, shader);
+    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
@@ -1213,7 +1213,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     struct TestCase {
         VkSampleCountFlagBits color_samples;
@@ -1296,14 +1296,14 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
     uint32_t combination_count = 0;
     std::vector<VkFramebufferMixedSamplesCombinationNV> combinations;
 
-    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr);
+    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(Gpu(), &combination_count, nullptr);
     if (combination_count < 1) {
         GTEST_SKIP() << "No mixed sample combinations are supported";
     }
     combinations.resize(combination_count);
     // TODO this fill can be removed once https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4138 merges
     std::fill(combinations.begin(), combinations.end(), vku::InitStruct<VkFramebufferMixedSamplesCombinationNV>());
-    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, &combinations[0]);
+    vk::GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(Gpu(), &combination_count, &combinations[0]);
 
     // Pick the first supported combination for a positive test.
     test_cases.push_back({combinations[0].rasterizationSamples, static_cast<VkSampleCountFlagBits>(combinations[0].colorSamples),
@@ -1311,7 +1311,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
                           combinations[0].coverageReductionMode, true,
                           "VUID-VkGraphicsPipelineCreateInfo-coverageReductionMode-02722"});
 
-    VkSampleCountFlags fb_sample_counts = m_device->phy().limits_.framebufferDepthSampleCounts;
+    VkSampleCountFlags fb_sample_counts = m_device->Physical().limits_.framebufferDepthSampleCounts;
     int max_sample_count = VK_SAMPLE_COUNT_64_BIT;
     while (max_sample_count > VK_SAMPLE_COUNT_1_BIT) {
         if (fb_sample_counts & max_sample_count) {
@@ -1661,7 +1661,7 @@ TEST_F(NegativePipeline, LineRasterization) {
             kErrorBit, vuids);
     }
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetLineStippleKHR-lineStippleFactor-02776");
     vk::CmdSetLineStippleEXT(m_command_buffer.handle(), 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1710,14 +1710,14 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, binding_pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, MaxPerStageResources) {
@@ -1733,9 +1733,9 @@ TEST_F(NegativePipeline, MaxPerStageResources) {
     // Spec requires a minimum of 128 so know this is setting it lower than that
     const uint32_t maxPerStageResources = 4;
     VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     props.limits.maxPerStageResources = maxPerStageResources;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     RETURN_IF_SKIP(InitState());
     // Adds the one color attachment
     InitRenderTarget();
@@ -1866,9 +1866,9 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
     // Remove format features want to test if missing
     VkFormatProperties formatProps;
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), sampled_format, &formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), sampled_format, &formatProps);
     formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
-    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), sampled_format, formatProps);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), sampled_format, formatProps);
 
     vkt::Image image(*m_device, 128, 128, 1, sampled_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -1980,7 +1980,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
                                                      VK_IMAGE_LAYOUT_UNDEFINED);
     seperate_descriptor_set.UpdateDescriptorSets();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Unused is a valid version of the combined pipeline/descriptors
@@ -2405,7 +2405,7 @@ TEST_F(NegativePipeline, ColorWriteCreateInfoEXTMaxAttachments) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    uint32_t max_color_attachments = m_device->phy().limits_.maxColorAttachments + 1;
+    uint32_t max_color_attachments = m_device->Physical().limits_.maxColorAttachments + 1;
 
     std::vector<VkBool32> enables(max_color_attachments, VK_TRUE);
     VkPipelineColorWriteCreateInfoEXT color_write = vku::InitStructHelper();
@@ -2477,7 +2477,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle());
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
-    vk::GetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
+    vk::GetPhysicalDeviceMultisamplePropertiesEXT(Gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
 
@@ -2540,7 +2540,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     begin_info.clearValueCount = 1;
     begin_info.pClearValues = &clear_value;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBeginRenderPass(m_command_buffer.handle(), &begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-variableSampleLocations-01525");
@@ -2563,7 +2563,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     m_command_buffer.NextSubpass();
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, RasterizationConservativeStateCreateInfo) {
@@ -2633,7 +2633,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessWithoutFeature) {
     attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     attachments[1].flags = 0;
-    attachments[1].format = FindSupportedDepthStencilFormat(this->gpu());
+    attachments[1].format = FindSupportedDepthStencilFormat(this->Gpu());
     attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -2733,7 +2733,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
         attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         attachments[1].flags = 0;
-        attachments[1].format = FindSupportedDepthStencilFormat(this->gpu());
+        attachments[1].format = FindSupportedDepthStencilFormat(this->Gpu());
         attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -2882,7 +2882,7 @@ TEST_F(NegativePipeline, IncompatibleScissorCountAndViewportCount) {
     InitRenderTarget();
 
     VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     if (features.multiViewport == false) {
         GTEST_SKIP() << "multiViewport feature not supported by device";
     }
@@ -3211,7 +3211,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageFormatProperties formProps;
-    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_ci.format, image_ci.imageType,
+    VkResult res = vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), image_ci.format, image_ci.imageType,
                                                               image_ci.tiling, image_ci.usage, image_ci.flags, &formProps);
     if (res != VK_SUCCESS || (formProps.sampleCounts & VK_SAMPLE_COUNT_2_BIT) == 0) {
         GTEST_SKIP() << "Required format not supported";
@@ -3243,14 +3243,14 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pNext-07935");
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, PipelineMissingFeatures) {
@@ -3260,7 +3260,7 @@ TEST_F(NegativePipeline, PipelineMissingFeatures) {
     VkPhysicalDeviceFeatures features = {};
     RETURN_IF_SKIP(InitState(&features));
 
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->phy().handle());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical().handle());
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
@@ -3299,7 +3299,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
 
     VkFormat undefined = VK_FORMAT_UNDEFINED;
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     vkt::Image color_image(*m_device, 32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView color_image_view = color_image.CreateView();
@@ -3385,7 +3385,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
     color_pipe.cb_ci_ = color_blend_state;
     stencil_pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, color_pipe.Handle());
@@ -3404,7 +3404,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePipeline, MissingPipelineViewportState) {
@@ -3494,7 +3494,7 @@ TEST_F(NegativePipeline, GeometryShaderConservativeRasterization) {
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     if (features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported";
     }
@@ -3538,7 +3538,7 @@ TEST_F(NegativePipeline, VertexPointOutputConservativeRasterization) {
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
     VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     if (features.geometryShader == VK_FALSE) {
         GTEST_SKIP() << "geometryShader not supported";
     }

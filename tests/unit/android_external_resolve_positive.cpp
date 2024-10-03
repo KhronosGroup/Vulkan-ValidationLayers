@@ -227,10 +227,10 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass_bi);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
@@ -301,12 +301,12 @@ TEST_F(PositiveAndroidExternalResolve, DynamicRendering) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06865");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkRenderingAttachmentInfo-imageView-06129");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
@@ -385,7 +385,7 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle());
 
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
@@ -403,7 +403,7 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
                            &image_barrier);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR

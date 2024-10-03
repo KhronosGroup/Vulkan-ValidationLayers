@@ -311,14 +311,14 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     // This copy is not legal since both buffers share same device memory range, and none of them will be rebound
     // to non overlapping device memory ranges. Reported at queue submit
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -398,13 +398,13 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -447,7 +447,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     }
     buffer_sparse.destroy();
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
-    buffer_sparse.init_no_mem(*m_device, buffer_ci);
+    buffer_sparse.InitNoMemory(*m_device, buffer_ci);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -477,7 +477,7 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
     VkBufferCopy copy_info;
@@ -485,9 +485,9 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     copy_info.dstOffset = buffer_mem_reqs.alignment / 2;  // dstOffset is the start of buffer_mem_2, or 0 in this space
                                                           // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment;
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -530,8 +530,8 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy4) {
     b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
-    VkMemoryRequirements buffer_sparse_mem_reqs = buffer_sparse.memory_requirements();
-    const VkMemoryRequirements buffer_not_sparse_mem_reqs = buffer_not_sparse.memory_requirements();
+    VkMemoryRequirements buffer_sparse_mem_reqs = buffer_sparse.MemoryRequirements();
+    const VkMemoryRequirements buffer_not_sparse_mem_reqs = buffer_not_sparse.MemoryRequirements();
 
     if ((buffer_sparse_mem_reqs.memoryTypeBits & buffer_not_sparse_mem_reqs.memoryTypeBits) == 0) {
         GTEST_SKIP() << "Could not find common memory type for sparse and not sparse buffer, skipping test";
@@ -564,14 +564,14 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy4) {
     VkQueue sparse_queue = m_device->QueuesWithSparseCapability()[0]->handle();
     vkt::Fence sparse_queue_fence(*m_device);
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, sparse_queue_fence);
-    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.wait(kWaitTimeout));
+    ASSERT_EQ(VK_SUCCESS, sparse_queue_fence.Wait(kWaitTimeout));
     // Set up complete
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     // This copy is not legal since both buffers share same device memory range, and none of them will be rebound
     // to non overlapping device memory ranges. Reported at queue submit
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -625,7 +625,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
 
-    if (m_device->phy().Features().sparseResidencyBuffer) {
+    if (m_device->Physical().Features().sparseResidencyBuffer) {
         buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
@@ -661,7 +661,7 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     buffer_create_info.size = 1024;
 
-    if (m_device->phy().Features().sparseResidencyBuffer) {
+    if (m_device->Physical().Features().sparseResidencyBuffer) {
         buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT | VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";

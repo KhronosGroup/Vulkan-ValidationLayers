@@ -26,7 +26,7 @@ TEST_F(NegativeSubgroup, Properties) {
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
     if (features.vertexPipelineStoresAndAtomics == VK_FALSE) {
         GTEST_SKIP() << "vertexPipelineStoresAndAtomics not supported";
     }
@@ -37,7 +37,7 @@ TEST_F(NegativeSubgroup, Properties) {
 
     // Don't enable the extension on purpose
     const bool extension_support_partitioned =
-        DeviceExtensionSupported(gpu(), nullptr, VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
+        DeviceExtensionSupported(Gpu(), nullptr, VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
     InitRenderTarget();
 
     // Gather all aspects supported
@@ -693,7 +693,7 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.LateBindPipelineInfo();
         pipe.cp_ci_.stage.pNext = &subgroup_size_control;
-        if (size * size * 2 > m_device->phy().limits_.maxComputeWorkGroupInvocations) {
+        if (size * size * 2 > m_device->Physical().limits_.maxComputeWorkGroupInvocations) {
             m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-x-06432");
         }
         m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-02756");

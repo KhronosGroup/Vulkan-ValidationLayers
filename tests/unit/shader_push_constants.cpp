@@ -58,7 +58,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceProperties device_props = {};
-    vk::GetPhysicalDeviceProperties(gpu(), &device_props);
+    vk::GetPhysicalDeviceProperties(Gpu(), &device_props);
     // will be at least 256 as required from the spec
     const uint32_t maxPushConstantsSize = device_props.limits.maxPushConstantsSize;
 
@@ -163,9 +163,9 @@ TEST_F(NegativeShaderPushConstants, Range) {
     // Set limit to be same max as the shader usages
     const uint32_t maxPushConstantsSize = 16;
     VkPhysicalDeviceProperties props;
-    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
     props.limits.maxPushConstantsSize = maxPushConstantsSize;
-    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
 
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -192,7 +192,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
 
     const float data[16] = {};  // dummy data to match shader size
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     // size of 0
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-arraylength");
@@ -226,7 +226,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                          maxPushConstantsSize, data);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
@@ -308,7 +308,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     g_pipe_small_range.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // vertex
@@ -341,7 +341,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {

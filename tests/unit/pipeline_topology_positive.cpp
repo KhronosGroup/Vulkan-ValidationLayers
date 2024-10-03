@@ -313,11 +313,11 @@ TEST_F(PositivePipelineTopology, PolygonModeValid) {
     InitRenderTarget();
 
     std::vector<const char *> device_extension_names;
-    auto features = m_device->phy().Features();
+    auto features = m_device->Physical().Features();
     // Artificially disable support for non-solid fill modes
     features.fillModeNonSolid = false;
     // The sacrificial device object
-    vkt::Device test_device(gpu(), device_extension_names, &features);
+    vkt::Device test_device(Gpu(), device_extension_names, &features);
 
     VkAttachmentReference attach = {};
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -445,13 +445,13 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
-    m_command_buffer.BeginRenderPass(renderPass(), framebuffer(), 32, 32, m_renderPassClearValues.size(),
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(RenderPass(), Framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositivePipelineTopology, LineTopologyClasses) {
@@ -479,7 +479,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     vkt::CommandBuffer cb(*m_device, m_command_pool);
-    cb.begin();
+    cb.Begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -489,7 +489,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
 
     cb.EndRenderPass();
 
-    cb.end();
+    cb.End();
 }
 
 TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {

@@ -37,12 +37,12 @@ TEST_F(PositiveDynamicState, DiscardRectanglesVersion) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, ViewportWithCountNoMultiViewport) {
@@ -100,14 +100,14 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXT) {
     vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &binding, 1, &attribute);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
@@ -153,14 +153,14 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
     vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &binding, 1, &attribute);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) {
@@ -172,12 +172,12 @@ TEST_F(PositiveDynamicState, ExtendedDynamicStateBindVertexBuffersMaintenance5) 
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     RETURN_IF_SKIP(Init());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize size = VK_WHOLE_SIZE;
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers2EXT(m_command_buffer.handle(), 0, 1, &buffer.handle(), &offset, &size, nullptr);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
@@ -197,12 +197,12 @@ TEST_F(PositiveDynamicState, DiscardRectanglesWithDynamicState) {
     CreatePipelineHelper pipe(*this, &discard_rect_ci);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
@@ -219,7 +219,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     }
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -260,7 +260,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
     pipe.ds_ci_.stencilTestEnable = VK_TRUE;
     ASSERT_EQ(VK_SUCCESS, pipe.CreateGraphicsPipeline());
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_renderPassBeginInfo.renderPass = rp.handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -271,7 +271,7 @@ TEST_F(PositiveDynamicState, DynamicColorWriteNoColorAttachments) {
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
@@ -280,7 +280,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     vkt::Image color_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto color_view = color_image.CreateView();
 
-    VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
     vkt::Image ds_image(*m_device, m_width, m_height, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
@@ -305,7 +305,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
 
@@ -313,7 +313,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
@@ -323,7 +323,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     vkt::Image color_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto color_view = color_image.CreateView();
 
-    VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
     vkt::Image ds_image(*m_device, m_width, m_height, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
@@ -347,7 +347,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
 
@@ -356,7 +356,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, SetBeforePipeline) {
@@ -373,7 +373,7 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     pipe_blend.AddDynamicState(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
     pipe_blend.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetLineWidth(m_command_buffer.handle(), 1.0f);
     float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -385,7 +385,7 @@ TEST_F(PositiveDynamicState, SetBeforePipeline) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
@@ -404,7 +404,7 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdSetAttachmentFeedbackLoopEnableEXT(m_command_buffer.handle(), VK_IMAGE_ASPECT_COLOR_BIT);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -412,7 +412,7 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnable) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
@@ -449,7 +449,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdSetDepthBiasEnableEXT(m_command_buffer.handle(), VK_TRUE);
 
@@ -465,7 +465,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
                 0);  // Without correct state tracking, VUID-vkCmdDraw-None-07834 would be thrown here
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
@@ -501,7 +501,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdSetDepthBiasEnableEXT(m_command_buffer.handle(), VK_TRUE);
 
@@ -517,7 +517,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
                 0);  // Without correct state tracking, VUID-vkCmdDraw-None-07834 would be thrown here
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentationInfo) {
@@ -562,7 +562,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     raster_state.depthBiasEnable = VK_TRUE;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdSetDepthBiasEnableEXT(m_command_buffer.handle(), VK_TRUE);
 
@@ -590,7 +590,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
@@ -619,13 +619,13 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetFalse) {
     pipe.ms_ci_ = ms_state_ci;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetAlphaToCoverageEnableEXT(m_command_buffer.handle(), VK_FALSE);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
@@ -639,13 +639,13 @@ TEST_F(PositiveDynamicState, AlphaToCoverageSetTrue) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetAlphaToCoverageEnableEXT(m_command_buffer.handle(), VK_TRUE);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, MultisampleStateIgnored) {
@@ -775,7 +775,7 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     RETURN_IF_SKIP(Init());
 
     // Need to set format framework uses for InitRenderTarget
-    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -790,14 +790,14 @@ TEST_F(PositiveDynamicState, DepthBoundsTestEnableState) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetDepthBoundsTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
     // don't need vkCmdSetDepthBounds since test is disabled now
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, ViewportInheritance) {
@@ -832,22 +832,22 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     auto hinfo = vku::InitStruct<VkCommandBufferInheritanceInfo>(&viewport_scissor_inheritance);
     hinfo.renderPass = m_renderPass;
     hinfo.subpass = 0;
-    hinfo.framebuffer = framebuffer();
+    hinfo.framebuffer = Framebuffer();
 
     auto info = vku::InitStruct<VkCommandBufferBeginInfo>();
     info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     info.pInheritanceInfo = &hinfo;
 
-    cmd_buffer.begin(&info);
+    cmd_buffer.Begin(&info);
     vk::CmdBindPipeline(cmd_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(cmd_buffer.handle(), 3, 1, 0, 0);
-    cmd_buffer.end();
+    cmd_buffer.End();
 
-    set_state.begin();
+    set_state.Begin();
     vk::CmdSetViewport(set_state.handle(), 1u, 1u, &viewports[1]);
-    set_state.end();
+    set_state.End();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdSetViewport(m_command_buffer.handle(), 0u, 2u, viewports);
     vk::CmdSetViewport(m_command_buffer.handle(), 0u, 1u, viewports);
     vk::CmdSetScissor(m_command_buffer.handle(), 0u, 2u, scissors);
@@ -856,7 +856,7 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &cmd_buffer.handle());
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -878,9 +878,9 @@ TEST_F(PositiveDynamicState, AttachmentFeedbackLoopEnableAspectMask) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdSetAttachmentFeedbackLoopEnableEXT(m_command_buffer.handle(), VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, RasterizationSamplesDynamicRendering) {
@@ -931,13 +931,13 @@ TEST_F(PositiveDynamicState, RasterizationSamplesDynamicRendering) {
     rendering_info.colorAttachmentCount = 1u;
     rendering_info.pColorAttachments = &colorAttachment;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_4_BIT);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, RasterizationSamples) {
@@ -979,13 +979,13 @@ TEST_F(PositiveDynamicState, RasterizationSamples) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32u, 32u);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_4_BIT);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, PrimitiveTopology) {
@@ -1005,14 +1005,14 @@ TEST_F(PositiveDynamicState, PrimitiveTopology) {
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_TRUE);
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, VertexInputMultipleBindings) {
@@ -1094,14 +1094,14 @@ TEST_F(PositiveDynamicState, VertexInputMultipleBindings) {
     VkBuffer buffers[2] = {vertex_buffer.handle(), instance_buffer.handle()};
     VkDeviceSize offsets[2] = {0u, 0u};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 2, buffers, offsets);
     vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 2, bindings, 4, attributes);
     vk::CmdDraw(m_command_buffer.handle(), 3u, 3u, 0u, 0u);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, ColorBlendEquationMultipleAttachments) {
@@ -1121,7 +1121,7 @@ TEST_F(PositiveDynamicState, ColorBlendEquationMultipleAttachments) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     const VkColorBlendEquationEXT equation = {VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_OP_ADD,
@@ -1131,7 +1131,7 @@ TEST_F(PositiveDynamicState, ColorBlendEquationMultipleAttachments) {
     vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 1, 1, &equation);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
@@ -1144,7 +1144,7 @@ TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
     RETURN_IF_SKIP(Init());
 
-    const uint32_t count = m_device->phy().limits_.maxFragmentDualSrcAttachments + 1;
+    const uint32_t count = m_device->Physical().limits_.maxFragmentDualSrcAttachments + 1;
     if (count != 2) {
         GTEST_SKIP() << "Test is designed for a maxFragmentDualSrcAttachments of 1";
     }
@@ -1171,7 +1171,7 @@ TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     VkColorBlendEquationEXT dual_color_blend_equation = {
@@ -1195,7 +1195,7 @@ TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
@@ -1208,7 +1208,7 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
     InitDynamicRenderTarget();
 
     const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -1259,7 +1259,7 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &rendering_info);
     VkBool32 color_blend_enables[] = {VK_TRUE, VK_TRUE, VK_TRUE};
     vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0u, 3u, color_blend_enables);
@@ -1275,7 +1275,7 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
     vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
     vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
@@ -1329,7 +1329,7 @@ TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
     rendering_info.colorAttachmentCount = attachment_count;
     rendering_info.pColorAttachments = rendering_attachment_info.data();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -1349,7 +1349,7 @@ TEST_F(PositiveDynamicState, DynamicAdvancedBlendMaxAttachments) {
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DynamicSampleLocationsRasterizationSamplesMismatch) {
@@ -1367,14 +1367,14 @@ TEST_F(PositiveDynamicState, DynamicSampleLocationsRasterizationSamplesMismatch)
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetSampleLocationsEnableEXT(m_command_buffer.handle(), VK_FALSE);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_1_BIT);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveDynamicState, DepthClampControl) {
@@ -1387,7 +1387,7 @@ TEST_F(PositiveDynamicState, DepthClampControl) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT);
     pipe.CreateGraphicsPipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkDepthClampRangeEXT clamp_range = {0.0f, 1.0f};
@@ -1396,5 +1396,5 @@ TEST_F(PositiveDynamicState, DepthClampControl) {
     vk::CmdSetDepthClampRangeEXT(m_command_buffer.handle(), VK_DEPTH_CLAMP_MODE_VIEWPORT_RANGE_EXT, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

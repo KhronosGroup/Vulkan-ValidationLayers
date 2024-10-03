@@ -58,7 +58,7 @@ TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
         )";
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
-    if (!BufferFormatAndFeaturesSupported(gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
@@ -120,13 +120,13 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
                                      });
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
-    if (!BufferFormatAndFeaturesSupported(gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
     VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-    vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UINT, &fmt_props);
+    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UINT, &fmt_props);
     if ((fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
@@ -147,14 +147,14 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     pipe.CreateComputePipeline();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-04469");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
@@ -174,12 +174,12 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
 
     // set so format can be used as a storage texel buffer, but no WITHOUT_FORMAT support
-    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(gpu(), format, &fmt_props);
+    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(Gpu(), format, &fmt_props);
     fmt_props.formatProperties.bufferFeatures |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
     fmt_props.formatProperties.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
     fmt_props_3.bufferFeatures |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
     fmt_props_3.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
-    fpvkSetPhysicalDeviceFormatProperties2EXT(gpu(), format, fmt_props);
+    fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), format, fmt_props);
 
     const char *csSource = R"(
                   OpCapability Shader
@@ -244,8 +244,8 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     ds.WriteDescriptorBufferView(0, buffer_view);
     ds.UpdateDescriptorSets();
 
-    m_command_buffer.reset();
-    m_command_buffer.begin();
+    m_command_buffer.Reset();
+    m_command_buffer.Begin();
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
@@ -253,5 +253,5 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07029");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

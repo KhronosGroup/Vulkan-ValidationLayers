@@ -132,10 +132,10 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass_bi);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
@@ -148,7 +148,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
 
     uint32_t attachment_width = 512;
     uint32_t attachment_height = 512;
-    VkFormat format = FindSupportedDepthOnlyFormat(gpu());
+    VkFormat format = FindSupportedDepthOnlyFormat(Gpu());
 
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
@@ -207,9 +207,9 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     clearAttachment.colorAttachment = 0;
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    secondary.begin(&beginInfo);
+    secondary.Begin(&beginInfo);
     vk::CmdClearAttachments(secondary.handle(), 1u, &clearAttachment, 1u, &clearRect);
-    secondary.end();
+    secondary.End();
 }
 
 TEST_F(PositiveImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {

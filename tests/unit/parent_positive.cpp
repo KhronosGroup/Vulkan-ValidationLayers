@@ -28,7 +28,7 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
     GetPhysicalDeviceFeatures2(imageless_framebuffer);
     RETURN_IF_SKIP(InitState(nullptr, &imageless_framebuffer));
     InitRenderTarget();  // Renderpass created on first device
-    auto features = m_device->phy().Features();
+    auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;

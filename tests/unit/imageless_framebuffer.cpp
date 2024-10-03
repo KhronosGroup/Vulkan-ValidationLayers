@@ -113,9 +113,9 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         renderPassBeginInfo.framebuffer = framebuffer.handle();
-        m_command_buffer.begin(&cmd_begin_info);
+        m_command_buffer.Begin(&cmd_begin_info);
         m_command_buffer.BeginRenderPass(renderPassBeginInfo);
-        m_command_buffer.reset();
+        m_command_buffer.Reset();
     }
 
     // Imageless framebuffer creation bit not present
@@ -299,9 +299,9 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         renderPassBeginInfo.framebuffer = framebuffer.handle();
         renderPassBeginInfo.renderArea.extent.height = renderPassBeginInfo.renderArea.extent.height / 2;
         renderPassBeginInfo.renderArea.extent.width = renderPassBeginInfo.renderArea.extent.width / 2;
-        m_command_buffer.begin(&cmd_begin_info);
+        m_command_buffer.Begin(&cmd_begin_info);
         m_command_buffer.BeginRenderPass(renderPassBeginInfo);
-        m_command_buffer.reset();
+        m_command_buffer.Reset();
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
         imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
         framebufferAttachmentImageInfo.height = framebufferAttachmentImageInfo.height * 2;
@@ -679,7 +679,7 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
-    VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
+    VkFormat attachmentFormat = FindSupportedDepthStencilFormat(Gpu());
 
     RenderPass2SingleSubpass rp(*this);
     rp.AddAttachmentDescription(attachmentFormat, VK_SAMPLE_COUNT_4_BIT);  // Depth/stencil
