@@ -66,19 +66,8 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
                 fence->Reset();
             }
         }
-
         if (VK_SUCCESS == result) {
-            VkPresentInfoKHR present_info = vku::InitStructHelper();
-            present_info.swapchainCount = 1;
-            present_info.pSwapchains = &m_swapchain;
-            present_info.pImageIndices = &index;
-            VkSemaphore h_sem = VK_NULL_HANDLE;
-            if (sem) {
-                h_sem = sem->handle();
-                present_info.waitSemaphoreCount = 1;
-                present_info.pWaitSemaphores = &h_sem;
-            }
-            vk::QueuePresentKHR(m_default_queue->handle(), &present_info);
+            m_default_queue->Present(sem ? *sem : vkt::no_semaphore, m_swapchain, index);
         }
         return result;
     };
@@ -231,15 +220,9 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     m_default_queue->Submit2(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
-    present.pWaitSemaphores = nullptr;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain;
-    present.pImageIndices = &image_index;
-
+    // DO NOT wait for submit. This should generate present after write (ILT) harard.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
@@ -278,15 +261,9 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
 
     m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;  // DO NOT wait on submit. This should generate present after write (ILT) harard.
-    present.pWaitSemaphores = nullptr;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain;
-    present.pImageIndices = &image_index;
-
+    // DO NOT wait for submit. This should generate present after write (ILT) harard.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }

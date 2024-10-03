@@ -510,13 +510,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &image_acquired.handle();
-    present.pSwapchains = &m_swapchain;
-    present.pImageIndices = &current_buffer;
-    present.swapchainCount = 1;
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(image_acquired, m_swapchain, current_buffer);
     m_default_queue->Wait();
 }
 
