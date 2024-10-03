@@ -18,7 +18,7 @@
 #include "instruction.h"
 #include "generated/spirv_grammar_helper.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 class Module;
@@ -168,4 +168,4 @@ class TypeManager {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

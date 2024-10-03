@@ -16,7 +16,7 @@
 #include "inject_function_pass.h"
 #include "module.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 InjectFunctionPass::InjectFunctionPass(Module& module) : Pass(module) { module.use_bda_ = true; }
@@ -56,4 +56,4 @@ bool InjectFunctionPass::Run() {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

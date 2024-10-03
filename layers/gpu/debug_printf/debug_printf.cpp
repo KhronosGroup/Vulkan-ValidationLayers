@@ -16,13 +16,13 @@
  */
 
 #include "gpu/debug_printf/debug_printf.h"
-#include "gpu/instrumentation/gpu_shader_instrumentor.h"
+#include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 #include "error_message/log_message_type.h"
 #include "error_message/logging.h"
 #include "generated/layer_chassis_dispatch.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpu/shaders/gpu_error_header.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_error_header.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/core/gpuav.h"
 
@@ -156,7 +156,7 @@ static std::vector<Substring> ParseFormatString(const std::string &format_string
     return parsed_strings;
 }
 
-static std::string FindFormatString(const std::vector<gpu::spirv::Instruction> &instructions, uint32_t string_id) {
+static std::string FindFormatString(const std::vector<gpuav::spirv::Instruction> &instructions, uint32_t string_id) {
     std::string format_string;
     for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
@@ -205,7 +205,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        const gpu::GpuAssistedShaderTracker *tracker_info = nullptr;
+        const gpuav::GpuAssistedShaderTracker *tracker_info = nullptr;
         auto it = gpuav.shader_map_.find(debug_record->shader_id);
         if (it != gpuav.shader_map_.end()) {
             tracker_info = &it->second;
@@ -217,8 +217,8 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             return;
         }
 
-        std::vector<gpu::spirv::Instruction> instructions;
-        gpu::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+        std::vector<gpuav::spirv::Instruction> instructions;
+        gpuav::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
@@ -358,7 +358,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
 bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
                                   VkPipelineBindPoint bind_point, const Location &loc) {
-    gpu::DeviceMemoryBlock debug_printf_output_buffer = {};
+    gpuav::DeviceMemoryBlock debug_printf_output_buffer = {};
 
     // Allocate memory for the output block that the gpu will use to return values for printf
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();

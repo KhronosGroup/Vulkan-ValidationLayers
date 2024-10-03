@@ -19,8 +19,8 @@
 
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "gpu/resources/gpu_shader_resources.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/resources/gpuav_shader_resources.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 
 using vvl::DescriptorClass;
 

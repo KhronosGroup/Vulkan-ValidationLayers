@@ -25,10 +25,10 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "generated/layer_chassis_dispatch.h"
-#include "gpu/shaders/gpu_error_header.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_error_header.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "generated/chassis.h"
-#include "gpu/core/gpu_shader_cache_hash.h"
+#include "gpu/core/gpuav_shader_cache_hash.h"
 
 namespace gpuav {
 

@@ -16,7 +16,7 @@
 #include "instruction.h"
 #include "generated/spirv_grammar_helper.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 void Instruction::UpdateDebugInfo() {
@@ -294,4 +294,4 @@ void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<In
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

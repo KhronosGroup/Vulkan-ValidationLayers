@@ -16,7 +16,7 @@
 
 #include "pass.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 // A type of common pass that will inject a function call and link it up later.
@@ -39,4 +39,4 @@ class InjectFunctionPass : public Pass {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

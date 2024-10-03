@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "inject_conditional_function_pass.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 // Create a pass to instrument bindless descriptor checking
@@ -52,4 +52,4 @@ class BindlessDescriptorPass : public InjectConditionalFunctionPass {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

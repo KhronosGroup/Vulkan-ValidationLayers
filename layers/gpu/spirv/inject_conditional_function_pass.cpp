@@ -16,7 +16,7 @@
 #include "inject_conditional_function_pass.h"
 #include "module.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 InjectConditionalFunctionPass::InjectConditionalFunctionPass(Module& module) : Pass(module) { module.use_bda_ = true; }
@@ -169,4 +169,4 @@ bool InjectConditionalFunctionPass::Run() {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

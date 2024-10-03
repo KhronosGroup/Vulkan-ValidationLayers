@@ -20,8 +20,8 @@
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "state_tracker/render_pass_state.h"
-#include "gpu/shaders/gpu_error_header.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_error_header.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "generated/cmd_validation_draw_vert.h"
 
 // See gpu/shaders/cmd_validation/draw.vert

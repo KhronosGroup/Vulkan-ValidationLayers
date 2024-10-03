@@ -391,7 +391,7 @@ def main(argv):
         'instrumentation_non_bindless_oob_texel_buffer_comp.cpp',
         'instrumentation_ray_query_comp.h',
         'instrumentation_ray_query_comp.cpp',
-        'gpu_av_shader_hash.h'
+        'gpuav_shader_hash.h'
     ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')

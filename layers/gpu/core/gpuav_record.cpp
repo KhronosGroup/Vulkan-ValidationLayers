@@ -27,12 +27,12 @@
 #include "gpu/descriptor_validation/gpuav_image_layout.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/instrumentation/gpuav_instrumentation.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpu/core/gpu_shader_cache_hash.h"
+#include "gpu/core/gpuav_shader_cache_hash.h"
 
 // Generated shaders
-#include "generated/gpu_av_shader_hash.h"
+#include "generated/gpuav_shader_hash.h"
 
 namespace gpuav {
 

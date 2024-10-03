@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
-#include "gpu/resources/gpu_resources.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
+#include "gpu/resources/gpuav_resources.h"
 
 namespace gpuav {
 
@@ -39,7 +39,7 @@ struct DescSetState {
 };
 
 struct DescBindingInfo {
-    gpu::DeviceMemoryBlock bindless_state;
+    DeviceMemoryBlock bindless_state;
     // Hold a buffer for each descriptor set
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     std::vector<DescSetState> descriptor_set_buffers;

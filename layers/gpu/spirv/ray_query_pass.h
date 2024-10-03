@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "inject_conditional_function_pass.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 // Create a pass to instrument SPV_KHR_ray_query instructions
@@ -37,4 +37,4 @@ class RayQueryPass : public InjectConditionalFunctionPass {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

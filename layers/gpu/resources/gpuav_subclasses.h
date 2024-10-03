@@ -21,7 +21,7 @@
 
 #include "external/inplace_function.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
-#include "gpu/resources/gpu_resources.h"
+#include "gpu/resources/gpuav_resources.h"
 
 // We pull in most the core state tracking files
 // gpuav_subclasses.h should NOT be included by any other header file
@@ -32,20 +32,17 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"
 
-namespace gpu {
-class GpuShaderInstrumentor;
-}
-
 namespace gpuav {
 
 class Validator;
+class GpuShaderInstrumentor;
 struct DescBindingInfo;
 
 struct DebugPrintfBufferInfo {
-    gpu::DeviceMemoryBlock output_mem_block;
+    DeviceMemoryBlock output_mem_block;
     VkPipelineBindPoint pipeline_bind_point;
     uint32_t action_command_index;
-    DebugPrintfBufferInfo(gpu::DeviceMemoryBlock output_mem_block, VkPipelineBindPoint pipeline_bind_point,
+    DebugPrintfBufferInfo(DeviceMemoryBlock output_mem_block, VkPipelineBindPoint pipeline_bind_point,
                           uint32_t action_command_index)
         : output_mem_block(output_mem_block),
           pipeline_bind_point(pipeline_bind_point),
@@ -100,7 +97,7 @@ class CommandBuffer : public vvl::CommandBuffer {
         return cmd_errors_counts_buffer_.buffer;
     }
 
-    const gpu::DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
+    const DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
     void ClearCmdErrorsCountsBuffer(const Location &loc) const;
     void UpdateCommandCount(VkPipelineBindPoint bind_point);
@@ -108,7 +105,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     void Destroy() final;
     void Reset(const Location &loc) final;
 
-    gpu::GpuResourcesManager gpu_resources_manager;
+    GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
@@ -133,18 +130,18 @@ class CommandBuffer : public vvl::CommandBuffer {
     VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
     // Buffer storing GPU-AV errors
-    gpu::DeviceMemoryBlock error_output_buffer_ = {};
+    DeviceMemoryBlock error_output_buffer_ = {};
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
-    gpu::DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
+    DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
     // Buffer storing a snapshot of buffer device address ranges
-    gpu::DeviceMemoryBlock bda_ranges_snapshot_ = {};
+    DeviceMemoryBlock bda_ranges_snapshot_ = {};
     uint32_t bda_ranges_snapshot_version_ = 0;
 };
 
 class Queue : public vvl::Queue {
   public:
-    Queue(gpu::GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
+    Queue(GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
           VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
     virtual ~Queue();
 
@@ -154,7 +151,7 @@ class Queue : public vvl::Queue {
     void SubmitBarrier(const Location &loc, uint64_t seq);
     void Retire(vvl::QueueSubmission &) override;
 
-    gpu::GpuShaderInstrumentor &shader_instrumentor_;
+    GpuShaderInstrumentor &shader_instrumentor_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};

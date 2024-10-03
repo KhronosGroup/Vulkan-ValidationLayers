@@ -17,7 +17,7 @@
 #include "instruction.h"
 #include "module.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 void BasicBlock::ToBinary(std::vector<uint32_t>& out) {
@@ -159,4 +159,4 @@ void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

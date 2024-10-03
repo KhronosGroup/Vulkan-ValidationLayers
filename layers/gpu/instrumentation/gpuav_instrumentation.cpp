@@ -20,8 +20,8 @@
 #include "chassis/chassis_modification_state.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/error_message/gpuav_vuids.h"
-#include "gpu/resources/gpu_shader_resources.h"
-#include "gpu/shaders/gpu_error_header.h"
+#include "gpu/resources/gpuav_shader_resources.h"
+#include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/debug_printf/debug_printf.h"
 #include "state_tracker/shader_object_state.h"
 
@@ -759,7 +759,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
     if (error_found) {
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        const gpu::GpuAssistedShaderTracker *tracker_info = nullptr;
+        const GpuAssistedShaderTracker *tracker_info = nullptr;
         const uint32_t shader_id = error_record[glsl::kHeaderShaderIdOffset];
         auto it = gpuav.shader_map_.find(shader_id);
         if (it != gpuav.shader_map_.end()) {
@@ -767,9 +767,9 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         }
 
         // If we somehow can't find our state, we can still report our error message
-        std::vector<gpu::spirv::Instruction> instructions;
+        std::vector<spirv::Instruction> instructions;
         if (tracker_info && !tracker_info->instrumented_spirv.empty()) {
-            gpu::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+            spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
         }
 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(

@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "pass.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 // Will make sure Texel Buffers that are non bindless are not OOB Uses robustBufferAccess to ensure if we
@@ -49,4 +49,4 @@ class NonBindlessOOBTexelBufferPass : public Pass {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

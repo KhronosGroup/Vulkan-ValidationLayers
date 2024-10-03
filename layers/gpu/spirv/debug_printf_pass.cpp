@@ -15,12 +15,12 @@
 
 #include "debug_printf_pass.h"
 #include "module.h"
-#include "gpu/shaders/gpu_error_header.h"
+#include "gpu/shaders/gpuav_error_header.h"
 #include <spirv/unified1/NonSemanticDebugPrintf.h>
 #include <cstring>
 #include <iostream>
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 // All functions are a list of uint32_t
@@ -790,4 +790,4 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

@@ -17,12 +17,12 @@
 
 #include "gpu/resources/gpuav_subclasses.h"
 
-#include "gpu/resources/gpu_shader_resources.h"
+#include "gpu/resources/gpuav_shader_resources.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/core/gpuav_constants.h"
 #include "gpu/descriptor_validation/gpuav_image_layout.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
-#include "gpu/shaders/gpu_error_header.h"
+#include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/debug_printf/debug_printf.h"
 
 namespace gpuav {
@@ -129,7 +129,7 @@ CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkC
     AllocateResources(loc);
 }
 
-static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_buffer, gpu::DeviceMemoryBlock &error_output_buffer,
+static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_buffer, DeviceMemoryBlock &error_output_buffer,
                                     const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = glsl::kErrorBufferByteSize;
@@ -561,7 +561,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     }
 }
 
-Queue::Queue(gpu::GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
+Queue::Queue(GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
              VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
     : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
       shader_instrumentor_(shader_instrumentor),

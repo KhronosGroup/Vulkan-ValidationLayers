@@ -15,7 +15,7 @@
 
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
 
 #include "buffer_device_address_pass.h"
@@ -27,7 +27,7 @@
 
 #include <iostream>
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings)
@@ -549,7 +549,7 @@ void Module::LinkFunction(const LinkInfo& info) {
                 }
 
                 // Replace LinkConstants
-                if (constant_value == gpuav::glsl::kLinkShaderId) {
+                if (constant_value == glsl::kLinkShaderId) {
                     new_inst->words_[3] = shader_id_;
                 }
             }
@@ -716,4 +716,4 @@ void Module::InternalError(const char* tag, const char* message) {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

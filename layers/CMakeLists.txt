@@ -210,7 +210,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_counter_bodies.h
     ${API_TYPE}/generated/thread_safety_counter_definitions.h
     ${API_TYPE}/generated/thread_safety_counter_instances.h
-    ${API_TYPE}/generated/gpu_av_shader_hash.h
+    ${API_TYPE}/generated/gpuav_shader_hash.h
     ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.h
     ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.cpp
     ${API_TYPE}/generated/cmd_validation_dispatch_comp.h
@@ -219,8 +219,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/cmd_validation_draw_vert.cpp
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
-    gpu/core/gpu_settings.h
-    gpu/core/gpu_shader_cache_hash.h
+    gpu/core/gpuav_settings.h
+    gpu/core/gpuav_shader_cache_hash.h
     gpu/core/gpuav_constants.h
     gpu/cmd_validation/gpuav_cmd_validation_common.h
     gpu/cmd_validation/gpuav_cmd_validation_common.cpp
@@ -245,18 +245,18 @@ target_sources(vvl PRIVATE
     gpu/debug_printf/debug_printf.h
     gpu/error_message/gpuav_vuids.cpp
     gpu/error_message/gpuav_vuids.h
-    gpu/instrumentation/gpu_shader_instrumentor.cpp
-    gpu/instrumentation/gpu_shader_instrumentor.h
+    gpu/instrumentation/gpuav_shader_instrumentor.cpp
+    gpu/instrumentation/gpuav_shader_instrumentor.h
     gpu/instrumentation/gpuav_instrumentation.h
     gpu/instrumentation/gpuav_instrumentation.cpp
     gpu/resources/gpuav_subclasses.cpp
     gpu/resources/gpuav_subclasses.h
-    gpu/resources/gpu_shader_resources.h
-    gpu/resources/gpu_resources.h
-    gpu/resources/gpu_resources.cpp
-    gpu/shaders/gpu_error_codes.h
-    gpu/shaders/gpu_error_header.h
-    gpu/shaders/gpu_shaders_constants.h
+    gpu/resources/gpuav_shader_resources.h
+    gpu/resources/gpuav_resources.h
+    gpu/resources/gpuav_resources.cpp
+    gpu/shaders/gpuav_error_codes.h
+    gpu/shaders/gpuav_error_header.h
+    gpu/shaders/gpuav_shaders_constants.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/buffer_state.cpp
