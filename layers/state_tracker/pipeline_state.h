@@ -751,15 +751,9 @@ struct LastBound {
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
 };
 
-static inline bool IsPipelineLayoutSetCompat(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
-    if (!a || !b) {
-        return false;
-    }
-    if ((set >= a->set_compat_ids.size()) || (set >= b->set_compat_ids.size())) {
-        return false;
-    }
-    return a->set_compat_ids[set] == b->set_compat_ids[set];
-}
+// Used to compare 2 layouts independently when not tied to the last bound object
+bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b);
+std::string DescribePipelineLayoutSetNonCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b);
 
 enum LvlBindPoint {
     BindPoint_Graphics = VK_PIPELINE_BIND_POINT_GRAPHICS,

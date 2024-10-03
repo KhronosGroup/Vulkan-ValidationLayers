@@ -1350,6 +1350,32 @@ std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderO
     return ss.str();
 }
 
+bool IsPipelineLayoutSetCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
+    if (!a || !b) {
+        return false;
+    }
+    if ((set >= a->set_compat_ids.size()) || (set >= b->set_compat_ids.size())) {
+        return false;
+    }
+    return *(a->set_compat_ids[set]) == *(b->set_compat_ids[set]);
+}
+
+std::string DescribePipelineLayoutSetNonCompatible(uint32_t set, const vvl::PipelineLayout *a, const vvl::PipelineLayout *b) {
+    std::ostringstream ss;
+    if (!a || !b) {
+        ss << "The set (" << set << ") has a null VkPipelineLayout object\n";
+    } else if (set >= a->set_compat_ids.size()) {
+        ss << "The set (" << set << ") is out of bounds for the number of sets in the non-compatible VkDescriptorSetLayout ("
+           << a->set_compat_ids.size() << ")\n";
+    } else if (set >= b->set_compat_ids.size()) {
+        ss << "The set (" << set << ") is out of bounds for the number of sets in the non-compatible VkDescriptorSetLayout ("
+           << b->set_compat_ids.size() << ")\n";
+    } else {
+        return a->set_compat_ids[set]->DescribeDifference(*(b->set_compat_ids[set]));
+    }
+    return ss.str();
+}
+
 const spirv::EntryPoint *LastBound::GetFragmentEntryPoint() const {
     if (pipeline_state && pipeline_state->fragment_shader_state) {
         return pipeline_state->fragment_shader_state->fragment_entry_point.get();

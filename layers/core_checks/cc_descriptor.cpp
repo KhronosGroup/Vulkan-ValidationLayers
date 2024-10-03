@@ -3660,16 +3660,17 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
                              FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
         }
         auto template_layout = Get<vvl::PipelineLayout>(template_ci.pipelineLayout);
-        if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
+        if (!IsPipelineLayoutSetCompatible(set, layout_data.get(), template_layout.get())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
             const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-07993"
                                     : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993";
             skip |= LogError(vuid, objlist, loc.dot(Field::descriptorUpdateTemplate),
                              "%s created with %s is incompatible "
                              "with command parameter "
-                             "%s for set %" PRIu32,
+                             "%s for set %" PRIu32 ".\n%s",
                              FormatHandle(descriptorUpdateTemplate).c_str(), FormatHandle(template_ci.pipelineLayout).c_str(),
-                             FormatHandle(layout).c_str(), set);
+                             FormatHandle(layout).c_str(), set,
+                             DescribePipelineLayoutSetNonCompatible(set, layout_data.get(), template_layout.get()).c_str());
         }
     }
 
