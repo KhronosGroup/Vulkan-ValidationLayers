@@ -428,6 +428,8 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
     VkResult ImportHandle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags = 0);
 };
 
+inline const Semaphore no_semaphore;  // equivalent to vkt::Semaphore{}
+
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
     Event() = default;
@@ -506,6 +508,9 @@ class Queue : public internal::Handle<VkQueue> {
     VkResult Submit2WithTimelineSemaphore(const CommandBuffer &cmd, const Semaphore &wait_semaphore, uint64_t wait_value,
                                           const Semaphore &signal_semaphore, uint64_t signal_value, const Fence &fence = no_fence,
                                           bool use_khr = false);
+
+    // vkQueuePresentKHR()
+    VkResult Present(const Semaphore &wait_semaphore, VkSwapchainKHR swapchain, uint32_t image_index);
 
     // vkQueueWaitIdle()
     VkResult Wait();

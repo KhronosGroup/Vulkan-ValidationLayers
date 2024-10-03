@@ -70,14 +70,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
 
     m_default_queue->Submit2(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
                              VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
-
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain;
-    present.pImageIndices = &image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue->handle(), &present));
+    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_default_queue->Wait();
 }
 
@@ -118,14 +111,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitAutomaticVisibility) {
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
-
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain;
-    present.pImageIndices = &image_index;
-    ASSERT_EQ(VK_SUCCESS, vk::QueuePresentKHR(m_default_queue->handle(), &present));
+    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_default_queue->Wait();
 }
 
@@ -165,18 +151,10 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     m_command_buffer.End();
 
     // The goal of this test is to use QueueSubmit API (not QueueSubmit2) to
-    // ensure syncval correctly converts SubmitInfo to SubmitInfo2 with
-    // regard to signal semaphore.
+    // ensure syncval correctly converts SubmitInfo to SubmitInfo2 with ALL_COMMANDS signal semaphore.
     m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain;
-    present.pImageIndices = &image_index;
-
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_device->Wait();
 }
 
@@ -249,17 +227,9 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
             vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
-
                 m_default_queue->Submit(vkt::no_cmd, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                         submit_semaphore, fence);
-
-                VkPresentInfoKHR present = vku::InitStructHelper();
-                present.waitSemaphoreCount = 1;
-                present.pWaitSemaphores = &submit_semaphore.handle();
-                present.swapchainCount = 1;
-                present.pSwapchains = &m_swapchain;
-                present.pImageIndices = &image_index;
-                vk::QueuePresentKHR(*m_default_queue, &present);
+                m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
             }
             vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
             vk::ResetFences(device(), 1, &fence.handle());
@@ -320,16 +290,6 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     vkt::Buffer src_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::Buffer dst_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    auto present = [this](const vkt::Semaphore& submit_semaphore, uint32_t image_index) {
-        VkPresentInfoKHR present = vku::InitStructHelper();
-        present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &submit_semaphore.handle();
-        present.swapchainCount = 1;
-        present.pSwapchains = &m_swapchain;
-        present.pImageIndices = &image_index;
-        vk::QueuePresentKHR(m_default_queue->handle(), &present);
-    };
-
     // Frame 0
     {
         uint32_t image_index = 0;
@@ -340,7 +300,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore, fence);
-        present(submit_semaphore, image_index);
+        m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     }
     // Frame 1
     {
@@ -352,7 +312,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         // on image_ready_semaphore semaphore when acquire->present direct synchronization is fixed.
         m_default_queue->Submit(vkt::no_cmd, acquire_semaphore2, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore2);
 
-        present(submit_semaphore2, image_index);
+        m_default_queue->Present(submit_semaphore2, m_swapchain, image_index);
     }
     // Frame 2
     {
