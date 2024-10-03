@@ -579,8 +579,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     m_default_queue->Present(submit_semaphores[image_index], m_swapchain, image_index);
 
     // Here the application decides to destroy swapchain (e.g. resize event)
-    vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
-    m_swapchain = VK_NULL_HANDLE;
+    m_swapchain.destroy();
 
     // At this point there's a pending frame we need to sync with.
     // WaitForFences(acquire_fence) logic can't be used, because swapchain was destroyed and its acquire
@@ -592,7 +591,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     m_default_queue->Wait();
 
     // Create new swapchain.
-    CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, m_swapchain);
+    m_swapchain = CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
     // The following Acquire will detect that fence's AcquireFenceSync belongs to the old swapchain and will invalidate it.
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
@@ -725,7 +724,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_swapchain.Init(*m_device, swapchain_create_info);
     const auto images = GetSwapchainImages(m_swapchain);
 
     uint32_t image_index;
@@ -968,7 +967,7 @@ TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     uint32_t bogus_int = 99;
     swapchain_create_info.pQueueFamilyIndices = &bogus_int;
 
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_swapchain.Init(*m_device, swapchain_create_info);
 }
 
 TEST_F(PositiveWsi, InitSwapchain) {
@@ -1081,7 +1080,8 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
     uint32_t bogus_int = 99;
     swapchain_create_info.pQueueFamilyIndices = &bogus_int;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
+    m_swapchain.Init(*m_device, swapchain_create_info);
+    ASSERT_TRUE(m_swapchain.initialized());
 
     // Get VkImage from swapchain which should be protected
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
@@ -1191,7 +1191,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    m_swapchain.Init(*m_device, swapchain_create_info);
 }
 
 TEST_F(PositiveWsi, RegisterDisplayEvent) {
@@ -1363,7 +1363,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         present.waitSemaphoreCount = 1;
         present.pWaitSemaphores = &submit_semaphore.handle();
         present.swapchainCount = 1;
-        present.pSwapchains = &m_swapchain;
+        present.pSwapchains = &m_swapchain.handle();
         present.pImageIndices = &image_index;
         vk::QueuePresentKHR(*m_default_queue, &present);
 
@@ -1448,7 +1448,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
         present.waitSemaphoreCount = 1;
         present.pWaitSemaphores = &frame.submit_finished.handle();
         present.swapchainCount = 1;
-        present.pSwapchains = &m_swapchain;
+        present.pSwapchains = &m_swapchain.handle();
         present.pImageIndices = &image_index;
         vk::QueuePresentKHR(*m_default_queue, &present);
     }
@@ -1488,7 +1488,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     present.waitSemaphoreCount = 1;
     present.pWaitSemaphores = &submit_semaphore.handle();
     present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain;
+    present.pSwapchains = &m_swapchain.handle();
     present.pImageIndices = &image_index;
     vk::QueuePresentKHR(*m_default_queue, &present);
 
@@ -1510,8 +1510,8 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
     SurfaceContext surface_context;
     VkSurfaceKHR surface2;
     CreateSurface(surface_context, surface2);
-    VkSwapchainKHR swapchain2{};
-    CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2);
+    vkt::Swapchain swapchain2 =
+        CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
     const vkt::Semaphore acquire_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
@@ -1549,7 +1549,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
     present_fence.Reset();
     present_fence2.Reset();
 
-    vk::DestroySwapchainKHR(device(), swapchain2, nullptr);
+    swapchain2.destroy();
     DestroySurface(surface2);
     DestroySurfaceContext(surface_context);
 }

@@ -602,14 +602,16 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     {
         m_errorMonitor->SetDesiredWarning("BestPractices-Arm-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
 
-        const auto err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+        VkSwapchainKHR swapchain{};
+        const auto err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
         ASSERT_TRUE(err == VK_ERROR_VALIDATION_FAILED_EXT) << string_VkResult(err);
         m_errorMonitor->VerifyFound();
     }
 
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain));
+    m_swapchain.Init(*m_device, swapchain_create_info);
+    ASSERT_TRUE(m_swapchain.initialized());
 }
 
 TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {

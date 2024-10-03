@@ -86,7 +86,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitFramework(void *instance_pnext = NULL);
     void ShutdownFramework();
 
-     // Functions to modify the VkRenderFramework surface & swapchain variables
+    // Functions to modify the VkRenderFramework surface & swapchain variables
     void InitSurface();
     void DestroySurface();
     void InitSwapchainInfo();
@@ -95,10 +95,11 @@ class VkRenderFramework : public VkTestFramework {
     void DestroySwapchain();
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
     VkResult CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance = VK_NULL_HANDLE);
-    void DestroySurface(VkSurfaceKHR& surface);
-    void DestroySurfaceContext(SurfaceContext& surface_context);
+    void DestroySurface(VkSurfaceKHR &surface);
+    void DestroySurfaceContext(SurfaceContext &surface_context);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
-    bool CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,  VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR &swapchain, VkSwapchainKHR oldSwapchain = 0);
+    vkt::Swapchain CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
+                                   VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
     std::vector<VkImage> GetSwapchainImages(const VkSwapchainKHR swapchain);
 
     void InitRenderTarget();
@@ -178,8 +179,8 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
 
-    std::vector<VkLayerProperties> available_layers_; // allow caching of available layers
-    std::vector<VkExtensionProperties> available_extensions_; // allow caching of available instance extensions
+    std::vector<VkLayerProperties> available_layers_;          // allow caching of available layers
+    std::vector<VkExtensionProperties> available_extensions_;  // allow caching of available instance extensions
 
     ErrorMonitor monitor_ = ErrorMonitor(m_print_vu);
     ErrorMonitor *m_errorMonitor = &monitor_;  // TODO: Removing this properly is it's own PR. It's a big change.
@@ -206,7 +207,7 @@ class VkRenderFramework : public VkTestFramework {
     // WSI items
     SurfaceContext m_surface_context{};
     VkSurfaceKHR m_surface{};
-    VkSwapchainKHR m_swapchain{};
+    vkt::Swapchain m_swapchain;
     VkSurfaceCapabilitiesKHR m_surface_capabilities{};
     std::vector<VkSurfaceFormatKHR> m_surface_formats;
     std::vector<VkPresentModeKHR> m_surface_present_modes;
