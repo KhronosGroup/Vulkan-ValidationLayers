@@ -23,7 +23,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace gpu {
+namespace gpuav {
 
 class DescriptorSetManager {
   public:
@@ -61,7 +61,7 @@ class GpuResourcesManager {
         : vma_allocator_(vma_allocator), descriptor_set_manager_(descriptor_set_manager) {}
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
-    void ManageDeviceMemoryBlock(gpu::DeviceMemoryBlock mem_block);
+    void ManageDeviceMemoryBlock(DeviceMemoryBlock mem_block);
 
     void DestroyResources();
 
@@ -69,7 +69,7 @@ class GpuResourcesManager {
     VmaAllocator vma_allocator_;
     DescriptorSetManager &descriptor_set_manager_;
     std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
-    std::vector<gpu::DeviceMemoryBlock> mem_blocks_;
+    std::vector<DeviceMemoryBlock> mem_blocks_;
 };
 
 class SharedResourcesManager {
@@ -113,4 +113,4 @@ class SharedResourcesManager {
         shared_validation_resources_map_;
 };
 
-}  // namespace gpu
+}  // namespace gpuav

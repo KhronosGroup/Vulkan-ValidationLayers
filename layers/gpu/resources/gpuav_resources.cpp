@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include "gpu/resources/gpu_resources.h"
+#include "gpu/resources/gpuav_resources.h"
 
 #include "generated/layer_chassis_dispatch.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-namespace gpu {
+namespace gpuav {
 
 // Implementation for Descriptor Set Manager class
 DescriptorSetManager::DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)
@@ -158,7 +158,7 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return descriptor.second;
 }
 
-void GpuResourcesManager::ManageDeviceMemoryBlock(gpu::DeviceMemoryBlock mem_block) { mem_blocks_.emplace_back(mem_block); }
+void GpuResourcesManager::ManageDeviceMemoryBlock(DeviceMemoryBlock mem_block) { mem_blocks_.emplace_back(mem_block); }
 
 void GpuResourcesManager::DestroyResources() {
     for (auto &[desc_pool, desc_set] : descriptors_) {
@@ -172,4 +172,4 @@ void GpuResourcesManager::DestroyResources() {
     mem_blocks_.clear();
 }
 
-}  // namespace gpu
+}  // namespace gpuav

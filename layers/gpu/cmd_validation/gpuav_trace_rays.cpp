@@ -17,9 +17,9 @@
 
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
-#include "gpu/resources/gpu_resources.h"
+#include "gpu/resources/gpuav_resources.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "gpu/shaders/gpu_error_header.h"
+#include "gpu/shaders/gpuav_error_header.h"
 #include "generated/cmd_validation_trace_rays_rgen.h"
 
 // See gpu/shaders/cmd_validation/trace_rays.rgen

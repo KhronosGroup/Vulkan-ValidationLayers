@@ -20,7 +20,7 @@
 #include "drawdispatch/descriptor_validator.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "gpu/resources/gpu_shader_resources.h"
+#include "gpu/resources/gpuav_shader_resources.h"
 
 namespace gpuav {
 void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,

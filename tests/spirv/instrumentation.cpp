@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
         start_time = std::chrono::high_resolution_clock::now();
     }
 
-    gpu::spirv::Settings module_settings{};
+    gpuav::spirv::Settings module_settings{};
     module_settings.shader_id = kDefaultShaderId;
     module_settings.output_buffer_descriptor_set = kInstDefaultDescriptorSet;
     module_settings.print_debug_info = print_debug_info;
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
     // for all passes, test worst case of using bindless
     module_settings.has_bindless_descriptors = all_passes || bindless_descriptor_pass;
 
-    gpu::spirv::Module module(spirv_data, nullptr, module_settings);
+    gpuav::spirv::Module module(spirv_data, nullptr, module_settings);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
     }

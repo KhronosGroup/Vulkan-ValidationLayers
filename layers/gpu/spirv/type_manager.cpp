@@ -16,7 +16,7 @@
 #include "type_manager.h"
 #include "module.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 // Simplest way to check if same type is see if items line up.
@@ -590,4 +590,4 @@ uint32_t TypeManager::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride,
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

@@ -19,22 +19,19 @@
 #include "containers/custom_containers.h"
 #include "generated/chassis.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "gpu/resources/gpu_resources.h"
+#include "gpu/resources/gpuav_resources.h"
 #include "gpu/spirv/instruction.h"
 #include "vma/vma.h"
 
 #include <vector>
 
-namespace gpuav {
-class Validator;
-}
-
 namespace chassis {
 struct ShaderInstrumentationMetadata;
 struct ShaderObjectInstrumentationData;
-}
+}  // namespace chassis
 
-namespace gpu {
+namespace gpuav {
+class Validator;
 
 // There are 3 ways to have a null VkShaderModule
 // 1. Use GPL for something like Vertex Input which won't have a shader
@@ -55,7 +52,7 @@ class SpirvCache {
     bool IsEmpty() { return spirv_shaders_.empty(); }
 
   private:
-    friend class gpuav::Validator;
+    friend class Validator;
     vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders_{};
 };
 
@@ -177,7 +174,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
                                          uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
-                                         uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
+                                         uint32_t instruction_position, const GpuAssistedShaderTracker *tracker_info,
                                          uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
                                          uint32_t operation_index) const;
 
@@ -248,4 +245,4 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     vvl::unordered_set<VkShaderModule> selected_instrumented_shaders;
 };
 
-}  // namespace gpu
+}  // namespace gpuav

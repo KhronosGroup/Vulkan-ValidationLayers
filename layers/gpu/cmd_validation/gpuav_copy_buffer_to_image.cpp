@@ -18,8 +18,8 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "gpu/shaders/gpu_error_header.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_error_header.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "generated/cmd_validation_copy_buffer_to_image_comp.h"
 
 namespace gpuav {
@@ -169,7 +169,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     uint32_t max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.height *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
-    gpu::DeviceMemoryBlock copy_src_regions_mem_block;
+    DeviceMemoryBlock copy_src_regions_mem_block;
     {
         // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {

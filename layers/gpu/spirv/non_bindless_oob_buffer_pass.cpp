@@ -19,9 +19,9 @@
 #include <iostream>
 
 #include "generated/instrumentation_non_bindless_oob_buffer_comp.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 NonBindlessOOBBufferPass::NonBindlessOOBBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
@@ -157,7 +157,7 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
         }
     }
 
-    if (descriptor_set_ >= gpuav::glsl::kDebugInputBindlessMaxDescSets) {
+    if (descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -209,4 +209,4 @@ bool NonBindlessOOBBufferPass::Run() {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

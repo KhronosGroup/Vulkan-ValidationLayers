@@ -25,7 +25,7 @@
 #include <vulkan/layer/vk_layer_settings.hpp>
 
 #include "generated/chassis.h"
-#include "gpu/core/gpu_settings.h"
+#include "gpu/core/gpuav_settings.h"
 #include "error_message/logging.h"
 
 #include "sync/sync_settings.h"

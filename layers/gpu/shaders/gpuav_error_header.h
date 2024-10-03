@@ -19,7 +19,7 @@
 #ifndef GPU_ERROR_HEADER_H
 #define GPU_ERROR_HEADER_H
 
-#include "gpu_error_codes.h"
+#include "gpuav_error_codes.h"
 
 #ifdef __cplusplus
 namespace gpuav {

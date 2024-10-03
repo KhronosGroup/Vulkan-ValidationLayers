@@ -23,7 +23,7 @@
 
 class DebugReport;
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 struct ModuleHeader {
@@ -128,4 +128,4 @@ class Module {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

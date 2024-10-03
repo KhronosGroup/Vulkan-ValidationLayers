@@ -20,7 +20,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 class Module;
@@ -106,4 +106,4 @@ using FunctionList = std::vector<std::unique_ptr<Function>>;
 using FunctionIt = FunctionList::iterator;
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

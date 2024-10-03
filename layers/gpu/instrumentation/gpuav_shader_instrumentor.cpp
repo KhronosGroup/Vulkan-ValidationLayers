@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include "gpu/instrumentation/gpu_shader_instrumentor.h"
+#include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpu/shaders/gpu_error_codes.h"
+#include "gpu/shaders/gpuav_error_codes.h"
 #include "spirv-tools/optimizer.hpp"
 #include "utils/vk_layer_utils.h"
 #include "state_tracker/descriptor_sets.h"
@@ -31,7 +31,7 @@
 #include <regex>
 #include <fstream>
 
-namespace gpu {
+namespace gpuav {
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {
     return DispatchGetInstanceProcAddr(inst, name);
@@ -169,7 +169,7 @@ std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue handle, u
                                                                VkDeviceQueueCreateFlags flags,
                                                                const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::static_pointer_cast<vvl::Queue>(
-        std::make_shared<gpuav::Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
+        std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
 }
 
 // These are the common things required for anything that deals with shader instrumentation
@@ -263,7 +263,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
 
     // maxBoundDescriptorSets limit, but possibly adjusted
     const uint32_t adjusted_max_desc_sets_limit =
-        std::min(gpu::kMaxAdjustedBoundDescriptorSet, phys_dev_props.limits.maxBoundDescriptorSets);
+        std::min(kMaxAdjustedBoundDescriptorSet, phys_dev_props.limits.maxBoundDescriptorSets);
     // If gpu_validation_reserve_binding_slot: the max slot is where we reserved
     // else: always use the last possible set as least likely to be used
     instrumentation_desc_set_bind_index_ = adjusted_max_desc_sets_limit - 1;
@@ -281,8 +281,7 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
         return;
     }
 
-    desc_set_manager_ =
-        std::make_unique<gpu::DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
+    desc_set_manager_ = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
 
     const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0,
                                                                     static_cast<uint32_t>(instrumentation_bindings_.size()),
@@ -364,11 +363,11 @@ void GpuShaderInstrumentor::ReserveBindingSlot(VkPhysicalDevice physicalDevice, 
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
     if (limits.maxBoundDescriptorSets == 0) return;
 
-    if (limits.maxBoundDescriptorSets > gpu::kMaxAdjustedBoundDescriptorSet) {
+    if (limits.maxBoundDescriptorSets > kMaxAdjustedBoundDescriptorSet) {
         std::stringstream ss;
         ss << "A descriptor binding slot is required to store GPU-side information, but the device maxBoundDescriptorSets is "
            << limits.maxBoundDescriptorSets << " which is too large, so we will be trying to use slot "
-           << gpu::kMaxAdjustedBoundDescriptorSet;
+           << kMaxAdjustedBoundDescriptorSet;
         InternalWarning(physicalDevice, loc, ss.str().c_str());
     }
 
@@ -860,16 +859,16 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
             return;
         }
 
-        deferred_op_post_checks.emplace_back([this, held_chassis_state =
-                                                        chassis_state](const std::vector<VkPipeline> &vk_pipelines) mutable {
-            for (size_t i = 0; i < vk_pipelines.size(); ++i) {
-                std::shared_ptr<vvl::Pipeline> pipeline_state =
-                    ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(vk_pipelines[i]);
-                ASSERT_AND_CONTINUE(pipeline_state);
-                auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[i];
-                PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
-            }
-        });
+        deferred_op_post_checks.emplace_back(
+            [this, held_chassis_state = chassis_state](const std::vector<VkPipeline> &vk_pipelines) mutable {
+                for (size_t i = 0; i < vk_pipelines.size(); ++i) {
+                    std::shared_ptr<vvl::Pipeline> pipeline_state =
+                        ((GpuShaderInstrumentor *)this)->Get<vvl::Pipeline>(vk_pipelines[i]);
+                    ASSERT_AND_CONTINUE(pipeline_state);
+                    auto &shader_instrumentation_metadata = held_chassis_state->shader_instrumentations_metadata[i];
+                    PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
+                }
+            });
         layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
     } else {
         for (uint32_t i = 0; i < count; ++i) {
@@ -1345,7 +1344,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                          static_cast<std::streamsize>(input_spirv.size() * sizeof(uint32_t)));
     }
 
-    gpu::spirv::Settings module_settings{};
+    spirv::Settings module_settings{};
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
     module_settings.shader_id = unique_shader_id;
     module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
@@ -1355,7 +1354,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.support_memory_model_device_scope = enabled_features.vulkanMemoryModelDeviceScope;
     module_settings.has_bindless_descriptors = has_bindless_descriptors;
 
-    gpu::spirv::Module module(input_spirv, debug_report, module_settings);
+    spirv::Module module(input_spirv, debug_report, module_settings);
 
     bool modified = false;
 
@@ -1383,7 +1382,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // 1. We use buffer device address in it and we don't want to validate the inside of this pass
     // 2. We might want to debug the above passes and want to inject our own debug printf calls
     if (gpuav_settings.debug_printf_enabled) {
-        modified |= module.RunPassDebugPrintf(gpuav::glsl::kBindingInstDebugPrintf);
+        modified |= module.RunPassDebugPrintf(glsl::kBindingInstDebugPrintf);
     }
 
     // If nothing was instrumented, leave early to save time
@@ -1586,7 +1585,7 @@ static bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, 
 static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1,
                                  uint32_t stage_info_2) {
     switch (stage_id) {
-        case gpuav::glsl::kHeaderStageIdMultiEntryPoint: {
+        case glsl::kHeaderStageIdMultiEntryPoint: {
             ss << "Stage has multiple OpEntryPoint and could not detect stage. ";
         } break;
         case spv::ExecutionModelVertex: {
@@ -1665,7 +1664,7 @@ static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint
 // Where we build up the error message with all the useful debug information about where the error occured
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
-    uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const gpu::GpuAssistedShaderTracker *tracker_info,
+    uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const GpuAssistedShaderTracker *tracker_info,
     uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
     std::ostringstream ss;
     if (instructions.empty() || !tracker_info) {
@@ -1708,7 +1707,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
         } else {
             ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->pipeline)) << "("
                << HandleToUint64(tracker_info->pipeline) << ")";
-            if (tracker_info->shader_module == gpu::kPipelineStageInfoHandle) {
+            if (tracker_info->shader_module == kPipelineStageInfoHandle) {
                 ss << " (internal ID " << shader_id
                    << ")\nShader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
             } else {
@@ -1744,7 +1743,8 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
         return ss.str();
     }
 
-    std::string prefix = gpuav_settings.debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ";
+    std::string prefix =
+        gpuav_settings.debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ";
 
     // Create message with file information obtained from the OpString pointed to by the discovered OpLine.
     bool found_opstring = false;
@@ -1834,4 +1834,4 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     return ss.str();
 }
 
-}  // namespace gpu
+}  // namespace gpuav

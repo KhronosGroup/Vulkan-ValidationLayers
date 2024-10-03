@@ -26,8 +26,8 @@
 #error No extension available for 64-bit integers.
 #endif
 
-#include "gpu_error_header.h"
-#include "gpu_shaders_constants.h"
+#include "gpuav_error_header.h"
+#include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
 bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
@@ -109,7 +109,7 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
 
         if (max_cmd_errors_count_reached) return false;
-        
+
         uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
         const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
 
@@ -127,7 +127,7 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
 
             inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
             inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
-            
+
             inst_errors_buffer.data[write_pos + kInstRayQueryParamOffset_0] = param_0;
         }
         return false;

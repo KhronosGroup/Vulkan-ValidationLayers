@@ -25,7 +25,7 @@ struct OperandInfo;
 // Need to use until we have native std::span in c++20
 using spirv_iterator = vvl::enumeration<const uint32_t, const uint32_t*>::iterator;
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 static constexpr uint32_t kLinkedInstruction = std::numeric_limits<uint32_t>::max();
@@ -110,4 +110,4 @@ struct Instruction {
 void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions);
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

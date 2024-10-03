@@ -19,9 +19,9 @@
 #include <iostream>
 
 #include "generated/instrumentation_bindless_descriptor_comp.h"
-#include "gpu/shaders/gpu_shaders_constants.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumentation_bindless_descriptor_comp_size,
@@ -254,7 +254,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
         }
     }
 
-    if (descriptor_set_ >= gpuav::glsl::kDebugInputBindlessMaxDescSets) {
+    if (descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -270,4 +270,4 @@ void BindlessDescriptorPass::PrintDebugInfo() {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

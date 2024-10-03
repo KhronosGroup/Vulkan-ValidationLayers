@@ -18,8 +18,8 @@
 #pragma once
 
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
-#include "gpu/resources/gpu_resources.h"
-#include "gpu/instrumentation/gpu_shader_instrumentor.h"
+#include "gpu/resources/gpuav_resources.h"
+#include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
 #include <memory>
 
@@ -48,7 +48,7 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
-class Validator : public gpu::GpuShaderInstrumentor {
+class Validator : public GpuShaderInstrumentor {
     using BaseClass = GpuShaderInstrumentor;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
@@ -407,7 +407,7 @@ class Validator : public gpu::GpuShaderInstrumentor {
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
-    gpu::SharedResourcesManager shared_resources_manager;
+    SharedResourcesManager shared_resources_manager;
 
   private:
     std::string instrumented_shader_cache_path_{};

@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "pass.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 struct Type;
@@ -62,4 +62,4 @@ class DebugPrintfPass : public Pass {
 };
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav

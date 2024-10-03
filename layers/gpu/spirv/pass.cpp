@@ -15,9 +15,9 @@
 
 #include "pass.h"
 #include "module.h"
-#include "gpu/shaders/gpu_error_codes.h"
+#include "gpu/shaders/gpuav_error_codes.h"
 
-namespace gpu {
+namespace gpuav {
 namespace spirv {
 
 const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
@@ -71,7 +71,7 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
     if (module_.entry_points_.size() > 1) {
         // For Multi Entry Points it currently a lot of work to scan every function to see where it will be called from
         // For now we will just report it is "unknown" and skip printing that part of the error message
-        stage_info[0] = module_.type_manager_.GetConstantUInt32(gpuav::glsl::kHeaderStageIdMultiEntryPoint).Id();
+        stage_info[0] = module_.type_manager_.GetConstantUInt32(glsl::kHeaderStageIdMultiEntryPoint).Id();
     } else {
         spv::ExecutionModel execution_model = spv::ExecutionModel(module_.entry_points_.begin()->get()->Operand(0));
         stage_info[0] = module_.type_manager_.GetConstantUInt32(execution_model).Id();
@@ -427,4 +427,4 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
 }
 
 }  // namespace spirv
-}  // namespace gpu
+}  // namespace gpuav
