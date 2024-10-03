@@ -68,549 +68,164 @@
                 {
                     "label": "Standard",
                     "description": "Good default validation setup that balance validation coverage and performance.",
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX",
-                        "MACOS",
-                        "ANDROID"
-                    ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
-                        {
-                            "key": "validate_core",
-                            "value": true
-                        },
-                        {
-                            "key": "check_image_layout",
-                            "value": true
-                        },
-                        {
-                            "key": "check_command_buffer",
-                            "value": true
-                        },
-                        {
-                            "key": "check_object_in_use",
-                            "value": true
-                        },
-                        {
-                            "key": "check_query",
-                            "value": true
-                        },
-                        {
-                            "key": "check_shaders",
-                            "value": true
-                        },
-                        {
-                            "key": "check_shaders_caching",
-                            "value": true
-                        },
-                        {
-                            "key": "unique_handles",
-                            "value": true
-                        },
-                        {
-                            "key": "object_lifetime",
-                            "value": true
-                        },
-                        {
-                            "key": "stateless_param",
-                            "value": true
-                        },
-                        {
-                            "key": "thread_safety",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_sync",
-                            "value": false
-                        },
-                        {
-                            "key": "printf_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "value": false
-                        },
-                        {
-                            "key": "report_flags",
-                            "value": [
-                                "error"
-                            ]
-                        },
-                        {
-                            "key": "debug_action",
-                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
-                        },
-                        {
-                            "key": "enable_message_limit",
-                            "value": true
-                        }
+                        { "key": "validate_core", "value": true },
+                        { "key": "check_image_layout", "value": true },
+                        { "key": "check_command_buffer", "value": true },
+                        { "key": "check_object_in_use", "value": true },
+                        { "key": "check_query", "value": true },
+                        { "key": "check_shaders", "value": true },
+                        { "key": "check_shaders_caching", "value": true },
+                        { "key": "unique_handles", "value": true },
+                        { "key": "object_lifetime", "value": true },
+                        { "key": "stateless_param", "value": true },
+                        { "key": "thread_safety", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "report_flags", "value": [ "error" ] },
+                        { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
+                        { "key": "enable_message_limit", "value": true }
                     ]
                 },
                 {
                     "label": "Reduced-Overhead",
                     "description": "Disables some checks in the interest of better performance.",
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX",
-                        "MACOS"
-                    ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                     "status": "STABLE",
                     "settings": [
-                        {
-                            "key": "validate_core",
-                            "value": true
-                        },
-                        {
-                            "key": "check_image_layout",
-                            "value": false
-                        },
-                        {
-                            "key": "check_command_buffer",
-                            "value": false
-                        },
-                        {
-                            "key": "check_object_in_use",
-                            "value": false
-                        },
-                        {
-                            "key": "check_query",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders",
-                            "value": true
-                        },
-                        {
-                            "key": "check_shaders_caching",
-                            "value": true
-                        },
-                        {
-                            "key": "unique_handles",
-                            "value": false
-                        },
-                        {
-                            "key": "object_lifetime",
-                            "value": true
-                        },
-                        {
-                            "key": "stateless_param",
-                            "value": true
-                        },
-                        {
-                            "key": "thread_safety",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_sync",
-                            "value": false
-                        },
-                        {
-                            "key": "printf_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "value": false
-                        },
-                        {
-                            "key": "report_flags",
-                            "value": [
-                                "error"
-                            ]
-                        },
-                        {
-                            "key": "debug_action",
-                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
-                        },
-                        {
-                            "key": "enable_message_limit",
-                            "value": true
-                        }
+                        { "key": "validate_core", "value": true },
+                        { "key": "check_image_layout", "value": false },
+                        { "key": "check_command_buffer", "value": false },
+                        { "key": "check_object_in_use", "value": false },
+                        { "key": "check_query", "value": false },
+                        { "key": "check_shaders", "value": true },
+                        { "key": "check_shaders_caching", "value": true },
+                        { "key": "unique_handles", "value": false },
+                        { "key": "object_lifetime", "value": true },
+                        { "key": "stateless_param", "value": true },
+                        { "key": "thread_safety", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "report_flags", "value": [ "error" ] },
+                        { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
+                        { "key": "enable_message_limit", "value": true }
                     ]
                 },
                 {
                     "label": "Best Practices",
                     "description": "Provides warnings on valid API usage that is potential API misuse.",
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX",
-                        "MACOS",
-                        "ANDROID"
-                    ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
-                        {
-                            "key": "validate_core",
-                            "value": false
-                        },
-                        {
-                            "key": "check_image_layout",
-                            "value": false
-                        },
-                        {
-                            "key": "check_command_buffer",
-                            "value": false
-                        },
-                        {
-                            "key": "check_object_in_use",
-                            "value": false
-                        },
-                        {
-                            "key": "check_query",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders_caching",
-                            "value": false
-                        },
-                        {
-                            "key": "unique_handles",
-                            "value": false
-                        },
-                        {
-                            "key": "object_lifetime",
-                            "value": false
-                        },
-                        {
-                            "key": "stateless_param",
-                            "value": false
-                        },
-                        {
-                            "key": "thread_safety",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_sync",
-                            "value": false
-                        },
-                        {
-                            "key": "printf_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "value": true
-                        },
-                        {
-                            "key": "report_flags",
-                            "value": [
-                                "error",
-                                "warn",
-                                "perf"
-                            ]
-                        },
-                        {
-                            "key": "debug_action",
-                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
-                        },
-                        {
-                            "key": "enable_message_limit",
-                            "value": true
-                        }
+                        { "key": "validate_core", "value": false },
+                        { "key": "check_image_layout", "value": false },
+                        { "key": "check_command_buffer", "value": false },
+                        { "key": "check_object_in_use", "value": false },
+                        { "key": "check_query", "value": false },
+                        { "key": "check_shaders", "value": false },
+                        { "key": "check_shaders_caching", "value": false },
+                        { "key": "unique_handles", "value": false },
+                        { "key": "object_lifetime", "value": false },
+                        { "key": "stateless_param", "value": false },
+                        { "key": "thread_safety", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "validate_best_practices", "value": true },
+                        { "key": "report_flags", "value": [ "error", "warn", "perf" ] },
+                        { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
+                        { "key": "enable_message_limit", "value": true }
                     ]
                 },
                 {
                     "label": "Synchronization",
                     "description": "Identify resource access conflicts due to missing or incorrect synchronization operations between actions reading or writing the same regions of memory.",
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX",
-                        "MACOS",
-                        "ANDROID"
-                    ],
+                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                     "status": "STABLE",
                     "settings": [
-                        {
-                            "key": "validate_core",
-                            "value": false
-                        },
-                        {
-                            "key": "check_image_layout",
-                            "value": false
-                        },
-                        {
-                            "key": "check_command_buffer",
-                            "value": false
-                        },
-                        {
-                            "key": "check_object_in_use",
-                            "value": false
-                        },
-                        {
-                            "key": "check_query",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders_caching",
-                            "value": false
-                        },
-                        {
-                            "key": "unique_handles",
-                            "value": true
-                        },
-                        {
-                            "key": "object_lifetime",
-                            "value": false
-                        },
-                        {
-                            "key": "stateless_param",
-                            "value": false
-                        },
-                        {
-                            "key": "thread_safety",
-                            "value": true
-                        },
-                        {
-                            "key": "validate_sync",
-                            "value": true
-                        },
-                        {
-                            "key": "printf_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_shader_instrumentation",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_buffers_validation",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "value": false
-                        },
-                        {
-                            "key": "report_flags",
-                            "value": [
-                                "error"
-                            ]
-                        },
-                        {
-                            "key": "debug_action",
-                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
-                        },
-                        {
-                            "key": "enable_message_limit",
-                            "value": true
-                        }
+                        { "key": "validate_core", "value": false },
+                        { "key": "check_image_layout", "value": false },
+                        { "key": "check_command_buffer", "value": false },
+                        { "key": "check_object_in_use", "value": false },
+                        { "key": "check_query", "value": false },
+                        { "key": "check_shaders", "value": false },
+                        { "key": "check_shaders_caching", "value": false },
+                        { "key": "unique_handles", "value": true },
+                        { "key": "object_lifetime", "value": false },
+                        { "key": "stateless_param", "value": false },
+                        { "key": "thread_safety", "value": true },
+                        { "key": "validate_sync", "value": true },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "gpuav_shader_instrumentation", "value": false },
+                        { "key": "gpuav_buffers_validation", "value": false },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "report_flags", "value": [ "error" ] },
+                        { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
+                        { "key": "enable_message_limit", "value": true }
                     ]
                 },
                 {
                     "label": "GPU-Assisted",
                     "description": "Check for API usage errors at shader execution time.",
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX"
-                    ],
+                    "platforms": [ "WINDOWS", "LINUX" ],
                     "status": "STABLE",
                     "settings": [
-                        {
-                            "key": "validate_core",
-                            "value": false
-                        },
-                        {
-                            "key": "check_image_layout",
-                            "value": false
-                        },
-                        {
-                            "key": "check_command_buffer",
-                            "value": false
-                        },
-                        {
-                            "key": "check_object_in_use",
-                            "value": false
-                        },
-                        {
-                            "key": "check_query",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders_caching",
-                            "value": false
-                        },
-                        {
-                            "key": "unique_handles",
-                            "value": false
-                        },
-                        {
-                            "key": "object_lifetime",
-                            "value": false
-                        },
-                        {
-                            "key": "stateless_param",
-                            "value": false
-                        },
-                        {
-                            "key": "thread_safety",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_sync",
-                            "value": false
-                        },
-                        {
-                            "key": "printf_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_enable",
-                            "value": true
-                        },
-                        {
-                            "key": "gpuav_shader_instrumentation",
-                            "value": true
-                        },
-                        {
-                            "key": "gpuav_cache_instrumented_shaders",
-                            "value": true
-                        },
-                        {
-                            "key": "gpuav_select_instrumented_shaders",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_buffers_validation",
-                            "value": true
-                        },
-                        {
-                            "key": "gpuav_reserve_binding_slot",
-                            "value": true
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "value": false
-                        },
-                        {
-                            "key": "report_flags",
-                            "value": [
-                                "error"
-                            ]
-                        },
-                        {
-                            "key": "debug_action",
-                            "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
-                        },
-                        {
-                            "key": "enable_message_limit",
-                            "value": true
-                        }
+                        { "key": "validate_core", "value": false },
+                        { "key": "check_image_layout", "value": false },
+                        { "key": "check_command_buffer", "value": false },
+                        { "key": "check_object_in_use", "value": false },
+                        { "key": "check_query", "value": false },
+                        { "key": "check_shaders", "value": false },
+                        { "key": "check_shaders_caching", "value": false },
+                        { "key": "unique_handles", "value": false },
+                        { "key": "object_lifetime", "value": false },
+                        { "key": "stateless_param", "value": false },
+                        { "key": "thread_safety", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "printf_enable", "value": false },
+                        { "key": "gpuav_enable", "value": true },
+                        { "key": "gpuav_shader_instrumentation", "value": true },
+                        { "key": "gpuav_cache_instrumented_shaders", "value": true },
+                        { "key": "gpuav_select_instrumented_shaders", "value": false },
+                        { "key": "gpuav_buffers_validation", "value": true },
+                        { "key": "gpuav_reserve_binding_slot", "value": true },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "report_flags", "value": [ "error" ] },
+                        { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
+                        { "key": "enable_message_limit", "value": true }
                     ]
                 },
                 {
                     "label": "Debug Printf",
                     "description": "Debug shader code by \"printing\" any values of interest to the debug callback or stdout.",
-                    "platforms": [
-                        "WINDOWS",
-                        "LINUX"
-                    ],
+                    "platforms": [ "WINDOWS", "LINUX" ],
                     "status": "STABLE",
                     "settings": [
-                        {
-                            "key": "validate_core",
-                            "value": false
-                        },
-                        {
-                            "key": "check_image_layout",
-                            "value": false
-                        },
-                        {
-                            "key": "check_command_buffer",
-                            "value": false
-                        },
-                        {
-                            "key": "check_object_in_use",
-                            "value": false
-                        },
-                        {
-                            "key": "check_query",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders",
-                            "value": false
-                        },
-                        {
-                            "key": "check_shaders_caching",
-                            "value": false
-                        },
-                        {
-                            "key": "unique_handles",
-                            "value": false
-                        },
-                        {
-                            "key": "object_lifetime",
-                            "value": false
-                        },
-                        {
-                            "key": "stateless_param",
-                            "value": false
-                        },
-                        {
-                            "key": "thread_safety",
-                            "value": false
-                        },
-                        {
-                            "key": "validate_sync",
-                            "value": false
-                        },
-                        {
-                            "key": "gpuav_enable",
-                            "value": false
-                        },
-                        {
-                            "key": "printf_enable",
-                            "value": true
-                        },
-                        {
-                            "key": "validate_best_practices",
-                            "value": false
-                        },
-                        {
-                            "key": "report_flags",
-                            "value": [
-                                "error",
-                                "info"
-                            ]
-                        },
-                        {
-                            "key": "debug_action",
-                            "value": []
-                        },
-                        {
-                            "key": "enable_message_limit",
-                            "value": false
-                        }
+                        { "key": "validate_core", "value": false },
+                        { "key": "check_image_layout", "value": false },
+                        { "key": "check_command_buffer", "value": false },
+                        { "key": "check_object_in_use", "value": false },
+                        { "key": "check_query", "value": false },
+                        { "key": "check_shaders", "value": false },
+                        { "key": "check_shaders_caching", "value": false },
+                        { "key": "unique_handles", "value": false },
+                        { "key": "object_lifetime", "value": false },
+                        { "key": "stateless_param", "value": false },
+                        { "key": "thread_safety", "value": false },
+                        { "key": "validate_sync", "value": false },
+                        { "key": "gpuav_enable", "value": false },
+                        { "key": "printf_enable", "value": true },
+                        { "key": "validate_best_practices", "value": false },
+                        { "key": "report_flags",  "value": [ "error", "info" ] },
+                        { "key": "debug_action",  "value": [] },
+                        { "key": "enable_message_limit",  "value": false }
                     ]
                 }
             ],
@@ -629,12 +244,7 @@
                             "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
                             "type": "BOOL",
                             "default": true,
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "validate_core",
@@ -652,10 +262,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_core",
-                                                "value": true
-                                            }
+                                            { "key": "validate_core", "value": true }
                                         ]
                                     }
                                 },
@@ -668,10 +275,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_core",
-                                                "value": true
-                                            }
+                                            { "key": "validate_core", "value": true }
                                         ]
                                     }
                                 },
@@ -684,10 +288,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_core",
-                                                "value": true
-                                            }
+                                            { "key": "validate_core", "value": true }
                                         ]
                                     }
                                 },
@@ -700,10 +301,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_core",
-                                                "value": true
-                                            }
+                                            { "key": "validate_core", "value": true }
                                         ]
                                     }
                                 },
@@ -717,10 +315,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_core",
-                                                "value": true
-                                            }
+                                            { "key": "validate_core", "value": true }
                                         ]
                                     },
                                     "settings": [
@@ -733,14 +328,8 @@
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "validate_core",
-                                                        "value": true
-                                                    },
-                                                    {
-                                                        "key": "check_shaders",
-                                                        "value": true
-                                                    }
+                                                    { "key": "validate_core", "value": true },
+                                                    { "key": "check_shaders", "value": true }
                                                 ]
                                             }
                                         },
@@ -763,12 +352,7 @@
                             "type": "BOOL",
                             "default": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "object_lifetime",
@@ -777,12 +361,7 @@
                             "type": "BOOL",
                             "default": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "stateless_param",
@@ -791,12 +370,7 @@
                             "type": "BOOL",
                             "default": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "thread_safety",
@@ -805,12 +379,7 @@
                             "type": "BOOL",
                             "default": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "validate_sync",
@@ -821,12 +390,7 @@
                             "default": false,
                             "expanded": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ],
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                             "settings": [
                                 {
                                     "key": "syncval_submit_time_validation",
@@ -838,10 +402,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_sync",
-                                                "value": true
-                                            }
+                                            { "key": "validate_sync", "value": true }
                                         ]
                                     }
                                 },
@@ -855,10 +416,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_sync",
-                                                "value": true
-                                            }
+                                            { "key": "validate_sync", "value": true }
                                         ]
                                     }
                                 }
@@ -873,10 +431,7 @@
                             "expanded": true,
                             "view": "HIDDEN",
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ],
+                            "platforms": [ "WINDOWS", "LINUX" ],
                             "flags": [
                                 {
                                     "key": "GPU_BASED_NONE",
@@ -889,10 +444,7 @@
                                     "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
                                     "url": "${LUNARG_SDK}/debug_printf.html",
                                     "status": "STABLE",
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ]
+                                    "platforms": [ "WINDOWS", "LINUX" ]
                                 },
                                 {
                                     "key": "GPU_BASED_GPU_ASSISTED",
@@ -900,10 +452,7 @@
                                     "description": "Check for API usage errors at shader execution time.",
                                     "url": "${LUNARG_SDK}/gpu_validation.html",
                                     "status": "STABLE",
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ]
+                                    "platforms": [ "WINDOWS", "LINUX" ]
                                 }
                             ]
                         },
@@ -914,10 +463,7 @@
                             "type": "BOOL",
                             "default": false,
                             "view": "HIDDEN",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX" ]
                         },
                         {
                             "key": "printf_enable",
@@ -926,10 +472,7 @@
                             "type": "BOOL",
                             "url": "${LUNARG_SDK}/debug_printf.html",
                             "default": false,
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ],
+                            "platforms": [ "WINDOWS", "LINUX" ],
                             "settings": [
                                 {
                                     "key": "printf_to_stdout",
@@ -937,17 +480,11 @@
                                     "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "printf_enable",
-                                                "value": true
-                                            }
+                                            { "key": "printf_enable", "value": true }
                                         ]
                                     }
                                 },
@@ -957,17 +494,11 @@
                                     "description": "Will print out handles, instruction location, position in command buffer, and more",
                                     "type": "BOOL",
                                     "default": false,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "printf_enable",
-                                                "value": true
-                                            }
+                                            { "key": "printf_enable", "value": true }
                                         ]
                                     }
                                 },
@@ -982,17 +513,11 @@
                                         "max": 1048576
                                     },
                                     "unit": "bytes",
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "printf_enable",
-                                                "value": true
-                                            }
+                                            { "key": "printf_enable", "value": true }
                                         ]
                                     }
                                 }
@@ -1006,10 +531,7 @@
                             "default": false,
                             "expanded": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ],
+                            "platforms": [ "WINDOWS", "LINUX" ],
                             "settings": [
                                 {
                                     "key": "gpuav_shader_instrumentation",
@@ -1018,17 +540,11 @@
                                     "type": "BOOL",
                                     "expanded": true,
                                     "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "gpuav_enable",
-                                                "value": true
-                                            }
+                                            { "key": "gpuav_enable", "value": true }
                                         ]
                                     },
                                     "settings": [
@@ -1039,17 +555,12 @@
                                             "type": "BOOL",
                                             "expanded": true,
                                             "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_shader_instrumentation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             },
                                             "settings": [
@@ -1059,17 +570,13 @@
                                                     "description": "Warn on out of bounds accesses even if robustness is enabled",
                                                     "type": "BOOL",
                                                     "default": true,
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
+                                                    "platforms": [ "WINDOWS", "LINUX" ],
                                                     "dependence": {
                                                         "mode": "ALL",
                                                         "settings": [
-                                                            {
-                                                                "key": "gpuav_descriptor_checks",
-                                                                "value": true
-                                                            }
+                                                            { "key": "gpuav_enable", "value": true },
+                                                            { "key": "gpuav_shader_instrumentation", "value": true },
+                                                            { "key": "gpuav_descriptor_checks", "value": true }
                                                         ]
                                                     }
                                                 }
@@ -1082,17 +589,12 @@
                                             "default": true,
                                             "expanded": true,
                                             "description": "Check for invalid access using buffer device address",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_shader_instrumentation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             },
                                             "settings": [
@@ -1106,17 +608,13 @@
                                                         "min": 100,
                                                         "max": 10000000
                                                     },
-                                                    "platforms": [
-                                                        "WINDOWS",
-                                                        "LINUX"
-                                                    ],
+                                                    "platforms": [ "WINDOWS", "LINUX" ],
                                                     "dependence": {
                                                         "mode": "ALL",
                                                         "settings": [
-                                                            {
-                                                                "key": "gpuav_buffer_address_oob",
-                                                                "value": true
-                                                            }
+                                                            { "key": "gpuav_enable", "value": true },
+                                                            { "key": "gpuav_shader_instrumentation", "value": true },
+                                                            { "key": "gpuav_buffer_address_oob", "value": true }
                                                         ]
                                                     }
                                                 }
@@ -1128,17 +626,12 @@
                                             "description": "Enable shader instrumentation on OpRayQueryInitializeKHR",
                                             "type": "BOOL",
                                             "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_shader_instrumentation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             }
                                         },
@@ -1148,17 +641,12 @@
                                             "description": "Enable instrumented shader caching",
                                             "type": "BOOL",
                                             "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_shader_instrumentation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             }
                                         },
@@ -1168,17 +656,12 @@
                                             "description": "Select which shaders to instrument passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext",
                                             "type": "BOOL",
                                             "default": false,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_shader_instrumentation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             }
                                         }
@@ -1190,17 +673,11 @@
                                     "description": "Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "gpuav_enable",
-                                                "value": true
-                                            }
+                                            { "key": "gpuav_enable", "value": true }
                                         ]
                                     },
                                     "settings": [
@@ -1210,17 +687,12 @@
                                             "type": "BOOL",
                                             "default": false,
                                             "description": "(Warning - still experimental) Validate buffers containing draw parameters used in indirect draw commands",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_buffers_validation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_buffers_validation", "value": true }
                                                 ]
                                             }
                                         },
@@ -1230,17 +702,12 @@
                                             "type": "BOOL",
                                             "default": false,
                                             "description": "(Warning - still experimental) Validate buffers containing dispatch parameters used in indirect dispatch commands",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_buffers_validation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_buffers_validation", "value": true }
                                                 ]
                                             }
                                         },
@@ -1250,17 +717,12 @@
                                             "type": "BOOL",
                                             "default": false,
                                             "description": "(Warning - still experimental) Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_buffers_validation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_buffers_validation", "value": true }
                                                 ]
                                             }
                                         },
@@ -1270,17 +732,12 @@
                                             "type": "BOOL",
                                             "default": true,
                                             "description": "Validate copies involving a VkBuffer. Right now only validates copy buffer to image.",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_buffers_validation",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_buffers_validation", "value": true }
                                                 ]
                                             }
                                         }
@@ -1292,17 +749,11 @@
                                     "description": "GPU-AV advanced settings",
                                     "type": "GROUP",
                                     "view": "ADVANCED",
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "gpuav_enable",
-                                                "value": true
-                                            }
+                                            { "key": "gpuav_enable", "value": true }
                                         ]
                                     },
                                     "settings": [
@@ -1312,17 +763,11 @@
                                             "type": "BOOL",
                                             "default": true,
                                             "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         },
@@ -1332,17 +777,11 @@
                                             "description": "Use VMA linear memory allocations for GPU-AV output buffers instead of finding best place for new allocations among free regions to optimize memory usage. Enabling this setting reduces performance cost but disabling this method minimizes memory usage.",
                                             "type": "BOOL",
                                             "default": true,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         }
@@ -1354,17 +793,11 @@
                                     "description": "GPU-AV debug settings",
                                     "type": "GROUP",
                                     "view": "ADVANCED",
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "gpuav_enable",
-                                                "value": true
-                                            }
+                                            { "key": "gpuav_enable", "value": true }
                                         ]
                                     },
                                     "settings": [
@@ -1375,17 +808,11 @@
                                             "type": "BOOL",
                                             "view": "HIDDEN",
                                             "default": false,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         },
@@ -1395,17 +822,11 @@
                                             "description": "Run spirv-val after doing shader instrumentation",
                                             "type": "BOOL",
                                             "default": false,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         },
@@ -1415,17 +836,11 @@
                                             "description": "Will dump the instrumented shaders (before and after) to working directory",
                                             "type": "BOOL",
                                             "default": false,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         },
@@ -1438,17 +853,11 @@
                                             "range": {
                                                 "min": 0
                                             },
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         },
@@ -1458,17 +867,11 @@
                                             "description": "Prints verbose information about the instrumentation of the SPIR-V",
                                             "type": "BOOL",
                                             "default": false,
-                                            "platforms": [
-                                                "WINDOWS",
-                                                "LINUX"
-                                            ],
+                                            "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
-                                                    {
-                                                        "key": "gpuav_enable",
-                                                        "value": true
-                                                    }
+                                                    { "key": "gpuav_enable", "value": true }
                                                 ]
                                             }
                                         }
@@ -1485,12 +888,7 @@
                             "default": false,
                             "expanded": true,
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ],
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                             "settings": [
                                 {
                                     "key": "validate_best_practices_arm",
@@ -1498,19 +896,11 @@
                                     "description": "Outputs warnings for spec-conforming but non-ideal code on ARM GPUs.",
                                     "type": "BOOL",
                                     "default": false,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX",
-                                        "MACOS",
-                                        "ANDROID"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_best_practices",
-                                                "value": true
-                                            }
+                                            { "key": "validate_best_practices", "value": true }
                                         ]
                                     }
                                 },
@@ -1520,18 +910,11 @@
                                     "description": "Outputs warnings for spec-conforming but non-ideal code on AMD GPUs.",
                                     "type": "BOOL",
                                     "default": false,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX",
-                                        "MACOS"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_best_practices",
-                                                "value": true
-                                            }
+                                            { "key": "validate_best_practices", "value": true }
                                         ]
                                     }
                                 },
@@ -1541,18 +924,11 @@
                                     "description": "Outputs warnings for spec-conforming but non-ideal code on Imagination GPUs.",
                                     "type": "BOOL",
                                     "default": false,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX",
-                                        "MACOS"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_best_practices",
-                                                "value": true
-                                            }
+                                            { "key": "validate_best_practices", "value": true }
                                         ]
                                     }
                                 },
@@ -1562,18 +938,11 @@
                                     "description": "Outputs warnings for spec-conforming but non-ideal code on NVIDIA GPUs.",
                                     "type": "BOOL",
                                     "default": false,
-                                    "platforms": [
-                                        "WINDOWS",
-                                        "LINUX",
-                                        "ANDROID"
-                                    ],
+                                    "platforms": [ "WINDOWS", "LINUX", "ANDROID" ],
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "validate_best_practices",
-                                                "value": true
-                                            }
+                                            { "key": "validate_best_practices", "value": true }
                                         ]
                                     }
                                 }
@@ -1601,12 +970,7 @@
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
-                                            {
-                                                "key": "debug_action",
-                                                "value": [
-                                                    "VK_DBG_LAYER_ACTION_LOG_MSG"
-                                                ]
-                                            }
+                                            { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] }
                                         ]
                                     }
                                 }
@@ -1622,9 +986,7 @@
                             "key": "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT",
                             "label": "Debug Output",
                             "description": "Log a txt message using the Windows OutputDebugString function.",
-                            "platforms": [
-                                "WINDOWS"
-                            ]
+                            "platforms": [ "WINDOWS" ]
                         },
                         {
                             "key": "VK_DBG_LAYER_ACTION_BREAK",
@@ -1693,10 +1055,7 @@
                             "dependence": {
                                 "mode": "ALL",
                                 "settings": [
-                                    {
-                                        "key": "enable_message_limit",
-                                        "value": true
-                                    }
+                                    { "key": "enable_message_limit", "value": true }
                                 ]
                             }
                         }
@@ -1723,12 +1082,7 @@
                             "description": "Useful when running multiple instances to know which instance the message is from.",
                             "type": "BOOL",
                             "default": false,
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         }
                     ]
                 },
@@ -1820,12 +1174,7 @@
                             "description": "This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",
@@ -1833,92 +1182,57 @@
                             "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
                             "url": "${LUNARG_SDK}/debug_printf.html",
                             "status": "STABLE",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX" ]
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",
                             "label": "GPU-Assisted",
                             "description": "Check for API usage errors at shader execution time.",
                             "url": "${LUNARG_SDK}/gpu_validation.html",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX" ]
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
                             "label": "Reserve Descriptor Set Binding Slot",
                             "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX"
-                            ]
+                            "platforms": ["WINDOWS", "LINUX" ]
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",
                             "label": "Best Practices",
                             "description": "Activating this feature enables the output of warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
                             "url": "${LUNARG_SDK}/best_practices.html",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",
                             "label": "ARM-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to ARM-specific misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",
                             "label": "AMD-specific best practices",
                             "description": "Adds check for spec-conforming but non-ideal code on AMD GPUs.",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",
                             "label": "IMG-specific best practices",
                             "description": "Adds check for spec-conforming but non-ideal code on Imagination GPUs.",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "MACOS"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",
                             "label": "NVIDIA-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to NVIDIA-specific misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "ANDROID" ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL",
                             "label": "Hardware specific best practices",
                             "description": "Activating this feature enables all vendor specific best practices.",
-                            "platforms": [
-                                "WINDOWS",
-                                "LINUX",
-                                "ANDROID"
-                            ]
+                            "platforms": [ "WINDOWS", "LINUX", "ANDROID" ]
                         }
                     ],
                     "default": []
