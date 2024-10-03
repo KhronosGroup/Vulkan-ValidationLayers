@@ -202,6 +202,11 @@ bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef 
     for (size_t i = 0; i < lhs_bindings.size(); i++) {
         const auto &l = lhs_bindings[i];
         const auto &r = rhs_bindings[i];
+        // For things where we are comparing with the bound pipeline, the binding will always be right, but when comparing two
+        // arbitrary layouts (ex. templates, Device Generated Commands, etc) the bindings might be different
+        if (l.binding != r.binding) {
+            return false;
+        }
         if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
             return false;
         }
@@ -247,7 +252,10 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
         for (size_t i = 0; i < lhs_bindings.size(); i++) {
             const auto &l = lhs_bindings[i];
             const auto &r = rhs_bindings[i];
-            if (l.descriptorType != r.descriptorType) {
+            if (l.binding != r.binding) {
+                ss << "VkDescriptorSetLayoutBinding::binding " << l.binding << " doesn't match " << r.binding;
+                break;
+            } else if (l.descriptorType != r.descriptorType) {
                 ss << "binding " << i << " descriptorType " << string_VkDescriptorType(l.descriptorType) << " doesn't match "
                    << string_VkDescriptorType(r.descriptorType);
                 break;
