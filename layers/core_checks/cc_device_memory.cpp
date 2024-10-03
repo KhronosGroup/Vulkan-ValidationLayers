@@ -407,6 +407,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                                const ErrorObject &error_obj) const {
     bool skip = false;
+    if (CheckIfAppExited()) return skip;
+
     if (Count<vvl::DeviceMemory>() >= phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= LogError(
             "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101", device, error_obj.location,

@@ -69,6 +69,8 @@ class CoreChecks : public ValidationStateTracker {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
+    bool CheckIfAppExited() const;
+
     bool ValidateSetMemBinding(const vvl::DeviceMemory& memory_state, const vvl::Bindable& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
