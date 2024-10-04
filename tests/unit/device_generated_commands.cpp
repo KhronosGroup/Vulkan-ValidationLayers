@@ -923,6 +923,55 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineShaderStages) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineCompatible) {
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    InitRenderTarget();
+
+    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set_vert(m_device,
+                                            {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+    OneOffDescriptorSet descriptor_set_all(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set_vert.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set_vert.UpdateDescriptorSets();
+    descriptor_set_all.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set_all.UpdateDescriptorSets();
+
+    const vkt::PipelineLayout pipeline_layout_vert(*m_device, {&descriptor_set_vert.layout_});
+    const vkt::PipelineLayout pipeline_layout_all(*m_device, {&descriptor_set_all.layout_});
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer StorageBuffer {
+            uint a;
+            uint b;
+        };
+        void main() {
+            a = b;
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
+    CreatePipelineHelper init_pipe(*this, &pipe_flags2);
+    init_pipe.gp_ci_.layout = pipeline_layout_vert.handle();
+    init_pipe.shader_stages_ = {vs.GetStageCreateInfo(), init_pipe.fs_->GetStageCreateInfo()};
+    init_pipe.CreateGraphicsPipeline();
+    vkt::IndirectExecutionSet exe_set(*m_device, init_pipe.Handle(), 1);
+
+    CreatePipelineHelper pipe(*this, &pipe_flags2);
+    pipe.gp_ci_.layout = pipeline_layout_all.handle();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkWriteIndirectExecutionSetPipelineEXT write_exe_sets = vku::InitStructHelper();
+    write_exe_sets.index = 0;
+    write_exe_sets.pipeline = pipe.Handle();
+    m_errorMonitor->SetDesiredError("VUID-vkUpdateIndirectExecutionSetPipelineEXT-None-11039");
+    vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set.handle(), 1, &write_exe_sets);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESMixShaderObjectPipeline) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
