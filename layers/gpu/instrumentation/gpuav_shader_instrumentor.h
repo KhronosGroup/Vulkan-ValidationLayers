@@ -179,10 +179,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          uint32_t operation_index) const;
 
   protected:
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                            VkDeviceQueueCreateFlags flags,
-                                            const VkQueueFamilyProperties &queueFamilyProperties) override;
-
     bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state);
     bool HasBindlessDescriptors(vvl::Pipeline &pipeline_state);
     bool HasBindlessDescriptors(VkShaderCreateInfoEXT &create_info);
@@ -233,8 +229,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // These are objects used to inject our descriptor set into the command buffer
     VkDescriptorSetLayout instrumentation_desc_layout_ = VK_NULL_HANDLE;
     VkPipelineLayout instrumentation_pipeline_layout_ = VK_NULL_HANDLE;
-    // Make sure we call the right versions of any timeline semaphore functions.
-    bool timeline_khr_{false};
 
     // Pass select_instrumented_shaders from vkCreateShaderModule to CreatePipeline time
     vvl::unordered_set<VkShaderModule> selected_instrumented_shaders;

@@ -60,13 +60,6 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
     }
 }
 
-std::shared_ptr<vvl::Queue> GpuShaderInstrumentor::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                                               VkDeviceQueueCreateFlags flags,
-                                                               const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::static_pointer_cast<vvl::Queue>(
-        std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
-}
-
 // These are the common things required for anything that deals with shader instrumentation
 void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
@@ -91,44 +84,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalD
             InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::shaderInt64 to VK_TRUE");
             enabled_features->shaderInt64 = VK_TRUE;
         }
-    }
-
-    auto add_missing_features = [this, &record_obj, modified_create_info]() {
-        // Add timeline semaphore feature - This is required as we use it to manage when command buffers are submitted at queue
-        // submit time
-        if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
-            if (ts_features->timelineSemaphore == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
-                                "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
-                ts_features->timelineSemaphore = VK_TRUE;
-            }
-        } else {
-            InternalWarning(device, record_obj.location,
-                            "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
-            VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
-            new_ts_features.timelineSemaphore = VK_TRUE;
-            vku::AddToPnext(*modified_create_info, new_ts_features);
-        }
-    };
-
-    if (api_version > VK_API_VERSION_1_1) {
-        if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
-            if (features12->timelineSemaphore == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
-                features12->timelineSemaphore = VK_TRUE;
-            }
-        } else {
-            add_missing_features();
-        }
-    } else if (api_version == VK_API_VERSION_1_1) {
-        // Add our new extensions (will only add if found)
-        const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
-        vku::AddExtension(*modified_create_info, ts_ext.data());
-        add_missing_features();
-        timeline_khr_ = true;
     }
 }
 
