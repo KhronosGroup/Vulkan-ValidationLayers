@@ -144,7 +144,7 @@ void SharedResourcesManager::Clear() {
     shared_validation_resources_map_.clear();
 }
 
-void DeviceMemoryBlock::Destroy(VmaAllocator allocator) {
+void DeviceMemoryBlock::DestroyBuffer(VmaAllocator allocator) {
     if (buffer != VK_NULL_HANDLE) {
         vmaDestroyBuffer(allocator, buffer, allocation);
         buffer = VK_NULL_HANDLE;
@@ -191,7 +191,13 @@ void AddressMemoryBlock::CreateBuffer(const Location &loc, const VkBufferCreateI
     }
 }
 
-void AddressMemoryBlock::DestroyBuffer() { vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation); }
+void AddressMemoryBlock::DestroyBuffer() {
+    if (buffer != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation);
+        buffer = VK_NULL_HANDLE;
+        allocation = VK_NULL_HANDLE;
+    }
+}
 
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {
     std::pair<VkDescriptorPool, VkDescriptorSet> descriptor;
@@ -209,7 +215,7 @@ void GpuResourcesManager::DestroyResources() {
     descriptors_.clear();
 
     for (auto &mem_block : mem_blocks_) {
-        mem_block.Destroy(vma_allocator_);
+        mem_block.DestroyBuffer(vma_allocator_);
     }
     mem_blocks_.clear();
 }

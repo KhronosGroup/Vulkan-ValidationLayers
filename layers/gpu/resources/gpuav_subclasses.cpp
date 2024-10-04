@@ -393,7 +393,7 @@ void CommandBuffer::ResetCBState() {
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &buffer_info : debug_printf_buffer_infos) {
-        buffer_info.output_mem_block.Destroy(gpuav->vma_allocator_);
+        buffer_info.output_mem_block.DestroyBuffer(gpuav->vma_allocator_);
     }
     debug_printf_buffer_infos.clear();
 
@@ -407,9 +407,9 @@ void CommandBuffer::ResetCBState() {
     di_input_buffer_list.clear();
     current_bindless_buffer = VK_NULL_HANDLE;
 
-    error_output_buffer_.Destroy(gpuav->vma_allocator_);
-    cmd_errors_counts_buffer_.Destroy(gpuav->vma_allocator_);
-    bda_ranges_snapshot_.Destroy(gpuav->vma_allocator_);
+    error_output_buffer_.DestroyBuffer(gpuav->vma_allocator_);
+    cmd_errors_counts_buffer_.DestroyBuffer(gpuav->vma_allocator_);
+    bda_ranges_snapshot_.DestroyBuffer(gpuav->vma_allocator_);
     bda_ranges_snapshot_version_ = 0;
 
     if (validation_cmd_desc_pool_ != VK_NULL_HANDLE && validation_cmd_desc_set_ != VK_NULL_HANDLE) {
