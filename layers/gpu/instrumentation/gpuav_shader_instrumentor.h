@@ -230,8 +230,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
-    DeviceMemoryBlock indices_buffer_{};
-    unsigned int indices_buffer_alignment_ = 0;
 
   private:
     void Cleanup();
