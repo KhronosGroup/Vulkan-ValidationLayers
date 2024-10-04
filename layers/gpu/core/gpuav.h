@@ -409,6 +409,9 @@ class Validator : public GpuShaderInstrumentor {
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
     SharedResourcesManager shared_resources_manager;
 
+    VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
+    std::unique_ptr<DescriptorSetManager> desc_set_manager_;
+
     DeviceMemoryBlock indices_buffer_{};
     unsigned int indices_buffer_alignment_ = 0;
 

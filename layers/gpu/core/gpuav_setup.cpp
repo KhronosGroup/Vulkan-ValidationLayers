@@ -100,6 +100,113 @@ static bool IsExtensionAvailable(const char *extension_name, const std::vector<V
     return false;
 }
 
+// Trampolines to make VMA call Dispatch for Vulkan calls
+static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {
+    return DispatchGetInstanceProcAddr(inst, name);
+}
+static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetDeviceProcAddr(VkDevice dev, const char *name) {
+    return DispatchGetDeviceProcAddr(dev, name);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                                                   VkPhysicalDeviceProperties *pProperties) {
+    DispatchGetPhysicalDeviceProperties(physicalDevice, pProperties);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
+                                                                         VkPhysicalDeviceMemoryProperties *pMemoryProperties) {
+    DispatchGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) {
+    return DispatchAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator) {
+    DispatchFreeMemory(device, memory, pAllocator);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
+                                                     VkMemoryMapFlags flags, void **ppData) {
+    return DispatchMapMemory(device, memory, offset, size, flags, ppData);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkUnmapMemory(VkDevice device, VkDeviceMemory memory) { DispatchUnmapMemory(device, memory); }
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkFlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
+                                                                   const VkMappedMemoryRange *pMemoryRanges) {
+    return DispatchFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkInvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
+                                                                        const VkMappedMemoryRange *pMemoryRanges) {
+    return DispatchInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
+                                                            VkDeviceSize memoryOffset) {
+    return DispatchBindBufferMemory(device, buffer, memory, memoryOffset);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory,
+                                                           VkDeviceSize memoryOffset) {
+    return DispatchBindImageMemory(device, image, memory, memoryOffset);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
+                                                                   VkMemoryRequirements *pMemoryRequirements) {
+    DispatchGetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetImageMemoryRequirements(VkDevice device, VkImage image,
+                                                                  VkMemoryRequirements *pMemoryRequirements) {
+    DispatchGetImageMemoryRequirements(device, image, pMemoryRequirements);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
+    return DispatchCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+    return DispatchDestroyBuffer(device, buffer, pAllocator);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
+    return DispatchCreateImage(device, pCreateInfo, pAllocator, pImage);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+    DispatchDestroyImage(device, image, pAllocator);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                                     uint32_t regionCount, const VkBufferCopy *pRegions) {
+    DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+}
+
+static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device,
+                                  bool use_buffer_device_address, VmaAllocator *pAllocator) {
+    VmaVulkanFunctions functions;
+    VmaAllocatorCreateInfo allocator_info = {};
+    allocator_info.instance = instance;
+    allocator_info.device = device;
+    allocator_info.physicalDevice = physical_device;
+
+    if (use_buffer_device_address) {
+        allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    }
+
+    functions.vkGetInstanceProcAddr = static_cast<PFN_vkGetInstanceProcAddr>(gpuVkGetInstanceProcAddr);
+    functions.vkGetDeviceProcAddr = static_cast<PFN_vkGetDeviceProcAddr>(gpuVkGetDeviceProcAddr);
+    functions.vkGetPhysicalDeviceProperties = static_cast<PFN_vkGetPhysicalDeviceProperties>(gpuVkGetPhysicalDeviceProperties);
+    functions.vkGetPhysicalDeviceMemoryProperties =
+        static_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(gpuVkGetPhysicalDeviceMemoryProperties);
+    functions.vkAllocateMemory = static_cast<PFN_vkAllocateMemory>(gpuVkAllocateMemory);
+    functions.vkFreeMemory = static_cast<PFN_vkFreeMemory>(gpuVkFreeMemory);
+    functions.vkMapMemory = static_cast<PFN_vkMapMemory>(gpuVkMapMemory);
+    functions.vkUnmapMemory = static_cast<PFN_vkUnmapMemory>(gpuVkUnmapMemory);
+    functions.vkFlushMappedMemoryRanges = static_cast<PFN_vkFlushMappedMemoryRanges>(gpuVkFlushMappedMemoryRanges);
+    functions.vkInvalidateMappedMemoryRanges = static_cast<PFN_vkInvalidateMappedMemoryRanges>(gpuVkInvalidateMappedMemoryRanges);
+    functions.vkBindBufferMemory = static_cast<PFN_vkBindBufferMemory>(gpuVkBindBufferMemory);
+    functions.vkBindImageMemory = static_cast<PFN_vkBindImageMemory>(gpuVkBindImageMemory);
+    functions.vkGetBufferMemoryRequirements = static_cast<PFN_vkGetBufferMemoryRequirements>(gpuVkGetBufferMemoryRequirements);
+    functions.vkGetImageMemoryRequirements = static_cast<PFN_vkGetImageMemoryRequirements>(gpuVkGetImageMemoryRequirements);
+    functions.vkCreateBuffer = static_cast<PFN_vkCreateBuffer>(gpuVkCreateBuffer);
+    functions.vkDestroyBuffer = static_cast<PFN_vkDestroyBuffer>(gpuVkDestroyBuffer);
+    functions.vkCreateImage = static_cast<PFN_vkCreateImage>(gpuVkCreateImage);
+    functions.vkDestroyImage = static_cast<PFN_vkDestroyImage>(gpuVkDestroyImage);
+    functions.vkCmdCopyBuffer = static_cast<PFN_vkCmdCopyBuffer>(gpuVkCmdCopyBuffer);
+    allocator_info.pVulkanFunctions = &functions;
+
+    return vmaCreateAllocator(&allocator_info, pAllocator);
+}
+
 void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                           const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
@@ -239,6 +346,14 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
 
     // Need the device to be created before we can query features for settings
     InitSettings(loc);
+
+    VkResult result = UtilInitializeVma(instance, physical_device, device, enabled_features.bufferDeviceAddress, &vma_allocator_);
+    if (result != VK_SUCCESS) {
+        InternalVmaError(device, loc, "Could not initialize VMA");
+        return;
+    }
+
+    desc_set_manager_ = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
 
     if (gpuav_settings.shader_instrumentation.bindless_descriptor) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
