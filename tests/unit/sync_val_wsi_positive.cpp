@@ -31,9 +31,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
     // this creates execution dependency with submit's wait semaphore, so layout
@@ -83,9 +81,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitAutomaticVisibility) {
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
     layout_transition.srcAccessMask = 0;
@@ -127,9 +123,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -223,8 +217,7 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
         vkt::Fence fence(*m_device);
 
         for (int i = 0; i < N; i++) {
-            uint32_t image_index = 0;
-            vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+            const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
                 m_default_queue->Submit(vkt::no_cmd, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -292,8 +285,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
 
     // Frame 0
     {
-        uint32_t image_index = 0;
-        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
         m_command_buffer.Begin();
         m_command_buffer.Copy(src_buffer, buffer);
@@ -304,8 +296,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     }
     // Frame 1
     {
-        uint32_t image_index = 0;
-        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore2, VK_NULL_HANDLE, &image_index);
+        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore2, kWaitTimeout);
 
         // TODO: Present should be able to accept semaphore from Acquire directly, but due to
         // another bug we need this intermediate sumbit. Remove it and make present to wait
@@ -321,8 +312,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         // import accesses from regular submits.
         vk::WaitForFences(*m_device, 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
-        uint32_t image_index = 0;
-        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
+        m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);  // do not need to keep result
 
         // If WaitForFences leaks accesses from present batches the following copy will cause submit time hazard.
         m_command_buffer.Begin();

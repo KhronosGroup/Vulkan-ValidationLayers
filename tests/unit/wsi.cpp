@@ -455,8 +455,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoSync) {
 
     {
         m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-01780");
-        uint32_t dummy;
-        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, VK_NULL_HANDLE, &dummy);
+        m_swapchain.AcquireNextImage(vkt::no_semaphore, kWaitTimeout);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -477,8 +476,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageSignaledFence) {
 
     {
         m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-fence-01287");
-        uint32_t dummy;
-        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &dummy);
+        m_swapchain.AcquireNextImage(fence, kWaitTimeout);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -555,8 +553,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageNoBinarySemaphore) {
     vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-03265");
-    uint32_t image_i;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), VK_NULL_HANDLE, &image_i);
+    m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);  // result is not needed
     m_errorMonitor->VerifyFound();
 }
 
@@ -608,16 +605,15 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     std::vector<vkt::Fence> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, vkt::Fence::CreateInfo());
-        uint32_t image_i;
-        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fences[i].handle(), &image_i);
+        VkResult res{};
+        m_swapchain.AcquireNextImage(fences[i], kWaitTimeout, &res);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
     vkt::Fence error_fence(*m_device);
 
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-surface-07783");
-    uint32_t image_i;
     // NOTE: timeout MUST be UINT64_MAX to trigger the VUID
-    vk::AcquireNextImageKHR(device(), m_swapchain, vvl::kU64Max, VK_NULL_HANDLE, error_fence.handle(), &image_i);
+    m_swapchain.AcquireNextImage(error_fence, vvl::kU64Max);
     m_errorMonitor->VerifyFound();
 
     // Cleanup
@@ -733,8 +729,8 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     std::vector<vkt::Fence> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, vkt::Fence::CreateInfo());
-        uint32_t image_i;
-        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fences[i].handle(), &image_i);
+        VkResult res{};
+        m_swapchain.AcquireNextImage(fences[i], kWaitTimeout, &res);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
     vkt::Fence error_fence(*m_device);
@@ -1524,7 +1520,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
 
     uint32_t dummy;
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-01286");
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), VK_NULL_HANDLE, &dummy);
+    m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-VkAcquireNextImageInfoKHR-semaphore-01288");
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
@@ -1544,10 +1540,9 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
 
     // Add a wait, but don't let it finish.
     m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
-
-    uint32_t dummy;
+    
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-01779");
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &dummy);
+    m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
     m_errorMonitor->VerifyFound();
 
     VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
@@ -1557,6 +1552,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     acquire_info.fence = VK_NULL_HANDLE;
     acquire_info.deviceMask = 0x1;
 
+    uint32_t dummy;
     m_errorMonitor->SetDesiredError("VUID-VkAcquireNextImageInfoKHR-semaphore-01781");
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
     m_errorMonitor->VerifyFound();
@@ -1565,7 +1561,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     m_default_queue->Wait();
 
     // now it should be possible to acquire
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &dummy);
+    m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
@@ -1576,11 +1572,8 @@ TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     InitRenderTarget();
 
-    uint32_t current_buffer;
-    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
-    vkt::Semaphore image_acquired(*m_device, semaphore_create_info);
-    ASSERT_TRUE(image_acquired.initialized());
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired.handle(), VK_NULL_HANDLE, &current_buffer);
+    vkt::Semaphore image_acquired(*m_device);
+    const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1668,8 +1661,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     fence_handles[0] = fence.handle();
     fence_handles[1] = fence2.handle();
 
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
-    vk::AcquireNextImageKHR(device(), swapchain2, kWaitTimeout, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
+    image_indices[0] = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    image_indices[1] = swapchain2.AcquireNextImage(fence2, kWaitTimeout);
     vk::WaitForFences(device(), 2, fence_handles, true, kWaitTimeout);
     SetImageLayoutPresentSrc(images[image_indices[0]]);
     SetImageLayoutPresentSrc(images2[image_indices[1]]);
@@ -1689,8 +1682,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
     vk::QueuePresentKHR(m_default_queue->handle(), &present);
 
     vk::ResetFences(device(), 2, fence_handles);
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handles[0], &image_indices[0]);
-    vk::AcquireNextImageKHR(device(), swapchain2, kWaitTimeout, VK_NULL_HANDLE, fence_handles[1], &image_indices[1]);
+    image_indices[0] = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+    image_indices[1] = swapchain2.AcquireNextImage(fence2, kWaitTimeout);
     vk::WaitForFences(device(), 2, fence_handles, true, kWaitTimeout);
     SetImageLayoutPresentSrc(images[image_indices[0]]);
     SetImageLayoutPresentSrc(images2[image_indices[1]]);
@@ -1740,9 +1733,8 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
 
     const auto images = GetSwapchainImages(m_swapchain);
 
-    uint32_t image_index;
     vkt::Fence fence(*m_device);
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
     SetImageLayoutPresentSrc(images[image_index]);
@@ -2223,9 +2215,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
     const vkt::Semaphore acquire_semaphore(*m_device);
-
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
+    m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     m_default_queue->Wait();
 
@@ -2423,8 +2413,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     vkt::Semaphore submit_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     const VkImageMemoryBarrier present_transition =
         TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
@@ -2861,8 +2850,7 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout) {
     const vkt::Semaphore acquire_semaphore(*m_device);
 
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore.handle(), VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -3053,8 +3041,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
 
     // Acquire image using a semaphore
     const vkt::Semaphore semaphore(*m_device);
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
 
     // Present without waiting on the acquire semaphore
     VkPresentInfoKHR present = vku::InitStructHelper();
@@ -3081,8 +3068,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
 
     // Acquire image using a semaphore
     const vkt::Semaphore semaphore(*m_device);
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, VK_NULL_HANDLE, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
 
     // Dummy submit that signals semaphore that will be waited by the present. Does not wait on the acquire semaphore.
     m_command_buffer.Begin();
@@ -3117,8 +3103,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
 
     // Acquire image using a fence
     const vkt::Fence fence(*m_device);
-    uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence, &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
 
     // Present without waiting on the acquire fence
     VkPresentInfoKHR present = vku::InitStructHelper();
@@ -3210,7 +3195,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
 
     uint32_t dummy;
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-swapchain-01285");
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), VK_NULL_HANDLE, &dummy);
+    m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-VkAcquireNextImageInfoKHR-swapchain-01675");
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
@@ -3226,9 +3211,8 @@ TEST_F(NegativeWsi, PresentInfoParameters) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
-    uint32_t image_index;
     vkt::Fence fence(*m_device);
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
@@ -3252,9 +3236,8 @@ TEST_F(NegativeWsi, PresentRegionsKHR) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
-    uint32_t image_index;
     vkt::Fence fence(*m_device);
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
     vk::WaitForFences(device(), 1, &fence.handle(), true, kWaitTimeout);
 
     // Allowed to have zero rectangleCount
@@ -3450,12 +3433,12 @@ TEST_F(NegativeWsi, PresentDuplicatedSwapchain) {
     VkSwapchainKHR swapchains[2] = {m_swapchain, m_swapchain};
     uint32_t image_indices[2];
 
-    VkResult result =
-        vk::AcquireNextImageKHR(*m_device, m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence1.handle(), &image_indices[0]);
+    VkResult result{};
+    image_indices[0] = m_swapchain.AcquireNextImage(fence1, kWaitTimeout, &result);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Failed to acquire image";
     }
-    result = vk::AcquireNextImageKHR(*m_device, m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence2.handle(), &image_indices[1]);
+    image_indices[1] = m_swapchain.AcquireNextImage(fence2, kWaitTimeout, &result);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Failed to acquire image";
     }

@@ -622,10 +622,8 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
         image_1D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     }
 
-    uint32_t current_buffer;
     vkt::Semaphore image_acquired(*m_device);
-    ASSERT_TRUE(image_acquired.initialized());
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired.handle(), VK_NULL_HANDLE, &current_buffer);
+    const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
 
     VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

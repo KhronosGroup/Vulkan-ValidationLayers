@@ -58,7 +58,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
     // Loop through the indices until we find one we are reusing...
     // When fence is non-null this can timeout so we need to track results
-    auto present_image = [this](uint32_t index, vkt::Semaphore* sem, vkt::Fence* fence) {
+    auto present_image = [this](uint32_t index, const vkt::Semaphore* sem, const vkt::Fence* fence) {
         VkResult result = VK_SUCCESS;
         if (fence) {
             result = fence->Wait(kWaitTimeout);
@@ -73,16 +73,25 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     };
 
     // Acquire can always timeout, so we need to track results
-    auto acquire_used_image = [this, &image_used, &present_image](vkt::Semaphore* sem, vkt::Fence* fence, uint32_t& index) {
-        VkSemaphore h_sem = sem ? sem->handle() : VK_NULL_HANDLE;
-        VkFence h_fence = fence ? fence->handle() : VK_NULL_HANDLE;
+    auto acquire_used_image_semaphore = [this, &image_used, &present_image](const vkt::Semaphore& sem, uint32_t& index) {
         VkResult result = VK_SUCCESS;
-
         while (true) {
-            result = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, h_sem, h_fence, &index);
+            index = m_swapchain.AcquireNextImage(sem, kWaitTimeout, &result);
             if ((result != VK_SUCCESS) || image_used[index]) break;
 
-            result = present_image(index, sem, fence);
+            result = present_image(index, &sem, nullptr);
+            if (result != VK_SUCCESS) break;
+            image_used[index] = true;
+        }
+        return result;
+    };
+    auto acquire_used_image_fence = [this, &image_used, &present_image](const vkt::Fence& fence, uint32_t& index) {
+        VkResult result = VK_SUCCESS;
+        while (true) {
+            index = m_swapchain.AcquireNextImage(fence, kWaitTimeout, &result);
+            if ((result != VK_SUCCESS) || image_used[index]) break;
+
+            result = present_image(index, nullptr, &fence);
             if (result != VK_SUCCESS) break;
             image_used[index] = true;
         }
@@ -114,7 +123,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     }
 
     uint32_t acquired_index = 0;
-    REQUIRE_SUCCESS(acquire_used_image(nullptr, &fence, acquired_index), "acquire_used_image");
+    REQUIRE_SUCCESS(acquire_used_image_fence(fence, acquired_index), "acquire_used_image");
 
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
@@ -140,7 +149,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
 
     vkt::Semaphore sem(*m_device);
-    REQUIRE_SUCCESS(acquire_used_image(&sem, nullptr, acquired_index), "acquire_used_image");
+    REQUIRE_SUCCESS(acquire_used_image_semaphore(sem, acquired_index), "acquire_used_image");
 
     m_command_buffer.Reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -162,7 +171,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     m_device->Wait();
     present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
 
-    REQUIRE_SUCCESS(acquire_used_image(VK_NULL_HANDLE, &fence, acquired_index), "acquire_used_index");
+    REQUIRE_SUCCESS(acquire_used_image_fence(fence, acquired_index), "acquire_used_index");
     REQUIRE_SUCCESS(fence.Wait(kWaitTimeout), "WaitForFences");
 
     m_command_buffer.Reset();
@@ -190,10 +199,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-
-    uint32_t image_index = 0;
-    ASSERT_EQ(VK_SUCCESS,
-              vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -236,10 +242,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
     const auto swapchain_images = GetSwapchainImages(m_swapchain);
-
-    uint32_t image_index = 0;
-    ASSERT_EQ(VK_SUCCESS,
-              vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index));
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
     layout_transition.srcAccessMask = 0;

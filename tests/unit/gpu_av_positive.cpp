@@ -1189,7 +1189,8 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
     const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
     {
-        auto result = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index);
+        VkResult result{};
+        image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout, &result);
         ASSERT_TRUE(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
         fence.Wait(vvl::kU32Max);
     }
