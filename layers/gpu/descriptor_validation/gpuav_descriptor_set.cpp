@@ -44,8 +44,8 @@ DescriptorSet::~DescriptorSet() {
 
 VkDeviceAddress DescriptorSet::GetLayoutState(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    if (layout_.device_address != 0) {
-        return layout_.device_address;
+    if (layout_.Address() != 0) {
+        return layout_.Address();
     }
     uint32_t num_bindings = (GetBindingCount() > 0) ? GetLayout()->GetMaxBinding() + 1 : 0;
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
@@ -97,7 +97,7 @@ VkDeviceAddress DescriptorSet::GetLayoutState(Validator &gpuav, const Location &
 
     layout_.FlushAllocation(loc);
     layout_.UnmapMemory();
-    return layout_.device_address;
+    return layout_.Address();
 }
 
 static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {

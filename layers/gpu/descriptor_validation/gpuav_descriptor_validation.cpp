@@ -115,13 +115,13 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         }
         if (!desc_set_state.state->IsUpdateAfterBind()) {
             desc_set_state.gpu_state = desc_set_state.state->GetCurrentState(gpuav, loc);
-            bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->buffer.device_address;
+            bindless_state->desc_sets[i].in_data = desc_set_state.gpu_state->buffer.Address();
             desc_set_state.output_state = desc_set_state.state->GetOutputState(gpuav, loc);
             if (!desc_set_state.output_state) {
                 di_buffers.bindless_state.UnmapMemory();
                 return;
             }
-            bindless_state->desc_sets[i].out_data = desc_set_state.output_state->buffer.device_address;
+            bindless_state->desc_sets[i].out_data = desc_set_state.output_state->buffer.Address();
         }
         di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
     }
@@ -141,7 +141,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             bindless_state->desc_sets[i].layout_data = set_buffer.state->GetLayoutState(gpuav, loc);
             if (!set_buffer.gpu_state) {
                 set_buffer.gpu_state = set_buffer.state->GetCurrentState(gpuav, loc);
-                bindless_state->desc_sets[i].in_data = set_buffer.gpu_state->buffer.device_address;
+                bindless_state->desc_sets[i].in_data = set_buffer.gpu_state->buffer.Address();
             }
             if (!set_buffer.output_state) {
                 set_buffer.output_state = set_buffer.state->GetOutputState(gpuav, loc);
@@ -149,7 +149,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                     cmd_info.bindless_state.UnmapMemory();
                     return false;
                 }
-                bindless_state->desc_sets[i].out_data = set_buffer.output_state->buffer.device_address;
+                bindless_state->desc_sets[i].out_data = set_buffer.output_state->buffer.Address();
             }
         }
         cmd_info.bindless_state.UnmapMemory();

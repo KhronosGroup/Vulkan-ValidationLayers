@@ -51,12 +51,10 @@ class DescriptorSetManager {
 };
 
 // Simplest wrapper around device memory and the allocation
-struct DeviceMemoryBlock {
-    const Validator &gpuav;
+class DeviceMemoryBlock {
+  public:
     VkBuffer buffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
-    // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
-    VkDeviceAddress device_address = 0;
 
     explicit DeviceMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
 
@@ -70,6 +68,13 @@ struct DeviceMemoryBlock {
     void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
                       const VmaAllocationCreateInfo *allocation_create_info);
     void DestroyBuffer();
+
+    VkDeviceAddress Address() const { return device_address; };
+
+  private:
+    const Validator &gpuav;
+    // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
+    VkDeviceAddress device_address = 0;
 };
 
 class GpuResourcesManager {
