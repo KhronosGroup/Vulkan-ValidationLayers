@@ -72,6 +72,13 @@ std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuf
     return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool));
 }
 
+std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                                                   VkDeviceQueueCreateFlags flags,
+                                                   const VkQueueFamilyProperties &queueFamilyProperties) {
+    return std::static_pointer_cast<vvl::Queue>(
+        std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
+}
+
 static std::vector<VkExtensionProperties> GetExtensions(VkPhysicalDevice physical_device) {
     VkResult err;
     uint32_t extension_count = 512;
@@ -215,6 +222,44 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
     // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
 
     std::vector<VkExtensionProperties> available_extensions = GetExtensions(physicalDevice);
+
+    auto add_missing_features = [this, &record_obj, modified_create_info]() {
+        // Add timeline semaphore feature - This is required as we use it to manage when command buffers are submitted at queue
+        // submit time
+        if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
+            if (ts_features->timelineSemaphore == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
+                ts_features->timelineSemaphore = VK_TRUE;
+            }
+        } else {
+            InternalWarning(device, record_obj.location,
+                            "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
+            VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
+            new_ts_features.timelineSemaphore = VK_TRUE;
+            vku::AddToPnext(*modified_create_info, new_ts_features);
+        }
+    };
+
+    if (api_version > VK_API_VERSION_1_1) {
+        if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
+            if (features12->timelineSemaphore == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
+                features12->timelineSemaphore = VK_TRUE;
+            }
+        } else {
+            add_missing_features();
+        }
+    } else if (api_version == VK_API_VERSION_1_1) {
+        // Add our new extensions (will only add if found)
+        const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
+        vku::AddExtension(*modified_create_info, ts_ext.data());
+        add_missing_features();
+        timeline_khr_ = true;
+    }
 
     // Force bufferDeviceAddress feature if available
     // ---

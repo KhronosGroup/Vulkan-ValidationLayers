@@ -35,7 +35,6 @@
 namespace gpuav {
 
 class Validator;
-class GpuShaderInstrumentor;
 struct DescBindingInfo;
 
 struct DebugPrintfBufferInfo {
@@ -141,8 +140,8 @@ class CommandBuffer : public vvl::CommandBuffer {
 
 class Queue : public vvl::Queue {
   public:
-    Queue(GpuShaderInstrumentor &shader_instrumentor_, VkQueue q, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
+    Queue(Validator &gpuav, VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
     virtual ~Queue();
 
   protected:
@@ -151,7 +150,7 @@ class Queue : public vvl::Queue {
     void SubmitBarrier(const Location &loc, uint64_t seq);
     void Retire(vvl::QueueSubmission &) override;
 
-    GpuShaderInstrumentor &shader_instrumentor_;
+    Validator &state_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};

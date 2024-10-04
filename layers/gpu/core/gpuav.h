@@ -78,6 +78,9 @@ class Validator : public GpuShaderInstrumentor {
     std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
                                                             const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                             uint32_t variable_count) final;
+    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                                            VkDeviceQueueCreateFlags flags,
+                                            const VkQueueFamilyProperties& queueFamilyProperties) override;
 
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
@@ -420,6 +423,9 @@ class Validator : public GpuShaderInstrumentor {
 
   private:
     std::string instrumented_shader_cache_path_{};
+
+    // Make sure we call the right versions of any timeline semaphore functions.
+    bool timeline_khr_{false};
 };
 
 }  // namespace gpuav

@@ -561,23 +561,21 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     }
 }
 
-Queue::Queue(GpuShaderInstrumentor &shader_instrumentor, VkQueue q, uint32_t family_index, uint32_t queue_index,
-             VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
-    : vvl::Queue(shader_instrumentor, q, family_index, queue_index, flags, queueFamilyProperties),
-      shader_instrumentor_(shader_instrumentor),
-      timeline_khr_(timeline_khr) {}
+Queue::Queue(Validator &gpuav, VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+             const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
+    : vvl::Queue(gpuav, q, family_index, queue_index, flags, queueFamilyProperties), state_(gpuav), timeline_khr_(timeline_khr) {}
 
 Queue::~Queue() {
     if (barrier_command_buffer_) {
-        DispatchFreeCommandBuffers(shader_instrumentor_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
+        DispatchFreeCommandBuffers(state_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
         barrier_command_buffer_ = VK_NULL_HANDLE;
     }
     if (barrier_command_pool_) {
-        DispatchDestroyCommandPool(shader_instrumentor_.device, barrier_command_pool_, nullptr);
+        DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
         barrier_command_pool_ = VK_NULL_HANDLE;
     }
     if (barrier_sem_) {
-        DispatchDestroySemaphore(shader_instrumentor_.device, barrier_sem_, nullptr);
+        DispatchDestroySemaphore(state_.device, barrier_sem_, nullptr);
         barrier_sem_ = VK_NULL_HANDLE;
     }
 }
@@ -590,9 +588,9 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
         VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
         pool_create_info.queueFamilyIndex = queue_family_index;
-        result = DispatchCreateCommandPool(shader_instrumentor_.device, &pool_create_info, nullptr, &barrier_command_pool_);
+        result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
-            shader_instrumentor_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
+            state_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
             barrier_command_pool_ = VK_NULL_HANDLE;
             return;
         }
@@ -601,10 +599,10 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         buffer_alloc_info.commandPool = barrier_command_pool_;
         buffer_alloc_info.commandBufferCount = 1;
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        result = DispatchAllocateCommandBuffers(shader_instrumentor_.device, &buffer_alloc_info, &barrier_command_buffer_);
+        result = DispatchAllocateCommandBuffers(state_.device, &buffer_alloc_info, &barrier_command_buffer_);
         if (result != VK_SUCCESS) {
-            shader_instrumentor_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
-            DispatchDestroyCommandPool(shader_instrumentor_.device, barrier_command_pool_, nullptr);
+            state_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
+            DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
             return;
@@ -616,17 +614,17 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 
         VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
-        result = DispatchCreateSemaphore(shader_instrumentor_.device, &semaphore_create_info, nullptr, &barrier_sem_);
+        result = DispatchCreateSemaphore(state_.device, &semaphore_create_info, nullptr, &barrier_sem_);
         if (result != VK_SUCCESS) {
-            shader_instrumentor_.InternalError(shader_instrumentor_.device, loc, "Unable to create barrier semaphore.");
-            DispatchDestroyCommandPool(shader_instrumentor_.device, barrier_command_pool_, nullptr);
+            state_.InternalError(state_.device, loc, "Unable to create barrier semaphore.");
+            DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
             return;
         }
 
         // Hook up command buffer dispatch
-        shader_instrumentor_.vk_set_device_loader_data_(shader_instrumentor_.device, barrier_command_buffer_);
+        state_.vk_set_device_loader_data_(state_.device, barrier_command_buffer_);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo barrier_cmd_buffer_begin_info = vku::InitStructHelper();
@@ -693,9 +691,9 @@ void Queue::Retire(vvl::QueueSubmission &submission) {
         wait_info.pValues = &submission.seq;
 
         if (timeline_khr_) {
-            DispatchWaitSemaphoresKHR(shader_instrumentor_.device, &wait_info, 1000000000);
+            DispatchWaitSemaphoresKHR(state_.device, &wait_info, 1000000000);
         } else {
-            DispatchWaitSemaphores(shader_instrumentor_.device, &wait_info, 1000000000);
+            DispatchWaitSemaphores(state_.device, &wait_info, 1000000000);
         }
 
         for (auto &cbs : retiring_) {
