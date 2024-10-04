@@ -112,7 +112,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
         }
     }
 
-    indices_buffer_.DestroyBuffer(vma_allocator_);
+    indices_buffer_.DestroyBuffer();
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 

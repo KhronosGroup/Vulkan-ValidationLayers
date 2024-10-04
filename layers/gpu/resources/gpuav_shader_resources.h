@@ -43,6 +43,8 @@ struct DescBindingInfo {
     // Hold a buffer for each descriptor set
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     std::vector<DescSetState> descriptor_set_buffers;
+
+    DescBindingInfo(Validator &gpuav) : bindless_state(gpuav) {}
 };
 
 // These match the Structures found in the instrumentation GLSL logic

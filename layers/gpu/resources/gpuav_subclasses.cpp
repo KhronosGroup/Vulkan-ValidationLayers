@@ -123,8 +123,11 @@ void AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bo
 CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                              const vvl::CommandPool *pool)
     : vvl::CommandBuffer(gpuav, handle, pCreateInfo, pool),
-      gpu_resources_manager(gpuav.vma_allocator_, *gpuav.desc_set_manager_),
-      state_(gpuav) {
+      gpu_resources_manager(*gpuav.desc_set_manager_),
+      state_(gpuav),
+      error_output_buffer_(gpuav),
+      cmd_errors_counts_buffer_(gpuav),
+      bda_ranges_snapshot_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
@@ -137,26 +140,17 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = gpuav.output_buffer_pool_;
-    VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &error_output_buffer.buffer,
-                                      &error_output_buffer.allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(command_buffer, loc, "Unable to allocate device memory for error output buffer.");
-        return false;
-    }
+    error_output_buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
     uint32_t *output_buffer_ptr;
-    result = vmaMapMemory(gpuav.vma_allocator_, error_output_buffer.allocation, reinterpret_cast<void **>(&output_buffer_ptr));
-    if (result == VK_SUCCESS) {
-        memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
-        if (gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) {
-            output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
-        }
-        vmaUnmapMemory(gpuav.vma_allocator_, error_output_buffer.allocation);
-    } else {
-        gpuav.InternalVmaError(command_buffer, loc, "Unable to map device memory allocated for error output buffer.");
-        return false;
+    error_output_buffer.MapMemory(loc, reinterpret_cast<void **>(&output_buffer_ptr));
+
+    memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
+    if (gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) {
+        output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
     }
 
+    error_output_buffer.UnmapMemory();
     return true;
 }
 
@@ -192,12 +186,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.pool = gpuav->output_buffer_pool_;
-        result = vmaCreateBuffer(gpuav->vma_allocator_, &buffer_info, &alloc_info, &cmd_errors_counts_buffer_.buffer,
-                                 &cmd_errors_counts_buffer_.allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            gpuav->InternalVmaError(gpuav->device, loc, "Unable to allocate device memory for commands errors counts buffer.");
-            return;
-        }
+        cmd_errors_counts_buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
         ClearCmdErrorsCountsBuffer(loc);
         if (gpuav->aborted_) return;
@@ -212,12 +201,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
         // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-        result = vmaCreateBuffer(gpuav->vma_allocator_, &buffer_info, &alloc_info, &bda_ranges_snapshot_.buffer,
-                                 &bda_ranges_snapshot_.allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            gpuav->InternalVmaError(gpuav->device, loc, "Unable to allocate device memory for buffer device address data.");
-            return;
-        }
+        bda_ranges_snapshot_.CreateBuffer(loc, &buffer_info, &alloc_info);
     }
 
     // Update validation commands common descriptor set
@@ -317,13 +301,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // Update buffer device address table
     // ---
     VkDeviceAddress *bda_table_ptr = nullptr;
-    assert(bda_ranges_snapshot_.allocation);
-    VkResult result =
-        vmaMapMemory(gpuav->vma_allocator_, bda_ranges_snapshot_.allocation, reinterpret_cast<void **>(&bda_table_ptr));
-    if (result != VK_SUCCESS) {
-        gpuav->InternalVmaError(gpuav->device, loc, "Unable to map device memory in UpdateBdaRangesBuffer.");
-        return false;
-    }
+    bda_ranges_snapshot_.MapMemory(loc, reinterpret_cast<void **>(&bda_table_ptr));
 
     // Buffer device address table layout
     // Ranges are sorted from low to high, and do not overlap
@@ -354,8 +332,8 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // Post update cleanups
     // ---
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
-    result = vmaFlushAllocation(gpuav->vma_allocator_, bda_ranges_snapshot_.allocation, 0, VK_WHOLE_SIZE);
-    vmaUnmapMemory(gpuav->vma_allocator_, bda_ranges_snapshot_.allocation);
+    bda_ranges_snapshot_.FlushAllocation(loc);
+    bda_ranges_snapshot_.UnmapMemory();
     bda_ranges_snapshot_version_ = gpuav->buffer_device_address_ranges_version;
 
     return true;
@@ -393,7 +371,7 @@ void CommandBuffer::ResetCBState() {
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &buffer_info : debug_printf_buffer_infos) {
-        buffer_info.output_mem_block.DestroyBuffer(gpuav->vma_allocator_);
+        buffer_info.output_mem_block.DestroyBuffer();
     }
     debug_printf_buffer_infos.clear();
 
@@ -407,9 +385,9 @@ void CommandBuffer::ResetCBState() {
     di_input_buffer_list.clear();
     current_bindless_buffer = VK_NULL_HANDLE;
 
-    error_output_buffer_.DestroyBuffer(gpuav->vma_allocator_);
-    cmd_errors_counts_buffer_.DestroyBuffer(gpuav->vma_allocator_);
-    bda_ranges_snapshot_.DestroyBuffer(gpuav->vma_allocator_);
+    error_output_buffer_.DestroyBuffer();
+    cmd_errors_counts_buffer_.DestroyBuffer();
+    bda_ranges_snapshot_.DestroyBuffer();
     bda_ranges_snapshot_version_ = 0;
 
     if (validation_cmd_desc_pool_ != VK_NULL_HANDLE && validation_cmd_desc_set_ != VK_NULL_HANDLE) {
@@ -435,16 +413,10 @@ void CommandBuffer::ResetCBState() {
 }
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
-    auto gpuav = static_cast<Validator *>(&dev_data);
     uint32_t *cmd_errors_counts_buffer_ptr = nullptr;
-    VkResult result = vmaMapMemory(gpuav->vma_allocator_, cmd_errors_counts_buffer_.allocation,
-                                   reinterpret_cast<void **>(&cmd_errors_counts_buffer_ptr));
-    if (result != VK_SUCCESS) {
-        gpuav->InternalVmaError(gpuav->device, loc, "Unable to map device memory for commands errors counts buffer.");
-        return;
-    }
+    cmd_errors_counts_buffer_.MapMemory(loc, reinterpret_cast<void **>(&cmd_errors_counts_buffer_ptr));
     std::memset(cmd_errors_counts_buffer_ptr, 0, static_cast<size_t>(GetCmdErrorsCountsBufferByteSize()));
-    vmaUnmapMemory(gpuav->vma_allocator_, cmd_errors_counts_buffer_.allocation);
+    cmd_errors_counts_buffer_.UnmapMemory();
 }
 
 void CommandBuffer::UpdateCommandCount(VkPipelineBindPoint bind_point) {
@@ -474,7 +446,7 @@ bool CommandBuffer::PreProcess(const Location &loc) {
     return !per_command_error_loggers.empty() || has_build_as_cmd;
 }
 
-bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsNull(); }
+bool CommandBuffer::NeedsPostProcess() { return error_output_buffer_.buffer != VK_NULL_HANDLE; }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
@@ -483,15 +455,9 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (auto &buffer_info : debug_printf_buffer_infos) {
         char *data;
-
-        VkResult result = vmaMapMemory(gpuav->vma_allocator_, buffer_info.output_mem_block.allocation, (void **)&data);
-        if (result != VK_SUCCESS) {
-            gpuav->InternalVmaError(queue, loc, "Unable to map device memory allocated for DebugPrintf buffer.");
-            return;
-        }
-
+        buffer_info.output_mem_block.MapMemory(loc, reinterpret_cast<void **>(&data));
         debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, buffer_info, (uint32_t *)data, loc);
-        vmaUnmapMemory(gpuav->vma_allocator_, buffer_info.output_mem_block.allocation);
+        buffer_info.output_mem_block.UnmapMemory();
     }
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -502,11 +468,10 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     }
 
     bool skip = false;
-    uint32_t *error_output_buffer_ptr = nullptr;
-    VkResult result =
-        vmaMapMemory(gpuav->vma_allocator_, error_output_buffer_.allocation, reinterpret_cast<void **>(&error_output_buffer_ptr));
-    assert(result == VK_SUCCESS);
-    if (result == VK_SUCCESS) {
+    {
+        uint32_t *error_output_buffer_ptr = nullptr;
+        error_output_buffer_.MapMemory(loc, reinterpret_cast<void **>(&error_output_buffer_ptr));
+
         // The second word in the debug output buffer is the number of words that would have
         // been written by the shader instrumentation, if there was enough room in the buffer we provided.
         // The number of words actually written by the shaders is determined by the size of the buffer
@@ -543,7 +508,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                    glsl::kErrorBufferByteSize - cst::stream_output_data_offset * sizeof(uint32_t));
         }
         error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
-        vmaUnmapMemory(gpuav->vma_allocator_, error_output_buffer_.allocation);
+        error_output_buffer_.UnmapMemory();
     }
 
     ClearCmdErrorsCountsBuffer(loc);

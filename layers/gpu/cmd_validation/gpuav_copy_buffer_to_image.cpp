@@ -169,7 +169,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     uint32_t max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.height *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
-    DeviceMemoryBlock copy_src_regions_mem_block;
+    DeviceMemoryBlock copy_src_regions_mem_block(gpuav);
     {
         // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {
@@ -200,22 +200,12 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
 
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
-        VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &copy_src_regions_mem_block.buffer,
-                                          &copy_src_regions_mem_block.allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            gpuav.InternalVmaError(cb_state.VkHandle(), loc, "Unable to allocate device memory for GPU copy of pRegions.");
-            return;
-        }
+        copy_src_regions_mem_block.CreateBuffer(loc, &buffer_info, &alloc_info);
+
         cb_state.gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
 
         uint32_t *gpu_regions_u32_ptr = nullptr;
-        result = vmaMapMemory(gpuav.vma_allocator_, copy_src_regions_mem_block.allocation,
-                              reinterpret_cast<void **>(&gpu_regions_u32_ptr));
-
-        if (result != VK_SUCCESS) {
-            gpuav.InternalVmaError(cb_state.VkHandle(), loc, "Unable to map device memory for GPU copy of pRegions.");
-            return;
-        }
+        copy_src_regions_mem_block.MapMemory(loc, reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;
@@ -260,7 +250,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
 
         if (gpu_regions_count == 0) {
             // Nothing to validate
-            vmaUnmapMemory(gpuav.vma_allocator_, copy_src_regions_mem_block.allocation);
+            copy_src_regions_mem_block.UnmapMemory();
             return;
         }
 
@@ -273,7 +263,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         gpu_regions_u32_ptr[6] = 0;
         gpu_regions_u32_ptr[7] = 0;
 
-        vmaUnmapMemory(gpuav.vma_allocator_, copy_src_regions_mem_block.allocation);
+        copy_src_regions_mem_block.UnmapMemory();
     }
 
     // Update descriptor set
