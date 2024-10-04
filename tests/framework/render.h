@@ -100,7 +100,6 @@ class VkRenderFramework : public VkTestFramework {
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
     vkt::Swapchain CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
                                    VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
-    std::vector<VkImage> GetSwapchainImages(const VkSwapchainKHR swapchain);
 
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);

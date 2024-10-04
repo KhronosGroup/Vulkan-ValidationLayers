@@ -47,12 +47,8 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSwapchain());
-    uint32_t image_count;
-    std::vector<VkImage> images;
-    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
-    images.resize(image_count, VK_NULL_HANDLE);
-    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
 
+    const std::vector<VkImage> images = m_swapchain.GetImages();
     std::vector<bool> image_used(images.size(), false);
     vkt::Fence fence(*m_device);
 
@@ -198,7 +194,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     RETURN_IF_SKIP(InitSwapchain());
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -241,7 +237,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
     RETURN_IF_SKIP(InitSwapchain());
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();

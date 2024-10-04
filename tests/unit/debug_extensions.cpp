@@ -558,13 +558,8 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    VkSwapchainKHR swapchain;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-
-    uint32_t imageCount;
-    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
-    std::vector<VkImage> images(imageCount);
-    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
+    const auto images = swapchain.GetImages();
 
     {
         VkDebugMarkerObjectNameInfoEXT name_info = vku::InitStructHelper();
@@ -589,6 +584,4 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
         vk::DebugMarkerSetObjectTagEXT(device(), &name_info);
         m_errorMonitor->VerifyFound();
     }
-
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
 }

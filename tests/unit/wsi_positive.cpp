@@ -374,7 +374,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     // Can transition layout after the memory is bound
     peer_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
 
     vkt::Fence fence(*m_device);
     const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
@@ -419,7 +419,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     const VkImageMemoryBarrier present_transition =
@@ -439,7 +439,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -456,7 +456,7 @@ TEST_F(PositiveWsi, WaitForAcquireFenceAndIgnoreSemaphore) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -479,7 +479,7 @@ TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -506,7 +506,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -549,7 +549,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    auto swapchain_images = GetSwapchainImages(m_swapchain);
+    auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -601,7 +601,7 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchainImages = GetSwapchainImages(m_swapchain);
+    const auto swapchainImages = m_swapchain.GetImages();
     const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
     {
@@ -718,7 +718,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     swapchain_create_info.oldSwapchain = 0;
 
     m_swapchain.Init(*m_device, swapchain_create_info);
-    const auto images = GetSwapchainImages(m_swapchain);
+    const auto images = m_swapchain.GetImages();
 
     vkt::Fence fence(*m_device);
     const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
@@ -787,10 +787,7 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive) {
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
 
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
 }
 #endif
 
@@ -835,10 +832,7 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive2) {
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
 
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
 }
 #endif
 
@@ -897,7 +891,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     pipe.cb_attachments_ = pcbas;
     pipe.CreateGraphicsPipeline();
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const vkt::Fence fence(*m_device);
 
     uint32_t image_index;
@@ -1077,7 +1071,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     ASSERT_TRUE(m_swapchain.initialized());
 
     // Get VkImage from swapchain which should be protected
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     VkImage protected_image = swapchain_images.at(0);  // only need 1 image to test
 
     // Create a protected image view
@@ -1282,19 +1276,14 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    VkSwapchainKHR swapchain;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
 
     vkt::Fence fence(*m_device);
 
-    uint32_t imageIndex;
-    vk::AcquireNextImageKHR(device(), swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &imageIndex);
+    uint32_t imageIndex = swapchain.AcquireNextImage(fence, kWaitTimeout);
     vk::WaitForFences(device(), 1u, &fence.handle(), VK_FALSE, kWaitTimeout);
 
-    uint32_t imageCount;
-    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
-    std::vector<VkImage> images(imageCount);
-    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, images.data());
+    std::vector<VkImage> images = swapchain.GetImages();
 
     const VkImageMemoryBarrier present_transition = TransitionToPresent(images[imageIndex], VK_IMAGE_LAYOUT_UNDEFINED, 0);
     m_command_buffer.Begin();
@@ -1303,8 +1292,6 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Present(vkt::no_semaphore, swapchain, imageIndex);
-
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7025
@@ -1335,7 +1322,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         const vkt::Semaphore acquire_semaphore(*m_device);
         const vkt::Semaphore submit_semaphore(*m_device);
 
-        const auto swapchain_images = GetSwapchainImages(m_swapchain);
+        const auto swapchain_images = m_swapchain.GetImages();
         const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
         const VkImageMemoryBarrier present_transition =
             TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
@@ -1395,7 +1382,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -1459,7 +1446,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
     const auto present_transition = TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
 
@@ -1504,11 +1491,11 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
         CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
     const vkt::Semaphore acquire_semaphore(*m_device);
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     const vkt::Semaphore acquire_semaphore2(*m_device);
-    const auto swapchain_images2 = GetSwapchainImages(swapchain2);
+    const auto swapchain_images2 = swapchain2.GetImages();
     const uint32_t image_index2 = swapchain2.AcquireNextImage(acquire_semaphore2, kWaitTimeout);
 
     SetImageLayoutPresentSrc(swapchain_images[image_index]);
@@ -1605,9 +1592,8 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+    { vkt::Swapchain swapchain(*m_device, swapchain_create_info); }
+
     vk::DestroySurfaceKHR(instance(), surface, nullptr);
     ReleaseWaylandContext(wayland_ctx);
 #endif

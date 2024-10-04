@@ -1927,6 +1927,19 @@ void Swapchain::Init(const Device &dev, const VkSwapchainCreateInfoKHR &info) {
     }
 }
 
+uint32_t Swapchain::GetImageCount() const {
+    uint32_t image_count = 0;
+    vk::GetSwapchainImagesKHR(device(), handle(), &image_count, nullptr);
+    return image_count;
+}
+
+std::vector<VkImage> Swapchain::GetImages() const {
+    uint32_t image_count = GetImageCount();
+    std::vector<VkImage> images(image_count);
+    vk::GetSwapchainImagesKHR(device(), handle(), &image_count, images.data());
+    return images;
+}
+
 uint32_t Swapchain::AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result) {
     uint32_t image_index = 0;
     VkResult acquire_result = vk::AcquireNextImageKHR(device(), handle(), timeout, image_acquired, VK_NULL_HANDLE, &image_index);

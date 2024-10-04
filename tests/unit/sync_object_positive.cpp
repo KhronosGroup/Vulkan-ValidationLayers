@@ -1345,10 +1345,6 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    uint32_t image_count;
-    vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
-    std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
-    vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
 
     vkt::Fence fence(*m_device);
     vkt::Semaphore sem(*m_device);

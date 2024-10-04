@@ -1185,7 +1185,7 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const vkt::Fence fence(*m_device);
     uint32_t image_index = 0;
     {

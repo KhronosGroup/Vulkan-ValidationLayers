@@ -1421,6 +1421,9 @@ class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
     void Init(const Device &dev, const VkSwapchainCreateInfoKHR &info);
     void SetName(const char *name) { NonDispHandle<VkSwapchainKHR>::SetName(VK_OBJECT_TYPE_SWAPCHAIN_KHR, name); }
 
+    uint32_t GetImageCount() const;
+    std::vector<VkImage> GetImages() const;
+
     uint32_t AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result = nullptr);
     uint32_t AcquireNextImage(const Fence &image_acquired, uint64_t timeout, VkResult *result = nullptr);
 };
