@@ -38,7 +38,7 @@ class DescriptorSet : public vvl::DescriptorSet {
 
         const VkDescriptorSet set;
         const uint32_t version;
-        AddressMemoryBlock buffer;
+        DeviceMemoryBlock buffer;
 
         std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DescriptorSet &set,
                                                                   uint32_t shader_set) const;
@@ -57,7 +57,7 @@ class DescriptorSet : public vvl::DescriptorSet {
   private:
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
-    AddressMemoryBlock layout_;
+    DeviceMemoryBlock layout_;
     std::atomic<uint32_t> current_version_{0};
     std::shared_ptr<State> last_used_state_;
     std::shared_ptr<State> output_state_;
@@ -83,7 +83,7 @@ class DescriptorHeap {
     DescriptorId next_id_{1};
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
-    AddressMemoryBlock buffer_;
+    DeviceMemoryBlock buffer_;
     uint32_t *gpu_heap_state_{nullptr};
 };
 

@@ -174,6 +174,14 @@ void DeviceMemoryBlock::CreateBuffer(const Location &loc, const VkBufferCreateIn
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.");
     }
+
+    if (buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+        // After creating the buffer, get the address right away
+        device_address = gpuav.GetBufferDeviceAddressHelper(buffer);
+        if (device_address == 0) {
+            gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
+        }
+    }
 }
 
 void DeviceMemoryBlock::DestroyBuffer() {
@@ -181,22 +189,6 @@ void DeviceMemoryBlock::DestroyBuffer() {
         vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation);
         buffer = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
-    }
-}
-
-void AddressMemoryBlock::CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                                      const VmaAllocationCreateInfo *allocation_create_info) {
-    VkResult result =
-        vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.");
-    }
-
-    assert(buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
-    // After creating the buffer, get the address right away
-    device_address = gpuav.GetBufferDeviceAddressHelper(buffer);
-    if (device_address == 0) {
-        gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
     }
 }
 
