@@ -167,7 +167,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;
 
-    void InternalVmaError(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
 
@@ -225,7 +224,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     uint32_t instrumentation_desc_set_bind_index_ = 0;
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
     VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
-    VmaAllocator vma_allocator_ = {};
     vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
