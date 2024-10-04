@@ -211,7 +211,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // sense too)
     mutable bool aborted_ = false;
 
-    PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
     // The descriptor slot we will be injecting our error buffer into
     uint32_t instrumentation_desc_set_bind_index_ = 0;

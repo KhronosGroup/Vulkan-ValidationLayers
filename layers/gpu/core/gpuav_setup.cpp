@@ -419,6 +419,13 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
 
     desc_set_manager_ = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
 
+    // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
+    {
+        auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
+        assert(chain_info->u.pfnSetDeviceLoaderData);
+        vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
+    }
+
     if (gpuav_settings.shader_instrumentation.bindless_descriptor) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);

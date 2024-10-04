@@ -79,11 +79,6 @@ void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateIn
         return;
     }
 
-    // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
-    auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
-    assert(chain_info->u.pfnSetDeviceLoaderData);
-    vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
-
     // maxBoundDescriptorSets limit, but possibly adjusted
     const uint32_t adjusted_max_desc_sets_limit =
         std::min(kMaxAdjustedBoundDescriptorSet, phys_dev_props.limits.maxBoundDescriptorSets);
