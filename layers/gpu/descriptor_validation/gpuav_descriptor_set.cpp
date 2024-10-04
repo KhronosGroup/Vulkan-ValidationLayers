@@ -26,47 +26,6 @@ using vvl::DescriptorClass;
 
 namespace gpuav {
 
-void AddressBuffer::MapMemory(const Location &loc, void **data) const {
-    VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, data);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Unable to map device memory.", true);
-    }
-}
-
-void AddressBuffer::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }
-
-void AddressBuffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
-    VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Unable to flush device memory.", true);
-    }
-}
-
-void AddressBuffer::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
-    VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Unable to invalidate device memory.", true);
-    }
-}
-
-void AddressBuffer::CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                                 const VmaAllocationCreateInfo *allocation_create_info) {
-    VkResult result =
-        vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.", true);
-    }
-
-    assert(buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
-    // After creating the buffer, get the address right away
-    device_addr = gpuav.GetBufferDeviceAddressHelper(buffer);
-    if (device_addr == 0) {
-        gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
-    }
-}
-
-void AddressBuffer::DestroyBuffer() { vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation); }
-
 // Returns the number of bytes to hold 32 bit aligned array of bits.
 static uint32_t BitBufferSize(uint32_t num_bits) {
     static constexpr uint32_t kBitsPerWord = 32;

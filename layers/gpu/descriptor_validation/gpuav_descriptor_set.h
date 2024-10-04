@@ -20,31 +20,10 @@
 #include <atomic>
 #include <mutex>
 #include "state_tracker/descriptor_sets.h"
-#include "vma/vma.h"
+#include "gpu/resources/gpuav_resources.h"
 
 namespace gpuav {
-
 class Validator;
-
-// TODO - This probably could be used elsewhere and a more universal object for creating buffers.
-struct AddressBuffer {
-    const Validator &gpuav;
-    VmaAllocation allocation{nullptr};
-    VkBuffer buffer{VK_NULL_HANDLE};
-    VkDeviceAddress device_addr{0};
-
-    AddressBuffer(Validator &gpuav) : gpuav(gpuav) {}
-
-    // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these clean
-    void MapMemory(const Location &loc, void **data) const;
-    void UnmapMemory() const;
-    void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
-    void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
-
-    void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                      const VmaAllocationCreateInfo *allocation_create_info);
-    void DestroyBuffer();
-};
 
 class DescriptorSet : public vvl::DescriptorSet {
   public:
@@ -59,7 +38,7 @@ class DescriptorSet : public vvl::DescriptorSet {
 
         const VkDescriptorSet set;
         const uint32_t version;
-        AddressBuffer buffer;
+        AddressMemoryBlock buffer;
 
         std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DescriptorSet &set,
                                                                   uint32_t shader_set) const;
@@ -78,7 +57,7 @@ class DescriptorSet : public vvl::DescriptorSet {
   private:
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
-    AddressBuffer layout_;
+    AddressMemoryBlock layout_;
     std::atomic<uint32_t> current_version_{0};
     std::shared_ptr<State> last_used_state_;
     std::shared_ptr<State> output_state_;
@@ -104,7 +83,7 @@ class DescriptorHeap {
     DescriptorId next_id_{1};
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
-    AddressBuffer buffer_;
+    AddressMemoryBlock buffer_;
     uint32_t *gpu_heap_state_{nullptr};
 };
 
