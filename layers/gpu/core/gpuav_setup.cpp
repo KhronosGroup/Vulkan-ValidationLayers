@@ -374,9 +374,9 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     uint32_t mem_type_index;
-    VkResult result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &alloc_create_info, &mem_type_index);
+    result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &alloc_create_info, &mem_type_index);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "Unable to find memory type index.", true);
+        InternalVmaError(device, loc, "Unable to find memory type index.");
         return;
     }
     VmaPoolCreateInfo vma_pool_ci = {};
@@ -388,7 +388,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     }
     result = vmaCreatePool(vma_allocator_, &vma_pool_ci, &output_buffer_pool_);
     if (result != VK_SUCCESS) {
-        InternalError(device, loc, "Unable to create VMA memory pool.", true);
+        InternalVmaError(device, loc, "Unable to create VMA memory pool.");
         return;
     }
 
@@ -436,14 +436,14 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         result = vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &indices_buffer_.buffer, &indices_buffer_.allocation,
                                  nullptr);
         if (result != VK_SUCCESS) {
-            InternalError(device, loc, "Unable to allocate device memory for command indices.", true);
+            InternalVmaError(device, loc, "Unable to allocate device memory for command indices.");
             return;
         }
 
         uint32_t *indices_ptr = nullptr;
         result = vmaMapMemory(vma_allocator_, indices_buffer_.allocation, reinterpret_cast<void **>(&indices_ptr));
         if (result != VK_SUCCESS) {
-            InternalError(device, loc, "Unable to map device memory for command indices buffer.", true);
+            InternalVmaError(device, loc, "Unable to map device memory for command indices buffer.");
             return;
         }
 
