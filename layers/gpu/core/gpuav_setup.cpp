@@ -220,6 +220,25 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
     BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
 
     // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
+    // If the features are not supported, can't internal error until post device creation
+    VkPhysicalDeviceFeatures supported_features{};
+    DispatchGetPhysicalDeviceFeatures(physicalDevice, &supported_features);
+
+    if (auto enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures)) {
+        if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
+            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::fragmentStoresAndAtomics to VK_TRUE");
+            enabled_features->fragmentStoresAndAtomics = VK_TRUE;
+        }
+        if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
+            InternalWarning(device, record_obj.location,
+                            "Forcing VkPhysicalDeviceFeatures::vertexPipelineStoresAndAtomics to VK_TRUE");
+            enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
+        }
+        if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
+            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::shaderInt64 to VK_TRUE");
+            enabled_features->shaderInt64 = VK_TRUE;
+        }
+    }
 
     std::vector<VkExtensionProperties> available_extensions = GetExtensions(physicalDevice);
 

@@ -73,9 +73,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
-    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                   const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
-                                   vku::safe_VkDeviceCreateInfo *modified_create_info) override;
     void PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
