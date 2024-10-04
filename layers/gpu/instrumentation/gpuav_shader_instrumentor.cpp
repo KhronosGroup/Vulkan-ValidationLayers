@@ -60,33 +60,6 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
     }
 }
 
-// These are the common things required for anything that deals with shader instrumentation
-void GpuShaderInstrumentor::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                      const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                                      const RecordObject &record_obj,
-                                                      vku::safe_VkDeviceCreateInfo *modified_create_info) {
-    // Force enable required features
-    // If the features are not supported, can't internal error until post device creation
-    VkPhysicalDeviceFeatures supported_features{};
-    DispatchGetPhysicalDeviceFeatures(physicalDevice, &supported_features);
-
-    if (auto enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures)) {
-        if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
-            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::fragmentStoresAndAtomics to VK_TRUE");
-            enabled_features->fragmentStoresAndAtomics = VK_TRUE;
-        }
-        if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
-            InternalWarning(device, record_obj.location,
-                            "Forcing VkPhysicalDeviceFeatures::vertexPipelineStoresAndAtomics to VK_TRUE");
-            enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
-        }
-        if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
-            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::shaderInt64 to VK_TRUE");
-            enabled_features->shaderInt64 = VK_TRUE;
-        }
-    }
-}
-
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
 void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::PostCreateDevice(pCreateInfo, loc);
