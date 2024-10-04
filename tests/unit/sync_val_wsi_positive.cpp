@@ -30,7 +30,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
     RETURN_IF_SKIP(InitSwapchain());
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -80,7 +80,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitAutomaticVisibility) {
     RETURN_IF_SKIP(InitSwapchain());
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
@@ -122,7 +122,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     RETURN_IF_SKIP(InitSwapchain());
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -159,7 +159,7 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSwapchain());
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     {
         vkt::CommandBuffer cmd(*m_device, m_command_pool);
         cmd.Begin();
@@ -266,7 +266,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitSyncVal());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(*m_default_queue, *m_device, image);
     }

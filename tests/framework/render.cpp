@@ -915,15 +915,6 @@ vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImage
     return swapchain;
 }
 
-std::vector<VkImage> VkRenderFramework::GetSwapchainImages(const VkSwapchainKHR swapchain) {
-    uint32_t imageCount = 0;
-    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, nullptr);
-    vector<VkImage> swapchainImages;
-    swapchainImages.resize(imageCount);
-    vk::GetSwapchainImagesKHR(device(), swapchain, &imageCount, swapchainImages.data());
-    return swapchainImages;
-}
-
 void VkRenderFramework::DestroySwapchain() {
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->Wait();

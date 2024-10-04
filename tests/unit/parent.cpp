@@ -377,9 +377,8 @@ TEST_F(NegativeParent, Instance_Surface) {
     swapchain_ci.oldSwapchain = VK_NULL_HANDLE;
 
     // surface from a different instance
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-commonparent");
-    vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -426,17 +425,14 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     swapchain_ci.clipped = VK_FALSE;
     swapchain_ci.oldSwapchain = VK_NULL_HANDLE;
 
-    VkSwapchainKHR other_device_swapchain = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateSwapchainKHR(instance2_device.handle(), &swapchain_ci, nullptr, &other_device_swapchain));
+    vkt::Swapchain other_device_swapchain(instance2_device, swapchain_ci);
 
     // oldSwapchain from a different device
     swapchain_ci.surface = m_surface;
     swapchain_ci.oldSwapchain = other_device_swapchain;
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-commonparent");
-    vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
-    vk::DestroySwapchainKHR(instance2_device.handle(), other_device_swapchain, nullptr);
 }
 
 TEST_F(NegativeParent, Instance_Surface_2) {

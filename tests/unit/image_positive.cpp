@@ -462,11 +462,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
 
     vk::BindImageMemory2(device(), 1, &bind_info);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
+    const std::vector<VkImage> swapchain_images = m_swapchain.GetImages();
     
     vkt::Semaphore image_acquired(*m_device);
     const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);

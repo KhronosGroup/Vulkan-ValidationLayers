@@ -75,15 +75,10 @@ TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
         // Create swapchain, monitor potential validation error
         if (!surface_protected_capabilities.supportsProtected) {
             m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-flags-03187");
-        }
-
-        VkSwapchainKHR swapchain{};
-        vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
-
-        if (!surface_protected_capabilities.supportsProtected) {
+            vkt::Swapchain swapchain(*m_device, swapchain_ci);
             m_errorMonitor->VerifyFound();
         } else {
-            vk::DestroySwapchainKHR(device(), swapchain, nullptr);
+            vkt::Swapchain swapchain(*m_device, swapchain_ci);
         }
     }
 
@@ -94,9 +89,8 @@ TEST_F(NegativeWsi, InitSwapchainPotentiallyIncompatibleFlag) {
             VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, &image_format_props) == VK_SUCCESS) {
         swapchain_ci.flags = VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR;
 
-        VkSwapchainKHR swapchain{};
         m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429");
-        vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
+        vkt::Swapchain swapchain(*m_device, swapchain_ci);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -326,7 +320,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     bind_info.memoryOffset = 0;
     vk::BindImageMemory2(device(), 1, &bind_info);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
 
     m_command_buffer.Begin();
 
@@ -417,18 +411,15 @@ TEST_F(NegativeWsi, SwapchainImageParams) {
         GTEST_SKIP() << "Graphics queue does not support present";
     }
 
-    VkSwapchainKHR swapchain{};
     if (found_bad_usage) {
         m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778");
-        vk::CreateSwapchainKHR(device(), &create_info_bad_usage, nullptr, &swapchain);
+        vkt::Swapchain swapchain(*m_device, create_info_bad_usage);
         m_errorMonitor->VerifyFound();
     } else {
         printf(
             "could not find imageFormat and imageUsage values, supported by "
             "surface but unsupported by image, skipping test\n");
     }
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
-    swapchain = VK_NULL_HANDLE;
 
     VkImageFormatProperties props;
     VkResult res = vk::GetPhysicalDeviceImageFormatProperties(Gpu(), good_create_info.imageFormat, VK_IMAGE_TYPE_2D,
@@ -441,7 +432,7 @@ TEST_F(NegativeWsi, SwapchainImageParams) {
     VkSwapchainCreateInfoKHR create_info_bad_flags = good_create_info;
     create_info_bad_flags.flags = VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429");
-    vk::CreateSwapchainKHR(device(), &create_info_bad_flags, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, create_info_bad_flags);
     m_errorMonitor->VerifyFound();
 }
 
@@ -596,8 +587,8 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    uint32_t image_count;
-    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    const uint32_t image_count = m_swapchain.GetImageCount();
+
     VkSurfaceCapabilitiesKHR caps;
     ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &caps));
 
@@ -626,7 +617,7 @@ TEST_F(NegativeWsi, GetSwapchainImageAndTryDestroy) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto images = GetSwapchainImages(m_swapchain);
+    const auto images = m_swapchain.GetImages();
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyImage-image-04882");
     vk::DestroyImage(device(), images.at(0), nullptr);
@@ -720,8 +711,8 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    uint32_t image_count;
-    ASSERT_EQ(VK_SUCCESS, vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    const uint32_t image_count = m_swapchain.GetImageCount();
+
     VkSurfaceCapabilitiesKHR caps;
     ASSERT_EQ(VK_SUCCESS, vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &caps));
 
@@ -1111,7 +1102,7 @@ TEST_F(NegativeWsi, SwapchainPresentShared) {
 
     m_swapchain.Init(*m_device, swapchain_create_info);
 
-    const auto images = GetSwapchainImages(m_swapchain);
+    const auto images = m_swapchain.GetImages();
     uint32_t image_index = 0;
 
     // Try to Present without Acquire...
@@ -1651,8 +1642,8 @@ TEST_F(NegativeWsi, PresentIdWait) {
         CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     ASSERT_TRUE(swapchain2.initialized());
 
-    auto images = GetSwapchainImages(m_swapchain);
-    auto images2 = GetSwapchainImages(swapchain2);
+    auto images = m_swapchain.GetImages();
+    auto images2 = swapchain2.GetImages();
 
     uint32_t image_indices[2];
     vkt::Fence fence(*m_device);
@@ -1731,7 +1722,7 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
-    const auto images = GetSwapchainImages(m_swapchain);
+    const auto images = m_swapchain.GetImages();
 
     vkt::Fence fence(*m_device);
     const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
@@ -1792,8 +1783,8 @@ TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
 
     m_swapchain.Init(*m_device, swapchain_info);
 
-    uint32_t imageCount;
-    vk::GetSwapchainImagesKHR(device(), m_swapchain, &imageCount, nullptr);
+    // This test initiates image count query, but don't need resulting value
+    m_swapchain.GetImageCount(); 
 
     const uint32_t image_index = 0;
     VkPresentInfoKHR present_info = vku::InitStructHelper();
@@ -2213,7 +2204,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     swapchain_create_info.pNext = nullptr;
     m_swapchain.Init(*m_device, swapchain_create_info);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const vkt::Semaphore acquire_semaphore(*m_device);
     m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
@@ -2283,7 +2274,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 
     m_swapchain.Init(*m_device, swapchain_create_info);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -2412,7 +2403,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     const VkImageMemoryBarrier present_transition =
@@ -2541,10 +2532,10 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = m_swapchain;
 
-    VkSwapchainKHR swapchain_one, swapchain_two;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain_one);
+    vkt::Swapchain swapchain_one(*m_device, swapchain_create_info);
+
     swapchain_create_info.oldSwapchain = swapchain_one;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain_two);
+    vkt::Swapchain swapchain_two(*m_device, swapchain_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674");
     vk::AcquireFullScreenExclusiveModeEXT(device(), swapchain_one);
@@ -2560,9 +2551,6 @@ TEST_F(NegativeWsi, AcquireFullScreenExclusiveModeEXT) {
         vk::AcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
         m_errorMonitor->VerifyFound();
     }
-
-    vk::DestroySwapchainKHR(device(), swapchain_one, nullptr);
-    vk::DestroySwapchainKHR(device(), swapchain_two, nullptr);
 }
 #endif
 
@@ -2600,11 +2588,9 @@ TEST_F(NegativeWsi, CreateSwapchainFullscreenExclusive) {
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
 
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-
     surface_full_screen_exlusive_info.fullScreenExclusive = VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-pNext-02679");
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 }
 #endif
@@ -2849,7 +2835,7 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout) {
 
     const vkt::Semaphore acquire_semaphore(*m_device);
 
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
     VkPresentInfoKHR present = vku::InitStructHelper();
@@ -2894,9 +2880,7 @@ TEST_F(NegativeWsi, CreatingSwapchainWithExtent) {
     swapchain_ci.clipped = VK_FALSE;
     swapchain_ci.oldSwapchain = 0;
 
-    VkSwapchainKHR swapchain;
-    vk::CreateSwapchainKHR(device(), &swapchain_ci, nullptr, &swapchain);
-
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2958,7 +2942,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
     }
 
     uint32_t image_index{0};
-    const auto images = GetSwapchainImages(m_swapchain);
+    const auto images = m_swapchain.GetImages();
 
     vkt::Fence fence(*m_device);
     vkt::Semaphore semaphore(*m_device);
@@ -3002,7 +2986,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     uint32_t image_index{0};
-    const auto images = GetSwapchainImages(m_swapchain);
+    const auto images = m_swapchain.GetImages();
 
     vkt::Fence fence(*m_device);
     vkt::Semaphore semaphore(*m_device);
@@ -3034,7 +3018,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -3061,7 +3045,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -3096,7 +3080,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -3128,7 +3112,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    const auto swapchain_images = GetSwapchainImages(m_swapchain);
+    const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
         SetImageLayoutPresentSrc(image);
     }
@@ -3181,9 +3165,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = m_swapchain;
 
-    VkSwapchainKHR swapchain;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
     vkt::Semaphore semaphore(*m_device);
 
     VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
@@ -3200,8 +3182,6 @@ TEST_F(NegativeWsi, SwapchainAcquireImageRetired) {
     m_errorMonitor->SetDesiredError("VUID-VkAcquireNextImageInfoKHR-swapchain-01675");
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
 }
 
 TEST_F(NegativeWsi, PresentInfoParameters) {
@@ -3295,19 +3275,13 @@ TEST_F(NegativeWsi, UseDestroyedSwapchain) {
     swapchain_create_info.presentMode = m_surface_non_shared_present_mode;
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
-    VkSwapchainKHR swapchain{};
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
-    uint32_t swapchain_images_count = 0;
-    vk::GetSwapchainImagesKHR(device(), swapchain, &swapchain_images_count, nullptr);
-    std::vector<VkImage> swapchain_images;
-    swapchain_images.resize(swapchain_images_count);
-    vk::GetSwapchainImagesKHR(device(), swapchain, &swapchain_images_count, swapchain_images.data());
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
+    const std::vector<VkImage> swapchain_images = swapchain.GetImages();
 
     vkt::Fence fence(*m_device);
-    uint32_t index;
     vk::ResetFences(device(), 1, &fence.handle());
-    vk::AcquireNextImageKHR(device(), swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &index);
+    const uint32_t index = swapchain.AcquireNextImage(fence, kWaitTimeout);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -3341,18 +3315,16 @@ TEST_F(NegativeWsi, UseDestroyedSwapchain) {
     pipe.gp_ci_.renderPass = rp.handle();
     pipe.CreateGraphicsPipeline();
 
-    VkSwapchainKHR oldSwapchain = swapchain;
-    swapchain_create_info.oldSwapchain = swapchain;
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
-    vk::DestroySwapchainKHR(device(), oldSwapchain, nullptr);
+    vkt::Swapchain oldSwapchain = std::move(swapchain);
+    swapchain_create_info.oldSwapchain = oldSwapchain;
+    swapchain.Init(*m_device, swapchain_create_info);
+    oldSwapchain.destroy();
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle());
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
-
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
 }
 
 TEST_F(NegativeWsi, ImageCompressionControlSwapchainWithoutFeature) {
@@ -3380,9 +3352,8 @@ TEST_F(NegativeWsi, ImageCompressionControlSwapchainWithoutFeature) {
     create_info.clipped = VK_FALSE;
     create_info.oldSwapchain = 0;
 
-    VkSwapchainKHR swapchain;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-pNext-06752");
-    vk::CreateSwapchainKHR(*m_device, &create_info, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, create_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3425,7 +3396,7 @@ TEST_F(NegativeWsi, PresentDuplicatedSwapchain) {
         GTEST_SKIP() << "Failed to create swapchain";
     }
 
-    auto images = GetSwapchainImages(m_swapchain);
+    auto images = m_swapchain.GetImages();
 
     vkt::Fence fence1(*m_device);
     vkt::Fence fence2(*m_device);
@@ -3562,9 +3533,8 @@ TEST_F(NegativeWsi, NonSupportedPresentMode) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    VkSwapchainKHR swapchain;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-presentMode-01281");
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
+    vkt::Swapchain swapchain(*m_device, swapchain_create_info);
     m_errorMonitor->VerifyFound();
 }
 
