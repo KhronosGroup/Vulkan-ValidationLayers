@@ -18,10 +18,8 @@
 
 #include "containers/custom_containers.h"
 #include "generated/chassis.h"
-#include "state_tracker/cmd_buffer_state.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "state_tracker/state_tracker.h"
 #include "gpu/spirv/instruction.h"
-#include "vma/vma.h"
 
 #include <vector>
 
