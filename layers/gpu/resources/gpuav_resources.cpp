@@ -17,6 +17,7 @@
 
 #include "gpu/resources/gpuav_resources.h"
 
+#include "gpu/core/gpuav.h"
 #include "generated/layer_chassis_dispatch.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -150,6 +151,47 @@ void DeviceMemoryBlock::Destroy(VmaAllocator allocator) {
         allocation = VK_NULL_HANDLE;
     }
 }
+
+void AddressMemoryBlock::MapMemory(const Location &loc, void **data) const {
+    VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, data);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, loc, "Unable to map device memory.", true);
+    }
+}
+
+void AddressMemoryBlock::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }
+
+void AddressMemoryBlock::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+    VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, loc, "Unable to flush device memory.", true);
+    }
+}
+
+void AddressMemoryBlock::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+    VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, loc, "Unable to invalidate device memory.", true);
+    }
+}
+
+void AddressMemoryBlock::CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                                      const VmaAllocationCreateInfo *allocation_create_info) {
+    VkResult result =
+        vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
+    if (result != VK_SUCCESS) {
+        gpuav.InternalError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.", true);
+    }
+
+    assert(buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT);
+    // After creating the buffer, get the address right away
+    device_addr = gpuav.GetBufferDeviceAddressHelper(buffer);
+    if (device_addr == 0) {
+        gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
+    }
+}
+
+void AddressMemoryBlock::DestroyBuffer() { vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation); }
 
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {
     std::pair<VkDescriptorPool, VkDescriptorSet> descriptor;

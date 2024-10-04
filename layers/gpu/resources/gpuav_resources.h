@@ -23,7 +23,9 @@
 #include <unordered_map>
 #include <vector>
 
+struct Location;
 namespace gpuav {
+class Validator;
 
 class DescriptorSetManager {
   public:
@@ -48,11 +50,33 @@ class DescriptorSetManager {
     mutable std::mutex lock_;
 };
 
+// Simplest wrapper around device memory and the allocation
 struct DeviceMemoryBlock {
     VkBuffer buffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
     void Destroy(VmaAllocator allocator);
     bool IsNull() { return buffer == VK_NULL_HANDLE; }
+};
+
+// Similar to DeviceMemoryBlock, but used for things that will require Buffer Device Address
+struct AddressMemoryBlock {
+    const Validator &gpuav;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    VkDeviceAddress device_addr{0};
+
+    AddressMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
+
+    // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these clean
+    // (while these don't return up the chain, if we are hitting a VMA error likely not going to recover anyway)
+    void MapMemory(const Location &loc, void **data) const;
+    void UnmapMemory() const;
+    void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+
+    void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                      const VmaAllocationCreateInfo *allocation_create_info);
+    void DestroyBuffer();
 };
 
 class GpuResourcesManager {
