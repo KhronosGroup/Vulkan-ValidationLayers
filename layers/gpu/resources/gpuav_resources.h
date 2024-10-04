@@ -55,9 +55,10 @@ struct DeviceMemoryBlock {
     const Validator &gpuav;
     VkBuffer buffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
+    // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
+    VkDeviceAddress device_address = 0;
 
     explicit DeviceMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
-    virtual ~DeviceMemoryBlock(){};
 
     // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these cleaner
     // (while these don't return errors up the chain, if we are hitting a VMA error, likely not going to recover anyway)
@@ -66,19 +67,9 @@ struct DeviceMemoryBlock {
     void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
     void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    virtual void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                              const VmaAllocationCreateInfo *allocation_create_info);
-    void DestroyBuffer();
-};
-
-// Similar to DeviceMemoryBlock, but used for things that will require Buffer Device Address
-struct AddressMemoryBlock : public DeviceMemoryBlock {
-    VkDeviceAddress device_address{0};
-
-    explicit AddressMemoryBlock(Validator &gpuav) : DeviceMemoryBlock(gpuav) {}
-
     void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                      const VmaAllocationCreateInfo *allocation_create_info) override;
+                      const VmaAllocationCreateInfo *allocation_create_info);
+    void DestroyBuffer();
 };
 
 class GpuResourcesManager {
