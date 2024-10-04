@@ -919,6 +919,29 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                              "was %screated with StencilExportEXT, but the initialPipeline was %screated with StencilExportEXT.",
                              ies_pipeline_stencil_export ? "" : "not ", initial_pipeline_stencil_export ? "" : "not ");
             }
+
+            const auto initial_pipeline_layout = initial_pipeline->PipelineLayoutState();
+            const auto update_pipeline_layout = update_pipeline->PipelineLayoutState();
+            if (initial_pipeline_layout && update_pipeline_layout) {
+                const uint32_t set_count = (uint32_t)std::min(initial_pipeline_layout->set_compat_ids.size(),
+                                                              update_pipeline_layout->set_compat_ids.size());
+                for (uint32_t set = 0; set < set_count; set++) {
+                    if (!IsPipelineLayoutSetCompatible(set, initial_pipeline_layout.get(), update_pipeline_layout.get())) {
+                        LogObjectList objlist(initial_pipeline->Handle(), initial_pipeline_layout->Handle(),
+                                              update_pipeline->Handle(), update_pipeline_layout->Handle());
+                        LogError(
+                            "VUID-vkUpdateIndirectExecutionSetPipelineEXT-None-11039", objlist, set_write_loc.dot(Field::pipeline),
+                            "%s was created with a layout %s which is not compatible with the initialPipeline layout %s for set "
+                            "%" PRIu32 ".\n%s",
+                            FormatHandle(update_pipeline->VkHandle()).c_str(),
+                            FormatHandle(update_pipeline_layout->VkHandle()).c_str(),
+                            FormatHandle(initial_pipeline_layout->VkHandle()).c_str(), set,
+                            DescribePipelineLayoutSetNonCompatible(set, initial_pipeline_layout.get(), update_pipeline_layout.get())
+                                .c_str());
+                        break;
+                    }
+                }
+            }
         }
     }
 
