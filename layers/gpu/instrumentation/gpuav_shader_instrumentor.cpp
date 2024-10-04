@@ -342,7 +342,7 @@ void GpuShaderInstrumentor::Cleanup() {
 
 void GpuShaderInstrumentor::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                                        const RecordObject &record_obj) {
-    indices_buffer_.Destroy(vma_allocator_);
+    indices_buffer_.DestroyBuffer(vma_allocator_);
 
     Cleanup();
 

@@ -54,8 +54,9 @@ class DescriptorSetManager {
 struct DeviceMemoryBlock {
     VkBuffer buffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
-    void Destroy(VmaAllocator allocator);
     bool IsNull() { return buffer == VK_NULL_HANDLE; }
+
+    void DestroyBuffer(VmaAllocator allocator);
 };
 
 // Similar to DeviceMemoryBlock, but used for things that will require Buffer Device Address
