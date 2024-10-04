@@ -225,8 +225,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
     VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     VmaAllocator vma_allocator_ = {};
-    VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
-    std::unique_ptr<DescriptorSetManager> desc_set_manager_;
     vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
