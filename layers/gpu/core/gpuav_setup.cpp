@@ -628,4 +628,15 @@ void Validator::InternalVmaError(LogObjectList objlist, const Location &loc, con
     ReleaseDeviceDispatchObject(LayerObjectTypeGpuAssisted);
 }
 
+VkDeviceAddress Validator::GetBufferDeviceAddressHelper(VkBuffer buffer) const {
+    VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
+    address_info.buffer = buffer;
+
+    if (api_version >= VK_API_VERSION_1_2) {
+        return DispatchGetBufferDeviceAddress(device, &address_info);
+    } else {
+        return DispatchGetBufferDeviceAddressKHR(device, &address_info);
+    }
+}
+
 }  // namespace gpuav

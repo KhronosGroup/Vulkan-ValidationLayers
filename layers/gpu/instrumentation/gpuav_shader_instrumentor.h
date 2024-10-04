@@ -162,8 +162,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
                                       const RecordObject &record_obj) override;
 
-    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;
-
     void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
 

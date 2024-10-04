@@ -1256,17 +1256,6 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     return true;
 }
 
-VkDeviceAddress GpuShaderInstrumentor::GetBufferDeviceAddressHelper(VkBuffer buffer) const {
-    VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
-    address_info.buffer = buffer;
-
-    if (api_version >= VK_API_VERSION_1_2) {
-        return DispatchGetBufferDeviceAddress(device, &address_info);
-    } else {
-        return DispatchGetBufferDeviceAddressKHR(device, &address_info);
-    }
-}
-
 void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
     aborted_ = true;
     std::string error_message = specific_message;
