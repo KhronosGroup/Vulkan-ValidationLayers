@@ -72,7 +72,7 @@ class DescriptorHeap {
     DescriptorId NextId(const VulkanTypedHandle &handle);
     void DeleteId(DescriptorId id);
 
-    VkDeviceAddress GetDeviceAddress() const { return buffer_.device_address; }
+    VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
 
   private:
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
