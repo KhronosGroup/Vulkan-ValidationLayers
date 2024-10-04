@@ -1345,7 +1345,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
-    uint32_t image_index, image_count;
+    uint32_t image_count;
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
     std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
     vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
@@ -1368,7 +1368,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     auto err = vk::AllocateCommandBuffers(m_device->handle(), &alloc_info, &command_buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    err = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, sem.handle(), VK_NULL_HANDLE, &image_index);
+    m_swapchain.AcquireNextImage(sem, kWaitTimeout, &err);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();

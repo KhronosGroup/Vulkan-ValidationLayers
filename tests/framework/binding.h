@@ -386,7 +386,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
     VkResult GetStatus() const { return vk::GetFenceStatus(device(), handle()); }
     VkResult Wait(uint64_t timeout) const;
 
-    VkResult Reset();
+    VkResult Reset() const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VkResult ExportHandle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type);
@@ -1420,6 +1420,9 @@ class Swapchain : public internal::NonDispHandle<VkSwapchainKHR> {
 
     void Init(const Device &dev, const VkSwapchainCreateInfoKHR &info);
     void SetName(const char *name) { NonDispHandle<VkSwapchainKHR>::SetName(VK_OBJECT_TYPE_SWAPCHAIN_KHR, name); }
+
+    uint32_t AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result = nullptr);
+    uint32_t AcquireNextImage(const Fence &image_acquired, uint64_t timeout, VkResult *result = nullptr);
 };
 
 class IndirectCommandsLayout : public internal::NonDispHandle<VkIndirectCommandsLayoutEXT> {

@@ -822,15 +822,9 @@ Fence &Fence::operator=(Fence &&rhs) noexcept {
 
 void Fence::init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
 
-VkResult Fence::Wait(uint64_t timeout) const {
-    VkFence fence = handle();
-    return vk::WaitForFences(device(), 1, &fence, VK_TRUE, timeout);
-}
+VkResult Fence::Wait(uint64_t timeout) const { return vk::WaitForFences(device(), 1, &handle(), VK_TRUE, timeout); }
 
-VkResult Fence::Reset() {
-    VkFence fence = handle();
-    return vk::ResetFences(device(), 1, &fence);
-}
+VkResult Fence::Reset() const { return vk::ResetFences(device(), 1, &handle()); }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 VkResult Fence::ExportHandle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
@@ -1931,6 +1925,24 @@ void Swapchain::Init(const Device &dev, const VkSwapchainCreateInfoKHR &info) {
     if (result == VK_SUCCESS) {
         NonDispHandle::init(dev.handle(), handle);
     }
+}
+
+uint32_t Swapchain::AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result) {
+    uint32_t image_index = 0;
+    VkResult acquire_result = vk::AcquireNextImageKHR(device(), handle(), timeout, image_acquired, VK_NULL_HANDLE, &image_index);
+    if (result) {
+        *result = acquire_result;
+    }
+    return image_index;
+}
+
+uint32_t Swapchain::AcquireNextImage(const Fence &image_acquired, uint64_t timeout, VkResult *result) {
+    uint32_t image_index = 0;
+    VkResult acquire_result = vk::AcquireNextImageKHR(device(), handle(), timeout, VK_NULL_HANDLE, image_acquired, &image_index);
+    if (result) {
+        *result = acquire_result;
+    }
+    return image_index;
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(IndirectCommandsLayout, vk::DestroyIndirectCommandsLayoutEXT)
