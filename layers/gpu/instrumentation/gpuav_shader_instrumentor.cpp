@@ -24,9 +24,10 @@
 #include "gpu/shaders/gpuav_error_codes.h"
 #include "spirv-tools/optimizer.hpp"
 #include "utils/vk_layer_utils.h"
+#include "gpu/resources/gpuav_subclasses.h"
+
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
-#include "gpu/resources/gpuav_subclasses.h"
 
 #include <cassert>
 #include <regex>

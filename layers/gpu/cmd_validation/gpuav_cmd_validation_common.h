@@ -17,13 +17,13 @@
 
 #pragma once
 
-#include "gpu/resources/gpuav_subclasses.h"
-
 #include <utility>
 #include <vector>
+#include "state_tracker/cmd_buffer_state.h"
 
 namespace gpuav {
 class Validator;
+class CommandBuffer;
 
 class RestorablePipelineState {
   public:

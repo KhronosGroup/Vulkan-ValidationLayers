@@ -21,8 +21,10 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/error_message/gpuav_vuids.h"
 #include "gpu/resources/gpuav_shader_resources.h"
+#include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/debug_printf/debug_printf.h"
+
 #include "state_tracker/shader_object_state.h"
 
 namespace gpuav {

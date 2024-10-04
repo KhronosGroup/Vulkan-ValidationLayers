@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan.h>
 #include "gpu/debug_printf/debug_printf.h"
-#include "gpu/instrumentation/gpuav_shader_instrumentor.h"
-#include "error_message/log_message_type.h"
-#include "error_message/logging.h"
 #include "generated/layer_chassis_dispatch.h"
-#include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/core/gpuav.h"
+#include "gpu/spirv/instruction.h"
 
 #include <iostream>
 

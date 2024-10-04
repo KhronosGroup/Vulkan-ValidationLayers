@@ -17,11 +17,16 @@
 
 #pragma once
 
-#include "gpu/resources/gpuav_subclasses.h"
+#include <vulkan/vulkan.h>
+#include <string>
+#include <vector>
 
+struct Location;
+struct LogObjectList;
 namespace gpuav {
-
 struct DescSetState;
+class Validator;
+class CommandBuffer;
 
 void UpdateInstrumentationDescSet(Validator& gpuav, CommandBuffer& cb_state, VkDescriptorSet instrumentation_desc_set,
                                   const Location& loc);
