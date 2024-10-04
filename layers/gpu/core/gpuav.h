@@ -84,6 +84,8 @@ class Validator : public GpuShaderInstrumentor {
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
+    void InternalVmaError(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
+
   private:
     void InitSettings(const Location& loc);
 
@@ -409,6 +411,7 @@ class Validator : public GpuShaderInstrumentor {
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
     SharedResourcesManager shared_resources_manager;
 
+    VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager_;
 
