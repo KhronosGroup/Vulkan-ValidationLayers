@@ -167,7 +167,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;
 
-    void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message, bool vma_fail = false) const;
+    void InternalVmaError(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
+    void InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
     void InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const;
 
     bool IsSelectiveInstrumentationEnabled(const void *pNext);

@@ -140,7 +140,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &error_output_buffer.buffer,
                                       &error_output_buffer.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(command_buffer, loc, "Unable to allocate device memory for error output buffer.", true);
+        gpuav.InternalVmaError(command_buffer, loc, "Unable to allocate device memory for error output buffer.");
         return false;
     }
 
@@ -153,7 +153,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
         }
         vmaUnmapMemory(gpuav.vma_allocator_, error_output_buffer.allocation);
     } else {
-        gpuav.InternalError(command_buffer, loc, "Unable to map device memory allocated for error output buffer.", true);
+        gpuav.InternalVmaError(command_buffer, loc, "Unable to map device memory allocated for error output buffer.");
         return false;
     }
 
@@ -195,7 +195,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         result = vmaCreateBuffer(gpuav->vma_allocator_, &buffer_info, &alloc_info, &cmd_errors_counts_buffer_.buffer,
                                  &cmd_errors_counts_buffer_.allocation, nullptr);
         if (result != VK_SUCCESS) {
-            gpuav->InternalError(gpuav->device, loc, "Unable to allocate device memory for commands errors counts buffer.", true);
+            gpuav->InternalVmaError(gpuav->device, loc, "Unable to allocate device memory for commands errors counts buffer.");
             return;
         }
 
@@ -215,7 +215,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         result = vmaCreateBuffer(gpuav->vma_allocator_, &buffer_info, &alloc_info, &bda_ranges_snapshot_.buffer,
                                  &bda_ranges_snapshot_.allocation, nullptr);
         if (result != VK_SUCCESS) {
-            gpuav->InternalError(gpuav->device, loc, "Unable to allocate device memory for buffer device address data.", true);
+            gpuav->InternalVmaError(gpuav->device, loc, "Unable to allocate device memory for buffer device address data.");
             return;
         }
     }
@@ -321,7 +321,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     VkResult result =
         vmaMapMemory(gpuav->vma_allocator_, bda_ranges_snapshot_.allocation, reinterpret_cast<void **>(&bda_table_ptr));
     if (result != VK_SUCCESS) {
-        gpuav->InternalError(gpuav->device, loc, "Unable to map device memory in UpdateBdaRangesBuffer.", true);
+        gpuav->InternalVmaError(gpuav->device, loc, "Unable to map device memory in UpdateBdaRangesBuffer.");
         return false;
     }
 
@@ -440,7 +440,7 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
     VkResult result = vmaMapMemory(gpuav->vma_allocator_, cmd_errors_counts_buffer_.allocation,
                                    reinterpret_cast<void **>(&cmd_errors_counts_buffer_ptr));
     if (result != VK_SUCCESS) {
-        gpuav->InternalError(gpuav->device, loc, "Unable to map device memory for commands errors counts buffer.", true);
+        gpuav->InternalVmaError(gpuav->device, loc, "Unable to map device memory for commands errors counts buffer.");
         return;
     }
     std::memset(cmd_errors_counts_buffer_ptr, 0, static_cast<size_t>(GetCmdErrorsCountsBufferByteSize()));
@@ -486,7 +486,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
         VkResult result = vmaMapMemory(gpuav->vma_allocator_, buffer_info.output_mem_block.allocation, (void **)&data);
         if (result != VK_SUCCESS) {
-            gpuav->InternalError(queue, loc, "Unable to map device memory allocated for DebugPrintf buffer.", true);
+            gpuav->InternalVmaError(queue, loc, "Unable to map device memory allocated for DebugPrintf buffer.");
             return;
         }
 

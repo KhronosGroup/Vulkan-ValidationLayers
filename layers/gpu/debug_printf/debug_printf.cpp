@@ -370,7 +370,7 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &debug_printf_output_buffer.buffer,
                                       &debug_printf_output_buffer.allocation, nullptr);
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(cb_state.Handle(), loc, "Unable to allocate device memory.", true);
+        gpuav.InternalVmaError(cb_state.Handle(), loc, "Unable to allocate device memory.");
         return false;
     }
 
@@ -378,7 +378,7 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     uint32_t *data;
     result = vmaMapMemory(gpuav.vma_allocator_, debug_printf_output_buffer.allocation, reinterpret_cast<void **>(&data));
     if (result != VK_SUCCESS) {
-        gpuav.InternalError(cb_state.Handle(), loc, "Unable to allocate map memory.", true);
+        gpuav.InternalVmaError(cb_state.Handle(), loc, "Unable to allocate map memory.");
         return false;
     }
     memset(data, 0, gpuav.gpuav_settings.debug_printf_buffer_size);

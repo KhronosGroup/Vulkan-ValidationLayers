@@ -1344,17 +1344,30 @@ VkDeviceAddress GpuShaderInstrumentor::GetBufferDeviceAddressHelper(VkBuffer buf
     }
 }
 
-void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message,
-                                          bool vma_fail) const {
+void GpuShaderInstrumentor::InternalVmaError(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
     aborted_ = true;
     std::string error_message = specific_message;
-    if (vma_fail) {
-        char *stats_string;
-        vmaBuildStatsString(vma_allocator_, &stats_string, false);
-        error_message += " VMA statistics = ";
-        error_message += stats_string;
-        vmaFreeStatsString(vma_allocator_, stats_string);
-    }
+
+    char *stats_string;
+    vmaBuildStatsString(vma_allocator_, &stats_string, false);
+    error_message += " VMA statistics = ";
+    error_message += stats_string;
+    vmaFreeStatsString(vma_allocator_, stats_string);
+
+    char const *layer_name = gpuav_settings.debug_printf_only ? "DebugPrintf" : "GPU-AV";
+    char const *vuid = gpuav_settings.debug_printf_only ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
+
+    LogError(vuid, objlist, loc, "Internal VMA Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
+
+    // Once we encounter an internal issue disconnect everything.
+    // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
+    // with errors making it hard to see the first error with the real source of the problem).
+    ReleaseDeviceDispatchObject(LayerObjectTypeGpuAssisted);
+}
+
+void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
+    aborted_ = true;
+    std::string error_message = specific_message;
 
     char const *layer_name = gpuav_settings.debug_printf_only ? "DebugPrintf" : "GPU-AV";
     char const *vuid = gpuav_settings.debug_printf_only ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";

@@ -203,7 +203,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &copy_src_regions_mem_block.buffer,
                                           &copy_src_regions_mem_block.allocation, nullptr);
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to allocate device memory for GPU copy of pRegions.", true);
+            gpuav.InternalVmaError(cb_state.VkHandle(), loc, "Unable to allocate device memory for GPU copy of pRegions.");
             return;
         }
         cb_state.gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
@@ -213,7 +213,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
                               reinterpret_cast<void **>(&gpu_regions_u32_ptr));
 
         if (result != VK_SUCCESS) {
-            gpuav.InternalError(cb_state.VkHandle(), loc, "Unable to map device memory for GPU copy of pRegions.", true);
+            gpuav.InternalVmaError(cb_state.VkHandle(), loc, "Unable to map device memory for GPU copy of pRegions.");
             return;
         }
 
