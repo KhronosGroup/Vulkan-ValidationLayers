@@ -111,6 +111,9 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
             file_stream.close();
         }
     }
+
+    indices_buffer_.DestroyBuffer(vma_allocator_);
+
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 }
 
