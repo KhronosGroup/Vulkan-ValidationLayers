@@ -21,9 +21,6 @@
 
 struct Location;
 namespace gpuav {
-struct DeviceMemoryBlock;
-}
-namespace gpuav {
 struct DebugPrintfBufferInfo;
 class CommandBuffer;
 class Validator;

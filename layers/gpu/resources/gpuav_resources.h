@@ -52,38 +52,38 @@ class DescriptorSetManager {
 
 // Simplest wrapper around device memory and the allocation
 struct DeviceMemoryBlock {
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
-    bool IsNull() { return buffer == VK_NULL_HANDLE; }
-
-    void DestroyBuffer(VmaAllocator allocator);
-};
-
-// Similar to DeviceMemoryBlock, but used for things that will require Buffer Device Address
-struct AddressMemoryBlock {
     const Validator &gpuav;
     VkBuffer buffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
-    VkDeviceAddress device_addr{0};
 
-    AddressMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
+    explicit DeviceMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
+    virtual ~DeviceMemoryBlock(){};
 
-    // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these clean
-    // (while these don't return up the chain, if we are hitting a VMA error likely not going to recover anyway)
+    // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these cleaner
+    // (while these don't return errors up the chain, if we are hitting a VMA error, likely not going to recover anyway)
     void MapMemory(const Location &loc, void **data) const;
     void UnmapMemory() const;
     void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
     void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                      const VmaAllocationCreateInfo *allocation_create_info);
+    virtual void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                              const VmaAllocationCreateInfo *allocation_create_info);
     void DestroyBuffer();
+};
+
+// Similar to DeviceMemoryBlock, but used for things that will require Buffer Device Address
+struct AddressMemoryBlock : public DeviceMemoryBlock {
+    VkDeviceAddress device_address{0};
+
+    explicit AddressMemoryBlock(Validator &gpuav) : DeviceMemoryBlock(gpuav) {}
+
+    void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                      const VmaAllocationCreateInfo *allocation_create_info) override;
 };
 
 class GpuResourcesManager {
   public:
-    GpuResourcesManager(VmaAllocator vma_allocator, DescriptorSetManager &descriptor_set_manager)
-        : vma_allocator_(vma_allocator), descriptor_set_manager_(descriptor_set_manager) {}
+    explicit GpuResourcesManager(DescriptorSetManager &descriptor_set_manager) : descriptor_set_manager_(descriptor_set_manager) {}
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
     void ManageDeviceMemoryBlock(DeviceMemoryBlock mem_block);
@@ -91,7 +91,6 @@ class GpuResourcesManager {
     void DestroyResources();
 
   private:
-    VmaAllocator vma_allocator_;
     DescriptorSetManager &descriptor_set_manager_;
     std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
     std::vector<DeviceMemoryBlock> mem_blocks_;

@@ -55,7 +55,7 @@ class Validator : public GpuShaderInstrumentor {
     using Field = vvl::Field;
 
   public:
-    Validator() { container_type = LayerObjectTypeGpuAssisted; }
+    Validator() : indices_buffer_(*this) { container_type = LayerObjectTypeGpuAssisted; }
 
     // gpuav_setup.cpp
     // -------------
@@ -421,7 +421,7 @@ class Validator : public GpuShaderInstrumentor {
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
     std::unique_ptr<DescriptorSetManager> desc_set_manager_;
 
-    DeviceMemoryBlock indices_buffer_{};
+    DeviceMemoryBlock indices_buffer_;
     unsigned int indices_buffer_alignment_ = 0;
 
   private:

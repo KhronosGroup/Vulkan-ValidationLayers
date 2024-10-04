@@ -356,7 +356,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
 bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
                                   VkPipelineBindPoint bind_point, const Location &loc) {
-    gpuav::DeviceMemoryBlock debug_printf_output_buffer = {};
+    gpuav::DeviceMemoryBlock debug_printf_output_buffer(gpuav);
 
     // Allocate memory for the output block that the gpu will use to return values for printf
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -365,22 +365,13 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = gpuav.output_buffer_pool_;
-    VkResult result = vmaCreateBuffer(gpuav.vma_allocator_, &buffer_info, &alloc_info, &debug_printf_output_buffer.buffer,
-                                      &debug_printf_output_buffer.allocation, nullptr);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(cb_state.Handle(), loc, "Unable to allocate device memory.");
-        return false;
-    }
+    debug_printf_output_buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
     // Clear the output block to zeros so that only printf values from the gpu will be present
     uint32_t *data;
-    result = vmaMapMemory(gpuav.vma_allocator_, debug_printf_output_buffer.allocation, reinterpret_cast<void **>(&data));
-    if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(cb_state.Handle(), loc, "Unable to allocate map memory.");
-        return false;
-    }
+    debug_printf_output_buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
     memset(data, 0, gpuav.gpuav_settings.debug_printf_buffer_size);
-    vmaUnmapMemory(gpuav.vma_allocator_, debug_printf_output_buffer.allocation);
+    debug_printf_output_buffer.UnmapMemory();
 
     VkDescriptorBufferInfo debug_printf_desc_buffer_info = {};
     debug_printf_desc_buffer_info.range = gpuav.gpuav_settings.debug_printf_buffer_size;

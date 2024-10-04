@@ -504,25 +504,16 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         assert(output_buffer_pool_);
         alloc_info.pool = output_buffer_pool_;
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        result = vmaCreateBuffer(vma_allocator_, &buffer_info, &alloc_info, &indices_buffer_.buffer, &indices_buffer_.allocation,
-                                 nullptr);
-        if (result != VK_SUCCESS) {
-            InternalVmaError(device, loc, "Unable to allocate device memory for command indices.");
-            return;
-        }
+        indices_buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
         uint32_t *indices_ptr = nullptr;
-        result = vmaMapMemory(vma_allocator_, indices_buffer_.allocation, reinterpret_cast<void **>(&indices_ptr));
-        if (result != VK_SUCCESS) {
-            InternalVmaError(device, loc, "Unable to map device memory for command indices buffer.");
-            return;
-        }
+        indices_buffer_.MapMemory(loc, reinterpret_cast<void **>(&indices_ptr));
 
         for (uint32_t i = 0; i < buffer_info.size / sizeof(uint32_t); ++i) {
             indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));
         }
 
-        vmaUnmapMemory(vma_allocator_, indices_buffer_.allocation);
+        indices_buffer_.UnmapMemory();
     }
 }
 

@@ -129,12 +129,12 @@ class CommandBuffer : public vvl::CommandBuffer {
     VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
     // Buffer storing GPU-AV errors
-    DeviceMemoryBlock error_output_buffer_ = {};
+    DeviceMemoryBlock error_output_buffer_;
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
-    DeviceMemoryBlock cmd_errors_counts_buffer_ = {};
+    DeviceMemoryBlock cmd_errors_counts_buffer_;
     // Buffer storing a snapshot of buffer device address ranges
-    DeviceMemoryBlock bda_ranges_snapshot_ = {};
+    DeviceMemoryBlock bda_ranges_snapshot_;
     uint32_t bda_ranges_snapshot_version_ = 0;
 };
 
