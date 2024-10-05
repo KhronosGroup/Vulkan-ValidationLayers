@@ -171,7 +171,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     VkDescriptorBufferInfo indices_desc_buffer_info = {};
     {
         indices_desc_buffer_info.range = sizeof(uint32_t);
-        indices_desc_buffer_info.buffer = gpuav.indices_buffer_.buffer;
+        indices_desc_buffer_info.buffer = gpuav.indices_buffer_.Buffer();
         indices_desc_buffer_info.offset = 0;
 
         VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -230,7 +230,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
     if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {
         bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-        bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().buffer;
+        bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().Buffer();
         bda_input_desc_buffer_info.offset = 0;
 
         VkWriteDescriptorSet wds = vku::InitStructHelper();

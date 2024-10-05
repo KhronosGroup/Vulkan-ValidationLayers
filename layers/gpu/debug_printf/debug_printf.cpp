@@ -368,14 +368,13 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     debug_printf_output_buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
     // Clear the output block to zeros so that only printf values from the gpu will be present
-    uint32_t *data;
-    debug_printf_output_buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
-    memset(data, 0, gpuav.gpuav_settings.debug_printf_buffer_size);
+    auto printf_output_ptr = (uint32_t *)debug_printf_output_buffer.MapMemory(loc);
+    memset(printf_output_ptr, 0, gpuav.gpuav_settings.debug_printf_buffer_size);
     debug_printf_output_buffer.UnmapMemory();
 
     VkDescriptorBufferInfo debug_printf_desc_buffer_info = {};
     debug_printf_desc_buffer_info.range = gpuav.gpuav_settings.debug_printf_buffer_size;
-    debug_printf_desc_buffer_info.buffer = debug_printf_output_buffer.buffer;
+    debug_printf_desc_buffer_info.buffer = debug_printf_output_buffer.Buffer();
     debug_printf_desc_buffer_info.offset = 0;
 
     VkWriteDescriptorSet wds = vku::InitStructHelper();

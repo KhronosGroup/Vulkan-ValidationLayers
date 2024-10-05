@@ -85,15 +85,15 @@ class CommandBuffer : public vvl::CommandBuffer {
     uint32_t GetValidationErrorBufferDescSetIndex() const { return 0; }
 
     const VkBuffer &GetErrorOutputBuffer() const {
-        assert(error_output_buffer_.buffer != VK_NULL_HANDLE);
-        return error_output_buffer_.buffer;
+        assert(error_output_buffer_.Buffer() != VK_NULL_HANDLE);
+        return error_output_buffer_.Buffer();
     }
 
     VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(uint32_t); }
 
     const VkBuffer &GetCmdErrorsCountsBuffer() const {
-        assert(cmd_errors_counts_buffer_.buffer != VK_NULL_HANDLE);
-        return cmd_errors_counts_buffer_.buffer;
+        assert(cmd_errors_counts_buffer_.Buffer() != VK_NULL_HANDLE);
+        return cmd_errors_counts_buffer_.Buffer();
     }
 
     const DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }

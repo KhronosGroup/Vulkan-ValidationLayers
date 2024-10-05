@@ -506,8 +506,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         indices_buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-        uint32_t *indices_ptr = nullptr;
-        indices_buffer_.MapMemory(loc, reinterpret_cast<void **>(&indices_ptr));
+        auto indices_ptr = (uint32_t *)indices_buffer_.MapMemory(loc);
 
         for (uint32_t i = 0; i < buffer_info.size / sizeof(uint32_t); ++i) {
             indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));

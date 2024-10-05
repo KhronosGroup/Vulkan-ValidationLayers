@@ -144,11 +144,14 @@ void SharedResourcesManager::Clear() {
     shared_validation_resources_map_.clear();
 }
 
-void DeviceMemoryBlock::MapMemory(const Location &loc, void **data) const {
-    VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, data);
+void *DeviceMemoryBlock::MapMemory(const Location &loc) const {
+    void *buffer_ptr = nullptr;
+    VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, &buffer_ptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to map device memory.");
+        return nullptr;
     }
+    return buffer_ptr;
 }
 
 void DeviceMemoryBlock::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }

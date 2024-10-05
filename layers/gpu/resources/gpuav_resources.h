@@ -50,17 +50,15 @@ class DescriptorSetManager {
     mutable std::mutex lock_;
 };
 
-// Simplest wrapper around device memory and the allocation
+// Wrapper around device memory and its corresponding allocation
 class DeviceMemoryBlock {
   public:
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
-
     explicit DeviceMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
 
-    // Warps VMA calls so we can report (unlikely) errors if found while making the usages of these cleaner
-    // (while these don't return errors up the chain, if we are hitting a VMA error, likely not going to recover anyway)
-    void MapMemory(const Location &loc, void **data) const;
+    // Warps VMA calls to simplify error reporting.
+    // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
+
+    [[nodiscard]] void *MapMemory(const Location &loc) const;
     void UnmapMemory() const;
     void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
     void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
@@ -69,10 +67,15 @@ class DeviceMemoryBlock {
                       const VmaAllocationCreateInfo *allocation_create_info);
     void DestroyBuffer();
 
+    bool Destroyed() const { return buffer == VK_NULL_HANDLE; }
+    const VkBuffer &Buffer() const { return buffer; }
+    const VmaAllocation &Allocation() const { return allocation; }
     VkDeviceAddress Address() const { return device_address; };
 
   private:
     const Validator &gpuav;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
     // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
     VkDeviceAddress device_address = 0;
 };
