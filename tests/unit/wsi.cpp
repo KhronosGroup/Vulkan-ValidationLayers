@@ -1499,7 +1499,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithSignaledSemaphore) {
     RETURN_IF_SKIP(InitSwapchain());
 
     vkt::Semaphore semaphore(*m_device);
-    m_default_queue->Submit(vkt::no_cmd, vkt::signal, semaphore);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
     m_default_queue->Wait();
 
     VkAcquireNextImageInfoKHR acquire_info = vku::InitStructHelper();
@@ -1527,10 +1527,10 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
     RETURN_IF_SKIP(InitSwapchain());
 
     vkt::Semaphore semaphore(*m_device);
-    m_default_queue->Submit(vkt::no_cmd, vkt::signal, semaphore);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
 
     // Add a wait, but don't let it finish.
-    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
     
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-01779");
     m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
@@ -2413,7 +2413,8 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
                            0, nullptr, 0, nullptr, 1, &present_transition);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT),
+                            vkt::Signal(submit_semaphore));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.waitSemaphoreCount = 1;
@@ -2954,7 +2955,7 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
 
     vkt::Queue *other = m_device->QueuesWithGraphicsCapability()[1];
 
-    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.pSwapchains = &m_swapchain.handle();
@@ -2996,7 +2997,7 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     fence.Wait(kWaitTimeout);
     SetImageLayoutPresentSrc(images[image_index]);
 
-    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
 
     VkPresentInfoKHR present = vku::InitStructHelper();
     present.pSwapchains = &m_swapchain.handle();
@@ -3058,7 +3059,7 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     m_command_buffer.Begin();
     m_command_buffer.End();
     const vkt::Semaphore submit_semaphore(*m_device);
-    m_default_queue->Submit(m_command_buffer, vkt::signal, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(submit_semaphore));
 
     // Present waits on submit semaphore. Does not wait on the acquire semaphore.
     VkPresentInfoKHR present = vku::InitStructHelper();

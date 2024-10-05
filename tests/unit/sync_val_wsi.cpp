@@ -152,11 +152,11 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
     // The wait mask doesn't match the operations in the command buffer
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_default_queue->Submit(m_command_buffer, vkt::wait, sem, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(sem, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT));
     m_errorMonitor->VerifyFound();
 
     // Now then wait mask matches the operations in the command buffer
-    m_default_queue->Submit(m_command_buffer, vkt::wait, sem, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(sem, VK_PIPELINE_STAGE_TRANSFER_BIT));
 
     // Try presenting without waiting for the ILT to finish
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
@@ -174,7 +174,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     fence.Reset();
-    m_default_queue->Submit(m_command_buffer, vkt::signal, sem);
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(sem));
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
     present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
@@ -219,8 +219,8 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
     m_command_buffer.End();
 
-    m_default_queue->Submit2(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
-                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                             vkt::Signal(submit_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT));
 
     // DO NOT wait for submit. This should generate present after write (ILT) harard.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
@@ -258,7 +258,8 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &layout_transition);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                            vkt::Signal(submit_semaphore));
 
     // DO NOT wait for submit. This should generate present after write (ILT) harard.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");

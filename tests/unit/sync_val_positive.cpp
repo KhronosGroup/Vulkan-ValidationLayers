@@ -779,7 +779,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     vk::CmdDispatch(cb, 1, 1, 1);
     cb.End();
 
-    m_default_queue->Submit2(cb, vkt::signal, semaphore);
+    m_default_queue->Submit2(cb, vkt::Signal(semaphore));
 
     // Submit 1: transition image layout (write access)
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -803,7 +803,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     vk::CmdPipelineBarrier2(cb2, &dep_info);
     cb2.End();
 
-    m_default_queue->Submit2(cb2, vkt::wait, semaphore);
+    m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
     m_default_queue->Wait();
 }
 
@@ -841,14 +841,14 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
     cb.Begin();
     vk::CmdClearColorImage(cb, image, VK_IMAGE_LAYOUT_GENERAL, &m_clear_color, 1, &layout_transition.subresourceRange);
     cb.End();
-    m_default_queue->Submit2(cb, vkt::signal, semaphore);
+    m_default_queue->Submit2(cb, vkt::Signal(semaphore));
 
     // Submit 2: Transition layout (WRITE access)
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdPipelineBarrier2(cb2, &dep_info);
     cb2.End();
-    m_default_queue->Submit2(cb2, vkt::wait, semaphore);
+    m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
     m_default_queue->Wait();
 }
 
@@ -884,7 +884,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     cb.Begin();
     vk::CmdPipelineBarrier2(cb, &dep_info);
     cb.End();
-    m_default_queue->Submit2(cb, vkt::signal, semaphore);
+    m_default_queue->Submit2(cb, vkt::Signal(semaphore));
 
     // Submit1: wait for the semaphore and read image in the shader
     const OneOffDescriptorSet::Bindings bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -912,7 +912,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
                               nullptr);
     vk::CmdDispatch(cb2, 1, 1, 1);
     cb2.End();
-    m_default_queue->Submit2(cb2, vkt::wait, semaphore);
+    m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
     m_default_queue->Wait();
 }
 
@@ -1130,10 +1130,10 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     dep_info.pImageMemoryBarriers = &image_barrier;
     vk::CmdPipelineBarrier2(cb0, &dep_info);
     cb0.End();
-    m_default_queue->Submit2(cb0, vkt::signal, semaphore);
+    m_default_queue->Submit2(cb0, vkt::Signal(semaphore));
 
     // Submit 1: empty submit on Transfer queue that waits for Submit 0.
-    transfer_queue->Submit2(vkt::no_cmd, vkt::wait, semaphore);
+    transfer_queue->Submit2(vkt::no_cmd, vkt::Wait(semaphore));
 
     // Submit 2: copy to image on Graphics queue. No synchronization is needed because of COPY+WRITE barrier from Submit 0.
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
@@ -1471,10 +1471,9 @@ TEST_F(PositiveSyncVal, SignalUnsignalSignalMultipleSubmits) {
     command_buffer2.Copy(buffer_a, buffer_b);
     command_buffer2.End();
 
-    m_default_queue->Submit2(vkt::no_cmd, vkt::signal, semaphore);
-    m_default_queue->Submit2(m_command_buffer, semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, semaphore,
-                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    m_default_queue->Submit2(command_buffer2, vkt::wait, semaphore);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(semaphore), vkt::Signal(semaphore));
+    m_default_queue->Submit2(command_buffer2, vkt::Wait(semaphore));
     m_default_queue->Wait();
 }
 
