@@ -429,7 +429,8 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
                            nullptr, 0, nullptr, 1, &present_transition);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT),
+                            vkt::Signal(submit_semaphore));
     m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_default_queue->Wait();
 }
@@ -538,7 +539,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
         command_buffers[image_index].Begin();
         command_buffers[image_index].End();
 
-        m_default_queue->Submit(command_buffers[image_index], vkt::signal, submit_semaphores[image_index]);
+        m_default_queue->Submit(command_buffers[image_index], vkt::Signal(submit_semaphores[image_index]));
         m_default_queue->Present(submit_semaphores[image_index], m_swapchain, image_index);
     }
     m_default_queue->Wait();
@@ -567,7 +568,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     command_buffers[image_index].Begin();
     command_buffers[image_index].End();
 
-    m_default_queue->Submit(command_buffers[image_index], vkt::signal, submit_semaphores[image_index]);
+    m_default_queue->Submit(command_buffers[image_index], vkt::Signal(submit_semaphores[image_index]));
     m_default_queue->Present(submit_semaphores[image_index], m_swapchain, image_index);
 
     // Here the application decides to destroy swapchain (e.g. resize event)
@@ -1331,7 +1332,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                                nullptr, 0, nullptr, 1, &present_transition);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
+        m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore));
 
         vkt::Fence present_fence(*m_device);
         VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
@@ -1416,7 +1417,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
 
         const uint32_t image_index = m_swapchain.AcquireNextImage(frame.image_acquired, kWaitTimeout);
 
-        m_default_queue->Submit(vkt::no_cmd, frame.image_acquired, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, frame.submit_finished);
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(frame.image_acquired), vkt::Signal(frame.submit_finished));
 
         VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
         present_fence_info.swapchainCount = 1;
@@ -1454,7 +1455,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &present_transition);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore));
 
     vkt::Fence present_fence(*m_device);
     VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();

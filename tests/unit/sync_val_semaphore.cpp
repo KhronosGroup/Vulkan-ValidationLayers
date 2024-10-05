@@ -30,11 +30,11 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitInitialValue) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
 
     // Wait on the initial value 0 does not synchronize with signal 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 0);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 0));
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -56,11 +56,11 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitInitialValueTwoQueues) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
 
     // Wait on the initial value 0 does not synchronize with signal 1
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 0);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 0));
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
@@ -78,10 +78,10 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitAfterSignalStageMismatch) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     // Signal first scope includes only CLEAR commands but not COPY commands
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 2, VK_PIPELINE_STAGE_2_CLEAR_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 2, VK_PIPELINE_STAGE_2_CLEAR_BIT));
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT));
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -104,10 +104,10 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignal) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
 
     // Resolve waint on the main queue
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
 
     // Writes on the second queue collide with writes on the main queue
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
@@ -131,8 +131,8 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalBatchFollowedByOneMoreB
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_default_queue->Submit2(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -158,15 +158,15 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalEmptyWaitScope) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     // Buffer copy starts immediately because VERTEX_SHADER stage does not include copy operation
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT));
 
     // TODO: this should be detected as WRITE-RACING-WRITE error
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 1);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 1));
     m_errorMonitor->VerifyFound();
 
     // Unblock the first queue (the previous call due to error did not reach Record phase)
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     m_device->Wait();
 }
 
@@ -208,11 +208,11 @@ TEST_F(NegativeSyncValTimelineSemaphore, WaitBeforeSignalAfterNoDepsBatch) {
     vk::QueueSubmit2(*m_default_queue, 2, submits, VK_NULL_HANDLE);
 
     // Submit signal to resolve the wait
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
 
     // Submit one more copy to collide with a copy on the default queue
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    m_second_queue->Submit2(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
@@ -234,13 +234,13 @@ TEST_F(NegativeSyncValTimelineSemaphore, HostSignal) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
 
     // Finish the previous wait, so both submits can run in parallel
     semaphore.Signal(1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 2);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 2));
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
@@ -262,8 +262,8 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
     semaphore.Signal(1);
     m_errorMonitor->VerifyFound();
@@ -290,8 +290,8 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits2) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 2);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 2));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
     semaphore.Signal(2);
     m_errorMonitor->VerifyFound();
@@ -318,14 +318,14 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits3) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    m_third_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_third_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     m_errorMonitor->VerifyFound();
 
     // Unblock queue threads (the previous call did not reach Record phase)
-    m_third_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_third_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     m_device->Wait();
 }
 
@@ -347,9 +347,9 @@ TEST_F(NegativeSyncValTimelineSemaphore, SignalResolvesTwoWaits4) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     semaphore.Signal(1);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }

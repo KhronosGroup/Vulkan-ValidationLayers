@@ -458,10 +458,41 @@ class Event : public internal::NonDispHandle<VkEvent> {
     static VkEventCreateInfo CreateInfo(VkFlags flags);
 };
 
-struct WaitT {};
-constexpr WaitT wait{};
-struct SignalT {};
-constexpr SignalT signal{};
+struct Wait {
+    const Semaphore &semaphore;
+    VkPipelineStageFlags2 stage_mask;
+
+    explicit Wait(const Semaphore &semaphore, VkPipelineStageFlags2 stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+        : semaphore(semaphore), stage_mask(stage_mask) {}
+};
+
+struct Signal {
+    const Semaphore &semaphore;
+    VkPipelineStageFlags2 stage_mask;
+
+    explicit Signal(const Semaphore &semaphore, VkPipelineStageFlags2 stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+        : semaphore(semaphore), stage_mask(stage_mask) {}
+};
+
+struct TimelineWait {
+    const Semaphore &semaphore;
+    uint64_t value;
+    VkPipelineStageFlags2 stage_mask;
+
+    explicit TimelineWait(const Semaphore &semaphore, uint64_t value,
+                          VkPipelineStageFlags2 stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+        : semaphore(semaphore), value(value), stage_mask(stage_mask) {}
+};
+
+struct TimelineSignal {
+    const Semaphore &semaphore;
+    uint64_t value;
+    VkPipelineStageFlags2 stage_mask;
+
+    explicit TimelineSignal(const Semaphore &semaphore, uint64_t value,
+                            VkPipelineStageFlags2 stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+        : semaphore(semaphore), value(value), stage_mask(stage_mask) {}
+};
 
 class Queue : public internal::Handle<VkQueue> {
   public:
@@ -472,43 +503,28 @@ class Queue : public internal::Handle<VkQueue> {
     VkResult Submit(const CommandBuffer &cmd, const Fence &fence = no_fence);
     VkResult Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fence = no_fence);
 
-    VkResult Submit(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore,
-                    VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, const Fence &fence = no_fence);
-    VkResult Submit(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore, const Fence &fence = no_fence);
-    VkResult Submit(const CommandBuffer &cmd, const Semaphore &wait_semaphore, VkPipelineStageFlags wait_stage_mask,
-                    const Semaphore &signal_semaphore, const Fence &fence = no_fence);
+    VkResult Submit(const CommandBuffer &cmd, const Wait &wait, const Fence &fence = no_fence);
+    VkResult Submit(const CommandBuffer &cmd, const Signal &signal, const Fence &fence = no_fence);
+    VkResult Submit(const CommandBuffer &cmd, const Wait &wait, const Signal &signal, const Fence &fence = no_fence);
 
-    VkResult SubmitWithTimelineSemaphore(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore, uint64_t wait_value,
-                                         VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                         const Fence &fence = no_fence);
-    VkResult SubmitWithTimelineSemaphore(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore,
-                                         uint64_t signal_value, const Fence &fence = no_fence);
-    VkResult SubmitWithTimelineSemaphore(const CommandBuffer &cmd, const Semaphore &wait_semaphore, uint64_t wait_value,
-                                         const Semaphore &signal_semaphore, uint64_t signal_value, const Fence &fence = no_fence);
+    VkResult Submit(const CommandBuffer &cmd, const TimelineWait &wait, const Fence &fence = no_fence);
+    VkResult Submit(const CommandBuffer &cmd, const TimelineSignal &signal, const Fence &fence = no_fence);
+    VkResult Submit(const CommandBuffer &cmd, const TimelineWait &wait, const TimelineSignal &signal,
+                    const Fence &fence = no_fence);
 
     // vkQueueSubmit2()
     VkResult Submit2(const CommandBuffer &cmd, const Fence &fence = no_fence, bool use_khr = false);
     VkResult Submit2(const vvl::span<const CommandBuffer> &cmds, const Fence &fence = no_fence, bool use_khr = false);
 
-    VkResult Submit2(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore,
-                     VkPipelineStageFlags2 wait_stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, const Fence &fence = no_fence,
-                     bool use_khr = false);
-    VkResult Submit2(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore,
-                     VkPipelineStageFlags2 signal_stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, const Fence &fence = no_fence,
-                     bool use_khr = false);
-    VkResult Submit2(const CommandBuffer &cmd, const Semaphore &wait_semaphore, VkPipelineStageFlags2 wait_stage_mask,
-                     const Semaphore &signal_semaphore, VkPipelineStageFlags2 signal_stage_mask, const Fence &fence = no_fence,
+    VkResult Submit2(const CommandBuffer &cmd, const Wait &wait, const Fence &fence = no_fence, bool use_khr = false);
+    VkResult Submit2(const CommandBuffer &cmd, const Signal &signal, const Fence &fence = no_fence, bool use_khr = false);
+    VkResult Submit2(const CommandBuffer &cmd, const Wait &wait, const Signal &signal, const Fence &fence = no_fence,
                      bool use_khr = false);
 
-    VkResult Submit2WithTimelineSemaphore(const CommandBuffer &cmd, WaitT, const Semaphore &wait_semaphore, uint64_t value,
-                                          VkPipelineStageFlags2 wait_stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                          const Fence &fence = no_fence, bool use_khr = false);
-    VkResult Submit2WithTimelineSemaphore(const CommandBuffer &cmd, SignalT, const Semaphore &signal_semaphore, uint64_t value,
-                                          VkPipelineStageFlags2 signal_stage_mask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                          const Fence &fence = no_fence, bool use_khr = false);
-    VkResult Submit2WithTimelineSemaphore(const CommandBuffer &cmd, const Semaphore &wait_semaphore, uint64_t wait_value,
-                                          const Semaphore &signal_semaphore, uint64_t signal_value, const Fence &fence = no_fence,
-                                          bool use_khr = false);
+    VkResult Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Fence &fence = no_fence, bool use_khr = false);
+    VkResult Submit2(const CommandBuffer &cmd, const TimelineSignal &signal, const Fence &fence = no_fence, bool use_khr = false);
+    VkResult Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const TimelineSignal &signal,
+                     const Fence &fence = no_fence, bool use_khr = false);
 
     // vkQueuePresentKHR()
     VkResult Present(const Semaphore &wait_semaphore, VkSwapchainKHR swapchain, uint32_t image_index);

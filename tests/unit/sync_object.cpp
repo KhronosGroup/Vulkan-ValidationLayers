@@ -2127,11 +2127,11 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     vkt::Semaphore semaphore(*m_device);
     {
         VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        m_default_queue->Submit(vkt::no_cmd, vkt::signal, semaphore);
-        m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, stage_flags);
+        m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, stage_flags));
 
         m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pWaitSemaphores-00068");
-        m_second_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, stage_flags);
+        m_second_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, stage_flags));
         m_errorMonitor->VerifyFound();
         m_default_queue->Wait();
         m_second_queue->Wait();
@@ -2705,19 +2705,16 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
 
     // Check for re-signalling an already completed value (5)
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-semaphore-03882");
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, value, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                                  vkt::no_fence, true);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, value), vkt::no_fence, true);
     m_errorMonitor->VerifyFound();
 
     // Submit (6)
     value++;
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, value, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                                  vkt::no_fence, true);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, value), vkt::no_fence, true);
 
     // Check against a pending value (6)
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-semaphore-03882");
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, value, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                                                  vkt::no_fence, true);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, value), vkt::no_fence, true);
     m_errorMonitor->VerifyFound();
 
     // Double signal with the same value (7)
@@ -2746,13 +2743,11 @@ TEST_F(NegativeSyncObject, Sync2QueueSubmitTimelineSemaphoreValue) {
         value += timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-semaphore-03883");
-        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, value,
-                                                      VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, vkt::no_fence, true);
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, value), vkt::no_fence, true);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-semaphore-03884");
-        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, value,
-                                                      VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, vkt::no_fence, true);
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, value), vkt::no_fence, true);
         m_errorMonitor->VerifyFound();
     }
     m_default_queue->Wait();
@@ -2898,8 +2893,8 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreOutOfOrder) {
         GTEST_SKIP() << "Two queues are needed to run this test";
     }
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 5);
-    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, semaphore, 10, semaphore, 100);
-    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, semaphore, 0, semaphore, 10);
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 10), vkt::TimelineSignal(semaphore, 100));
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 0), vkt::TimelineSignal(semaphore, 10));
     m_device->Wait();
 }
 
@@ -2971,7 +2966,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
     m_errorMonitor->VerifyFound();
 
     timeline0.SignalKHR(10);
-    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, timeline1, 10, timeline0, 20);
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(timeline1, 10), vkt::TimelineSignal(timeline0, 20));
 
     m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03259");
     timeline0.SignalKHR(25);
@@ -3293,13 +3288,13 @@ TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
     cb1.End();
 
     vkt::Semaphore semaphore(*m_device);
-    m_default_queue->Submit(cb1, vkt::signal, semaphore);
+    m_default_queue->Submit(cb1, vkt::Signal(semaphore));
 
     m_command_buffer.Begin();
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError(queue_forward_progress_message);
-    m_default_queue->Submit(m_command_buffer, vkt::signal, semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(semaphore));
     m_errorMonitor->VerifyFound();
 
     m_device->Wait();
@@ -3472,10 +3467,10 @@ TEST_F(NegativeSyncObject, StageMaskHost) {
 
     vkt::Semaphore semaphore(*m_device);
     // Signal the semaphore so we can wait on it.
-    m_default_queue->Submit(vkt::no_cmd, vkt::signal, semaphore);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pWaitDstStageMask-00078");
-    m_default_queue->Submit(vkt::no_cmd, vkt::wait, semaphore, VK_PIPELINE_STAGE_HOST_BIT);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_HOST_BIT));
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -3686,7 +3681,7 @@ TEST_F(NegativeSyncObject, TimelineHostSignalAndInUseTracking) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     VkSemaphore handle = semaphore.handle();
 
-    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
     semaphore.Signal(1);  // signal should not initiate forward progress on the queue thread
 
     // In the case of regression, this delay gives the queue thread additional time to mark
@@ -3716,8 +3711,8 @@ TEST_F(NegativeSyncObject, TimelineSubmitSignalAndInUseTracking) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     VkSemaphore handle = semaphore.handle();
 
-    m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
-    m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     // Waiting for the second (signaling) queue should not initiate queue thread forward
     // progress on the default (waiting) queue.
     m_second_queue->Wait();

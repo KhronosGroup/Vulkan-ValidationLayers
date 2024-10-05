@@ -66,8 +66,8 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
     vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
     m_command_buffer.End();
 
-    m_default_queue->Submit2(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore,
-                             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                             vkt::Signal(submit_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT));
     m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_default_queue->Wait();
 }
@@ -106,7 +106,8 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitAutomaticVisibility) {
                            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &layout_transition);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                            vkt::Signal(submit_semaphore));
     m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_default_queue->Wait();
 }
@@ -146,7 +147,8 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
 
     // The goal of this test is to use QueueSubmit API (not QueueSubmit2) to
     // ensure syncval correctly converts SubmitInfo to SubmitInfo2 with ALL_COMMANDS signal semaphore.
-    m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, submit_semaphore);
+    m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                            vkt::Signal(submit_semaphore));
 
     m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     m_device->Wait();
@@ -220,8 +222,8 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
             const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
-                m_default_queue->Submit(vkt::no_cmd, acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                        submit_semaphore, fence);
+                m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
+                                        vkt::Signal(submit_semaphore), fence);
                 m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
             }
             vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
@@ -291,7 +293,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         m_command_buffer.Copy(src_buffer, buffer);
         m_command_buffer.End();
 
-        m_default_queue->Submit(m_command_buffer, acquire_semaphore, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore, fence);
+        m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore), fence);
         m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
     }
     // Frame 1
@@ -301,7 +303,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         // TODO: Present should be able to accept semaphore from Acquire directly, but due to
         // another bug we need this intermediate sumbit. Remove it and make present to wait
         // on image_ready_semaphore semaphore when acquire->present direct synchronization is fixed.
-        m_default_queue->Submit(vkt::no_cmd, acquire_semaphore2, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, submit_semaphore2);
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore2), vkt::Signal(submit_semaphore2));
 
         m_default_queue->Present(submit_semaphore2, m_swapchain, image_index);
     }
@@ -318,7 +320,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         m_command_buffer.Begin();
         m_command_buffer.Copy(buffer, dst_buffer);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer, vkt::wait, acquire_semaphore);
+        m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore));
     }
     m_default_queue->Wait();
 }

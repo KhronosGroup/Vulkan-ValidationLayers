@@ -5948,7 +5948,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     vkt::Semaphore semaphore(*m_device);
 
     // Submit on Graphics queue: empty batch just so Transfer queue can synchronize with.
-    m_default_queue->Submit2(vkt::no_cmd, vkt::signal, semaphore);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Signal(semaphore));
 
     // Submit on Graphics queue: image layout transition (WRITE access).
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
@@ -5978,7 +5978,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     cb2.End();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    transfer_queue->Submit2(cb2, vkt::wait, semaphore);
+    transfer_queue->Submit2(cb2, vkt::Wait(semaphore));
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -6038,7 +6038,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingRead) {
     gfx_cb.Begin();
     vk::CmdCopyBuffer(gfx_cb, buffer, gfx_dst_buffer, 1, &region);
     gfx_cb.End();
-    gfx_queue->Submit2(gfx_cb, vkt::signal, semaphore);
+    gfx_queue->Submit2(gfx_cb, vkt::Signal(semaphore));
 
     // Submit 1 (gfx queue): another read from the same buffer
     gfx_cb2.Begin();
@@ -6050,7 +6050,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingRead) {
     compute_cb.Begin();
     vk::CmdCopyBuffer(compute_cb, compute_src_buffer, compute_dst_buffer, 1, &region);
     compute_cb.End();
-    compute_queue->Submit2(compute_cb, vkt::signal, semaphore2);
+    compute_queue->Submit2(compute_cb, vkt::Signal(semaphore2));
 
     // Submit 3 (transfer queue): wait for gfx/compute semaphores
     {

@@ -25,7 +25,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitInitialValue) {
     TEST_DESCRIPTION("Wait on the initial value");
     RETURN_IF_SKIP(InitTimelineSemaphore());
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 1);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
     m_default_queue->Wait();
 }
 
@@ -40,8 +40,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignal) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_default_queue->Wait();
 }
 
@@ -56,8 +56,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalSync1) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->SubmitWithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
-    m_default_queue->SubmitWithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
+    m_default_queue->Submit(m_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_default_queue->Wait();
 }
 
@@ -78,8 +78,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalTwoQueues) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_device->Wait();
 }
 
@@ -94,8 +94,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalSmallerValue) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 2);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 2));
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_default_queue->Wait();
 }
 
@@ -116,8 +116,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalSmallerValueTwoQueues) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 2);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 2));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
     m_device->Wait();
 }
 
@@ -132,8 +132,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalNonDefaultStage) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT));
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT));
     m_default_queue->Wait();
 }
 
@@ -148,8 +148,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalNonDefaultStage2) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT));
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT));
     m_default_queue->Wait();
 }
 
@@ -170,8 +170,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitAfterSignalNonDefaultStageTwoQueues
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT));
     m_device->Wait();
 }
 
@@ -192,8 +192,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSignal) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 1));
     m_device->Wait();
 }
 
@@ -214,8 +214,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSignalSync1) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->SubmitWithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
-    m_second_queue->SubmitWithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 1);
+    m_default_queue->Submit(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit(m_second_command_buffer, vkt::TimelineSignal(semaphore, 1));
     m_device->Wait();
 }
 
@@ -236,8 +236,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitSmallerValueBeforeSignal) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 2);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 2));
     m_device->Wait();
 }
 
@@ -258,8 +258,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSignalNonDefaultStage) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_COPY_BIT));
     m_device->Wait();
 }
 
@@ -280,9 +280,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSignalNonDefaultStage2) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT);
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::signal, semaphore, 3,
-                                                 VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT));
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT));
     m_device->Wait();
 }
 
@@ -297,11 +296,11 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitLatestSignal) {
     m_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);  // includes all stages
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));  // includes all stages
 
     // If due to regression signal=1 resolves this wait then it should generate a WAW hazard due to stage mask mismatch
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 2);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 2));
     m_device->Wait();
 }
 
@@ -322,11 +321,11 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitLatestSignalTwoQueues) {
     m_second_command_buffer.End();
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 2);  // includes all stages
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));  // includes all stages
 
     // If due to regression signal=1 resolves this wait then it should generate a WAW hazard due to stage mask mismatch
-    m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, vkt::wait, semaphore, 2);
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 2));
     m_device->Wait();
 }
 
@@ -341,10 +340,10 @@ TEST_F(PositiveSyncValTimelineSemaphore, QueuesCollaborateToResolveEachOthersWai
     vkt::Semaphore first_queue_wait(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     vkt::Semaphore second_queue_wait(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, second_queue_wait, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, first_queue_wait, 1);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, second_queue_wait, 1);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, first_queue_wait, 1);
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(second_queue_wait, 1));
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(first_queue_wait, 1));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(second_queue_wait, 1));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(first_queue_wait, 1));
     m_device->Wait();
 }
 
@@ -356,9 +355,9 @@ TEST_F(PositiveSyncValTimelineSemaphore, SignalResolvesTwoWaits) {
         GTEST_SKIP() << "Three queues are needed";
     }
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
-    m_third_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
+    m_third_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     m_device->Wait();
 }
 
@@ -371,8 +370,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, SignalResolvesTwoWaits2) {
     }
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     semaphore.Signal(1);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
-    m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
     m_device->Wait();
 }
 
@@ -396,7 +395,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, SyncSubmitsWithSingleSemaphore) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     for (int i = 1; i <= N; i++) {
-        m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, semaphore, i - 1, semaphore, i);
+        m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, i - 1), vkt::TimelineSignal(semaphore, i));
     }
     m_device->Wait();
 }
@@ -415,7 +414,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, FrameSynchronization) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     for (int i = 1; i <= N; i++) {
-        m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, i);
+        m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, i));
         semaphore.Wait(i, vvl::kU64Max);
     }
     m_device->Wait();
@@ -438,7 +437,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, FrameSynchronization2) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     for (int i = 1; i <= N; i++) {
-        m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, i);
+        m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, i));
         while (semaphore.GetCounterValue() != i)
             ;
     }
@@ -457,7 +456,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, HostSignal) {
     TEST_DESCRIPTION("Host signal finishes device wait");
     RETURN_IF_SKIP(InitTimelineSemaphore());
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
     semaphore.Signal(1);
     m_device->Wait();
 }
@@ -466,7 +465,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, HostWaitWait) {
     TEST_DESCRIPTION("Wait for semaphore one more time on the host");
     RETURN_IF_SKIP(InitTimelineSemaphore());
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, 1);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
     semaphore.Wait(1, kWaitTimeout);
     // Test that the second wait does not cause any issues.
     semaphore.Wait(1, kWaitTimeout);
@@ -482,7 +481,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, HostSignalSignal) {
     // Test that the second signal does not cause any issues.
     semaphore.Signal(2);
 
-    m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
     m_device->Wait();
 }
 
@@ -562,7 +561,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, KhronosTimelineSemaphoreExample) {
     auto thread1 = [this, &timeline]() {
         const uint64_t wait_value_1 = 0;    // No-op wait. Value is always >= 0.
         const uint64_t signal_value_1 = 5;  // Unblock thread2's CPU work.
-        m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, timeline, wait_value_1, timeline, signal_value_1);
+        m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(timeline, wait_value_1),
+                                 vkt::TimelineSignal(timeline, signal_value_1));
     };
     auto thread2 = [&timeline, &bytes]() {
         // Wait for thread1's device work to complete.
@@ -578,7 +578,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, KhronosTimelineSemaphoreExample) {
     auto thread3 = [this, &timeline]() {
         const uint64_t wait_value_3 = 7;    // Wait for thread2's CPU work to complete.
         const uint64_t signal_value_3 = 8;  // Signal completion of all work.
-        m_second_queue->Submit2WithTimelineSemaphore(m_second_command_buffer, timeline, wait_value_3, timeline, signal_value_3);
+        m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(timeline, wait_value_3),
+                                vkt::TimelineSignal(timeline, signal_value_3));
     };
 
     std::thread t1(thread1);
@@ -605,8 +606,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, ResolveManyWaitBeforeSignals) {
     // Increase constant value to get longer running time.
     uint32_t N = 1000;
     for (uint32_t i = 0; i < N; i++) {
-        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::wait, semaphore, i + 1);
-        m_second_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, i + 1);
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, i + 1));
+        m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, i + 1));
         m_device->Wait();
     }
 }
@@ -648,8 +649,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitBeforeSignal) {
     // to track external signal). Check that the list of unresolved batches and signals does not grow.
     const int N = 100;
     for (int i = 1; i <= N; i++) {
-        m_default_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::wait, export_semaphore, i);
-        m_second_queue->SubmitWithTimelineSemaphore(vkt::no_cmd, vkt::signal, import_semaphore, i);
+        m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(export_semaphore, i));
+        m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(import_semaphore, i));
         m_device->Wait();
     }
 }
@@ -662,7 +663,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesSignals) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     const uint32_t N = 100;
     for (uint32_t i = 1; i <= N; i++) {
-        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, i);
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, i));
         // The maximum number of registered signals will be around 25
         if (i % 25 == 0) {
             m_default_queue->Wait();
@@ -678,7 +679,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, DeviceWaitIdleRemovesignals) {
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     const uint32_t N = 100;
     for (uint32_t i = 1; i <= N; i++) {
-        m_default_queue->Submit2WithTimelineSemaphore(vkt::no_cmd, vkt::signal, semaphore, i);
+        m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, i));
         // The maximum number of registered signals will be around 50
         if (i % 50 == 0) {
             m_device->Wait();
@@ -754,8 +755,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitForFencesWithTimelineSignalBatches)
 
     // The first batch context.
     // Specify VERTEX_SHADER signal scope, so waiting for timeline signal does not protect buffer copy
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::signal, semaphore, 1,
-                                                  VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT, fence);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT), fence);
 
     // The second batch context which imports the first one.
     // The timeline signal in the first submit still references the first batch.
@@ -769,7 +769,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitForFencesWithTimelineSignalBatches)
     // Waiting for timeline signal imports the first batch stored in that signal.
     // In case of regression the first batch will contain unprotected copy writes and
     // this will cause WRITE-AFTER-WRITE hazard.
-    m_default_queue->Submit2WithTimelineSemaphore(m_command_buffer, vkt::wait, semaphore, 1);
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1));
 
     m_default_queue->Wait();
 }
