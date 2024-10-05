@@ -204,8 +204,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
 
         cb_state.gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
 
-        uint32_t *gpu_regions_u32_ptr = nullptr;
-        copy_src_regions_mem_block.MapMemory(loc, reinterpret_cast<void **>(&gpu_regions_u32_ptr));
+        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_block.MapMemory(loc);
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;
@@ -281,7 +280,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         descriptor_buffer_infos[0].offset = 0;
         descriptor_buffer_infos[0].range = VK_WHOLE_SIZE;
         // Copy regions buffer
-        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_block.buffer;
+        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_block.Buffer();
         descriptor_buffer_infos[1].offset = 0;
         descriptor_buffer_infos[1].range = VK_WHOLE_SIZE;
 

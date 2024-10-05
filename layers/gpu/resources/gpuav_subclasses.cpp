@@ -142,8 +142,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     alloc_info.pool = gpuav.output_buffer_pool_;
     error_output_buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    uint32_t *output_buffer_ptr;
-    error_output_buffer.MapMemory(loc, reinterpret_cast<void **>(&output_buffer_ptr));
+    auto output_buffer_ptr = (uint32_t *)error_output_buffer.MapMemory(loc);
 
     memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
     if (gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) {
@@ -243,8 +242,8 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 
         VkDescriptorBufferInfo error_output_buffer_desc_info = {};
 
-        assert(error_output_buffer_.buffer != VK_NULL_HANDLE);
-        error_output_buffer_desc_info.buffer = error_output_buffer_.buffer;
+        assert(!error_output_buffer_.Destroyed());
+        error_output_buffer_desc_info.buffer = error_output_buffer_.Buffer();
         error_output_buffer_desc_info.offset = 0;
         error_output_buffer_desc_info.range = VK_WHOLE_SIZE;
 
@@ -257,8 +256,8 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 
         VkDescriptorBufferInfo cmd_indices_buffer_desc_info = {};
 
-        assert(error_output_buffer_.buffer != VK_NULL_HANDLE);
-        cmd_indices_buffer_desc_info.buffer = gpuav->indices_buffer_.buffer;
+        assert(!gpuav->indices_buffer_.Destroyed());
+        cmd_indices_buffer_desc_info.buffer = gpuav->indices_buffer_.Buffer();
         cmd_indices_buffer_desc_info.offset = 0;
         cmd_indices_buffer_desc_info.range = sizeof(uint32_t);
 
@@ -300,8 +299,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
 
     // Update buffer device address table
     // ---
-    VkDeviceAddress *bda_table_ptr = nullptr;
-    bda_ranges_snapshot_.MapMemory(loc, reinterpret_cast<void **>(&bda_table_ptr));
+    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.MapMemory(loc);
 
     // Buffer device address table layout
     // Ranges are sorted from low to high, and do not overlap
@@ -380,7 +378,7 @@ void CommandBuffer::ResetCBState() {
     per_command_error_loggers.clear();
 
     for (auto &buffer_info : di_input_buffer_list) {
-        vmaDestroyBuffer(gpuav->vma_allocator_, buffer_info.bindless_state.buffer, buffer_info.bindless_state.allocation);
+        buffer_info.bindless_state.DestroyBuffer();
     }
     di_input_buffer_list.clear();
     current_bindless_buffer = VK_NULL_HANDLE;
@@ -413,8 +411,7 @@ void CommandBuffer::ResetCBState() {
 }
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
-    uint32_t *cmd_errors_counts_buffer_ptr = nullptr;
-    cmd_errors_counts_buffer_.MapMemory(loc, reinterpret_cast<void **>(&cmd_errors_counts_buffer_ptr));
+    auto cmd_errors_counts_buffer_ptr = (uint32_t *)cmd_errors_counts_buffer_.MapMemory(loc);
     std::memset(cmd_errors_counts_buffer_ptr, 0, static_cast<size_t>(GetCmdErrorsCountsBufferByteSize()));
     cmd_errors_counts_buffer_.UnmapMemory();
 }
@@ -446,7 +443,7 @@ bool CommandBuffer::PreProcess(const Location &loc) {
     return !per_command_error_loggers.empty() || has_build_as_cmd;
 }
 
-bool CommandBuffer::NeedsPostProcess() { return error_output_buffer_.buffer != VK_NULL_HANDLE; }
+bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.Destroyed(); }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
@@ -454,9 +451,8 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (auto &buffer_info : debug_printf_buffer_infos) {
-        char *data;
-        buffer_info.output_mem_block.MapMemory(loc, reinterpret_cast<void **>(&data));
-        debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, buffer_info, (uint32_t *)data, loc);
+        auto printf_output_ptr = (char *)buffer_info.output_mem_block.MapMemory(loc);
+        debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, buffer_info, (uint32_t *)printf_output_ptr, loc);
         buffer_info.output_mem_block.UnmapMemory();
     }
 
@@ -469,8 +465,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     bool skip = false;
     {
-        uint32_t *error_output_buffer_ptr = nullptr;
-        error_output_buffer_.MapMemory(loc, reinterpret_cast<void **>(&error_output_buffer_ptr));
+        auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_.MapMemory(loc);
 
         // The second word in the debug output buffer is the number of words that would have
         // been written by the shader instrumentation, if there was enough room in the buffer we provided.

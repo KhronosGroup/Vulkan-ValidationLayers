@@ -88,11 +88,10 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     // draw's descriptor set.
     di_buffers.bindless_state.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    glsl::BindlessStateBuffer *bindless_state{nullptr};
-    di_buffers.bindless_state.MapMemory(loc, reinterpret_cast<void **>(&bindless_state));
+    auto bindless_state = (glsl::BindlessStateBuffer *)di_buffers.bindless_state.MapMemory(loc);
 
     memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
-    cb_state.current_bindless_buffer = di_buffers.bindless_state.buffer;
+    cb_state.current_bindless_buffer = di_buffers.bindless_state.Buffer();
 
     bindless_state->global_state = gpuav.desc_heap_->GetDeviceAddress();
     di_buffers.descriptor_set_buffers.reserve(di_buffers.descriptor_set_buffers.size() + last_bound.per_set.size());
@@ -133,8 +132,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
 [[nodiscard]] bool UpdateBindlessStateBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc) {
     for (auto &cmd_info : cb_state.di_input_buffer_list) {
-        glsl::BindlessStateBuffer *bindless_state{nullptr};
-        cmd_info.bindless_state.MapMemory(loc, reinterpret_cast<void **>(&bindless_state));
+        auto bindless_state = (glsl::BindlessStateBuffer *)cmd_info.bindless_state.MapMemory(loc);
 
         for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {
             auto &set_buffer = cmd_info.descriptor_set_buffers[i];

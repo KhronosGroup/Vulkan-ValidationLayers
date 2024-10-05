@@ -57,8 +57,7 @@ VkDeviceAddress DescriptorSet::GetLayoutState(Validator &gpuav, const Location &
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     layout_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    glsl::BindingLayout *layout_data;
-    layout_.MapMemory(loc, reinterpret_cast<void **>(&layout_data));
+    auto layout_data = (glsl::BindingLayout *)layout_.MapMemory(loc);
     memset(layout_data, 0, static_cast<size_t>(buffer_info.size));
 
     layout_data[0].count = num_bindings;
@@ -252,8 +251,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     next_state->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    glsl::DescriptorState *data{nullptr};
-    next_state->buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
+    auto data = (glsl::DescriptorState *)next_state->buffer.MapMemory(loc);
 
     uint32_t index = 0;
     for (uint32_t i = 0; i < bindings_.size(); i++) {
@@ -330,8 +328,7 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     next_state->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    uint32_t *data = nullptr;
-    next_state->buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
+    auto data = (uint32_t *)next_state->buffer.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
@@ -345,15 +342,13 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
 std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::State::UsedDescriptors(const Location &loc, const DescriptorSet &set,
                                                                                 uint32_t shader_set) const {
     std::map<uint32_t, std::vector<uint32_t>> used_descs;
-    if (!buffer.allocation) {
+    if (buffer.Destroyed()) {
         return used_descs;
     }
 
-    glsl::BindingLayout *layout_data = nullptr;
-    set.layout_.MapMemory(loc, reinterpret_cast<void **>(&layout_data));
+    auto layout_data = (glsl::BindingLayout *)set.layout_.MapMemory(loc);
 
-    uint32_t *data = nullptr;
-    buffer.MapMemory(loc, reinterpret_cast<void **>(&data));
+    auto data = (uint32_t *)buffer.MapMemory(loc);
     buffer.InvalidateAllocation(loc);
 
     uint32_t max_binding = layout_data[0].count;
@@ -407,7 +402,7 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    buffer_.MapMemory(loc, reinterpret_cast<void **>(&gpu_heap_state_));
+    gpu_heap_state_ = (uint32_t *)buffer_.MapMemory(loc);
     memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
 }
 
