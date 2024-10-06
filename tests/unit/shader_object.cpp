@@ -3894,17 +3894,23 @@ TEST_F(NegativeShaderObject, ComputeShaderGroupCount) {
 
     m_command_buffer.BindCompShader(compShader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountX-00386");
-    vk::CmdDispatch(m_command_buffer.handle(), x_count_limit + 1u, 1u, 1u);
-    m_errorMonitor->VerifyFound();
+    if (x_count_limit != std::numeric_limits<uint32_t>::max()) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountX-00386");
+        vk::CmdDispatch(m_command_buffer.handle(), x_count_limit + 1u, 1u, 1u);
+        m_errorMonitor->VerifyFound();
+    }
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountY-00387");
-    vk::CmdDispatch(m_command_buffer.handle(), 1u, y_count_limit + 1u, 1u);
-    m_errorMonitor->VerifyFound();
+    if (y_count_limit != std::numeric_limits<uint32_t>::max()) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountY-00387");
+        vk::CmdDispatch(m_command_buffer.handle(), 1u, y_count_limit + 1u, 1u);
+        m_errorMonitor->VerifyFound();
+    }
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountZ-00388");
-    vk::CmdDispatch(m_command_buffer.handle(), 1u, 1u, z_count_limit + 1u);
-    m_errorMonitor->VerifyFound();
+    if (z_count_limit != std::numeric_limits<uint32_t>::max()) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountZ-00388");
+        vk::CmdDispatch(m_command_buffer.handle(), 1u, 1u, z_count_limit + 1u);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_command_buffer.End();
 }
