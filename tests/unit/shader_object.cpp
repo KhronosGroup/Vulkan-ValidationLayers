@@ -1811,6 +1811,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetAlphaToOneEnableEXT) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07625");
 
+    AddRequiredFeature(vkt::Feature::alphaToOne);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
