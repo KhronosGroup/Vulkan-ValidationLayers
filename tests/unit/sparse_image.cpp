@@ -1102,7 +1102,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
     VkMemoryAllocateInfo invalid_image_mem_alloc = vku::InitStructHelper();
     invalid_image_mem_alloc.allocationSize = invalid_image_mem_reqs.size;
     if (!m_device->Physical().SetMemoryType(invalid_image_mem_reqs.memoryTypeBits, &invalid_image_mem_alloc,
-                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD)) {
         GTEST_SKIP() << "Could not find required memory type";
     }
 
@@ -1190,7 +1190,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
     VkMemoryAllocateInfo invalid_image_mem_alloc = vku::InitStructHelper();
     invalid_image_mem_alloc.allocationSize = invalid_image_mem_reqs.size;
     if (!m_device->Physical().SetMemoryType(invalid_image_mem_reqs.memoryTypeBits, &invalid_image_mem_alloc,
-                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD)) {
         GTEST_SKIP() << "Could not find required memory type";
     }
 
