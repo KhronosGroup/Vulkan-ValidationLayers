@@ -54,40 +54,29 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
     // Loop through the indices until we find one we are reusing...
     // When fence is non-null this can timeout so we need to track results
-    auto present_image = [this](uint32_t index, const vkt::Semaphore* sem, const vkt::Fence* fence) {
-        VkResult result = VK_SUCCESS;
-        if (fence) {
-            result = fence->Wait(kWaitTimeout);
-            if (VK_SUCCESS == result) {
-                fence->Reset();
-            }
-        }
-        if (VK_SUCCESS == result) {
-            m_default_queue->Present(sem ? *sem : vkt::no_semaphore, m_swapchain, index);
-        }
-        return result;
-    };
-
     // Acquire can always timeout, so we need to track results
-    auto acquire_used_image_semaphore = [this, &image_used, &present_image](const vkt::Semaphore& sem, uint32_t& index) {
+    auto acquire_used_image_semaphore = [this, &image_used](const vkt::Semaphore& sem, uint32_t& index) {
         VkResult result = VK_SUCCESS;
         while (true) {
             index = m_swapchain.AcquireNextImage(sem, kWaitTimeout, &result);
             if ((result != VK_SUCCESS) || image_used[index]) break;
 
-            result = present_image(index, &sem, nullptr);
+            result = m_default_queue->Present(m_swapchain, index, sem);
             if (result != VK_SUCCESS) break;
             image_used[index] = true;
         }
         return result;
     };
-    auto acquire_used_image_fence = [this, &image_used, &present_image](const vkt::Fence& fence, uint32_t& index) {
+    auto acquire_used_image_fence = [this, &image_used](const vkt::Fence& fence, uint32_t& index) {
         VkResult result = VK_SUCCESS;
         while (true) {
             index = m_swapchain.AcquireNextImage(fence, kWaitTimeout, &result);
             if ((result != VK_SUCCESS) || image_used[index]) break;
 
-            result = present_image(index, nullptr, &fence);
+            result = fence.Wait(kWaitTimeout);
+            fence.Reset();
+            m_default_queue->Present(m_swapchain, index, vkt::no_semaphore);
+
             if (result != VK_SUCCESS) break;
             image_used[index] = true;
         }
@@ -142,7 +131,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     m_device->Wait();
 
     // Release the image back to the present engine, so we don't run out
-    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
+    m_default_queue->Present(m_swapchain, acquired_index, vkt::no_semaphore);  // present without fence can't timeout
 
     vkt::Semaphore sem(*m_device);
     REQUIRE_SUCCESS(acquire_used_image_semaphore(sem, acquired_index), "acquire_used_image");
@@ -160,12 +149,12 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
     // Try presenting without waiting for the ILT to finish
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
+    m_default_queue->Present(m_swapchain, acquired_index, vkt::no_semaphore);  // present without fence can't timeout
     m_errorMonitor->VerifyFound();
 
     // Let the ILT complete, and the release the image back
     m_device->Wait();
-    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
+    m_default_queue->Present(m_swapchain, acquired_index, vkt::no_semaphore);  // present without fence can't timeout
 
     REQUIRE_SUCCESS(acquire_used_image_fence(fence, acquired_index), "acquire_used_index");
     REQUIRE_SUCCESS(fence.Wait(kWaitTimeout), "WaitForFences");
@@ -177,10 +166,10 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     m_default_queue->Submit(m_command_buffer, vkt::Signal(sem));
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
+    m_default_queue->Present(m_swapchain, acquired_index, vkt::no_semaphore);  // present without fence can't timeout
     m_errorMonitor->VerifyFound();
 
-    present_image(acquired_index, &sem, nullptr);  // present without fence can't timeout
+    m_default_queue->Present(m_swapchain, acquired_index, sem);  // present without fence can't timeout
     m_device->Wait();
 }
 
@@ -224,7 +213,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
 
     // DO NOT wait for submit. This should generate present after write (ILT) harard.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
@@ -263,7 +252,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit) {
 
     // DO NOT wait for submit. This should generate present after write (ILT) harard.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }

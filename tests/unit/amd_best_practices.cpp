@@ -625,21 +625,9 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     vkt::Semaphore image_acquired(*m_device);
     const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
 
-    VkPresentInfoKHR present_info = {};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 0;
-    present_info.pWaitSemaphores = &image_acquired.handle();
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = &m_swapchain.handle();
-    present_info.pImageIndices = &current_buffer;
-    present_info.pResults = NULL;
-
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Submission-ReduceNumberOfSubmissions");
     m_errorMonitor->SetUnexpectedError("VUID-VkPresentInfoKHR-pImageIndices-01430");
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
-
-    vk::QueuePresentKHR(m_default_queue->handle(), &present_info);
-
+    m_default_queue->Present(m_swapchain, current_buffer, image_acquired);
     m_errorMonitor->VerifyFound();
 }
 

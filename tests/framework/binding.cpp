@@ -743,14 +743,15 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
     return result;
 }
 
-VkResult Queue::Present(const Semaphore &wait_semaphore, VkSwapchainKHR swapchain, uint32_t image_index) {
-    VkPresentInfoKHR present = vku::InitStructHelper();
+VkResult Queue::Present(const Swapchain &swapchain, uint32_t image_index, const Semaphore &wait_semaphore,
+                        void *present_info_pnext) {
+    VkPresentInfoKHR present = vku::InitStructHelper(present_info_pnext);
     if (wait_semaphore.initialized()) {
         present.waitSemaphoreCount = 1;
         present.pWaitSemaphores = &wait_semaphore.handle();
     }
     present.swapchainCount = 1;
-    present.pSwapchains = &swapchain;
+    present.pSwapchains = &swapchain.handle();
     present.pImageIndices = &image_index;
     VkResult result = vk::QueuePresentKHR(handle(), &present);
     return result;
