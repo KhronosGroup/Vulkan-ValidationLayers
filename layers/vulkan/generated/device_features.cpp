@@ -1087,6 +1087,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->primitiveTopologyPatchListRestart |= enabled->primitiveTopologyPatchListRestart == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT: {
+                const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT *>(pNext);
+                features->presentModeFifoLatestReady |= enabled->presentModeFifoLatestReady == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI: {
                 const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *enabled =
                     reinterpret_cast<const VkPhysicalDeviceSubpassShadingFeaturesHUAWEI *>(pNext);

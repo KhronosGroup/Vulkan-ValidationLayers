@@ -4148,6 +4148,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->presentId, "VkPhysicalDevicePresentIdFeaturesKHR::presentId"};
         }
+        case Feature::presentModeFifoLatestReady: {
+            auto vk_struct = const_cast<VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->presentModeFifoLatestReady,
+                    "VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT::presentModeFifoLatestReady"};
+        }
         case Feature::presentWait: {
             auto vk_struct = const_cast<VkPhysicalDevicePresentWaitFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDevicePresentWaitFeaturesKHR>(*inout_pnext_chain));

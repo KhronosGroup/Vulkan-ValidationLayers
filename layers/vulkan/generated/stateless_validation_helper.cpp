@@ -2882,6 +2882,24 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT: {  // Covers
+                                                                                               // VUID-VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_present_mode_fifo_latest_ready)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT, but when "
+                                     "creating VkDevice, the parent extension "
+                                     "(VK_EXT_present_mode_fifo_latest_ready) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT* structure =
+                    (VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentModeFifoLatestReady), structure->presentModeFifoLatestReady);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceSubpassShadingFeaturesHUAWEI structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceSubpassShadingFeaturesHUAWEI-sType-sType
@@ -9977,6 +9995,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVES_GENERATED_QUERY_FEATURES_EXT,

@@ -621,6 +621,8 @@ struct DeviceFeatures {
     bool presentBarrier;
     // VkPhysicalDevicePresentIdFeaturesKHR
     bool presentId;
+    // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
+    bool presentModeFifoLatestReady;
     // VkPhysicalDevicePresentWaitFeaturesKHR
     bool presentWait;
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
