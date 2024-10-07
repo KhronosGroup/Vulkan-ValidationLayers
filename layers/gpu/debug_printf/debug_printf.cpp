@@ -231,7 +231,6 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
             if (substring.needs_value) {
                 if (substring.is_64_bit) {
-                    assert(substring.type != NumericTypeSint);  // not supported
                     if (substring.type == NumericTypeUint) {
                         std::array<std::string_view, 3> format_strings = {{"%ul", "%lu", "%lx"}};
                         for (const auto &ul_string : format_strings) {
@@ -250,6 +249,28 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                         needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                         temp_string.resize(needed);
                         std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                    } else if (substring.type == NumericTypeSint) {
+                        size_t ld_pos = substring.string.find("%ld");
+                        if (ld_pos != std::string::npos) {
+                            substring.string.replace(ld_pos + 1, 2, PRId64);
+                        } else {
+                            gpuav.InternalWarning(command_buffer, loc,
+                                                  "Trying to DebugPrintf a 64-bit signed int but not using \"%%ld\" to print it.");
+                        }
+
+                        const uint32_t *current_ptr = static_cast<uint32_t *>(current_value);
+                        const uint32_t low = *current_ptr;
+                        const uint32_t high = *(current_ptr + 1);
+                        // Need to shift into uint before casting to signed int to avoid undefined behavior
+                        // https://learn.microsoft.com/en-us/cpp/cpp/left-shift-and-right-shift-operators-input-and-output?view=msvc-170#footnotes
+                        const uint64_t value_unsigned = (static_cast<uint64_t>(high) << 32) | low;
+                        const int64_t value = static_cast<int64_t>(value_unsigned);
+
+                        needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
+                        temp_string.resize(needed);
+                        std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
+                    } else {
+                        assert(false);  // non-supported type
                     }
                 } else {
                     if (substring.type == NumericTypeUint) {
