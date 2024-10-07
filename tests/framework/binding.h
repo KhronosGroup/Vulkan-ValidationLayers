@@ -527,7 +527,8 @@ class Queue : public internal::Handle<VkQueue> {
                      const Fence &fence = no_fence, bool use_khr = false);
 
     // vkQueuePresentKHR()
-    VkResult Present(const Semaphore &wait_semaphore, VkSwapchainKHR swapchain, uint32_t image_index);
+    VkResult Present(const Swapchain &swapchain, uint32_t image_index, const Semaphore &wait_semaphore,
+                     void *present_info_pnext = nullptr);
 
     // vkQueueWaitIdle()
     VkResult Wait();

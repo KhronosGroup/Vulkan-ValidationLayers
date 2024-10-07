@@ -431,7 +431,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {
 
     m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT),
                             vkt::Signal(submit_semaphore));
-    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
     m_default_queue->Wait();
 }
 
@@ -448,7 +448,7 @@ TEST_F(PositiveWsi, SwapchainAcquireImageAndWaitForFence) {
     const vkt::Fence fence(*m_device);
     const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
-    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_default_queue->Wait();
 }
 
@@ -470,7 +470,7 @@ TEST_F(PositiveWsi, WaitForAcquireFenceAndIgnoreSemaphore) {
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 
     // Present without waiting for the semaphore. That's fine because we waited on the fence
-    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
 
     m_default_queue->Wait();
 }
@@ -492,7 +492,7 @@ TEST_F(PositiveWsi, WaitForAcquireSemaphoreAndIgnoreFence) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
 
     // Present without waiting on the fence. That's fine because present waits for the semaphore
-    m_default_queue->Present(semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, semaphore);
 
     // NOTE: this test validates vkQueuePresentKHR.
     // At this point it's fine to wait for the fence to avoid in-use errors during test exit
@@ -540,7 +540,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence) {
         command_buffers[image_index].End();
 
         m_default_queue->Submit(command_buffers[image_index], vkt::Signal(submit_semaphores[image_index]));
-        m_default_queue->Present(submit_semaphores[image_index], m_swapchain, image_index);
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphores[image_index]);
     }
     m_default_queue->Wait();
 }
@@ -569,7 +569,7 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     command_buffers[image_index].End();
 
     m_default_queue->Submit(command_buffers[image_index], vkt::Signal(submit_semaphores[image_index]));
-    m_default_queue->Present(submit_semaphores[image_index], m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphores[image_index]);
 
     // Here the application decides to destroy swapchain (e.g. resize event)
     m_swapchain.destroy();
@@ -727,7 +727,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
 
     SetImageLayoutPresentSrc(images[image_index]);
 
-    m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
 
     // Presenting image multiple times is valid in the shared present mode.
     //
@@ -740,7 +740,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     // of a shared presentable image after a present. The application must call vkQueuePresentKHR to guarantee an update. However,
     // the presentation engine may update from it at any time.
     for (uint32_t i = 0; i < 5; ++i) {
-        m_default_queue->Present(vkt::no_semaphore, m_swapchain, image_index);
+        m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     }
 }
 
@@ -1292,7 +1292,7 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
                            0, nullptr, 0, nullptr, 1, &present_transition);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Present(vkt::no_semaphore, swapchain, imageIndex);
+    m_default_queue->Present(swapchain, imageIndex, vkt::no_semaphore);
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7025
@@ -1339,13 +1339,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
         present_fence_info.swapchainCount = 1;
         present_fence_info.pFences = &present_fence.handle();
 
-        VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
-        present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &submit_semaphore.handle();
-        present.swapchainCount = 1;
-        present.pSwapchains = &m_swapchain.handle();
-        present.pImageIndices = &image_index;
-        vk::QueuePresentKHR(*m_default_queue, &present);
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &present_fence_info);
 
         vk::WaitForFences(device(), 1, &present_fence.handle(), VK_TRUE, kWaitTimeout);
 
@@ -1423,13 +1417,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
         present_fence_info.swapchainCount = 1;
         present_fence_info.pFences = &frame.present_finished_fence.handle();
 
-        VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
-        present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &frame.submit_finished.handle();
-        present.swapchainCount = 1;
-        present.pSwapchains = &m_swapchain.handle();
-        present.pImageIndices = &image_index;
-        vk::QueuePresentKHR(*m_default_queue, &present);
+        m_default_queue->Present(m_swapchain, image_index, frame.submit_finished, &present_fence_info);
     }
     m_default_queue->Wait();
 }
@@ -1462,13 +1450,7 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
     present_fence_info.swapchainCount = 1;
     present_fence_info.pFences = &present_fence.handle();
 
-    VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-    vk::QueuePresentKHR(*m_default_queue, &present);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &present_fence_info);
 
     // QueueWaitIdle (and also DeviceWaitIdle) can wait for present fences.
     m_default_queue->Wait();

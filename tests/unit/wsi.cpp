@@ -1107,12 +1107,7 @@ TEST_F(NegativeWsi, SwapchainPresentShared) {
 
     // Try to Present without Acquire...
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1580,15 +1575,9 @@ TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     display_present_info.dstRect.extent.width = swapchain_width;
     display_present_info.dstRect.extent.height = swapchain_height;
 
-    VkPresentInfoKHR present = vku::InitStructHelper(&display_present_info);
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &image_acquired.handle();
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &current_buffer;
-    present.swapchainCount = 1;
     m_errorMonitor->SetDesiredError("VUID-VkDisplayPresentInfoKHR-srcRect-01257");
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, current_buffer, image_acquired, &display_present_info);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1735,13 +1724,8 @@ TEST_F(NegativeWsi, PresentIdWaitFeatures) {
     present_id.swapchainCount = 1;
     present_id.pPresentIds = &present_id_index;
 
-    VkPresentInfoKHR present = vku::InitStructHelper(&present_id);
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-    present.swapchainCount = 1;
-
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pNext-06235");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &present_id);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkWaitForPresentKHR-presentWait-06234");
@@ -1786,13 +1770,8 @@ TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     // This test initiates image count query, but don't need resulting value
     m_swapchain.GetImageCount(); 
 
-    const uint32_t image_index = 0;
-    VkPresentInfoKHR present_info = vku::InitStructHelper();
-    present_info.pImageIndices = &image_index;
-    present_info.pSwapchains = &m_swapchain.handle();
-    present_info.swapchainCount = 1;
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present_info);
+    m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2416,24 +2395,16 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT),
                             vkt::Signal(submit_semaphore));
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &submit_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     vkt::Fence present_fence(*m_device);
     VkFence fences[2] = {present_fence.handle(), present_fence.handle()};
 
     // PresentFenceInfo swapchaincount not equal to PresentInfo swapchaincount
     VkSwapchainPresentFenceInfoEXT fence_info = vku::InitStructHelper();
-    fence_info.swapchainCount = present.swapchainCount + 1;
+    fence_info.swapchainCount = 1 /* swapchain count */ + 1;
     fence_info.pFences = fences;
-    present.pNext = &fence_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentFenceInfoEXT-swapchainCount-07757");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &fence_info);
     m_errorMonitor->VerifyFound();
 
     const std::vector<VkPresentModeKHR> defined_present_modes{
@@ -2458,15 +2429,14 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     VkSwapchainPresentModeInfoEXT present_mode_info = vku::InitStructHelper();
     present_mode_info.swapchainCount = 1;
     present_mode_info.pPresentModes = &mismatched_present_mode;
-    present.pNext = &present_mode_info;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-07761");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
 
     // QueuePresent resets image[index].acquired to false
     VkPresentModeKHR good_present_mode = m_surface_non_shared_present_mode;
     present_mode_info.pPresentModes = &good_present_mode;
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore, &present_mode_info);
 
     uint32_t release_index = 0;
     VkReleaseSwapchainImagesInfoEXT release_info = vku::InitStructHelper();
@@ -2835,19 +2805,11 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout) {
     RETURN_IF_SKIP(InitSwapchain());
 
     const vkt::Semaphore acquire_semaphore(*m_device);
-
     const auto swapchain_images = m_swapchain.GetImages();
     const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &acquire_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2957,15 +2919,8 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
 
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-    present.swapchainCount = 1;
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &semaphore.handle();
-
     m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pWaitSemaphores-01294");
-    vk::QueuePresentKHR(other->handle(), &present);
+    other->Present(m_swapchain, image_index, semaphore);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -2999,16 +2954,9 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
 
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
 
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-    present.swapchainCount = 1;
-    present.waitSemaphoreCount = 1;
     // the semaphore has already been waited on
-    present.pWaitSemaphores = &semaphore.handle();
-
     m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pWaitSemaphores-03268");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, semaphore);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -3029,15 +2977,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {
     const uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
 
     // Present without waiting on the acquire semaphore
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;
-    present.pWaitSemaphores = nullptr;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3062,15 +3003,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore_2) {
     m_default_queue->Submit(m_command_buffer, vkt::Signal(submit_semaphore));
 
     // Present waits on submit semaphore. Does not wait on the acquire semaphore.
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 1;  // only submit semaphore
-    present.pWaitSemaphores = &submit_semaphore.handle();
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);  // only submit semaphore
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -3091,15 +3025,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFence) {
     const uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
 
     // Present without waiting on the acquire fence
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;
-    present.pWaitSemaphores = nullptr;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
 
     // NOTE: this test validates vkQueuePresentKHR.
@@ -3125,15 +3052,8 @@ TEST_F(NegativeWsi, MissingWaitForImageAcquireFenceAndSemaphore) {
     vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore, fence, &image_index);
 
     // Present without waiting on the acquire semaphore and fence
-    VkPresentInfoKHR present = vku::InitStructHelper();
-    present.waitSemaphoreCount = 0;
-    present.pWaitSemaphores = nullptr;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPresentInfoKHR-pImageIndices-MissingAcquireWait");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore);
     m_errorMonitor->VerifyFound();
 
     // NOTE: this test validates vkQueuePresentKHR.
@@ -3224,26 +3144,21 @@ TEST_F(NegativeWsi, PresentRegionsKHR) {
     // Allowed to have zero rectangleCount
     VkPresentRegionKHR region[2] = {{0, nullptr}, {0, nullptr}};
 
-    VkPresentRegionsKHR regions = vku::InitStructHelper();
-    VkPresentInfoKHR present = vku::InitStructHelper(&regions);
-    present.waitSemaphoreCount = 0;
-    present.swapchainCount = 1;
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_index;
-
     {
+        VkPresentRegionsKHR regions = vku::InitStructHelper();
         regions.swapchainCount = 2;  // swapchainCount doesn't match VkPresentInfoKHR::swapchainCount
         regions.pRegions = region;
         m_errorMonitor->SetDesiredError("VUID-VkPresentRegionsKHR-swapchainCount-01260");
-        vk::QueuePresentKHR(m_default_queue->handle(), &present);
+        m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &regions);
         m_errorMonitor->VerifyFound();
     }
 
     {
+        VkPresentRegionsKHR regions = vku::InitStructHelper();
         regions.swapchainCount = 0;  // can't be zero
         regions.pRegions = region;
         m_errorMonitor->SetDesiredError("VUID-VkPresentRegionsKHR-swapchainCount-arraylength");
-        vk::QueuePresentKHR(m_default_queue->handle(), &present);
+        m_default_queue->Present(m_swapchain, image_index, vkt::no_semaphore, &regions);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -3476,20 +3391,14 @@ TEST_F(NegativeWsi, SwapchainPresentModeInfoImplicit) {
     present_mode_info.swapchainCount = 0;
     present_mode_info.pPresentModes = &present_mode;
 
-    uint32_t image_indices = 0;
-    VkPresentInfoKHR present = vku::InitStructHelper(&present_mode_info);
-    present.pSwapchains = &m_swapchain.handle();
-    present.pImageIndices = &image_indices;
-    present.swapchainCount = 1;
-
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-swapchainCount-arraylength");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
 
     present_mode_info.swapchainCount = 1;
     present_mode_info.pPresentModes = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModeInfoEXT-pPresentModes-parameter");
-    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore, &present_mode_info);
     m_errorMonitor->VerifyFound();
 }
 

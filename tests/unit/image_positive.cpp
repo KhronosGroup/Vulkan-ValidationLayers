@@ -506,7 +506,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    m_default_queue->Present(image_acquired, m_swapchain, current_buffer);
+    m_default_queue->Present(m_swapchain, current_buffer, image_acquired);
     m_default_queue->Wait();
 }
 

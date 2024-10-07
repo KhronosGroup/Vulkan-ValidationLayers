@@ -68,7 +68,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
 
     m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
                              vkt::Signal(submit_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT));
-    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
     m_default_queue->Wait();
 }
 
@@ -108,7 +108,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitAutomaticVisibility) {
 
     m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
                             vkt::Signal(submit_semaphore));
-    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
     m_default_queue->Wait();
 }
 
@@ -150,7 +150,7 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
                             vkt::Signal(submit_semaphore));
 
-    m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
+    m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
     m_device->Wait();
 }
 
@@ -224,7 +224,7 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
                 std::unique_lock<std::mutex> lock(queue_mutex);
                 m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
                                         vkt::Signal(submit_semaphore), fence);
-                m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
+                m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
             }
             vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
             vk::ResetFences(device(), 1, &fence.handle());
@@ -294,7 +294,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore), fence);
-        m_default_queue->Present(submit_semaphore, m_swapchain, image_index);
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
     }
     // Frame 1
     {
@@ -305,7 +305,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
         // on image_ready_semaphore semaphore when acquire->present direct synchronization is fixed.
         m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore2), vkt::Signal(submit_semaphore2));
 
-        m_default_queue->Present(submit_semaphore2, m_swapchain, image_index);
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphore2);
     }
     // Frame 2
     {
