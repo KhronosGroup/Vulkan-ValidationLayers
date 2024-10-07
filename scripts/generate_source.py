@@ -20,12 +20,12 @@
 import argparse
 import filecmp
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import difflib
-import json
 import common_ci
 import pickle
 from xml.etree import ElementTree
@@ -428,13 +428,11 @@ def main(argv):
         json_files.append(repo_relative('layers/VkLayer_khronos_validation.json.in'))
         json_files.append(repo_relative('tests/layers/VkLayer_device_profile_api.json.in'))
         for json_file in json_files:
-            with open(json_file) as f:
-                data = json.load(f)
-
-            data["layer"]["api_version"] = args.generated_version
-
-            with open(json_file, mode='w', encoding='utf-8', newline='\n') as f:
-                f.write(json.dumps(data, indent=4))
+            with open(json_file, 'r') as file:
+                json_str = file.read()
+            with open(json_file, 'w') as file:
+                # Update json at the string-level so it doesn't get reformatted
+                file.write(re.sub(r'("api_version" *: *)".*?"', fr'\1"{args.generated_version}"', json_str))
 
     # get directory where generators will run
     if args.verify or args.incremental:
