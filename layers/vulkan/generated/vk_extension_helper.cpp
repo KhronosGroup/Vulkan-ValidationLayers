@@ -322,6 +322,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_device_address_binding_report", vvl::Extension::_VK_EXT_device_address_binding_report},
         {"VK_EXT_depth_clip_control", vvl::Extension::_VK_EXT_depth_clip_control},
         {"VK_EXT_primitive_topology_list_restart", vvl::Extension::_VK_EXT_primitive_topology_list_restart},
+        {"VK_EXT_present_mode_fifo_latest_ready", vvl::Extension::_VK_EXT_present_mode_fifo_latest_ready},
         {"VK_FUCHSIA_external_memory", vvl::Extension::_VK_FUCHSIA_external_memory},
         {"VK_FUCHSIA_external_semaphore", vvl::Extension::_VK_FUCHSIA_external_semaphore},
         {"VK_FUCHSIA_buffer_collection", vvl::Extension::_VK_FUCHSIA_buffer_collection},

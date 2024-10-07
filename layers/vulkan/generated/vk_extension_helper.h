@@ -540,6 +540,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_device_address_binding_report{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_control{kNotEnabled};
     ExtEnabled vk_ext_primitive_topology_list_restart{kNotEnabled};
+    ExtEnabled vk_ext_present_mode_fifo_latest_ready{kNotEnabled};
     ExtEnabled vk_fuchsia_external_memory{kNotEnabled};
     ExtEnabled vk_fuchsia_external_semaphore{kNotEnabled};
     ExtEnabled vk_fuchsia_buffer_collection{kNotEnabled};
@@ -1413,6 +1414,9 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_ext_primitive_topology_list_restart,
                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_present_mode_fifo_latest_ready,
+             Info(&DeviceExtensions::vk_ext_present_mode_fifo_latest_ready,
+                  {{{&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_FUCHSIA
             {vvl::Extension::_VK_FUCHSIA_external_memory,
              Info(&DeviceExtensions::vk_fuchsia_external_memory,
@@ -2027,6 +2031,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_device_address_binding_report:
         case vvl::Extension::_VK_EXT_depth_clip_control:
         case vvl::Extension::_VK_EXT_primitive_topology_list_restart:
+        case vvl::Extension::_VK_EXT_present_mode_fifo_latest_ready:
         case vvl::Extension::_VK_FUCHSIA_external_memory:
         case vvl::Extension::_VK_FUCHSIA_external_semaphore:
         case vvl::Extension::_VK_FUCHSIA_buffer_collection:

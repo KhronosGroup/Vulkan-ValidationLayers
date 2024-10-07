@@ -1155,6 +1155,9 @@ ValidValue StatelessValidation::IsValidEnumValue(VkPresentModeKHR value) const {
         case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
         case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
             return IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_PRESENT_MODE_FIFO_LATEST_READY_EXT:
+            return IsExtEnabled(device_extensions.vk_ext_present_mode_fifo_latest_ready) ? ValidValue::Valid
+                                                                                         : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2834,6 +2837,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkPresentModeKHR value) c
         case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
         case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
             return {vvl::Extension::_VK_KHR_shared_presentable_image};
+        case VK_PRESENT_MODE_FIFO_LATEST_READY_EXT:
+            return {vvl::Extension::_VK_EXT_present_mode_fifo_latest_ready};
         default:
             return {};
     };
