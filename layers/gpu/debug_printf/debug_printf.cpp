@@ -193,14 +193,14 @@ struct OutputRecord {
 void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer, VkQueue queue,
                                gpuav::DebugPrintfBufferInfo &buffer_info, uint32_t *const debug_output_buffer,
                                const Location &loc) {
-    uint32_t output_record_counts = debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize];
-    if (!output_record_counts) return;
+    uint32_t output_buffer_dwords_counts = debug_output_buffer[gpuav::kDebugPrintfOutputBufferDWordsCount];
+    if (!output_buffer_dwords_counts) return;
 
-    uint32_t index = gpuav::kDebugPrintfOutputBufferData;  // get first OutputRecord index
-    while (debug_output_buffer[index]) {
+    uint32_t output_record_i = gpuav::kDebugPrintfOutputBufferData;  // get first OutputRecord index
+    while (debug_output_buffer[output_record_i]) {
         std::stringstream shader_message;
 
-        OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[index]);
+        OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[output_record_i]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
         const gpuav::GpuAssistedShaderTracker *tracker_info = nullptr;
@@ -224,8 +224,8 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         auto format_substrings = ParseFormatString(format_string);
         void *current_value = static_cast<void *>(&debug_record->values);
         // Sprintf each format substring into a temporary string then add that to the message
-        for (size_t i = 0; i < format_substrings.size(); i++) {
-            auto &substring = format_substrings[i];
+        for (size_t substring_i = 0; substring_i < format_substrings.size(); substring_i++) {
+            auto &substring = format_substrings[substring_i];
             std::string temp_string;
             size_t needed = 0;
 
@@ -233,7 +233,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 if (substring.is_64_bit) {
                     assert(substring.type != NumericTypeSint);  // not supported
                     if (substring.type == NumericTypeUint) {
-                        std::vector<std::string> format_strings = {"%ul", "%lu", "%lx"};
+                        std::array<std::string_view, 3> format_strings = {{"%ul", "%lu", "%lx"}};
                         for (const auto &ul_string : format_strings) {
                             size_t ul_pos = substring.string.find(ul_string);
                             if (ul_pos == std::string::npos) continue;
@@ -261,12 +261,12 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
                     } else if (substring.type == NumericTypeSint) {
                         // When dealing with signed int, we need to know which size the int was to print the correct value
-                        if (debug_record->signed_8_bitmask & (1 << i)) {
+                        if (debug_record->signed_8_bitmask & (1 << substring_i)) {
                             const int8_t value = *static_cast<int8_t *>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
                             std::snprintf(&temp_string[0], needed, substring.string.c_str(), value);
-                        } else if (debug_record->signed_16_bitmask & (1 << i)) {
+                        } else if (debug_record->signed_16_bitmask & (1 << substring_i)) {
                             const int16_t value = *static_cast<int16_t *>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
                             temp_string.resize(needed);
@@ -283,7 +283,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                         // but we need to store the 64-bit floats in 2 dwords in our GPU side buffer.
                         // Using the bitmask, we know if the incoming float was 64-bit or not.
                         // This is much simpler than enforcing a %lf which doesn't line up with how the CPU side works
-                        if (debug_record->double_bitmask & (1 << i)) {
+                        if (debug_record->double_bitmask & (1 << substring_i)) {
                             substring.is_64_bit = true;
                             const double value = *static_cast<double *>(current_value);
                             needed = std::snprintf(nullptr, 0, substring.string.c_str(), value) + 1;
@@ -333,9 +333,9 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 gpuav.debug_report->DebugLogMsg(kInformationBit, {}, shader_message.str().c_str(), "VVL-DEBUG-PRINTF");
             }
         }
-        index += debug_record->size;
+        output_record_i += debug_record->size;
     }
-    if ((index - gpuav::kDebugPrintfOutputBufferData) != output_record_counts) {
+    if ((output_record_i - gpuav::kDebugPrintfOutputBufferData) < output_buffer_dwords_counts) {
         std::stringstream message;
         message << "Debug Printf message was truncated due to a buffer size (" << gpuav.gpuav_settings.debug_printf_buffer_size
                 << ") being too small for the messages. (This can be adjusted with VK_LAYER_PRINTF_BUFFER_SIZE or vkconfig)";
@@ -345,7 +345,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
     // Only memset what is needed, in case we are only using a small portion of a large buffer_size.
     // At the same time we want to make sure we don't memset past the actual VkBuffer allocation
     uint32_t clear_size =
-        sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferSize] + gpuav::kDebugPrintfOutputBufferData);
+        sizeof(uint32_t) * (debug_output_buffer[gpuav::kDebugPrintfOutputBufferDWordsCount] + gpuav::kDebugPrintfOutputBufferData);
     clear_size = std::min(gpuav.gpuav_settings.debug_printf_buffer_size, clear_size);
     memset(debug_output_buffer, 0, clear_size);
 }
