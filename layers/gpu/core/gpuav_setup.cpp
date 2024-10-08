@@ -219,6 +219,11 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                                           const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
     BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
 
+    // GPU-AV requirements not met, exit early or future Vulkan calls may be invalid
+    if (api_version < VK_API_VERSION_1_1) {
+        return;
+    }
+
     // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
     // If the features are not supported, can't internal error until post device creation
     VkPhysicalDeviceFeatures supported_features{};
@@ -375,6 +380,12 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
 
 // Perform initializations that can be done at Create Device time.
 void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+    // GPU-AV not supported, exit early to prevent errors inside Validator::PostCallRecordCreateDevice
+    if (api_version < VK_API_VERSION_1_1) {
+        InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
+        return;
+    }
+
     // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
     // would be messier without.
     // TODO: Find a good way to do this hooklessly.
@@ -382,12 +393,6 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         [](vvl::CommandBuffer *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
-
-    // If using 1.0 and there is no VK_KHR_timeline_semaphore support, we will error inside ValidationStateTracker::PostCreateDevice
-    if (api_version < VK_API_VERSION_1_1) {
-        InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
-        return;
-    }
 
     // Set up a stub implementation of the descriptor heap in case we abort.
     desc_heap_.emplace(*this, 0, loc);
