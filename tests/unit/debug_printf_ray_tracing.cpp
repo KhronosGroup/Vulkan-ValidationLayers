@@ -23,6 +23,30 @@
 
 class NegativeDebugPrintfRayTracing : public DebugPrintfTests {
   public:
+    void InitFrameworkWithPrintfBufferSize(uint32_t printf_buffer_size) {
+        SetTargetApiVersion(VK_API_VERSION_1_1);
+        AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+        VkBool32 printf_value = VK_TRUE;
+        VkLayerSettingEXT printf_enable_setting = {OBJECT_LAYER_NAME, "printf_enable", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                   &printf_value};
+
+        VkLayerSettingEXT printf_buffer_size_setting = {OBJECT_LAYER_NAME, "printf_buffer_size", VK_LAYER_SETTING_TYPE_UINT32_EXT,
+                                                        1, &printf_buffer_size};
+
+        std::array<VkLayerSettingEXT, 2> layer_settings = {printf_enable_setting, printf_buffer_size_setting};
+        VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
+        layer_settings_create_info.settingCount = static_cast<uint32_t>(layer_settings.size());
+        layer_settings_create_info.pSettings = layer_settings.data();
+        RETURN_IF_SKIP(InitFramework(&layer_settings_create_info));
+        if (!CanEnableGpuAV(*this)) {
+            GTEST_SKIP() << "Requirements for GPU-AV/Printf are not met";
+        }
+        if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+            GTEST_SKIP() << "Currently disabled for Portability";
+        }
+    }
+
     // Build Top Level Acceleration Structure:
     // 2 instances of the cube, at different positions
     // clang-format off
@@ -901,9 +925,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-
-    RETURN_IF_SKIP(InitDebugPrintfFramework());
-
+    RETURN_IF_SKIP(InitFrameworkWithPrintfBufferSize(1024 * 1024));
     RETURN_IF_SKIP(InitState());
 
     // #ARNO_TODO: For clarity, here geometry should be set explicitly, as of now the ray hitting or not
@@ -952,8 +974,8 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         layout(location = 0) rayPayloadEXT vec3 hit;
        
         void main() {
-            debugPrintfEXT("In Raygen\n");
-            atomicAdd(debug_buffer[0], 1);
+            uint last = atomicAdd(debug_buffer[0], 1);
+            debugPrintfEXT("In Raygen %u", last);
 
             vec3 ray_origin = vec3(0,0,-50);
             vec3 ray_direction = vec3(0,0,1);
@@ -994,8 +1016,8 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         layout(location = 0) rayPayloadInEXT vec3 hit;
 
         void main() {
-            debugPrintfEXT("In Miss\n");
-            atomicAdd(debug_buffer[1], 1);
+            uint last = atomicAdd(debug_buffer[1], 1);
+            debugPrintfEXT("In Miss %u", last);
             hit = vec3(0.1, 0.2, 0.3);
         }
     )glsl";
@@ -1016,8 +1038,8 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         hitAttributeEXT vec2 baryCoord;
 
         void main() {
-            debugPrintfEXT("In Closest Hit\n");
-            atomicAdd(debug_buffer[2], 1);
+            uint last = atomicAdd(debug_buffer[2], 1);
+            debugPrintfEXT("In Closest Hit %u", last);
             const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
             hit = barycentricCoords;
         }
@@ -1034,7 +1056,11 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
 
     pipeline.Build();
 
-    uint32_t frames_count = 100;
+    constexpr uint32_t frames_count = 14;
+    const uint32_t ray_gen_width = 1;
+    const uint32_t ray_gen_height = 4;
+    const uint32_t ray_gen_depth = 1;
+    const uint32_t ray_gen_rays_count = ray_gen_width * ray_gen_height * ray_gen_depth;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
         m_command_buffer.begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
@@ -1043,21 +1069,32 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
 
         vk::CmdTraceRaysKHR(m_command_buffer.handle(), &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt,
-                            &trace_rays_sbt.hit_sbt, &trace_rays_sbt.callable_sbt, 1, 1, 1);
+                            &trace_rays_sbt.hit_sbt, &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
 
         m_command_buffer.end();
-        m_errorMonitor->SetDesiredInfo("In Raygen");
-        m_errorMonitor->SetDesiredInfo("In Miss", 3);
-        m_errorMonitor->SetDesiredInfo("In Closest Hit", 2);
+        for (uint32_t i = 0; i < ray_gen_rays_count; ++i) {
+            std::string msg = "In Raygen " + std::to_string(frame * ray_gen_rays_count + i);
+            m_errorMonitor->SetDesiredInfo(msg.c_str());
+        }
+        for (uint32_t i = 0; i < 3 * ray_gen_rays_count; ++i) {
+            std::string msg = "In Miss " + std::to_string(frame * 3 * ray_gen_rays_count + i);
+            m_errorMonitor->SetDesiredInfo(msg.c_str());
+        }
+        for (uint32_t i = 0; i < 2 * ray_gen_rays_count; ++i) {
+            std::string msg = "In Closest Hit " + std::to_string(frame * 2 * ray_gen_rays_count + i);
+            m_errorMonitor->SetDesiredInfo(msg.c_str());
+        }
+
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
+
+        m_errorMonitor->VerifyFound();
     }
-    m_errorMonitor->VerifyFound();
 
     auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
-    ASSERT_EQ(debug_buffer_ptr[0], frames_count);
-    ASSERT_EQ(debug_buffer_ptr[1], 3 * frames_count);
-    ASSERT_EQ(debug_buffer_ptr[2], 2 * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[0], ray_gen_rays_count * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[1], 3 * ray_gen_rays_count * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[2], 2 * ray_gen_rays_count * frames_count);
     debug_buffer.memory().unmap();
 }
 
@@ -1224,7 +1261,6 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
 
     // Check debug buffer to cross check that every expected shader invocation happened
     auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
-    (void)debug_buffer_ptr;
     ASSERT_EQ(debug_buffer_ptr[0], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], (2 + 0) * frames_count);
@@ -1310,12 +1346,101 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
 
     // Check debug buffer to cross check that every expected shader invocation happened
     auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
-    (void)debug_buffer_ptr;
     ASSERT_EQ(debug_buffer_ptr[0], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], (2 + 0) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[3], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 + 2) * frames_count);
+    debug_buffer.memory().unmap();
+}
+
+TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndirectDeferredBuild) {
+    TEST_DESCRIPTION(
+        "Test debug printf in a multi entry points shader. 2 ray generation shaders, 2 miss shaders, 2 closest hit shaders."
+        "Trace rays using vkCmdTraceRaysIndirect2KHR");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
+    RETURN_IF_SKIP(InitFrameworkWithPrintfBufferSize(1024 * 1024));
+    RETURN_IF_SKIP(InitState());
+
+    std::shared_ptr<vkt::as::BuildGeometryInfoKHR> cube_blas;
+    vkt::as::BuildGeometryInfoKHR tlas = GetCubesTLAS(cube_blas);
+
+    // Buffer used to count invocations for the 2 * 3 shaders
+    vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
+                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    m_command_buffer.begin();
+    vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    pipeline.AddSpirvRayGenShader(GetSlangShader1(), "rayGenShader");
+    pipeline.AddSpirvRayGenShader(GetSlangShader1(), "rayGenShader2");
+    pipeline.AddSpirvMissShader(GetSlangShader1(), "missShader");
+    pipeline.AddSpirvMissShader(GetSlangShader1(), "missShader2");
+    pipeline.AddSpirvClosestHitShader(GetSlangShader1(), "closestHitShader");
+    pipeline.AddSpirvClosestHitShader(GetSlangShader1(), "closestHitShader2");
+
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipeline.CreateDescriptorSet();
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, debug_buffer.handle(), 0, VK_WHOLE_SIZE,
+                                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
+
+    pipeline.DeferBuild();
+    pipeline.Build();
+
+    const uint32_t ray_gen_1_width = 2;
+    const uint32_t ray_gen_1_height = 2;
+    const uint32_t ray_gen_1_depth = 1;
+    const uint32_t ray_gen_1_rays_count = ray_gen_1_width * ray_gen_1_height * ray_gen_1_depth;
+    vkt::Buffer sbt_ray_gen_1 = pipeline.GetTraceRaysSbtIndirectBuffer(0, ray_gen_1_width, ray_gen_1_height, ray_gen_1_depth);
+    vkt::Buffer sbt_ray_gen_2 = pipeline.GetTraceRaysSbtIndirectBuffer(1, 1, 1, 1);
+
+    uint32_t frames_count = 1;
+    for (uint32_t frame = 0; frame < frames_count; ++frame) {
+        m_command_buffer.begin();
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
+                                  0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+
+        // Invoke ray gen shader 1
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_1.address());
+
+        // Invoke ray gen shader 2
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_2.address());
+
+        m_command_buffer.end();
+        m_errorMonitor->SetDesiredInfo("In Raygen 1", ray_gen_1_rays_count);
+        m_errorMonitor->SetDesiredInfo("In Raygen 2");
+        m_errorMonitor->SetDesiredInfo("In Miss 1", 2 * ray_gen_1_rays_count + 0);
+        m_errorMonitor->SetDesiredInfo("In Miss 2", 1 * ray_gen_1_rays_count + 1);
+        m_errorMonitor->SetDesiredInfo("In Closest Hit 1", 1 * ray_gen_1_rays_count + 1);
+        m_errorMonitor->SetDesiredInfo("In Closest Hit 2", 1 * ray_gen_1_rays_count + 2);
+        m_default_queue->Submit(m_command_buffer);
+        m_default_queue->Wait();
+    }
+    m_errorMonitor->VerifyFound();
+
+    // Check debug buffer to cross check that every expected shader invocation happened
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    ASSERT_EQ(debug_buffer_ptr[0], 1 * ray_gen_1_rays_count * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[1], 1 * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[2], (2 * ray_gen_1_rays_count + 0) * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[3], (1 * ray_gen_1_rays_count + 1) * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[4], (1 * ray_gen_1_rays_count + 1) * frames_count);
+    ASSERT_EQ(debug_buffer_ptr[5], (1 * ray_gen_1_rays_count + 2) * frames_count);
     debug_buffer.memory().unmap();
 }
