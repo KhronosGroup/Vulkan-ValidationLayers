@@ -397,16 +397,17 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
             shader_object_state->instrumentation_data.was_instrumented = true;
         }
 
-        shader_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE, pShaders[i],
-                                     instrumentation_data.instrumented_spirv);
+        instrumented_shaders_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE,
+                                                   pShaders[i], instrumentation_data.instrumented_spirv);
     }
 }
 
 void GpuShaderInstrumentor::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
                                                           const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto to_erase = shader_map_.snapshot([shader](const GpuAssistedShaderTracker &entry) { return entry.shader_object == shader; });
+    auto to_erase =
+        instrumented_shaders_map_.snapshot([shader](const InstrumentedShader &entry) { return entry.shader_object == shader; });
     for (const auto &entry : to_erase) {
-        shader_map_.erase(entry.first);
+        instrumented_shaders_map_.erase(entry.first);
     }
     BaseClass::PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
 }
@@ -684,9 +685,10 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
 // Remove all the shader trackers associated with this destroyed pipeline.
 void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto to_erase = shader_map_.snapshot([pipeline](const GpuAssistedShaderTracker &entry) { return entry.pipeline == pipeline; });
+    auto to_erase =
+        instrumented_shaders_map_.snapshot([pipeline](const InstrumentedShader &entry) { return entry.pipeline == pipeline; });
     for (const auto &entry : to_erase) {
-        shader_map_.erase(entry.first);
+        instrumented_shaders_map_.erase(entry.first);
     }
 
     if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
@@ -944,8 +946,8 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
             shader_module_handle = kPipelineStageInfoHandle;
         }
 
-        shader_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(), shader_module_handle,
-                                     VK_NULL_HANDLE, std::move(code));
+        instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(),
+                                                   shader_module_handle, VK_NULL_HANDLE, std::move(code));
     }
 }
 
@@ -1110,8 +1112,8 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
                 shader_module_handle = kPipelineStageInfoHandle;
             }
 
-            shader_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, lib->VkHandle(), shader_module_handle,
-                                         VK_NULL_HANDLE, std::move(code));
+            instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, lib->VkHandle(),
+                                                       shader_module_handle, VK_NULL_HANDLE, std::move(code));
         }
     }
 }
@@ -1444,10 +1446,10 @@ static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint
 // Where we build up the error message with all the useful debug information about where the error occured
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
-    uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const GpuAssistedShaderTracker *tracker_info,
+    uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const InstrumentedShader *instrumented_shader,
     uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
     std::ostringstream ss;
-    if (instructions.empty() || !tracker_info) {
+    if (instructions.empty() || !instrumented_shader) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
         return ss.str();
     }
@@ -1455,7 +1457,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     GenerateStageMessage(ss, stage_id, stage_info_0, stage_info_1, stage_info_2);
 
     ss << std::hex << std::showbase;
-    if (tracker_info->shader_module == VK_NULL_HANDLE && tracker_info->shader_object == VK_NULL_HANDLE) {
+    if (instrumented_shader->shader_module == VK_NULL_HANDLE && instrumented_shader->shader_object == VK_NULL_HANDLE) {
         std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
         ss << "[Internal Error] - Unable to locate shader/pipeline handles used in command buffer "
            << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(commandBuffer)) << "(" << HandleToUint64(commandBuffer)
@@ -1481,18 +1483,19 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
         ss << "Index " << operation_index << '\n';
         ss << std::hex << std::noshowbase;
 
-        if (tracker_info->shader_module == VK_NULL_HANDLE) {
-            ss << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->shader_object)) << "("
-               << HandleToUint64(tracker_info->shader_object) << ") (internal ID " << shader_id << ")\n";
+        if (instrumented_shader->shader_module == VK_NULL_HANDLE) {
+            ss << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->shader_object))
+               << "(" << HandleToUint64(instrumented_shader->shader_object) << ") (internal ID " << shader_id << ")\n";
         } else {
-            ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->pipeline)) << "("
-               << HandleToUint64(tracker_info->pipeline) << ")";
-            if (tracker_info->shader_module == kPipelineStageInfoHandle) {
+            ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->pipeline)) << "("
+               << HandleToUint64(instrumented_shader->pipeline) << ")";
+            if (instrumented_shader->shader_module == kPipelineStageInfoHandle) {
                 ss << " (internal ID " << shader_id
                    << ")\nShader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
             } else {
-                ss << "\nShader Module " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(tracker_info->shader_module))
-                   << "(" << HandleToUint64(tracker_info->shader_module) << ") (internal ID " << shader_id << ")\n";
+                ss << "\nShader Module "
+                   << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->shader_module)) << "("
+                   << HandleToUint64(instrumented_shader->shader_module) << ") (internal ID " << shader_id << ")\n";
             }
         }
     }

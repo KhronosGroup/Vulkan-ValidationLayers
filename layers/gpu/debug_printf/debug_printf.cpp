@@ -203,20 +203,20 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         OutputRecord *debug_record = reinterpret_cast<OutputRecord *>(&debug_output_buffer[output_record_i]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        const gpuav::GpuAssistedShaderTracker *tracker_info = nullptr;
-        auto it = gpuav.shader_map_.find(debug_record->shader_id);
-        if (it != gpuav.shader_map_.end()) {
-            tracker_info = &it->second;
+        const gpuav::InstrumentedShader *instrumented_shader = nullptr;
+        auto it = gpuav.instrumented_shaders_map_.find(debug_record->shader_id);
+        if (it != gpuav.instrumented_shaders_map_.end()) {
+            instrumented_shader = &it->second;
         }
 
         // without the instrumented spirv, there is nothing valuable to print out
-        if (!tracker_info || tracker_info->instrumented_spirv.empty()) {
+        if (!instrumented_shader || instrumented_shader->instrumented_spirv.empty()) {
             gpuav.InternalWarning(queue, loc, "Can't find instructions from any handles in shader_map");
             return;
         }
 
         std::vector<gpuav::spirv::Instruction> instructions;
-        gpuav::spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+        gpuav::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
@@ -315,7 +315,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         if (gpuav.gpuav_settings.debug_printf_verbose) {
             std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
                 command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0, debug_record->stage_info_1,
-                debug_record->stage_info_2, debug_record->instruction_position, tracker_info, debug_record->shader_id,
+                debug_record->stage_info_2, debug_record->instruction_position, instrumented_shader, debug_record->shader_id,
                 buffer_info.pipeline_bind_point, buffer_info.action_command_index);
             if (use_stdout) {
                 std::cout << "VVL-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
