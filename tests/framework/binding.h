@@ -608,8 +608,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
               void *alloc_info_pnext = nullptr);
     void init(const Device &dev, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags mem_props = 0,
-              void *alloc_info_pnext = nullptr, const std::vector<uint32_t> &queue_families = {}) {
-        init(dev, CreateInfo(size, usage, &queue_families), mem_props, alloc_info_pnext);
+              void *alloc_info_pnext = nullptr, const vvl::span<uint32_t> &queue_families = {}) {
+        init(dev, CreateInfo(size, usage, queue_families), mem_props, alloc_info_pnext);
     }
     void InitNoMemory(const Device &dev, const VkBufferCreateInfo &info);
     void SetName(const char *name) { NonDispHandle<VkBuffer>::SetName(VK_OBJECT_TYPE_BUFFER, name); }
@@ -635,7 +635,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     void BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
     const VkBufferCreateInfo &CreateInfo() const { return create_info_; }
-    static VkBufferCreateInfo CreateInfo(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr,
+    static VkBufferCreateInfo CreateInfo(VkDeviceSize size, VkFlags usage, const vvl::span<uint32_t> &queue_families = {},
                                          void *create_info_pnext = nullptr);
 
     VkBufferMemoryBarrier BufferMemoryBarrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,
@@ -1251,16 +1251,16 @@ class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConv
     static VkSamplerYcbcrConversionCreateInfo DefaultConversionInfo(VkFormat format);
 };
 
-inline VkBufferCreateInfo Buffer::CreateInfo(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families,
+inline VkBufferCreateInfo Buffer::CreateInfo(VkDeviceSize size, VkFlags usage, const vvl::span<uint32_t> &queue_families,
                                              void *create_info_pnext) {
     VkBufferCreateInfo info = vku::InitStructHelper(create_info_pnext);
     info.size = size;
     info.usage = usage;
 
-    if (queue_families && queue_families->size() > 1) {
+    if (queue_families.size() > 1) {
         info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
-        info.pQueueFamilyIndices = queue_families->data();
+        info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
+        info.pQueueFamilyIndices = queue_families.data();
     }
 
     return info;

@@ -790,7 +790,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Use image unbound to memory in barrier
     // Use buffer unbound to memory in barrier
     Barrier2QueueFamilyTestHelper conc_test(&test_context);
-    conc_test.Init(nullptr, false, false);
+    conc_test.Init(false, false);
 
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test(" used with no memory bound. Memory should be bound by calling vkBindImageMemory()",
@@ -1178,7 +1178,7 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
     }
     Barrier2QueueFamilyTestHelper::Context test_context(this, qf_indices);
     Barrier2QueueFamilyTestHelper conc_test(&test_context);
-    conc_test.Init(nullptr, false, true);
+    conc_test.Init(false, true);
 
     m_command_buffer.Begin();
 
@@ -1736,7 +1736,7 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     Barrier2QueueFamilyTestHelper::Context test_context2(this, qf_indices);
 
     Barrier2QueueFamilyTestHelper excl_test(&test_context2);
-    excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
+    excl_test.Init();  // *exclusive* sharing mode.
     excl_test("VUID-VkImageMemoryBarrier2-image-09118", "VUID-VkBufferMemoryBarrier2-buffer-09096", submit_family, invalid);
     excl_test("VUID-VkImageMemoryBarrier2-image-09117", "VUID-VkBufferMemoryBarrier2-buffer-09095", invalid, submit_family);
     excl_test(submit_family, submit_family);
