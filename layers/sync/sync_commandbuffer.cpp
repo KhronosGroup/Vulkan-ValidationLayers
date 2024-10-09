@@ -566,7 +566,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     }
 }
 
-bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
+bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex,
                                                     const Location &loc) const {
     bool skip = false;
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -579,13 +579,23 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
                                       ? cb_state_->dynamic_state_value.vertex_bindings
                                       : pipe->vertex_input_state->bindings;
 
-    for (const auto &binding_state : vertex_bindings) {
-        const auto &binding_desc = binding_state.second.desc;
+    for (const auto &[_, binding_state] : vertex_bindings) {
+        const auto &binding_desc = binding_state.desc;
+        if (binding_desc.inputRate != VK_VERTEX_INPUT_RATE_VERTEX) {
+            // TODO: add support to determine range of instance level attributes
+            continue;
+        }
         if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
             const auto buf_state = sync_state_->Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
-            const ResourceAccessRange range = MakeRange(*vertex_buffer, firstVertex, vertexCount, binding_desc.stride);
+            ResourceAccessRange range;
+            if (vertexCount.has_value()) {  // the range is specified
+                range = MakeRange(vertex_buffer->offset, firstVertex, *vertexCount, binding_desc.stride);
+            } else {  // entire vertex buffer
+                range = MakeRange(*vertex_buffer);
+            }
+
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
                 skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
@@ -598,7 +608,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(const std::optional<uint32_t
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex,
+void CommandBufferAccessContext::RecordDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex,
                                                   const ResourceUsageTag tag) {
     const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pipe) {
@@ -609,13 +619,23 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
                                       ? cb_state_->dynamic_state_value.vertex_bindings
                                       : pipe->vertex_input_state->bindings;
 
-    for (const auto &binding_state : vertex_bindings) {
-        const auto &binding_desc = binding_state.second.desc;
+    for (const auto &[_, binding_state] : vertex_bindings) {
+        const auto &binding_desc = binding_state.desc;
+        if (binding_desc.inputRate != VK_VERTEX_INPUT_RATE_VERTEX) {
+            // TODO: add support to determine range of instance level attributes
+            continue;
+        }
         if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
             const auto buf_state = sync_state_->Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
-            const ResourceAccessRange range = MakeRange(*vertex_buffer, firstVertex, vertexCount, binding_desc.stride);
+            ResourceAccessRange range;
+            if (vertexCount.has_value()) {  // the range is specified
+                range = MakeRange(vertex_buffer->offset, firstVertex, *vertexCount, binding_desc.stride);
+            } else {  // entire vertex buffer
+                range = MakeRange(*vertex_buffer);
+            }
+
             const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());
             current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ,
                                                 SyncOrdering::kNonAttachment, range, tag_ex);
@@ -623,15 +643,14 @@ void CommandBufferAccessContext::RecordDrawVertex(const std::optional<uint32_t> 
     }
 }
 
-bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uint32_t> &index_count, uint32_t firstIndex,
-                                                         const Location &loc) const {
+bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, uint32_t firstIndex, const Location &loc) const {
     bool skip = false;
     const auto &index_binding = cb_state_->index_buffer_binding;
     const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
     if (!index_buf_state) return skip;
 
     const auto index_size = GetIndexAlignment(index_binding.index_type);
-    const ResourceAccessRange range = MakeRange(index_binding, firstIndex, index_count, index_size);
+    const ResourceAccessRange range = MakeRange(index_binding.offset, firstIndex, index_count, index_size);
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
@@ -641,25 +660,26 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(const std::optional<uin
                                       sync_state_->FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
     }
 
-    // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
-    //       We will detect more accurate range in the future.
+    // TODO: Shader instrumentation support is needed to read index buffer content and determine more accurate range
+    // of accessed versices (new syncval mode). Scanning index buffer for each draw can be impractical though.
+    // More practical option can be to leave this as an optional heuristic that always tracks entire vertex buffer.
     skip |= ValidateDrawVertex(std::optional<uint32_t>(), 0, loc);
     return skip;
 }
 
-void CommandBufferAccessContext::RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex,
-                                                       const ResourceUsageTag tag) {
+void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
     const auto &index_binding = cb_state_->index_buffer_binding;
     const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
     if (!index_buf_state) return;
 
     const auto index_size = GetIndexAlignment(index_binding.index_type);
-    const ResourceAccessRange range = MakeRange(index_binding, firstIndex, indexCount, index_size);
+    const ResourceAccessRange range = MakeRange(index_binding.offset, firstIndex, indexCount, index_size);
     const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, index_buf_state->Handle());
     current_context_->UpdateAccessState(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, SyncOrdering::kNonAttachment, range, tag_ex);
 
-    // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
-    //       We will detect more accurate range in the future.
+    // TODO: Shader instrumentation support is needed to read index buffer content and determine more accurate range
+    // of accessed versices (new syncval mode). Scanning index buffer for each draw can be impractical though.
+    // More practical option can be to leave this as an optional heuristic that always tracks entire vertex buffer.
     RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
 }
 

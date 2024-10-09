@@ -66,10 +66,6 @@ ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
 ResourceAccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
 ResourceAccessRange MakeRange(const vvl::BufferView &buf_view_state);
 ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride);
-ResourceAccessRange MakeRange(const vvl::VertexBufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
-                              uint32_t stride);
-ResourceAccessRange MakeRange(const vvl::IndexBufferBinding &binding, uint32_t first_index, const std::optional<uint32_t> &count,
-                              uint32_t index_size);
 
 extern const ResourceAccessRange kFullRange;
 

@@ -1652,11 +1652,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     skip |= cb_access_context->ValidateDrawAttachment(error_obj.location);
     skip |= ValidateIndirectBuffer(*cb_access_context, *context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset,
                                    drawCount, stride, error_obj.location);
-
-    // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
-    //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, error_obj.location);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // skip |= cb_access_context->ValidateDrawVertex(?, ?, error_obj.location);
     return skip;
 }
 
@@ -1673,10 +1670,8 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
     cb_access_context->RecordDrawAttachment(tag);
     RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
 
-    // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
-    //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // cb_access_context->RecordDrawVertex(?, ?, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1697,10 +1692,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     skip |= ValidateIndirectBuffer(*cb_access_context, *context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer,
                                    offset, drawCount, stride, error_obj.location);
 
-    // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
-    //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, error_obj.location);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // skip |= cb_access_context->ValidateDrawVertexIndex(?, ?, error_obj.location);
     return skip;
 }
 
@@ -1717,10 +1710,8 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
     cb_access_context->RecordDrawAttachment(tag);
     RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
 
-    // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
-    //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will record the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(std::optional<uint32_t>(), 0, tag);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // cb_access_context->RecordDrawVertexIndex(?, ?, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1742,10 +1733,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandB
                                    maxDrawCount, stride, error_obj.location);
     skip |= ValidateCountBuffer(*cb_access_context, *context, commandBuffer, countBuffer, countBufferOffset, error_obj.location);
 
-    // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
-    //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertex(std::optional<uint32_t>(), 0, error_obj.location);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // skip |= cb_access_context->ValidateDrawVertex(?, ?, error_obj.location);
     return skip;
 }
 
@@ -1763,10 +1752,8 @@ void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, Vk
     RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
     RecordCountBuffer(*cb_access_context, tag, countBuffer, countBufferOffset);
 
-    // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
-    //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will record the vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertex(std::optional<uint32_t>(), 0, tag);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // cb_access_context->RecordDrawVertex(?, ?, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -1827,10 +1814,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer c
                                    offset, maxDrawCount, stride, error_obj.location);
     skip |= ValidateCountBuffer(*cb_access_context, *context, commandBuffer, countBuffer, countBufferOffset, error_obj.location);
 
-    // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
-    //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= cb_access_context->ValidateDrawVertexIndex(std::optional<uint32_t>(), 0, error_obj.location);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // skip |= cb_access_context->ValidateDrawVertexIndex(?, ?, error_obj.location);
     return skip;
 }
 
@@ -1848,10 +1833,8 @@ void SyncValidator::RecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuf
     RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
     RecordCountBuffer(*cb_access_context, tag, countBuffer, countBufferOffset);
 
-    // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
-    //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
-    //       We will update the index and vertex buffer in SubmitQueue in the future.
-    cb_access_context->RecordDrawVertexIndex(std::optional<uint32_t>(), 0, tag);
+    // TODO: Shader instrumentation support is needed to read indirect buffer content (new syncval mode)
+    // cb_access_context->RecordDrawVertexIndex(?, ?, tag);
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

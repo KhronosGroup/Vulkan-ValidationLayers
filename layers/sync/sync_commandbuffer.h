@@ -290,10 +290,10 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void RecordEndRendering(const RecordObject &record_obj);
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
-    bool ValidateDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, const Location &loc) const;
-    void RecordDrawVertex(const std::optional<uint32_t> &vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
-    bool ValidateDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, const Location &loc) const;
-    void RecordDrawVertexIndex(const std::optional<uint32_t> &indexCount, uint32_t firstIndex, ResourceUsageTag tag);
+    bool ValidateDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex, const Location &loc) const;
+    void RecordDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex, ResourceUsageTag tag);
+    bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const Location &loc) const;
+    void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, ResourceUsageTag tag);
     bool ValidateDrawAttachment(const Location &loc) const;
     bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
