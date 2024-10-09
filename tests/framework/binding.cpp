@@ -1019,6 +1019,26 @@ void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPro
     BindMemory(internal_mem_, 0);
 }
 
+void Buffer::InitHostVisibleWithData(const Device &dev, VkBufferUsageFlags usage, const void *data, size_t data_size,
+                                     const vvl::span<uint32_t> &queue_families) {
+    const auto create_info = CreateInfo(static_cast<VkDeviceSize>(data_size), usage, queue_families);
+    InitNoMemory(dev, create_info);
+
+    // According to the specification there is always a host visible coherent memory type.
+    // It can always be bound to a buffer created without SPARSE_BIDNING/PROTECTED flags.
+    const VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    const VkMemoryRequirements memory_requirements = MemoryRequirements();
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = memory_requirements.size;
+    dev.Physical().SetMemoryType(memory_requirements.memoryTypeBits, &alloc_info, memory_properties);
+    internal_mem_.init(dev, alloc_info);
+    BindMemory(internal_mem_, 0);
+
+    void *ptr = internal_mem_.Map();
+    std::memcpy(ptr, data, data_size);
+    internal_mem_.Unmap();
+}
+
 void Buffer::InitNoMemory(const Device &dev, const VkBufferCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateBuffer, dev, &info);
     create_info_ = info;
