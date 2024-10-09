@@ -2003,3 +2003,92 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
     }
     m_device->Wait();
 }
+
+TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedVertexBuffer) {
+    TEST_DESCRIPTION("Indirect draw reads suballocated vertex buffer. CmdFillBuffer writes to another non-overlapped region");
+    RETURN_IF_SKIP(InitSyncVal());
+    InitRenderTarget();
+
+    VkDrawIndirectCommand indirect_command = {};
+    indirect_command.vertexCount = 3;
+    indirect_command.instanceCount = 1;
+    vkt::Buffer indirect_buffer(*m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command, sizeof(VkDrawIndirectCommand));
+
+    const size_t vertices_size = 3 * 3 * sizeof(float);  // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
+    const size_t fill_region_size = 32;
+    const VkDeviceSize buffer_size = vertices_size + fill_region_size;
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    const VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    const VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+
+    // Indirect draw reads from vertex region
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    const VkDeviceSize vertices_offset = 0;
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer.handle(), &vertices_offset);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirect(m_command_buffer, indirect_buffer, 0, 1, 0);
+    m_command_buffer.EndRenderPass();
+
+    // Fill region does not intersect vertex region. There should be no hazards.
+    vk::CmdFillBuffer(m_command_buffer, buffer, vertices_size, fill_region_size, 0);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedIndexBuffer) {
+    TEST_DESCRIPTION("Indirect draw reads suballocated index buffer. CmdFillBuffer writes to another non-overlapped region");
+    RETURN_IF_SKIP(InitSyncVal());
+    InitRenderTarget();
+
+    VkDrawIndexedIndirectCommand indirect_command = {};
+    indirect_command.indexCount = 3;
+    indirect_command.instanceCount = 1;
+
+    vkt::Buffer indirect_buffer(*m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command,
+                                sizeof(VkDrawIndexedIndirectCommand));
+
+    const size_t vertices_size = 3 * 3 * sizeof(float);  // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
+    vkt::Buffer vertex_buffer(*m_device, vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    constexpr size_t indices_size = 3 * sizeof(uint32_t);
+    constexpr size_t fill_region_size = 12;
+    constexpr VkDeviceSize buffer_size = indices_size + fill_region_size;
+    uint32_t buffer_data[buffer_size / sizeof(uint32_t)] = {0, 1, 2};  // initialize index region
+    vkt::Buffer buffer(*m_device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, buffer_data, buffer_size);
+
+    const VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    const VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+
+    // Indirect draw reads from index region
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    const VkDeviceSize vertices_offset = 0;
+    vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertices_offset);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndexedIndirect(m_command_buffer, indirect_buffer, 0, 1, 0);
+    m_command_buffer.EndRenderPass();
+
+    // Fill region does not intersect index region. There should be no hazards.
+    vk::CmdFillBuffer(m_command_buffer, buffer, indices_size, fill_region_size, 1);
+
+    m_command_buffer.End();
+}
