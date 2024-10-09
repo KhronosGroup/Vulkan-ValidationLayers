@@ -74,7 +74,7 @@ class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
   public:
     Barrier2QueueFamilyTestHelper(Context *context) : BarrierQueueFamilyBase(context) {}
     // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
+    void Init(bool image_memory = true, bool buffer_memory = true);
 
     void operator()(const std::string &img_err, const std::string &buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
                     uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,

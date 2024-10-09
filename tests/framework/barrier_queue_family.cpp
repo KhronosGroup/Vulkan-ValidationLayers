@@ -65,7 +65,8 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
                                                image_.Layout(), image_.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
+    auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                             families ? vvl::make_span(families->data(), families->size()) : vvl::span<uint32_t>{});
     if (buffer_memory) {
         buffer_.init(*device_obj, buffer_ci, mem_prop);
     } else {
@@ -75,11 +76,11 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
     buffer_barrier_ = buffer_.BufferMemoryBarrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
 }
 
-void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
+void Barrier2QueueFamilyTestHelper::Init(bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL, families);
+                                                  VK_IMAGE_TILING_OPTIMAL);
     if (image_memory) {
         image_.init(*device_obj, image_ci, 0);
         image_.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -92,7 +93,7 @@ void Barrier2QueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool i
                                                image_.Layout(), image_.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, families);
+    auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     if (buffer_memory) {
         buffer_.init(*device_obj, buffer_ci, mem_prop);
     } else {
