@@ -54,7 +54,7 @@ class SpirvCache {
     vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders_{};
 };
 
-struct GpuAssistedShaderTracker {
+struct InstrumentedShader {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     VkShaderEXT shader_object;
@@ -167,7 +167,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions,
                                          uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
-                                         uint32_t instruction_position, const GpuAssistedShaderTracker *tracker_info,
+                                         uint32_t instruction_position, const InstrumentedShader *instrumented_shader,
                                          uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
                                          uint32_t operation_index) const;
 
@@ -212,7 +212,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     uint32_t instrumentation_desc_set_bind_index_ = 0;
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index
     VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
-    vvl::concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map_;
+    vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
     SpirvCache instrumented_shaders_cache_;
 

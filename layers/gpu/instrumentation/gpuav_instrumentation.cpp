@@ -761,24 +761,24 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
     if (error_found) {
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
-        const GpuAssistedShaderTracker *tracker_info = nullptr;
+        const InstrumentedShader *instrumented_shader = nullptr;
         const uint32_t shader_id = error_record[glsl::kHeaderShaderIdOffset];
-        auto it = gpuav.shader_map_.find(shader_id);
-        if (it != gpuav.shader_map_.end()) {
-            tracker_info = &it->second;
+        auto it = gpuav.instrumented_shaders_map_.find(shader_id);
+        if (it != gpuav.instrumented_shaders_map_.end()) {
+            instrumented_shader = &it->second;
         }
 
         // If we somehow can't find our state, we can still report our error message
         std::vector<spirv::Instruction> instructions;
-        if (tracker_info && !tracker_info->instrumented_spirv.empty()) {
-            spirv::GenerateInstructions(tracker_info->instrumented_spirv, instructions);
+        if (instrumented_shader && !instrumented_shader->instrumented_spirv.empty()) {
+            spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
         }
 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
             cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
-            tracker_info, shader_id, pipeline_bind_point, operation_index);
+            instrumented_shader, shader_id, pipeline_bind_point, operation_index);
 
         if (uses_robustness && oob_access) {
             if (gpuav.gpuav_settings.warn_on_robust_oob) {
