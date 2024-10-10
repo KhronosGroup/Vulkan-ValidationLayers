@@ -723,10 +723,6 @@ bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limit
         spv::spirvbin_t(0).remap(spirv, spv::spirvbin_t::STRIP);
     }
 
-    if (this->m_do_everything_spv) {
-        spv::spirvbin_t(0).remap(spirv, spv::spirvbin_t::DO_EVERYTHING);
-    }
-
     delete shader;
 
     return true;
