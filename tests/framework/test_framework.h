@@ -45,7 +45,6 @@ class VkTestFramework : public ::testing::Test {
 
     static inline bool m_canonicalize_spv = false;
     static inline bool m_strip_spv = false;
-    static inline bool m_do_everything_spv = false;
     static inline bool m_print_vu = false;
     static inline bool m_syncval_disable_core = false;
     static inline bool m_gpuav_disable_core = false;
