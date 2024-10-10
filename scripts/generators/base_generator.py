@@ -153,6 +153,9 @@ class BaseGenerator(OutputGenerator):
         self.flagAliasMap = dict()
         self.structAliasMap = dict()
 
+        # TODO - Remove when new XML is upstreamed
+        self.spirvTempFix = dict()
+
     def write(self, data):
         # Prevents having to check before writting
         if data is not None and data != "":
@@ -347,6 +350,19 @@ class BaseGenerator(OutputGenerator):
         maxSyncSupport.stages = self.vk.bitmasks['VkPipelineStageFlagBits2'].flags
         maxSyncEquivalent.accesses = self.vk.bitmasks['VkAccessFlagBits2'].flags
         maxSyncEquivalent.stages = self.vk.bitmasks['VkPipelineStageFlagBits2'].flags
+
+        # Because the alias were listed before the promoted names, need to fix in endFile()
+        for name, enables in self.spirvTempFix.items():
+            if name == 'ShaderViewportIndexLayerNV':
+                [x.enable.extend(enables) for x in self.vk.spirv if x.name == 'ShaderViewportIndexLayerEXT']
+            elif name == 'ComputeDerivativeGroupQuadsNV':
+                [x.enable.extend(enables) for x in self.vk.spirv if x.name == 'ComputeDerivativeGroupQuadsKHR']
+            elif name == 'ComputeDerivativeGroupLinearNV':
+                [x.enable.extend(enables) for x in self.vk.spirv if x.name == 'ComputeDerivativeGroupLinearKHR']
+            elif name == 'FragmentBarycentricNV':
+                [x.enable.extend(enables) for x in self.vk.spirv if x.name == 'FragmentBarycentricKHR']
+            elif name == 'ShadingRateNV':
+                [x.enable.extend(enables) for x in self.vk.spirv if x.name == 'FragmentDensityEXT']
 
         # All inherited generators should run from here
         self.generate()
@@ -670,6 +686,24 @@ class BaseGenerator(OutputGenerator):
             value = elem.attrib.get('value')
             enables.append(SpirvEnables(version, extensionEnable, struct, feature,
                                         requires, propertyEnable, member, value))
+
+        # Emulate the following change until it is upstreamed
+        # https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6936
+        ignore = ['ShaderViewportIndexLayerNV', 'ComputeDerivativeGroupQuadsNV', 'ComputeDerivativeGroupLinearNV', 'FragmentBarycentricNV', 'ShadingRateNV']
+        if name in ignore:
+            self.spirvTempFix[name] = enables
+            return
+        # Just had old non-promoted name in the XML
+        if name == 'DemoteToHelperInvocationEXT':
+            name = 'DemoteToHelperInvocation'
+        if name == 'DotProductInputAllKHR':
+            name = 'DotProductInputAll'
+        if name == 'DotProductInput4x8BitKHR':
+            name = 'DotProductInput4x8Bit'
+        if name == 'DotProductInput4x8BitPackedKHR':
+            name = 'DotProductInput4x8BitPacked'
+        if name == 'DotProductKHR':
+            name = 'DotProduct'
 
         self.vk.spirv.append(Spirv(name, extension, capability, enables))
 

@@ -64,11 +64,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
 
     def addToStringList(self, operandKind, kind, list, ignoreList = []):
         if operandKind['kind'] == kind:
-            values = [] # prevent alias from being duplicatd
             for enum in operandKind['enumerants']:
-                if enum['value'] not in values and enum['enumerant'] not in ignoreList:
+                if enum['enumerant'] not in ignoreList:
                     list.append(enum['enumerant'])
-                    values.append(enum['value'])
 
     #
     # Takes the SPIR-V Grammar JSON and parses it
@@ -98,44 +96,21 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                     self.kindBitEnum.append(kind)
 
                 if kind == 'ImageOperands':
-                    values = [] # prevent alias from being duplicatd
                     for enum in operandKind['enumerants']:
                         count = 0  if 'parameters' not in enum else len(enum['parameters'])
-                        if enum['value'] not in values:
-                            self.imageOperandsParamCount[count].append(enum['enumerant'])
-                            values.append(enum['value'])
-                # Use EXT/KHR Alias names where possible
-                # Core issue is SPIR-V grammar sometimes puts alias both before/after the promotoed name
-                self.addToStringList(operandKind, 'StorageClass', self.storageClassList, ['CallableDataNV', 'IncomingCallableDataNV', 'RayPayloadNV', 'HitAttributeNV', 'IncomingRayPayloadNV', 'ShaderRecordBufferNV'])
-                self.addToStringList(operandKind, 'ExecutionModel', self.executionModelList, ['RayGenerationNV', 'IntersectionNV', 'AnyHitNV', 'ClosestHitNV', 'MissNV', 'CallableNV'])
-                self.addToStringList(operandKind, 'ExecutionMode', self.executionModeList, ['OutputLinesNV', 'OutputPrimitivesNV', 'OutputTrianglesNV'])
-                self.addToStringList(operandKind, 'Decoration', self.decorationList, ['PerPrimitiveNV'])
-                self.addToStringList(operandKind, 'BuiltIn', self.builtInList, ['BaryCoordNV', 'BaryCoordNoPerspNV', 'LaunchIdNV', 'LaunchSizeNV', 'WorldRayOriginNV', 'WorldRayDirectionNV', 'ObjectRayOriginNV', 'ObjectRayDirectionNV', 'RayTminNV', 'RayTmaxNV', 'InstanceCustomIndexNV', 'ObjectToWorldNV', 'WorldToObjectNV', 'HitKindNV', 'IncomingRayFlagsNV'])
+                        self.imageOperandsParamCount[count].append(enum['enumerant'])
+
+                self.addToStringList(operandKind, 'StorageClass', self.storageClassList)
+                self.addToStringList(operandKind, 'ExecutionModel', self.executionModelList)
+                self.addToStringList(operandKind, 'ExecutionMode', self.executionModeList)
+                self.addToStringList(operandKind, 'Decoration', self.decorationList)
+                self.addToStringList(operandKind, 'BuiltIn', self.builtInList)
                 self.addToStringList(operandKind, 'Dim', self.dimList)
                 self.addToStringList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
-
-            # Currently no alias field, so need to manually track alias commands
-            # https://github.com/KhronosGroup/SPIRV-Headers/issues/109
-            aliasOpname = [
-                'OpSDotKHR',
-                'OpUDotKHR',
-                'OpSUDotKHR',
-                'OpSDotAccSatKHR',
-                'OpUDotAccSatKHR',
-                'OpSUDotAccSatKHR',
-                'OpReportIntersectionKHR',
-                'OpTypeAccelerationStructureNV',
-                'OpDemoteToHelperInvocationEXT',
-                'OpDecorateStringGOOGLE',
-                'OpMemberDecorateStringGOOGLE',
-            ]
 
             for instruction in instructions:
                 opname = instruction['opname']
                 opcode = instruction['opcode']
-
-                if opname in aliasOpname:
-                    continue
 
                 if 'capabilities' in instruction:
                     notSupported = True
@@ -605,7 +580,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatrixOperandsMask mask) {{
                 switch(mask) {{
                     case spv::CooperativeMatrixOperandsMaskNone:
-                        return "None";
+                        return "NoneKHR";
             {"".join([f"""        case spv::CooperativeMatrixOperands{x}Mask:
                         return "{x}";
             """ for x in self.cooperativeMatrixList])}

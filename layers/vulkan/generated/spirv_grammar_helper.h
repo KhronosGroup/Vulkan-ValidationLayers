@@ -340,6 +340,7 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpGroupNonUniformPartitionNV:
         case spv::OpFetchMicroTriangleVertexPositionNV:
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
+        case spv::OpReportIntersectionKHR:
         case spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR:
         case spv::OpCooperativeMatrixLoadNV:
         case spv::OpCooperativeMatrixMulAddNV:
@@ -730,6 +731,7 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpGroupNonUniformPartitionNV:
         case spv::OpFetchMicroTriangleVertexPositionNV:
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
+        case spv::OpReportIntersectionKHR:
         case spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR:
         case spv::OpTypeAccelerationStructureKHR:
         case spv::OpTypeCooperativeMatrixNV:
