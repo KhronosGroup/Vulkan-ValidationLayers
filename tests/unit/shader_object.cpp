@@ -13,7 +13,7 @@
 #include "../framework/shader_object_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
-#include "../framework/shader_templates.h"
+#include "../framework/shader_helper.h"
 
 class NegativeShaderObject : public ShaderObjectTest {};
 

@@ -154,13 +154,7 @@ class VkRenderFramework : public VkTestFramework {
     // struct, so be sure to call SetTargetApiVersion before
     void AddDisabledFeature(vkt::Feature feature);
 
-    template <typename GLSLContainer>
-    std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code,
-                                    const spv_target_env env = SPV_ENV_VULKAN_1_0) {
-        std::vector<uint32_t> spv;
-        GLSLtoSPV(m_device->Physical().limits_, stage, code, spv, env);
-        return spv;
-    }
+    std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const char *code, const spv_target_env env = SPV_ENV_VULKAN_1_0);
 
     void SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg) {
         m_errorMonitor->SetDesiredFailureMsg(msg_flags, msg);
