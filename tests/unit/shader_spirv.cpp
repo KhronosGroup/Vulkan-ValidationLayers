@@ -58,7 +58,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         std::vector<uint32_t> shader;
         VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
         VkShaderModule module;
-        this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
+        GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
         module_create_info.pCode = shader.data();
         // Introduce failure by making codeSize a non-multiple of 4
         module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
@@ -95,7 +95,7 @@ TEST_F(NegativeShaderSpirv, CodeSizeMaintenance5) {
     m_errorMonitor->VerifyFound();
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
     module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
@@ -131,7 +131,7 @@ TEST_F(NegativeShaderSpirv, CodeSizeMaintenance5Compute) {
     m_errorMonitor->VerifyFound();
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
     module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
@@ -634,7 +634,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
         }
     )glsl";
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, vsSource, shader);
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, vsSource, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();

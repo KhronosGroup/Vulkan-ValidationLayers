@@ -1058,7 +1058,7 @@ TEST_F(NegativePipeline, NullStagepNameMaintenance5) {
     InitRenderTarget();
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();
@@ -1086,7 +1086,7 @@ TEST_F(NegativePipeline, NullStagepNameMaintenance5Compute) {
     RETURN_IF_SKIP(Init());
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl, shader);
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();

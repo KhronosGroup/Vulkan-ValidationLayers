@@ -18,7 +18,6 @@
 #pragma once
 
 #include <spirv-tools/libspirv.hpp>
-#include <glslang/Public/ShaderLang.h>
 #include "test_common.h"
 
 #include <stdbool.h>
@@ -36,15 +35,10 @@ class VkTestFramework : public ::testing::Test {
     static void InitArgs(int *argc, char *argv[]);
     static void Finish();
 
-    virtual bool GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type,
-                           const char *pshader, std::vector<uint32_t> &spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
-    virtual bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<uint32_t> &spv);
+    bool GLSLtoSPV(const VkPhysicalDeviceLimits &device_limits, const VkShaderStageFlagBits shader_type, const char *p_shader,
+                   std::vector<uint32_t> &spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
+    bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *p_asm, std::vector<uint32_t> &spv);
 
-    char **ReadFileData(const char *fileName);
-    void FreeFileData(char **data);
-
-    static inline bool m_canonicalize_spv = false;
-    static inline bool m_strip_spv = false;
     static inline bool m_print_vu = false;
     static inline bool m_syncval_disable_core = false;
     static inline bool m_gpuav_disable_core = false;
@@ -55,17 +49,6 @@ class VkTestFramework : public ::testing::Test {
 #endif
 
   private:
-    int m_compile_options = 0;
-    int m_num_shader_strings = 0;
-    TBuiltInResource Resources;
-    void SetMessageOptions(EShMessages &messages);
-    void ProcessConfigFile(VkPhysicalDeviceLimits const *const device_limits);
-    EShLanguage FindLanguage(const std::string &name);
-    EShLanguage FindLanguage(const VkShaderStageFlagBits shader_type);
-    std::string ConfigFile;
-    bool SetConfigFile(const std::string &name);
-    std::string m_testName;
-
     static inline int m_width = 0;
     static inline int m_height = 0;
 };
