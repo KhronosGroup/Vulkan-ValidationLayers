@@ -219,6 +219,11 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                                           const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
     BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
 
+    // If using 1.0, GPU-AV will error inside Validator::PostCallRecordCreateDevice
+    if (api_version < VK_API_VERSION_1_1) {
+        return;
+    }
+
     // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
     // If the features are not supported, can't internal error until post device creation
     VkPhysicalDeviceFeatures supported_features{};
@@ -376,7 +381,6 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             cb_state->SetImageViewInitialLayout(iv_state, layout);
         });
 
-    // If using 1.0 and there is no VK_KHR_timeline_semaphore support, we will error inside ValidationStateTracker::PostCreateDevice
     if (api_version < VK_API_VERSION_1_1) {
         InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
         return;
