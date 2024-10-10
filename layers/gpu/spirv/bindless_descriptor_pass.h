@@ -28,7 +28,7 @@ class BindlessDescriptorPass : public InjectConditionalFunctionPass {
   public:
     BindlessDescriptorPass(Module& module) : InjectConditionalFunctionPass(module) {}
     const char* Name() const final { return "BindlessDescriptorPass"; }
-    void PrintDebugInfo() final;
+    void PrintDebugInfo();
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst) final;

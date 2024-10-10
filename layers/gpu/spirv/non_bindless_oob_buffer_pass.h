@@ -25,9 +25,9 @@ namespace spirv {
 class NonBindlessOOBBufferPass : public Pass {
   public:
     NonBindlessOOBBufferPass(Module& module);
-    void PrintDebugInfo() final;
+    void PrintDebugInfo();
     const char* Name() const final { return "NonBindlessOOBBufferPass"; }
-    bool Run() final;
+    bool Run();
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst);
