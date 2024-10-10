@@ -200,9 +200,11 @@ struct DeviceFeatures {
     // VkPhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV
     bool deviceGeneratedComputePipelines;
     // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
-    bool dynamicGeneratedPipelineLayout;
-    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT, VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
     bool deviceGeneratedCommands;
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT
+    bool dynamicGeneratedPipelineLayout;
+    // VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV
+    bool deviceGeneratedCommandsNV;
     // VkPhysicalDeviceDeviceMemoryReportFeaturesEXT
     bool deviceMemoryReport;
     // VkPhysicalDeviceDiagnosticsConfigFeaturesNV
