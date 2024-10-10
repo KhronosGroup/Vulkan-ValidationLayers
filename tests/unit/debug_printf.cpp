@@ -725,6 +725,104 @@ TEST_F(NegativeDebugPrintf, BoolNonConstant) {
     BasicComputeTest(shader_source, "bool 1");
 }
 
+TEST_F(NegativeDebugPrintf, Int32Before) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            uint idx_32 = 42;
+            uint a = 1;
+            uint b = 2;
+            uint c = 3;
+            debugPrintfEXT("Results: %8d %8x %8x %8x\n", idx_32, a, b, c);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "Results:       42        1        2        3");
+}
+
+TEST_F(NegativeDebugPrintf, Int32After) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            uint idx_32 = 42;
+            uint a = 1;
+            uint b = 2;
+            uint c = 3;
+            debugPrintfEXT("Results: %8x %8x %8x %8d\n", a, b, c, idx_32);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "Results:        1        2        3       42");
+}
+
+TEST_F(NegativeDebugPrintf, Int64Before) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            uint64_t idx_64 = 42;
+            uint a = 1;
+            uint b = 2;
+            uint c = 3;
+
+            debugPrintfEXT("Results: %8lu %8x %8x %8x\n", idx_64, a, b, c);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "Results:       42        1        2        3");
+}
+
+TEST_F(NegativeDebugPrintf, Int64After) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            uint64_t idx_64 = 42;
+            uint a = 1;
+            uint b = 2;
+            uint c = 3;
+            debugPrintfEXT("Results: %8x %8x %8x %8lu\n", a, b, c, idx_64);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "Results:        1        2        3       42");
+}
+
+TEST_F(NegativeDebugPrintf, Int64Signed) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            int64_t zero = 0;
+            int64_t neg1 = -1;
+            int64_t neg42 = -42;
+            int64_t negMin = -9223372036854775808l; // INT64_MIN
+            debugPrintfEXT("Results: %ld %ld %ld %ld\n", zero, neg1, neg42, negMin);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "Results: 0 -1 -42 -9223372036854775808");
+}
+
+TEST_F(NegativeDebugPrintf, Int64SignedMix) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
+        void main() {
+            int64_t pos = 42;
+            int64_t neg = -42;
+            int a = 1;
+            debugPrintfEXT("Results: %d %ld %ld %d\n", a, pos, neg, 2);
+        }
+    )glsl";
+    BasicComputeTest(shader_source, "Results: 1 42 -42 2");
+}
+
 TEST_F(NegativeDebugPrintf, Empty) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
