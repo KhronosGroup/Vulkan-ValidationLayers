@@ -31,8 +31,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -114,8 +114,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -201,8 +201,8 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -314,8 +314,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -424,8 +424,8 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
     AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -537,8 +537,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -748,6 +748,9 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);

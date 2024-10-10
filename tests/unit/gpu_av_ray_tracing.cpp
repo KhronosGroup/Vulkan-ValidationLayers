@@ -15,6 +15,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/ray_tracing_objects.h"
 #include "../framework/shader_helper.h"
+#include "../framework/gpu_av_helper.h"
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
@@ -27,8 +28,8 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD";
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     RETURN_IF_SKIP(InitState());
 
@@ -193,6 +194,9 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    if (!CanEnableGpuAV(*this)) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline pipeline(*this, m_device);
