@@ -27,6 +27,7 @@
 #include "generated/vk_extension_helper.h"
 #include "layer_validation_tests.h"
 #include "vk_layer_config.h"
+#include "shader_helper.h"
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 #include "apple_wsi.h"
@@ -1199,4 +1200,10 @@ void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
     VkColorComponentFlags colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
+}
+
+std::vector<uint32_t> VkRenderFramework::GLSLToSPV(VkShaderStageFlagBits stage, const char *code, const spv_target_env env) {
+    std::vector<uint32_t> spv;
+    GLSLtoSPV(m_device->Physical().limits_, stage, code, spv, env);
+    return spv;
 }

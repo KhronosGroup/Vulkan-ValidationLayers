@@ -22,29 +22,9 @@
 #include <glslang/Public/ShaderLang.h>
 
 #include "render.h"
-#include "test_framework.h"
 #include "shader_templates.h"
 
 class VkRenderFramework;
-class VkTestFramework;
-
-// Command-line options
-enum TOptions {
-    EOptionNone = 0x000,
-    EOptionIntermediate = 0x001,
-    EOptionSuppressInfolog = 0x002,
-    EOptionMemoryLeakMode = 0x004,
-    EOptionRelaxedErrors = 0x008,
-    EOptionGiveWarnings = 0x010,
-    EOptionLinkProgram = 0x020,
-    EOptionMultiThreaded = 0x040,
-    EOptionDumpConfig = 0x080,
-    EOptionDumpReflection = 0x100,
-    EOptionSuppressWarnings = 0x200,
-    EOptionDumpVersions = 0x400,
-    EOptionSpv = 0x800,
-    EOptionDefaultDesktop = 0x1000,
-};
 
 // What is the incoming source to be turned into VkShaderModuleCreateInfo::pCode
 typedef enum {
@@ -54,6 +34,10 @@ typedef enum {
     SPV_SOURCE_GLSL_TRY,
     SPV_SOURCE_ASM_TRY,
 } SpvSourceType;
+
+bool GLSLtoSPV(const VkPhysicalDeviceLimits &device_limits, const VkShaderStageFlagBits shader_type, const char *p_shader,
+               std::vector<uint32_t> &spv, const spv_target_env spv_env = SPV_ENV_VULKAN_1_0);
+bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *p_asm, std::vector<uint32_t> &spv);
 
 // VkShaderObj is really just the Shader Module, but we named before VK_EXT_shader_object
 // TODO - move all of VkShaderObj to vkt::ShaderModule
@@ -83,7 +67,6 @@ class VkShaderObj : public vkt::ShaderModule {
 
   protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
-    VkRenderFramework &m_framework;
     vkt::Device &m_device;
     const char *m_source;
     spv_target_env m_spv_env;
