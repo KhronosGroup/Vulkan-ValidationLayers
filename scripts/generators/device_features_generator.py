@@ -33,6 +33,7 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
         # semantically different.  They are given a suffix to be distinguished.
         self.identical_but_different_features = {
             'VkPhysicalDeviceBufferDeviceAddressFeaturesEXT': 'EXT',
+            'VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV': 'NV',
         }
 
     def generate(self):

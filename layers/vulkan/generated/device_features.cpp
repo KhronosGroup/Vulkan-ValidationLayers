@@ -903,7 +903,7 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_NV: {
                 const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV *>(pNext);
-                features->deviceGeneratedCommands |= enabled->deviceGeneratedCommands == VK_TRUE;
+                features->deviceGeneratedCommandsNV |= enabled->deviceGeneratedCommands == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INHERITED_VIEWPORT_SCISSOR_FEATURES_NV: {
