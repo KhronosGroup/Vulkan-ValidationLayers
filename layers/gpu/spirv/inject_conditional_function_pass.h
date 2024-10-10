@@ -46,7 +46,7 @@ namespace spirv {
 //    }
 class InjectConditionalFunctionPass : public Pass {
   public:
-    bool Run() final;
+    bool Run();
 
   protected:
     InjectConditionalFunctionPass(Module& module);

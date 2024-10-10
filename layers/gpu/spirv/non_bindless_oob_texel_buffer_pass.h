@@ -25,9 +25,9 @@ namespace spirv {
 class NonBindlessOOBTexelBufferPass : public Pass {
   public:
     NonBindlessOOBTexelBufferPass(Module& module);
-    void PrintDebugInfo() final;
+    void PrintDebugInfo();
     const char* Name() const final { return "NonBindlessOOBTexelBufferPass"; }
-    bool Run() final;
+    bool Run();
 
   private:
     bool AnalyzeInstruction(const Function& function, const Instruction& inst);

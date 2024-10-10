@@ -35,10 +35,6 @@ struct InjectionData {
 class Pass {
   public:
     virtual const char* Name() const = 0;
-    // Return false if nothing was changed
-    virtual bool Run() { return false; }
-
-    virtual void PrintDebugInfo() {}
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
     const Variable& GetBuiltinVariable(uint32_t built_in);

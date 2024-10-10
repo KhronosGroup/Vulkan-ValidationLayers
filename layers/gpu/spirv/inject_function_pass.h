@@ -25,7 +25,7 @@ namespace spirv {
 //     value = original_value;
 class InjectFunctionPass : public Pass {
   public:
-    bool Run() final;
+    bool Run();
 
   protected:
     InjectFunctionPass(Module& module);
