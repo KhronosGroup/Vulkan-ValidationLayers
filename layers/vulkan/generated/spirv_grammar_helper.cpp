@@ -817,6 +817,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpFetchMicroTriangleVertexPositionNV";
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
             return "OpFetchMicroTriangleVertexBarycentricNV";
+        case spv::OpReportIntersectionKHR:
+            return "OpReportIntersectionKHR";
         case spv::OpIgnoreIntersectionNV:
             return "OpIgnoreIntersectionNV";
         case spv::OpTerminateRayNV:
@@ -1832,7 +1834,7 @@ const char* string_SpvDim(uint32_t dim) {
 static const char* string_SpvCooperativeMatrixOperandsMask(spv::CooperativeMatrixOperandsMask mask) {
     switch (mask) {
         case spv::CooperativeMatrixOperandsMaskNone:
-            return "None";
+            return "NoneKHR";
         case spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask:
             return "MatrixASignedComponentsKHR";
         case spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask:
@@ -2259,6 +2261,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpWritePackedPrimitiveIndices4x8NV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpFetchMicroTriangleVertexPositionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpFetchMicroTriangleVertexBarycentricNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpReportIntersectionKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpIgnoreIntersectionNV, {{}}},
         {spv::OpTerminateRayNV, {{}}},
         {spv::OpTraceNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},

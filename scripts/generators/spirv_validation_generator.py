@@ -31,20 +31,13 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         # that require an update of the SPIRV-Headers which might not be ready to pull in.
         # Get the list of safe enum values to use from the SPIR-V grammar
         self.capabilityList = []
-        self.capabilityAliasList = []
         with open(grammar) as grammar_file:
             grammar_dict = json.load(grammar_file)
         for kind in grammar_dict['operand_kinds']:
             if kind['kind'] == 'Capability':
-                enum_values = set()
                 for enum in kind['enumerants']:
-                    if IsNonVulkanSprivCapability(enum['enumerant']):
-                        continue
-                    # Detect aliases
-                    if enum['value'] in enum_values:
-                        self.capabilityAliasList.append(enum['enumerant'])
-                    self.capabilityList.append(enum['enumerant'])
-                    enum_values.add(enum['value'])
+                    if not IsNonVulkanSprivCapability(enum['enumerant']):
+                        self.capabilityList.append(enum['enumerant'])
                 break
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
@@ -83,6 +76,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         self.propertyMap = {
             'VkPhysicalDeviceVulkan11Properties' : 'phys_dev_props_core11',
             'VkPhysicalDeviceVulkan12Properties' : 'phys_dev_props_core12',
+            'VkPhysicalDeviceVulkan13Properties' : 'phys_dev_props_core13', # Not used, but left for grep searching
         }
 
     #
@@ -221,9 +215,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('static inline const char* string_SpvCapability(uint32_t input_value) {\n')
         out.append('    switch ((spv::Capability)input_value) {\n')
         for name in self.capabilityList:
-            if name not in self.capabilityAliasList:
-                out.append(f'         case spv::Capability{name}:\n')
-                out.append(f'            return "{name}";\n')
+            out.append(f'         case spv::Capability{name}:\n')
+            out.append(f'            return "{name}";\n')
         out.append('        default:\n')
         out.append('            return \"Unhandled OpCapability\";\n')
         out.append('    };\n')
