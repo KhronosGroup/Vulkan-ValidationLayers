@@ -2258,7 +2258,7 @@ TEST_F(NegativeDebugPrintf, Maintenance5) {
     )glsl";
 
     std::vector<uint32_t> shader;
-    this->GLSLtoSPV(&m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, shader_source, shader);
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_COMPUTE_BIT, shader_source, shader);
 
     VkShaderModuleCreateInfo module_create_info = vku::InitStructHelper();
     module_create_info.pCode = shader.data();

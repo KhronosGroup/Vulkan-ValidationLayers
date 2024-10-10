@@ -19,6 +19,7 @@
 #include "test_framework.h"
 #include "vk_layer_config.h"
 #include "generated/vk_function_pointers.h"
+#include <glslang/Public/ShaderLang.h>
 #include CONFIG_HEADER_FILE
 #include <filesystem>
 #include <cmath>
@@ -193,11 +194,7 @@ void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }
 void VkTestFramework::InitArgs(int *argc, char *argv[]) {
     for (int i = 1; i < *argc; ++i) {
         const std::string_view current_argument = argv[i];
-        if (current_argument == "--strip-SPV") {
-            m_strip_spv = true;
-        } else if (current_argument == "--canonicalize-SPV") {
-            m_canonicalize_spv = true;
-        } else if (current_argument == "--print-vu") {
+        if (current_argument == "--print-vu") {
             m_print_vu = true;
         } else if (current_argument == "--syncval-disable-core") {
             m_syncval_disable_core = true;
@@ -218,12 +215,6 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
                 "\t--gpuav-disable-core\n"
                 "\t\tDisable core validation when running gpu-av tests.\n"
                 "\t\tBy default both CoreChecks and gpu-av is enabled.\n");
-            printf(
-                "\t--strip-SPV\n"
-                "\t\tStrip SPIR-V debug information (line numbers, names, etc).\n");
-            printf(
-                "\t--canonicalize-SPV\n"
-                "\t\tRemap SPIR-V ids before submission to aid compression.\n");
             printf(
                 "\t--device-index <physical device index>\n"
                 "\t\tIndex into VkPhysicalDevice array returned from vkEnumeratePhysicalDevices.\n"

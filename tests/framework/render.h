@@ -158,7 +158,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code,
                                     const spv_target_env env = SPV_ENV_VULKAN_1_0) {
         std::vector<uint32_t> spv;
-        GLSLtoSPV(&m_device->Physical().limits_, stage, code, spv, env);
+        GLSLtoSPV(m_device->Physical().limits_, stage, code, spv, env);
         return spv;
     }
 
