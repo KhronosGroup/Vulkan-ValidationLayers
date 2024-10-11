@@ -5284,8 +5284,18 @@ bool ObjectLifetimes::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
     return skip;
 }
 
-// vkCmdInitializeGraphScratchMemoryAMDX:
-// Checked by chassis: commandBuffer: "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-parameter"
+bool ObjectLifetimes::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                                         VkDeviceAddress scratch, VkDeviceSize scratchSize,
+                                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commonparent"
+    skip |= ValidateObject(
+        executionGraph, kVulkanObjectTypePipeline, false, "VUID-vkCmdInitializeGraphScratchMemoryAMDX-executionGraph-parameter",
+        "VUID-vkCmdInitializeGraphScratchMemoryAMDX-commonparent", error_obj.location.dot(Field::executionGraph));
+
+    return skip;
+}
 
 // vkCmdDispatchGraphAMDX:
 // Checked by chassis: commandBuffer: "VUID-vkCmdDispatchGraphAMDX-commandBuffer-parameter"

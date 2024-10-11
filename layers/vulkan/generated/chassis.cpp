@@ -17976,7 +17976,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetExecutionGraphPipelineNodeIndexAMDX(VkDevice d
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch) {
+VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                               VkDeviceAddress scratch, VkDeviceSize scratchSize) {
     VVL_ZoneScoped;
 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -17988,7 +17989,8 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer c
         for (const ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPreCallValidateCmdInitializeGraphScratchMemoryAMDX]) {
             auto lock = intercept->ReadLock();
-            skip |= intercept->PreCallValidateCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, error_obj);
+            skip |= intercept->PreCallValidateCmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch,
+                                                                                  scratchSize, error_obj);
             if (skip) return;
         }
     }
@@ -17998,24 +18000,26 @@ VKAPI_ATTR void VKAPI_CALL CmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer c
         for (ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPreCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, record_obj);
+            intercept->PreCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize,
+                                                                        record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        DispatchCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+        DispatchCmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPostCallRecordCmdInitializeGraphScratchMemoryAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch, record_obj);
+            intercept->PostCallRecordCmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize,
+                                                                         record_obj);
         }
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     VVL_ZoneScoped;
 
@@ -18026,7 +18030,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, V
         VVL_ZoneScopedN("PreCallValidate");
         for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphAMDX]) {
             auto lock = intercept->ReadLock();
-            skip |= intercept->PreCallValidateCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, error_obj);
+            skip |= intercept->PreCallValidateCmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo, error_obj);
             if (skip) return;
         }
     }
@@ -18035,24 +18039,24 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, V
         VVL_ZoneScopedN("PreCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, record_obj);
+            intercept->PreCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo, record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        DispatchCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+        DispatchCmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo, record_obj);
+            intercept->PostCallRecordCmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo, record_obj);
         }
     }
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                        const VkDispatchGraphCountInfoAMDX* pCountInfo) {
+                                                        VkDeviceSize scratchSize, const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     VVL_ZoneScoped;
 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -18064,7 +18068,8 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandB
         for (const ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphIndirectAMDX]) {
             auto lock = intercept->ReadLock();
-            skip |= intercept->PreCallValidateCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, error_obj);
+            skip |=
+                intercept->PreCallValidateCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo, error_obj);
             if (skip) return;
         }
     }
@@ -18073,24 +18078,24 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectAMDX(VkCommandBuffer commandB
         VVL_ZoneScopedN("PreCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphIndirectAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, record_obj);
+            intercept->PreCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo, record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        DispatchCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+        DispatchCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo, record_obj);
+            intercept->PostCallRecordCmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo, record_obj);
         }
     }
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                             VkDeviceAddress countInfo) {
+                                                             VkDeviceSize scratchSize, VkDeviceAddress countInfo) {
     VVL_ZoneScoped;
 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -18102,7 +18107,8 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
         for (const ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDispatchGraphIndirectCountAMDX]) {
             auto lock = intercept->ReadLock();
-            skip |= intercept->PreCallValidateCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, error_obj);
+            skip |= intercept->PreCallValidateCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo,
+                                                                                error_obj);
             if (skip) return;
         }
     }
@@ -18112,19 +18118,19 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchGraphIndirectCountAMDX(VkCommandBuffer com
         for (ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDispatchGraphIndirectCountAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, record_obj);
+            intercept->PreCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo, record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        DispatchCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+        DispatchCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDispatchGraphIndirectCountAMDX]) {
             auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo, record_obj);
+            intercept->PostCallRecordCmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo, record_obj);
         }
     }
 }

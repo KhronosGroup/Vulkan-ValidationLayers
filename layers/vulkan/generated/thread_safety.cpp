@@ -5021,47 +5021,55 @@ void ThreadSafety::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice
     FinishReadObject(executionGraph, record_obj.location);
 }
 
-void ThreadSafety::PreCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void ThreadSafety::PreCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                                    VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                                     const RecordObject& record_obj) {
     StartReadObject(commandBuffer, record_obj.location);
+    StartReadObject(executionGraph, record_obj.location);
 }
 
-void ThreadSafety::PostCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void ThreadSafety::PostCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                                     VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                                      const RecordObject& record_obj) {
     FinishReadObject(commandBuffer, record_obj.location);
+    FinishReadObject(executionGraph, record_obj.location);
 }
 
 void ThreadSafety::PreCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                     const VkDispatchGraphCountInfoAMDX* pCountInfo,
+                                                     VkDeviceSize scratchSize, const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                      const RecordObject& record_obj) {
     StartReadObject(commandBuffer, record_obj.location);
 }
 
 void ThreadSafety::PostCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                      const VkDispatchGraphCountInfoAMDX* pCountInfo,
+                                                      VkDeviceSize scratchSize, const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                       const RecordObject& record_obj) {
     FinishReadObject(commandBuffer, record_obj.location);
 }
 
 void ThreadSafety::PreCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+                                                             VkDeviceSize scratchSize,
                                                              const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                              const RecordObject& record_obj) {
     StartReadObject(commandBuffer, record_obj.location);
 }
 
 void ThreadSafety::PostCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+                                                              VkDeviceSize scratchSize,
                                                               const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                               const RecordObject& record_obj) {
     FinishReadObject(commandBuffer, record_obj.location);
 }
 
 void ThreadSafety::PreCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                                  VkDeviceAddress countInfo, const RecordObject& record_obj) {
+                                                                  VkDeviceSize scratchSize, VkDeviceAddress countInfo,
+                                                                  const RecordObject& record_obj) {
     StartReadObject(commandBuffer, record_obj.location);
 }
 
 void ThreadSafety::PostCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                                   VkDeviceAddress countInfo, const RecordObject& record_obj) {
+                                                                   VkDeviceSize scratchSize, VkDeviceAddress countInfo,
+                                                                   const RecordObject& record_obj) {
     FinishReadObject(commandBuffer, record_obj.location);
 }
 

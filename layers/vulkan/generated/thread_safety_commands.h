@@ -2596,31 +2596,35 @@ void PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPip
                                                           const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                           uint32_t* pNodeIndex, const RecordObject& record_obj) override;
 
-void PreCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void PreCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                      VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                       const RecordObject& record_obj) override;
 
-void PostCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void PostCallRecordCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                       VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                        const RecordObject& record_obj) override;
 
-void PreCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void PreCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                        const VkDispatchGraphCountInfoAMDX* pCountInfo, const RecordObject& record_obj) override;
 
-void PostCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void PostCallRecordCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                         const VkDispatchGraphCountInfoAMDX* pCountInfo, const RecordObject& record_obj) override;
 
-void PreCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void PreCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                const RecordObject& record_obj) override;
 
-void PostCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void PostCallRecordCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                 const RecordObject& record_obj) override;
 
 void PreCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                    VkDeviceAddress countInfo, const RecordObject& record_obj) override;
+                                                    VkDeviceSize scratchSize, VkDeviceAddress countInfo,
+                                                    const RecordObject& record_obj) override;
 
 void PostCallRecordCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                     VkDeviceAddress countInfo, const RecordObject& record_obj) override;
+                                                     VkDeviceSize scratchSize, VkDeviceAddress countInfo,
+                                                     const RecordObject& record_obj) override;
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 void PreCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo,

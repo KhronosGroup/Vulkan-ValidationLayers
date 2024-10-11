@@ -5357,6 +5357,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->shaderEnqueue, "VkPhysicalDeviceShaderEnqueueFeaturesAMDX::shaderEnqueue"};
         }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case Feature::shaderMeshEnqueue: {
+            auto vk_struct = const_cast<VkPhysicalDeviceShaderEnqueueFeaturesAMDX *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceShaderEnqueueFeaturesAMDX>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceShaderEnqueueFeaturesAMDX;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->shaderMeshEnqueue, "VkPhysicalDeviceShaderEnqueueFeaturesAMDX::shaderMeshEnqueue"};
+        }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         case Feature::shaderExpectAssume: {
             auto vk_struct = const_cast<VkPhysicalDeviceShaderExpectAssumeFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceShaderExpectAssumeFeaturesKHR>(*inout_pnext_chain));

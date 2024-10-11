@@ -1168,16 +1168,18 @@ bool PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, Vk
 bool PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                            const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                            uint32_t* pNodeIndex, const ErrorObject& error_obj) const override;
-bool PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+bool PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                        VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                         const ErrorObject& error_obj) const override;
-bool PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+bool PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                          const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                          const ErrorObject& error_obj) const override;
-bool PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+bool PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                                  const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                      VkDeviceAddress countInfo, const ErrorObject& error_obj) const override;
+                                                      VkDeviceSize scratchSize, VkDeviceAddress countInfo,
+                                                      const ErrorObject& error_obj) const override;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
                                              const ErrorObject& error_obj) const override;

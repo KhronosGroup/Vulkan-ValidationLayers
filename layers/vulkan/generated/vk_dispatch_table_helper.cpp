@@ -755,11 +755,14 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetExecutionGraphPipelineNodeIndexAMDX
                                                                                  uint32_t*) {
     return VK_SUCCESS;
 }
-static VKAPI_ATTR void VKAPI_CALL StubCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer, VkDeviceAddress) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphAMDX(VkCommandBuffer, VkDeviceAddress, const VkDispatchGraphCountInfoAMDX*) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectAMDX(VkCommandBuffer, VkDeviceAddress,
+static VKAPI_ATTR void VKAPI_CALL StubCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer, VkPipeline, VkDeviceAddress,
+                                                                          VkDeviceSize) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphAMDX(VkCommandBuffer, VkDeviceAddress, VkDeviceSize,
+                                                           const VkDispatchGraphCountInfoAMDX*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectAMDX(VkCommandBuffer, VkDeviceAddress, VkDeviceSize,
                                                                    const VkDispatchGraphCountInfoAMDX*) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer, VkDeviceAddress, VkDeviceAddress) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer, VkDeviceAddress, VkDeviceSize,
+                                                                        VkDeviceAddress) {}
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetSampleLocationsEXT(VkCommandBuffer, const VkSampleLocationsInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice, VkSampleCountFlagBits,

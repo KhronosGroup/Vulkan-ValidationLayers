@@ -769,6 +769,8 @@ struct DeviceFeatures {
     bool shaderEarlyAndLateFragmentTests;
     // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
     bool shaderEnqueue;
+    // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
+    bool shaderMeshEnqueue;
     // VkPhysicalDeviceShaderExpectAssumeFeaturesKHR
     bool shaderExpectAssume;
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
