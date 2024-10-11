@@ -1072,11 +1072,11 @@ struct DeviceExtensions : public InstanceExtensions {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_AMDX_shader_enqueue,
              Info(&DeviceExtensions::vk_amdx_shader_enqueue,
-                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
-                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                    {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
-                    {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME},
-                    {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME}}})},
+                  {{{&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_maintenance5, VK_KHR_MAINTENANCE_5_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME}}})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_AMD_mixed_attachment_samples, Info(&DeviceExtensions::vk_amd_mixed_attachment_samples, {})},
             {vvl::Extension::_VK_AMD_shader_fragment_mask, Info(&DeviceExtensions::vk_amd_shader_fragment_mask, {})},

@@ -711,6 +711,7 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceShaderEnqueueFeaturesAMDX *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderEnqueueFeaturesAMDX *>(pNext);
                 features->shaderEnqueue |= enabled->shaderEnqueue == VK_TRUE;
+                features->shaderMeshEnqueue |= enabled->shaderMeshEnqueue == VK_TRUE;
                 break;
             }
 #endif  // VK_ENABLE_BETA_EXTENSIONS

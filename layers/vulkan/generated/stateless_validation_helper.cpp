@@ -1864,6 +1864,8 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                 }
                 VkPhysicalDeviceShaderEnqueueFeaturesAMDX* structure = (VkPhysicalDeviceShaderEnqueueFeaturesAMDX*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::shaderEnqueue), structure->shaderEnqueue);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderMeshEnqueue), structure->shaderMeshEnqueue);
             }
         } break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
@@ -21432,17 +21434,20 @@ bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+bool StatelessValidation::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer,
+                                                                             VkPipeline executionGraph, VkDeviceAddress scratch,
+                                                                             VkDeviceSize scratchSize,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
-    // No xml-driven validation
+    skip |= ValidateRequiredHandle(loc.dot(Field::executionGraph), executionGraph);
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+                                                              VkDeviceSize scratchSize,
                                                               const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
@@ -21458,6 +21463,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer co
 }
 
 bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+                                                                      VkDeviceSize scratchSize,
                                                                       const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
@@ -21474,7 +21480,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandB
 }
 
 bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
-                                                                           VkDeviceAddress countInfo,
+                                                                           VkDeviceSize scratchSize, VkDeviceAddress countInfo,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;

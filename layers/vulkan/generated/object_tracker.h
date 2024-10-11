@@ -989,6 +989,9 @@ bool PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, Vk
 bool PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                            const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                            uint32_t* pNodeIndex, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
+                                                        VkDeviceAddress scratch, VkDeviceSize scratchSize,
+                                                        const ErrorObject& error_obj) const override;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
                                                            VkImageDrmFormatModifierPropertiesEXT* pProperties,

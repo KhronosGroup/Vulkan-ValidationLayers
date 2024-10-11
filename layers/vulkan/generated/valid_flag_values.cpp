@@ -987,6 +987,11 @@ vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bi
             }
             return {};
         case vvl::FlagBitmask::VkPipelineCreateFlagBits2KHR:
+            if (value & (VK_PIPELINE_CREATE_2_EXECUTION_GRAPH_BIT_AMDX)) {
+                if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue)) {
+                    return {vvl::Extension::_VK_AMDX_shader_enqueue};
+                }
+            }
             if (value & (VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_legacy_dithering)) {
                     return {vvl::Extension::_VK_EXT_legacy_dithering};

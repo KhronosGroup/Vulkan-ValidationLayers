@@ -6303,30 +6303,35 @@ VkResult DispatchGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipel
     return result;
 }
 
-void DispatchCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch) {
+void DispatchCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph, VkDeviceAddress scratch,
+                                                 VkDeviceSize scratchSize) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
-
-    layer_data->device_dispatch_table.CmdInitializeGraphScratchMemoryAMDX(commandBuffer, scratch);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch,
+                                                                                     scratchSize);
+    { executionGraph = layer_data->Unwrap(executionGraph); }
+    layer_data->device_dispatch_table.CmdInitializeGraphScratchMemoryAMDX(commandBuffer, executionGraph, scratch, scratchSize);
 }
 
-void DispatchCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void DispatchCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                   const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
 
-    layer_data->device_dispatch_table.CmdDispatchGraphAMDX(commandBuffer, scratch, pCountInfo);
+    layer_data->device_dispatch_table.CmdDispatchGraphAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
 }
 
-void DispatchCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
+void DispatchCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
                                           const VkDispatchGraphCountInfoAMDX* pCountInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
 
-    layer_data->device_dispatch_table.CmdDispatchGraphIndirectAMDX(commandBuffer, scratch, pCountInfo);
+    layer_data->device_dispatch_table.CmdDispatchGraphIndirectAMDX(commandBuffer, scratch, scratchSize, pCountInfo);
 }
 
-void DispatchCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceAddress countInfo) {
+void DispatchCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
+                                               VkDeviceAddress countInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
 
-    layer_data->device_dispatch_table.CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, countInfo);
+    layer_data->device_dispatch_table.CmdDispatchGraphIndirectCountAMDX(commandBuffer, scratch, scratchSize, countInfo);
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 

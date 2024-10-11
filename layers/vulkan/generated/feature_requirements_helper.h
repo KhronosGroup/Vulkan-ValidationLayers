@@ -762,6 +762,8 @@ enum class Feature {
     shaderEarlyAndLateFragmentTests,
     // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
     shaderEnqueue,
+    // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
+    shaderMeshEnqueue,
     // VkPhysicalDeviceShaderExpectAssumeFeaturesKHR
     shaderExpectAssume,
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
