@@ -95,7 +95,7 @@ class ValidationCache {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    void GetUUID(uint8_t *uuid);
+    void SetUUID(uint8_t *uuid);
 
     // Can hit cases where error appear/disappear if spirv-val settings are adjusted
     // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031
