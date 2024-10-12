@@ -1913,8 +1913,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
     AddRequiredFeature(vkt::Feature::multiview);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();

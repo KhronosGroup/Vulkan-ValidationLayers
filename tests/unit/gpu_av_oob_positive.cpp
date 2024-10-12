@@ -21,8 +21,7 @@ TEST_F(PositiveGpuAVOOB, Basic) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -106,7 +105,7 @@ TEST_F(PositiveGpuAVOOB, Basic) {
 TEST_F(PositiveGpuAVOOB, ImageLoadStoreTexelFetch) {
     TEST_DESCRIPTION("index into an image Load, Store, and texelFetch");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -160,7 +159,7 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
     TEST_DESCRIPTION("index into an atomic image Load and Store");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -216,8 +215,7 @@ TEST_F(PositiveGpuAVOOB, GPL) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -303,7 +301,7 @@ TEST_F(PositiveGpuAVOOB, GPLNonInlined) {
     TEST_DESCRIPTION("Make sure GPL works when shader modules are not inlined at pipeline creation time with valid GPU-AV code");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -523,7 +521,7 @@ TEST_F(PositiveGpuAVOOB, GPLFragmentIndependentSets) {
 
 TEST_F(PositiveGpuAVOOB, VertexFragmentMultiEntrypoint) {
     TEST_DESCRIPTION("Same as negative test, but buffer are large enough");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -663,7 +661,7 @@ TEST_F(PositiveGpuAVOOB, VertexFragmentMultiEntrypoint) {
 
 TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorSSBO) {
     TEST_DESCRIPTION("Only bound part of a SSBO, but only use that part so it is still valid");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -706,7 +704,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorSSBO) {
 
 TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorBuffer) {
     TEST_DESCRIPTION("Make large enough buffer, but only bound part of it to the SSBO that is used");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -750,7 +748,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorBuffer) {
 
 TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorCopy) {
     TEST_DESCRIPTION("Copy the partial bound buffer the descriptor that is used");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -805,7 +803,7 @@ TEST_F(PositiveGpuAVOOB, PartialBoundDescriptorCopy) {
 TEST_F(PositiveGpuAVOOB, TexelFetchArray) {
     TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

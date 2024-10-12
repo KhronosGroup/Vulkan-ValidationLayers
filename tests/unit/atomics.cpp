@@ -23,7 +23,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisable) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
-    AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -74,7 +74,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
-    AddDisabledFeature(vkt::Feature::fragmentStoresAndAtomics);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -123,7 +123,7 @@ TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureDisable) {
 TEST_F(NegativeAtomic, FragmentStoresAndAtomicsFeatureBuffer) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::fragmentStoresAndAtomics);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -152,7 +152,7 @@ TEST_F(NegativeAtomic, VertexStoresAndAtomicsFeatureDisableShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::shaderImageFloat32Atomics);
-    AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+
     RETURN_IF_SKIP(Init());
 
     char const *vs_source = R"glsl(
@@ -569,6 +569,7 @@ TEST_F(NegativeAtomic, Float) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat64);
     // Create device without VK_EXT_shader_atomic_float extension or features enabled
     RETURN_IF_SKIP(Init());
     VkPhysicalDeviceFeatures available_features = {};
@@ -1596,7 +1597,7 @@ TEST_F(NegativeAtomic, ImageFloat16Vector) {
 
 TEST_F(NegativeAtomic, VertexPipelineStoresAndAtomics) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8223");
-    AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

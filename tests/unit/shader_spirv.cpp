@@ -619,7 +619,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::maintenance5);
-    AddDisabledFeature(vkt::Feature::shaderInt16);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1667,7 +1667,6 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline in which a capability declared by the shader requires a feature not enabled on the device.");
 
-    AddDisabledFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1995,7 +1994,7 @@ TEST_F(NegativeShaderSpirv, SubgroupRotate) {
     TEST_DESCRIPTION("Missing shaderSubgroupRotate");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::shaderSubgroupRotate);
+
     RETURN_IF_SKIP(Init());
 
     char const *source = R"glsl(
@@ -2017,7 +2016,7 @@ TEST_F(NegativeShaderSpirv, SubgroupRotateClustered) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderSubgroupRotate);
-    AddDisabledFeature(vkt::Feature::shaderSubgroupRotateClustered);
+
     RETURN_IF_SKIP(Init());
 
     char const *source = R"glsl(
@@ -2039,7 +2038,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+
     RETURN_IF_SKIP(Init());
 
     char const *csSource = R"glsl(
@@ -2060,7 +2059,7 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
     TEST_DESCRIPTION("Validate using QueueFamily memory scope in spirv.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::vulkanMemoryModel);
+
     AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(Init());
 
@@ -2437,7 +2436,7 @@ TEST_F(NegativeShaderSpirv, ScalarBlockLayoutShaderCache) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::scalarBlockLayout);  // will NOT set --scalar-block-layout
+    // will NOT set --scalar-block-layout
     RETURN_IF_SKIP(Init());
 
     // Matches glsl from other ScalarBlockLayoutShaderCache test

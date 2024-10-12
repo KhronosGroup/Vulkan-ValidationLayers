@@ -190,7 +190,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabled) {
     TEST_DESCRIPTION("Tests for when descriptor buffer is not enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::descriptorBuffer);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
@@ -251,7 +251,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledBufferDeviceAddress) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::descriptorBuffer);
+
     RETURN_IF_SKIP(Init());
 
     vkt::Buffer d_buffer(*m_device, 4096,
@@ -275,7 +275,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledBufferDeviceAddress) {
 TEST_F(NegativeDescriptorBuffer, NotEnabledGetBufferOpaqueCaptureDescriptorDataEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
 
     uint8_t data[256];
@@ -293,7 +293,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetBufferOpaqueCaptureDescriptorDataE
 TEST_F(NegativeDescriptorBuffer, NotEnabledGetImageOpaqueCaptureDescriptorDataEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
 
     uint8_t data[256];
@@ -323,7 +323,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetImageOpaqueCaptureDescriptorDataEX
 TEST_F(NegativeDescriptorBuffer, NotEnabledGetImageViewOpaqueCaptureDescriptorDataEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
     uint8_t data[256];
 
@@ -355,7 +355,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetImageViewOpaqueCaptureDescriptorDa
 TEST_F(NegativeDescriptorBuffer, NotEnabledGetSamplerOpaqueCaptureDescriptorDataEXT) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
 
     uint8_t data[256];
@@ -377,7 +377,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetAccelerationStructureOpaqueCapture
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
@@ -399,9 +399,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::descriptorBuffer);
-    AddDisabledFeature(vkt::Feature::descriptorBufferPushDescriptors);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
@@ -492,8 +490,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplayAS) {
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
-    AddDisabledFeature(vkt::Feature::descriptorBuffer);
-    AddDisabledFeature(vkt::Feature::descriptorBufferCaptureReplay);
+
     RETURN_IF_SKIP(Init());
 
     uint32_t data[128];

@@ -32,7 +32,7 @@ void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing() {
     AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
     AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
     AddRequiredFeature(vkt::Feature::shaderStorageBufferArrayNonUniformIndexing);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitState());
 }
 

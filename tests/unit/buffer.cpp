@@ -658,6 +658,7 @@ TEST_F(NegativeBuffer, DedicatedAllocationBufferFlags) {
 
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
     AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = vku::InitStructHelper();

@@ -115,6 +115,7 @@ TEST_F(NegativeAndroidExternalResolve, SubpassDescriptionViewMask) {
     rp.SetViewMask(1);  // bad
 
     m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-externalFormatResolve-09346");
+    m_errorMonitor->SetDesiredError("VUID-VkSubpassDescription2-multiview-06558");
     rp.CreateRenderPass();
     m_errorMonitor->VerifyFound();
 }

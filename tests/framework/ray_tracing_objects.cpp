@@ -1539,7 +1539,7 @@ void Pipeline::BuildSbt() {
     // => only it needs to be aligned to shaderGroupBaseAlignment,
     // and within miss/closes hit entries alignment is shaderGroupHandleAlignment
     const VkDeviceSize miss_shaders_sbt_entry_byte_size = miss_shaders_.size() * handle_size_aligned;
-    const VkDeviceSize closest_hit_shaders_sbt_entry_byte_size = miss_shaders_.size() * handle_size_aligned;
+    const VkDeviceSize closest_hit_shaders_sbt_entry_byte_size = closest_hit_shaders_.size() * handle_size_aligned;
     VkDeviceSize sbt_buffer_size = ray_gen_shaders_sbt_entry_byte_size;
     sbt_buffer_size = Align<VkDeviceSize>(sbt_buffer_size, rt_pipeline_props.shaderGroupBaseAlignment);
     sbt_buffer_size += miss_shaders_sbt_entry_byte_size;

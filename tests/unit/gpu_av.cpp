@@ -152,7 +152,6 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
 
     // not using VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT
     const VkValidationFeatureEnableEXT gpu_av_enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT;
@@ -237,7 +236,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);

@@ -355,7 +355,7 @@ TEST_F(PositiveGpuAVSpirv, VulkanMemoryModelDeviceScope) {
 
 TEST_F(PositiveGpuAVSpirv, FindMultipleStores) {
     TEST_DESCRIPTION("Catches bug when various OpStore are in top of a function");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

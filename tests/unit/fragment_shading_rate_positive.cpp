@@ -40,8 +40,7 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
-    AddDisabledFeature(vkt::Feature::pipelineFragmentShadingRate);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRate);
+
     RETURN_IF_SKIP(Init());
 
     VkImageFormatProperties format_props = {};
