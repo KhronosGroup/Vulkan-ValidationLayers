@@ -137,6 +137,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderTileImageDepthReadAccess);
     AddRequiredFeature(vkt::Feature::shaderTileImageStencilReadAccess);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -675,6 +676,9 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
 
 TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 
     if (m_device->Physical().limits_.maxGeometryOutputVertices == 0) {
@@ -1469,6 +1473,7 @@ TEST_F(NegativeDynamicRendering, AttachmentInfo) {
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06146");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06861");
     m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentInfo-imageView-06862");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06107");
     m_command_buffer.BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2807,6 +2812,7 @@ TEST_F(NegativeDynamicRendering, ShaderLayerBuiltIn) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::multiview);
     AddRequiredFeature(vkt::Feature::multiviewGeometryShader);

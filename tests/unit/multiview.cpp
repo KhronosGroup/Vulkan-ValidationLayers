@@ -128,7 +128,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiview);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
 
     VkAttachmentDescription attachmentDescription = {};
@@ -1065,8 +1065,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     AddRequiredFeature(vkt::Feature::multiview);
     AddRequiredFeature(vkt::Feature::tessellationShader);
     AddRequiredFeature(vkt::Feature::geometryShader);
-    AddDisabledFeature(vkt::Feature::multiviewTessellationShader);
-    AddDisabledFeature(vkt::Feature::multiviewGeometryShader);
+
     RETURN_IF_SKIP(Init());
 
     RenderPass2SingleSubpass rp(*this);

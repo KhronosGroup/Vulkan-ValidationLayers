@@ -448,7 +448,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::extendedDynamicState);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -751,7 +751,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateSetViewportScissor) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     AddRequiredFeature(vkt::Feature::multiViewport);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -852,7 +852,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabledNoMultiview) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
-    AddDisabledFeature(vkt::Feature::multiViewport);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -880,7 +880,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Disabled) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::extendedDynamicState2);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -916,7 +916,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2PatchControlPointsDisabled) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
-    AddDisabledFeature(vkt::Feature::extendedDynamicState2PatchControlPoints);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -942,7 +942,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpDisabled) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
-    AddDisabledFeature(vkt::Feature::extendedDynamicState2LogicOp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1091,6 +1091,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2LogicOpEnabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::logicOp);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2LogicOp);
     RETURN_IF_SKIP(Init());
@@ -1599,7 +1600,7 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthClampEnable) {
 
 TEST_F(NegativeDynamicState, SetDepthClampFeature) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::depthClamp);
+
     AddRequiredFeature(vkt::Feature::extendedDynamicState3DepthClampEnable);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1620,7 +1621,7 @@ TEST_F(NegativeDynamicState, SetDepthClampFeature) {
 
 TEST_F(NegativeDynamicState, SetDepthBoundsTestEnableFeature) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::depthBounds);
+
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1643,7 +1644,7 @@ TEST_F(NegativeDynamicState, DrawNotSetPolygonMode) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3PolygonMode);
-    AddDisabledFeature(vkt::Feature::fillModeNonSolid);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1701,7 +1702,7 @@ TEST_F(NegativeDynamicState, AlphaToOneFeature) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
-    AddDisabledFeature(vkt::Feature::alphaToOne);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1748,7 +1749,7 @@ TEST_F(NegativeDynamicState, SetLogicOpFeature) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 dynamic state not set before drawing");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
-    AddDisabledFeature(vkt::Feature::logicOp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1773,7 +1774,7 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
-    AddDisabledFeature(vkt::Feature::dualSrcBlend);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1885,6 +1886,7 @@ TEST_F(NegativeDynamicState, DrawNotSetRasterizationStream) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryStreams);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationStream);
+    AddRequiredFeature(vkt::Feature::transformFeedback);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2433,9 +2435,7 @@ void NegativeDynamicState::InitLineRasterizationFeatureDisabled() {
     AddRequiredFeature(vkt::Feature::rectangularLines);
     AddRequiredFeature(vkt::Feature::bresenhamLines);
     AddRequiredFeature(vkt::Feature::smoothLines);
-    AddDisabledFeature(vkt::Feature::stippledRectangularLines);
-    AddDisabledFeature(vkt::Feature::stippledBresenhamLines);
-    AddDisabledFeature(vkt::Feature::stippledSmoothLines);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 }
@@ -4356,7 +4356,7 @@ TEST_F(NegativeDynamicState, DrawNotSetAttachmentFeedbackLoopEnable) {
 TEST_F(NegativeDynamicState, AttachmentFeedbackLoopEnableFeatures) {
     TEST_DESCRIPTION("Call vkCmdSetAttachmentFeedbackLoopEnableEXT without features enabled");
     AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_DYNAMIC_STATE_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::attachmentFeedbackLoopDynamicState);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -4402,7 +4402,7 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     AddRequiredFeature(vkt::Feature::depthBiasControl);
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
 
     m_command_buffer.Begin();
@@ -4430,10 +4430,7 @@ TEST_F(NegativeDynamicState, SetDepthBias2EXTDepthBiasControlFeaturesDisabled) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     AddRequiredFeature(vkt::Feature::depthBiasControl);
-    AddDisabledFeature(vkt::Feature::leastRepresentableValueForceUnormRepresentation);
-    AddDisabledFeature(vkt::Feature::floatRepresentation);
-    AddDisabledFeature(vkt::Feature::depthBiasExact);
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -4615,7 +4612,7 @@ TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
 
 TEST_F(NegativeDynamicState, SetDepthBiasClampDisabled) {
     TEST_DESCRIPTION("Call vkCmdSetDepthBias with depthBiasClamp disabled");
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
 
     m_command_buffer.Begin();
@@ -4631,7 +4628,7 @@ TEST_F(NegativeDynamicState, MultisampleStateIgnored) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleMask);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToCoverageEnable);
-    AddDisabledFeature(vkt::Feature::alphaToOne);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -4978,6 +4975,7 @@ TEST_F(NegativeDynamicState, SampleLocationsSamplesMismatch) {
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitRenderTarget());
 
@@ -5012,6 +5010,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsRasterizationSamplesMismatch)
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -5047,7 +5046,7 @@ TEST_F(NegativeDynamicState, DynamicRasterizationSamples) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
-    AddDisabledFeature(vkt::Feature::variableMultisampleRate);
+
     RETURN_IF_SKIP(Init());
 
     VkSubpassDescription subpass = {};
@@ -5548,7 +5547,7 @@ TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
     AddRequiredFeature(vkt::Feature::transformFeedback);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationStream);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -5900,6 +5899,7 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthCompareOp) {
 
 TEST_F(NegativeDynamicState, DepthClampControl) {
     AddRequiredExtensions(VK_EXT_DEPTH_CLAMP_CONTROL_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::depthClamp);
     AddRequiredFeature(vkt::Feature::depthClampControl);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

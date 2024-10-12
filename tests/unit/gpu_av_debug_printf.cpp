@@ -116,7 +116,7 @@ void NegativeGpuAVDebugPrintf::BasicComputeTest() {
 
 TEST_F(NegativeGpuAVDebugPrintf, Basic) {
     TEST_DESCRIPTION("Both trip a GPU-AV error while calling into DebugPrintf");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
@@ -125,7 +125,6 @@ TEST_F(NegativeGpuAVDebugPrintf, Basic) {
 }
 
 TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettings) {
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     RETURN_IF_SKIP(InitWithLayerSettings(true, true, true));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
@@ -134,7 +133,6 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettings) {
 }
 
 TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsNoPrintf) {
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     RETURN_IF_SKIP(InitWithLayerSettings(false, true, true));
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
@@ -185,7 +183,7 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsPrintfPreset) {
 
 TEST_F(NegativeGpuAVDebugPrintf, Graphics) {
     TEST_DESCRIPTION("Make sure graphics flow works");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -235,7 +233,7 @@ TEST_F(NegativeGpuAVDebugPrintf, Graphics) {
 TEST_F(NegativeGpuAVDebugPrintf, GPL) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -282,7 +280,7 @@ TEST_F(NegativeGpuAVDebugPrintf, GPL) {
 TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -328,7 +326,7 @@ TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
 
 TEST_F(NegativeGpuAVDebugPrintf, DynamicRendering) {
     TEST_DESCRIPTION("Make sure graphics flow works");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());

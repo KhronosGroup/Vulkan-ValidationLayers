@@ -3788,7 +3788,7 @@ TEST_F(NegativeSyncVal, Sync2FeatureDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::synchronization2);
+
     RETURN_IF_SKIP(Init());
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);

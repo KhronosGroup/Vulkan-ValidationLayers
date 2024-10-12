@@ -1654,7 +1654,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_properties = vku::InitStructHelper();
@@ -1702,7 +1702,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedFeature) {
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQuery);
+
     RETURN_IF_SKIP(Init());
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
@@ -1722,7 +1722,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithRasterizerDiscard);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1763,7 +1763,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedStreams) {
     AddRequiredFeature(vkt::Feature::transformFeedback);
     AddRequiredFeature(vkt::Feature::geometryStreams);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithNonZeroStreams);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT xfb_props = vku::InitStructHelper();
@@ -2227,8 +2227,7 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::meshShaderQueries);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

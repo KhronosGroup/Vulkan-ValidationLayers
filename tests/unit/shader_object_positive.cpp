@@ -34,8 +34,7 @@ void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) 
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
 }
 
@@ -742,9 +741,6 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
-    AddDisabledFeature(vkt::Feature::alphaToOne);
-    AddDisabledFeature(vkt::Feature::depthClamp);
-    AddDisabledFeature(vkt::Feature::logicOp);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();

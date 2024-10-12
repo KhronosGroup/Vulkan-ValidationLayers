@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,13 @@ class FeatureRequirements {
     ~FeatureRequirements();
     // Add a feature required for the test to be executed
     void AddRequiredFeature(APIVersion api_version, vkt::Feature feature);
-    // Add a feature that will be disabled when creating the device
-    void AddDisabledFeature(APIVersion api_version, vkt::Feature feature);
 
     bool HasFeatures2() const { return feature_chain_ != nullptr; }
     VkPhysicalDeviceFeatures* GetFeatures() { return &phys_dev_features_.features; };
     VkPhysicalDeviceFeatures2* GetFeatures2();
     // Return nullptr if all required feature are enabled, else return the name of the first disabled feature
     const char* AnyRequiredFeatureDisabled() const;
-    void EnforceDisableFeatures();
+    void EnforceRequiredFeatures();
 
   private:
     FeatureAndName SetFeature(APIVersion api_version, vkt::Feature feature, VkBool32 value);
@@ -39,7 +37,6 @@ class FeatureRequirements {
     void* feature_chain_ = nullptr;
     VkPhysicalDeviceFeatures2 phys_dev_features_{};
     std::vector<FeatureAndName> required_features_{};
-    std::vector<VkBool32*> disabled_features_{};
 };
 
 }  // namespace vkt
