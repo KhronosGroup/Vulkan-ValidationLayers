@@ -204,7 +204,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
-    AddDisabledFeature(vkt::Feature::descriptorBindingUniformBufferUpdateAfterBind);
+
     RETURN_IF_SKIP(Init());
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {

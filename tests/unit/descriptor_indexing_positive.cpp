@@ -176,6 +176,7 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -302,6 +303,7 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderImageBufferArray) {
     )glsl";
 
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::shaderStorageTexelBufferArrayDynamicIndexing);
     ComputePipelineShaderTest(csSource, bindings);
 }
 

@@ -1483,7 +1483,7 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     AddRequiredFeature(vkt::Feature::depthBiasExact);
     // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
     // depthBiasClamp being enabled
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1807,7 +1807,7 @@ TEST_F(PositivePipeline, ColorBlendUnsupportedLogicOpDynamic) {
     TEST_DESCRIPTION("VkPipelineColorBlendStateCreateInfo::logicOpEnable is ignored with VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
-    AddDisabledFeature(vkt::Feature::logicOp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1824,9 +1824,7 @@ TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3DepthClampEnable);
-    AddDisabledFeature(vkt::Feature::depthBounds);
-    AddDisabledFeature(vkt::Feature::depthClamp);
-    AddDisabledFeature(vkt::Feature::alphaToOne);
+
     RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical().handle());

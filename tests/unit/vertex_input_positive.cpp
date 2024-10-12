@@ -820,7 +820,7 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
 
 TEST_F(PositiveVertexInput, InterleavedAttributes) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7892");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

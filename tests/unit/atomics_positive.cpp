@@ -88,6 +88,7 @@ TEST_F(PositiveAtomic, ImageInt64DrawtimeSparse) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
     AddRequiredFeature(vkt::Feature::sparseImageInt64Atomics);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
     const char *cs_source = R"glsl(
@@ -667,6 +668,7 @@ TEST_F(PositiveAtomic, PhysicalPointer) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(Init());
 
     const char *spv_source = R"(
@@ -938,7 +940,7 @@ TEST_F(PositiveAtomic, ImageFloat16Vector) {
 
 TEST_F(PositiveAtomic, VertexPipelineStoresAndAtomics) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8223");
-    AddDisabledFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

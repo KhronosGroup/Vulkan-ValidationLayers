@@ -443,7 +443,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
     AddRequiredExtensions(VK_KHR_MAP_MEMORY_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::memoryMapPlaced);
-    AddDisabledFeature(vkt::Feature::memoryMapRangePlaced);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_placed_props = vku::InitStructHelper();
@@ -635,6 +635,7 @@ TEST_F(NegativeMemory, BindImageMemoryType) {
 }
 
 TEST_F(NegativeMemory, BindMemory) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info =
@@ -1781,6 +1782,7 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
     // Both VK_KHR_dedicated_allocation and VK_KHR_sampler_ycbcr_conversion supported in 1.1
     // Quicke to set 1.1 then check all extensions in 1.0
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     const VkFormat disjoint_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;

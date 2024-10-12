@@ -72,8 +72,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported types");
 
     AddRequiredFeature(vkt::Feature::sparseBinding);
-    AddDisabledFeature(vkt::Feature::sparseResidencyImage2D);
-    AddDisabledFeature(vkt::Feature::sparseResidencyImage3D);
+
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -107,10 +106,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
 TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported tiling or sample counts");
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
-    AddDisabledFeature(vkt::Feature::sparseResidency2Samples);
-    AddDisabledFeature(vkt::Feature::sparseResidency4Samples);
-    AddDisabledFeature(vkt::Feature::sparseResidency8Samples);
-    AddDisabledFeature(vkt::Feature::sparseResidency16Samples);
+
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();

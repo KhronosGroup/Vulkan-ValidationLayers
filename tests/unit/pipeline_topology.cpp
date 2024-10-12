@@ -20,7 +20,7 @@ class NegativePipelineTopology : public VkLayerTest {};
 TEST_F(NegativePipelineTopology, PolygonMode) {
     TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
     // The sacrificial device object
-    AddDisabledFeature(vkt::Feature::fillModeNonSolid);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -224,8 +224,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::primitiveTopologyListRestart);
-    AddDisabledFeature(vkt::Feature::primitiveTopologyPatchListRestart);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -270,7 +269,7 @@ TEST_F(NegativePipelineTopology, FillRectangleNV) {
     AddRequiredExtensions(VK_NV_FILL_RECTANGLE_EXTENSION_NAME);
     // Disable non-solid fill modes to make sure that the usage of VK_POLYGON_MODE_LINE and
     // VK_POLYGON_MODE_POINT will cause an error when the VK_NV_fill_rectangle extension is enabled.
-    AddDisabledFeature(vkt::Feature::fillModeNonSolid);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

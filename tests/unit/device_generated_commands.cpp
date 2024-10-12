@@ -928,6 +928,8 @@ TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineShaderStages) {
 }
 
 TEST_F(NegativeDeviceGeneratedCommands, UpdateIESPipelineCompatible) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 

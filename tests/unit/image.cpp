@@ -1294,6 +1294,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
     const bool maintenance1_support =
         IsExtensionsEnabled(VK_KHR_MAINTENANCE_1_EXTENSION_NAME) || DeviceValidationVersion() >= VK_API_VERSION_1_1;
@@ -2222,7 +2223,7 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
 
 TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
     TEST_DESCRIPTION("Passing bad image subrange to CreateImageView");
-
+    AddRequiredFeature(vkt::Feature::imageCubeArray);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -2389,6 +2390,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
 
 TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -3170,7 +3172,7 @@ TEST_F(NegativeImage, Stencil) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::shaderStorageImageMultisample);
+
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
@@ -3275,7 +3277,7 @@ TEST_F(NegativeImage, AstcDecodeMode) {
     TEST_DESCRIPTION("Tests for VUs for VK_EXT_astc_decode_mode");
     AddRequiredExtensions(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::textureCompressionASTC_LDR);
-    AddDisabledFeature(vkt::Feature::decodeModeSharedExponent);
+
     RETURN_IF_SKIP(Init());
 
     const VkFormat rgba_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3621,6 +3623,7 @@ TEST_F(NegativeImage, SparseResidencyAliased) {
 TEST_F(NegativeImage, SparseResidencyLinear) {
     TEST_DESCRIPTION("use VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT with VK_IMAGE_TILING_LINEAR.");
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = DefaultImageInfo();
@@ -4269,8 +4272,7 @@ TEST_F(NegativeImage, Image2DViewOf3DFeature) {
     TEST_DESCRIPTION("Checks for image image_2d_view_of_3d features");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::image2DViewOf3D);
-    AddDisabledFeature(vkt::Feature::sampler2DViewOf3D);
+
     RETURN_IF_SKIP(Init());
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},

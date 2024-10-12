@@ -2066,7 +2066,7 @@ TEST_F(NegativeSyncObject, BarrierAccessVideoDecode) {
 
 TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddDisabledFeature(vkt::Feature::synchronization2);
+
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo info = vkt::Image::CreateInfo();

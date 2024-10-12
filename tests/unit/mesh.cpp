@@ -36,9 +36,7 @@ TEST_F(NegativeMesh, BasicUsage) {
     AddRequiredFeature(vkt::Feature::taskShader);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
-    AddDisabledFeature(vkt::Feature::multiDrawIndirect);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -245,10 +243,7 @@ TEST_F(NegativeMesh, ExtensionDisabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
-    AddDisabledFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -350,8 +345,8 @@ TEST_F(NegativeMesh, RuntimeSpirv) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -475,8 +470,7 @@ TEST_F(NegativeMesh, RuntimeSpirv2) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -855,9 +849,7 @@ TEST_F(NegativeMesh, DrawCmds) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::multiDrawIndirect);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -991,8 +983,8 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1189,8 +1181,7 @@ TEST_F(NegativeMesh, MeshTasksWorkgroupCount) {
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1298,9 +1289,7 @@ TEST_F(NegativeMesh, MeshShaderConservativeRasterization) {
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1347,9 +1336,7 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
     AddRequiredFeature(vkt::Feature::transformFeedback);
-    AddDisabledFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1389,8 +1376,7 @@ TEST_F(NegativeMesh, DrawIndexMesh) {
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
     AddRequiredFeature(vkt::Feature::shaderDrawParameters);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1435,8 +1421,7 @@ TEST_F(NegativeMesh, DrawIndexMeshShaderObject) {
     AddRequiredFeature(vkt::Feature::shaderDrawParameters);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

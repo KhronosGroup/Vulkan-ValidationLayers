@@ -379,7 +379,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
 TEST_F(NegativePipeline, SampleRateFeatureDisable) {
     // Enable sample shading in pipeline when the feature is disabled.
     // Disable sampleRateShading here
-    AddDisabledFeature(vkt::Feature::sampleRateShading);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -459,7 +459,6 @@ TEST_F(NegativePipeline, SamplePNextDisabled) {
 TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     TEST_DESCRIPTION("Test creating two pipelines referring to the same subpass but with different rasterization samples count");
 
-    AddDisabledFeature(vkt::Feature::variableMultisampleRate);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -882,7 +881,7 @@ TEST_F(NegativePipeline, ColorBlendInvalidLogicOp) {
 
 TEST_F(NegativePipeline, ColorBlendUnsupportedLogicOp) {
     TEST_DESCRIPTION("Attempt enabling VkPipelineColorBlendStateCreateInfo::logicOpEnable when logicOp feature is disabled.");
-    AddDisabledFeature(vkt::Feature::logicOp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1472,6 +1471,7 @@ TEST_F(NegativePipeline, FragmentCoverageToColorNV) {
 
 TEST_F(NegativePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1815,7 +1815,7 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::pipelineExecutableInfo);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2878,6 +2878,7 @@ TEST_F(NegativePipeline, IncompatibleScissorCountAndViewportCount) {
     TEST_DESCRIPTION("Validate creating a pipeline with incompatible scissor and viewport count, without dynamic states.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -3131,12 +3132,10 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::depthBiasControl);
-    AddDisabledFeature(vkt::Feature::leastRepresentableValueForceUnormRepresentation);
-    AddDisabledFeature(vkt::Feature::floatRepresentation);
-    AddDisabledFeature(vkt::Feature::depthBiasExact);
+
     // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
     // depthBiasClamp being enabled
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -3562,7 +3561,7 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
-    AddDisabledFeature(vkt::Feature::pipelineCreationCacheControl);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

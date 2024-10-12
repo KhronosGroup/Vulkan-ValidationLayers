@@ -479,8 +479,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::tessellationShader);
-    AddDisabledFeature(vkt::Feature::geometryShader);
+
     RETURN_IF_SKIP(Init());
 
     {
@@ -687,8 +686,7 @@ TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08684");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08688");
-    AddDisabledFeature(vkt::Feature::geometryShader);
-    AddDisabledFeature(vkt::Feature::tessellationShader);
+
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
@@ -952,8 +950,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::tessellationShader);
-    AddDisabledFeature(vkt::Feature::geometryShader);
+
     RETURN_IF_SKIP(Init());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -4333,7 +4330,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::shaderClipDistance);
+
     RETURN_IF_SKIP(Init());
 
     const char* vs_src = R"(
@@ -4482,7 +4479,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+
     RETURN_IF_SKIP(Init());
 
     char const* cs_src = R"glsl(
@@ -4729,7 +4726,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    AddDisabledFeature(vkt::Feature::shaderSubgroupExtendedTypes);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
@@ -4836,7 +4833,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::maintenance4);
+
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* cs_src = R"(
@@ -6074,7 +6071,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithRasterizerDiscard);
+
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 

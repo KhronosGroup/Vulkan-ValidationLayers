@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2024 Valve Corporation
+ * Copyright (c) 2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,6 @@ void FeatureRequirements::AddRequiredFeature(APIVersion api_version, vkt::Featur
     FeatureAndName f = SetFeature(api_version, feature, VK_TRUE);
     *f.feature = VK_TRUE;
     required_features_.emplace_back(f);
-}
-
-void FeatureRequirements::AddDisabledFeature(APIVersion api_version, vkt::Feature feature) {
-    FeatureAndName f = SetFeature(api_version, feature, VK_FALSE);
-    *f.feature = VK_FALSE;
-    disabled_features_.emplace_back(f.feature);
 }
 
 vkt::FeatureAndName FeatureRequirements::SetFeature(APIVersion api_version, vkt::Feature feature, VkBool32 value) {
@@ -357,9 +351,9 @@ const char* FeatureRequirements::AnyRequiredFeatureDisabled() const {
     return nullptr;
 }
 
-void FeatureRequirements::EnforceDisableFeatures() {
-    for (auto feature : disabled_features_) {
-        *feature = VK_FALSE;
+void FeatureRequirements::EnforceRequiredFeatures() {
+    for (const auto [feature, name] : required_features_) {
+        *feature = VK_TRUE;
     }
 }
 

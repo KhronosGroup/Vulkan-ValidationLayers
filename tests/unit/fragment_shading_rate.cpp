@@ -101,8 +101,7 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsNoFeatures) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRate);
-    AddDisabledFeature(vkt::Feature::attachmentFragmentShadingRate);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -135,7 +134,7 @@ TEST_F(NegativeFragmentShadingRate, CombinerOpsNoPipelineRate) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
-    AddDisabledFeature(vkt::Feature::pipelineFragmentShadingRate);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1487,6 +1486,9 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
     RETURN_IF_SKIP(InitFramework());
 
     const bool vil_extension = IsExtensionsEnabled(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
@@ -1500,21 +1502,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
         GTEST_SKIP() << "requires primitiveFragmentShadingRateWithMultipleViewports to be unsupported.";
     }
 
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(fsr_features);
-
-    if (!fsr_features.primitiveFragmentShadingRate) {
-        GTEST_SKIP() << "requires primitiveFragmentShadingRate to be supported.";
-    }
-
-    if (!features2.features.multiViewport) {
-        GTEST_SKIP() << "requires multiViewport to be supported.";
-    }
-    if (!features2.features.shaderTessellationAndGeometryPointSize) {
-        GTEST_SKIP() << "requires shaderTessellationAndGeometryPointSize to be supported.";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &fsr_features));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     // Test PrimitiveShadingRate writes with multiple viewports
@@ -1544,6 +1532,8 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
             *this, info_override, kErrorBit,
             "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503");
     }
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(features2);
 
     // Test PrimitiveShadingRate writes with ViewportIndex writes in a geometry shader
     if (features2.features.geometryShader) {
@@ -1671,6 +1661,7 @@ TEST_F(NegativeFragmentShadingRate, Ops) {
     // Enable KHR_fragment_shading_rate and all of its required extensions
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::attachmentFragmentShadingRate);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -2822,7 +2813,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapNonSubsampledImages) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::fragmentDensityMap);
-    AddDisabledFeature(vkt::Feature::fragmentDensityMapNonSubsampledImages);
+
     RETURN_IF_SKIP(Init());
 
     VkFramebuffer fb;

@@ -409,6 +409,8 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
+    raster_state.lineWidth = 1.0f;
+    ;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
 
@@ -438,7 +440,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -447,6 +449,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampDisabled) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
+    raster_state.lineWidth = 1.0f;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
 
@@ -491,6 +494,7 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasWithDepthBiasRepresentatio
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
+    raster_state.lineWidth = 1.0f;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
     m_command_buffer.Begin();
@@ -587,7 +591,7 @@ TEST_F(PositiveDynamicState, MultisampleStateIgnored) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleMask);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToCoverageEnable);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
-    AddDisabledFeature(vkt::Feature::alphaToOne);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -724,6 +728,7 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     TEST_DESCRIPTION("Dynamically set viewport multiple times");
 
     AddRequiredExtensions(VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     AddRequiredFeature(vkt::Feature::inheritedViewportScissor2D);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1271,6 +1276,7 @@ TEST_F(PositiveDynamicState, DynamicSampleLocationsRasterizationSamplesMismatch)
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
