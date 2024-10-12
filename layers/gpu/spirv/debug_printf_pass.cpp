@@ -150,9 +150,10 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 }
 
                 if (!module_.support_int64_) {
-                    module_.InternalError("DEBUG-PRINTF-INT64-SUPPORT",
-                                          "shaderInt64 feature is not supported, but need it to cast 64-bit float to a 64-bit int "
-                                          "to write to the output buffer");
+                    module_.InternalError(
+                        "DEBUG-PRINTF-INT64-SUPPORT",
+                        "shaderInt64 feature is not supported, but is required to cast a 64-bit float to a 64-bit int "
+                        "when writing to the output buffer");
                 }
                 module_.AddCapability(spv::CapabilityInt64);
 

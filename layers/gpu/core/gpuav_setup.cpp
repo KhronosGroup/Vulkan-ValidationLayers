@@ -224,18 +224,25 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
     VkPhysicalDeviceFeatures supported_features{};
     DispatchGetPhysicalDeviceFeatures(physicalDevice, &supported_features);
 
-    if (auto enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures)) {
+    VkPhysicalDeviceFeatures *enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
+    if (!enabled_features) {
+        // Look in a potential VkPhysicalDeviceFeatures2 feature struct
+        if (auto *enabled_features_2 = const_cast<VkPhysicalDeviceFeatures2 *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
+            enabled_features = &enabled_features_2->features;
+        }
+    }
+    if (enabled_features) {
         if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
-            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::fragmentStoresAndAtomics to VK_TRUE");
+            InternalWarning(device, record_obj.location, "Forcing fragmentStoresAndAtomics to VK_TRUE");
             enabled_features->fragmentStoresAndAtomics = VK_TRUE;
         }
         if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
-            InternalWarning(device, record_obj.location,
-                            "Forcing VkPhysicalDeviceFeatures::vertexPipelineStoresAndAtomics to VK_TRUE");
+            InternalWarning(device, record_obj.location, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
             enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
         }
         if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
-            InternalWarning(device, record_obj.location, "Forcing VkPhysicalDeviceFeatures::shaderInt64 to VK_TRUE");
+            InternalWarning(device, record_obj.location, "Forcing shaderInt64 to VK_TRUE");
             enabled_features->shaderInt64 = VK_TRUE;
         }
     }
