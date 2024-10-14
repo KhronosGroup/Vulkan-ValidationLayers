@@ -3089,7 +3089,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
         if (rendering_info.pDepthAttachment && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
             if (depth_view_state && !(depth_view_state->image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT)) {
-                const LogObjectList objlist(commandBuffer, rendering_info.pStencilAttachment->imageView);
+                const LogObjectList objlist(commandBuffer, rendering_info.pDepthAttachment->imageView);
                 skip |= LogError("VUID-VkRenderingInfo-imageView-06107", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
                                  "must be created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.");
