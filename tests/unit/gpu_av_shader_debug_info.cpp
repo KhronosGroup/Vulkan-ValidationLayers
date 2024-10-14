@@ -169,6 +169,124 @@ void main() {
     BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n             ^");
 }
 
+TEST_F(NegativeGpuAVShaderDebugInfo, OpSourceContinued) {
+    TEST_DESCRIPTION("Make sure can find source in OpSourceContinued");
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %1 = OpString "a.comp"
+               OpSource GLSL 450 %1 "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer { int indices[]; };"
+               OpSourceContinued "layout(set = 0, binding = 0) buffer foo { IndexBuffer data; int x; };"
+               OpSourceContinued "void main() {
+    x = data.indices[16];
+}"
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %foo Block
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %IndexBuffer Block
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %17 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+               OpLine %1 6 14
+         %18 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %17
+         %21 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %18 %int_0 %int_16
+         %22 = OpLoad %int %21 Aligned 4
+         %24 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %24 %22
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n             ^");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BadLineNumber) {
+    TEST_DESCRIPTION("OpLine gives a line number not in the source");
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %1 = OpString "a.comp"
+               OpSource GLSL 450 %1 "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer { int indices[]; };
+layout(set = 0, binding = 0) buffer foo { IndexBuffer data; int x; };
+void main() {
+    x = data.indices[16];
+}"
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %foo Block
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %IndexBuffer Block
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %17 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+               OpLine %1 20 14
+         %18 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %17
+         %21 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %18 %int_0 %int_16
+         %22 = OpLoad %int %21 Aligned 4
+         %24 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %24 %22
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source, "Unable to find a suitable line in SPIR-V OpSource");
+}
+
 TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslang) {
     TEST_DESCRIPTION("Make sure basic OpLine and OpSource are working with glslang");
 
@@ -315,6 +433,761 @@ void main()  {
 
     BasicSingleStorageBufferComputeOOB(
         shader_source, "Shader validation error occurred in file a.comp at line 9000\n\n9000:     x = data.indices[16];");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
+    TEST_DESCRIPTION("Make sure basic glslang with ShaderDebugInfo works");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+
+    // Manually ran:
+    //   glslangValidator -V -gV in.comp -o out.spv --target-env vulkan1.2
+    char const *shader_source = R"(
+                       OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_KHR_relaxed_extended_instruction"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+          %8 = OpString "uint"
+         %16 = OpString "main"
+         %31 = OpString "int"
+         %35 = OpString "data"
+         %39 = OpString "x"
+         %43 = OpString "foo"
+         %49 = OpString "indices"
+         %51 = OpString "IndexBuffer"
+         %57 = OpString ""
+               OpSourceExtension "GL_EXT_buffer_reference"
+               OpName %main "main"
+               OpName %foo "foo"
+               OpMemberName %foo 0 "data"
+               OpMemberName %foo 1 "x"
+               OpName %IndexBuffer "IndexBuffer"
+               OpMemberName %IndexBuffer 0 "indices"
+               OpName %_ ""
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+    %uint_32 = OpConstant %uint 32
+     %uint_6 = OpConstant %uint 6
+     %uint_0 = OpConstant %uint 0
+          %9 = OpExtInst %void %1 DebugTypeBasic %8 %uint_32 %uint_6 %uint_0
+     %uint_3 = OpConstant %uint 3
+          %6 = OpExtInst %void %1 DebugTypeFunction %uint_3 %void
+         %18 = OpExtInst %void %1 DebugSource %2
+    %uint_10 = OpConstant %uint 10
+     %uint_1 = OpConstant %uint 1
+     %uint_4 = OpConstant %uint 4
+     %uint_2 = OpConstant %uint 2
+         %20 = OpExtInst %void %1 DebugCompilationUnit %uint_1 %uint_4 %18 %uint_2
+         %17 = OpExtInst %void %1 DebugFunction %16 %6 %18 %uint_10 %uint_0 %20 %16 %uint_3 %uint_10
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+         %29 = OpExtInstWithForwardRefsKHR %void %1 DebugTypePointer %50 %uint_5349 %uint_0
+        %int = OpTypeInt 32 1
+         %32 = OpExtInst %void %1 DebugTypeBasic %31 %uint_32 %uint_4 %uint_0
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+     %uint_7 = OpConstant %uint 7
+    %uint_17 = OpConstant %uint 17
+         %34 = OpExtInst %void %1 DebugTypeMember %35 %29 %18 %uint_7 %uint_17 %uint_0 %uint_0 %uint_3
+     %uint_8 = OpConstant %uint 8
+     %uint_9 = OpConstant %uint 9
+         %38 = OpExtInst %void %1 DebugTypeMember %39 %32 %18 %uint_8 %uint_9 %uint_0 %uint_0 %uint_3
+    %uint_11 = OpConstant %uint 11
+         %42 = OpExtInst %void %1 DebugTypeComposite %43 %uint_1 %18 %uint_11 %uint_0 %20 %43 %uint_0 %uint_3 %34 %38
+%_runtimearr_int = OpTypeRuntimeArray %int
+         %46 = OpExtInst %void %1 DebugTypeArray %32 %uint_0
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+         %48 = OpExtInst %void %1 DebugTypeMember %49 %46 %18 %uint_4 %uint_9 %uint_0 %uint_0 %uint_3
+         %50 = OpExtInst %void %1 DebugTypeComposite %51 %uint_1 %18 %uint_11 %uint_0 %20 %51 %uint_0 %uint_3 %48
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+    %uint_12 = OpConstant %uint 12
+         %54 = OpExtInst %void %1 DebugTypePointer %42 %uint_12 %uint_0
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+         %56 = OpExtInst %void %1 DebugGlobalVariable %57 %42 %18 %uint_11 %uint_0 %20 %57 %_ %uint_8
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+         %61 = OpExtInst %void %1 DebugTypePointer %29 %uint_12 %uint_0
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+         %67 = OpExtInst %void %1 DebugTypePointer %32 %uint_5349 %uint_0
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+         %71 = OpExtInst %void %1 DebugTypePointer %32 %uint_12 %uint_0
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %25 = OpExtInst %void %1 DebugScope %17
+         %26 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_10 %uint_0 %uint_0
+         %24 = OpExtInst %void %1 DebugFunctionDefinition %17 %main
+         %63 = OpExtInst %void %1 DebugLine %18 %uint_11 %uint_11 %uint_0 %uint_0
+         %62 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %64 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %62
+         %68 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %64 %int_0 %int_16
+         %69 = OpLoad %int %68 Aligned 4
+         %72 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %72 %69
+         %73 = OpExtInst %void %1 DebugLine %18 %uint_12 %uint_12 %uint_0 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source,
+                                       "SPIR-V Instruction Index = 95\nShader validation error occurred in file a.comp at line "
+                                       "11\nNo Text operand found in DebugSource");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSource) {
+    TEST_DESCRIPTION("Make sure basic glslang with ShaderDebugInfo works");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+
+    // Manually ran:
+    //   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.2
+    char const *shader_source = R"(
+              OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_KHR_relaxed_extended_instruction"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+          %8 = OpString "uint"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer {
+    int indices[];
+};
+layout(set = 0, binding = 0) buffer foo {
+    IndexBuffer data;
+    int x;
+};
+void main() {
+    x = data.indices[16];
+}"
+         %32 = OpString "int"
+         %36 = OpString "data"
+         %40 = OpString "x"
+         %44 = OpString "foo"
+         %50 = OpString "indices"
+         %52 = OpString "IndexBuffer"
+         %58 = OpString ""
+               OpSourceExtension "GL_EXT_buffer_reference"
+               OpName %main "main"
+               OpName %foo "foo"
+               OpMemberName %foo 0 "data"
+               OpMemberName %foo 1 "x"
+               OpName %IndexBuffer "IndexBuffer"
+               OpMemberName %IndexBuffer 0 "indices"
+               OpName %_ ""
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+    %uint_32 = OpConstant %uint 32
+     %uint_6 = OpConstant %uint 6
+     %uint_0 = OpConstant %uint 0
+          %9 = OpExtInst %void %1 DebugTypeBasic %8 %uint_32 %uint_6 %uint_0
+     %uint_3 = OpConstant %uint 3
+          %6 = OpExtInst %void %1 DebugTypeFunction %uint_3 %void
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+    %uint_10 = OpConstant %uint 10
+     %uint_1 = OpConstant %uint 1
+     %uint_4 = OpConstant %uint 4
+     %uint_2 = OpConstant %uint 2
+         %21 = OpExtInst %void %1 DebugCompilationUnit %uint_1 %uint_4 %18 %uint_2
+         %17 = OpExtInst %void %1 DebugFunction %16 %6 %18 %uint_10 %uint_0 %21 %16 %uint_3 %uint_10
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+         %30 = OpExtInstWithForwardRefsKHR %void %1 DebugTypePointer %51 %uint_5349 %uint_0
+        %int = OpTypeInt 32 1
+         %33 = OpExtInst %void %1 DebugTypeBasic %32 %uint_32 %uint_4 %uint_0
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+     %uint_7 = OpConstant %uint 7
+    %uint_17 = OpConstant %uint 17
+         %35 = OpExtInst %void %1 DebugTypeMember %36 %30 %18 %uint_7 %uint_17 %uint_0 %uint_0 %uint_3
+     %uint_8 = OpConstant %uint 8
+     %uint_9 = OpConstant %uint 9
+         %39 = OpExtInst %void %1 DebugTypeMember %40 %33 %18 %uint_8 %uint_9 %uint_0 %uint_0 %uint_3
+    %uint_11 = OpConstant %uint 11
+         %43 = OpExtInst %void %1 DebugTypeComposite %44 %uint_1 %18 %uint_11 %uint_0 %21 %44 %uint_0 %uint_3 %35 %39
+%_runtimearr_int = OpTypeRuntimeArray %int
+         %47 = OpExtInst %void %1 DebugTypeArray %33 %uint_0
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+         %49 = OpExtInst %void %1 DebugTypeMember %50 %47 %18 %uint_4 %uint_9 %uint_0 %uint_0 %uint_3
+         %51 = OpExtInst %void %1 DebugTypeComposite %52 %uint_1 %18 %uint_11 %uint_0 %21 %52 %uint_0 %uint_3 %49
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+    %uint_12 = OpConstant %uint 12
+         %55 = OpExtInst %void %1 DebugTypePointer %43 %uint_12 %uint_0
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+         %57 = OpExtInst %void %1 DebugGlobalVariable %58 %43 %18 %uint_11 %uint_0 %21 %58 %_ %uint_8
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+         %62 = OpExtInst %void %1 DebugTypePointer %30 %uint_12 %uint_0
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+         %68 = OpExtInst %void %1 DebugTypePointer %33 %uint_5349 %uint_0
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+         %72 = OpExtInst %void %1 DebugTypePointer %33 %uint_12 %uint_0
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %26 = OpExtInst %void %1 DebugScope %17
+         %27 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_10 %uint_0 %uint_0
+         %25 = OpExtInst %void %1 DebugFunctionDefinition %17 %main
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_11 %uint_11 %uint_0 %uint_0
+         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
+         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
+         %70 = OpLoad %int %69 Aligned 4
+         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %73 %70
+         %74 = OpExtInst %void %1 DebugLine %18 %uint_12 %uint_12 %uint_0 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source,
+                                       "SPIR-V Instruction Index = 96\nShader validation error occurred in file a.comp at line "
+                                       "11\n\n11:     x = data.indices[16];");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugInfoColumns) {
+    TEST_DESCRIPTION("DebugLine has a Column Start and Column End");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer {
+    int indices[];
+};
+layout(set = 0, binding = 0) buffer foo {
+    IndexBuffer data;
+    int x;
+};
+void main() {
+    x = data.indices[16];
+}"
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_3 = OpConstant %uint 3
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+    %uint_10 = OpConstant %uint 10
+     %uint_1 = OpConstant %uint 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+    %uint_11 = OpConstant %uint 11
+    %uint_14 = OpConstant %uint 14
+    %uint_16 = OpConstant %uint 16
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_11 %uint_11 %uint_14 %uint_16
+         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
+         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
+         %70 = OpLoad %int %69 Aligned 4
+         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %73 %70
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n             ^");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugSourceContinued) {
+    TEST_DESCRIPTION("Make sure can find source in DebugSourceContinued");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+         %16 = OpString "main"
+         %s1 = OpString "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer {
+    int indices[];
+};"
+         %s2 = OpString "layout(set = 0, binding = 0) buffer foo {
+    IndexBuffer data;
+    int x;
+};"
+         %s3 = OpString "void main() {
+    x = data.indices[16];
+}"
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_3 = OpConstant %uint 3
+         %18 = OpExtInst %void %1 DebugSource %2 %s1
+         %c1 = OpExtInst %void %1 DebugSourceContinued %s2
+         %c2 = OpExtInst %void %1 DebugSourceContinued %s3
+    %uint_10 = OpConstant %uint 10
+     %uint_1 = OpConstant %uint 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+    %uint_11 = OpConstant %uint 11
+    %uint_14 = OpConstant %uint 14
+    %uint_16 = OpConstant %uint 16
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_11 %uint_11 %uint_14 %uint_16
+         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
+         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
+         %70 = OpLoad %int %69 Aligned 4
+         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %73 %70
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n             ^");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugLineMultiLine) {
+    TEST_DESCRIPTION("DebugLine has a Line Start and Line End");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer {
+    int indices[];
+};
+layout(set = 0, binding = 0) buffer foo {
+    IndexBuffer data;
+    int x;
+};
+void main() {
+    x = data.indices[16];
+}"
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_3 = OpConstant %uint 3
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+    %uint_10 = OpConstant %uint 10
+    %uint_11 = OpConstant %uint 11
+    %uint_12 = OpConstant %uint 12
+     %uint_1 = OpConstant %uint 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_12 %uint_11 %uint_11
+         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
+         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
+         %70 = OpLoad %int %69 Aligned 4
+         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %73 %70
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source, "10: void main() {\n11:     x = data.indices[16];\n12: }");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BadShaderDebugLineStart) {
+    TEST_DESCRIPTION("DebugLine Line Start has bad value");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer {
+    int indices[];
+};
+layout(set = 0, binding = 0) buffer foo {
+    IndexBuffer data;
+    int x;
+};
+void main() {
+    x = data.indices[16];
+}"
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_3 = OpConstant %uint 3
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+    %uint_11 = OpConstant %uint 11
+    %uint_20 = OpConstant %uint 20
+     %uint_1 = OpConstant %uint 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_20 %uint_20 %uint_11 %uint_11
+         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
+         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
+         %70 = OpLoad %int %69 Aligned 4
+         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %73 %70
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source, "20: [No line found in source]");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BadShaderDebugLineEnd) {
+    TEST_DESCRIPTION("DebugLine Line End has bad value");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+#extension GL_EXT_buffer_reference : enable
+layout(buffer_reference, std430) readonly buffer IndexBuffer {
+    int indices[];
+};
+layout(set = 0, binding = 0) buffer foo {
+    IndexBuffer data;
+    int x;
+};
+void main() {
+    x = data.indices[16];
+}"
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpMemberDecorate %foo 1 Offset 8
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %IndexBuffer Block
+               OpMemberDecorate %IndexBuffer 0 NonWritable
+               OpMemberDecorate %IndexBuffer 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+     %uint_3 = OpConstant %uint 3
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+    %uint_10 = OpConstant %uint 10
+    %uint_11 = OpConstant %uint 11
+    %uint_20 = OpConstant %uint 20
+     %uint_1 = OpConstant %uint 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_IndexBuffer PhysicalStorageBuffer
+  %uint_5349 = OpConstant %uint 5349
+        %int = OpTypeInt 32 1
+        %foo = OpTypeStruct %_ptr_PhysicalStorageBuffer_IndexBuffer %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+%IndexBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer PhysicalStorageBuffer %IndexBuffer
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer = OpTypePointer StorageBuffer %_ptr_PhysicalStorageBuffer_IndexBuffer
+     %int_16 = OpConstant %int 16
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+         %64 = OpExtInst %void %1 DebugLine %18 %uint_10 %uint_20 %uint_11 %uint_11
+         %63 = OpAccessChain %_ptr_StorageBuffer__ptr_PhysicalStorageBuffer_IndexBuffer %_ %int_0
+         %65 = OpLoad %_ptr_PhysicalStorageBuffer_IndexBuffer %63
+         %69 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %65 %int_0 %int_16
+         %70 = OpLoad %int %69 Aligned 4
+         %73 = OpAccessChain %_ptr_StorageBuffer_int %_ %int_1
+               OpStore %73 %70
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    BasicSingleStorageBufferComputeOOB(shader_source,
+                                       "10: void main() {\n11:     x = data.indices[16];\n12: }\n13: [No line found in source]");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BasicDXC) {
+    TEST_DESCRIPTION("Make sure basic dxc with ShaderDebugInfo works");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // Manually ran:
+    //   dxc -spirv -T cs_6_0 -E main -fspv-target-env=vulkan1.2 -fspv-extension=SPV_KHR_non_semantic_info
+    //   -fspv-debug=vulkan-with-source in.hlsl
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %data
+               OpExecutionMode %main LocalSize 1 1 1
+          %4 = OpString "a.hlsl"
+          %5 = OpString "RWByteAddressBuffer data : register(u0);
+
+[numthreads(1, 1, 1)]
+void main() {
+    data.Store(0, uint(int(data.Load(68))));
+}
+"
+          %6 = OpString "main"
+          %7 = OpString ""
+          %8 = OpString "d9a5e97d"
+          %9 = OpString " -E main -T cs_6_0 -spirv -fspv-target-env=vulkan1.2 -fspv-extension=SPV_KHR_non_semantic_info -fspv-debug=vulkan-with-source -Qembed_debug"
+         %10 = OpString "uint"
+         %11 = OpString "type.RWByteAddressBuffer"
+         %12 = OpString "data"
+               OpName %type_RWByteAddressBuffer "type.RWByteAddressBuffer"
+               OpName %data "data"
+               OpName %main "main"
+               OpDecorate %data DescriptorSet 0
+               OpDecorate %data Binding 0
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpMemberDecorate %type_RWByteAddressBuffer 0 Offset 0
+               OpDecorate %type_RWByteAddressBuffer Block
+       %uint = OpTypeInt 32 0
+     %uint_0 = OpConstant %uint 0
+    %uint_32 = OpConstant %uint 32
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+%type_RWByteAddressBuffer = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer_type_RWByteAddressBuffer = OpTypePointer StorageBuffer %type_RWByteAddressBuffer
+       %void = OpTypeVoid
+     %uint_3 = OpConstant %uint 3
+     %uint_1 = OpConstant %uint 1
+     %uint_4 = OpConstant %uint 4
+     %uint_5 = OpConstant %uint 5
+    %uint_13 = OpConstant %uint 13
+     %uint_6 = OpConstant %uint 6
+    %uint_21 = OpConstant %uint 21
+     %uint_8 = OpConstant %uint 8
+         %40 = OpTypeFunction %void
+    %uint_43 = OpConstant %uint 43
+    %uint_28 = OpConstant %uint 28
+    %uint_40 = OpConstant %uint 40
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+        %int = OpTypeInt 32 1
+    %uint_19 = OpConstant %uint 19
+       %data = OpVariable %_ptr_StorageBuffer_type_RWByteAddressBuffer StorageBuffer
+    %uint_17 = OpConstant %uint 17
+         %15 = OpExtInst %void %1 DebugInfoNone
+         %16 = OpExtInst %void %1 DebugTypeFunction %uint_3 %void
+         %18 = OpExtInst %void %1 DebugSource %4 %5
+         %19 = OpExtInst %void %1 DebugCompilationUnit %uint_1 %uint_4 %18 %uint_5
+         %23 = OpExtInst %void %1 DebugFunction %6 %16 %18 %uint_4 %uint_1 %19 %7 %uint_3 %uint_4
+         %24 = OpExtInst %void %1 DebugLexicalBlock %18 %uint_4 %uint_13 %23
+         %26 = OpExtInst %void %1 DebugTypeBasic %10 %uint_32 %uint_6 %uint_0
+         %30 = OpExtInst %void %1 DebugTypeArray %26 %uint_0
+         %31 = OpExtInst %void %1 DebugTypeMember %7 %30 %18 %uint_0 %uint_0 %uint_0 %uint_0 %uint_3
+         %32 = OpExtInst %void %1 DebugTypeComposite %11 %uint_1 %18 %uint_0 %uint_0 %19 %11 %uint_0 %uint_3 %31
+         %33 = OpExtInst %void %1 DebugGlobalVariable %12 %32 %18 %uint_1 %uint_21 %19 %12 %data %uint_8
+         %36 = OpExtInst %void %1 DebugEntryPoint %23 %19 %8 %9
+       %main = OpFunction %void None %40
+         %48 = OpLabel
+         %77 = OpExtInst %void %1 DebugScope %24
+         %49 = OpExtInst %void %1 DebugLine %18 %uint_5 %uint_5 %uint_28 %uint_40
+         %50 = OpAccessChain %_ptr_StorageBuffer_uint %data %uint_0 %uint_17
+         %52 = OpLoad %uint %50
+         %54 = OpBitcast %int %52
+         %55 = OpExtInst %void %1 DebugLine %18 %uint_5 %uint_5 %uint_19 %uint_19
+         %56 = OpBitcast %uint %54
+         %57 = OpExtInst %void %1 DebugLine %18 %uint_5 %uint_5 %uint_5 %uint_43
+         %58 = OpAccessChain %_ptr_StorageBuffer_uint %data %uint_0 %uint_0
+               OpStore %58 %56
+         %78 = OpExtInst %void %1 DebugNoScope
+         %60 = OpExtInst %void %1 DebugLine %18 %uint_6 %uint_6 %uint_1 %uint_1
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    // VUID-vkCmdDispatch-storageBuffers-06936
+    m_errorMonitor->SetDesiredError("5:     data.Store(0, uint(int(data.Load(68))));");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
