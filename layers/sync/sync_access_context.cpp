@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-#include <cinttypes>
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/render_pass_state.h"

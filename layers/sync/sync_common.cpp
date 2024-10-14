@@ -16,7 +16,6 @@
  */
 
 #include "state_tracker/buffer_state.h"
-#include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "sync/sync_common.h"
 

@@ -18,6 +18,7 @@
 
 #include "sync/sync_access_context.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include "error_message/error_location.h"
 
 class CommandBufferAccessContext;
 class CommandExecutionContext;
