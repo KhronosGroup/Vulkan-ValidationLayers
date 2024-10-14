@@ -22,9 +22,9 @@
 // NOLINTBEGIN
 
 #include "error_location_helper.h"
-#include "containers/custom_containers.h"
 #include "generated/vk_api_version.h"
 #include <assert.h>
+#include <string_view>
 
 // clang-format off
 namespace vvl {

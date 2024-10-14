@@ -144,8 +144,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             #include <functional>
             #include <spirv/unified1/spirv.hpp>
             #include "vk_extension_helper.h"
-            #include "state_tracker/shader_module.h"
-            #include "state_tracker/device_state.h"
+            #include "state_tracker/shader_instruction.h"
             #include "core_checks/core_validation.h"
             ''')
 

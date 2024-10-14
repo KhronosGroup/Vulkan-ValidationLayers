@@ -20,10 +20,9 @@
 
 #include <atomic>
 #include <chrono>
-#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <thread>
-#include <vector>
 #include "utils/vk_layer_utils.h"
 
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(DISTINCT_NONDISPATCHABLE_PHONY_HANDLE)

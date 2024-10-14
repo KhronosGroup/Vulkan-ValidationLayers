@@ -86,8 +86,6 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out = []
         out.append('''
             #pragma once
-            #include <string_view>
-            #include <sstream>
             #include <vulkan/vulkan.h>
             #include "containers/custom_containers.h"
             #include "generated/vk_api_version.h"
@@ -173,9 +171,9 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out = []
         out.append('''
             #include "error_location_helper.h"
-            #include "containers/custom_containers.h"
             #include "generated/vk_api_version.h"
             #include <assert.h>
+            #include <string_view>
             ''')
 
         out.append('''

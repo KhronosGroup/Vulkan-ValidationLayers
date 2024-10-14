@@ -98,6 +98,9 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
         out.append('''
             #pragma once
 
+            #include <vulkan/vulkan.h>
+            class APIVersion;
+
             // Union of all features defined in VkPhysicalDevice*Features* structs
             struct DeviceFeatures {
             ''')
@@ -116,7 +119,10 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
         # Handle pCreateInfo->pEnabledFeatures first, it's the only one not necessarily found in the
         # pNext chain.
         out.append('''
-            #include "state_tracker/state_tracker.h"
+            #include "generated/device_features.h"
+            #include "generated/vk_api_version.h"
+            #include "generated/vk_extension_helper.h"
+            #include <vulkan/utility/vk_struct_helper.hpp>
 
             void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatures *features, const APIVersion &api_version) {
                 // Initialize all to false

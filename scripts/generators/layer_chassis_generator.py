@@ -286,7 +286,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #pragma once
 
             #include <atomic>
-            #include <mutex>
+            #include <shared_mutex>
             #include <cinttypes>
             #include <stdio.h>
             #include <stdlib.h>
@@ -306,7 +306,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "error_message/logging.h"
             #include "error_message/error_location.h"
             #include "error_message/record_object.h"
-            #include "vk_object_types.h"
+            #include "error_message/log_message_type.h"
             #include "utils/vk_layer_extension_utils.h"
             #include "utils/vk_layer_utils.h"
             #include "vk_dispatch_table_helper.h"

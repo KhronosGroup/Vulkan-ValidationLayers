@@ -23,6 +23,7 @@
 #include "utils/vk_layer_utils.h"
 #include "state_tracker/shader_stage_state.h"
 #include "generated/vk_object_types.h"
+#include "generated/error_location_helper.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <map>
 #include <set>

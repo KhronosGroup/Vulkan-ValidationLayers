@@ -19,6 +19,7 @@
 
 #include "state_tracker/pipeline_layout_state.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 // Graphics pipeline sub-state as defined by VK_KHR_graphics_pipeline_library
 

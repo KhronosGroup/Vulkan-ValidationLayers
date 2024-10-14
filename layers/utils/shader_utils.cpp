@@ -20,6 +20,8 @@
 #include "shader_utils.h"
 
 #include "generated/device_features.h"
+#include "generated/vk_api_version.h"
+#include "generated/vk_extension_helper.h"
 #include "utils/hash_util.h"
 
 #include "generated/spirv_tools_commit_id.h"

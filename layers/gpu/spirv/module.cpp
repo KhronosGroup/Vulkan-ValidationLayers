@@ -17,6 +17,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
+#include "error_message/log_message_type.h"
 
 #include "buffer_device_address_pass.h"
 #include "bindless_descriptor_pass.h"

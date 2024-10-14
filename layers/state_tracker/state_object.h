@@ -21,6 +21,8 @@
 #include "vulkan/vulkan.h"
 #include "containers/custom_containers.h"
 #include "utils/vk_layer_utils.h"
+#include "generated/vk_object_types.h"
+#include "error_message/logging.h"
 
 #include <atomic>
 
