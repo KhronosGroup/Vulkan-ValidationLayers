@@ -17,8 +17,6 @@
  */
 #include "sync/sync_vuid_maps.h"
 #include "error_message/error_location.h"
-#include "core_checks/core_validation.h"
-#include "generated/enum_flag_bits.h"
 
 #include <cassert>
 

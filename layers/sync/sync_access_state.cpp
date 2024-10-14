@@ -16,6 +16,7 @@
  */
 #include "sync/sync_utils.h"
 #include "sync/sync_access_state.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
     {{VK_PIPELINE_STAGE_2_NONE_KHR, SyncStageAccessFlags()},

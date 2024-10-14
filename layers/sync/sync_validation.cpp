@@ -16,14 +16,11 @@
  */
 
 #include <algorithm>
-#include <iostream>
-#include <limits>
 #include <memory>
 #include <vector>
 
 #include "sync/sync_validation.h"
 #include "sync/sync_image.h"
-#include "state_tracker/device_state.h"
 #include "state_tracker/buffer_state.h"
 #include "utils/convert_utils.h"
 #include "vk_layer_config.h"
