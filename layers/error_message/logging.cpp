@@ -21,13 +21,16 @@
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #include <debugapi.h>
 #endif
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#include "vk_layer_config.h"
+#endif
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "generated/vk_validation_error_messages.h"
 #include "error_location.h"
 #include "utils/hash_util.h"
-#include "vk_layer_config.h"
+#include "error_message/log_message_type.h"
 
 [[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
 

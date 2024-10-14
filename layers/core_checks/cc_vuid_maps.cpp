@@ -17,6 +17,7 @@
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
 #include "utils/vk_layer_utils.h"
+#include <map>
 
 namespace vvl {
 

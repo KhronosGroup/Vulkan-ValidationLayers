@@ -133,7 +133,6 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
             #include <string>
             #include <utility>
-            #include <array>
             #include <vector>
             #include <cassert>
 

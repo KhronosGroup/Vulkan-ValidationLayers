@@ -23,6 +23,7 @@
 // NOLINTBEGIN
 
 #pragma once
+#include <vulkan/vulkan.h>
 
 extern bool wrap_handles;
 

@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <vulkan/vulkan.h>
+class APIVersion;
+
 // Union of all features defined in VkPhysicalDevice*Features* structs
 struct DeviceFeatures {
     // VkPhysicalDevice16BitStorageFeatures, VkPhysicalDeviceVulkan11Features

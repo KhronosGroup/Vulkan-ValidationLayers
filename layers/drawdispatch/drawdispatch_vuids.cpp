@@ -18,6 +18,7 @@
  */
 
 #include "drawdispatch_vuids.h"
+#include "containers/custom_containers.h"
 
 namespace vvl {
 // clang-format off
@@ -4380,7 +4381,7 @@ static const std::pair<Func, DrawDispatchVuid> pairs[] = {
     // Used if invalid function is used
     {Func::Empty, DrawDispatchVuid(Func::Empty)}
 };
-static const auto kDrawdispatchVuid = std::map<Func, DrawDispatchVuid>{std::begin(pairs), std::end(pairs)};
+static const auto kDrawdispatchVuid = vvl::unordered_map<Func, DrawDispatchVuid>{std::begin(pairs), std::end(pairs)};
 
   return kDrawdispatchVuid;
 }
@@ -4389,10 +4390,11 @@ static const auto kDrawdispatchVuid = std::map<Func, DrawDispatchVuid>{std::begi
 // Getter function to provide kVUIDUndefined in case an invalid function is passed in. Likely if new extension adds command and
 // VUIDs are not added yet
 const DrawDispatchVuid& GetDrawDispatchVuid(Func function) {
-    if (GetDrawDispatchVuid().find(function) != GetDrawDispatchVuid().cend()) {
-        return GetDrawDispatchVuid().at(function);
+    const vvl::unordered_map<Func, DrawDispatchVuid>& vuids = GetDrawDispatchVuid();
+    if (vuids.find(function) != vuids.cend()) {
+        return vuids.at(function);
     } else {
-        return GetDrawDispatchVuid().at(Func::Empty);
+        return vuids.at(Func::Empty);
     }
 }
 }  // namespace vvl

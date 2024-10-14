@@ -21,6 +21,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"

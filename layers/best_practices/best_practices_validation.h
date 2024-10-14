@@ -25,6 +25,7 @@
 #include <string>
 #include <deque>
 #include <chrono>
+#include <set>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
@@ -953,6 +954,7 @@ class BestPractices : public ValidationStateTracker {
     std::deque<MemoryFreeEvent> memory_free_events_;
     mutable std::shared_mutex memory_free_events_lock_;
 
+    // Can't get vvl::unordered_set to work with std::array
     std::set<std::array<uint32_t, 4>> clear_colors_;
     mutable std::shared_mutex clear_colors_lock_;
 

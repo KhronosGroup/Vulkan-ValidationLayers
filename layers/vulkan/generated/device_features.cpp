@@ -21,7 +21,10 @@
 
 // NOLINTBEGIN
 
-#include "state_tracker/state_tracker.h"
+#include "generated/device_features.h"
+#include "generated/vk_api_version.h"
+#include "generated/vk_extension_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatures *features, const APIVersion &api_version) {
     // Initialize all to false

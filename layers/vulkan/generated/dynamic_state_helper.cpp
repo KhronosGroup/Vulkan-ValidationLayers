@@ -21,7 +21,6 @@
 
 // NOLINTBEGIN
 
-#include "core_checks/core_validation.h"
 #include "state_tracker/pipeline_state.h"
 
 VkDynamicState ConvertToDynamicState(CBDynamicState dynamic_state) {

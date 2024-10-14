@@ -20,20 +20,18 @@
 #include "vk_layer_config.h"
 
 #include <cstring>
-#include <fstream>
-#include <iostream>
 #include <string>
-#include <charconv>
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
-#include "utils/vk_layer_utils.h"
 
 #if defined(_WIN32)
 #include <windows.h>
 #include <direct.h>
 #define GetCurrentDir _getcwd
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+#include "error_message/logging.h"
+#include <charconv>
 #include <sys/system_properties.h>
 #include <unistd.h>
 #include "utils/android_ndk_types.h"

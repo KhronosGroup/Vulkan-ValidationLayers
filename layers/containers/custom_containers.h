@@ -23,9 +23,7 @@
 #include <cassert>
 #include <limits>
 #include <memory>
-#include <map>
 #include <unordered_map>
-#include <set>
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
@@ -35,6 +33,8 @@
 #ifdef USE_ROBIN_HOOD_HASHING
 #include "robin_hood.h"
 #else
+#include <map>
+#include <set>
 #include <unordered_set>
 #endif
 

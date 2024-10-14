@@ -18,6 +18,7 @@
 #include "containers/subresource_adapter.h"
 #include "containers/range_vector.h"
 #include "generated/sync_validation_types.h"
+#include <set>
 
 namespace vvl {
 class Buffer;

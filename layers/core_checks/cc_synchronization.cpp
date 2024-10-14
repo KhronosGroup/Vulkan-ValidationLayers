@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <string>
+#include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"

@@ -20,8 +20,9 @@
 
 #pragma once
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan_core.h>
 #include "utils/vk_layer_utils.h"
+#include "containers/custom_containers.h"
 
 #include <spirv-tools/libspirv.hpp>
 
