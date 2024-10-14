@@ -157,6 +157,95 @@ void main() {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderDebugInfoDebugLine) {
+    TEST_DESCRIPTION("Make sure DebugLine works");
+    RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitState());
+
+    // Manually ran:
+    //   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.0
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_non_semantic_info"
+          %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+          %3 = OpExtInstImport "GLSL.std.450"
+         %44 = OpExtInstImport "NonSemantic.DebugPrintf"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+          %2 = OpString "a.comp"
+          %8 = OpString "uint"
+         %16 = OpString "main"
+         %19 = OpString "#version 450
+#extension GL_EXT_debug_printf : enable
+void main() {
+    float myfloat = 3.1415f;
+    debugPrintfEXT(\"float == %f\", myfloat);
+}"
+         %28 = OpString "float"
+         %35 = OpString "myfloat"
+         %40 = OpString "float == %f"
+               OpSourceExtension "GL_EXT_debug_printf"
+               OpName %main "main"
+               OpName %myfloat "myfloat"
+       %void = OpTypeVoid
+          %5 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+    %uint_32 = OpConstant %uint 32
+     %uint_6 = OpConstant %uint 6
+     %uint_0 = OpConstant %uint 0
+          %9 = OpExtInst %void %1 DebugTypeBasic %8 %uint_32 %uint_6 %uint_0
+     %uint_3 = OpConstant %uint 3
+          %6 = OpExtInst %void %1 DebugTypeFunction %uint_3 %void
+         %18 = OpExtInst %void %1 DebugSource %2 %19
+     %uint_1 = OpConstant %uint 1
+     %uint_4 = OpConstant %uint 4
+     %uint_2 = OpConstant %uint 2
+         %20 = OpExtInst %void %1 DebugCompilationUnit %uint_1 %uint_4 %18 %uint_2
+         %17 = OpExtInst %void %1 DebugFunction %16 %6 %18 %uint_3 %uint_0 %20 %16 %uint_3 %uint_3
+      %float = OpTypeFloat 32
+         %29 = OpExtInst %void %1 DebugTypeBasic %28 %uint_32 %uint_3 %uint_0
+%_ptr_Function_float = OpTypePointer Function %float
+     %uint_7 = OpConstant %uint 7
+         %32 = OpExtInst %void %1 DebugTypePointer %29 %uint_7 %uint_0
+         %34 = OpExtInst %void %1 DebugLocalVariable %35 %29 %18 %uint_4 %uint_0 %17 %uint_4
+         %37 = OpExtInst %void %1 DebugExpression
+%float_3_1415 = OpConstant %float 3.1415
+     %uint_5 = OpConstant %uint 5
+       %main = OpFunction %void None %5
+         %15 = OpLabel
+    %myfloat = OpVariable %_ptr_Function_float Function
+         %25 = OpExtInst %void %1 DebugScope %17
+         %26 = OpExtInst %void %1 DebugLine %18 %uint_3 %uint_3 %uint_0 %uint_0
+         %24 = OpExtInst %void %1 DebugFunctionDefinition %17 %main
+         %38 = OpExtInst %void %1 DebugLine %18 %uint_4 %uint_4 %uint_0 %uint_0
+         %36 = OpExtInst %void %1 DebugDeclare %34 %myfloat %37
+               OpStore %myfloat %float_3_1415
+         %42 = OpExtInst %void %1 DebugLine %18 %uint_5 %uint_5 %uint_0 %uint_0
+         %41 = OpLoad %float %myfloat
+         %45 = OpExtInst %void %44 1 %40 %41
+         %46 = OpExtInst %void %1 DebugLine %18 %uint_6 %uint_6 %uint_0 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        kInformationBit,
+        "Debug shader printf message generated in file a.comp at line 5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
     TEST_DESCRIPTION("Make sure we print which index in the command buffer the issue occured");
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));

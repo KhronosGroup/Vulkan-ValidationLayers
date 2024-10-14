@@ -511,7 +511,7 @@ bool DebugPrintfPass::Run() {
         if (strcmp(import_string, "NonSemantic.DebugPrintf") == 0) {
             module_.ext_inst_imports_.erase(inst_it);
             break;
-        } else if (strcmp(import_string, "NonSemantic.") == 0) {
+        } else if (strncmp(import_string, "NonSemantic.", 12) == 0) {
             other_non_semantic = true;
         }
     }
