@@ -3729,3 +3729,31 @@ TEST_F(NegativeSyncObject, TimelineSubmitSignalAndInUseTracking) {
     m_default_queue->Wait();
     vk::DestroySemaphore(*m_device, handle, nullptr);
 }
+
+TEST_F(NegativeSyncObject, TimelineCannotFixBinaryWaitBeforeSignal) {
+    TEST_DESCRIPTION("Binary signal should be submitted before binary wait. Timeline can't help with ordering");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    // Although timeline wait postpones binary wait, the specification still does not
+    // allow to submit binary wait before binary signal
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4046
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1));
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-semaphore-03873");
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit2(vkt::no_cmd, vkt::Signal(binary_semaphore));
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+
+    m_default_queue->Wait();
+}
