@@ -31,17 +31,11 @@ class DescriptorSet : public vvl::DescriptorSet {
                   const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                   ValidationStateTracker *state_data);
     virtual ~DescriptorSet();
-    void Destroy() override { last_used_state_.reset(); };
     struct State {
-        State(VkDescriptorSet set, uint32_t version, Validator &gpuav) : set(set), version(version), buffer(gpuav) {}
+        State(Validator &gpuav) : buffer(gpuav) {}
         ~State();
 
-        const VkDescriptorSet set;
-        const uint32_t version;
         DeviceMemoryBlock buffer;
-
-        std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DescriptorSet &set,
-                                                                  uint32_t shader_set) const;
     };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
@@ -51,6 +45,8 @@ class DescriptorSet : public vvl::DescriptorSet {
     std::shared_ptr<State> GetCurrentState(Validator &gpuav, const Location &loc);
     std::shared_ptr<State> GetOutputState(Validator &gpuav, const Location &loc);
 
+    const DeviceMemoryBlock &LayoutBlock() const { return layout_; }
+
   protected:
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
 
@@ -58,9 +54,15 @@ class DescriptorSet : public vvl::DescriptorSet {
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
     DeviceMemoryBlock layout_;
+
+    // Since we will re-bind the same descriptor set many times, keeping a version allows us to know if things have changed and
+    // worth re-saving the new information
     std::atomic<uint32_t> current_version_{0};
-    std::shared_ptr<State> last_used_state_;
-    std::shared_ptr<State> output_state_;
+    // Set when created the last used state
+    uint32_t last_used_version_{0};
+
+    std::shared_ptr<State> last_used_block_;
+    std::shared_ptr<State> output_block_;
     mutable std::mutex state_lock_;
 };
 

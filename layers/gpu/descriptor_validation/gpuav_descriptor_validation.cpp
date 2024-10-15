@@ -156,6 +156,36 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 }
 }  // namespace descriptor
 
+static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DeviceMemoryBlock &layout,
+                                                                 const DeviceMemoryBlock &output_state, uint32_t shader_set) {
+    std::map<uint32_t, std::vector<uint32_t>> used_descriptors;
+    if (output_state.Destroyed()) {
+        return used_descriptors;
+    }
+
+    auto layout_data = (glsl::BindingLayout *)layout.MapMemory(loc);
+
+    auto data = (uint32_t *)output_state.MapMemory(loc);
+    output_state.InvalidateAllocation(loc);
+
+    uint32_t max_binding = layout_data[0].count;
+    for (uint32_t binding = 0; binding < max_binding; binding++) {
+        uint32_t count = layout_data[binding + 1].count;
+        uint32_t start = layout_data[binding + 1].state_start;
+        for (uint32_t i = 0; i < count; i++) {
+            uint32_t pos = start + i;
+            if (data[pos] == shader_set) {
+                auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
+                map_result.first->second.emplace_back(i);
+            }
+        }
+    }
+
+    output_state.UnmapMemory();
+    layout.UnmapMemory();
+    return used_descriptors;
+}
+
 // After the GPU executed, we know which descriptor indexes were accessed and can validate with normal Core Validation logic
 [[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets(const Location &loc) {
     // For each vkCmdBindDescriptorSets()...
@@ -163,6 +193,10 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     // checking them multiple times.
     vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
     for (auto [di_info_i, di_info] : vvl::enumerate(di_input_buffer_list)) {
+        // TODO - Currently we don't know the actual call that triggered this, but without just giving "vkCmdDraw" we will get
+        // VUID_Undefined
+        Location draw_loc(vvl::Func::vkCmdDraw);
+
         // For each descriptor set ...
         for (uint32_t i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
             auto &set = di_info->descriptor_set_buffers[i];
@@ -181,9 +215,9 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 return false;
             }
 
-            vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, loc);
+            vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
             const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
-            auto used_descs = set.output_state->UsedDescriptors(loc, *set.state, shader_set);
+            auto used_descs = UsedDescriptors(loc, set.state->LayoutBlock(), set.output_state->buffer, shader_set);
             // For each used binding ...
             for (const auto &u : used_descs) {
                 auto iter = set.binding_req_map.find(u.first);

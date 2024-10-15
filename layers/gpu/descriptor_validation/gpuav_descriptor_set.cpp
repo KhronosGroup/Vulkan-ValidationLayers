@@ -38,7 +38,7 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *
     : vvl::DescriptorSet(handle, pool, layout, variable_count, state_data), layout_(*static_cast<Validator *>(state_data)) {}
 
 DescriptorSet::~DescriptorSet() {
-    Destroy();
+    last_used_block_.reset();
     layout_.DestroyBuffer();
 }
 
@@ -217,11 +217,12 @@ void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::Descripto
 
 std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    uint32_t cur_version = current_version_.load();
-    if (last_used_state_ && last_used_state_->version == cur_version) {
-        return last_used_state_;
+    uint32_t current_version = current_version_.load();
+    if (last_used_block_ && last_used_version_ == current_version) {
+        return last_used_block_;
     }
-    auto next_state = std::make_shared<State>(VkHandle(), cur_version, gpuav);
+    last_used_version_ = current_version;
+    auto next_block = std::make_shared<State>(gpuav);
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     if (GetBindingCount() > 0) {
@@ -237,8 +238,8 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
     }
     if (descriptor_count == 0) {
         // no descriptors case, return a dummy state object
-        last_used_state_ = next_state;
-        return last_used_state_;
+        last_used_block_ = next_block;
+        return last_used_block_;
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
@@ -249,9 +250,9 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    next_state->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
+    next_block->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    auto data = (glsl::DescriptorState *)next_state->buffer.MapMemory(loc);
+    auto data = (glsl::DescriptorState *)next_block->buffer.MapMemory(loc);
 
     uint32_t index = 0;
     for (uint32_t i = 0; i < bindings_.size(); i++) {
@@ -287,20 +288,19 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetCurrentState(Validator &
     }
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
-    next_state->buffer.FlushAllocation(loc);
-    next_state->buffer.UnmapMemory();
+    next_block->buffer.FlushAllocation(loc);
+    next_block->buffer.UnmapMemory();
 
-    last_used_state_ = next_state;
-    return next_state;
+    last_used_block_ = next_block;
+    return next_block;
 }
 
 std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    uint32_t cur_version = current_version_.load();
-    if (output_state_) {
-        return output_state_;
+    if (output_block_) {
+        return output_block_;
     }
-    auto next_state = std::make_shared<State>(VkHandle(), cur_version, gpuav);
+    auto next_block = std::make_shared<State>(gpuav);
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     for (const auto &binding : *this) {
@@ -314,8 +314,8 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     }
     if (descriptor_count == 0) {
         // no descriptors case, return a dummy state object
-        output_state_ = next_state;
-        return output_state_;
+        output_block_ = next_block;
+        return output_block_;
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -326,47 +326,17 @@ std::shared_ptr<DescriptorSet::State> DescriptorSet::GetOutputState(Validator &g
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    next_state->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
+    next_block->buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    auto data = (uint32_t *)next_state->buffer.MapMemory(loc);
+    auto data = (uint32_t *)next_block->buffer.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
-    next_state->buffer.FlushAllocation(loc);
-    next_state->buffer.UnmapMemory();
+    next_block->buffer.FlushAllocation(loc);
+    next_block->buffer.UnmapMemory();
 
-    output_state_ = next_state;
-    return next_state;
-}
-
-std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::State::UsedDescriptors(const Location &loc, const DescriptorSet &set,
-                                                                                uint32_t shader_set) const {
-    std::map<uint32_t, std::vector<uint32_t>> used_descs;
-    if (buffer.Destroyed()) {
-        return used_descs;
-    }
-
-    auto layout_data = (glsl::BindingLayout *)set.layout_.MapMemory(loc);
-
-    auto data = (uint32_t *)buffer.MapMemory(loc);
-    buffer.InvalidateAllocation(loc);
-
-    uint32_t max_binding = layout_data[0].count;
-    for (uint32_t binding = 0; binding < max_binding; binding++) {
-        uint32_t count = layout_data[binding + 1].count;
-        uint32_t start = layout_data[binding + 1].state_start;
-        for (uint32_t i = 0; i < count; i++) {
-            uint32_t pos = start + i;
-            if (data[pos] == shader_set) {
-                auto map_result = used_descs.emplace(binding, std::vector<uint32_t>());
-                map_result.first->second.emplace_back(i);
-            }
-        }
-    }
-
-    buffer.UnmapMemory();
-    set.layout_.UnmapMemory();
-    return used_descs;
+    output_block_ = next_block;
+    return next_block;
 }
 
 DescriptorSet::State::~State() { buffer.DestroyBuffer(); }
