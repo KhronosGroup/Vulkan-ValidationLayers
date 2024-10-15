@@ -60,8 +60,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
         const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoKHR>(
             pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
-        if (vertex_input_divisor_state && phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE &&
-            firstInstance != 0u) {
+        if (vertex_input_divisor_state && phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
             for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
                 if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
@@ -78,7 +77,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
 
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-            phys_dev_ext_props.vtx_attrib_divisor_props.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
+            phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
             for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
                 const auto &desc = binding_state.second.desc;
                 if (desc.divisor != 1u) {
@@ -922,7 +921,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                 skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pMissShaderBindingTable),
                                  "is 0 but last bound ray tracing pipeline (%s) was created with flags (%s).",
                                  FormatHandle(pipeline_state->Handle()).c_str(),
-                                 string_VkPipelineCreateFlags2KHR(pipeline_state->create_flags).c_str());
+                                 string_VkPipelineCreateFlags2(pipeline_state->create_flags).c_str());
             }
         }
     }

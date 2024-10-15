@@ -958,20 +958,108 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         }
     }
 
+    // funnel promoted extensions into a VkPhysicalDeviceVulkan14Properties
+    if (dev_ext.vk_feature_version_1_4) {
+        // First query to get list properties size from host image copy extension,
+        // second to get actual properties
+        phys_dev_props_core14.copySrcLayoutCount = 0;
+        phys_dev_props_core14.pCopySrcLayouts = nullptr;
+        phys_dev_props_core14.copyDstLayoutCount = 0;
+        phys_dev_props_core14.pCopyDstLayouts = nullptr;
+        GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_feature_version_1_4, &phys_dev_props_core14);
+        host_image_copy_props_copy_src_layouts.resize(phys_dev_props_core14.copySrcLayoutCount);
+        host_imape_copy_props_copy_dst_layouts.resize(phys_dev_props_core14.copyDstLayoutCount);
+        phys_dev_props_core14.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
+        phys_dev_props_core14.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+        GetPhysicalDeviceExtProperties<false>(physical_device, dev_ext.vk_feature_version_1_4, &phys_dev_props_core14);
+    } else {
+        if (dev_ext.vk_khr_line_rasterization) {
+            VkPhysicalDeviceLineRasterizationPropertiesKHR line_rasterization_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_line_rasterization, &line_rasterization_props);
+            phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
+        } else if (dev_ext.vk_ext_line_rasterization) {
+            VkPhysicalDeviceLineRasterizationPropertiesEXT line_rasterization_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_line_rasterization, &line_rasterization_props);
+            phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
+        }
+
+        if (dev_ext.vk_ext_vertex_attribute_divisor) {
+            VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_vertex_attribute_divisor, &vtx_attrib_divisor_props_ext);
+            phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
+        } else if (dev_ext.vk_khr_vertex_attribute_divisor) {
+            VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vtx_attrib_divisor_props_khr;
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_vertex_attribute_divisor, &vtx_attrib_divisor_props_khr);
+            phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_khr.maxVertexAttribDivisor;
+            phys_dev_props_core14.supportsNonZeroFirstInstance = vtx_attrib_divisor_props_khr.supportsNonZeroFirstInstance;
+        }
+
+        if (dev_ext.vk_khr_push_descriptor) {
+            VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_push_descriptor, &push_descriptor_props);
+            phys_dev_props_core14.maxPushDescriptors = push_descriptor_props.maxPushDescriptors;
+        }
+
+        if (dev_ext.vk_khr_maintenance5) {
+            VkPhysicalDeviceMaintenance5PropertiesKHR maintenance_5_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance5, &maintenance_5_props);
+            phys_dev_props_core14.earlyFragmentMultisampleCoverageAfterSampleCounting =
+                maintenance_5_props.earlyFragmentMultisampleCoverageAfterSampleCounting;
+            phys_dev_props_core14.earlyFragmentSampleMaskTestBeforeSampleCounting =
+                maintenance_5_props.earlyFragmentSampleMaskTestBeforeSampleCounting;
+            phys_dev_props_core14.depthStencilSwizzleOneSupport = maintenance_5_props.depthStencilSwizzleOneSupport;
+            phys_dev_props_core14.polygonModePointSize = maintenance_5_props.polygonModePointSize;
+            phys_dev_props_core14.nonStrictSinglePixelWideLinesUseParallelogram =
+                maintenance_5_props.nonStrictSinglePixelWideLinesUseParallelogram;
+            phys_dev_props_core14.nonStrictWideLinesUseParallelogram = maintenance_5_props.nonStrictWideLinesUseParallelogram;
+        }
+
+        if (dev_ext.vk_khr_maintenance6) {
+            VkPhysicalDeviceMaintenance6PropertiesKHR maintenance_6_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance6, &maintenance_6_props);
+            phys_dev_props_core14.blockTexelViewCompatibleMultipleLayers =
+                maintenance_6_props.blockTexelViewCompatibleMultipleLayers;
+            phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount =
+                maintenance_6_props.maxCombinedImageSamplerDescriptorCount;
+            phys_dev_props_core14.fragmentShadingRateClampCombinerInputs =
+                maintenance_6_props.fragmentShadingRateClampCombinerInputs;
+        }
+
+        if (dev_ext.vk_ext_pipeline_robustness) {
+            VkPhysicalDevicePipelineRobustnessProperties pipeline_robustness_props = vku::InitStructHelper();
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_pipeline_robustness, &pipeline_robustness_props);
+            phys_dev_props_core14.defaultRobustnessStorageBuffers = pipeline_robustness_props.defaultRobustnessStorageBuffers;
+            phys_dev_props_core14.defaultRobustnessUniformBuffers = pipeline_robustness_props.defaultRobustnessUniformBuffers;
+            phys_dev_props_core14.defaultRobustnessVertexInputs = pipeline_robustness_props.defaultRobustnessVertexInputs;
+            phys_dev_props_core14.defaultRobustnessImages = pipeline_robustness_props.defaultRobustnessImages;
+        }
+
+        if (dev_ext.vk_ext_host_image_copy) {
+            VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props = vku::InitStructHelper();
+            // First call, get copySrcLayoutCount and copyDstLayoutCount
+            GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &host_image_copy_props);
+            host_image_copy_props_copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
+            host_imape_copy_props_copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
+            host_image_copy_props.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
+            host_image_copy_props.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+            GetPhysicalDeviceExtProperties<false>(physical_device, dev_ext.vk_ext_host_image_copy, &host_image_copy_props);
+
+            phys_dev_props_core14.copySrcLayoutCount = host_image_copy_props.copySrcLayoutCount;
+            phys_dev_props_core14.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
+            phys_dev_props_core14.copyDstLayoutCount = host_image_copy_props.copyDstLayoutCount;
+            phys_dev_props_core14.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+            std::memcpy(phys_dev_props_core14.optimalTilingLayoutUUID, host_image_copy_props.optimalTilingLayoutUUID,
+                        sizeof(host_image_copy_props.optimalTilingLayoutUUID));
+            phys_dev_props_core14.identicalMemoryTypeRequirements = host_image_copy_props.identicalMemoryTypeRequirements;
+        }
+    }
+
     // Extensions with properties to extract to DeviceExtensionProperties
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_push_descriptor, &phys_dev_props->push_descriptor_props);
+
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_shading_rate_image, &phys_dev_props->shading_rate_image_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_mesh_shader, &phys_dev_props->mesh_shader_props_nv);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_mesh_shader, &phys_dev_props->mesh_shader_props_ext);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_vertex_attribute_divisor,
-                                   &phys_dev_props->vtx_attrib_divisor_props);
-    if (!IsExtEnabled(dev_ext.vk_khr_vertex_attribute_divisor)) {
-        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
-        GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_vertex_attribute_divisor, &vtx_attrib_divisor_props_ext);
-        phys_dev_props->vtx_attrib_divisor_props = vku::InitStructHelper();
-        phys_dev_props->vtx_attrib_divisor_props.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
-        phys_dev_props->vtx_attrib_divisor_props.supportsNonZeroFirstInstance = VK_TRUE;
-    }
+
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props_nv);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_ray_tracing_pipeline, &phys_dev_props->ray_tracing_props_khr);
@@ -1001,32 +1089,18 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
                                    &phys_dev_props->image_alignment_control_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_nested_command_buffer,
                                    &phys_dev_props->nested_command_buffer_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance6, &phys_dev_props->maintenance6_props);
+
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_maintenance7, &phys_dev_props->maintenance7_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_device_generated_commands,
                                    &phys_dev_props->device_generated_commands_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_props);
+
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_map_memory_placed, &phys_dev_props->map_memory_placed_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_pipeline_binary, &phys_dev_props->pipeline_binary_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_compute_shader_derivatives,
                                    &phys_dev_props->compute_shader_derivatives_props);
-    if ((phys_dev_props->host_image_copy_props.copySrcLayoutCount > 0) ||
-        (phys_dev_props->host_image_copy_props.copyDstLayoutCount > 0)) {
-        // Have to allocate memory for the layout lists
-        host_image_copy_src_layouts.resize(phys_dev_props->host_image_copy_props.copySrcLayoutCount);
-        host_image_copy_dst_layouts.resize(phys_dev_props->host_image_copy_props.copyDstLayoutCount);
-        if (phys_dev_props->host_image_copy_props.copySrcLayoutCount > 0) {
-            phys_dev_props->host_image_copy_props.pCopySrcLayouts = host_image_copy_src_layouts.data();
-        }
-        if (phys_dev_props->host_image_copy_props.copyDstLayoutCount > 0) {
-            phys_dev_props->host_image_copy_props.pCopyDstLayouts = host_image_copy_dst_layouts.data();
-        }
-        // Call again (without init) to fill in lists
-        GetPhysicalDeviceExtProperties<false>(physical_device, dev_ext.vk_ext_host_image_copy,
-                                              &phys_dev_props->host_image_copy_props);
-    }
+
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_props);
     }
@@ -2705,15 +2779,20 @@ void ValidationStateTracker::PostCallRecordCmdSetLineWidth(VkCommandBuffer comma
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_LINE_WIDTH);
 }
 
+void ValidationStateTracker::PostCallRecordCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                             uint16_t lineStipplePattern, const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_LINE_STIPPLE);
+}
+
 void ValidationStateTracker::PostCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                                 uint16_t lineStipplePattern, const RecordObject &record_obj) {
-    PostCallRecordCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
+    PostCallRecordCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                                 uint16_t lineStipplePattern, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR);
+    PostCallRecordCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor,
@@ -2795,9 +2874,9 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
                                             pDescriptorSets, no_push_desc, dynamicOffsetCount, pDynamicOffsets);
 }
 
-void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                                    const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
-                                                                    const RecordObject &record_obj) {
+void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                                 const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<vvl::PipelineLayout>(pBindDescriptorSetsInfo->layout);
     ASSERT_AND_RETURN(cb_state && pipeline_layout);
@@ -2827,11 +2906,16 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuf
     }
 }
 
-void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
-                                                                  VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                                                  uint32_t set, uint32_t descriptorWriteCount,
-                                                                  const VkWriteDescriptorSet *pDescriptorWrites,
-                                                                  const RecordObject &record_obj) {
+void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                                    const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                                    const RecordObject &record_obj) {
+    PreCallRecordCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, record_obj);
+}
+
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                               const VkWriteDescriptorSet *pDescriptorWrites,
+                                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     ASSERT_AND_RETURN(pipeline_layout);
@@ -2839,9 +2923,18 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
                                      pDescriptorWrites);
 }
 
-void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                                   const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                                   const RecordObject &record_obj) {
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
+                                                                  VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                  uint32_t set, uint32_t descriptorWriteCount,
+                                                                  const VkWriteDescriptorSet *pDescriptorWrites,
+                                                                  const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites,
+                                      record_obj);
+}
+
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                                const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                                const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<vvl::PipelineLayout>(pPushDescriptorSetInfo->layout);
     ASSERT_AND_RETURN(pipeline_layout);
@@ -2860,6 +2953,12 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuff
                                          pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
                                          pPushDescriptorSetInfo->pDescriptorWrites);
     }
+}
+
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                                   const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                                   const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
@@ -2948,11 +3047,17 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
     cb_state->push_constant_data_chunks.emplace_back(push_constant_data);
 }
 
+void ValidationStateTracker::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer,
+                                                             const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                             const RecordObject &record_obj) {
+    PostCallRecordCmdPushConstants(commandBuffer, pPushConstantsInfo->layout, pPushConstantsInfo->stageFlags,
+                                   pPushConstantsInfo->offset, pPushConstantsInfo->size, pPushConstantsInfo->pValues, record_obj);
+}
+
 void ValidationStateTracker::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
                                                                 const VkPushConstantsInfoKHR *pPushConstantsInfo,
                                                                 const RecordObject &record_obj) {
-    PostCallRecordCmdPushConstants(commandBuffer, pPushConstantsInfo->layout, pPushConstantsInfo->stageFlags,
-                                   pPushConstantsInfo->offset, pPushConstantsInfo->size, pPushConstantsInfo->pValues, record_obj);
+    PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -2974,9 +3079,9 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
     }
 }
 
-void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                 VkDeviceSize offset, VkDeviceSize size, VkIndexType indexType,
-                                                                 const RecordObject &record_obj) {
+void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              VkDeviceSize size, VkIndexType indexType,
+                                                              const RecordObject &record_obj) {
     if (buffer == VK_NULL_HANDLE) {
         return;  // allowed in maintenance6
     }
@@ -2990,6 +3095,12 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer
     if (!disabled[command_buffer_state] && buffer) {
         cb_state->AddChild(buffer_state);
     }
+}
+
+void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                 VkDeviceSize offset, VkDeviceSize size, VkIndexType indexType,
+                                                                 const RecordObject &record_obj) {
+    PreCallRecordCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, record_obj);
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
@@ -3496,10 +3607,15 @@ void ValidationStateTracker::PostCallRecordMapMemory(VkDevice device, VkDeviceMe
     RecordMappedMemory(mem, offset, size, ppData);
 }
 
-void ValidationStateTracker::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData,
-                                                         const RecordObject &record_obj) {
+void ValidationStateTracker::PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapInfo *pMemoryMapInfo, void **ppData,
+                                                      const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     RecordMappedMemory(pMemoryMapInfo->memory, pMemoryMapInfo->offset, pMemoryMapInfo->size, ppData);
+}
+
+void ValidationStateTracker::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR *pMemoryMapInfo, void **ppData,
+                                                         const RecordObject &record_obj) {
+    PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
 }
 
 void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem, const RecordObject &record_obj) {
@@ -3509,12 +3625,17 @@ void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceM
     }
 }
 
-void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
-                                                          const RecordObject &record_obj) {
+void ValidationStateTracker::PreCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
+                                                       const RecordObject &record_obj) {
     if (auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory)) {
         mem_info->mapped_range = vvl::MemRange();
         mem_info->p_driver_data = nullptr;
     }
+}
+
+void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
+                                                          const RecordObject &record_obj) {
+    PreCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
 }
 
 void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
@@ -4366,10 +4487,10 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkD
     PreCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData, record_obj);
 }
 
-void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                                              VkPipelineLayout layout, uint32_t set,
-                                                                              const void *pData, const RecordObject &record_obj) {
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                           VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                                           const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
     auto layout_data = Get<vvl::PipelineLayout>(layout);
@@ -4387,7 +4508,14 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
                                      decoded_template.desc_writes.data());
 }
 
-void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
+                                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                              VkPipelineLayout layout, uint32_t set,
+                                                                              const void *pData, const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData, record_obj);
+}
+
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
     const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -4406,6 +4534,12 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
     cb_state->PushDescriptorSetState(
         template_ci.pipelineBindPoint, *layout_data, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
         static_cast<uint32_t>(decoded_template.desc_writes.size()), decoded_template.desc_writes.data());
+}
+
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, record_obj);
 }
 
 void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice,
@@ -5254,7 +5388,7 @@ void ValidationStateTracker::PostCallRecordCmdSetFragmentShadingRateKHR(VkComman
     cb_state->dynamic_state_value.fragment_size = *pFragmentSize;
 }
 
-void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocationsKHR(
+void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocations(
     VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfoKHR *pLocationInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
@@ -5265,8 +5399,13 @@ void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocationsKHR
     }
 }
 
-void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-    const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo, const RecordObject& record_obj) {
+void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocationsKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfoKHR *pLocationInfo, const RecordObject &record_obj) {
+    PostCallRecordCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, record_obj);
+}
+
+void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     cb_state->rendering_attachments.set_color_indexes = true;
@@ -5276,6 +5415,11 @@ void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndices
     }
     cb_state->rendering_attachments.depth_index = pLocationInfo->pDepthInputAttachmentIndex;
     cb_state->rendering_attachments.stencil_index = pLocationInfo->pStencilInputAttachmentIndex;
+}
+
+void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo, const RecordObject &record_obj) {
+    PostCallRecordCmdSetRenderingInputAttachmentIndices(commandBuffer, pLocationInfo, record_obj);
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer,

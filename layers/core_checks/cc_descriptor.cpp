@@ -244,7 +244,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
             if (!VerifySetLayoutCompatibility(*descriptor_set, pipeline_layout->set_layouts, pipeline_layout->Handle(),
                                               set_idx + firstSet, error_string)) {
                 const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx]);
-                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-00358"
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-00358"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358";
                 skip |= LogError(vuid, objlist, set_loc,
                                  "(%s) being bound is not compatible with overlapping "
@@ -258,7 +258,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
             const auto &dsl = descriptor_set->GetLayout();
             if (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
                 const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx], dsl->VkHandle());
-                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-08010"
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-08010"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-08010";
                 skip |= LogError(vuid, objlist, set_loc, "was allocated from VkDescriptorSetLayout with %s flags.",
                                  string_VkDescriptorSetLayoutCreateFlags(dsl->GetCreateFlags()).c_str());
@@ -270,7 +270,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                 if ((total_dynamic_descriptors + set_dynamic_descriptor_count) > dynamicOffsetCount) {
                     // Test/report this here, such that we don't run past the end of pDynamicOffsets in the else clause
                     const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx]);
-                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359"
+                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-dynamicOffsetCount-00359"
                                             : "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359";
                     skip |=
                         LogError(vuid, objlist, set_loc,
@@ -315,7 +315,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                             // Validate alignment with limit
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
                                 (SafeModulo(offset, limits.minUniformBufferOffsetAlignment) != 0)) {
-                                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDynamicOffsets-01971"
+                                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-01971"
                                                         : "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971";
                                 skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32
@@ -325,7 +325,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                             }
                             if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
                                 (SafeModulo(offset, limits.minStorageBufferOffsetAlignment) != 0)) {
-                                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDynamicOffsets-01972"
+                                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-01972"
                                                         : "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972";
                                 skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                  "is %" PRIu32
@@ -348,7 +348,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                                 if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
                                     const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx],
                                                                 buffer_descriptor->GetBuffer());
-                                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-06715"
+                                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-06715"
                                                             : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715";
                                     skip |= LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
                                                      "is %" PRIu32
@@ -363,7 +363,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                                            ((offset + bound_range + bound_offset) > buffer_state->create_info.size)) {
                                     const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx],
                                                                 buffer_descriptor->GetBuffer());
-                                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-01979"
+                                    const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-01979"
                                                             : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979";
                                     skip |=
                                         LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
@@ -385,15 +385,15 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
             auto ds_pool_state = descriptor_set->GetPoolState();
             if (ds_pool_state && ds_pool_state->create_info.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
                 const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx], ds_pool_state->Handle());
-                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-04616"
+                const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-04616"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616";
                 skip |= LogError(vuid, objlist, set_loc,
                                  "was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
             }
         } else if (!enabled_features.graphicsPipelineLibrary) {
             const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx]);
-            const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-06563"
-                                    : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
+            const char *vuid =
+                is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-06563" : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
             skip |= LogError(vuid, objlist, set_loc,
                              "(%s) does not exist, and the pipeline layout was not created "
                              "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
@@ -402,7 +402,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
     }
     //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound
     if (total_dynamic_descriptors != dynamicOffsetCount) {
-        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-dynamicOffsetCount-00359"
+        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-dynamicOffsetCount-00359"
                                 : "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359";
         skip |= LogError(vuid, cb_state.Handle(), loc,
                          "Attempting to bind %" PRIu32 " descriptorSets with %" PRIu32
@@ -414,7 +414,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
     }
     // firstSet and descriptorSetCount sum must be less than setLayoutCount
     if ((firstSet + setCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
-        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfoKHR-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
+        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
         skip |= LogError(vuid, cb_state.Handle(), loc,
                          "Sum of firstSet (%" PRIu32 ") and descriptorSetCount (%" PRIu32
                          ") is greater than "
@@ -440,9 +440,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                          const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
-                                                          const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                       const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                       const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
 
@@ -463,6 +463,12 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer comman
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                          const ErrorObject &error_obj) const {
+    return PreCallValidateCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, error_obj);
 }
 
 bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLayoutCreateInfo &create_info, uint32_t max_binding,
@@ -776,12 +782,12 @@ bool CoreChecks::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayo
         }
     }
 
-    if ((push_descriptor_set) && (total_descriptors > phys_dev_ext_props.push_descriptor_props.maxPushDescriptors)) {
+    if ((push_descriptor_set) && (total_descriptors > phys_dev_props_core14.maxPushDescriptors)) {
         skip |= LogError(
             "VUID-VkDescriptorSetLayoutCreateInfo-flags-00281", device, create_info_loc.dot(Field::flags),
             "contains VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR, but the total descriptor count in layout (%" PRIu64
             ") must not be greater than maxPushDescriptors (%" PRIu32 ").",
-            total_descriptors, phys_dev_ext_props.push_descriptor_props.maxPushDescriptors);
+            total_descriptors, phys_dev_props_core14.maxPushDescriptors);
     }
 
     return skip;
@@ -1571,14 +1577,14 @@ bool CoreChecks::ValidateBufferUsage(const vvl::Buffer &buffer_state, VkDescript
             if (!(buffer_state.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-08765", buffer_state.Handle(), buffer_loc,
                                  "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER.",
-                                 string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str());
+                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str());
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (!(buffer_state.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-08766", buffer_state.Handle(), buffer_loc,
                                  "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER.",
-                                 string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str());
+                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str());
             }
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -1586,7 +1592,7 @@ bool CoreChecks::ValidateBufferUsage(const vvl::Buffer &buffer_state, VkDescript
             if (!(buffer_state.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00330", buffer_state.Handle(), buffer_loc,
                                  "was created with %s, but descriptorType is %s.",
-                                 string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str(), string_VkDescriptorType(type));
+                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
             }
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
@@ -1594,7 +1600,7 @@ bool CoreChecks::ValidateBufferUsage(const vvl::Buffer &buffer_state, VkDescript
             if (!(buffer_state.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00331", buffer_state.Handle(), buffer_loc,
                                  "was created with %s, but descriptorType is %s.",
-                                 string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str(), string_VkDescriptorType(type));
+                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
             }
             break;
         default:
@@ -2438,7 +2444,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                           (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                            VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT))) {
                          if (out_error_msg) {
-                             *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
+                             *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                          }
                          return false;
                      }
@@ -2446,7 +2452,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  },
                  [binding_usage = binding_info.usage, i]() {
                      return "The following buffers have a usage that does not match pBindingInfos[" + std::to_string(i) +
-                            "].usage (" + string_VkBufferUsageFlags2KHR(binding_usage) + "):";
+                            "].usage (" + string_VkBufferUsageFlags2(binding_usage) + "):";
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
@@ -2456,7 +2462,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                          sampler_buffers.push_back(buffer_state->VkHandle());
                          if (!(buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) {
                              if (out_error_msg) {
-                                 *out_error_msg += "has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
+                                 *out_error_msg += "has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                              }
                              return false;
                          }
@@ -2472,7 +2478,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                          resource_buffers.push_back(buffer_state->VkHandle());
                          if (!(buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)) {
                              if (out_error_msg) {
-                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
+                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                              }
                              return false;
                          }
@@ -2490,7 +2496,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                          push_descriptor_buffers.push_back(buffer_state->VkHandle());
                          if (!(buffer_state->usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) {
                              if (out_error_msg) {
-                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
+                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                              }
                              return false;
                          }
@@ -3463,7 +3469,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
                                               uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites,
                                               const Location &loc) const {
     bool skip = false;
-    const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetKHR;
+    const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetKHR && loc.function != Func::vkCmdPushDescriptorSet;
 
     auto layout_data = Get<vvl::PipelineLayout>(layout);
     if (!layout_data) return skip;  // dynamicPipelineLayout
@@ -3475,7 +3481,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
         const auto &dsl = set_layouts[set];
         if (dsl) {
             if (!dsl->IsPushDescriptor()) {
-                const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfoKHR-set-00365" : "VUID-vkCmdPushDescriptorSetKHR-set-00365";
+                const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfo-set-00365" : "VUID-vkCmdPushDescriptorSet-set-00365";
                 skip |=
                     LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
                              set, FormatHandle(layout).c_str());
@@ -3489,7 +3495,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
             }
         }
     } else {
-        const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfoKHR-set-00364" : "VUID-vkCmdPushDescriptorSetKHR-set-00364";
+        const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfo-set-00364" : "VUID-vkCmdPushDescriptorSet-set-00364";
         skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
                          FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
     }
@@ -3497,10 +3503,10 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                        VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                        const VkWriteDescriptorSet *pDescriptorWrites,
-                                                        const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                     const VkWriteDescriptorSet *pDescriptorWrites,
+                                                     const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -3509,9 +3515,17 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                         const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                         const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                        VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                        const VkWriteDescriptorSet *pDescriptorWrites,
+                                                        const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                               pDescriptorWrites, error_obj);
+}
+
+bool CoreChecks::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                      const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                      const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -3531,6 +3545,12 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer command
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                         const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                         const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
@@ -3646,21 +3666,22 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
     bool skip = false;
     skip |= ValidateCmd(*cb_state, loc);
 
-    const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetWithTemplateKHR;
+    const bool is_2 =
+        loc.function != Func::vkCmdPushDescriptorSetWithTemplateKHR && loc.function != Func::vkCmdPushDescriptorSetWithTemplate;
     auto layout_data = Get<vvl::PipelineLayout>(layout);
     const auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
     // Validate the set index points to a push descriptor set and is in range
     if (dsl) {
         if (!dsl->IsPushDescriptor()) {
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07305"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07305";
+            const char *vuid =
+                is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07305" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07305";
             const LogObjectList objlist(commandBuffer, layout);
             skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
                              set, FormatHandle(layout).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
         const char *vuid =
-            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07304";
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07304";
         const LogObjectList objlist(commandBuffer, layout);
         skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
                          FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
@@ -3673,16 +3694,16 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         skip |= ValidatePipelineBindPoint(*cb_state, template_ci.pipelineBindPoint, loc);
 
         if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-descriptorUpdateTemplate-07994"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-07994";
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-descriptorUpdateTemplate-07994"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplate-descriptorUpdateTemplate-07994";
             skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
                              "%s was not created with flag "
                              "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR.",
                              FormatHandle(descriptorUpdateTemplate).c_str());
         }
         if (template_ci.set != set) {
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-set-07995"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-set-07995";
+            const char *vuid =
+                is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07995" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07995";
             skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
                              "%s created with set %" PRIu32 " does not match command parameter set %" PRIu32 ".",
                              FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
@@ -3690,8 +3711,8 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         auto template_layout = Get<vvl::PipelineLayout>(template_ci.pipelineLayout);
         if (!IsPipelineLayoutSetCompatible(set, layout_data.get(), template_layout.get())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-07993"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-07993";
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-layout-07993"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplate-layout-07993";
             skip |= LogError(vuid, objlist, loc.dot(Field::descriptorUpdateTemplate),
                              "%s created with %s is incompatible "
                              "with command parameter "
@@ -3705,8 +3726,8 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
     if (dsl && template_state) {
         if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
             const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfoKHR-pData-01686"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplateKHR-pData-01686";
+            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-pData-01686"
+                                    : "VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686";
             skip |= LogError(vuid, objlist, loc.dot(Field::pData),
                              "does not point to a valid layout, it possible the "
                              "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
@@ -3724,15 +3745,22 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                                    VkPipelineLayout layout, uint32_t set, const void *pData,
-                                                                    const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                 VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                                 const ErrorObject &error_obj) const {
     return ValidateCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
                                                     error_obj.location);
 }
 
-bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
+                                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                    VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                                    const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData, error_obj);
+}
+
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
     const ErrorObject &error_obj) const {
     bool skip = false;
@@ -3740,6 +3768,12 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
         commandBuffer, pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate, pPushDescriptorSetWithTemplateInfo->layout,
         pPushDescriptorSetWithTemplateInfo->set, pPushDescriptorSetWithTemplateInfo->pData, error_obj.location);
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, error_obj);
 }
 
 enum DSL_DESCRIPTOR_GROUPS {
@@ -4508,7 +4542,7 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
         if ((offset >= range.offset) && (offset + size <= range.offset + range.size)) {
             VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
             if (matching_stages != range.stageFlags) {
-                const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-offset-01796" : "VUID-vkCmdPushConstants-offset-01796";
+                const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-01796" : "VUID-vkCmdPushConstants-offset-01796";
                 skip |= LogError(vuid, commandBuffer, loc,
                                  "stageFlags (%s, offset (%" PRIu32 "), and size (%" PRIu32
                                  "),  must contain all stages in overlapping VkPushConstantRange stageFlags (%s), offset (%" PRIu32
@@ -4524,7 +4558,7 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
     }
     if (found_stages != stageFlags) {
         uint32_t missing_stages = ~found_stages & stageFlags;
-        const char *vuid = is_2 ? "VUID-VkPushConstantsInfoKHR-offset-01795" : "VUID-vkCmdPushConstants-offset-01795";
+        const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-01795" : "VUID-vkCmdPushConstants-offset-01795";
         skip |=
             LogError(vuid, commandBuffer, loc,
                      "%s, VkPushConstantRange in %s overlapping offset = %" PRIu32 " and size = %" PRIu32 ", do not contain %s.",
@@ -4540,15 +4574,20 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
     return ValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, error_obj.location);
 }
 
-bool CoreChecks::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
-                                                     const VkPushConstantsInfoKHR *pPushConstantsInfo,
-                                                     const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->layout, pPushConstantsInfo->stageFlags,
                                      pPushConstantsInfo->offset, pPushConstantsInfo->size,
                                      error_obj.location.dot(Field::pPushConstantsInfo));
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
+                                                     const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                     const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushConstants2(commandBuffer, pPushConstantsInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,

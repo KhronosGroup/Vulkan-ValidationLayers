@@ -7469,6 +7469,716 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSparseMemoryRequirements(VkDevice devic
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                             uint16_t lineStipplePattern) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdSetLineStipple, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdSetLineStipple]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdSetLineStipple);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdSetLineStipple]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdSetLineStipple]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkMapMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateMapMemory2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateMapMemory2(device, pMemoryMapInfo, ppData, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkMapMemory2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordMapMemory2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->MapMemory2(device, pMemoryMapInfo, ppData);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordMapMemory2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkUnmapMemory2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateUnmapMemory2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateUnmapMemory2(device, pMemoryUnmapInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkUnmapMemory2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordUnmapMemory2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->UnmapMemory2(device, pMemoryUnmapInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordUnmapMemory2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               VkDeviceSize size, VkIndexType indexType) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBindIndexBuffer2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBindIndexBuffer2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBindIndexBuffer2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBindIndexBuffer2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBindIndexBuffer2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                       VkExtent2D* pGranularity) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetRenderingAreaGranularity, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetRenderingAreaGranularity]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetRenderingAreaGranularity);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetRenderingAreaGranularity]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetRenderingAreaGranularity]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                           VkSubresourceLayout2* pLayout) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDeviceImageSubresourceLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDeviceImageSubresourceLayout]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDeviceImageSubresourceLayout(device, pInfo, pLayout, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDeviceImageSubresourceLayout);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDeviceImageSubresourceLayout]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDeviceImageSubresourceLayout(device, pInfo, pLayout, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->GetDeviceImageSubresourceLayout(device, pInfo, pLayout);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDeviceImageSubresourceLayout]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDeviceImageSubresourceLayout(device, pInfo, pLayout, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                      VkSubresourceLayout2* pLayout) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetImageSubresourceLayout2, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetImageSubresourceLayout2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetImageSubresourceLayout2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetImageSubresourceLayout2(device, image, pSubresource, pLayout, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetImageSubresourceLayout2(device, image, pSubresource, pLayout, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                const VkWriteDescriptorSet* pDescriptorWrites) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSet, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdPushDescriptorSet]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                            pDescriptorWrites, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSet);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdPushDescriptorSet]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                  pDescriptorWrites, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                              pDescriptorWrites);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSet]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                   pDescriptorWrites, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                            VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                            VkPipelineLayout layout, uint32_t set, const void* pData) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdPushDescriptorSetWithTemplate]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
+                                                                        error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdPushDescriptorSetWithTemplate]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
+                                                              record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetWithTemplate]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData,
+                                                               record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                              const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdSetRenderingAttachmentLocations,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdSetRenderingAttachmentLocations]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdSetRenderingAttachmentLocations);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdSetRenderingAttachmentLocations]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdSetRenderingAttachmentLocations]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndices,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdSetRenderingInputAttachmentIndices]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdSetRenderingInputAttachmentIndices);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdSetRenderingInputAttachmentIndices]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdSetRenderingInputAttachmentIndices]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                  const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBindDescriptorSets2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBindDescriptorSets2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBindDescriptorSets2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBindDescriptorSets2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBindDescriptorSets2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdPushConstants2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdPushConstants2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdPushConstants2(commandBuffer, pPushConstantsInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdPushConstants2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdPushConstants2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdPushConstants2(commandBuffer, pPushConstantsInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdPushConstants2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                 const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSet2, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdPushDescriptorSet2]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSet2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdPushDescriptorSet2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSet2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate2,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdPushDescriptorSetWithTemplate2]) {
+            auto lock = vo->ReadLock();
+            skip |=
+                vo->PreCallValidateCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdPushDescriptorSetWithTemplate2);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdPushDescriptorSetWithTemplate2]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdPushDescriptorSetWithTemplate2]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCopyMemoryToImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCopyMemoryToImage]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCopyMemoryToImage(device, pCopyMemoryToImageInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCopyMemoryToImage);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCopyMemoryToImage]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCopyMemoryToImage(device, pCopyMemoryToImageInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->CopyMemoryToImage(device, pCopyMemoryToImageInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCopyMemoryToImage]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCopyMemoryToImage(device, pCopyMemoryToImageInfo, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCopyImageToMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCopyImageToMemory]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCopyImageToMemory(device, pCopyImageToMemoryInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCopyImageToMemory);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCopyImageToMemory]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCopyImageToMemory(device, pCopyImageToMemoryInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->CopyImageToMemory(device, pCopyImageToMemoryInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCopyImageToMemory]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCopyImageToMemory(device, pCopyImageToMemoryInfo, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCopyImageToImage, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCopyImageToImage]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCopyImageToImage(device, pCopyImageToImageInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCopyImageToImage);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCopyImageToImage]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCopyImageToImage(device, pCopyImageToImageInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->CopyImageToImage(device, pCopyImageToImageInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCopyImageToImage]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCopyImageToImage(device, pCopyImageToImageInfo, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                     const VkHostImageLayoutTransitionInfo* pTransitions) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkTransitionImageLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateTransitionImageLayout]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateTransitionImageLayout(device, transitionCount, pTransitions, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkTransitionImageLayout);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordTransitionImageLayout]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->TransitionImageLayout(device, transitionCount, pTransitions);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto* vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordTransitionImageLayout]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 
@@ -11743,7 +12453,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateKHR(VkCommandBuffer commandB
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
-                                                                 const VkRenderingAttachmentLocationInfoKHR* pLocationInfo) {
+                                                                 const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -11780,7 +12490,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetRenderingInputAttachmentIndicesKHR(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo) {
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -12293,7 +13003,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) {
+VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -12331,7 +13041,7 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMemoryMapI
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -13110,7 +13820,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfoKHR* pRenderingAreaInfo,
+VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
                                                           VkExtent2D* pGranularity) {
     VVL_ZoneScoped;
 
@@ -13146,8 +13856,8 @@ VKAPI_ATTR void VKAPI_CALL GetRenderingAreaGranularityKHR(VkDevice device, const
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR* pInfo,
-                                                              VkSubresourceLayout2KHR* pLayout) {
+VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                              VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -13182,8 +13892,8 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice device, c
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                                         VkSubresourceLayout2KHR* pLayout) {
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                         VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -13584,7 +14294,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsKHR(VkDevice device, uint3
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                     const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo) {
+                                                     const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -13619,7 +14329,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuff
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo) {
+VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -13655,7 +14365,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants2KHR(VkCommandBuffer commandBuffer, c
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                    const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo) {
+                                                    const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -13691,7 +14401,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffe
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplate2KHR(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo) {
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -18995,7 +19705,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkS
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -19033,7 +19743,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyMemoryToImageEXT(VkDevice device, const VkCop
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -19071,7 +19781,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToMemoryEXT(VkDevice device, const VkCop
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) {
+VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -19110,7 +19820,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CopyImageToImageEXT(VkDevice device, const VkCopy
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                        const VkHostImageLayoutTransitionInfoEXT* pTransitions) {
+                                                        const VkHostImageLayoutTransitionInfo* pTransitions) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -19148,8 +19858,8 @@ VKAPI_ATTR VkResult VKAPI_CALL TransitionImageLayoutEXT(VkDevice device, uint32_
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                                         VkSubresourceLayout2KHR* pLayout) {
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                         VkSubresourceLayout2* pLayout) {
     VVL_ZoneScoped;
 
     auto device_dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
@@ -26160,6 +26870,25 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkGetDeviceBufferMemoryRequirements", {kFuncTypeDev, (void*)GetDeviceBufferMemoryRequirements}},
         {"vkGetDeviceImageMemoryRequirements", {kFuncTypeDev, (void*)GetDeviceImageMemoryRequirements}},
         {"vkGetDeviceImageSparseMemoryRequirements", {kFuncTypeDev, (void*)GetDeviceImageSparseMemoryRequirements}},
+        {"vkCmdSetLineStipple", {kFuncTypeDev, (void*)CmdSetLineStipple}},
+        {"vkMapMemory2", {kFuncTypeDev, (void*)MapMemory2}},
+        {"vkUnmapMemory2", {kFuncTypeDev, (void*)UnmapMemory2}},
+        {"vkCmdBindIndexBuffer2", {kFuncTypeDev, (void*)CmdBindIndexBuffer2}},
+        {"vkGetRenderingAreaGranularity", {kFuncTypeDev, (void*)GetRenderingAreaGranularity}},
+        {"vkGetDeviceImageSubresourceLayout", {kFuncTypeDev, (void*)GetDeviceImageSubresourceLayout}},
+        {"vkGetImageSubresourceLayout2", {kFuncTypeDev, (void*)GetImageSubresourceLayout2}},
+        {"vkCmdPushDescriptorSet", {kFuncTypeDev, (void*)CmdPushDescriptorSet}},
+        {"vkCmdPushDescriptorSetWithTemplate", {kFuncTypeDev, (void*)CmdPushDescriptorSetWithTemplate}},
+        {"vkCmdSetRenderingAttachmentLocations", {kFuncTypeDev, (void*)CmdSetRenderingAttachmentLocations}},
+        {"vkCmdSetRenderingInputAttachmentIndices", {kFuncTypeDev, (void*)CmdSetRenderingInputAttachmentIndices}},
+        {"vkCmdBindDescriptorSets2", {kFuncTypeDev, (void*)CmdBindDescriptorSets2}},
+        {"vkCmdPushConstants2", {kFuncTypeDev, (void*)CmdPushConstants2}},
+        {"vkCmdPushDescriptorSet2", {kFuncTypeDev, (void*)CmdPushDescriptorSet2}},
+        {"vkCmdPushDescriptorSetWithTemplate2", {kFuncTypeDev, (void*)CmdPushDescriptorSetWithTemplate2}},
+        {"vkCopyMemoryToImage", {kFuncTypeDev, (void*)CopyMemoryToImage}},
+        {"vkCopyImageToMemory", {kFuncTypeDev, (void*)CopyImageToMemory}},
+        {"vkCopyImageToImage", {kFuncTypeDev, (void*)CopyImageToImage}},
+        {"vkTransitionImageLayout", {kFuncTypeDev, (void*)TransitionImageLayout}},
         {"vkDestroySurfaceKHR", {kFuncTypeInst, (void*)DestroySurfaceKHR}},
         {"vkGetPhysicalDeviceSurfaceSupportKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceSurfaceSupportKHR}},
         {"vkGetPhysicalDeviceSurfaceCapabilitiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceSurfaceCapabilitiesKHR}},

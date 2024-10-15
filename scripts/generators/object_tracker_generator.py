@@ -84,7 +84,9 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             'vkAllocateDescriptorSets',
             'vkFreeDescriptorSets',
             'vkUpdateDescriptorSets',
+            'vkCmdPushDescriptorSet',
             'vkCmdPushDescriptorSetKHR',
+            'vkCmdPushDescriptorSet2',
             'vkCmdPushDescriptorSet2KHR',
             'vkResetDescriptorPool',
             'vkCreateDescriptorUpdateTemplate',
@@ -575,8 +577,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return '"UNASSIGNED-VkLatencySleepInfoNV-signalSemaphore-parent"'
         if commandName == 'vkCreateCudaFunctionNV' and memberName == 'module':
             return '"UNASSIGNED-VkCudaFunctionCreateInfoNV-module-parent"'
-        if commandName == 'vkCmdPushConstants2KHR' and memberName == 'layout':
-            return '"UNASSIGNED-VkPushConstantsInfoKHR-layout-parent"'
+        if (commandName == 'vkCmdPushConstants2' or commandName == 'vkCmdPushConstants2KHR') and memberName == 'layout':
+            return '"UNASSIGNED-VkPushConstantsInfo-layout-parent"'
         if commandName == 'vkCmdSetDescriptorBufferOffsets2EXT' and memberName == 'layout':
             return '"UNASSIGNED-VkSetDescriptorBufferOffsetsInfoEXT-layout-parent"'
         if commandName == 'vkCmdBindDescriptorBufferEmbeddedSamplers2EXT' and memberName == 'layout':
@@ -659,16 +661,16 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return '"UNASSIGNED-VkReleaseSwapchainImagesInfoEXT-swapchain-parent"'
         if commandName == 'vkCmdBeginConditionalRenderingEXT' and memberName == 'buffer':
             return '"UNASSIGNED-VkConditionalRenderingBeginInfoEXT-buffer-parent"'
-        if commandName == 'vkMapMemory2KHR' and memberName == 'memory':
-            return '"UNASSIGNED-VkMemoryMapInfoKHR-memory-parent"'
-        if commandName == 'vkUnmapMemory2KHR' and memberName == 'memory':
-            return '"UNASSIGNED-VkMemoryUnmapInfoKHR-memory-parent"'
-        if commandName == 'vkCopyMemoryToImageEXT' and memberName == 'dstImage':
-            return '"UNASSIGNED-VkCopyMemoryToImageInfoEXT-dstImage-parent"'
-        if commandName == 'vkCopyImageToMemoryEXT' and memberName == 'srcImage':
-            return '"UNASSIGNED-VkCopyImageToMemoryInfoEXT-srcImage-parent"'
-        if commandName == 'vkTransitionImageLayoutEXT' and memberName == 'image':
-            return '"UNASSIGNED-VkHostImageLayoutTransitionInfoEXT-image-parent"'
+        if (commandName == 'vkMapMemory2' or commandName == 'vkMapMemory2KHR') and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryMapInfo-memory-parent"'
+        if (commandName == 'vkUnmapMemory2' or commandName == 'vkUnmapMemory2KHR') and memberName == 'memory':
+            return '"UNASSIGNED-VkMemoryUnmapInfo-memory-parent"'
+        if (commandName == 'vkCopyMemoryToImage' or commandName == 'vkCopyMemoryToImageEXT') and memberName == 'dstImage':
+            return '"UNASSIGNED-VkCopyMemoryToImageInfo-dstImage-parent"'
+        if (commandName == 'vkCopyImageToMemory' or commandName == 'vkCopyImageToMemoryEXT') and memberName == 'srcImage':
+            return '"UNASSIGNED-VkCopyImageToMemoryInfo-srcImage-parent"'
+        if (commandName == 'vkTransitionImageLayout' or commandName == 'vkTransitionImageLayoutEXT') and memberName == 'image':
+            return '"UNASSIGNED-VkHostImageLayoutTransitionInfo-image-parent"'
         if commandName == 'vkCreateMicromapEXT' and memberName == 'buffer':
             return '"UNASSIGNED-VkMicromapCreateInfoEXT-buffer-parent"'
         if commandName == 'vkCreateAccelerationStructureKHR' and memberName == 'buffer':

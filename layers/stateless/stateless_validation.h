@@ -440,9 +440,8 @@ class StatelessValidation : public ValidationObject {
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                const ErrorObject &error_obj) const;
 
-    bool manual_PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR *pInfo,
-                                                                  VkSubresourceLayout2KHR *pLayout,
-                                                                  const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
+                                                               VkSubresourceLayout2 *pLayout, const ErrorObject &error_obj) const;
 
     bool ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const;
 
@@ -620,13 +619,13 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                       VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                       const VkWriteDescriptorSet *pDescriptorWrites,
-                                                       const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                        const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                    VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                    const VkWriteDescriptorSet *pDescriptorWrites,
+                                                    const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                     const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                     const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                         uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors,
                                                         const ErrorObject &error_obj) const;
@@ -705,15 +704,15 @@ class StatelessValidation : public ValidationObject {
                                                  const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                  const ErrorObject &error_obj) const;
 
-    bool manual_PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                    uint16_t lineStipplePattern, const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                 uint16_t lineStipplePattern, const ErrorObject &error_obj) const;
 
     bool ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType,
                                     const Location &loc) const;
     bool manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                   VkIndexType indexType, const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkDeviceSize size, VkIndexType indexType, const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                   VkDeviceSize size, VkIndexType indexType, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                     const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                     const ErrorObject &error_obj) const;
@@ -765,13 +764,12 @@ class StatelessValidation : public ValidationObject {
         VkCommandBuffer commandBuffer,
         const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
         const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+    bool manual_PreCallValidateCmdPushDescriptorSetWithTemplate2(
         VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
         const ErrorObject &error_obj) const;
-    bool manual_PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                         const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
-                                                         const ErrorObject &error_obj) const;
-
+    bool manual_PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                      const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                      const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                               const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
@@ -935,8 +933,8 @@ class StatelessValidation : public ValidationObject {
                                                     const ErrorObject &error_obj) const;
 
     bool ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size, const Location &loc) const;
-    bool manual_PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR *pPushConstantsInfo,
-                                                    const ErrorObject &error_obj) const;
+    bool manual_PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                 const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
                                                 const ErrorObject &error_obj) const;

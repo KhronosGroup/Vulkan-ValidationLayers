@@ -1634,8 +1634,8 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
     {
         subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-aspectMask-00997");
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-format-08886");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-aspectMask-00997");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-format-08886");
         vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -1645,7 +1645,7 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
         subresource.imageSubresource.mipLevel = 1;
         subresource.imageSubresource.arrayLayer = 0;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-mipLevel-01716");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-mipLevel-01716");
         vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -1655,7 +1655,7 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
         subresource.imageSubresource.mipLevel = 0;
         subresource.imageSubresource.arrayLayer = 1;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-arrayLayer-01717");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-arrayLayer-01717");
         vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -1665,8 +1665,8 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
         subresource.imageSubresource.mipLevel = 0;
         subresource.imageSubresource.arrayLayer = 0;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-format-08886");
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-format-04464");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-format-08886");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-format-04464");
         vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -1676,8 +1676,8 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
         subresource.imageSubresource.mipLevel = 0;
         subresource.imageSubresource.arrayLayer = 0;
 
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-format-08886");
-        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfoKHR-format-04464");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-format-08886");
+        m_errorMonitor->SetDesiredError("VUID-VkDeviceImageSubresourceInfo-format-04464");
         vk::GetDeviceImageSubresourceLayoutKHR(device(), &image_sub_info, &out_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -4024,7 +4024,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-mipLevel-01716");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-mipLevel-01716");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
 
@@ -4040,7 +4040,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-arrayLayer-01717");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-arrayLayer-01717");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
 
@@ -4056,7 +4056,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-format-08886");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-08886");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
 
@@ -4073,7 +4073,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         const VkFormat depth_format = FindSupportedDepthOnlyFormat(Gpu());
         vkt::Image image;
         if (create_compressed_image(depth_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-format-04462");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-04462");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
 
@@ -4089,7 +4089,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     if (stencil_format != VK_FORMAT_UNDEFINED) {
         vkt::Image image;
         if (create_compressed_image(stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-format-04463");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-04463");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
 
@@ -4106,7 +4106,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         const VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
         vkt::Image image;
         if (create_compressed_image(depth_stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-aspectMask-00997");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-aspectMask-00997");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
 
@@ -4122,8 +4122,8 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_SNORM, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-format-08886");
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-format-04464");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-08886");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-04464");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
 
@@ -4167,7 +4167,7 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
     {
         vkt::Image image;
         if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-tiling-08717");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-tiling-08717");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0};
 
@@ -4184,7 +4184,7 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
     {
         vkt::Image image;
         if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
-            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-tiling-08717");
+            m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-tiling-08717");
             VkImageSubresource2EXT subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
 
@@ -4212,7 +4212,7 @@ TEST_F(NegativeImage, GetImageSubresourceLayout2Maintenance5) {
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     // Exceed MipmapLevel
-    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-mipLevel-01716");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-mipLevel-01716");
     VkImageSubresource2KHR subresource = vku::InitStructHelper();
     subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
     VkSubresourceLayout2KHR layout = vku::InitStructHelper();
@@ -4220,13 +4220,13 @@ TEST_F(NegativeImage, GetImageSubresourceLayout2Maintenance5) {
     m_errorMonitor->VerifyFound();
 
     // Exceed ArrayLayers
-    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-arrayLayer-01717");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-arrayLayer-01717");
     subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
     vk::GetImageSubresourceLayout2KHR(m_device->handle(), image.handle(), &subresource, &layout);
     m_errorMonitor->VerifyFound();
 
     // Color format aspect
-    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-format-08886");
+    m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-08886");
     subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
     vk::GetImageSubresourceLayout2KHR(m_device->handle(), image.handle(), &subresource, &layout);
     m_errorMonitor->VerifyFound();

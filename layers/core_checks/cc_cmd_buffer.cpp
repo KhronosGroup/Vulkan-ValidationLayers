@@ -380,26 +380,26 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
 bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, VkBuffer buffer, VkDeviceSize offset,
                                             VkIndexType indexType, const Location &loc) const {
     bool skip = false;
-    const bool is_2 = loc.function == Func::vkCmdBindIndexBuffer2KHR;
+    const bool is_2 = loc.function == Func::vkCmdBindIndexBuffer2KHR || loc.function == Func::vkCmdBindIndexBuffer2;
     const char *vuid;
 
     auto buffer_state = Get<vvl::Buffer>(buffer);
     if (!buffer_state) return skip;  // if using nullDescriptors
     const LogObjectList objlist(cb_state.Handle(), buffer);
 
-    vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
+    vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
     skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, vuid, loc.dot(Field::buffer));
-    vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
+    vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.Handle(), *buffer_state, loc.dot(Field::buffer), vuid);
 
     const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
     if (!IsIntegerMultipleOf(offset, offset_align)) {
-        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-offset-08783" : "VUID-vkCmdBindIndexBuffer-offset-08783";
+        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-offset-08783" : "VUID-vkCmdBindIndexBuffer-offset-08783";
         skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") does not fall on alignment (%s) boundary.", offset,
                          string_VkIndexType(indexType));
     }
     if (offset >= buffer_state->create_info.size) {
-        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2KHR-offset-08782" : "VUID-vkCmdBindIndexBuffer-offset-08782";
+        vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-offset-08782" : "VUID-vkCmdBindIndexBuffer-offset-08782";
         skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", offset,
                          buffer_state->create_info.size);
     }
@@ -416,9 +416,8 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       VkDeviceSize size, VkIndexType indexType,
-                                                       const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkDeviceSize size, VkIndexType indexType, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -431,17 +430,23 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBu
         const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
         if (!IsIntegerMultipleOf(size, offset_align)) {
             const LogObjectList objlist(commandBuffer, buffer);
-            skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08767", objlist, error_obj.location.dot(Field::size),
+            skip |= LogError("VUID-vkCmdBindIndexBuffer2-size-08767", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") does not fall on alignment (%s) boundary.", size, string_VkIndexType(indexType));
         }
         if ((offset + size) > buffer_state->create_info.size) {
             const LogObjectList objlist(commandBuffer, buffer);
-            skip |= LogError("VUID-vkCmdBindIndexBuffer2KHR-size-08768", objlist, error_obj.location.dot(Field::size),
+            skip |= LogError("VUID-vkCmdBindIndexBuffer2-size-08768", objlist, error_obj.location.dot(Field::size),
                              "(%" PRIu64 ") + offset (%" PRIu64 ") is larger than the buffer size (%" PRIu64 ").", size, offset,
                              buffer_state->create_info.size);
         }
     }
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkDeviceSize size, VkIndexType indexType,
+                                                       const ErrorObject &error_obj) const {
+    return PreCallValidateCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
@@ -891,13 +896,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         skip |= ValidateRenderingAttachmentLocationsKHR(*location_info, objlist, cb_loc.dot(Field::pNext));
 
                         if (location_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
-                            skip |= LogError(
-                                vuid_090504, objlist,
-                                cb_loc.pNext(Struct::VkRenderingAttachmentLocationInfoKHR, Field::colorAttachmentCount),
-                                "(%" PRIu32
-                                ") does not match the implicit or explicit state in the primary command buffer ("
-                                "%" PRIu32 ").",
-                                location_info->colorAttachmentCount, unsigned(cb_state.rendering_attachments.color_indexes.size()));
+                            skip |= LogError(vuid_090504, objlist,
+                                             cb_loc.pNext(Struct::VkRenderingAttachmentLocationInfo, Field::colorAttachmentCount),
+                                             "(%" PRIu32
+                                             ") does not match the implicit or explicit state in the primary command buffer ("
+                                             "%" PRIu32 ").",
+                                             location_info->colorAttachmentCount,
+                                             unsigned(cb_state.rendering_attachments.color_indexes.size()));
                         } else {
                             for (uint32_t idx = 0; idx < location_info->colorAttachmentCount; idx++) {
                                 if (location_info->pColorAttachmentLocations &&
@@ -905,8 +910,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         cb_state.rendering_attachments.color_locations[idx]) {
                                     skip |= LogError(
                                         vuid_090504, objlist,
-                                        cb_loc.pNext(Struct::VkRenderingAttachmentLocationInfoKHR,
-                                                     Field::pColorAttachmentInputIndices, idx),
+                                        cb_loc.pNext(Struct::VkRenderingAttachmentLocationInfo, Field::pColorAttachmentInputIndices,
+                                                     idx),
                                         "(%" PRIu32
                                         ") does not match the implicit or explicit state in the primary command buffer (%" PRIu32
                                         ").",
@@ -926,19 +931,19 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         skip |= ValidateRenderingInputAttachmentIndicesKHR(*index_info, objlist, cb_loc.dot(Field::pNext));
 
                         if (index_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
-                            skip |= LogError(
-                                vuid_090505, objlist,
-                                cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::colorAttachmentCount),
-                                "(%" PRIu32
-                                ") does not match the implicit or explicit state in the primary command buffer ("
-                                "%" PRIu32 ").",
-                                index_info->colorAttachmentCount, unsigned(cb_state.rendering_attachments.color_indexes.size()));
+                            skip |= LogError(vuid_090505, objlist,
+                                             cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount),
+                                             "(%" PRIu32
+                                             ") does not match the implicit or explicit state in the primary command buffer ("
+                                             "%" PRIu32 ").",
+                                             index_info->colorAttachmentCount,
+                                             unsigned(cb_state.rendering_attachments.color_indexes.size()));
                         } else {
                             for (uint32_t idx = 0; idx < index_info->colorAttachmentCount; idx++) {
                                 if (index_info->pColorAttachmentInputIndices && cb_state.rendering_attachments.color_indexes[idx] !=
                                                                                     index_info->pColorAttachmentInputIndices[idx]) {
                                     skip |= LogError(vuid_090505, objlist,
-                                                     cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR,
+                                                     cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfo,
                                                                   Field::pColorAttachmentInputIndices, idx),
                                                      "(%" PRIu32
                                                      ") does not match the implicit or explicit state in the primary command "
@@ -953,7 +958,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             *cb_state.rendering_attachments.depth_index != *index_info->pDepthInputAttachmentIndex) {
                             skip |= LogError(
                                 vuid_090505, objlist,
-                                cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pDepthInputAttachmentIndex),
+                                cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex),
                                 "(%" PRIu32
                                 ") does not match the implicit or explicit state in the primary command buffer ("
                                 "%" PRIu32 ").",
@@ -964,7 +969,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             *cb_state.rendering_attachments.stencil_index != *index_info->pStencilInputAttachmentIndex) {
                             skip |= LogError(
                                 vuid_090505, objlist,
-                                cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfoKHR, Field::pStencilInputAttachmentIndex),
+                                cb_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex),
                                 "(%" PRIu32
                                 ") does not match the implicit or explicit state in the primary command buffer"
                                 "(%" PRIu32 ").",
@@ -1534,7 +1539,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
         if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
             const LogObjectList objlist(commandBuffer, pBuffers[i]);
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02360", objlist, buffer_loc,
-                             "was created with %s.", string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
+                             "was created with %s.", string_VkBufferUsageFlags2(buffer_state->usage).c_str());
         }
 
         // pSizes is optional and may be nullptr. Also might be VK_WHOLE_SIZE which VU don't apply
@@ -1641,7 +1646,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                 skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372", objlist,
                                  error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
-                                 string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
+                                 string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
         }
     }
@@ -1680,7 +1685,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                 skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380", objlist,
                                  error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
-                                 string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
+                                 string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
         }
     }
@@ -1763,7 +1768,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
                 skip |=
                     LogError("VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982", objlist, conditional_loc.dot(Field::buffer),
                              "(%s) was created with %s.", FormatHandle(pConditionalRenderingBegin->buffer).c_str(),
-                             string_VkBufferUsageFlags2KHR(buffer_state->usage).c_str());
+                             string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
             if (pConditionalRenderingBegin->offset + 4 > buffer_state->create_info.size) {
                 const LogObjectList objlist(commandBuffer, buffer_state->Handle());

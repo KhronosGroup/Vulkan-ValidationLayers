@@ -38,7 +38,7 @@ bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buf
 
     if (!correct_usage) {
         skip |= LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s.",
-                         FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str(),
+                         FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2(buffer_state.usage).c_str(),
                          string_VkBufferUsageFlags(desired).c_str());
     }
     return skip;
@@ -111,7 +111,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
                          "was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
                          "Format (%s) doesn't support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
                          "(supported bufferFeatures: %s)",
-                         string_VkBufferUsageFlags2KHR(usage).c_str(), string_VkFormat(format),
+                         string_VkBufferUsageFlags2(usage).c_str(), string_VkFormat(format),
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
     if ((usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
@@ -120,7 +120,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
                          "was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
                          "Format (%s) doesn't support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
                          "(supported bufferFeatures: %s)",
-                         string_VkBufferUsageFlags2KHR(usage).c_str(), string_VkFormat(format),
+                         string_VkBufferUsageFlags2(usage).c_str(), string_VkFormat(format),
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
     return skip;
@@ -233,7 +233,7 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
 
         if (!(usage & (VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-08103", device, create_info_loc.dot(Field::usage), "is (%s).",
-                             string_VkBufferUsageFlags2KHR(usage).c_str());
+                             string_VkBufferUsageFlags2(usage).c_str());
         }
     }
 
@@ -435,13 +435,13 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         const VkBufferUsageFlags2KHR usage = buffer_usage_flags2->usage;
         if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) != 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,
-                             create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage), "is %s.",
-                             string_VkBufferUsageFlags2KHR(usage).c_str());
+                             create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage), "is %s.",
+                             string_VkBufferUsageFlags2(usage).c_str());
         } else if ((usage & buffer_state.usage) != usage) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08781", objlist,
-                             create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfoKHR, Field::usage),
-                             "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2KHR(usage).c_str(),
-                             string_VkBufferUsageFlags2KHR(buffer_state.usage).c_str());
+                             create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage),
+                             "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2(usage).c_str(),
+                             string_VkBufferUsageFlags2(buffer_state.usage).c_str());
         }
     }
 

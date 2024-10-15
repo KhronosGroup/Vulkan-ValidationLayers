@@ -73,9 +73,11 @@ class APISpecific:
                             return VK_API_VERSION_1_1;
                         else if (specified_version < VK_API_VERSION_1_3)
                             return VK_API_VERSION_1_2;
-                        else
+                        else if (specified_version < VK_API_VERSION_1_4)
                             return VK_API_VERSION_1_3;
-                    }
+                        else
+                            return VK_API_VERSION_1_4;
+                                        }
                     '''
 
 class ApiVersionOutputGenerator(BaseGenerator):

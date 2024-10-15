@@ -133,6 +133,8 @@ class FeatureRequirementsGenerator(BaseGenerator):
             return 'VK_API_VERSION_1_2'
         if structs.find('13') != -1:
             return 'VK_API_VERSION_1_3'
+        if structs.find('14') != -1:
+            return 'VK_API_VERSION_1_4'
         else:
             assert False
 
@@ -159,7 +161,8 @@ class FeatureRequirementsGenerator(BaseGenerator):
             if len(origins) == 1 or vulkan_feature_struct_i == -1:
                     feature_struct_name = origins[0]
                     out.extend(guard_helper.add_guard(self.vk.structs[feature_struct_name].protect))
-                    out.append(f''' case Feature::{feature}: {{
+                    out.append(f'''
+                        case Feature::{feature}: {{
                         auto vk_struct = const_cast<{feature_struct_name} *>(vku::FindStructInPNextChain<{feature_struct_name}>(*inout_pnext_chain));
                         if (!vk_struct) {{
                             vk_struct = new {feature_struct_name};

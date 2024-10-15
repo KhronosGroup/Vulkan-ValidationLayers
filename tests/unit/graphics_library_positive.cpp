@@ -350,7 +350,7 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
     frag_shader_lib.vi_ci_.vertexAttributeDescriptionCount = 1;
     frag_shader_lib.gp_ci_.pVertexInputState = &frag_shader_lib.vi_ci_;
 
-    // VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228 shouldn't be trigged
+    // VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateZeroDivisor-02228 shouldn't be trigged
     frag_shader_lib.CreateGraphicsPipeline();
 }
 

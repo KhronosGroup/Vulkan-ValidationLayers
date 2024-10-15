@@ -262,8 +262,8 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_st
                 skip |= LogError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-06654", pd_state.Handle(), info_loc,
                                  "Multiple queues are created with queueFamilyIndex %" PRIu32
                                  ", but one has global priority %s and another %s.",
-                                 infos[i].queueFamilyIndex, string_VkQueueGlobalPriorityKHR(prev_global_priority->second),
-                                 string_VkQueueGlobalPriorityKHR(global_priority));
+                                 infos[i].queueFamilyIndex, string_VkQueueGlobalPriority(prev_global_priority->second),
+                                 string_VkQueueGlobalPriority(global_priority));
             }
         } else {
             global_priorities.insert({infos[i].queueFamilyIndex, global_priority});

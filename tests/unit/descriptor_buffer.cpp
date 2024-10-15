@@ -1573,7 +1573,7 @@ TEST_F(NegativeDescriptorBuffer, Binding) {
     bind_ds_info.dynamicOffsetCount = 0;
     bind_ds_info.pDynamicOffsets = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-pDescriptorSets-08010");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfo-pDescriptorSets-08010");
     vk::CmdBindDescriptorSets2KHR(m_command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }

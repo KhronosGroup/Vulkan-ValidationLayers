@@ -515,6 +515,26 @@ const PromotedExtensionInfoMap& GetDevicePromotionInfoMap() {
               vvl::Extension::_VK_EXT_4444_formats,
               vvl::Extension::_VK_EXT_extended_dynamic_state2,
           }}},
+        {VK_API_VERSION_1_4,
+         {"VK_VERSION_1_4",
+          {
+              vvl::Extension::_VK_KHR_push_descriptor,
+              vvl::Extension::_VK_KHR_global_priority,
+              vvl::Extension::_VK_KHR_dynamic_rendering_local_read,
+              vvl::Extension::_VK_KHR_map_memory2,
+              vvl::Extension::_VK_KHR_shader_subgroup_rotate,
+              vvl::Extension::_VK_KHR_maintenance5,
+              vvl::Extension::_VK_KHR_vertex_attribute_divisor,
+              vvl::Extension::_VK_KHR_load_store_op_none,
+              vvl::Extension::_VK_KHR_shader_float_controls2,
+              vvl::Extension::_VK_KHR_index_type_uint8,
+              vvl::Extension::_VK_KHR_line_rasterization,
+              vvl::Extension::_VK_KHR_shader_expect_assume,
+              vvl::Extension::_VK_KHR_maintenance6,
+              vvl::Extension::_VK_EXT_pipeline_robustness,
+              vvl::Extension::_VK_EXT_host_image_copy,
+              vvl::Extension::_VK_EXT_pipeline_protected_access,
+          }}},
 
     };
     return promoted_map;
@@ -526,6 +546,7 @@ const InstanceExtensions::Info& GetInstanceVersionMap(const char* version) {
         {"VK_VERSION_1_1", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_1, {})},
         {"VK_VERSION_1_2", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_2, {})},
         {"VK_VERSION_1_3", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_3, {})},
+        {"VK_VERSION_1_4", InstanceExtensions::Info(&InstanceExtensions::vk_feature_version_1_4, {})},
     };
     const auto info = version_map.find(version);
     return (info != version_map.cend()) ? info->second : empty_info;
@@ -537,6 +558,7 @@ const DeviceExtensions::Info& GetDeviceVersionMap(const char* version) {
         {"VK_VERSION_1_1", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_1, {})},
         {"VK_VERSION_1_2", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_2, {})},
         {"VK_VERSION_1_3", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_3, {})},
+        {"VK_VERSION_1_4", DeviceExtensions::Info(&DeviceExtensions::vk_feature_version_1_4, {})},
     };
     const auto info = version_map.find(version);
     return (info != version_map.cend()) ? info->second : empty_info;

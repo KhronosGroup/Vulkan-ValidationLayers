@@ -413,6 +413,8 @@ def main(argv):
         'instrumentation_ray_query_comp.cpp',
         'instrumentation_post_process_descriptor_index_comp.h',
         'instrumentation_post_process_descriptor_index_comp.cpp',
+        'feature_requirements_helper.h', # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
+        'feature_requirements_helper.cpp'
     ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')

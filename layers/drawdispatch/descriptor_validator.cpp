@@ -389,7 +389,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     << " Image layout specified by vkCmdBindDescriptorSets doesn't match actual image layout at time "
                        "descriptor is used";
             } else {
-                msg << "Image layout specified by vkCmdPushDescriptorSetKHR doesn't match actual image layout at time "
+                msg << "Image layout specified by vkCmdPushDescriptorSet doesn't match actual image layout at time "
                        "descriptor is used";
             }
             return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
@@ -593,7 +593,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
              sampler_state->create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
             (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
             if (image_view_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 || image_view_format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
-                image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 || image_view_format == VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR) {
+                image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 || image_view_format == VK_FORMAT_A1B5G5R5_UNORM_PACK16) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, sampler_state->Handle(), image_view_state->Handle());
                 return dev_state.LogError(
@@ -844,12 +844,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     for (const uint32_t texel_component_count : resource_variable.write_without_formats_component_count_list) {
         const uint32_t format_component_count = vkuFormatComponentCount(image_view_format);
-        if (image_view_format == VK_FORMAT_A8_UNORM_KHR) {
+        if (image_view_format == VK_FORMAT_A8_UNORM) {
             if (texel_component_count != 4) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view);
                 return dev_state.LogError(vuids.storage_image_write_texel_count_08796, objlist, loc,
-                                          "the descriptor %s VkImageView is mapped to a OpImage format of VK_FORMAT_A8_UNORM_KHR, "
+                                          "the descriptor %s VkImageView is mapped to a OpImage format of VK_FORMAT_A8_UNORM, "
                                           "but the OpImageWrite Texel "
                                           "operand only contains %" PRIu32 " components.",
                                           DescribeDescriptor(resource_variable, index).c_str(), texel_component_count);

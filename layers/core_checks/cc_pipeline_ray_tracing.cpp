@@ -276,17 +276,17 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
 
                 if ((lib->create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
                     skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381", device, library_loc,
-                                     "was created with %s.", string_VkPipelineCreateFlags2KHR(lib->create_flags).c_str());
+                                     "was created with %s.", string_VkPipelineCreateFlags2(lib->create_flags).c_str());
                 }
                 for (const auto &pair : vuid_map) {
                     if (pipeline->create_flags & pair.second) {
                         if ((lib->create_flags & pair.second) == 0) {
                             skip |= LogError(pair.first, device, library_loc,
                                              "was created with %s, which is missing %s included in %s (%s).",
-                                             string_VkPipelineCreateFlags2KHR(lib->create_flags).c_str(),
-                                             string_VkPipelineCreateFlags2KHR(pair.second).c_str(),
+                                             string_VkPipelineCreateFlags2(lib->create_flags).c_str(),
+                                             string_VkPipelineCreateFlags2(pair.second).c_str(),
                                              create_info_loc.dot(Field::flags).Fields().c_str(),
-                                             string_VkPipelineCreateFlags2KHR(pipeline->create_flags).c_str());
+                                             string_VkPipelineCreateFlags2(pipeline->create_flags).c_str());
                         }
                     }
                 }

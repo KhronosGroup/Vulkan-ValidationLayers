@@ -155,6 +155,34 @@ static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageMemoryRequirements(VkDevice,
                                                                        VkMemoryRequirements2*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSparseMemoryRequirements(VkDevice, const VkDeviceImageMemoryRequirements*,
                                                                              uint32_t*, VkSparseImageMemoryRequirements2*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetLineStipple(VkCommandBuffer, uint32_t, uint16_t) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubMapMemory2(VkDevice, const VkMemoryMapInfo*, void**) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubUnmapMemory2(VkDevice, const VkMemoryUnmapInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindIndexBuffer2(VkCommandBuffer, VkBuffer, VkDeviceSize, VkDeviceSize, VkIndexType) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetRenderingAreaGranularity(VkDevice, const VkRenderingAreaInfo*, VkExtent2D*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSubresourceLayout(VkDevice, const VkDeviceImageSubresourceInfo*,
+                                                                      VkSubresourceLayout2*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2(VkDevice, VkImage, const VkImageSubresource2*,
+                                                                 VkSubresourceLayout2*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSet(VkCommandBuffer, VkPipelineBindPoint, VkPipelineLayout, uint32_t,
+                                                           uint32_t, const VkWriteDescriptorSet*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSetWithTemplate(VkCommandBuffer, VkDescriptorUpdateTemplate,
+                                                                       VkPipelineLayout, uint32_t, const void*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetRenderingAttachmentLocations(VkCommandBuffer,
+                                                                         const VkRenderingAttachmentLocationInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdSetRenderingInputAttachmentIndices(VkCommandBuffer,
+                                                                            const VkRenderingInputAttachmentIndexInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindDescriptorSets2(VkCommandBuffer, const VkBindDescriptorSetsInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushConstants2(VkCommandBuffer, const VkPushConstantsInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSet2(VkCommandBuffer, const VkPushDescriptorSetInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSetWithTemplate2(VkCommandBuffer,
+                                                                        const VkPushDescriptorSetWithTemplateInfo*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCopyMemoryToImage(VkDevice, const VkCopyMemoryToImageInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToMemory(VkDevice, const VkCopyImageToMemoryInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToImage(VkDevice, const VkCopyImageToImageInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubTransitionImageLayout(VkDevice, uint32_t, const VkHostImageLayoutTransitionInfo*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR void VKAPI_CALL StubDestroySurfaceKHR(VkInstance, VkSurfaceKHR, const VkAllocationCallbacks*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice, uint32_t, VkSurfaceKHR, VkBool32*) {
     return VK_SUCCESS;
@@ -471,9 +499,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceFragmentShadingRatesK
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetFragmentShadingRateKHR(VkCommandBuffer, const VkExtent2D*,
                                                                    const VkFragmentShadingRateCombinerOpKHR[2]) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer,
-                                                                            const VkRenderingAttachmentLocationInfoKHR*) {}
+                                                                            const VkRenderingAttachmentLocationInfo*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer,
-                                                                               const VkRenderingInputAttachmentIndexInfoKHR*) {}
+                                                                               const VkRenderingInputAttachmentIndexInfo*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubWaitForPresentKHR(VkDevice, VkSwapchainKHR, uint64_t, uint64_t) { return VK_SUCCESS; }
 static VKAPI_ATTR VkDeviceAddress VKAPI_CALL StubGetBufferDeviceAddressKHR(VkDevice, const VkBufferDeviceAddressInfo*) { return 0; }
 static VKAPI_ATTR uint64_t VKAPI_CALL StubGetBufferOpaqueCaptureAddressKHR(VkDevice, const VkBufferDeviceAddressInfo*) { return 0; }
@@ -501,8 +529,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetPipelineExecutableInternalRepresent
     VkDevice, const VkPipelineExecutableInfoKHR*, uint32_t*, VkPipelineExecutableInternalRepresentationKHR*) {
     return VK_SUCCESS;
 }
-static VKAPI_ATTR VkResult VKAPI_CALL StubMapMemory2KHR(VkDevice, const VkMemoryMapInfoKHR*, void**) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubUnmapMemory2KHR(VkDevice, const VkMemoryUnmapInfoKHR*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubMapMemory2KHR(VkDevice, const VkMemoryMapInfo*, void**) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubUnmapMemory2KHR(VkDevice, const VkMemoryUnmapInfo*) { return VK_SUCCESS; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR*, VkVideoEncodeQualityLevelPropertiesKHR*) {
     return VK_SUCCESS;
@@ -534,11 +562,11 @@ static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageMemoryRequirementsKHR(VkDevi
 static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSparseMemoryRequirementsKHR(VkDevice, const VkDeviceImageMemoryRequirements*,
                                                                                 uint32_t*, VkSparseImageMemoryRequirements2*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdBindIndexBuffer2KHR(VkCommandBuffer, VkBuffer, VkDeviceSize, VkDeviceSize, VkIndexType) {}
-static VKAPI_ATTR void VKAPI_CALL StubGetRenderingAreaGranularityKHR(VkDevice, const VkRenderingAreaInfoKHR*, VkExtent2D*) {}
-static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSubresourceLayoutKHR(VkDevice, const VkDeviceImageSubresourceInfoKHR*,
-                                                                         VkSubresourceLayout2KHR*) {}
-static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2KHR(VkDevice, VkImage, const VkImageSubresource2KHR*,
-                                                                    VkSubresourceLayout2KHR*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetRenderingAreaGranularityKHR(VkDevice, const VkRenderingAreaInfo*, VkExtent2D*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSubresourceLayoutKHR(VkDevice, const VkDeviceImageSubresourceInfo*,
+                                                                         VkSubresourceLayout2*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2KHR(VkDevice, VkImage, const VkImageSubresource2*,
+                                                                    VkSubresourceLayout2*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePipelineBinariesKHR(VkDevice, const VkPipelineBinaryCreateInfoKHR*,
                                                                     const VkAllocationCallbacks*, VkPipelineBinaryHandlesInfoKHR*) {
     return VK_SUCCESS;
@@ -568,11 +596,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetCalibratedTimestampsKHR(VkDevice, u
                                                                      uint64_t*, uint64_t*) {
     return VK_SUCCESS;
 }
-static VKAPI_ATTR void VKAPI_CALL StubCmdBindDescriptorSets2KHR(VkCommandBuffer, const VkBindDescriptorSetsInfoKHR*) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdPushConstants2KHR(VkCommandBuffer, const VkPushConstantsInfoKHR*) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSet2KHR(VkCommandBuffer, const VkPushDescriptorSetInfoKHR*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindDescriptorSets2KHR(VkCommandBuffer, const VkBindDescriptorSetsInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushConstants2KHR(VkCommandBuffer, const VkPushConstantsInfo*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSet2KHR(VkCommandBuffer, const VkPushDescriptorSetInfo*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdPushDescriptorSetWithTemplate2KHR(VkCommandBuffer,
-                                                                           const VkPushDescriptorSetWithTemplateInfoKHR*) {}
+                                                                           const VkPushDescriptorSetWithTemplateInfo*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer,
                                                                         const VkSetDescriptorBufferOffsetsInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL
@@ -940,14 +968,14 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBoundsTestEnableEXT(VkCommandBu
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilTestEnableEXT(VkCommandBuffer, VkBool32) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilOpEXT(VkCommandBuffer, VkStencilFaceFlags, VkStencilOp, VkStencilOp, VkStencilOp,
                                                          VkCompareOp) {}
-static VKAPI_ATTR VkResult VKAPI_CALL StubCopyMemoryToImageEXT(VkDevice, const VkCopyMemoryToImageInfoEXT*) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToMemoryEXT(VkDevice, const VkCopyImageToMemoryInfoEXT*) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToImageEXT(VkDevice, const VkCopyImageToImageInfoEXT*) { return VK_SUCCESS; }
-static VKAPI_ATTR VkResult VKAPI_CALL StubTransitionImageLayoutEXT(VkDevice, uint32_t, const VkHostImageLayoutTransitionInfoEXT*) {
+static VKAPI_ATTR VkResult VKAPI_CALL StubCopyMemoryToImageEXT(VkDevice, const VkCopyMemoryToImageInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToMemoryEXT(VkDevice, const VkCopyImageToMemoryInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubCopyImageToImageEXT(VkDevice, const VkCopyImageToImageInfo*) { return VK_SUCCESS; }
+static VKAPI_ATTR VkResult VKAPI_CALL StubTransitionImageLayoutEXT(VkDevice, uint32_t, const VkHostImageLayoutTransitionInfo*) {
     return VK_SUCCESS;
 }
-static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice, VkImage, const VkImageSubresource2KHR*,
-                                                                    VkSubresourceLayout2KHR*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice, VkImage, const VkImageSubresource2*,
+                                                                    VkSubresourceLayout2*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesEXT(VkDevice, const VkReleaseSwapchainImagesInfoEXT*) {
     return VK_SUCCESS;
 }
@@ -1435,6 +1463,25 @@ const auto& GetApiPromotedMap() {
         {"vkGetDeviceBufferMemoryRequirements", {"VK_VERSION_1_3"}},
         {"vkGetDeviceImageMemoryRequirements", {"VK_VERSION_1_3"}},
         {"vkGetDeviceImageSparseMemoryRequirements", {"VK_VERSION_1_3"}},
+        {"vkCmdSetLineStipple", {"VK_VERSION_1_4"}},
+        {"vkMapMemory2", {"VK_VERSION_1_4"}},
+        {"vkUnmapMemory2", {"VK_VERSION_1_4"}},
+        {"vkCmdBindIndexBuffer2", {"VK_VERSION_1_4"}},
+        {"vkGetRenderingAreaGranularity", {"VK_VERSION_1_4"}},
+        {"vkGetDeviceImageSubresourceLayout", {"VK_VERSION_1_4"}},
+        {"vkGetImageSubresourceLayout2", {"VK_VERSION_1_4"}},
+        {"vkCmdPushDescriptorSet", {"VK_VERSION_1_4"}},
+        {"vkCmdPushDescriptorSetWithTemplate", {"VK_VERSION_1_4"}},
+        {"vkCmdSetRenderingAttachmentLocations", {"VK_VERSION_1_4"}},
+        {"vkCmdSetRenderingInputAttachmentIndices", {"VK_VERSION_1_4"}},
+        {"vkCmdBindDescriptorSets2", {"VK_VERSION_1_4"}},
+        {"vkCmdPushConstants2", {"VK_VERSION_1_4"}},
+        {"vkCmdPushDescriptorSet2", {"VK_VERSION_1_4"}},
+        {"vkCmdPushDescriptorSetWithTemplate2", {"VK_VERSION_1_4"}},
+        {"vkCopyMemoryToImage", {"VK_VERSION_1_4"}},
+        {"vkCopyImageToMemory", {"VK_VERSION_1_4"}},
+        {"vkCopyImageToImage", {"VK_VERSION_1_4"}},
+        {"vkTransitionImageLayout", {"VK_VERSION_1_4"}},
     };
     return api_promoted_map;
 }
@@ -2306,6 +2353,89 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->GetDeviceImageSparseMemoryRequirements == nullptr) {
         table->GetDeviceImageSparseMemoryRequirements =
             (PFN_vkGetDeviceImageSparseMemoryRequirements)StubGetDeviceImageSparseMemoryRequirements;
+    }
+    table->CmdSetLineStipple = (PFN_vkCmdSetLineStipple)gpa(device, "vkCmdSetLineStipple");
+    if (table->CmdSetLineStipple == nullptr) {
+        table->CmdSetLineStipple = (PFN_vkCmdSetLineStipple)StubCmdSetLineStipple;
+    }
+    table->MapMemory2 = (PFN_vkMapMemory2)gpa(device, "vkMapMemory2");
+    if (table->MapMemory2 == nullptr) {
+        table->MapMemory2 = (PFN_vkMapMemory2)StubMapMemory2;
+    }
+    table->UnmapMemory2 = (PFN_vkUnmapMemory2)gpa(device, "vkUnmapMemory2");
+    if (table->UnmapMemory2 == nullptr) {
+        table->UnmapMemory2 = (PFN_vkUnmapMemory2)StubUnmapMemory2;
+    }
+    table->CmdBindIndexBuffer2 = (PFN_vkCmdBindIndexBuffer2)gpa(device, "vkCmdBindIndexBuffer2");
+    if (table->CmdBindIndexBuffer2 == nullptr) {
+        table->CmdBindIndexBuffer2 = (PFN_vkCmdBindIndexBuffer2)StubCmdBindIndexBuffer2;
+    }
+    table->GetRenderingAreaGranularity = (PFN_vkGetRenderingAreaGranularity)gpa(device, "vkGetRenderingAreaGranularity");
+    if (table->GetRenderingAreaGranularity == nullptr) {
+        table->GetRenderingAreaGranularity = (PFN_vkGetRenderingAreaGranularity)StubGetRenderingAreaGranularity;
+    }
+    table->GetDeviceImageSubresourceLayout =
+        (PFN_vkGetDeviceImageSubresourceLayout)gpa(device, "vkGetDeviceImageSubresourceLayout");
+    if (table->GetDeviceImageSubresourceLayout == nullptr) {
+        table->GetDeviceImageSubresourceLayout = (PFN_vkGetDeviceImageSubresourceLayout)StubGetDeviceImageSubresourceLayout;
+    }
+    table->GetImageSubresourceLayout2 = (PFN_vkGetImageSubresourceLayout2)gpa(device, "vkGetImageSubresourceLayout2");
+    if (table->GetImageSubresourceLayout2 == nullptr) {
+        table->GetImageSubresourceLayout2 = (PFN_vkGetImageSubresourceLayout2)StubGetImageSubresourceLayout2;
+    }
+    table->CmdPushDescriptorSet = (PFN_vkCmdPushDescriptorSet)gpa(device, "vkCmdPushDescriptorSet");
+    if (table->CmdPushDescriptorSet == nullptr) {
+        table->CmdPushDescriptorSet = (PFN_vkCmdPushDescriptorSet)StubCmdPushDescriptorSet;
+    }
+    table->CmdPushDescriptorSetWithTemplate =
+        (PFN_vkCmdPushDescriptorSetWithTemplate)gpa(device, "vkCmdPushDescriptorSetWithTemplate");
+    if (table->CmdPushDescriptorSetWithTemplate == nullptr) {
+        table->CmdPushDescriptorSetWithTemplate = (PFN_vkCmdPushDescriptorSetWithTemplate)StubCmdPushDescriptorSetWithTemplate;
+    }
+    table->CmdSetRenderingAttachmentLocations =
+        (PFN_vkCmdSetRenderingAttachmentLocations)gpa(device, "vkCmdSetRenderingAttachmentLocations");
+    if (table->CmdSetRenderingAttachmentLocations == nullptr) {
+        table->CmdSetRenderingAttachmentLocations =
+            (PFN_vkCmdSetRenderingAttachmentLocations)StubCmdSetRenderingAttachmentLocations;
+    }
+    table->CmdSetRenderingInputAttachmentIndices =
+        (PFN_vkCmdSetRenderingInputAttachmentIndices)gpa(device, "vkCmdSetRenderingInputAttachmentIndices");
+    if (table->CmdSetRenderingInputAttachmentIndices == nullptr) {
+        table->CmdSetRenderingInputAttachmentIndices =
+            (PFN_vkCmdSetRenderingInputAttachmentIndices)StubCmdSetRenderingInputAttachmentIndices;
+    }
+    table->CmdBindDescriptorSets2 = (PFN_vkCmdBindDescriptorSets2)gpa(device, "vkCmdBindDescriptorSets2");
+    if (table->CmdBindDescriptorSets2 == nullptr) {
+        table->CmdBindDescriptorSets2 = (PFN_vkCmdBindDescriptorSets2)StubCmdBindDescriptorSets2;
+    }
+    table->CmdPushConstants2 = (PFN_vkCmdPushConstants2)gpa(device, "vkCmdPushConstants2");
+    if (table->CmdPushConstants2 == nullptr) {
+        table->CmdPushConstants2 = (PFN_vkCmdPushConstants2)StubCmdPushConstants2;
+    }
+    table->CmdPushDescriptorSet2 = (PFN_vkCmdPushDescriptorSet2)gpa(device, "vkCmdPushDescriptorSet2");
+    if (table->CmdPushDescriptorSet2 == nullptr) {
+        table->CmdPushDescriptorSet2 = (PFN_vkCmdPushDescriptorSet2)StubCmdPushDescriptorSet2;
+    }
+    table->CmdPushDescriptorSetWithTemplate2 =
+        (PFN_vkCmdPushDescriptorSetWithTemplate2)gpa(device, "vkCmdPushDescriptorSetWithTemplate2");
+    if (table->CmdPushDescriptorSetWithTemplate2 == nullptr) {
+        table->CmdPushDescriptorSetWithTemplate2 = (PFN_vkCmdPushDescriptorSetWithTemplate2)StubCmdPushDescriptorSetWithTemplate2;
+    }
+    table->CopyMemoryToImage = (PFN_vkCopyMemoryToImage)gpa(device, "vkCopyMemoryToImage");
+    if (table->CopyMemoryToImage == nullptr) {
+        table->CopyMemoryToImage = (PFN_vkCopyMemoryToImage)StubCopyMemoryToImage;
+    }
+    table->CopyImageToMemory = (PFN_vkCopyImageToMemory)gpa(device, "vkCopyImageToMemory");
+    if (table->CopyImageToMemory == nullptr) {
+        table->CopyImageToMemory = (PFN_vkCopyImageToMemory)StubCopyImageToMemory;
+    }
+    table->CopyImageToImage = (PFN_vkCopyImageToImage)gpa(device, "vkCopyImageToImage");
+    if (table->CopyImageToImage == nullptr) {
+        table->CopyImageToImage = (PFN_vkCopyImageToImage)StubCopyImageToImage;
+    }
+    table->TransitionImageLayout = (PFN_vkTransitionImageLayout)gpa(device, "vkTransitionImageLayout");
+    if (table->TransitionImageLayout == nullptr) {
+        table->TransitionImageLayout = (PFN_vkTransitionImageLayout)StubTransitionImageLayout;
     }
     table->CreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)gpa(device, "vkCreateSwapchainKHR");
     if (table->CreateSwapchainKHR == nullptr) {
