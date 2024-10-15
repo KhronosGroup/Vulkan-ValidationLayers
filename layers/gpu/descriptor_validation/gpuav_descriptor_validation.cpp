@@ -26,7 +26,10 @@ namespace gpuav {
 namespace descriptor {
 void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) return;
+    if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor &&
+        !gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
+        return;
+    }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];
@@ -62,7 +65,10 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
 
 void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) return;
+    if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor &&
+        !gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
+        return;
+    }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];

@@ -30,6 +30,7 @@ static bool non_bindless_oob_texel_buffer_pass = false;
 static bool buffer_device_address_pass = false;
 static bool ray_query_pass = false;
 static bool debug_printf_pass = false;
+static bool post_process_descriptor_indexing_pass = false;
 
 void PrintUsage(const char* program) {
     printf(R"(
@@ -54,6 +55,9 @@ USAGE: %s <input> -o <output> <passes>
                Runs RayQueryPass
   --debug-printf
                Runs DebugPrintfPass
+  --post-process-descriptor-indexing
+               Runs PostProcessDescriptorIndexingPass
+
   --timer
                Prints time it takes to instrument entire module
   --print-debug-info
@@ -95,6 +99,8 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
             ray_query_pass = true;
         } else if (0 == strcmp(cur_arg, "--debug-printf")) {
             debug_printf_pass = true;
+        } else if (0 == strcmp(cur_arg, "--post-process-descriptor-indexing")) {
+            post_process_descriptor_indexing_pass = true;
         } else if (0 == strncmp(cur_arg, "--", 2)) {
             printf("Unknown pass %s\n", cur_arg);
             PrintUsage(argv[0]);
@@ -168,6 +174,10 @@ int main(int argc, char** argv) {
     }
     if (all_passes || ray_query_pass) {
         module.RunPassRayQuery();
+    }
+
+    if (all_passes || post_process_descriptor_indexing_pass) {
+        module.RunPassPostProcessDescriptorIndexing();
     }
 
     for (const auto& info : module.link_info_) {

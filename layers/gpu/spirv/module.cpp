@@ -25,6 +25,7 @@
 #include "non_bindless_oob_texel_buffer_pass.h"
 #include "ray_query_pass.h"
 #include "debug_printf_pass.h"
+#include "post_process_descriptor_indexing.h"
 
 #include <iostream>
 
@@ -325,6 +326,15 @@ bool Module::RunPassRayQuery() {
 // binding slot allows debug printf to be slotted in the same set as GPU-AV if needed
 bool Module::RunPassDebugPrintf(uint32_t binding_slot) {
     DebugPrintfPass pass(*this, binding_slot);
+    const bool changed = pass.Run();
+    if (print_debug_info_) {
+        pass.PrintDebugInfo();
+    }
+    return changed;
+}
+
+bool Module::RunPassPostProcessDescriptorIndexing() {
+    PostProcessDescriptorIndexingPass pass(*this);
     const bool changed = pass.Run();
     if (print_debug_info_) {
         pass.PrintDebugInfo();

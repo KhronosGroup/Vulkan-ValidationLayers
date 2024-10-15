@@ -523,12 +523,13 @@ void Validator::InitSettings(const Location &loc) {
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
 
     GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
-    if (shader_instrumentation.bindless_descriptor) {
+    if (shader_instrumentation.bindless_descriptor || shader_instrumentation.post_process_descriptor_index) {
         if (!enabled_features.bufferDeviceAddress) {
             shader_instrumentation.bindless_descriptor = false;
+            shader_instrumentation.post_process_descriptor_index = false;
             InternalWarning(device, loc,
                             "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not supported "
-                            "[Disabling gpuav_descriptor_checks]");
+                            "[Disabling gpuav_descriptor_checks and gpuav_post_process_descriptor_indexing]");
         }
     }
 

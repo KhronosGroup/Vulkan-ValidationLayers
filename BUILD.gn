@@ -197,6 +197,8 @@ vvl_sources = [
   "layers/gpu/spirv/non_bindless_oob_texel_buffer_pass.h",
   "layers/gpu/spirv/buffer_device_address_pass.cpp",
   "layers/gpu/spirv/buffer_device_address_pass.h",
+  "layers/gpu/spirv/post_process_descriptor_indexing.cpp",
+  "layers/gpu/spirv/post_process_descriptor_indexing.h",
   "layers/gpu/spirv/function_basic_block.cpp",
   "layers/gpu/spirv/function_basic_block.h",
   "layers/gpu/spirv/instruction.cpp",
