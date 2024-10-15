@@ -430,7 +430,7 @@ void CommandBuffer::UpdateCommandCount(VkPipelineBindPoint bind_point) {
 bool CommandBuffer::PreProcess(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
-    bool succeeded = UpdateBindlessStateBuffer(*gpuav, *this, loc);
+    bool succeeded = descriptor::UpdateBindlessStateBuffer(*gpuav, *this, loc);
     if (!succeeded) {
         return false;
     }

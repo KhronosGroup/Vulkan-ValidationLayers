@@ -65,9 +65,16 @@ std::string vvl::DescriptorValidator::DescribeDescriptor(const DescriptorBinding
     return ss.str();
 }
 
-vvl::DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, vvl::CommandBuffer &cb, vvl::DescriptorSet &set,
-                                              uint32_t set_index_, VkFramebuffer fb, const Location &l)
-    : dev_state(dev), cb_state(cb), descriptor_set(set), set_index(set_index_), framebuffer(fb), loc(l), vuids(GetDrawDispatchVuid(loc.function)) {}
+vvl::DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, vvl::CommandBuffer &cb_state,
+                                              vvl::DescriptorSet &descriptor_set, uint32_t set_index, VkFramebuffer framebuffer,
+                                              const Location &loc)
+    : dev_state(dev),
+      cb_state(cb_state),
+      descriptor_set(descriptor_set),
+      set_index(set_index),
+      framebuffer(framebuffer),
+      loc(loc),
+      vuids(GetDrawDispatchVuid(loc.function)) {}
 
 template <typename T>
 bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding) const {

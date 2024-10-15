@@ -213,7 +213,7 @@ void Validator::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkP
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    UpdateBoundPipeline(*this, *cb_state, pipelineBindPoint, pipeline, record_obj.location);
+    descriptor::UpdateBoundPipeline(*this, *cb_state, pipelineBindPoint, pipeline, record_obj.location);
 }
 
 void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -228,7 +228,7 @@ void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    UpdateBoundDescriptors(*this, *cb_state, pipelineBindPoint, record_obj.location);
+    descriptor::UpdateBoundDescriptors(*this, *cb_state, pipelineBindPoint, record_obj.location);
 }
 void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                         const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
@@ -242,13 +242,13 @@ void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandB
     }
 
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     }
 }
 
@@ -264,7 +264,7 @@ void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuff
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    UpdateBoundDescriptors(*this, *cb_state, pipelineBindPoint, record_obj.location);
+    descriptor::UpdateBoundDescriptors(*this, *cb_state, pipelineBindPoint, record_obj.location);
 }
 
 void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
@@ -278,13 +278,13 @@ void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuf
     }
 
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+        descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
+        descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
+        descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     }
 }
 
