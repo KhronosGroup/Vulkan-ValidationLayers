@@ -667,6 +667,36 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
+    const auto *vulkan_14_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan14Features>(pCreateInfo->pNext);
+    if (vulkan_14_features) {
+        const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(pCreateInfo->pNext);
+        const std::array<VkStructureType, 13> illegal_feature_structs_with_14 = {
+            {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_TERMINATE_INVOCATION_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES,
+             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES}};
+        while (current) {
+            if (IsValueIn(current->sType, illegal_feature_structs_with_14)) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-10360", physicalDevice, error_obj.location,
+                                 "If the pNext chain includes a VkPhysicalDeviceVulkan14Features structure, then it must not "
+                                 "include a %s structure",
+                                 string_VkStructureType(current->sType));
+                break;
+            }
+            current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
+        }
+    }
+
     // Validate pCreateInfo->pQueueCreateInfos
     if (pCreateInfo->pQueueCreateInfos) {
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {

@@ -723,8 +723,8 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
     if (!pDescriptorWrites) {
         return skip;
     }
-    const bool is_push_descriptor =
-        loc.function == Func::vkCmdPushDescriptorSetKHR || loc.function == Func::vkCmdPushDescriptorSet2KHR;
+    const bool is_push_descriptor = IsValueIn(loc.function, {Func::vkCmdPushDescriptorSet, Func::vkCmdPushDescriptorSet2,
+                                                             Func::vkCmdPushDescriptorSetKHR, Func::vkCmdPushDescriptorSet2KHR});
 
     for (uint32_t i = 0; i < descriptorWriteCount; ++i) {
         const Location writes_loc = loc.dot(Field::pDescriptorWrites, i);
@@ -747,9 +747,11 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
             (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             if (descriptor_writes.pImageInfo == nullptr) {
                 const char *vuid =
-                    loc.function == Func::vkCmdPushDescriptorSetKHR      ? "VUID-vkCmdPushDescriptorSetKHR-pDescriptorWrites-06494"
-                    : (loc.function == Func::vkCmdPushDescriptorSet2KHR) ? "VUID-VkPushDescriptorSetInfoKHR-pDescriptorWrites-06494"
-                                                                         : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
+                    (loc.function == Func::vkCmdPushDescriptorSet || loc.function == Func::vkCmdPushDescriptorSetKHR)
+                        ? "VUID-vkCmdPushDescriptorSet-pDescriptorWrites-06494"
+                    : (loc.function == Func::vkCmdPushDescriptorSet2 || loc.function == Func::vkCmdPushDescriptorSet2KHR)
+                        ? "VUID-VkPushDescriptorSetInfo-pDescriptorWrites-06494"
+                        : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
                 skip |= LogError(vuid, device, writes_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
                                  string_VkDescriptorType(descriptor_type));
             } else if (descriptor_type != VK_DESCRIPTOR_TYPE_SAMPLER) {
@@ -1349,18 +1351,18 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBufferEmbeddedS
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
+bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
     const ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pPushDescriptorSetWithTemplateInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {
-            skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-None-09495", commandBuffer,
+            skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfo-None-09495", commandBuffer,
                              error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout),
                              "is VK_NULL_HANDLE.");
         } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pPushDescriptorSetWithTemplateInfo->pNext)) {
-            skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfoKHR-layout-09496", commandBuffer,
+            skip |= LogError("VUID-VkPushDescriptorSetWithTemplateInfo-layout-09496", commandBuffer,
                              error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo).dot(Field::layout),
                              "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
         }
@@ -1368,15 +1370,16 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetWithTemplate
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorSets2KHR(
-    VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo, const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                                       const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
     if (pBindDescriptorSetsInfo->layout == VK_NULL_HANDLE) {
         if (!enabled_features.dynamicPipelineLayout) {
-            skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-None-09495", commandBuffer,
+            skip |= LogError("VUID-VkBindDescriptorSetsInfo-None-09495", commandBuffer,
                              error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout), "is VK_NULL_HANDLE.");
         } else if (!vku::FindStructInPNextChain<VkPipelineLayoutCreateInfo>(pBindDescriptorSetsInfo->pNext)) {
-            skip |= LogError("VUID-VkBindDescriptorSetsInfoKHR-layout-09496", commandBuffer,
+            skip |= LogError("VUID-VkBindDescriptorSetsInfo-layout-09496", commandBuffer,
                              error_obj.location.dot(Field::pBindDescriptorSetsInfo).dot(Field::layout),
                              "is VK_NULL_HANDLE and pNext is missing VkPipelineLayoutCreateInfo.");
         }

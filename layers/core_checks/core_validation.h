@@ -1217,13 +1217,16 @@ class CoreChecks : public ValidationStateTracker {
 
     void PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                              const RecordObject& record_obj) override;
-
+    bool PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo,
                                              const ErrorObject& error_obj) const override;
-
+    bool PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
+                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo,
                                              const ErrorObject& error_obj) const override;
-
+    bool PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
+                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
                                             const ErrorObject& error_obj) const override;
 
@@ -1264,8 +1267,12 @@ class CoreChecks : public ValidationStateTracker {
                                                                         uint32_t* pInternalRepresentationCount,
                                                                         VkPipelineExecutableInternalRepresentationKHR* pStatistics,
                                                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
+                                   const ErrorObject& error_obj) const override;
     bool PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData,
                                       const ErrorObject& error_obj) const override;
+    bool PreCallValidateUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
+                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo,
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
@@ -1585,6 +1592,8 @@ class CoreChecks : public ValidationStateTracker {
                                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth,
                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
+                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
@@ -1612,16 +1621,26 @@ class CoreChecks : public ValidationStateTracker {
                                               VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                               const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                               const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                               const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                               const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                   const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
                                                   const ErrorObject& error_obj) const override;
     bool ValidateCmdPushDescriptorSet(const vvl::CommandBuffer& cb_state, VkPipelineLayout layout, uint32_t set,
                                       uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites,
                                       const Location& loc) const;
+    bool PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                             VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                             const VkWriteDescriptorSet* pDescriptorWrites,
+                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites,
                                                 const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                              const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                  const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
                                                  const ErrorObject& error_obj) const override;
@@ -1629,6 +1648,8 @@ class CoreChecks : public ValidationStateTracker {
                                     const Location& loc) const;
     bool PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            VkIndexType indexType, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                                            VkIndexType indexType, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                VkDeviceSize size, VkIndexType indexType,
                                                const ErrorObject& error_obj) const override;
@@ -1763,6 +1784,8 @@ class CoreChecks : public ValidationStateTracker {
                                               VkQueryResultFlags flags, const RecordObject& record_obj) override;
     bool ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                   uint32_t offset, uint32_t size, const Location& loc) const;
+    bool PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
@@ -1980,9 +2003,16 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
                                                   VkDescriptorUpdateTemplate descriptorUpdateTemplate, VkPipelineLayout layout,
                                                   uint32_t set, const void* pData, const Location& loc) const;
+    bool PreCallValidateCmdPushDescriptorSetWithTemplate2(
+        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+        const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
         VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
         const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                         VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                         VkPipelineLayout layout, uint32_t set, const void* pData,
+                                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                             VkPipelineLayout layout, uint32_t set, const void* pData,
@@ -2461,14 +2491,22 @@ class CoreChecks : public ValidationStateTracker {
                                            const RecordObject& record_obj) override;
     bool ValidateGetImageSubresourceLayout(const vvl::Image& image_state, const VkImageSubresource& subresource,
                                            const Location& subresource_loc) const;
+    bool PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                              const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                  const VkHostImageLayoutTransitionInfoEXT* pTransitions,
                                                  const ErrorObject& error_obj) const override;
+    void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                             const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                             const RecordObject& record_obj) override;
     void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions,
                                                 const RecordObject& record_obj) override;
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                   VkSubresourceLayout* pLayout, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
+                                                   VkSubresourceLayout2KHR* pLayout, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                       VkSubresourceLayout2KHR* pLayout,
                                                       const ErrorObject& error_obj) const override;
@@ -2587,12 +2625,18 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& location_info,
                                                  const LogObjectList objlist, const Location& loc_info) const;
+    bool PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                           const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                               const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
                                                               const ErrorObject& error_obj) const override;
 
     bool ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR& index_info,
                                                     const LogObjectList objlist, const Location& loc_info) const;
+    bool PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
+                                                              const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
                                                                  const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
                                                                  const ErrorObject& error_obj) const override;

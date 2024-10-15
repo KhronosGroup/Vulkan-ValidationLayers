@@ -220,7 +220,7 @@ enum class Feature {
     displacementMicromap,
     // VkPhysicalDeviceDynamicRenderingFeatures, VkPhysicalDeviceVulkan13Features
     dynamicRendering,
-    // VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR
+    // VkPhysicalDeviceDynamicRenderingLocalReadFeatures, VkPhysicalDeviceVulkan14Features
     dynamicRenderingLocalRead,
     // VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT
     dynamicRenderingUnusedAttachments,
@@ -450,13 +450,13 @@ enum class Feature {
     primitiveFragmentShadingRate,
     // VkPhysicalDeviceFrameBoundaryFeaturesEXT
     frameBoundary,
-    // VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR
+    // VkPhysicalDeviceGlobalPriorityQueryFeatures, VkPhysicalDeviceVulkan14Features
     globalPriorityQuery,
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     graphicsPipelineLibrary,
     // VkPhysicalDeviceHdrVividFeaturesHUAWEI
     hdrVivid,
-    // VkPhysicalDeviceHostImageCopyFeaturesEXT
+    // VkPhysicalDeviceHostImageCopyFeatures, VkPhysicalDeviceVulkan14Features
     hostImageCopy,
     // VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceVulkan12Features
     hostQueryReset,
@@ -486,7 +486,7 @@ enum class Feature {
     minLod,
     // VkPhysicalDeviceImagelessFramebufferFeatures, VkPhysicalDeviceVulkan12Features
     imagelessFramebuffer,
-    // VkPhysicalDeviceIndexTypeUint8FeaturesKHR
+    // VkPhysicalDeviceIndexTypeUint8Features, VkPhysicalDeviceVulkan14Features
     indexTypeUint8,
     // VkPhysicalDeviceInheritedViewportScissorFeaturesNV
     inheritedViewportScissor2D,
@@ -500,25 +500,25 @@ enum class Feature {
     legacyDithering,
     // VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT
     legacyVertexAttributes,
-    // VkPhysicalDeviceLineRasterizationFeaturesKHR
+    // VkPhysicalDeviceLineRasterizationFeatures, VkPhysicalDeviceVulkan14Features
     bresenhamLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesKHR
+    // VkPhysicalDeviceLineRasterizationFeatures, VkPhysicalDeviceVulkan14Features
     rectangularLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesKHR
+    // VkPhysicalDeviceLineRasterizationFeatures, VkPhysicalDeviceVulkan14Features
     smoothLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesKHR
+    // VkPhysicalDeviceLineRasterizationFeatures, VkPhysicalDeviceVulkan14Features
     stippledBresenhamLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesKHR
+    // VkPhysicalDeviceLineRasterizationFeatures, VkPhysicalDeviceVulkan14Features
     stippledRectangularLines,
-    // VkPhysicalDeviceLineRasterizationFeaturesKHR
+    // VkPhysicalDeviceLineRasterizationFeatures, VkPhysicalDeviceVulkan14Features
     stippledSmoothLines,
     // VkPhysicalDeviceLinearColorAttachmentFeaturesNV
     linearColorAttachment,
     // VkPhysicalDeviceMaintenance4Features, VkPhysicalDeviceVulkan13Features
     maintenance4,
-    // VkPhysicalDeviceMaintenance5FeaturesKHR
+    // VkPhysicalDeviceMaintenance5Features, VkPhysicalDeviceVulkan14Features
     maintenance5,
-    // VkPhysicalDeviceMaintenance6FeaturesKHR
+    // VkPhysicalDeviceMaintenance6Features, VkPhysicalDeviceVulkan14Features
     maintenance6,
     // VkPhysicalDeviceMaintenance7FeaturesKHR
     maintenance7,
@@ -594,9 +594,9 @@ enum class Feature {
     pipelineLibraryGroupHandles,
     // VkPhysicalDevicePipelinePropertiesFeaturesEXT
     pipelinePropertiesIdentifier,
-    // VkPhysicalDevicePipelineProtectedAccessFeaturesEXT
+    // VkPhysicalDevicePipelineProtectedAccessFeatures, VkPhysicalDeviceVulkan14Features
     pipelineProtectedAccess,
-    // VkPhysicalDevicePipelineRobustnessFeaturesEXT
+    // VkPhysicalDevicePipelineRobustnessFeatures, VkPhysicalDeviceVulkan14Features
     pipelineRobustness,
     // VkPhysicalDevicePortabilitySubsetFeaturesKHR
     constantAlphaColorBlendFactors,
@@ -780,13 +780,13 @@ enum class Feature {
     shaderEnqueue,
     // VkPhysicalDeviceShaderEnqueueFeaturesAMDX
     shaderMeshEnqueue,
-    // VkPhysicalDeviceShaderExpectAssumeFeaturesKHR
+    // VkPhysicalDeviceShaderExpectAssumeFeatures, VkPhysicalDeviceVulkan14Features
     shaderExpectAssume,
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     shaderFloat16,
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     shaderInt8,
-    // VkPhysicalDeviceShaderFloatControls2FeaturesKHR
+    // VkPhysicalDeviceShaderFloatControls2Features, VkPhysicalDeviceVulkan14Features
     shaderFloatControls2,
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
     shaderImageInt64Atomics,
@@ -814,9 +814,9 @@ enum class Feature {
     shaderSMBuiltins,
     // VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures, VkPhysicalDeviceVulkan12Features
     shaderSubgroupExtendedTypes,
-    // VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR
+    // VkPhysicalDeviceShaderSubgroupRotateFeatures, VkPhysicalDeviceVulkan14Features
     shaderSubgroupRotate,
-    // VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR
+    // VkPhysicalDeviceShaderSubgroupRotateFeatures, VkPhysicalDeviceVulkan14Features
     shaderSubgroupRotateClustered,
     // VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR
     shaderSubgroupUniformControlFlow,
@@ -862,9 +862,9 @@ enum class Feature {
     variablePointers,
     // VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVulkan11Features
     variablePointersStorageBuffer,
-    // VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR
+    // VkPhysicalDeviceVertexAttributeDivisorFeatures, VkPhysicalDeviceVulkan14Features
     vertexAttributeInstanceRateDivisor,
-    // VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR
+    // VkPhysicalDeviceVertexAttributeDivisorFeatures, VkPhysicalDeviceVulkan14Features
     vertexAttributeInstanceRateZeroDivisor,
     // VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT
     vertexAttributeRobustness,
@@ -898,6 +898,8 @@ enum class Feature {
     vulkanMemoryModelDeviceScope,
     // VkPhysicalDeviceVulkan13Features, VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures
     shaderZeroInitializeWorkgroupMemory,
+    // VkPhysicalDeviceVulkan14Features
+    pushDescriptor,
     // VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR
     workgroupMemoryExplicitLayout,
     // VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR

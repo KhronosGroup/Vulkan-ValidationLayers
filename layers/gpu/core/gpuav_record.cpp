@@ -205,10 +205,11 @@ void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
     }
     descriptor::UpdateBoundDescriptors(*this, *cb_state, pipelineBindPoint, record_obj.location);
 }
-void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
-                                                        const RecordObject &record_obj) {
-    BaseClass::PostCallRecordCmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo, record_obj);
+
+void Validator::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                     const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                     const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_state) {
@@ -227,12 +228,17 @@ void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandB
     }
 }
 
-void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                     const VkWriteDescriptorSet *pDescriptorWrites,
-                                                     const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                    pDescriptorWrites, record_obj);
+void Validator::PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
+                                                        const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                        const RecordObject &record_obj) {
+    PostCallRecordCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, record_obj);
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                  VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                  const VkWriteDescriptorSet *pDescriptorWrites, const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                 pDescriptorWrites, record_obj);
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_state) {
@@ -242,10 +248,18 @@ void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuff
     descriptor::UpdateBoundDescriptors(*this, *cb_state, pipelineBindPoint, record_obj.location);
 }
 
-void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                      const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                      const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo, record_obj);
+void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                     const VkWriteDescriptorSet *pDescriptorWrites,
+                                                     const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites,
+                                      record_obj);
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                   const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                   const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_state) {
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
@@ -261,6 +275,12 @@ void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuf
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         descriptor::UpdateBoundDescriptors(*this, *cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
     }
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                      const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                      const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
 }
 
 void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,

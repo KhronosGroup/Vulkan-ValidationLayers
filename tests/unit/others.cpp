@@ -1281,6 +1281,7 @@ TEST_F(VkLayerTest, MissingExtensionStruct) {
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
     m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-pNext-pNext");
+    m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-pNext-pNext");
     vkt::BufferView view(*m_device, buffer_view_ci);
     m_errorMonitor->VerifyFound();
 }

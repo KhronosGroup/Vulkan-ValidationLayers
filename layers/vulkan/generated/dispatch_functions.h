@@ -1279,6 +1279,116 @@ static inline void DispatchGetDeviceImageSparseMemoryRequirements(VkDevice devic
     dispatch->GetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
+static inline void DispatchCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                             uint16_t lineStipplePattern) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
+}
+
+static inline VkResult DispatchMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    return dispatch->MapMemory2(device, pMemoryMapInfo, ppData);
+}
+
+static inline VkResult DispatchUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    return dispatch->UnmapMemory2(device, pMemoryUnmapInfo);
+}
+
+static inline void DispatchCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               VkDeviceSize size, VkIndexType indexType) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
+}
+
+static inline void DispatchGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                       VkExtent2D* pGranularity) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    dispatch->GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
+}
+
+static inline void DispatchGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                           VkSubresourceLayout2* pLayout) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    dispatch->GetDeviceImageSubresourceLayout(device, pInfo, pLayout);
+}
+
+static inline void DispatchGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                      VkSubresourceLayout2* pLayout) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    dispatch->GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
+}
+
+static inline void DispatchCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                const VkWriteDescriptorSet* pDescriptorWrites) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
+}
+
+static inline void DispatchCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                            VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                            VkPipelineLayout layout, uint32_t set, const void* pData) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
+}
+
+static inline void DispatchCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                              const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
+}
+
+static inline void DispatchCmdSetRenderingInputAttachmentIndices(
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
+}
+
+static inline void DispatchCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                                  const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo);
+}
+
+static inline void DispatchCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdPushConstants2(commandBuffer, pPushConstantsInfo);
+}
+
+static inline void DispatchCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                 const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo);
+}
+
+static inline void DispatchCmdPushDescriptorSetWithTemplate2(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    dispatch->CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+}
+
+static inline VkResult DispatchCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    return dispatch->CopyMemoryToImage(device, pCopyMemoryToImageInfo);
+}
+
+static inline VkResult DispatchCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    return dispatch->CopyImageToMemory(device, pCopyImageToMemoryInfo);
+}
+
+static inline VkResult DispatchCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    return dispatch->CopyImageToImage(device, pCopyImageToImageInfo);
+}
+
+static inline VkResult DispatchTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                     const VkHostImageLayoutTransitionInfo* pTransitions) {
+    auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    return dispatch->TransitionImageLayout(device, transitionCount, pTransitions);
+}
+
 static inline void DispatchDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     dispatch->DestroySurfaceKHR(instance, surface, pAllocator);
@@ -1964,13 +2074,13 @@ static inline void DispatchCmdSetFragmentShadingRateKHR(VkCommandBuffer commandB
 }
 
 static inline void DispatchCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
-                                                                 const VkRenderingAttachmentLocationInfoKHR* pLocationInfo) {
+                                                                 const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     dispatch->CmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
 }
 
 static inline void DispatchCmdSetRenderingInputAttachmentIndicesKHR(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo) {
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     dispatch->CmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo);
 }
@@ -2046,12 +2156,12 @@ static inline VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
                                                                      pInternalRepresentations);
 }
 
-static inline VkResult DispatchMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) {
+static inline VkResult DispatchMapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     return dispatch->MapMemory2KHR(device, pMemoryMapInfo, ppData);
 }
 
-static inline VkResult DispatchUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
+static inline VkResult DispatchUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     return dispatch->UnmapMemory2KHR(device, pMemoryUnmapInfo);
 }
@@ -2170,20 +2280,20 @@ static inline void DispatchCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
     dispatch->CmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
 }
 
-static inline void DispatchGetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfoKHR* pRenderingAreaInfo,
+static inline void DispatchGetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
                                                           VkExtent2D* pGranularity) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     dispatch->GetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
 }
 
-static inline void DispatchGetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR* pInfo,
-                                                              VkSubresourceLayout2KHR* pLayout) {
+static inline void DispatchGetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                              VkSubresourceLayout2* pLayout) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     dispatch->GetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
 }
 
-static inline void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                                         VkSubresourceLayout2KHR* pLayout) {
+static inline void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                         VkSubresourceLayout2* pLayout) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     dispatch->GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
 }
@@ -2248,24 +2358,24 @@ static inline VkResult DispatchGetCalibratedTimestampsKHR(VkDevice device, uint3
 }
 
 static inline void DispatchCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                                     const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo) {
+                                                     const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     dispatch->CmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo);
 }
 
-static inline void DispatchCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo) {
+static inline void DispatchCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     dispatch->CmdPushConstants2KHR(commandBuffer, pPushConstantsInfo);
 }
 
 static inline void DispatchCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                    const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo) {
+                                                    const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     dispatch->CmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo);
 }
 
 static inline void DispatchCmdPushDescriptorSetWithTemplate2KHR(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo) {
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     dispatch->CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
 }
@@ -3161,29 +3271,29 @@ static inline void DispatchCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkS
     dispatch->CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
-static inline VkResult DispatchCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo) {
+static inline VkResult DispatchCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     return dispatch->CopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
 }
 
-static inline VkResult DispatchCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) {
+static inline VkResult DispatchCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     return dispatch->CopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
 }
 
-static inline VkResult DispatchCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) {
+static inline VkResult DispatchCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     return dispatch->CopyImageToImageEXT(device, pCopyImageToImageInfo);
 }
 
 static inline VkResult DispatchTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                        const VkHostImageLayoutTransitionInfoEXT* pTransitions) {
+                                                        const VkHostImageLayoutTransitionInfo* pTransitions) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     return dispatch->TransitionImageLayoutEXT(device, transitionCount, pTransitions);
 }
 
-static inline void DispatchGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                                         VkSubresourceLayout2KHR* pLayout) {
+static inline void DispatchGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                         VkSubresourceLayout2* pLayout) {
     auto dispatch = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     dispatch->GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
 }

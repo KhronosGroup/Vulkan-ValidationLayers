@@ -246,6 +246,25 @@ void PostCallRecordSetPrivateData(VkDevice device, VkObjectType objectType, uint
 void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                 const RecordObject& record_obj) override;
 
+void PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
+                              const RecordObject& record_obj) override;
+
+void PostCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
+                                const RecordObject& record_obj) override;
+
+void PostCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+                                     const RecordObject& record_obj) override;
+
+void PostCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
+                                     const RecordObject& record_obj) override;
+
+void PostCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
+                                    const RecordObject& record_obj) override;
+
+void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                         const VkHostImageLayoutTransitionInfo* pTransitions,
+                                         const RecordObject& record_obj) override;
+
 void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                       VkSurfaceKHR surface, VkBool32* pSupported,
                                                       const RecordObject& record_obj) override;
@@ -527,10 +546,10 @@ void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations, const RecordObject& record_obj) override;
 
-void PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData,
+void PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
                                  const RecordObject& record_obj) override;
 
-void PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo,
+void PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
                                    const RecordObject& record_obj) override;
 
 void PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
@@ -813,17 +832,17 @@ void PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadles
                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                             const RecordObject& record_obj) override;
 
-void PostCallRecordCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo,
+void PostCallRecordCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
                                         const RecordObject& record_obj) override;
 
-void PostCallRecordCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo,
+void PostCallRecordCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
                                         const RecordObject& record_obj) override;
 
-void PostCallRecordCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
+void PostCallRecordCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
                                        const RecordObject& record_obj) override;
 
 void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                            const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                            const VkHostImageLayoutTransitionInfo* pTransitions,
                                             const RecordObject& record_obj) override;
 
 void PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,

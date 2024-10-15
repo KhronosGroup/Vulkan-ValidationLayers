@@ -195,6 +195,14 @@ static const std::string& FindVUID(const Location& loc, const Table& table) {
         f = Func::vkCmdCopyImageToBuffer2;
     } else if (f == Func::vkCmdResolveImage2KHR) {
         f = Func::vkCmdResolveImage2;
+    } else if (f == Func::vkCopyImageToImageEXT) {
+        f = Func::vkCopyImageToImage;
+    } else if (f == Func::vkCopyImageToMemoryEXT) {
+        f = Func::vkCopyImageToMemory;
+    } else if (f == Func::vkCopyMemoryToImageEXT) {
+        f = Func::vkCopyMemoryToImage;
+    } else if (f == Func::vkTransitionImageLayoutEXT) {
+        f = Func::vkTransitionImageLayout;
     }
     const Location core_loc(f, loc.structure, loc.field, loc.index);
 

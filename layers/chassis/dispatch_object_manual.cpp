@@ -906,6 +906,24 @@ void DispatchObject::UpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescr
     free(unwrapped_buffer);
 }
 
+void DispatchObject::CmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                      VkDescriptorUpdateTemplate descriptorUpdateTemplate, VkPipelineLayout layout,
+                                                      uint32_t set, const void *pData) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set,
+                                                                         pData);
+    uint64_t template_handle = CastToUint64(descriptorUpdateTemplate);
+    void *unwrapped_buffer = nullptr;
+    {
+        ReadLockGuard lock(dispatch_lock);
+        descriptorUpdateTemplate = Unwrap(descriptorUpdateTemplate);
+        layout = Unwrap(layout);
+        unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(this, template_handle, pData);
+    }
+    device_dispatch_table.CmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, unwrapped_buffer);
+    free(unwrapped_buffer);
+}
+
 void DispatchObject::CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                          VkPipelineLayout layout, uint32_t set, const void *pData) {
@@ -922,6 +940,25 @@ void DispatchObject::CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer command
     }
     device_dispatch_table.CmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set,
                                                               unwrapped_buffer);
+    free(unwrapped_buffer);
+}
+
+void DispatchObject::CmdPushDescriptorSetWithTemplate2(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
+    uint64_t template_handle = CastToUint64(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+    void *unwrapped_buffer = nullptr;
+    {
+        ReadLockGuard lock(dispatch_lock);
+        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->descriptorUpdateTemplate =
+            Unwrap(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->layout =
+            Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
+        unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(this, template_handle, pPushDescriptorSetWithTemplateInfo->pData);
+        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->pData = unwrapped_buffer;
+    }
+    device_dispatch_table.CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
     free(unwrapped_buffer);
 }
 

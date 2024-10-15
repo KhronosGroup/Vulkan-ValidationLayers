@@ -219,14 +219,14 @@ TEST_F(NegativeMemory, MapMemory2) {
     // Attempt to map memory size 0 is invalid
     map_info.offset = 0;
     map_info.size = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-size-07960");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-size-07960");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
     map_info.offset = 0;
     map_info.size = VK_WHOLE_SIZE;
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory2KHR(device(), &map_info, (void **)&pData));
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-memory-07958");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-memory-07958");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
@@ -235,17 +235,17 @@ TEST_F(NegativeMemory, MapMemory2) {
     // overstep offset with VK_WHOLE_SIZE
     map_info.offset = allocation_size + 1;
     map_info.size = VK_WHOLE_SIZE;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-offset-07959");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-offset-07959");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
     map_info.offset = 1,
     map_info.size = allocation_size;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-size-07961");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-size-07961");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Now error due to unmapping memory that's not mapped
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryUnmapInfoKHR-memory-07964");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryUnmapInfo-memory-07964");
     vk::UnmapMemory2KHR(device(), &unmap_info);
     m_errorMonitor->VerifyFound();
 }
@@ -319,7 +319,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
     map_info.size = 32;
     uint8_t *pData;
 
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-memory-07962");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-memory-07962");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 }
@@ -357,7 +357,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
 
     // No VkMemoryMapPlacedInfoEXT
     void *pData;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09570");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09570");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -365,7 +365,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
     map_info.pNext = &placed_info;
 
     // No VkMemoryMapPlacedInfoEXT::pPlacedAddress == NULL
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09570");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09570");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -424,7 +424,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedEnabled) {
 
     void *pData;
     // Unaligned offset
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09573");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09573");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -432,7 +432,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedEnabled) {
     map_info.size = allocation_size - (map_placed_props.minPlacedMemoryMapAlignment / 2);
 
     // Unaligned size
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09574");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09574");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 }
@@ -475,7 +475,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
 
     void *pData;
     // Non-zero offset
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09571");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09571");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -483,7 +483,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
     map_info.size = allocation_size - map_placed_props.minPlacedMemoryMapAlignment;
 
     // Not VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09572");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09572");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
@@ -495,13 +495,13 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
     map_info.offset = 0;
     map_info.size = VK_WHOLE_SIZE;
 
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09651");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09651");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 
     map_info.size = unaligned_size;
 
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfoKHR-flags-09574");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryMapInfo-flags-09574");
     vk::MapMemory2KHR(device(), &map_info, &pData);
     m_errorMonitor->VerifyFound();
 }

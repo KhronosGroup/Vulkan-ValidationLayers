@@ -51,11 +51,11 @@ TEST_F(NegativeHostImageCopy, ImageLayout) {
     copy_from_image.pRegions = &region_from_image;
 
     // Bad image layout
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImageLayout-09059");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09064");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImageLayout-09064");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -100,12 +100,12 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
         vkt::Image image_no_transfer(*m_device, image_ci_no_transfer);
         image_no_transfer.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         copy_to_image.dstImage = image_no_transfer;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-09113");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09113");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
 
         copy_from_image.srcImage = image_no_transfer;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-09113");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09113");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
         copy_to_image.dstImage = image;
@@ -118,16 +118,16 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
     // If ImageExtent.width is left at width, offset will exceed width of image (07971). Setting it to width-1 will not match
     // image dimensions (09115). Pick the one with MEMCPY flag set and test for both here.
     region_to_image.imageExtent.width = width - 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09114");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-09115");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageOffset-09114");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09115");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 
     copy_from_image.flags = VK_HOST_IMAGE_COPY_MEMCPY_EXT;
     region_from_image.imageOffset.x = 1;
     region_from_image.imageExtent.width = width - 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09114");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-09115");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageOffset-09114");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09115");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -168,11 +168,11 @@ TEST_F(NegativeHostImageCopy, AspectMask) {
 
     // Bad aspectMask
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-09105");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageSubresource-09105");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-09105");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageSubresource-09105");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -213,12 +213,12 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemoryNoMemory) {
 
     vkt::Image image_no_mem(*m_device, image_ci, vkt::no_mem);
     copy_to_image.dstImage = image_no_mem;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07966");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07966");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 
     copy_from_image.srcImage = image_no_mem;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07966");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07966");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -263,20 +263,20 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
     // Also get 07972 - imageOffset.y and (imageExtent.height + imageOffset.y) both >= 0 and <= imageSubresource height
     // Also get 09104 - imageOffset.z and (imageExtent.depth + imageOffset.z) both >= 0 and <= imageSubresource depth
     region_to_image.imageSubresource.mipLevel = image_ci.mipLevels + 1;
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07971");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09104");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07967");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07970");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07971");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageOffset-09104");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07967");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 
     region_from_image.imageSubresource.mipLevel = image_ci.mipLevels + 1;
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07971");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09104");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07967");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07970");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07971");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageOffset-09104");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07967");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageSubresource.mipLevel = 0;
@@ -284,11 +284,11 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
 
     // baseArrayLayer + layerCount > arrayLayers
     region_to_image.imageSubresource.baseArrayLayer = image_ci.arrayLayers;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07968");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageSubresource.baseArrayLayer = image_ci.arrayLayers;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07968");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageSubresource.baseArrayLayer = 0;
@@ -296,13 +296,13 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
 
     // Extent bigger than image - Can't get 07970 without getting 07971, 07972 or 09104, so test both 07971 and 07970 here
     region_to_image.imageExtent.width = width + 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07971");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07971");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07970");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageExtent.width = width + 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07971");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07971");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07970");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageExtent.width = width;
@@ -310,13 +310,13 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
 
     // imageOffset.y and (imageExtent.height + imageOffset.y) both >= 0 and <= imageSubresource height
     region_to_image.imageOffset.y = -1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07970");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageOffset.y = -1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07970");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -363,14 +363,14 @@ TEST_F(NegativeHostImageCopy, ImageExtent) {
     // imageOffset.z and (imageExtent.depth + imageOffset.z) both >= 0 and <= imageSubresource height
     copy_to_image.dstImage = image_3d;
     region_to_image.imageOffset.z = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09104");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-imageOffset-09104");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07970");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageOffset.z = 1;
     copy_from_image.srcImage = image_3d;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09104");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-imageOffset-09104");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07970");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageOffset.z = 0;
@@ -378,13 +378,13 @@ TEST_F(NegativeHostImageCopy, ImageExtent) {
 
     // imageSubresource.baseArrayLayer must be 0 and imageSubresource.layerCount must be 1
     region_to_image.imageSubresource.baseArrayLayer = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07983");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07983");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07968");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageSubresource.baseArrayLayer = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07983");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07983");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07968");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageSubresource.baseArrayLayer = 0;
@@ -392,11 +392,11 @@ TEST_F(NegativeHostImageCopy, ImageExtent) {
 
     // imageExtent.depth must not be 0
     region_to_image.imageExtent.depth = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-imageExtent-06661");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-imageExtent-06661");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageExtent.depth = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-imageExtent-06661");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-imageExtent-06661");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -443,12 +443,12 @@ TEST_F(NegativeHostImageCopy, Image1D) {
         vkt::Image image_samplecount(*m_device, image_ci);
         image_samplecount.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         copy_to_image.dstImage = image_samplecount;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07973");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07973");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
 
         copy_from_image.srcImage = image_samplecount;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07973");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07973");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
         copy_to_image.dstImage = image;
@@ -467,17 +467,17 @@ TEST_F(NegativeHostImageCopy, Image1D) {
     copy_to_image.dstImage = image_1d;
     region_to_image.imageOffset.y = 1;
     region_to_image.imageExtent.height = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07979");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07979");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07970");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     copy_from_image.srcImage = image_1d;
     region_from_image.imageOffset.y = 1;
     region_from_image.imageExtent.height = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07979");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07979");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07970");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageOffset.y = 0;
@@ -486,16 +486,16 @@ TEST_F(NegativeHostImageCopy, Image1D) {
     // imageOffset.z must be 0 and imageExtent.depth must be 1
     region_to_image.imageOffset.z = 1;
     region_to_image.imageExtent.depth = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07980");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09104");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07980");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageOffset-09104");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-imageSubresource-07970");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageOffset.z = 1;
     region_from_image.imageExtent.depth = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07980");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09104");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07980");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageOffset-09104");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-imageSubresource-07970");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -556,16 +556,16 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
     region_to_image.imageExtent = {1, 1, 1};
     region_to_image.imageSubresource.mipLevel = 4;
     copy_to_image.dstImage = image_compressed;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07274");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07275");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07274");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07275");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageOffset = {1, 1, 0};
     region_from_image.imageExtent = {1, 1, 1};
     region_from_image.imageSubresource.mipLevel = 4;
     copy_from_image.srcImage = image_compressed;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07274");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07275");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07274");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07275");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageOffset = {0, 0, 0};
@@ -573,21 +573,21 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
 
     // width not a multiple of compressed block width
     region_to_image.imageExtent = {1, 2, 1};
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-00207");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-00207");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageExtent = {1, 2, 1};
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-00207");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-00207");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
     // Copy height < compressed block size but not the full mip height
     region_to_image.imageExtent = {2, 1, 1};
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-00208");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-00208");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageExtent = {2, 1, 1};
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-00208");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-00208");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
@@ -599,24 +599,24 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
     // memoryRowLength not a multiple of block width (4)
     region_to_image.memoryRowLength = 130;
     region_to_image.memoryImageHeight = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09106");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-memoryRowLength-09106");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.memoryRowLength = 130;
     region_from_image.memoryImageHeight = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09106");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-memoryRowLength-09106");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
     // memoryImageHeight not a multiple of block height (4)
     region_to_image.memoryRowLength = 0;
     region_to_image.memoryImageHeight = 130;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-memoryImageHeight-09107");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-memoryImageHeight-09107");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.memoryRowLength = 0;
     region_from_image.memoryImageHeight = 130;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-memoryImageHeight-09107");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-memoryImageHeight-09107");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
@@ -626,11 +626,11 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
     // memoryRowLength divided by the texel block extent width and then multiplied by the texel block size of the image must
     // be less than or equal to 2^31-1
     region_to_image.memoryRowLength = 0x20000000;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09108");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-memoryRowLength-09108");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.memoryRowLength = 0x20000000;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09108");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-memoryRowLength-09108");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -688,13 +688,13 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     copy_to_image.dstImage = image_stencil;
     copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-09111");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09111");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     copy_from_image.srcImage = image_stencil;
     copy_from_image.srcImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-09111");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09111");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
@@ -708,12 +708,12 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
     // Seperate stencil, no VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT
     region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     copy_to_image.dstImage = image_separate_stencil;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-09112");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09112");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     copy_from_image.srcImage = image_separate_stencil;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-09112");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09112");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 
@@ -731,12 +731,12 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
         copy_to_image.dstImage = image_stencil2;
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-aspectMask-09103");
+        m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-aspectMask-09103");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
         copy_from_image.srcImage = image_stencil2;
         region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-aspectMask-09103");
+        m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-aspectMask-09103");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
     }
@@ -787,12 +787,12 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
         image_multi_planar2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
         copy_to_image.dstImage = image_multi_planar2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07981");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
         region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
         copy_from_image.srcImage = image_multi_planar2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07981");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
     }
@@ -808,12 +808,12 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
         image_multi_planar3.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
         region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_to_image.dstImage = image_multi_planar3;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07981");
         vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
         m_errorMonitor->VerifyFound();
         region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_from_image.srcImage = image_multi_planar3;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07981");
         vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
         m_errorMonitor->VerifyFound();
     }
@@ -860,11 +860,11 @@ TEST_F(NegativeHostImageCopy, NonSupportedLayout) {
     // layout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopySrcLayouts
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09060");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImageLayout-09060");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     copy_from_image.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImageLayout-09065");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -908,11 +908,11 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
 
     // memoryRowLength must be 0, or greater than or equal to the width member of imageExtent
     region_to_image.memoryRowLength = region_to_image.imageExtent.width - 4;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-memoryRowLength-09101");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-memoryRowLength-09101");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.memoryRowLength = region_from_image.imageExtent.width - 4;
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-memoryRowLength-09101");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-memoryRowLength-09101");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.memoryRowLength = 0;
@@ -920,11 +920,11 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
 
     // memoryImageHeight must be 0, or greater than or equal to the height member of imageExtent
     region_to_image.memoryImageHeight = region_to_image.imageExtent.height - 4;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-memoryImageHeight-09102");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-memoryImageHeight-09102");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.memoryImageHeight = region_from_image.imageExtent.height - 4;
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-memoryImageHeight-09102");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-memoryImageHeight-09102");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.memoryImageHeight = 0;
@@ -932,11 +932,11 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
 
     // imageExtent.width must not be 0
     region_to_image.imageExtent.width = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-imageExtent-06659");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-imageExtent-06659");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageExtent.width = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-imageExtent-06659");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-imageExtent-06659");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageExtent.width = width;
@@ -944,11 +944,11 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
 
     // imageExtent.height must not be 0
     region_to_image.imageExtent.height = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-imageExtent-06660");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-imageExtent-06660");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.imageExtent.height = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-imageExtent-06660");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-imageExtent-06660");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
     region_to_image.imageExtent.height = height;
@@ -957,12 +957,12 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
     // When VK_HOST_IMAGE_COPY_MEMCPY_EXT is in flags, memoryRowLength and memoryImageHeight must be zero
     region_to_image.memoryRowLength = width;
     copy_to_image.flags = VK_HOST_IMAGE_COPY_MEMCPY_EXT;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-flags-09393");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-flags-09393");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
     region_from_image.memoryImageHeight = height;
     copy_from_image.flags = VK_HOST_IMAGE_COPY_MEMCPY_EXT;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-flags-09394");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-flags-09394");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -1010,7 +1010,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     copy_image_to_image.dstImage = image1;
     copy_image_to_image.srcImage = skinny_image;
     image_copy_2.extent.width = image_ci.extent.width;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-09069");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09069");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_ci.extent.width = width;
@@ -1036,8 +1036,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image_copy_2.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
         copy_image_to_image.srcImage = image_stencil2;
         copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-09111");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-09111");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-09111");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09111");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
 
@@ -1057,8 +1057,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         copy_image_to_image.dstImage = image_separate_stencil1;
         image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
         copy_image_to_image.srcImage = image_separate_stencil2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-09112");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-09112");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-09112");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09112");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
 
@@ -1082,8 +1082,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image_no_transfer2.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         copy_image_to_image.dstImage = image_no_transfer1;
         copy_image_to_image.srcImage = image_no_transfer2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-09113");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-09113");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-09113");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09113");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
     }
@@ -1097,10 +1097,10 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     // If ImageExtent.width is left at width, offset will exceed width of image (07971). Setting it to width-1 will not match
     // image dimensions (09115). Pick the one with MEMCPY flag set (09115) and test for both here.
     image_copy_2.extent.width = width - 1;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstOffset-09114");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcOffset-09114");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-09115");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-09115");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstOffset-09114");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcOffset-09114");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09115");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-09115");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 
@@ -1116,8 +1116,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         vkt::Image image_no_mem2(*m_device, image_ci, vkt::no_mem);
         copy_image_to_image.dstImage = image_no_mem1;
         copy_image_to_image.srcImage = image_no_mem2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07966");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07966");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07966");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07966");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
     }
@@ -1131,16 +1131,16 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     image_copy_2.srcSubresource.mipLevel = image_ci.mipLevels + 1;
     copy_image_to_image.dstImage = image1;
     copy_image_to_image.srcImage = image2;
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07971");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcOffset-09104");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07971");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstOffset-09104");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07967");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07967");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07970");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07971");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcOffset-09104");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07970");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07971");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstOffset-09104");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcSubresource-07967");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstSubresource-07967");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.dstSubresource.mipLevel = 0;
@@ -1149,8 +1149,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     // baseArrayLayer + layerCount > arrayLayers
     image_copy_2.srcSubresource.baseArrayLayer = image_ci.arrayLayers;
     image_copy_2.dstSubresource.baseArrayLayer = image_ci.arrayLayers;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcSubresource-07968");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstSubresource-07968");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcSubresource.baseArrayLayer = 0;
@@ -1160,10 +1160,10 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     image_copy_2.extent.width = width + 1;
     copy_image_to_image.dstImage = image1;
     copy_image_to_image.srcImage = image2;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07971");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07971");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcSubresource-07971");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstSubresource-07971");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.extent.width = width;
@@ -1174,10 +1174,10 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     image_copy_2.dstOffset.y = -1;
     copy_image_to_image.dstImage = image1;
     copy_image_to_image.srcImage = image2;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07972");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07972");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcSubresource-07972");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstSubresource-07972");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07970");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07970");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcOffset.y = 0;
@@ -1198,10 +1198,10 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         copy_image_to_image.srcImage = image_3d2;
         image_copy_2.srcOffset.z = 1;
         image_copy_2.dstOffset.z = 1;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstOffset-09104");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcOffset-09104");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstOffset-09104");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcOffset-09104");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07970");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07970");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         image_copy_2.srcOffset.z = 0;
@@ -1211,10 +1211,10 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         // Also get Subresource.baseArrayLayer + Subresource.layerCount <= CreateInfo.arrayLayers
         image_copy_2.srcSubresource.baseArrayLayer = 1;
         image_copy_2.dstSubresource.baseArrayLayer = 1;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07983");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07983");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07983");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07983");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07968");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07968");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         image_copy_2.srcSubresource.baseArrayLayer = 0;
@@ -1247,12 +1247,12 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image_copy_2.srcOffset.y = 1;
         image_copy_2.dstOffset.y = 1;
         image_copy_2.extent.height = 1;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07979");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07979");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07972");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07972");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07979");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07979");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07970");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07970");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07972");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07972");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         image_copy_2.srcOffset.y = 0;
@@ -1264,12 +1264,12 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image_copy_2.srcOffset.z = 1;
         image_copy_2.dstOffset.z = 1;
         image_copy_2.extent.depth = 1;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07980");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07980");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-07970");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-07970");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcOffset-09104");
-        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstOffset-09104");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07980");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07980");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-07970");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstSubresource-07970");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcOffset-09104");
+        m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstOffset-09104");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         image_copy_2.srcOffset.z = 0;
@@ -1295,10 +1295,10 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
             image_copy_2.dstSubresource.mipLevel = 4;
             copy_image_to_image.dstImage = image_compressed1;
             copy_image_to_image.srcImage = image_compressed2;
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07274");
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07274");
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07275");
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07275");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07274");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07274");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07275");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07275");
             vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
             m_errorMonitor->VerifyFound();
             image_copy_2.dstOffset = {0, 0, 0};
@@ -1306,15 +1306,15 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
 
             // width not a multiple of compressed block width
             image_copy_2.extent = {1, 2, 1};
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-00207");
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-00207");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-00207");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-00207");
             vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
             m_errorMonitor->VerifyFound();
 
             // Copy height < compressed block size but not the full mip height
             image_copy_2.extent = {2, 1, 1};
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-00208");
-            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-00208");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-00208");
+            m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-00208");
             vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
             m_errorMonitor->VerifyFound();
             image_copy_2.extent = {width, height, 1};
@@ -1328,8 +1328,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     image_copy_2.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copy_image_to_image.dstImage = image1;
     copy_image_to_image.srcImage = image2;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstSubresource-09105");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcSubresource-09105");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstSubresource-09105");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1350,8 +1350,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image_copy_2.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
         copy_image_to_image.dstImage = image_multi_twoplane1;
         copy_image_to_image.srcImage = image_multi_twoplane2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07981");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07981");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1374,8 +1374,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image_copy_2.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy_image_to_image.dstImage = image_multi_threeplane1;
         copy_image_to_image.srcImage = image_multi_threeplane2;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07981");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07981");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07981");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
     }
@@ -1385,8 +1385,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     copy_image_to_image.dstImage = image1;
     copy_image_to_image.srcImage = image2;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09070");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09071");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImageLayout-09070");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImageLayout-09071");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1398,8 +1398,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
         image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09072");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09073");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImageLayout-09072");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImageLayout-09073");
         vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
         m_errorMonitor->VerifyFound();
         copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1421,7 +1421,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     image_copy_2.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceLayers-aspectMask-00167");
     // Also get aspect not present in image
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-09105");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.extent = {width, height, 1};
@@ -1437,7 +1437,7 @@ TEST_F(NegativeHostImageCopy, CopyImageToImage) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageSubresourceLayers-aspectMask-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceLayers-aspectMask-02247");
     // Also get aspect not present in image
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcSubresource-09105");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
     image_copy_2.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1490,12 +1490,12 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemorySubsampled) {
     vkt::Image image_subsampled(*m_device, image_ci, vkt::set_layout);
     image_subsampled.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     copy_to_image.dstImage = image_subsampled;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-07969");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-07969");
     vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     m_errorMonitor->VerifyFound();
 
     copy_from_image.srcImage = image_subsampled;
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-07969");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-07969");
     vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
     m_errorMonitor->VerifyFound();
 }
@@ -1529,8 +1529,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImageSubsampled) {
     copy_image_to_image.dstImage = image_subsampled1;
     copy_image_to_image.srcImage = image_subsampled2;
 
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-07969");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-07969");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-07969");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-07969");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 }
@@ -1554,14 +1554,14 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
     // Bad baseMipLevel
     transition_info.subresourceRange.baseMipLevel = 1;
     transition_info.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01486");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01486");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.baseMipLevel = 0;
 
     // Bad baseMipLevel + levelCount
     transition_info.subresourceRange.levelCount = 2;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01724");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01724");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.levelCount = 1;
@@ -1569,8 +1569,8 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
     // Bad baseArrayLayer
     // Also has to get baseArrayLayer + layerCount > arrayLayers, so test both
     transition_info.subresourceRange.baseArrayLayer = 1;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01725");
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01488");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01725");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01488");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.baseArrayLayer = 0;
@@ -1579,7 +1579,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
         // No image memory
         vkt::Image image_no_mem(*m_device, image_ci, vkt::no_mem);
         transition_info.image = image_no_mem;
-        m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01932");
+        m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-01932");
         vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
         m_errorMonitor->VerifyFound();
     }
@@ -1587,14 +1587,14 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
     // Bad aspectMask
     transition_info.image = image;
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Bad oldLayout
     transition_info.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09229");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-oldLayout-09229");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1616,7 +1616,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutUsage) {
     vkt::Image image_no_transfer(*m_device, image_ci_no_transfer, vkt::set_layout);
     image_no_transfer.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     transition_info.image = image_no_transfer;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09055");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-09055");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1691,7 +1691,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutMultiPlanar) {
     image_multi_planar.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     transition_info.image = image_multi_planar;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-image-01672");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-01672");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     vk::FreeMemory(device(), plane_0_memory, nullptr);
@@ -1722,7 +1722,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutNotSupported) {
     // layout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopySrcLayouts
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     transition_info.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-oldLayout-09230");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-oldLayout-09230");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
     transition_info.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1730,7 +1730,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutNotSupported) {
 
     // layout must be one of the image layouts returned in VkPhysicalDeviceHostImageCopyPropertiesEXT::pCopyDstLayouts
     transition_info.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-newLayout-09057");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-newLayout-09057");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1779,13 +1779,13 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthStencil) {
     if (separate_depth_stencil) {
         transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
         // Will also get error for aspect != color
-        m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
-        m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-image-03319");
+        m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
+        m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-03319");
     } else {
         transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         // Will also get error for aspect != color
-        m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
-        m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-image-03320");
+        m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
+        m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-03320");
     }
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
@@ -1795,8 +1795,8 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthStencil) {
     transition_info.subresourceRange.aspectMask = (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
     transition_info.newLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
     // Will also get error for aspect != color
-    m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-aspectMask-08702");
+    m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-aspectMask-08702");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 
@@ -1805,8 +1805,8 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthStencil) {
     transition_info.subresourceRange.aspectMask = (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
     transition_info.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     // Will also get error for aspect != color
-    m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfoEXT-image-09241");
-    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfoEXT-aspectMask-08703");
+    m_errorMonitor->SetUnexpectedError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-aspectMask-08703");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1850,13 +1850,13 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     copy_image_to_memory.pRegions = &region;
 
     // Start of copy overlaps
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-pRegions-09067");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-pRegions-09067");
     vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
     m_errorMonitor->VerifyFound();
 
     // End of copy overlaps
     region.pHostPointer = data - (copy_size / 2);
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-pRegions-09067");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-pRegions-09067");
     vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
     m_errorMonitor->VerifyFound();
 
@@ -1864,7 +1864,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     region.pHostPointer = data - copy_size - 1;
     region.memoryRowLength = 48;
     region.memoryImageHeight = 32;
-    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopyEXT-pRegions-09067");
+    m_errorMonitor->SetDesiredError("VUID-VkImageToMemoryCopy-pRegions-09067");
     vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
     m_errorMonitor->VerifyFound();
 
@@ -1882,7 +1882,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     copy_memory_to_image.regionCount = 1;
     copy_memory_to_image.pRegions = &region2;
 
-    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopyEXT-pRegions-09062");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-pRegions-09062");
     vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
     m_errorMonitor->VerifyFound();
 
@@ -1921,8 +1921,8 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     copy_image_to_memory.pRegions = &region;
 
     // LAYOUT_UNDEFINED will not be allowed, but image has no memory
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09065");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfoEXT-srcImage-09109");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToMemoryInfo-srcImageLayout-09065");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToMemoryInfo-srcImage-09109");
     vk::CopyImageToMemoryEXT(*m_device, &copy_image_to_memory);
     m_errorMonitor->VerifyFound();
 
@@ -1941,8 +1941,8 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     copy_memory_to_image.pRegions = &region2;
 
     // LAYOUT_UNDEFINED will not be allowed, but image has no memory
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfoEXT-dstImage-09109");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyMemoryToImageInfo-dstImageLayout-09059");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageInfo-dstImage-09109");
     vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
     m_errorMonitor->VerifyFound();
 
@@ -1961,10 +1961,10 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     copy_image_to_image.srcImage = image;
     copy_image_to_image.dstImage = image2;
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-srcImageLayout-09072");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-srcImage-09109");
-    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfoEXT-dstImageLayout-09071");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfoEXT-dstImage-09109");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-srcImageLayout-09072");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-srcImage-09109");
+    m_errorMonitor->SetUnexpectedError("VUID-VkCopyImageToImageInfo-dstImageLayout-09071");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyImageToImageInfo-dstImage-09109");
     vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
     m_errorMonitor->VerifyFound();
 }

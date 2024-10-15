@@ -431,7 +431,7 @@ TEST_F(NegativeCommand, PushConstant2PipelineLayoutCreateInfo) {
     pc_info.layout = VK_NULL_HANDLE;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkPushConstantsInfoKHR-None-09495");
+    m_errorMonitor->SetDesiredError("VUID-VkPushConstantsInfo-None-09495");
     vk::CmdPushConstants2KHR(m_command_buffer.handle(), &pc_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -2675,13 +2675,13 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     bind_ds_info.dynamicOffsetCount = 0;
     bind_ds_info.pDynamicOffsets = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets2KHR-pBindDescriptorSetsInfo-09467");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets2-pBindDescriptorSetsInfo-09467");
     vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 
     bind_ds_info.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     bind_ds_info.descriptorSetCount = 0;
-    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfoKHR-descriptorSetCount-arraylength");
+    m_errorMonitor->SetDesiredError("VUID-VkBindDescriptorSetsInfo-descriptorSetCount-arraylength");
     vk::CmdBindDescriptorSets2KHR(command_buffer.handle(), &bind_ds_info);
     m_errorMonitor->VerifyFound();
 }

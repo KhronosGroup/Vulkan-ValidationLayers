@@ -248,6 +248,7 @@ TEST_F(NegativeDeviceFeatureProperty, VertexAttributeDivisor) {
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     m_second_device_ci.pNext = &vadf;
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -391,6 +392,7 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceGlobalPriorityQueryFeaturesK
     query_feature.globalPriorityQuery = VK_TRUE;
     m_second_device_ci.pNext = &query_feature;
 
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();

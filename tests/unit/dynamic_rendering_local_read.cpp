@@ -719,7 +719,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexColorAttachmentCou
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfoKHR-colorAttachmentCount-09525");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -775,7 +775,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndicesColorAttachment
     input_info.colorAttachmentCount = 1;
     input_info.pColorAttachmentInputIndices = locations;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-pInputAttachmentIndexInfo-09517");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndices-pInputAttachmentIndexInfo-09517");
     vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer.handle(), &input_info);
     m_errorMonitor->VerifyFound();
 }
@@ -796,7 +796,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentIndices) {
     input_info.colorAttachmentCount = 0;
     input_info.pColorAttachmentInputIndices = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-commandBuffer-09518");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndices-commandBuffer-09518");
     vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer.handle(), &input_info);
     m_errorMonitor->VerifyFound();
 }
@@ -838,13 +838,12 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexSetToUnused) {
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &locations[0], nullptr, nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &unused, &locations[0], nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 1, &unused, nullptr, &locations[0]}};
-    const char *vuids[] = {
-        "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09519",
-        "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09520",
-        "VUID-VkRenderingInputAttachmentIndexInfoKHR-dynamicRenderingLocalRead-09521"};
+    const char *vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09519",
+                           "VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09520",
+                           "VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09521"};
 
     for (uint32_t i = 0; i < 3; i++) {
-        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingInputAttachmentIndices-dynamicRenderingLocalRead-09516");
         m_errorMonitor->SetDesiredError(vuids[i]);
         vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer.handle(), &input_info[i]);
         m_errorMonitor->VerifyFound();
@@ -883,9 +882,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, InputAttachmentIndexUnique) {
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_bad[0], nullptr, nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_good[0], &locations_bad[0], nullptr},
         {VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, nullptr, 2, &locations_good[0], nullptr, &locations_bad[0]}};
-    const char *vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09522",
-                           "VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09523",
-                           "VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-09524"};
+    const char *vuids[] = {"VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09522",
+                           "VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09523",
+                           "VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09524"};
 
     for (uint32_t i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredError(vuids[i]);
@@ -927,7 +926,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetAttachmentLocationsColorAttachme
     location_info.colorAttachmentCount = 1;
     location_info.pColorAttachmentLocations = locations;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }
@@ -962,7 +961,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, NewFunctionsReportErrorExtensionDisabl
     location_info.colorAttachmentCount = 0;
     location_info.pColorAttachmentLocations = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocationsKHR-dynamicRenderingLocalRead-09509");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocations-dynamicRenderingLocalRead-09509");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &location_info);
     m_errorMonitor->VerifyFound();
 
@@ -970,7 +969,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, NewFunctionsReportErrorExtensionDisabl
     input_info.colorAttachmentCount = 0;
     input_info.pColorAttachmentInputIndices = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-dynamicRenderingLocalRead-09516");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingInputAttachmentIndices-dynamicRenderingLocalRead-09516");
     vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer.handle(), &input_info);
     m_errorMonitor->VerifyFound();
 }
@@ -991,7 +990,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, CmdSetRenderingAttachmentLocations) {
     location_info.colorAttachmentCount = 0;
     location_info.pColorAttachmentLocations = nullptr;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocationsKHR-commandBuffer-09511");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetRenderingAttachmentLocations-commandBuffer-09511");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1034,9 +1033,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsValidity) {
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = color_attachment_locations;
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocationsKHR-dynamicRenderingLocalRead-09509");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfoKHR-pColorAttachmentLocations-09513");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfoKHR-dynamicRenderingLocalRead-09512");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocations-dynamicRenderingLocalRead-09509");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-pColorAttachmentLocations-09513");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-dynamicRenderingLocalRead-09512");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1073,9 +1072,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, AttachmentLocationsMax) {
     location_info.colorAttachmentCount = static_cast<uint32_t>(color_attachment_locations.size());
     location_info.pColorAttachmentLocations = color_attachment_locations.data();
 
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfoKHR-colorAttachmentCount-09514");
-    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfoKHR-pColorAttachmentLocations-09515");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-09510");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-colorAttachmentCount-09514");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingAttachmentLocationInfo-pColorAttachmentLocations-09515");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510");
     vk::CmdSetRenderingAttachmentLocationsKHR(m_command_buffer.handle(), &location_info);
     m_errorMonitor->VerifyFound();
 }

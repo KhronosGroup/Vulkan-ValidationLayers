@@ -315,7 +315,7 @@ class BaseGenerator(OutputGenerator):
                         if structName in self.vk.structs:
                             struct = self.vk.structs[structName]
                             struct.extensions.extend([extension] if extension not in struct.extensions else [])
-
+                                
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected
         # We do some post processing now

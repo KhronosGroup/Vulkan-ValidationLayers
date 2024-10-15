@@ -145,8 +145,8 @@ dynamic_state_map = {
         "command" : ["vkCmdSetFragmentShadingRateKHR"],
         "dependency" : ["rasterizerDiscardEnable"]
     },
-    "VK_DYNAMIC_STATE_LINE_STIPPLE_KHR" : {
-        "command" : ["vkCmdSetLineStippleKHR"],
+    "VK_DYNAMIC_STATE_LINE_STIPPLE" : {
+        "command" : ["vkCmdSetLineStipple"],
         "dependency" : ["rasterizerDiscardEnable", "stippledLineEnable"]
     },
     "VK_DYNAMIC_STATE_VERTEX_INPUT_EXT" : {

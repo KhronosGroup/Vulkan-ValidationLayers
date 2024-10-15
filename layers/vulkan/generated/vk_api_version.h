@@ -36,6 +36,7 @@ enum class Version {
     _VK_VERSION_1_1 = (int)VK_API_VERSION_1_1,
     _VK_VERSION_1_2 = (int)VK_API_VERSION_1_2,
     _VK_VERSION_1_3 = (int)VK_API_VERSION_1_3,
+    _VK_VERSION_1_4 = (int)VK_API_VERSION_1_4,
 };
 }  // namespace vvl
 
@@ -70,8 +71,10 @@ static inline APIVersion NormalizeApiVersion(APIVersion specified_version) {
         return VK_API_VERSION_1_1;
     else if (specified_version < VK_API_VERSION_1_3)
         return VK_API_VERSION_1_2;
-    else
+    else if (specified_version < VK_API_VERSION_1_4)
         return VK_API_VERSION_1_3;
+    else
+        return VK_API_VERSION_1_4;
 }
 
 // Convert integer API version to a string

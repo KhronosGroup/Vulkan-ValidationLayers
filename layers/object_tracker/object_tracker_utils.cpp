@@ -357,14 +357,14 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
     return skip;
 }
 
-bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                             VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                             const VkWriteDescriptorSet *pDescriptorWrites,
-                                                             const ErrorObject &error_obj) const {
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                          VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                          const VkWriteDescriptorSet *pDescriptorWrites,
+                                                          const ErrorObject &error_obj) const {
     bool skip = false;
-    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-parameter"
-    skip |= ValidateObject(layout, kVulkanObjectTypePipelineLayout, false, "VUID-vkCmdPushDescriptorSetKHR-layout-parameter",
-                           "VUID-vkCmdPushDescriptorSetKHR-commonparent", error_obj.location.dot(Field::layout));
+    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet-commandBuffer-parameter"
+    skip |= ValidateObject(layout, kVulkanObjectTypePipelineLayout, false, "VUID-vkCmdPushDescriptorSet-layout-parameter",
+                           "VUID-vkCmdPushDescriptorSet-commonparent", error_obj.location.dot(Field::layout));
     if (pDescriptorWrites) {
         for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
             skip |=
@@ -374,13 +374,21 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer com
     return skip;
 }
 
-bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                                              const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
-                                                              const ErrorObject &error_obj) const {
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                             VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                             const VkWriteDescriptorSet *pDescriptorWrites,
+                                                             const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                               pDescriptorWrites, error_obj);
+}
+
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                           const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                           const ErrorObject &error_obj) const {
     bool skip = false;
-    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet2KHR-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet2-commandBuffer-parameter"
     skip |= ValidateObject(pPushDescriptorSetInfo->layout, kVulkanObjectTypePipelineLayout, true,
-                           "VUID-VkPushDescriptorSetInfoKHR-layout-parameter", kVUIDUndefined,
+                           "VUID-VkPushDescriptorSetInfo-layout-parameter", kVUIDUndefined,
                            error_obj.location.dot(Field::pPushDescriptorSetInfo).dot(Field::layout));
 
     if (pPushDescriptorSetInfo->pDescriptorWrites) {
@@ -391,6 +399,12 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer co
         }
     }
     return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
+                                                              const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                              const ErrorObject &error_obj) const {
+    return PreCallValidateCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, error_obj);
 }
 
 void ObjectLifetimes::CreateQueue(VkQueue vkObj, const Location &loc) {

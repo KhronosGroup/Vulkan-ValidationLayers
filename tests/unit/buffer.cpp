@@ -532,17 +532,17 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Set offset over buffer size
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2KHR-offset-08782");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2-offset-08782");
     vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), buffer_size + 4, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     // Set offset to be misaligned with index buffer UINT32 type
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2KHR-offset-08783");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2-offset-08783");
     vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
     // Test for missing pNext struct for index buffer UINT8 type
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2KHR-indexType-08787");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2-indexType-08787");
     vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT8_KHR);
     m_errorMonitor->VerifyFound();
 
@@ -565,11 +565,11 @@ TEST_F(NegativeBuffer, IndexBuffer2Size) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2KHR-size-08767");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2-size-08767");
     vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 4, 6, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2KHR-size-08768");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2-size-08768");
     vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 4, buffer_size, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 

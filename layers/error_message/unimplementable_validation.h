@@ -36,7 +36,7 @@ const char* unimplementable_validation[] = {
     "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912",
 
     // These VUIDs cannot be validated beyond making sure the pointer is not null
-    "VUID-VkMemoryToImageCopyEXT-pHostPointer-09061", "VUID-VkImageToMemoryCopyEXT-pHostPointer-09066"
+    "VUID-VkMemoryToImageCopy-pHostPointer-09061", "VUID-VkImageToMemoryCopy-pHostPointer-09066"
 
     // these are already taken care in spirv-val for 08737
     "VUID-VkShaderModuleCreateInfo-pCode-08736", "VUID-VkShaderCreateInfoEXT-pCode-08736",
@@ -112,16 +112,16 @@ const char* unimplementable_validation[] = {
     "VUID-VkImageResolve2-srcSubresource-parameter",
     "VUID-VkBufferImageCopy-imageSubresource-parameter",
     "VUID-VkBufferImageCopy2-imageSubresource-parameter",
-    "VUID-VkMemoryToImageCopyEXT-imageSubresource-parameter",
-    "VUID-VkImageToMemoryCopyEXT-imageSubresource-parameter",
+    "VUID-VkMemoryToImageCopy-imageSubresource-parameter",
+    "VUID-VkImageToMemoryCopy-imageSubresource-parameter",
     "VUID-VkCopyMemoryToImageIndirectCommandNV-imageSubresource-parameter",
     // VkImageSubresourceRange
     "VUID-VkImageMemoryBarrier-subresourceRange-parameter",
     "VUID-VkImageMemoryBarrier2-subresourceRange-parameter",
-    "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-parameter",
+    "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-parameter",
     "VUID-VkImageViewCreateInfo-subresourceRange-parameter",
     // VkImageSubresource
-    "VUID-VkImageSubresource2KHR-imageSubresource-parameter",
+    "VUID-VkImageSubresource2-imageSubresource-parameter",
     "VUID-VkSparseImageMemoryBind-subresource-parameter",
     // VkStencilOpState
     "VUID-VkPipelineDepthStencilStateCreateInfo-front-parameter",
@@ -177,8 +177,8 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07337",
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07338",
     "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-07339",
-    "VUID-VkRenderingInputAttachmentIndexInfoKHR-pDepthInputAttachmentIndex-parameter",
-    "VUID-VkRenderingInputAttachmentIndexInfoKHR-pStencilInputAttachmentIndex-parameter"
+    "VUID-VkRenderingInputAttachmentIndexInfo-pDepthInputAttachmentIndex-parameter",
+    "VUID-VkRenderingInputAttachmentIndexInfo-pStencilInputAttachmentIndex-parameter"
 
     // These VUs have "is not NULL it must be a pointer to a valid pointer to valid structure" language
     // There is no actual way to validate thsese
@@ -200,9 +200,9 @@ const char* unimplementable_validation[] = {
     "VUID-VkD3D12FenceSubmitInfoKHR-pWaitSemaphoreValues-parameter",
     "VUID-VkD3D12FenceSubmitInfoKHR-pSignalSemaphoreValues-parameter",
     "VUID-VkPresentRegionKHR-pRectangles-parameter",
-    "VUID-VkBindDescriptorSetsInfoKHR-pDynamicOffsets-parameter",
-    "VUID-VkPhysicalDeviceHostImageCopyPropertiesEXT-pCopySrcLayouts-parameter",
-    "VUID-VkPhysicalDeviceHostImageCopyPropertiesEXT-pCopyDstLayouts-parameter",
+    "VUID-VkBindDescriptorSetsInfo-pDynamicOffsets-parameter",
+    "VUID-VkPhysicalDeviceHostImageCopyProperties-pCopySrcLayouts-parameter",
+    "VUID-VkPhysicalDeviceHostImageCopyProperties-pCopyDstLayouts-parameter",
     "VUID-VkSurfacePresentModeCompatibilityEXT-pPresentModes-parameter",
     "VUID-VkFrameBoundaryEXT-pImages-parameter",
     "VUID-VkFrameBoundaryEXT-pBuffers-parameter",
