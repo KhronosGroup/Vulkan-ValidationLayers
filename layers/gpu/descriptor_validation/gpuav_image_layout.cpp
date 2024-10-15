@@ -454,10 +454,10 @@ void Validator::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, 
     // TODO???
 }
 
-void Validator::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                       const VkHostImageLayoutTransitionInfoEXT *pTransitions,
-                                                       const RecordObject &record_obj) {
-    BaseClass::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
+void Validator::PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                    const VkHostImageLayoutTransitionInfo *pTransitions,
+                                                    const RecordObject &record_obj) {
+    BaseClass::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 
     if (VK_SUCCESS != record_obj.result) return;
 
@@ -467,6 +467,12 @@ void Validator::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t
         if (!image_state) continue;
         image_state->SetImageLayout(transition.subresourceRange, transition.newLayout);
     }
+}
+
+void Validator::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
+                                                       const VkHostImageLayoutTransitionInfoEXT *pTransitions,
+                                                       const RecordObject &record_obj) {
+    PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 }
 
 void Validator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,

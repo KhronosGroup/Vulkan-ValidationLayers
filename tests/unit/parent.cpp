@@ -836,7 +836,7 @@ TEST_F(NegativeParent, MapMemory2) {
     map_info.size = memory_info.allocationSize;
 
     uint32_t *pData = nullptr;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryMapInfoKHR-memory-parent");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkMemoryMapInfo-memory-parent");
     vk::MapMemory2KHR(device(), &map_info, (void **)&pData);
     m_errorMonitor->VerifyFound();
 }

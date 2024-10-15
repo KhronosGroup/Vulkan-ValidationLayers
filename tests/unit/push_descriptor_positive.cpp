@@ -65,6 +65,54 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
                                 &descriptor_write);
 }
 
+TEST_F(PositivePushDescriptor, NullDstSet14) {
+    TEST_DESCRIPTION("Use null dstSet in CmdPushDescriptorSet, function promoted to core in 1.4");
+
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::pushDescriptor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 2;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    dsl_binding.pImmutableSamplers = NULL;
+
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    // Create push descriptor set layout
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+
+    // Use helper to create graphics pipeline
+    CreatePipelineHelper helper(*this);
+    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
+    helper.CreateGraphicsPipeline();
+
+    const uint32_t data_size = sizeof(float) * 3;
+    vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buff_info;
+    buff_info.buffer = vbo.handle();
+    buff_info.offset = 0;
+    buff_info.range = data_size;
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buff_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.dstSet = 0;  // Should not cause a validation error
+
+    m_command_buffer.Begin();
+
+    // In Intel GPU, it needs to bind pipeline before push descriptor set.
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+                             &descriptor_write);
+}
+
 TEST_F(PositivePushDescriptor, UnboundSet) {
     TEST_DESCRIPTION("Ensure that no validation errors are produced for not bound push descriptor sets");
 

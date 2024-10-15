@@ -345,6 +345,31 @@ void GetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemory
 void GetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                             uint32_t* pSparseMemoryRequirementCount,
                                             VkSparseImageMemoryRequirements2* pSparseMemoryRequirements);
+void CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern);
+VkResult MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData);
+VkResult UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo);
+void CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                         VkIndexType indexType);
+void GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo, VkExtent2D* pGranularity);
+void GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo, VkSubresourceLayout2* pLayout);
+void GetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                VkSubresourceLayout2* pLayout);
+void CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                          uint32_t set, uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites);
+void CmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                      VkPipelineLayout layout, uint32_t set, const void* pData);
+void CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfo* pLocationInfo);
+void CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
+                                           const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo);
+void CmdBindDescriptorSets2(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo);
+void CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo);
+void CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo);
+void CmdPushDescriptorSetWithTemplate2(VkCommandBuffer commandBuffer,
+                                       const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo);
+VkResult CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo);
+VkResult CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo);
+VkResult CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo);
+VkResult TransitionImageLayout(VkDevice device, uint32_t transitionCount, const VkHostImageLayoutTransitionInfo* pTransitions);
 void DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
 VkResult GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, VkSurfaceKHR surface,
                                             VkBool32* pSupported);
@@ -553,10 +578,9 @@ VkResult GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevic
                                                   VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates);
 void CmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                   const VkFragmentShadingRateCombinerOpKHR combinerOps[2]);
-void CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
-                                           const VkRenderingAttachmentLocationInfoKHR* pLocationInfo);
+void CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfo* pLocationInfo);
 void CmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
-                                              const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo);
+                                              const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo);
 VkResult WaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout);
 VkDeviceAddress GetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
 uint64_t GetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo);
@@ -574,8 +598,8 @@ VkResult GetPipelineExecutableStatisticsKHR(VkDevice device, const VkPipelineExe
 VkResult GetPipelineExecutableInternalRepresentationsKHR(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
                                                          uint32_t* pInternalRepresentationCount,
                                                          VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations);
-VkResult MapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData);
-VkResult UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo);
+VkResult MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData);
+VkResult UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo);
 VkResult GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties);
@@ -607,11 +631,10 @@ void GetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceIm
                                                VkSparseImageMemoryRequirements2* pSparseMemoryRequirements);
 void CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
                             VkIndexType indexType);
-void GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfoKHR* pRenderingAreaInfo, VkExtent2D* pGranularity);
-void GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR* pInfo,
-                                        VkSubresourceLayout2KHR* pLayout);
-void GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                   VkSubresourceLayout2KHR* pLayout);
+void GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo, VkExtent2D* pGranularity);
+void GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo, VkSubresourceLayout2* pLayout);
+void GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                   VkSubresourceLayout2* pLayout);
 VkResult CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries);
 void DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary, const VkAllocationCallbacks* pAllocator);
@@ -629,11 +652,11 @@ VkResult GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalD
                                                       VkTimeDomainKHR* pTimeDomains);
 VkResult GetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount, const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                     uint64_t* pTimestamps, uint64_t* pMaxDeviation);
-void CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo);
-void CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo);
-void CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo);
+void CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo);
+void CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo);
+void CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo);
 void CmdPushDescriptorSetWithTemplate2KHR(VkCommandBuffer commandBuffer,
-                                          const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo);
+                                          const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo);
 void CmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
                                        const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo);
 void CmdBindDescriptorBufferEmbeddedSamplers2EXT(
@@ -891,13 +914,12 @@ void CmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 dept
 void CmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable);
 void CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp,
                         VkStencilOp depthFailOp, VkCompareOp compareOp);
-VkResult CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo);
-VkResult CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo);
-VkResult CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo);
-VkResult TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                  const VkHostImageLayoutTransitionInfoEXT* pTransitions);
-void GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                   VkSubresourceLayout2KHR* pLayout);
+VkResult CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo);
+VkResult CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo);
+VkResult CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo);
+VkResult TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount, const VkHostImageLayoutTransitionInfo* pTransitions);
+void GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                   VkSubresourceLayout2* pLayout);
 VkResult ReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo);
 void GetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
                                               VkMemoryRequirements2* pMemoryRequirements);

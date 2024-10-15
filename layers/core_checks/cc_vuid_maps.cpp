@@ -64,43 +64,43 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
          {{
              {Key(Struct::VkBufferImageCopy), "VUID-VkBufferImageCopy-imageExtent-06659"},
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-imageExtent-06659"},
-             {Key(Struct::VkMemoryToImageCopyEXT), "VUID-VkMemoryToImageCopyEXT-imageExtent-06659"},
-             {Key(Struct::VkImageToMemoryCopyEXT), "VUID-VkImageToMemoryCopyEXT-imageExtent-06659"},
+             {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-imageExtent-06659"},
+             {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-imageExtent-06659"},
          }}},
         {CopyError::ImageExtentHeightZero_06660,
          {{
              {Key(Struct::VkBufferImageCopy), "VUID-VkBufferImageCopy-imageExtent-06660"},
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-imageExtent-06660"},
-             {Key(Struct::VkMemoryToImageCopyEXT), "VUID-VkMemoryToImageCopyEXT-imageExtent-06660"},
-             {Key(Struct::VkImageToMemoryCopyEXT), "VUID-VkImageToMemoryCopyEXT-imageExtent-06660"},
+             {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-imageExtent-06660"},
+             {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-imageExtent-06660"},
          }}},
         {CopyError::ImageExtentDepthZero_06661,
          {{
              {Key(Struct::VkBufferImageCopy), "VUID-VkBufferImageCopy-imageExtent-06661"},
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-imageExtent-06661"},
-             {Key(Struct::VkMemoryToImageCopyEXT), "VUID-VkMemoryToImageCopyEXT-imageExtent-06661"},
-             {Key(Struct::VkImageToMemoryCopyEXT), "VUID-VkImageToMemoryCopyEXT-imageExtent-06661"},
+             {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-imageExtent-06661"},
+             {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-imageExtent-06661"},
          }}},
         {CopyError::ImageExtentRowLength_09101,
          {{
              {Key(Struct::VkBufferImageCopy), "VUID-VkBufferImageCopy-bufferRowLength-09101"},
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-bufferRowLength-09101"},
-             {Key(Struct::VkMemoryToImageCopyEXT), "VUID-VkMemoryToImageCopyEXT-memoryRowLength-09101"},
-             {Key(Struct::VkImageToMemoryCopyEXT), "VUID-VkImageToMemoryCopyEXT-memoryRowLength-09101"},
+             {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-memoryRowLength-09101"},
+             {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-memoryRowLength-09101"},
          }}},
         {CopyError::ImageExtentImageHeight_09102,
          {{
              {Key(Struct::VkBufferImageCopy), "VUID-VkBufferImageCopy-bufferImageHeight-09102"},
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-bufferImageHeight-09102"},
-             {Key(Struct::VkMemoryToImageCopyEXT), "VUID-VkMemoryToImageCopyEXT-memoryImageHeight-09102"},
-             {Key(Struct::VkImageToMemoryCopyEXT), "VUID-VkImageToMemoryCopyEXT-memoryImageHeight-09102"},
+             {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-memoryImageHeight-09102"},
+             {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-memoryImageHeight-09102"},
          }}},
         {CopyError::AspectMaskSingleBit_09103,
          {{
              {Key(Struct::VkBufferImageCopy), "VUID-VkBufferImageCopy-aspectMask-09103"},
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-aspectMask-09103"},
-             {Key(Struct::VkMemoryToImageCopyEXT), "VUID-VkMemoryToImageCopyEXT-aspectMask-09103"},
-             {Key(Struct::VkImageToMemoryCopyEXT), "VUID-VkImageToMemoryCopyEXT-aspectMask-09103"},
+             {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-aspectMask-09103"},
+             {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-aspectMask-09103"},
          }}},
     };
 
@@ -113,10 +113,10 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
     } else if (IsValueIn(loc.function, {Func::vkCmdCopyBufferToImage2, Func::vkCmdCopyBufferToImage2KHR,
                                         Func::vkCmdCopyImageToBuffer2, Func::vkCmdCopyImageToBuffer2KHR})) {
         s = Struct::VkBufferImageCopy2;
-    } else if (loc.function == Func::vkCopyImageToMemoryEXT) {
-        s = Struct::VkImageToMemoryCopyEXT;
-    } else if (loc.function == Func::vkCopyMemoryToImageEXT) {
-        s = Struct::VkMemoryToImageCopyEXT;
+    } else if (loc.function == Func::vkCopyImageToMemory || loc.function == Func::vkCopyImageToMemoryEXT) {
+        s = Struct::VkImageToMemoryCopy;
+    } else if (loc.function == Func::vkCopyMemoryToImage || loc.function == Func::vkCopyMemoryToImageEXT) {
+        s = Struct::VkMemoryToImageCopy;
     }
     const Location updated_loc(f, s, loc.field, loc.index);
 
@@ -137,8 +137,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageSubresource-07971"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-pRegions-06223"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-imageOffset-00197"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07971"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07971"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-imageSubresource-07971"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-imageSubresource-07971"},
          }}},
         {CopyError::ImageOffest_07972,
          {{
@@ -146,8 +146,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageSubresource-07972"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-pRegions-06224"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-imageOffset-00198"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07972"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07972"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-imageSubresource-07972"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-imageSubresource-07972"},
          }}},
         {CopyError::Image1D_07979,
          {{
@@ -155,8 +155,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07979"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07979"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07979"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07979"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07979"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07979"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07979"},
          }}},
         {CopyError::Image1D_07980,
          {{
@@ -164,8 +164,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07980"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07980"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07980"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07980"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07980"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07980"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07980"},
          }}},
         {CopyError::Image3D_07983,
          {{
@@ -173,8 +173,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07983"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07983"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07983"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07983"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07983"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07983"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07983"},
          }}},
         {CopyError::TexelBlockExtentWidth_07274,
          {{
@@ -182,8 +182,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07274"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07274"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07274"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07274"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07274"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07274"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07274"},
          }}},
         {CopyError::TexelBlockExtentHeight_07275,
          {{
@@ -191,8 +191,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07275"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07275"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07275"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07275"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07275"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07275"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07275"},
          }}},
         {CopyError::TexelBlockExtentDepth_07276,
          {{
@@ -200,8 +200,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07276"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07276"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07276"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07276"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07276"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07276"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07276"},
          }}},
         {CopyError::TexelBlockExtentWidth_00207,
          {{
@@ -209,8 +209,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-00207"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-00207"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-00207"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00207"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00207"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-00207"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-00207"},
          }}},
         {CopyError::TexelBlockExtentHeight_00208,
          {{
@@ -218,8 +218,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-00208"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-00208"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-00208"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00208"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00208"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-00208"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-00208"},
          }}},
         {CopyError::TexelBlockExtentDepth_00209,
          {{
@@ -227,8 +227,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-00209"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-00209"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-00209"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-00209"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-00209"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-00209"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-00209"},
          }}},
         {CopyError::MultiPlaneAspectMask_07981,
          {{
@@ -236,8 +236,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07981"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07981"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07981"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-dstImage-07981"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-srcImage-07981"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-dstImage-07981"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-srcImage-07981"},
          }}},
         {CopyError::ImageOffest_09104,
          {{
@@ -245,8 +245,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageOffset-09104"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-imageOffset-09104"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-imageOffset-09104"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-imageOffset-09104"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-imageOffset-09104"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-imageOffset-09104"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-imageOffset-09104"},
          }}},
         {CopyError::AspectMask_09105,
          {{
@@ -254,8 +254,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageSubresource-09105"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-imageSubresource-09105"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-imageSubresource-09105"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-09105"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-09105"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-imageSubresource-09105"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-imageSubresource-09105"},
          }}},
         {CopyError::bufferRowLength_09106,
          {{
@@ -263,8 +263,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-bufferRowLength-09106"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-bufferRowLength-09106"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-bufferRowLength-09106"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09106"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09106"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-memoryRowLength-09106"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-memoryRowLength-09106"},
          }}},
         {CopyError::bufferImageHeight_09107,
          {{
@@ -272,8 +272,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-bufferImageHeight-09107"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-bufferImageHeight-09107"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-bufferImageHeight-09107"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-memoryImageHeight-09107"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-memoryImageHeight-09107"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-memoryImageHeight-09107"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-memoryImageHeight-09107"},
          }}},
         {CopyError::bufferRowLength_09108,
          {{
@@ -281,8 +281,8 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-bufferRowLength-09108"},
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-bufferRowLength-09108"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-bufferRowLength-09108"},
-             {Key(Struct::VkCopyMemoryToImageInfoEXT), "VUID-VkCopyMemoryToImageInfoEXT-memoryRowLength-09108"},
-             {Key(Struct::VkCopyImageToMemoryInfoEXT), "VUID-VkCopyImageToMemoryInfoEXT-memoryRowLength-09108"},
+             {Key(Struct::VkCopyMemoryToImageInfo), "VUID-VkCopyMemoryToImageInfo-memoryRowLength-09108"},
+             {Key(Struct::VkCopyImageToMemoryInfo), "VUID-VkCopyImageToMemoryInfo-memoryRowLength-09108"},
          }}},
     };
 
@@ -294,10 +294,10 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error) 
         s = Struct::VkCopyImageToBufferInfo2;
     } else if (IsValueIn(loc.function, {Func::vkCmdCopyBufferToImage2, Func::vkCmdCopyBufferToImage2KHR})) {
         s = Struct::VkCopyBufferToImageInfo2;
-    } else if (loc.function == Func::vkCopyImageToMemoryEXT) {
-        s = Struct::VkCopyImageToMemoryInfoEXT;
-    } else if (loc.function == Func::vkCopyMemoryToImageEXT) {
-        s = Struct::VkCopyMemoryToImageInfoEXT;
+    } else if (loc.function == Func::vkCopyImageToMemory || loc.function == Func::vkCopyImageToMemoryEXT) {
+        s = Struct::VkCopyImageToMemoryInfo;
+    } else if (loc.function == Func::vkCopyMemoryToImage || loc.function == Func::vkCopyMemoryToImageEXT) {
+        s = Struct::VkCopyMemoryToImageInfo;
     }
     const Location updated_loc(f, s, loc.field, loc.index);
 
@@ -316,181 +316,181 @@ const std::string &GetCopyImageVUID(const Location &loc, CopyError error) {
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-00146"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-00146"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07979"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07979"},
          }}},
         {CopyError::DstImage1D_00152,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-00152"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-00152"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07979"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07979"},
          }}},
         {CopyError::SrcImage1D_01785,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-01785"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-01785"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07980"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07980"},
          }}},
         {CopyError::DstImage1D_01786,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-01786"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-01786"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07980"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07980"},
          }}},
         {CopyError::SrcOffset_01728,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-01728"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-01728"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-00207"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-00207"},
          }}},
         {CopyError::SrcOffset_01729,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-01729"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-01729"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-00208"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-00208"},
          }}},
         {CopyError::SrcOffset_01730,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-01730"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-01730"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-00209"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-00209"},
          }}},
         {CopyError::DstOffset_01732,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-01732"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-01732"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-00207"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-00207"},
          }}},
         {CopyError::DstOffset_01733,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-01733"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-01733"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-00208"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-00208"},
          }}},
         {CopyError::DstOffset_01734,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-01734"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-01734"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-00209"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-00209"},
          }}},
         {CopyError::SrcImageContiguous_07966,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-07966"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-07966"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07966"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07966"},
          }}},
         {CopyError::DstImageContiguous_07966,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-07966"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-07966"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07966"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07966"},
          }}},
         {CopyError::SrcImageSubsampled_07969,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-07969"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-07969"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07969"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07969"},
          }}},
         {CopyError::DstImageSubsampled_07969,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-07969"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-07969"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07969"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07969"},
          }}},
         {CopyError::SrcOffset_07278,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-pRegions-07278"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-pRegions-07278"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07274"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07274"},
          }}},
         {CopyError::SrcOffset_07279,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-pRegions-07279"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-pRegions-07279"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07275"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07275"},
          }}},
         {CopyError::SrcOffset_07280,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-pRegions-07280"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-pRegions-07280"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07276"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07276"},
          }}},
         {CopyError::DstOffset_07281,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-pRegions-07281"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-pRegions-07281"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07274"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07274"},
          }}},
         {CopyError::DstOffset_07282,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-pRegions-07282"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-pRegions-07282"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07275"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07275"},
          }}},
         {CopyError::DstOffset_07283,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-pRegions-07283"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-pRegions-07283"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07276"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07276"},
          }}},
         {CopyError::SrcSubresource_00142,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-aspectMask-00142"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-aspectMask-00142"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcSubresource-09105"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcSubresource-09105"},
          }}},
         {CopyError::DstSubresource_00143,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-aspectMask-00143"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-aspectMask-00143"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstSubresource-09105"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstSubresource-09105"},
          }}},
         {CopyError::SrcOffset_00144,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcOffset-00144"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcOffset-00144"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07971"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcSubresource-07971"},
          }}},
         {CopyError::SrcOffset_00145,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcOffset-00145"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcOffset-00145"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07972"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcSubresource-07972"},
          }}},
         {CopyError::SrcOffset_00147,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcOffset-00147"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcOffset-00147"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcOffset-09104"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcOffset-09104"},
          }}},
         {CopyError::DstOffset_00150,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstOffset-00150"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstOffset-00150"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07971"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstSubresource-07971"},
          }}},
         {CopyError::DstOffset_00151,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstOffset-00151"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstOffset-00151"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07972"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstSubresource-07972"},
          }}},
         {CopyError::DstOffset_00153,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstOffset-00153"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstOffset-00153"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstOffset-09104"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstOffset-09104"},
          }}},
         {CopyError::SrcImage3D_04443,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-srcImage-04443"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-srcImage-04443"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-srcImage-07983"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-srcImage-07983"},
          }}},
         {CopyError::DstImage3D_04444,
          {{
              {Key(Func::vkCmdCopyImage), "VUID-vkCmdCopyImage-dstImage-04444"},
              {Key(Func::vkCmdCopyImage2), "VUID-VkCopyImageInfo2-dstImage-04444"},
-             {Key(Func::vkCopyImageToImageEXT), "VUID-VkCopyImageToImageInfoEXT-dstImage-07983"},
+             {Key(Func::vkCopyImageToImage), "VUID-VkCopyImageToImageInfo-dstImage-07983"},
          }}},
     };
 
@@ -509,8 +509,8 @@ const std::string &GetImageMipLevelVUID(const Location &loc) {
         {Key(Func::vkCmdCopyImage, Field::dstSubresource), "VUID-vkCmdCopyImage-dstSubresource-07967"},
         {Key(Func::vkCmdCopyImage2, Field::srcSubresource), "VUID-VkCopyImageInfo2-srcSubresource-07967"},
         {Key(Func::vkCmdCopyImage2, Field::dstSubresource), "VUID-VkCopyImageInfo2-dstSubresource-07967"},
-        {Key(Func::vkCopyImageToImageEXT, Field::srcSubresource), "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07967"},
-        {Key(Func::vkCopyImageToImageEXT, Field::dstSubresource), "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07967"},
+        {Key(Func::vkCopyImageToImage, Field::srcSubresource), "VUID-VkCopyImageToImageInfo-srcSubresource-07967"},
+        {Key(Func::vkCopyImageToImage, Field::dstSubresource), "VUID-VkCopyImageToImageInfo-dstSubresource-07967"},
         {Key(Func::vkCmdBlitImage, Field::srcSubresource), "VUID-vkCmdBlitImage-srcSubresource-01705"},
         {Key(Func::vkCmdBlitImage, Field::dstSubresource), "VUID-vkCmdBlitImage-dstSubresource-01706"},
         {Key(Func::vkCmdBlitImage2, Field::srcSubresource), "VUID-VkBlitImageInfo2-srcSubresource-01705"},
@@ -523,8 +523,8 @@ const std::string &GetImageMipLevelVUID(const Location &loc) {
         {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-imageSubresource-07967"},
         {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageSubresource-07967"},
         {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-imageSubresource-07967"},
-        {Key(Func::vkCopyImageToMemoryEXT), "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07967"},
-        {Key(Func::vkCopyMemoryToImageEXT), "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07967"},
+        {Key(Func::vkCopyImageToMemory), "VUID-VkCopyImageToMemoryInfo-imageSubresource-07967"},
+        {Key(Func::vkCopyMemoryToImage), "VUID-VkCopyMemoryToImageInfo-imageSubresource-07967"},
     }};
 
     const auto &result = FindVUID(loc, errors);
@@ -542,8 +542,8 @@ const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
         {Key(Func::vkCmdCopyImage, Field::dstSubresource), "VUID-vkCmdCopyImage-dstSubresource-07968"},
         {Key(Func::vkCmdCopyImage2, Field::srcSubresource), "VUID-VkCopyImageInfo2-srcSubresource-07968"},
         {Key(Func::vkCmdCopyImage2, Field::dstSubresource), "VUID-VkCopyImageInfo2-dstSubresource-07968"},
-        {Key(Func::vkCopyImageToImageEXT, Field::srcSubresource), "VUID-VkCopyImageToImageInfoEXT-srcSubresource-07968"},
-        {Key(Func::vkCopyImageToImageEXT, Field::dstSubresource), "VUID-VkCopyImageToImageInfoEXT-dstSubresource-07968"},
+        {Key(Func::vkCopyImageToImage, Field::srcSubresource), "VUID-VkCopyImageToImageInfo-srcSubresource-07968"},
+        {Key(Func::vkCopyImageToImage, Field::dstSubresource), "VUID-VkCopyImageToImageInfo-dstSubresource-07968"},
         {Key(Func::vkCmdBlitImage, Field::srcSubresource), "VUID-vkCmdBlitImage-srcSubresource-01707"},
         {Key(Func::vkCmdBlitImage, Field::dstSubresource), "VUID-vkCmdBlitImage-dstSubresource-01708"},
         {Key(Func::vkCmdBlitImage2, Field::srcSubresource), "VUID-VkBlitImageInfo2-srcSubresource-01707"},
@@ -556,8 +556,8 @@ const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
         {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-imageSubresource-07968"},
         {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageSubresource-07968"},
         {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-imageSubresource-07968"},
-        {Key(Func::vkCopyImageToMemoryEXT), "VUID-VkCopyImageToMemoryInfoEXT-imageSubresource-07968"},
-        {Key(Func::vkCopyMemoryToImageEXT), "VUID-VkCopyMemoryToImageInfoEXT-imageSubresource-07968"},
+        {Key(Func::vkCopyImageToMemory), "VUID-VkCopyImageToMemoryInfo-imageSubresource-07968"},
+        {Key(Func::vkCopyMemoryToImage), "VUID-VkCopyMemoryToImageInfo-imageSubresource-07968"},
     }};
 
     const auto &result = FindVUID(loc, errors);
@@ -575,7 +575,7 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
          {{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01486"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01486"},
-             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01486"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01486"},
              {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-baseMipLevel-01470"},
              {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474"},
              {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-01478"},
@@ -584,7 +584,7 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
          {{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01724"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01724"},
-             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01724"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01724"},
              {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-01692"},
              {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-01694"},
              {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-01718"},
@@ -593,7 +593,7 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
          {{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01488"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01488"},
-             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01488"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01488"},
              {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-baseArrayLayer-01472"},
              {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476"},
              {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-image-06724"},
@@ -602,7 +602,7 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
          {{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-01725"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-01725"},
-             {Key(Func::vkTransitionImageLayoutEXT), "VUID-VkHostImageLayoutTransitionInfoEXT-subresourceRange-01725"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-01725"},
              {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-01693"},
              {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-01695"},
              {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-06725"},

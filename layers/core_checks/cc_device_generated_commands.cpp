@@ -248,7 +248,7 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
                          pipeline_info_loc.dot(Field::initialPipeline),
                          "is missing VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, was created with flags %s. (Make sure you "
                          "set it with VkPipelineCreateFlags2CreateInfoKHR)",
-                         string_VkPipelineCreateFlags2KHR(initial_pipeline->create_flags).c_str());
+                         string_VkPipelineCreateFlags2(initial_pipeline->create_flags).c_str());
     }
 
     if (initial_pipeline->pipeline_type == VK_PIPELINE_BIND_POINT_COMPUTE &&
@@ -480,7 +480,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
              [](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
                  if ((buffer_state->usage & VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT) == 0) {
                      if (out_error_msg) {
-                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
+                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                      }
                      return false;
                  }
@@ -506,7 +506,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
              [](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
                  if ((buffer_state->usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR) == 0) {
                      if (out_error_msg) {
-                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2KHR(buffer_state->usage);
+                         *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                      }
                      return false;
                  }
@@ -841,7 +841,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                              set_write_loc.dot(Field::pipeline),
                              "is missing VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, was created with flags %s. (Make sure you "
                              "set it with VkPipelineCreateFlags2CreateInfoKHR)",
-                             string_VkPipelineCreateFlags2KHR(update_pipeline->create_flags).c_str());
+                             string_VkPipelineCreateFlags2(update_pipeline->create_flags).c_str());
         }
 
         if ((update_pipeline->active_shaders | props.supportedIndirectCommandsShaderStagesPipelineBinding) !=

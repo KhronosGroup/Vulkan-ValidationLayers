@@ -217,6 +217,24 @@ class DeviceFeaturesOutputGenerator(BaseGenerator):
                 if (api_version >= VK_API_VERSION_1_3) {
                     features->texelBufferAlignment = true;
                 }
+                if (api_version >= VK_API_VERSION_1_4) {
+                    features->fullDrawIndexUint32 = true;
+                    features->imageCubeArray = true;
+                    features->independentBlend = true;
+                    features->sampleRateShading = true;
+                    features->drawIndirectFirstInstance = true;
+                    features->depthClamp = true;
+                    features->depthBiasClamp = true;
+                    features->samplerAnisotropy = true;
+                    features->fragmentStoresAndAtomics = true;
+                    features->shaderStorageImageExtendedFormats = true;
+                    features->shaderUniformBufferArrayDynamicIndexing = true;
+                    features->shaderSampledImageArrayDynamicIndexing = true;
+                    features->shaderStorageBufferArrayDynamicIndexing = true;
+                    features->shaderStorageImageArrayDynamicIndexing = true;
+                    features->shaderImageGatherExtended = true;
+                    features->shaderInt16 = true;
+                }
             }
             ''')
 

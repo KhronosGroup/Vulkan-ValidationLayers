@@ -400,6 +400,14 @@ void DispatchObject::UnwrapPnextChainHandles(const void* pNext) {
                     safe_struct->imageView = Unwrap(safe_struct->imageView);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineLayoutCreateInfo*>(cur_pnext);
+                if (safe_struct->pSetLayouts) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->setLayoutCount; ++index0) {
+                        safe_struct->pSetLayouts[index0] = Unwrap(safe_struct->pSetLayouts[index0]);
+                    }
+                }
+            } break;
             case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkSwapchainPresentFenceInfoEXT*>(cur_pnext);
                 if (safe_struct->pFences) {
@@ -420,14 +428,6 @@ void DispatchObject::UnwrapPnextChainHandles(const void* pNext) {
 
                 if (safe_struct->quantizationMap) {
                     safe_struct->quantizationMap = Unwrap(safe_struct->quantizationMap);
-                }
-            } break;
-            case VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO: {
-                auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineLayoutCreateInfo*>(cur_pnext);
-                if (safe_struct->pSetLayouts) {
-                    for (uint32_t index0 = 0; index0 < safe_struct->setLayoutCount; ++index0) {
-                        safe_struct->pSetLayouts[index0] = Unwrap(safe_struct->pSetLayouts[index0]);
-                    }
                 }
             } break;
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -2880,6 +2880,319 @@ void DispatchObject::GetDeviceImageSparseMemoryRequirements(VkDevice device, con
                                                                  pSparseMemoryRequirements);
 }
 
+void DispatchObject::CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern) {
+    device_dispatch_table.CmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern);
+}
+
+VkResult DispatchObject::MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
+    if (!wrap_handles) return device_dispatch_table.MapMemory2(device, pMemoryMapInfo, ppData);
+    vku::safe_VkMemoryMapInfo var_local_pMemoryMapInfo;
+    vku::safe_VkMemoryMapInfo* local_pMemoryMapInfo = nullptr;
+    {
+        if (pMemoryMapInfo) {
+            local_pMemoryMapInfo = &var_local_pMemoryMapInfo;
+            local_pMemoryMapInfo->initialize(pMemoryMapInfo);
+
+            if (pMemoryMapInfo->memory) {
+                local_pMemoryMapInfo->memory = Unwrap(pMemoryMapInfo->memory);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.MapMemory2(device, (const VkMemoryMapInfo*)local_pMemoryMapInfo, ppData);
+
+    return result;
+}
+
+VkResult DispatchObject::UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
+    if (!wrap_handles) return device_dispatch_table.UnmapMemory2(device, pMemoryUnmapInfo);
+    vku::safe_VkMemoryUnmapInfo var_local_pMemoryUnmapInfo;
+    vku::safe_VkMemoryUnmapInfo* local_pMemoryUnmapInfo = nullptr;
+    {
+        if (pMemoryUnmapInfo) {
+            local_pMemoryUnmapInfo = &var_local_pMemoryUnmapInfo;
+            local_pMemoryUnmapInfo->initialize(pMemoryUnmapInfo);
+
+            if (pMemoryUnmapInfo->memory) {
+                local_pMemoryUnmapInfo->memory = Unwrap(pMemoryUnmapInfo->memory);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.UnmapMemory2(device, (const VkMemoryUnmapInfo*)local_pMemoryUnmapInfo);
+
+    return result;
+}
+
+void DispatchObject::CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                                         VkIndexType indexType) {
+    if (!wrap_handles) return device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
+    { buffer = Unwrap(buffer); }
+    device_dispatch_table.CmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType);
+}
+
+void DispatchObject::GetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
+                                                 VkExtent2D* pGranularity) {
+    device_dispatch_table.GetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity);
+}
+
+void DispatchObject::GetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                     VkSubresourceLayout2* pLayout) {
+    device_dispatch_table.GetDeviceImageSubresourceLayout(device, pInfo, pLayout);
+}
+
+void DispatchObject::GetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                VkSubresourceLayout2* pLayout) {
+    if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
+    { image = Unwrap(image); }
+    device_dispatch_table.GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
+}
+
+void DispatchObject::CmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                          VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                          const VkWriteDescriptorSet* pDescriptorWrites) {
+    if (!wrap_handles)
+        return device_dispatch_table.CmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                          pDescriptorWrites);
+    small_vector<vku::safe_VkWriteDescriptorSet, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pDescriptorWrites;
+    vku::safe_VkWriteDescriptorSet* local_pDescriptorWrites = nullptr;
+    {
+        layout = Unwrap(layout);
+        if (pDescriptorWrites) {
+            var_local_pDescriptorWrites.resize(descriptorWriteCount);
+            local_pDescriptorWrites = var_local_pDescriptorWrites.data();
+            for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
+                local_pDescriptorWrites[index0].initialize(&pDescriptorWrites[index0]);
+                UnwrapPnextChainHandles(local_pDescriptorWrites[index0].pNext);
+
+                if (pDescriptorWrites[index0].dstSet) {
+                    local_pDescriptorWrites[index0].dstSet = Unwrap(pDescriptorWrites[index0].dstSet);
+                }
+                if (local_pDescriptorWrites[index0].pImageInfo) {
+                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                        if (pDescriptorWrites[index0].pImageInfo[index1].sampler) {
+                            local_pDescriptorWrites[index0].pImageInfo[index1].sampler =
+                                Unwrap(pDescriptorWrites[index0].pImageInfo[index1].sampler);
+                        }
+                        if (pDescriptorWrites[index0].pImageInfo[index1].imageView) {
+                            local_pDescriptorWrites[index0].pImageInfo[index1].imageView =
+                                Unwrap(pDescriptorWrites[index0].pImageInfo[index1].imageView);
+                        }
+                    }
+                }
+                if (local_pDescriptorWrites[index0].pBufferInfo) {
+                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                        if (pDescriptorWrites[index0].pBufferInfo[index1].buffer) {
+                            local_pDescriptorWrites[index0].pBufferInfo[index1].buffer =
+                                Unwrap(pDescriptorWrites[index0].pBufferInfo[index1].buffer);
+                        }
+                    }
+                }
+                if (local_pDescriptorWrites[index0].pTexelBufferView) {
+                    for (uint32_t index1 = 0; index1 < local_pDescriptorWrites[index0].descriptorCount; ++index1) {
+                        local_pDescriptorWrites[index0].pTexelBufferView[index1] =
+                            Unwrap(local_pDescriptorWrites[index0].pTexelBufferView[index1]);
+                    }
+                }
+            }
+        }
+    }
+    device_dispatch_table.CmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                               (const VkWriteDescriptorSet*)local_pDescriptorWrites);
+}
+
+void DispatchObject::CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
+                                                        const VkRenderingAttachmentLocationInfo* pLocationInfo) {
+    device_dispatch_table.CmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo);
+}
+
+void DispatchObject::CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
+                                                           const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
+    device_dispatch_table.CmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo);
+}
+
+void DispatchObject::CmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                            const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo);
+    vku::safe_VkBindDescriptorSetsInfo var_local_pBindDescriptorSetsInfo;
+    vku::safe_VkBindDescriptorSetsInfo* local_pBindDescriptorSetsInfo = nullptr;
+    {
+        if (pBindDescriptorSetsInfo) {
+            local_pBindDescriptorSetsInfo = &var_local_pBindDescriptorSetsInfo;
+            local_pBindDescriptorSetsInfo->initialize(pBindDescriptorSetsInfo);
+
+            if (pBindDescriptorSetsInfo->layout) {
+                local_pBindDescriptorSetsInfo->layout = Unwrap(pBindDescriptorSetsInfo->layout);
+            }
+            if (local_pBindDescriptorSetsInfo->pDescriptorSets) {
+                for (uint32_t index1 = 0; index1 < local_pBindDescriptorSetsInfo->descriptorSetCount; ++index1) {
+                    local_pBindDescriptorSetsInfo->pDescriptorSets[index1] =
+                        Unwrap(local_pBindDescriptorSetsInfo->pDescriptorSets[index1]);
+                }
+            }
+            UnwrapPnextChainHandles(local_pBindDescriptorSetsInfo->pNext);
+        }
+    }
+    device_dispatch_table.CmdBindDescriptorSets2(commandBuffer, (const VkBindDescriptorSetsInfo*)local_pBindDescriptorSetsInfo);
+}
+
+void DispatchObject::CmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdPushConstants2(commandBuffer, pPushConstantsInfo);
+    vku::safe_VkPushConstantsInfo var_local_pPushConstantsInfo;
+    vku::safe_VkPushConstantsInfo* local_pPushConstantsInfo = nullptr;
+    {
+        if (pPushConstantsInfo) {
+            local_pPushConstantsInfo = &var_local_pPushConstantsInfo;
+            local_pPushConstantsInfo->initialize(pPushConstantsInfo);
+
+            if (pPushConstantsInfo->layout) {
+                local_pPushConstantsInfo->layout = Unwrap(pPushConstantsInfo->layout);
+            }
+            UnwrapPnextChainHandles(local_pPushConstantsInfo->pNext);
+        }
+    }
+    device_dispatch_table.CmdPushConstants2(commandBuffer, (const VkPushConstantsInfo*)local_pPushConstantsInfo);
+}
+
+void DispatchObject::CmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo);
+    vku::safe_VkPushDescriptorSetInfo var_local_pPushDescriptorSetInfo;
+    vku::safe_VkPushDescriptorSetInfo* local_pPushDescriptorSetInfo = nullptr;
+    {
+        if (pPushDescriptorSetInfo) {
+            local_pPushDescriptorSetInfo = &var_local_pPushDescriptorSetInfo;
+            local_pPushDescriptorSetInfo->initialize(pPushDescriptorSetInfo);
+
+            if (pPushDescriptorSetInfo->layout) {
+                local_pPushDescriptorSetInfo->layout = Unwrap(pPushDescriptorSetInfo->layout);
+            }
+            if (local_pPushDescriptorSetInfo->pDescriptorWrites) {
+                for (uint32_t index1 = 0; index1 < local_pPushDescriptorSetInfo->descriptorWriteCount; ++index1) {
+                    UnwrapPnextChainHandles(local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pNext);
+
+                    if (pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet) {
+                        local_pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet =
+                            Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].dstSet);
+                    }
+                    if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo) {
+                        for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                             ++index2) {
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler) {
+                                local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler =
+                                    Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].sampler);
+                            }
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView) {
+                                local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView =
+                                    Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pImageInfo[index2].imageView);
+                            }
+                        }
+                    }
+                    if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo) {
+                        for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                             ++index2) {
+                            if (pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo[index2].buffer) {
+                                local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo[index2].buffer =
+                                    Unwrap(pPushDescriptorSetInfo->pDescriptorWrites[index1].pBufferInfo[index2].buffer);
+                            }
+                        }
+                    }
+                    if (local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView) {
+                        for (uint32_t index2 = 0; index2 < local_pPushDescriptorSetInfo->pDescriptorWrites[index1].descriptorCount;
+                             ++index2) {
+                            local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView[index2] =
+                                Unwrap(local_pPushDescriptorSetInfo->pDescriptorWrites[index1].pTexelBufferView[index2]);
+                        }
+                    }
+                }
+            }
+            UnwrapPnextChainHandles(local_pPushDescriptorSetInfo->pNext);
+        }
+    }
+    device_dispatch_table.CmdPushDescriptorSet2(commandBuffer, (const VkPushDescriptorSetInfo*)local_pPushDescriptorSetInfo);
+}
+
+VkResult DispatchObject::CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
+    if (!wrap_handles) return device_dispatch_table.CopyMemoryToImage(device, pCopyMemoryToImageInfo);
+    vku::safe_VkCopyMemoryToImageInfo var_local_pCopyMemoryToImageInfo;
+    vku::safe_VkCopyMemoryToImageInfo* local_pCopyMemoryToImageInfo = nullptr;
+    {
+        if (pCopyMemoryToImageInfo) {
+            local_pCopyMemoryToImageInfo = &var_local_pCopyMemoryToImageInfo;
+            local_pCopyMemoryToImageInfo->initialize(pCopyMemoryToImageInfo);
+
+            if (pCopyMemoryToImageInfo->dstImage) {
+                local_pCopyMemoryToImageInfo->dstImage = Unwrap(pCopyMemoryToImageInfo->dstImage);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CopyMemoryToImage(device, (const VkCopyMemoryToImageInfo*)local_pCopyMemoryToImageInfo);
+
+    return result;
+}
+
+VkResult DispatchObject::CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
+    if (!wrap_handles) return device_dispatch_table.CopyImageToMemory(device, pCopyImageToMemoryInfo);
+    vku::safe_VkCopyImageToMemoryInfo var_local_pCopyImageToMemoryInfo;
+    vku::safe_VkCopyImageToMemoryInfo* local_pCopyImageToMemoryInfo = nullptr;
+    {
+        if (pCopyImageToMemoryInfo) {
+            local_pCopyImageToMemoryInfo = &var_local_pCopyImageToMemoryInfo;
+            local_pCopyImageToMemoryInfo->initialize(pCopyImageToMemoryInfo);
+
+            if (pCopyImageToMemoryInfo->srcImage) {
+                local_pCopyImageToMemoryInfo->srcImage = Unwrap(pCopyImageToMemoryInfo->srcImage);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CopyImageToMemory(device, (const VkCopyImageToMemoryInfo*)local_pCopyImageToMemoryInfo);
+
+    return result;
+}
+
+VkResult DispatchObject::CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
+    if (!wrap_handles) return device_dispatch_table.CopyImageToImage(device, pCopyImageToImageInfo);
+    vku::safe_VkCopyImageToImageInfo var_local_pCopyImageToImageInfo;
+    vku::safe_VkCopyImageToImageInfo* local_pCopyImageToImageInfo = nullptr;
+    {
+        if (pCopyImageToImageInfo) {
+            local_pCopyImageToImageInfo = &var_local_pCopyImageToImageInfo;
+            local_pCopyImageToImageInfo->initialize(pCopyImageToImageInfo);
+
+            if (pCopyImageToImageInfo->srcImage) {
+                local_pCopyImageToImageInfo->srcImage = Unwrap(pCopyImageToImageInfo->srcImage);
+            }
+            if (pCopyImageToImageInfo->dstImage) {
+                local_pCopyImageToImageInfo->dstImage = Unwrap(pCopyImageToImageInfo->dstImage);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CopyImageToImage(device, (const VkCopyImageToImageInfo*)local_pCopyImageToImageInfo);
+
+    return result;
+}
+
+VkResult DispatchObject::TransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                               const VkHostImageLayoutTransitionInfo* pTransitions) {
+    if (!wrap_handles) return device_dispatch_table.TransitionImageLayout(device, transitionCount, pTransitions);
+    small_vector<vku::safe_VkHostImageLayoutTransitionInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
+    vku::safe_VkHostImageLayoutTransitionInfo* local_pTransitions = nullptr;
+    {
+        if (pTransitions) {
+            var_local_pTransitions.resize(transitionCount);
+            local_pTransitions = var_local_pTransitions.data();
+            for (uint32_t index0 = 0; index0 < transitionCount; ++index0) {
+                local_pTransitions[index0].initialize(&pTransitions[index0]);
+
+                if (pTransitions[index0].image) {
+                    local_pTransitions[index0].image = Unwrap(pTransitions[index0].image);
+                }
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.TransitionImageLayout(device, transitionCount,
+                                                                  (const VkHostImageLayoutTransitionInfo*)local_pTransitions);
+
+    return result;
+}
+
 void DispatchObject::DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
 
@@ -4221,12 +4534,12 @@ void DispatchObject::CmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer,
 }
 
 void DispatchObject::CmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
-                                                           const VkRenderingAttachmentLocationInfoKHR* pLocationInfo) {
+                                                           const VkRenderingAttachmentLocationInfo* pLocationInfo) {
     device_dispatch_table.CmdSetRenderingAttachmentLocationsKHR(commandBuffer, pLocationInfo);
 }
 
 void DispatchObject::CmdSetRenderingInputAttachmentIndicesKHR(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR* pInputAttachmentIndexInfo) {
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo) {
     device_dispatch_table.CmdSetRenderingInputAttachmentIndicesKHR(commandBuffer, pInputAttachmentIndexInfo);
 }
 
@@ -4400,10 +4713,10 @@ VkResult DispatchObject::GetPipelineExecutableInternalRepresentationsKHR(
     return result;
 }
 
-VkResult DispatchObject::MapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) {
+VkResult DispatchObject::MapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     if (!wrap_handles) return device_dispatch_table.MapMemory2KHR(device, pMemoryMapInfo, ppData);
-    vku::safe_VkMemoryMapInfoKHR var_local_pMemoryMapInfo;
-    vku::safe_VkMemoryMapInfoKHR* local_pMemoryMapInfo = nullptr;
+    vku::safe_VkMemoryMapInfo var_local_pMemoryMapInfo;
+    vku::safe_VkMemoryMapInfo* local_pMemoryMapInfo = nullptr;
     {
         if (pMemoryMapInfo) {
             local_pMemoryMapInfo = &var_local_pMemoryMapInfo;
@@ -4414,15 +4727,15 @@ VkResult DispatchObject::MapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR
             }
         }
     }
-    VkResult result = device_dispatch_table.MapMemory2KHR(device, (const VkMemoryMapInfoKHR*)local_pMemoryMapInfo, ppData);
+    VkResult result = device_dispatch_table.MapMemory2KHR(device, (const VkMemoryMapInfo*)local_pMemoryMapInfo, ppData);
 
     return result;
 }
 
-VkResult DispatchObject::UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
+VkResult DispatchObject::UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     if (!wrap_handles) return device_dispatch_table.UnmapMemory2KHR(device, pMemoryUnmapInfo);
-    vku::safe_VkMemoryUnmapInfoKHR var_local_pMemoryUnmapInfo;
-    vku::safe_VkMemoryUnmapInfoKHR* local_pMemoryUnmapInfo = nullptr;
+    vku::safe_VkMemoryUnmapInfo var_local_pMemoryUnmapInfo;
+    vku::safe_VkMemoryUnmapInfo* local_pMemoryUnmapInfo = nullptr;
     {
         if (pMemoryUnmapInfo) {
             local_pMemoryUnmapInfo = &var_local_pMemoryUnmapInfo;
@@ -4433,7 +4746,7 @@ VkResult DispatchObject::UnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInf
             }
         }
     }
-    VkResult result = device_dispatch_table.UnmapMemory2KHR(device, (const VkMemoryUnmapInfoKHR*)local_pMemoryUnmapInfo);
+    VkResult result = device_dispatch_table.UnmapMemory2KHR(device, (const VkMemoryUnmapInfo*)local_pMemoryUnmapInfo);
 
     return result;
 }
@@ -4818,18 +5131,18 @@ void DispatchObject::CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuf
     device_dispatch_table.CmdBindIndexBuffer2KHR(commandBuffer, buffer, offset, size, indexType);
 }
 
-void DispatchObject::GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfoKHR* pRenderingAreaInfo,
+void DispatchObject::GetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
                                                     VkExtent2D* pGranularity) {
     device_dispatch_table.GetRenderingAreaGranularityKHR(device, pRenderingAreaInfo, pGranularity);
 }
 
-void DispatchObject::GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfoKHR* pInfo,
-                                                        VkSubresourceLayout2KHR* pLayout) {
+void DispatchObject::GetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
+                                                        VkSubresourceLayout2* pLayout) {
     device_dispatch_table.GetDeviceImageSubresourceLayoutKHR(device, pInfo, pLayout);
 }
 
-void DispatchObject::GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                                   VkSubresourceLayout2KHR* pLayout) {
+void DispatchObject::GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                   VkSubresourceLayout2* pLayout) {
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
     { image = Unwrap(image); }
     device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
@@ -4924,10 +5237,10 @@ VkResult DispatchObject::GetCalibratedTimestampsKHR(VkDevice device, uint32_t ti
 }
 
 void DispatchObject::CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
-                                               const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo) {
+                                               const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdBindDescriptorSets2KHR(commandBuffer, pBindDescriptorSetsInfo);
-    vku::safe_VkBindDescriptorSetsInfoKHR var_local_pBindDescriptorSetsInfo;
-    vku::safe_VkBindDescriptorSetsInfoKHR* local_pBindDescriptorSetsInfo = nullptr;
+    vku::safe_VkBindDescriptorSetsInfo var_local_pBindDescriptorSetsInfo;
+    vku::safe_VkBindDescriptorSetsInfo* local_pBindDescriptorSetsInfo = nullptr;
     {
         if (pBindDescriptorSetsInfo) {
             local_pBindDescriptorSetsInfo = &var_local_pBindDescriptorSetsInfo;
@@ -4945,14 +5258,13 @@ void DispatchObject::CmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
             UnwrapPnextChainHandles(local_pBindDescriptorSetsInfo->pNext);
         }
     }
-    device_dispatch_table.CmdBindDescriptorSets2KHR(commandBuffer,
-                                                    (const VkBindDescriptorSetsInfoKHR*)local_pBindDescriptorSetsInfo);
+    device_dispatch_table.CmdBindDescriptorSets2KHR(commandBuffer, (const VkBindDescriptorSetsInfo*)local_pBindDescriptorSetsInfo);
 }
 
-void DispatchObject::CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo) {
+void DispatchObject::CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPushConstants2KHR(commandBuffer, pPushConstantsInfo);
-    vku::safe_VkPushConstantsInfoKHR var_local_pPushConstantsInfo;
-    vku::safe_VkPushConstantsInfoKHR* local_pPushConstantsInfo = nullptr;
+    vku::safe_VkPushConstantsInfo var_local_pPushConstantsInfo;
+    vku::safe_VkPushConstantsInfo* local_pPushConstantsInfo = nullptr;
     {
         if (pPushConstantsInfo) {
             local_pPushConstantsInfo = &var_local_pPushConstantsInfo;
@@ -4964,14 +5276,14 @@ void DispatchObject::CmdPushConstants2KHR(VkCommandBuffer commandBuffer, const V
             UnwrapPnextChainHandles(local_pPushConstantsInfo->pNext);
         }
     }
-    device_dispatch_table.CmdPushConstants2KHR(commandBuffer, (const VkPushConstantsInfoKHR*)local_pPushConstantsInfo);
+    device_dispatch_table.CmdPushConstants2KHR(commandBuffer, (const VkPushConstantsInfo*)local_pPushConstantsInfo);
 }
 
 void DispatchObject::CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
-                                              const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo) {
+                                              const VkPushDescriptorSetInfo* pPushDescriptorSetInfo) {
     if (!wrap_handles) return device_dispatch_table.CmdPushDescriptorSet2KHR(commandBuffer, pPushDescriptorSetInfo);
-    vku::safe_VkPushDescriptorSetInfoKHR var_local_pPushDescriptorSetInfo;
-    vku::safe_VkPushDescriptorSetInfoKHR* local_pPushDescriptorSetInfo = nullptr;
+    vku::safe_VkPushDescriptorSetInfo var_local_pPushDescriptorSetInfo;
+    vku::safe_VkPushDescriptorSetInfo* local_pPushDescriptorSetInfo = nullptr;
     {
         if (pPushDescriptorSetInfo) {
             local_pPushDescriptorSetInfo = &var_local_pPushDescriptorSetInfo;
@@ -5022,7 +5334,7 @@ void DispatchObject::CmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
             UnwrapPnextChainHandles(local_pPushDescriptorSetInfo->pNext);
         }
     }
-    device_dispatch_table.CmdPushDescriptorSet2KHR(commandBuffer, (const VkPushDescriptorSetInfoKHR*)local_pPushDescriptorSetInfo);
+    device_dispatch_table.CmdPushDescriptorSet2KHR(commandBuffer, (const VkPushDescriptorSetInfo*)local_pPushDescriptorSetInfo);
 }
 
 void DispatchObject::CmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuffer,
@@ -6489,10 +6801,10 @@ void DispatchObject::CmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencil
     device_dispatch_table.CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
-VkResult DispatchObject::CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo) {
+VkResult DispatchObject::CopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyMemoryToImageEXT(device, pCopyMemoryToImageInfo);
-    vku::safe_VkCopyMemoryToImageInfoEXT var_local_pCopyMemoryToImageInfo;
-    vku::safe_VkCopyMemoryToImageInfoEXT* local_pCopyMemoryToImageInfo = nullptr;
+    vku::safe_VkCopyMemoryToImageInfo var_local_pCopyMemoryToImageInfo;
+    vku::safe_VkCopyMemoryToImageInfo* local_pCopyMemoryToImageInfo = nullptr;
     {
         if (pCopyMemoryToImageInfo) {
             local_pCopyMemoryToImageInfo = &var_local_pCopyMemoryToImageInfo;
@@ -6504,15 +6816,15 @@ VkResult DispatchObject::CopyMemoryToImageEXT(VkDevice device, const VkCopyMemor
         }
     }
     VkResult result =
-        device_dispatch_table.CopyMemoryToImageEXT(device, (const VkCopyMemoryToImageInfoEXT*)local_pCopyMemoryToImageInfo);
+        device_dispatch_table.CopyMemoryToImageEXT(device, (const VkCopyMemoryToImageInfo*)local_pCopyMemoryToImageInfo);
 
     return result;
 }
 
-VkResult DispatchObject::CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo) {
+VkResult DispatchObject::CopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyImageToMemoryEXT(device, pCopyImageToMemoryInfo);
-    vku::safe_VkCopyImageToMemoryInfoEXT var_local_pCopyImageToMemoryInfo;
-    vku::safe_VkCopyImageToMemoryInfoEXT* local_pCopyImageToMemoryInfo = nullptr;
+    vku::safe_VkCopyImageToMemoryInfo var_local_pCopyImageToMemoryInfo;
+    vku::safe_VkCopyImageToMemoryInfo* local_pCopyImageToMemoryInfo = nullptr;
     {
         if (pCopyImageToMemoryInfo) {
             local_pCopyImageToMemoryInfo = &var_local_pCopyImageToMemoryInfo;
@@ -6524,15 +6836,15 @@ VkResult DispatchObject::CopyImageToMemoryEXT(VkDevice device, const VkCopyImage
         }
     }
     VkResult result =
-        device_dispatch_table.CopyImageToMemoryEXT(device, (const VkCopyImageToMemoryInfoEXT*)local_pCopyImageToMemoryInfo);
+        device_dispatch_table.CopyImageToMemoryEXT(device, (const VkCopyImageToMemoryInfo*)local_pCopyImageToMemoryInfo);
 
     return result;
 }
 
-VkResult DispatchObject::CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo) {
+VkResult DispatchObject::CopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo) {
     if (!wrap_handles) return device_dispatch_table.CopyImageToImageEXT(device, pCopyImageToImageInfo);
-    vku::safe_VkCopyImageToImageInfoEXT var_local_pCopyImageToImageInfo;
-    vku::safe_VkCopyImageToImageInfoEXT* local_pCopyImageToImageInfo = nullptr;
+    vku::safe_VkCopyImageToImageInfo var_local_pCopyImageToImageInfo;
+    vku::safe_VkCopyImageToImageInfo* local_pCopyImageToImageInfo = nullptr;
     {
         if (pCopyImageToImageInfo) {
             local_pCopyImageToImageInfo = &var_local_pCopyImageToImageInfo;
@@ -6546,17 +6858,16 @@ VkResult DispatchObject::CopyImageToImageEXT(VkDevice device, const VkCopyImageT
             }
         }
     }
-    VkResult result =
-        device_dispatch_table.CopyImageToImageEXT(device, (const VkCopyImageToImageInfoEXT*)local_pCopyImageToImageInfo);
+    VkResult result = device_dispatch_table.CopyImageToImageEXT(device, (const VkCopyImageToImageInfo*)local_pCopyImageToImageInfo);
 
     return result;
 }
 
 VkResult DispatchObject::TransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                  const VkHostImageLayoutTransitionInfoEXT* pTransitions) {
+                                                  const VkHostImageLayoutTransitionInfo* pTransitions) {
     if (!wrap_handles) return device_dispatch_table.TransitionImageLayoutEXT(device, transitionCount, pTransitions);
-    small_vector<vku::safe_VkHostImageLayoutTransitionInfoEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
-    vku::safe_VkHostImageLayoutTransitionInfoEXT* local_pTransitions = nullptr;
+    small_vector<vku::safe_VkHostImageLayoutTransitionInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pTransitions;
+    vku::safe_VkHostImageLayoutTransitionInfo* local_pTransitions = nullptr;
     {
         if (pTransitions) {
             var_local_pTransitions.resize(transitionCount);
@@ -6571,13 +6882,13 @@ VkResult DispatchObject::TransitionImageLayoutEXT(VkDevice device, uint32_t tran
         }
     }
     VkResult result = device_dispatch_table.TransitionImageLayoutEXT(device, transitionCount,
-                                                                     (const VkHostImageLayoutTransitionInfoEXT*)local_pTransitions);
+                                                                     (const VkHostImageLayoutTransitionInfo*)local_pTransitions);
 
     return result;
 }
 
-void DispatchObject::GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
-                                                   VkSubresourceLayout2KHR* pLayout) {
+void DispatchObject::GetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
+                                                   VkSubresourceLayout2* pLayout) {
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
     { image = Unwrap(image); }
     device_dispatch_table.GetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);

@@ -83,6 +83,7 @@ struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
     ExtEnabled vk_feature_version_1_3{kNotEnabled};
+    ExtEnabled vk_feature_version_1_4{kNotEnabled};
     ExtEnabled vk_khr_surface{kNotEnabled};
     ExtEnabled vk_khr_display{kNotEnabled};
     ExtEnabled vk_khr_xlib_surface{kNotEnabled};
@@ -284,6 +285,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
     ExtEnabled vk_feature_version_1_3{kNotEnabled};
+    ExtEnabled vk_feature_version_1_4{kNotEnabled};
     ExtEnabled vk_khr_swapchain{kNotEnabled};
     ExtEnabled vk_khr_display_swapchain{kNotEnabled};
     ExtEnabled vk_khr_sampler_mirror_clamp_to_edge{kNotEnabled};

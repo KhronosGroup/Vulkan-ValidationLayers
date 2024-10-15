@@ -127,6 +127,9 @@ class Validator : public GpuShaderInstrumentor {
 
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                        const RecordObject& record_obj) final;
+    void PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
+                                              const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+                                              const RecordObject& record_obj) final;
     void PostCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                  const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
                                                  const RecordObject& record_obj) final;
@@ -134,9 +137,14 @@ class Validator : public GpuShaderInstrumentor {
                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                              const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                              const uint32_t* pDynamicOffsets, const RecordObject& record_obj) final;
+    void PreCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                           VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                           const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject&) final;
     void PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet* pDescriptorWrites, const RecordObject&) final;
+    void PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+                                            const RecordObject& record_obj) final;
     void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
                                                const RecordObject& record_obj) final;
@@ -331,6 +339,9 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                           const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects,
                                           const RecordObject&) final;
+    void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                             const VkHostImageLayoutTransitionInfo* pTransitions,
+                                             const RecordObject& record_obj) final;
     void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions,
                                                 const RecordObject& record_obj) final;

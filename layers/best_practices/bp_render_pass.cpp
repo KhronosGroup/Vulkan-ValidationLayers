@@ -640,10 +640,15 @@ void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer
     StateTracker::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
 }
 
+void BestPractices::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+                                                    const RecordObject& record_obj) {
+    StateTracker::PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
+}
+
 void BestPractices::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
                                                        const VkPushConstantsInfoKHR* pPushConstantsInfo,
                                                        const RecordObject& record_obj) {
-    StateTracker::PostCallRecordCmdPushConstants2KHR(commandBuffer, pPushConstantsInfo, record_obj);
+    PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }
 
 void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin) {

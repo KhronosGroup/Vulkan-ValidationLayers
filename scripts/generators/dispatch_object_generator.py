@@ -106,7 +106,9 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkDestroyDescriptorUpdateTemplateKHR',
             'vkUpdateDescriptorSetWithTemplate',
             'vkUpdateDescriptorSetWithTemplateKHR',
+            'vkCmdPushDescriptorSetWithTemplate',
             'vkCmdPushDescriptorSetWithTemplateKHR',
+            'vkCmdPushDescriptorSetWithTemplate2',
             'vkCmdPushDescriptorSetWithTemplate2KHR',
             # Tracking renderpass state for the pipeline safe struct
             'vkCreateRenderPass',

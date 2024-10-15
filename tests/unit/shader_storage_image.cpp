@@ -794,7 +794,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
 }
 
 TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
-    TEST_DESCRIPTION("Test writing to image unknown format with VK_FORMAT_A8_UNORM_KHR.");
+    TEST_DESCRIPTION("Test writing to image unknown format with VK_FORMAT_A8_UNORM.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
@@ -839,7 +839,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                      });
 
-    const VkFormat format = VK_FORMAT_A8_UNORM_KHR;
+    const VkFormat format = VK_FORMAT_A8_UNORM;
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }

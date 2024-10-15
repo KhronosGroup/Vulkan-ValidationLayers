@@ -574,6 +574,7 @@ TEST_F(PositiveVertexInput, VertexAttributeDivisorFirstInstance) {
     GetPhysicalDeviceProperties2(pdvad_props);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    vibdd.divisor = 1;
     VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;

@@ -39,6 +39,7 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_KHR_external_memory, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_1}}},
         {vvl::Extension::_VK_KHR_external_semaphore_capabilities, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_1}}},
         {vvl::Extension::_VK_KHR_external_semaphore, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_1}}},
+        {vvl::Extension::_VK_KHR_push_descriptor, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_KHR_shader_float16_int8, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_16bit_storage, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_1}}},
         {vvl::Extension::_VK_KHR_descriptor_update_template, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_1}}},
@@ -60,16 +61,19 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_KHR_shader_subgroup_extended_types, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_8bit_storage, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_shader_atomic_int64, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
+        {vvl::Extension::_VK_KHR_global_priority, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_KHR_driver_properties, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_shader_float_controls, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_depth_stencil_resolve, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_timeline_semaphore, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_vulkan_memory_model, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_shader_terminate_invocation, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_KHR_dynamic_rendering_local_read, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_KHR_spirv_1_4, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_separate_depth_stencil_layouts, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_uniform_buffer_standard_layout, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_KHR_buffer_device_address, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
+        {vvl::Extension::_VK_KHR_map_memory2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_KHR_shader_integer_dot_product, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_KHR_shader_non_semantic_info, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_KHR_synchronization2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
@@ -77,6 +81,15 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_KHR_copy_commands2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_KHR_format_feature_flags2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_KHR_maintenance4, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_KHR_shader_subgroup_rotate, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_maintenance5, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_vertex_attribute_divisor, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_load_store_op_none, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_shader_float_controls2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_index_type_uint8, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_line_rasterization, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_shader_expect_assume, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_KHR_maintenance6, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_EXT_debug_report, {DeprecationReason::Deprecated, {vvl::Extension::_VK_EXT_debug_utils}}},
         {vvl::Extension::_VK_NV_glsl_shader, {DeprecationReason::Deprecated, {vvl::Extension::Empty}}},
         {vvl::Extension::_VK_EXT_debug_marker, {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_debug_utils}}},
@@ -97,6 +110,7 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_shader_subgroup_ballot, {DeprecationReason::Deprecated, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_EXT_shader_subgroup_vote, {DeprecationReason::Deprecated, {vvl::Version::_VK_VERSION_1_1}}},
         {vvl::Extension::_VK_EXT_texture_compression_astc_hdr, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_EXT_pipeline_robustness, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_MVK_ios_surface, {DeprecationReason::Deprecated, {vvl::Extension::_VK_EXT_metal_surface}}},
         {vvl::Extension::_VK_MVK_macos_surface, {DeprecationReason::Deprecated, {vvl::Extension::_VK_EXT_metal_surface}}},
         {vvl::Extension::_VK_EXT_sampler_filter_minmax, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
@@ -126,6 +140,7 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_host_query_reset, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_2}}},
         {vvl::Extension::_VK_EXT_index_type_uint8, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_index_type_uint8}}},
         {vvl::Extension::_VK_EXT_extended_dynamic_state, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_EXT_host_image_copy, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
         {vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation,
          {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_texel_buffer_alignment, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
@@ -141,6 +156,7 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_extended_dynamic_state2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_global_priority_query, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_global_priority}}},
         {vvl::Extension::_VK_EXT_load_store_op_none, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_load_store_op_none}}},
+        {vvl::Extension::_VK_EXT_pipeline_protected_access, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
     };
 
     auto it = deprecated_extensions.find(extension_name);
@@ -898,6 +914,61 @@ void BestPractices::PostCallRecordSetPrivateData(VkDevice device, VkObjectType o
 void BestPractices::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                const RecordObject& record_obj) {
     ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
+                                             const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
+                                               const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
+                                                    const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCopyMemoryToImage(device, pCopyMemoryToImageInfo, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
+                                                    const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCopyImageToMemory(device, pCopyImageToMemoryInfo, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
+                                                   const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordCopyImageToImage(device, pCopyImageToImageInfo, record_obj);
+
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
+void BestPractices::PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
+                                                        const VkHostImageLayoutTransitionInfo* pTransitions,
+                                                        const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1731,22 +1802,14 @@ void BestPractices::PostCallRecordGetPipelineExecutableInternalRepresentationsKH
     }
 }
 
-void BestPractices::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData,
+void BestPractices::PostCallRecordMapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordMapMemory2KHR(device, pMemoryMapInfo, ppData, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
 }
 
-void BestPractices::PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo,
+void BestPractices::PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordUnmapMemory2KHR(device, pMemoryUnmapInfo, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
 }
 
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
@@ -2512,41 +2575,25 @@ void BestPractices::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, 
     }
 }
 
-void BestPractices::PostCallRecordCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT* pCopyMemoryToImageInfo,
+void BestPractices::PostCallRecordCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyMemoryToImageEXT(device, pCopyMemoryToImageInfo, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordCopyMemoryToImage(device, pCopyMemoryToImageInfo, record_obj);
 }
 
-void BestPractices::PostCallRecordCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo,
+void BestPractices::PostCallRecordCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyImageToMemoryEXT(device, pCopyImageToMemoryInfo, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordCopyImageToMemory(device, pCopyImageToMemoryInfo, record_obj);
 }
 
-void BestPractices::PostCallRecordCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
+void BestPractices::PostCallRecordCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyImageToImageEXT(device, pCopyImageToImageInfo, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordCopyImageToImage(device, pCopyImageToImageInfo, record_obj);
 }
 
 void BestPractices::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                           const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                                           const VkHostImageLayoutTransitionInfo* pTransitions,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordTransitionImageLayoutEXT(device, transitionCount, pTransitions, record_obj);
-
-    if (record_obj.result < VK_SUCCESS) {
-        LogErrorCode(record_obj);
-    }
+    PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 }
 
 void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,

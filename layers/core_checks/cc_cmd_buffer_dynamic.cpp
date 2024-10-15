@@ -212,7 +212,7 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT:
                 vuid_str = vuid.dynamic_discard_rectangle_mode_07881;
                 break;
-            case CB_DYNAMIC_STATE_LINE_STIPPLE_KHR:
+            case CB_DYNAMIC_STATE_LINE_STIPPLE:
                 vuid_str = vuid.dynamic_line_stipple_ext_07849;
                 break;
             default:
@@ -392,7 +392,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         if (enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
             enabled_features.stippledSmoothLines) {
             if (last_bound_state.IsStippledLineEnable()) {
-                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, vuid);
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE, vuid);
             }
         }
 
@@ -1289,7 +1289,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
                         "The pipeline VkRenderingAttachmentLocationInfoKHR::colorAttachmentCount is %" PRIu32
-                        " but vkCmdSetRenderingAttachmentLocationsKHR last set colorAttachmentCount to %" PRIu32 "",
+                        " but vkCmdSetRenderingAttachmentLocations last set colorAttachmentCount to %" PRIu32 "",
                         pipeline_color_count, color_attachment_count);
     } else if (pipeline_color_locations) {
         for (uint32_t i = 0; i < pipeline_color_count; i++) {
@@ -1298,7 +1298,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
                 skip = LogError(
                     vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
                     "The pipeline VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%" PRIu32 "] is %" PRIu32
-                    " but vkCmdSetRenderingAttachmentLocationsKHR last set pColorAttachmentLocations[%" PRIu32 "] to %" PRIu32 "",
+                    " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentLocations[%" PRIu32 "] to %" PRIu32 "",
                     i, pipeline_color_locations[i], i, cb_state.rendering_attachments.color_locations[i]);
                 break;
             }
@@ -1337,7 +1337,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                         "The pipeline VkRenderingInputAttachmentIndexInfoKHR::colorAttachmentCount is %" PRIu32
-                        " but vkCmdSetRenderingInputAttachmentIndicesKHR last set colorAttachmentCount to %" PRIu32 "",
+                        " but vkCmdSetRenderingInputAttachmentIndices last set colorAttachmentCount to %" PRIu32 "",
                         pipeline_color_count, color_index_count);
     } else if (pipeline_color_indexes) {
         for (uint32_t i = 0; i < pipeline_color_count; i++) {
@@ -1346,7 +1346,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
                 skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                                 "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pColorAttachmentInputIndices[%" PRIu32
                                 "] is %" PRIu32
-                                " but vkCmdSetRenderingInputAttachmentIndicesKHR last set pColorAttachmentInputIndices[%" PRIu32
+                                " but vkCmdSetRenderingInputAttachmentIndices last set pColorAttachmentInputIndices[%" PRIu32
                                 "] to %" PRIu32 "",
                                 i, pipeline_color_indexes[i], i, cb_state.rendering_attachments.color_indexes[i]);
                 break;
@@ -1359,14 +1359,14 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                         "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pDepthInputAttachmentIndex is 0x%p but "
-                        "vkCmdSetRenderingInputAttachmentIndicesKHR last set pDepthInputAttachmentIndex to 0x%p",
+                        "vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex to 0x%p",
                         pipeline_depth_index, cb_state.rendering_attachments.depth_index);
     } else if (pipeline_depth_index && cb_state.rendering_attachments.depth_index &&
                (*pipeline_depth_index != *cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                         "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pDepthInputAttachmentIndex value is %" PRIu32
-                        " but vkCmdSetRenderingInputAttachmentIndicesKHR last set pDepthInputAttachmentIndex value to %" PRIu32 "",
+                        " but vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex value to %" PRIu32 "",
                         *pipeline_depth_index, *cb_state.rendering_attachments.depth_index);
     }
 
@@ -1375,16 +1375,15 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
                         "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex is 0x%p but "
-                        "vkCmdSetRenderingInputAttachmentIndicesKHR last set pStencilInputAttachmentIndex to 0x%p",
+                        "vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex to 0x%p",
                         pipeline_stencil_index, cb_state.rendering_attachments.stencil_index);
     } else if (pipeline_stencil_index && cb_state.rendering_attachments.stencil_index &&
                (*pipeline_stencil_index != *cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-        skip =
-            LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                     "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex value is %" PRIu32
-                     " but vkCmdSetRenderingInputAttachmentIndicesKHR last set pStencilInputAttachmentIndex value to %" PRIu32 "",
-                     *pipeline_stencil_index, *cb_state.rendering_attachments.stencil_index);
+        skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
+                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex value is %" PRIu32
+                        " but vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex value to %" PRIu32 "",
+                        *pipeline_stencil_index, *cb_state.rendering_attachments.stencil_index);
     }
     return skip;
 }
@@ -1788,15 +1787,20 @@ bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, f
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
+bool CoreChecks::PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                  uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    return ValidateCmd(*cb_state, error_obj.location);
+}
+
 bool CoreChecks::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                      uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
-    return PreCallValidateCmdSetLineStippleKHR(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
+    return PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                      uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    return ValidateCmd(*cb_state, error_obj.location);
+    return PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,

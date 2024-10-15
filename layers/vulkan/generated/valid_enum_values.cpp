@@ -71,6 +71,9 @@ ValidValue StatelessValidation::IsValidEnumValue(VkImageLayout value) const {
         case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL:
         case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL:
             return IsExtEnabled(device_extensions.vk_khr_synchronization2) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ:
+            return IsExtEnabled(device_extensions.vk_khr_dynamic_rendering_local_read) ? ValidValue::Valid
+                                                                                       : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             return IsExtEnabled(device_extensions.vk_khr_swapchain) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR:
@@ -86,9 +89,6 @@ ValidValue StatelessValidation::IsValidEnumValue(VkImageLayout value) const {
                            IsExtEnabled(device_extensions.vk_nv_shading_rate_image)
                        ? ValidValue::Valid
                        : ValidValue::NoExtension;
-        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_dynamic_rendering_local_read) ? ValidValue::Valid
-                                                                                       : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR:
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR:
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
@@ -438,6 +438,9 @@ ValidValue StatelessValidation::IsValidEnumValue(VkFormat value) const {
         case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK:
             return IsExtEnabled(device_extensions.vk_ext_texture_compression_astc_hdr) ? ValidValue::Valid
                                                                                        : ValidValue::NoExtension;
+        case VK_FORMAT_A1B5G5R5_UNORM_PACK16:
+        case VK_FORMAT_A8_UNORM:
+            return IsExtEnabled(device_extensions.vk_khr_maintenance5) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
@@ -449,9 +452,6 @@ ValidValue StatelessValidation::IsValidEnumValue(VkFormat value) const {
             return IsExtEnabled(device_extensions.vk_img_format_pvrtc) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return IsExtEnabled(device_extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
-        case VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR:
-        case VK_FORMAT_A8_UNORM_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_maintenance5) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -700,6 +700,11 @@ ValidValue StatelessValidation::IsValidEnumValue(VkDynamicState value) const {
         case VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
         case VK_DYNAMIC_STATE_LOGIC_OP_EXT:
             return IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DYNAMIC_STATE_LINE_STIPPLE:
+            return IsExtEnabled(device_extensions.vk_khr_line_rasterization) ||
+                           IsExtEnabled(device_extensions.vk_ext_line_rasterization)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
         case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
             return IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT:
@@ -757,11 +762,6 @@ ValidValue StatelessValidation::IsValidEnumValue(VkDynamicState value) const {
         case VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             return IsExtEnabled(device_extensions.vk_ext_attachment_feedback_loop_dynamic_state) ? ValidValue::Valid
                                                                                                  : ValidValue::NoExtension;
-        case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_line_rasterization) ||
-                           IsExtEnabled(device_extensions.vk_ext_line_rasterization)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
         case VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
             return IsExtEnabled(device_extensions.vk_ext_depth_clamp_control) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
@@ -968,7 +968,7 @@ ValidValue StatelessValidation::IsValidEnumValue(VkAttachmentLoadOp value) const
         case VK_ATTACHMENT_LOAD_OP_CLEAR:
         case VK_ATTACHMENT_LOAD_OP_DONT_CARE:
             return ValidValue::Valid;
-        case VK_ATTACHMENT_LOAD_OP_NONE_KHR:
+        case VK_ATTACHMENT_LOAD_OP_NONE:
             return IsExtEnabled(device_extensions.vk_khr_load_store_op_none) ||
                            IsExtEnabled(device_extensions.vk_ext_load_store_op_none)
                        ? ValidValue::Valid
@@ -1032,14 +1032,14 @@ ValidValue StatelessValidation::IsValidEnumValue(VkIndexType value) const {
         case VK_INDEX_TYPE_UINT16:
         case VK_INDEX_TYPE_UINT32:
             return ValidValue::Valid;
+        case VK_INDEX_TYPE_UINT8:
+            return IsExtEnabled(device_extensions.vk_khr_index_type_uint8) ||
+                           IsExtEnabled(device_extensions.vk_ext_index_type_uint8)
+                       ? ValidValue::Valid
+                       : ValidValue::NoExtension;
         case VK_INDEX_TYPE_NONE_KHR:
             return IsExtEnabled(device_extensions.vk_nv_ray_tracing) ||
                            IsExtEnabled(device_extensions.vk_khr_acceleration_structure)
-                       ? ValidValue::Valid
-                       : ValidValue::NoExtension;
-        case VK_INDEX_TYPE_UINT8_KHR:
-            return IsExtEnabled(device_extensions.vk_khr_index_type_uint8) ||
-                           IsExtEnabled(device_extensions.vk_ext_index_type_uint8)
                        ? ValidValue::Valid
                        : ValidValue::NoExtension;
         default:
@@ -1115,7 +1115,7 @@ ValidValue StatelessValidation::IsValidEnumValue(VkDescriptorUpdateTemplateType 
     switch (value) {
         case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET:
             return ValidValue::Valid;
-        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR:
+        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS:
             return IsExtEnabled(device_extensions.vk_khr_push_descriptor) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
@@ -1141,6 +1141,58 @@ ValidValue StatelessValidation::IsValidEnumValue(VkSemaphoreType value) const {
     switch (value) {
         case VK_SEMAPHORE_TYPE_BINARY:
         case VK_SEMAPHORE_TYPE_TIMELINE:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessBufferBehavior value) const {
+    switch (value) {
+        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT:
+        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED:
+        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS:
+        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessImageBehavior value) const {
+    switch (value) {
+        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT:
+        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED:
+        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS:
+        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkQueueGlobalPriority value) const {
+    switch (value) {
+        case VK_QUEUE_GLOBAL_PRIORITY_LOW:
+        case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM:
+        case VK_QUEUE_GLOBAL_PRIORITY_HIGH:
+        case VK_QUEUE_GLOBAL_PRIORITY_REALTIME:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkLineRasterizationMode value) const {
+    switch (value) {
+        case VK_LINE_RASTERIZATION_MODE_DEFAULT:
+        case VK_LINE_RASTERIZATION_MODE_RECTANGULAR:
+        case VK_LINE_RASTERIZATION_MODE_BRESENHAM:
+        case VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -1194,19 +1246,6 @@ ValidValue StatelessValidation::IsValidEnumValue(VkColorSpaceKHR value) const {
 }
 
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkQueueGlobalPriorityKHR value) const {
-    switch (value) {
-        case VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR:
-        case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR:
-        case VK_QUEUE_GLOBAL_PRIORITY_HIGH_KHR:
-        case VK_QUEUE_GLOBAL_PRIORITY_REALTIME_KHR:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateCombinerOpKHR value) const {
     switch (value) {
         case VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR:
@@ -1253,19 +1292,6 @@ ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1RateControlGrou
         case VK_VIDEO_ENCODE_AV1_RATE_CONTROL_GROUP_INTRA_KHR:
         case VK_VIDEO_ENCODE_AV1_RATE_CONTROL_GROUP_PREDICTIVE_KHR:
         case VK_VIDEO_ENCODE_AV1_RATE_CONTROL_GROUP_BIPREDICTIVE_KHR:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkLineRasterizationModeKHR value) const {
-    switch (value) {
-        case VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR:
-        case VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR:
-        case VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR:
-        case VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -1370,32 +1396,6 @@ ValidValue StatelessValidation::IsValidEnumValue(VkValidationCheckEXT value) con
     switch (value) {
         case VK_VALIDATION_CHECK_ALL_EXT:
         case VK_VALIDATION_CHECK_SHADERS_EXT:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessBufferBehaviorEXT value) const {
-    switch (value) {
-        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT:
-        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT:
-        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT:
-        case VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT:
-            return ValidValue::Valid;
-        default:
-            return ValidValue::NotFound;
-    };
-}
-
-template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessImageBehaviorEXT value) const {
-    switch (value) {
-        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT:
-        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT:
-        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT:
-        case VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -2148,6 +2148,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageLayout value) cons
         case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL:
         case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL:
             return {vvl::Extension::_VK_KHR_synchronization2};
+        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ:
+            return {vvl::Extension::_VK_KHR_dynamic_rendering_local_read};
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             return {vvl::Extension::_VK_KHR_swapchain};
         case VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR:
@@ -2160,8 +2162,6 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageLayout value) cons
             return {vvl::Extension::_VK_EXT_fragment_density_map};
         case VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR:
             return {vvl::Extension::_VK_KHR_fragment_shading_rate, vvl::Extension::_VK_NV_shading_rate_image};
-        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR:
-            return {vvl::Extension::_VK_KHR_dynamic_rendering_local_read};
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR:
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR:
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
@@ -2303,6 +2303,9 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkFormat value) const {
         case VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK:
         case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK:
             return {vvl::Extension::_VK_EXT_texture_compression_astc_hdr};
+        case VK_FORMAT_A1B5G5R5_UNORM_PACK16:
+        case VK_FORMAT_A8_UNORM:
+            return {vvl::Extension::_VK_KHR_maintenance5};
         case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
@@ -2314,9 +2317,6 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkFormat value) const {
             return {vvl::Extension::_VK_IMG_format_pvrtc};
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return {vvl::Extension::_VK_NV_optical_flow};
-        case VK_FORMAT_A1B5G5R5_UNORM_PACK16_KHR:
-        case VK_FORMAT_A8_UNORM_KHR:
-            return {vvl::Extension::_VK_KHR_maintenance5};
         default:
             return {};
     };
@@ -2512,6 +2512,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkDynamicState value) con
         case VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT:
         case VK_DYNAMIC_STATE_LOGIC_OP_EXT:
             return {vvl::Extension::_VK_EXT_extended_dynamic_state2};
+        case VK_DYNAMIC_STATE_LINE_STIPPLE:
+            return {vvl::Extension::_VK_KHR_line_rasterization, vvl::Extension::_VK_EXT_line_rasterization};
         case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
             return {vvl::Extension::_VK_NV_clip_space_w_scaling};
         case VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT:
@@ -2568,8 +2570,6 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkDynamicState value) con
             return {vvl::Extension::_VK_EXT_extended_dynamic_state3};
         case VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
             return {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state};
-        case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
-            return {vvl::Extension::_VK_KHR_line_rasterization, vvl::Extension::_VK_EXT_line_rasterization};
         case VK_DYNAMIC_STATE_DEPTH_CLAMP_RANGE_EXT:
             return {vvl::Extension::_VK_EXT_depth_clamp_control};
         default:
@@ -2718,7 +2718,7 @@ const char* StatelessValidation::DescribeEnum(VkDescriptorType value) const {
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkAttachmentLoadOp value) const {
     switch (value) {
-        case VK_ATTACHMENT_LOAD_OP_NONE_KHR:
+        case VK_ATTACHMENT_LOAD_OP_NONE:
             return {vvl::Extension::_VK_KHR_load_store_op_none, vvl::Extension::_VK_EXT_load_store_op_none};
         default:
             return {};
@@ -2774,10 +2774,10 @@ const char* StatelessValidation::DescribeEnum(VkCommandBufferLevel value) const 
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkIndexType value) const {
     switch (value) {
+        case VK_INDEX_TYPE_UINT8:
+            return {vvl::Extension::_VK_KHR_index_type_uint8, vvl::Extension::_VK_EXT_index_type_uint8};
         case VK_INDEX_TYPE_NONE_KHR:
             return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_acceleration_structure};
-        case VK_INDEX_TYPE_UINT8_KHR:
-            return {vvl::Extension::_VK_KHR_index_type_uint8, vvl::Extension::_VK_EXT_index_type_uint8};
         default:
             return {};
     };
@@ -2840,7 +2840,7 @@ const char* StatelessValidation::DescribeEnum(VkChromaLocation value) const {
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkDescriptorUpdateTemplateType value) const {
     switch (value) {
-        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR:
+        case VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS:
             return {vvl::Extension::_VK_KHR_push_descriptor};
         default:
             return {};
@@ -2871,6 +2871,42 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkSemaphoreType value) co
 }
 template <>
 const char* StatelessValidation::DescribeEnum(VkSemaphoreType value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineRobustnessBufferBehavior value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkPipelineRobustnessBufferBehavior value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineRobustnessImageBehavior value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkPipelineRobustnessImageBehavior value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkQueueGlobalPriority value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkQueueGlobalPriority value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkLineRasterizationMode value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkLineRasterizationMode value) const {
     return nullptr;
 }
 
@@ -2921,15 +2957,6 @@ const char* StatelessValidation::DescribeEnum(VkColorSpaceKHR value) const {
 }
 
 template <>
-vvl::Extensions StatelessValidation::GetEnumExtensions(VkQueueGlobalPriorityKHR value) const {
-    return {};
-}
-template <>
-const char* StatelessValidation::DescribeEnum(VkQueueGlobalPriorityKHR value) const {
-    return nullptr;
-}
-
-template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkFragmentShadingRateCombinerOpKHR value) const {
     return {};
 }
@@ -2962,15 +2989,6 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkVideoEncodeAV1RateContr
 }
 template <>
 const char* StatelessValidation::DescribeEnum(VkVideoEncodeAV1RateControlGroupKHR value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions StatelessValidation::GetEnumExtensions(VkLineRasterizationModeKHR value) const {
-    return {};
-}
-template <>
-const char* StatelessValidation::DescribeEnum(VkLineRasterizationModeKHR value) const {
     return nullptr;
 }
 
@@ -3035,24 +3053,6 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkValidationCheckEXT valu
 }
 template <>
 const char* StatelessValidation::DescribeEnum(VkValidationCheckEXT value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineRobustnessBufferBehaviorEXT value) const {
-    return {};
-}
-template <>
-const char* StatelessValidation::DescribeEnum(VkPipelineRobustnessBufferBehaviorEXT value) const {
-    return nullptr;
-}
-
-template <>
-vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineRobustnessImageBehaviorEXT value) const {
-    return {};
-}
-template <>
-const char* StatelessValidation::DescribeEnum(VkPipelineRobustnessImageBehaviorEXT value) const {
     return nullptr;
 }
 

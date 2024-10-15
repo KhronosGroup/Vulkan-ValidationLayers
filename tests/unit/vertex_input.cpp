@@ -85,14 +85,14 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
             1,
             0,
             VK_VERTEX_INPUT_RATE_VERTEX,
-            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
+            {"VUID-VkVertexInputBindingDivisorDescription-inputRate-01871"}
         },
         {   dev_limits.maxVertexInputBindings + 1,
             1,
             0,
             VK_VERTEX_INPUT_RATE_INSTANCE,
-            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-binding-01869",
-             "VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
+            {"VUID-VkVertexInputBindingDivisorDescription-binding-01869",
+             "VUID-VkVertexInputBindingDivisorDescription-inputRate-01871"}
         }
     };
 
@@ -102,7 +102,7 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
                 pdvad_props.maxVertexAttribDivisor + 1,
                 0,
                 VK_VERTEX_INPUT_RATE_INSTANCE,
-                {"VUID-VkVertexInputBindingDivisorDescriptionKHR-divisor-01870"}
+                {"VUID-VkVertexInputBindingDivisorDescription-divisor-01870"}
             } );
     }
     // clang-format on
@@ -152,7 +152,7 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
     };
     CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
-                                      "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateDivisor-02229");
+                                      "VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateDivisor-02229");
 }
 
 TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
@@ -179,9 +179,8 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, instance_rate, kErrorBit,
-        "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228");
+    CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
+                                      "VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateZeroDivisor-02228");
 }
 
 TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
@@ -224,14 +223,14 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
             1,
             0,
             VK_VERTEX_INPUT_RATE_VERTEX,
-            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
+            {"VUID-VkVertexInputBindingDivisorDescription-inputRate-01871"}
         },
         {   dev_limits.maxVertexInputBindings + 1,
             1,
             0,
             VK_VERTEX_INPUT_RATE_INSTANCE,
-            {"VUID-VkVertexInputBindingDivisorDescriptionKHR-binding-01869",
-             "VUID-VkVertexInputBindingDivisorDescriptionKHR-inputRate-01871"}
+            {"VUID-VkVertexInputBindingDivisorDescription-binding-01869",
+             "VUID-VkVertexInputBindingDivisorDescription-inputRate-01871"}
         }
     };
 
@@ -241,7 +240,7 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
                 pdvad_props.maxVertexAttribDivisor + 1,
                 0,
                 VK_VERTEX_INPUT_RATE_INSTANCE,
-                {"VUID-VkVertexInputBindingDivisorDescriptionKHR-divisor-01870"}
+                {"VUID-VkVertexInputBindingDivisorDescription-divisor-01870"}
             } );
     }
     // clang-format on
@@ -292,7 +291,7 @@ TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
     };
     CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
-                                      "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateDivisor-02229");
+                                      "VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateDivisor-02229");
 }
 
 TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
@@ -320,9 +319,37 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
         helper.vi_ci_.pVertexBindingDescriptions = &vibd;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, instance_rate, kErrorBit,
-        "VUID-VkVertexInputBindingDivisorDescriptionKHR-vertexAttributeInstanceRateZeroDivisor-02228");
+    CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
+                                      "VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateZeroDivisor-02228");
+}
+
+TEST_F(NegativeVertexInput, DivisorInstanceRateZero14) {
+    TEST_DESCRIPTION("Test instanceRateZero feature of VK_KHR_vertex_attribute_divisor extension, promoted in 1.4");
+
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkVertexInputBindingDivisorDescription vibdd = {};
+    vibdd.binding = 0;
+    vibdd.divisor = 0;
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.binding = vibdd.binding;
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pNext = &pvids_ci;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+    };
+    CreatePipelineHelper::OneshotTest(*this, instance_rate, kErrorBit,
+                                      "VUID-VkVertexInputBindingDivisorDescription-vertexAttributeInstanceRateZeroDivisor-02228");
 }
 
 TEST_F(NegativeVertexInput, InputBindingMaxVertexInputBindings) {
