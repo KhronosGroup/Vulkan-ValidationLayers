@@ -28,9 +28,8 @@
 namespace gpuav {
 
 struct DescSetState {
-    uint32_t num = 0;
     std::shared_ptr<DescriptorSet> state = {};
-    BindingVariableMap binding_req = {};
+    BindingVariableMap binding_req_map = {};
     // State that will be used by the GPU-AV shader instrumentation
     // For update-after-bind, this will be set during queue submission
     // Otherwise it will be set when the DescriptorSet is bound.

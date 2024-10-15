@@ -23,6 +23,7 @@
 #include "gpu/resources/gpuav_shader_resources.h"
 
 namespace gpuav {
+namespace descriptor {
 void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) return;
@@ -53,7 +54,7 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
                     // TODO - Hit crash running with Dota2, this shouldn't happen, need to look into
                     continue;
                 }
-                descriptor_set_buffers[update_index++].binding_req = slot->second;
+                descriptor_set_buffers[update_index++].binding_req_map = slot->second;
             }
         }
     }
@@ -102,14 +103,13 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         }
 
         DescSetState desc_set_state;
-        desc_set_state.num = i;
         desc_set_state.state = std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
         bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutState(gpuav, loc);
-        // The pipeline might not have been bound yet, so will need to update binding_req later
+        // The pipeline might not have been bound yet, so will need to update binding_req_map later
         if (last_bound.pipeline_state) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
             if (slot != last_bound.pipeline_state->active_slots.end()) {
-                desc_set_state.binding_req = slot->second;
+                desc_set_state.binding_req_map = slot->second;
             }
         }
         if (!desc_set_state.state->IsUpdateAfterBind()) {
@@ -154,14 +154,15 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     }
     return true;
 }
+}  // namespace descriptor
 
+// After the GPU executed, we know which descriptor indexes were accessed and can validate with normal Core Validation logic
 [[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets(const Location &loc) {
     // For each vkCmdBindDescriptorSets()...
     // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
     // checking them multiple times.
     vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
     for (auto [di_info_i, di_info] : vvl::enumerate(di_input_buffer_list)) {
-        Location draw_loc(vvl::Func::vkCmdDraw);
         // For each descriptor set ...
         for (uint32_t i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
             auto &set = di_info->descriptor_set_buffers[i];
@@ -171,7 +172,6 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 continue;
             }
             validated_desc_sets.emplace(set.state->VkHandle());
-            assert(set.output_state);
             if (!set.output_state) {
                 std::stringstream error;
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, di_info[" << di_info_i << "].descriptor_set_buffers["
@@ -181,15 +181,15 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 return false;
             }
 
-            vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
+            vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, loc);
             const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
             auto used_descs = set.output_state->UsedDescriptors(loc, *set.state, shader_set);
             // For each used binding ...
             for (const auto &u : used_descs) {
-                auto iter = set.binding_req.find(u.first);
+                auto iter = set.binding_req_map.find(u.first);
                 vvl::DescriptorBindingInfo binding_info;
                 binding_info.first = u.first;
-                while (iter != set.binding_req.end() && iter->first == u.first) {
+                while (iter != set.binding_req_map.end() && iter->first == u.first) {
                     binding_info.second.emplace_back(iter->second);
                     ++iter;
                 }

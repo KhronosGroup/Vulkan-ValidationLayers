@@ -35,7 +35,6 @@ class ImageView;
 class Queue;
 class Sampler;
 class DescriptorSet;
-struct DescSetState;
 }  // namespace gpuav
 
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)

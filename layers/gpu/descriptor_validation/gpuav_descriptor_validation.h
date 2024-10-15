@@ -18,7 +18,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include "vma/vma.h"
 
 struct Location;
 
@@ -26,9 +25,11 @@ namespace gpuav {
 class CommandBuffer;
 class Validator;
 
+namespace descriptor {
 void UpdateBoundPipeline(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
                          const Location& loc);
 void UpdateBoundDescriptors(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location& loc);
 [[nodiscard]] bool UpdateBindlessStateBuffer(Validator& gpuav, CommandBuffer& cb_state, const Location& loc);
+}  // namespace descriptor
 }  // namespace gpuav
