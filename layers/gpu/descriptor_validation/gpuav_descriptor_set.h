@@ -31,21 +31,15 @@ class DescriptorSet : public vvl::DescriptorSet {
                   const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                   ValidationStateTracker *state_data);
     virtual ~DescriptorSet();
-    struct State {
-        State(Validator &gpuav) : buffer(gpuav) {}
-        ~State();
-
-        DeviceMemoryBlock buffer;
-    };
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
     void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
 
-    VkDeviceAddress GetLayoutState(Validator &gpuav, const Location &loc);
-    std::shared_ptr<State> GetCurrentState(Validator &gpuav, const Location &loc);
-    std::shared_ptr<State> GetOutputState(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetLayoutAddress(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetInputAddress(Validator &gpuav, const Location &loc);
+    std::shared_ptr<DeviceMemoryBlock> GetPostProcessBuffer(Validator &gpuav, const Location &loc);
 
-    const DeviceMemoryBlock &LayoutBlock() const { return layout_; }
+    const DeviceMemoryBlock &LayoutBlock() const { return layout_block_; }
 
   protected:
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
@@ -53,16 +47,16 @@ class DescriptorSet : public vvl::DescriptorSet {
   private:
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
-    DeviceMemoryBlock layout_;
+    DeviceMemoryBlock layout_block_;
 
     // Since we will re-bind the same descriptor set many times, keeping a version allows us to know if things have changed and
     // worth re-saving the new information
     std::atomic<uint32_t> current_version_{0};
     // Set when created the last used state
     uint32_t last_used_version_{0};
+    DeviceMemoryBlock input_block_;
 
-    std::shared_ptr<State> last_used_block_;
-    std::shared_ptr<State> output_block_;
+    std::shared_ptr<DeviceMemoryBlock> post_process_block_;
     mutable std::mutex state_lock_;
 };
 
