@@ -29,6 +29,8 @@ target_sources(gpu_av_spirv PRIVATE
     ray_query_pass.cpp
     debug_printf_pass.h
     debug_printf_pass.cpp
+    post_process_descriptor_indexing.h
+    post_process_descriptor_indexing.cpp
 
     # Framework
     instruction.h

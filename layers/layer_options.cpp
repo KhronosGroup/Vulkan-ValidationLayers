@@ -188,6 +188,9 @@ const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
 const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
 const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES = "gpuav_max_buffer_device_addresses";
 const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
+// Post Process are designed to allow the user to "assume" the access is valid and want to know after the GPU executes what
+// happened. These are much lighter checks and can be used while the rest of GPU-AV is turned off
+const char *VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
 const char *VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS = "gpuav_cache_instrumented_shaders";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 
@@ -824,6 +827,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS,
                                     gpuav_settings.shader_instrumentation.bindless_descriptor);
+        }
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING,
+                                    gpuav_settings.shader_instrumentation.post_process_descriptor_index);
         }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB)) {

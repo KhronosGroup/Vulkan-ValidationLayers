@@ -46,11 +46,12 @@ struct GpuAVSettings {
         bool bindless_descriptor = true;
         bool buffer_device_address = true;
         bool ray_query = true;
+        bool post_process_descriptor_index = true;
     } shader_instrumentation;
 
     bool IsShaderInstrumentationEnabled() const {
         return shader_instrumentation.bindless_descriptor || shader_instrumentation.buffer_device_address ||
-               shader_instrumentation.ray_query;
+               shader_instrumentation.ray_query || shader_instrumentation.post_process_descriptor_index;
     }
     bool IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
 
@@ -59,6 +60,7 @@ struct GpuAVSettings {
         shader_instrumentation.bindless_descriptor = false;
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
+        shader_instrumentation.post_process_descriptor_index = false;
         // Because of those 2 settings, cannot really have an "enabled" parameter to pass to this method
         cache_instrumented_shaders = false;
         select_instrumented_shaders = false;
