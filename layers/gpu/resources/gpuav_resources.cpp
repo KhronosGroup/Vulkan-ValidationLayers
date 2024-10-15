@@ -192,6 +192,7 @@ void DeviceMemoryBlock::DestroyBuffer() {
         vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation);
         buffer = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
+        device_address = 0;
     }
 }
 
