@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include <string>
+#include <cstdlib>
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
