@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
         PrintUsage(argv[0]);
         return EXIT_FAILURE;
     } else if (!std::filesystem::exists(argv[1])) {
-        std::cout << "ERROR: " << argv[1] << " Does not exists\n";
+        std::cout << "ERROR: " << argv[1] << " Does not exists\n(First arugment must be input spirv)\n";
         return EXIT_FAILURE;
     }
 
@@ -169,12 +169,14 @@ int main(int argc, char** argv) {
     if (all_passes || ray_query_pass) {
         module.RunPassRayQuery();
     }
-    if (all_passes || debug_printf_pass) {
-        module.RunPassDebugPrintf(kInstDefaultDebugPrintfBinding);
-    }
 
     for (const auto& info : module.link_info_) {
         module.LinkFunction(info);
+    }
+
+    // DebugPrintf goes at end to match how we do it in GpuShaderInstrumentor::InstrumentShader()
+    if (all_passes || debug_printf_pass) {
+        module.RunPassDebugPrintf(kInstDefaultDebugPrintfBinding);
     }
 
     module.PostProcess();
