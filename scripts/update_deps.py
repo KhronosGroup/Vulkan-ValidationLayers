@@ -636,7 +636,7 @@ def CreateHelper(args, repos, filename):
             if repo.api is not None and repo.api != args.api:
                 continue
             if install_names and repo.name in install_names and repo.on_build_platform:
-                helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
+                helper_file.write('set({var} "{dir}" CACHE STRING "")\n'
                                   .format(
                                       var=install_names[repo.name],
                                       dir=escape(repo.install_dir)))
