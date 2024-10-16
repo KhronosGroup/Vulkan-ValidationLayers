@@ -630,6 +630,11 @@ struct Module {
         bool has_specialization_constants{false};
         bool uses_interpolate_at_sample{false};
 
+        // Will check if there is source debug information
+        // Won't save any other info and will retrieve the debug info if requested in a VU error message
+        bool using_legacy_debug_info{false};
+        uint32_t shader_debug_info_set_id = 0;  // non-zero means shader has NonSemantic.Shader.DebugInfo.100
+
         // EntryPoint has pointer references inside it that need to be preserved
         std::vector<std::shared_ptr<EntryPoint>> entry_points;
 
@@ -714,6 +719,7 @@ struct Module {
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type, uint32_t indent) const;
     std::string DescribeType(uint32_t type) const;
     std::string DescribeVariable(uint32_t id) const;
+    std::string DescribeInstruction(const Instruction &error_insn) const;
 
     // Note that some shaders can have an input and output topology
     std::optional<VkPrimitiveTopology> GetTopology(const EntryPoint &entrypoint) const;
