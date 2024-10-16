@@ -21,7 +21,6 @@
 #include <spirv/unified1/spirv.hpp>
 
 #include "gpu/shaders/gpuav_shaders_constants.h"
-#include "gpu/spirv/instruction.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpuav_error_codes.h"
@@ -32,6 +31,7 @@
 
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/shader_instruction.h"
 
 #include <cassert>
 #include <regex>
@@ -1295,8 +1295,8 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
     return object_label;
 }
 
-static const spirv::Instruction *FindOpString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
-    const spirv::Instruction *string_insn = nullptr;
+static const Instruction *FindOpString(const std::vector<Instruction> &instructions, uint32_t string_id) {
+    const Instruction *string_insn = nullptr;
     for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Length() >= 3 && insn.Word(1) == string_id) {
             string_insn = &insn;
@@ -1313,7 +1313,7 @@ static const spirv::Instruction *FindOpString(const std::vector<spirv::Instructi
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, const uint32_t reported_file_id,
+static void ReadOpSource(const std::vector<Instruction> &instructions, const uint32_t reported_file_id,
                          std::vector<std::string> &out_opsource_lines) {
     for (size_t i = 0; i < instructions.size(); i++) {
         const auto &insn = instructions[i];
@@ -1343,7 +1343,7 @@ static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, co
     }
 }
 
-static void ReadDebugSource(const std::vector<spirv::Instruction> &instructions, const uint32_t debug_source_id,
+static void ReadDebugSource(const std::vector<Instruction> &instructions, const uint32_t debug_source_id,
                             uint32_t &out_file_string_id, std::vector<std::string> &out_opsource_lines) {
     for (size_t i = 0; i < instructions.size(); i++) {
         const auto &insn = instructions[i];
@@ -1518,7 +1518,7 @@ static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint
 // There are 2 ways to inject source into a shader:
 // 1. The "old" way using OpLine/OpSource
 // 2. The "new" way using NonSemantic Shader DebugInfo
-static std::string FindShaderSource(std::ostringstream &ss, const std::vector<spirv::Instruction> &instructions,
+static std::string FindShaderSource(std::ostringstream &ss, const std::vector<Instruction> &instructions,
                                     uint32_t instruction_position, bool debug_printf_only) {
     ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
 
@@ -1526,7 +1526,7 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<sp
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
     uint32_t index = 0;
     uint32_t shader_debug_info_set_id = 0;
-    const spirv::Instruction *last_line_inst = nullptr;
+    const Instruction *last_line_inst = nullptr;
     for (const auto &insn : instructions) {
         const uint32_t opcode = insn.Opcode();
         if (opcode == spv::OpExtInstImport) {
@@ -1712,7 +1712,7 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<sp
 
 // Where we build up the error message with all the useful debug information about where the error occured
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
-    VkCommandBuffer commandBuffer, const std::vector<spirv::Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
+    VkCommandBuffer commandBuffer, const std::vector<Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
     uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const InstrumentedShader *instrumented_shader,
     uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
     std::ostringstream ss;

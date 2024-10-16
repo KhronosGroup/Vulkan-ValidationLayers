@@ -22,7 +22,7 @@
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/core/gpuav.h"
-#include "gpu/spirv/instruction.h"
+#include "state_tracker/shader_instruction.h"
 
 #include <iostream>
 
@@ -154,7 +154,7 @@ static std::vector<Substring> ParseFormatString(const std::string &format_string
     return parsed_strings;
 }
 
-static std::string FindFormatString(const std::vector<gpuav::spirv::Instruction> &instructions, uint32_t string_id) {
+static std::string FindFormatString(const std::vector<Instruction> &instructions, uint32_t string_id) {
     std::string format_string;
     for (const auto &insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
@@ -215,8 +215,8 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             return;
         }
 
-        std::vector<gpuav::spirv::Instruction> instructions;
-        gpuav::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
+        std::vector<Instruction> instructions;
+        spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
