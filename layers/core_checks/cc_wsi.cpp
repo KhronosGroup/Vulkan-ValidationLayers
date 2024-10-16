@@ -356,13 +356,6 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         }
     }
 #endif
-    VkSurfacePresentModeEXT present_mode_info = vku::InitStructHelper();
-    if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
-        present_mode_info.presentMode = create_info.presentMode;
-        present_mode_info.pNext = surface_info_pnext;
-        surface_info_pnext = &present_mode_info;
-    }
-
     const auto surface_caps = surface_state->GetSurfaceCapabilities(physical_device_state->VkHandle(), surface_info_pnext);
 
     bool skip = false;
