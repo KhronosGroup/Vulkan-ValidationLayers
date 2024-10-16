@@ -892,180 +892,180 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
     const bool valid_16_float_vector = (enabled_features.shaderFloat16VectorAtomics == VK_TRUE);
     // clang-format on
 
-    for (const spirv::Instruction *atomic_def : stateless_data.atomic_inst) {
-        const spirv::AtomicInstructionInfo &atomic = module_state.GetAtomicInfo(*atomic_def);
-        const uint32_t opcode = atomic_def->Opcode();
+    for (const spirv::Instruction *atomic_def_ptr : stateless_data.atomic_inst) {
+        const spirv::Instruction &atomic_def = *atomic_def_ptr;
+        const spirv::AtomicInstructionInfo &atomic = module_state.GetAtomicInfo(atomic_def);
+        const uint32_t opcode = atomic_def.Opcode();
 
         if (atomic.type == spv::OpTypeFloat && (atomic.vector_size == 2 || atomic.vector_size == 4)) {
             if (!valid_16_float_vector) {
-                skip |= LogError("VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581", module_state.handle(), loc,
-                                 "SPIR-V is using 16-bit float vector atomics operations\n%s\nwith %s storage class, but "
-                                 "shaderFloat16VectorAtomics was not enabled.",
-                                 atomic_def->Describe().c_str(), string_SpvStorageClass(atomic.storage_class));
+                skip |=
+                    LogError("VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581", module_state.handle(), loc,
+                             "SPIR-V is using 16-bit float vector atomics operationswith %s storage class, but "
+                             "shaderFloat16VectorAtomics was not enabled.\n%s\n",
+                             string_SpvStorageClass(atomic.storage_class), module_state.DescribeInstruction(atomic_def).c_str());
             }
         } else if ((atomic.bit_width == 64) && (atomic.type == spv::OpTypeInt)) {
             // Validate 64-bit image atomics
             if (((atomic.storage_class == spv::StorageClassStorageBuffer) || (atomic.storage_class == spv::StorageClassUniform)) &&
                 (enabled_features.shaderBufferInt64Atomics == VK_FALSE)) {
-                skip |= LogError("VUID-RuntimeSpirv-None-06278", module_state.handle(), loc,
-                                 "SPIR-V is using 64-bit int atomics operations\n%s\nwith %s storage class, but "
-                                 "shaderBufferInt64Atomics was not enabled.",
-                                 atomic_def->Describe().c_str(), string_SpvStorageClass(atomic.storage_class));
+                skip |=
+                    LogError("VUID-RuntimeSpirv-None-06278", module_state.handle(), loc,
+                             "SPIR-V is using 64-bit int atomics operations with %s storage class, but "
+                             "shaderBufferInt64Atomics was not enabled. \n%s\n",
+                             string_SpvStorageClass(atomic.storage_class), module_state.DescribeInstruction(atomic_def).c_str());
             } else if ((atomic.storage_class == spv::StorageClassWorkgroup) &&
                        (enabled_features.shaderSharedInt64Atomics == VK_FALSE)) {
                 skip |= LogError("VUID-RuntimeSpirv-None-06279", module_state.handle(), loc,
-                                 "SPIR-V is using 64-bit int atomics operations\n%s\nwith Workgroup storage class, but "
-                                 "shaderSharedInt64Atomics was not enabled.",
-                                 atomic_def->Describe().c_str());
+                                 "SPIR-V is using 64-bit int atomics operations with Workgroup storage class, but "
+                                 "shaderSharedInt64Atomics was not enabled.\n%s\n",
+                                 module_state.DescribeInstruction(atomic_def).c_str());
             } else if ((atomic.storage_class == spv::StorageClassImage) && (valid_image_64_int == false)) {
                 skip |= LogError("VUID-RuntimeSpirv-None-06288", module_state.handle(), loc,
-                                 "SPIR-V is using 64-bit int atomics operations\n%s\nwith Image storage class, but "
-                                 "shaderImageInt64Atomics was not enabled.",
-                                 atomic_def->Describe().c_str());
+                                 "SPIR-V is using 64-bit int atomics operations with Image storage class, but "
+                                 "shaderImageInt64Atomics was not enabled.\n%s\n",
+                                 module_state.DescribeInstruction(atomic_def).c_str());
             }
         } else if (atomic.type == spv::OpTypeFloat) {
             // Validate Floats
             if (atomic.storage_class == spv::StorageClassStorageBuffer) {
                 if (valid_storage_buffer_float == false) {
                     skip |= LogError("VUID-RuntimeSpirv-None-06284", module_state.handle(), loc,
-                                     "SPIR-V is using float atomics operations\n%s\nwith StorageBuffer storage class, but none of "
-                                     "the required features were enabled.",
-                                     atomic_def->Describe().c_str());
+                                     "SPIR-V is using float atomics operations with StorageBuffer storage class, but none of "
+                                     "the required features were enabled.\n%s\n",
+                                     module_state.DescribeInstruction(atomic_def).c_str());
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (enabled_features.shaderBufferFloat16AtomicAdd == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
-                                         "SPIR-V is using 16-bit float atomics for add operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat16AtomicAdd was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 16-bit float atomics for add operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat16AtomicAdd was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 32) && (enabled_features.shaderBufferFloat32AtomicAdd == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                         "SPIR-V is using 32-bit float atomics for add operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat32AtomicAdd was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 32-bit float atomics for add operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat32AtomicAdd was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 64) && (enabled_features.shaderBufferFloat64AtomicAdd == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                                         "SPIR-V is using 64-bit float atomics for add operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat64AtomicAdd was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 64-bit float atomics for add operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat64AtomicAdd was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     }
                 } else if (opcode == spv::OpAtomicFMinEXT || opcode == spv::OpAtomicFMaxEXT) {
                     if ((atomic.bit_width == 16) && (enabled_features.shaderBufferFloat16AtomicMinMax == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
-                                         "SPIR-V is using 16-bit float atomics for min/max operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat16AtomicMinMax was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 16-bit float atomics for min/max operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat16AtomicMinMax was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 32) && (enabled_features.shaderBufferFloat32AtomicMinMax == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                         "SPIR-V is using 32-bit float atomics for min/max operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat32AtomicMinMax was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 32-bit float atomics for min/max operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat32AtomicMinMax was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 64) && (enabled_features.shaderBufferFloat64AtomicMinMax == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                                         "SPIR-V is using 64-bit float atomics for min/max operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat64AtomicMinMax was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 64-bit float atomics for min/max operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat64AtomicMinMax was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     }
                 } else {
                     // Assume is valid load/store/exchange (rest of supported atomic operations) or else spirv-val will catch
                     if ((atomic.bit_width == 16) && (enabled_features.shaderBufferFloat16Atomics == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                         "SPIR-V is using 16-bit float atomics for load/store/exhange operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat16Atomics was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 16-bit float atomics for load/store/exhange operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat16Atomics was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 32) && (enabled_features.shaderBufferFloat32Atomics == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                         "SPIR-V is using 32-bit float atomics for load/store/exhange operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat32Atomics was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 32-bit float atomics for load/store/exhange operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat32Atomics was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 64) && (enabled_features.shaderBufferFloat64Atomics == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                                         "SPIR-V is using 64-bit float atomics for load/store/exhange operations\n%s\nwith "
-                                         "StorageBuffer storage class, but shaderBufferFloat64Atomics was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 64-bit float atomics for load/store/exhange operations with "
+                                         "StorageBuffer storage class, but shaderBufferFloat64Atomics was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     }
                 }
             } else if (atomic.storage_class == spv::StorageClassWorkgroup) {
                 if (valid_workgroup_float == false) {
                     skip |= LogError("VUID-RuntimeSpirv-None-06285", module_state.handle(), loc,
-                                     "SPIR-V is using float atomics operations\n%s\nwith Workgroup storage class, but none of the "
-                                     "required features were enabled.",
-                                     atomic_def->Describe().c_str());
+                                     "SPIR-V is using float atomics operations with Workgroup storage class, but none of the "
+                                     "required features were enabled.\n%s\n",
+                                     module_state.DescribeInstruction(atomic_def).c_str());
                 } else if (opcode == spv::OpAtomicFAddEXT) {
                     if ((atomic.bit_width == 16) && (enabled_features.shaderSharedFloat16AtomicAdd == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
-                                         "SPIR-V is using 16-bit float atomics for add operations\n%s\nwith Workgroup "
-                                         "storage class, but shaderSharedFloat16AtomicAdd was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 16-bit float atomics for add operations with Workgroup "
+                                         "storage class, but shaderSharedFloat16AtomicAdd was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 32) && (enabled_features.shaderSharedFloat32AtomicAdd == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                         "SPIR-V is using 32-bit float atomics for add operations\n%s\nwith Workgroup "
-                                         "storage class, but shaderSharedFloat32AtomicAdd was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 32-bit float atomics for add operations with Workgroup "
+                                         "storage class, but shaderSharedFloat32AtomicAdd was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 64) && (enabled_features.shaderSharedFloat64AtomicAdd == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                                         "SPIR-V is using 64-bit float atomics for add operations\n%s\nwith Workgroup "
-                                         "storage class, but shaderSharedFloat64AtomicAdd was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 64-bit float atomics for add operations with Workgroup "
+                                         "storage class, but shaderSharedFloat64AtomicAdd was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     }
                 } else if (opcode == spv::OpAtomicFMinEXT || opcode == spv::OpAtomicFMaxEXT) {
                     if ((atomic.bit_width == 16) && (enabled_features.shaderSharedFloat16AtomicMinMax == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
-                                         "SPIR-V is using 16-bit float atomics for min/max operations\n%s\nwith "
-                                         "Workgroup storage class, but shaderSharedFloat16AtomicMinMax was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 16-bit float atomics for min/max operations with "
+                                         "Workgroup storage class, but shaderSharedFloat16AtomicMinMax was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 32) && (enabled_features.shaderSharedFloat32AtomicMinMax == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                         "SPIR-V is using 32-bit float atomics for min/max operations\n%s\nwith "
-                                         "Workgroup storage class, but shaderSharedFloat32AtomicMinMax was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 32-bit float atomics for min/max operations with "
+                                         "Workgroup storage class, but shaderSharedFloat32AtomicMinMax was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 64) && (enabled_features.shaderSharedFloat64AtomicMinMax == VK_FALSE)) {
                         skip |= LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                                         "SPIR-V is using 64-bit float atomics for min/max operations\n%s\nwith "
-                                         "Workgroup storage class, but shaderSharedFloat64AtomicMinMax was not enabled.",
-                                         atomic_def->Describe().c_str());
+                                         "SPIR-V is using 64-bit float atomics for min/max operations with "
+                                         "Workgroup storage class, but shaderSharedFloat64AtomicMinMax was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     }
                 } else {
                     // Assume is valid load/store/exchange (rest of supported atomic operations) or else spirv-val will catch
                     if ((atomic.bit_width == 16) && (enabled_features.shaderSharedFloat16Atomics == VK_FALSE)) {
-                        skip |=
-                            LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
-                                     "SPIR-V is using 16-bit float atomics for load/store/exhange operations\n%s\nwith Workgroup "
-                                     "storage class, but shaderSharedFloat16Atomics was not enabled.",
-                                     atomic_def->Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
+                                         "SPIR-V is using 16-bit float atomics for load/store/exhange operations with Workgroup "
+                                         "storage class, but shaderSharedFloat16Atomics was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 32) && (enabled_features.shaderSharedFloat32Atomics == VK_FALSE)) {
-                        skip |=
-                            LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                                     "SPIR-V is using 32-bit float atomics for load/store/exhange operations\n%s\nwith Workgroup "
-                                     "storage class, but shaderSharedFloat32Atomics was not enabled.",
-                                     atomic_def->Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
+                                         "SPIR-V is using 32-bit float atomics for load/store/exhange operations with Workgroup "
+                                         "storage class, but shaderSharedFloat32Atomics was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     } else if ((atomic.bit_width == 64) && (enabled_features.shaderSharedFloat64Atomics == VK_FALSE)) {
-                        skip |=
-                            LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                                     "SPIR-V is using 64-bit float atomics for load/store/exhange operations\n%s\nwith Workgroup "
-                                     "storage class, but shaderSharedFloat64Atomics was not enabled.",
-                                     atomic_def->Describe().c_str());
+                        skip |= LogError("VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
+                                         "SPIR-V is using 64-bit float atomics for load/store/exhange operations with Workgroup "
+                                         "storage class, but shaderSharedFloat64Atomics was not enabled.\n%s\n",
+                                         module_state.DescribeInstruction(atomic_def).c_str());
                     }
                 }
             } else if ((atomic.storage_class == spv::StorageClassImage) && (valid_image_float == false)) {
                 skip |= LogError("VUID-RuntimeSpirv-None-06286", module_state.handle(), loc,
-                                 "SPIR-V is using float atomics operations\n%s\nwith Image storage class, but none of the required "
-                                 "features were enabled.",
-                                 atomic_def->Describe().c_str());
+                                 "SPIR-V is using float atomics operations with Image storage class, but none of the required "
+                                 "features were enabled.\n%s\n",
+                                 module_state.DescribeInstruction(atomic_def).c_str());
             } else if ((atomic.bit_width == 16) && (valid_16_float == false)) {
                 skip |= LogError(
                     "VUID-RuntimeSpirv-None-06337", module_state.handle(), loc,
-                    "SPIR-V is using 16-bit float atomics operations\n%s\n but none of the required features were enabled.",
-                    atomic_def->Describe().c_str());
+                    "SPIR-V is using 16-bit float atomics operations but none of the required features were enabled.\n%s\n",
+                    module_state.DescribeInstruction(atomic_def).c_str());
             } else if ((atomic.bit_width == 32) && (valid_32_float == false)) {
                 skip |= LogError(
                     "VUID-RuntimeSpirv-None-06338", module_state.handle(), loc,
-                    "SPIR-V is using 32-bit float atomics operations\n%s\n but none of the required features were enabled.",
-                    atomic_def->Describe().c_str());
+                    "SPIR-V is using 32-bit float atomics operations but none of the required features were enabled.\n%s\n",
+                    module_state.DescribeInstruction(atomic_def).c_str());
             } else if ((atomic.bit_width == 64) && (valid_64_float == false)) {
                 skip |= LogError(
                     "VUID-RuntimeSpirv-None-06339", module_state.handle(), loc,
-                    "SPIR-V is using 64-bit float atomics operations\n%s\n but snone of the required features were enabled.",
-                    atomic_def->Describe().c_str());
+                    "SPIR-V is using 64-bit float atomics operations but snone of the required features were enabled.\n%s\n",
+                    module_state.DescribeInstruction(atomic_def).c_str());
             }
         }
     }

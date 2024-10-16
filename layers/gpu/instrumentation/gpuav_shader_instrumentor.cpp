@@ -1400,6 +1400,8 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<In
             last_line_inst = &insn;
         } else if (opcode == spv::OpLine) {
             last_line_inst = &insn;
+        } else if (opcode == spv::OpFunctionEnd) {
+            last_line_inst = nullptr;  // debug lines can't cross functions boundaries
         }
 
         if (index == instruction_position) {
@@ -1408,163 +1410,11 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<In
         index++;
     }
 
-    if (!last_line_inst) {
+    if (last_line_inst) {
+        ss << (debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ");
+        GetShaderSourceInfo(ss, instructions, *last_line_inst);
+    } else {
         ss << "Unable to source. Build shader with debug info to get source information.\n";
-        return ss.str();
-    }
-
-    const bool using_shader_debug_info = shader_debug_info_set_id != 0;
-
-    // Instead of building up hash map that might not be used, reloop the constants to find the value.
-    // Non Semantic instructions are validated to have 32-bit integer constants (not spec constants).
-    auto get_constant_value = [&instructions](uint32_t id) {
-        for (const auto &insn : instructions) {
-            if (insn.Opcode() == spv::OpConstant && insn.ResultId() == id) {
-                return insn.Word(3);
-            } else if (insn.Opcode() == spv::OpFunction) {
-                break;
-            }
-        }
-        assert(false);
-        return 0u;
-    };
-
-    // Read the source code and split it up into separate lines.
-    //
-    // 1. OpLine will point to a OpSource/OpSourceContinued which have the string built-in
-    // 2. DebugLine will point to a DebugSource/DebugSourceContinued that each point to a OpString
-    //
-    // For the second one, we need to build the source lines up sooner
-    std::vector<std::string> opsource_lines;
-
-    uint32_t file_string_id = 0;  // OpString with filename
-    uint32_t line_number_start = 0;
-    uint32_t line_number_end = 0;
-    uint32_t column_number = 0;  // most compiler will just give zero here, so just try and get a start column
-    if (last_line_inst->Opcode() == spv::OpLine) {
-        file_string_id = last_line_inst->Word(1);
-        line_number_start = last_line_inst->Word(2);
-        line_number_end = line_number_start;  // OpLine only give a single line granularity
-        column_number = last_line_inst->Word(3);
-    } else {
-        // NonSemanticShaderDebugInfo100DebugLine
-        line_number_start = get_constant_value(last_line_inst->Word(6));
-        line_number_end = get_constant_value(last_line_inst->Word(7));
-        column_number = get_constant_value(last_line_inst->Word(8));
-        const uint32_t debug_source_id = last_line_inst->Word(5);
-        ReadDebugSource(instructions, debug_source_id, file_string_id, opsource_lines);
-    }
-
-    const std::string debug_info_type = (using_shader_debug_info) ? "DebugSource" : "OpLine";
-    if (file_string_id == 0) {
-        // This error should be caught in spirv-val
-        ss << "Unable to find file string from SPIR-V " << debug_info_type << '\n';
-        return ss.str();
-    }
-
-    auto file_string_insn = FindOpString(instructions, file_string_id);
-    if (!file_string_insn) {
-        ss << "Unable to find SPIR-V OpString from " << debug_info_type << " instruction.\n";
-        ss << "File ID = " << file_string_id << ", Line Number = " << line_number_start << ", Column = " << column_number << '\n';
-        return ss.str();
-    }
-
-    ss << (debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ");
-
-    std::string reported_filename = file_string_insn->GetAsString(2);
-    if (!reported_filename.empty()) {
-        ss << "in file " << reported_filename << " ";
-    }
-
-    ss << "at line " << line_number_start;
-    if (line_number_end > line_number_start) {
-        ss << " to " << line_number_end;
-    }
-
-    if (column_number != 0) {
-        ss << ", column " << column_number;
-    }
-    ss << '\n';
-
-    // Defer finding source from OpLine until we know we have a valid file string to tie it too
-    if (!using_shader_debug_info) {
-        ReadOpSource(instructions, file_string_id, opsource_lines);
-    }
-
-    if (opsource_lines.empty()) {
-        if (using_shader_debug_info) {
-            ss << "No Text operand found in DebugSource\n";
-        } else {
-            ss << "Unable to find SPIR-V OpSource\n";
-        }
-        return ss.str();
-    }
-
-    // Find the line in the OpSource content that corresponds to the reported error file and line.
-    uint32_t saved_line_number = 0;
-    std::string current_filename = reported_filename;  // current "preprocessor" filename state.
-    std::vector<std::string>::size_type saved_opsource_offset = 0;
-
-    // This was designed to fine the best line if using #line in GLSL
-    bool found_best_line = false;
-    if (!using_shader_debug_info) {
-        for (auto it = opsource_lines.begin(); it != opsource_lines.end(); ++it) {
-            uint32_t parsed_line_number;
-            std::string parsed_filename;
-            const bool found_line = GetLineAndFilename(*it, &parsed_line_number, parsed_filename);
-            if (!found_line) continue;
-
-            const bool found_filename = parsed_filename.size() > 0;
-            if (found_filename) {
-                current_filename = parsed_filename;
-            }
-            if ((!found_filename) || (current_filename == reported_filename)) {
-                // Update the candidate best line directive, if the current one is prior and closer to the reported line
-                if (line_number_start >= parsed_line_number) {
-                    if (!found_best_line || (line_number_start - parsed_line_number <= line_number_start - saved_line_number)) {
-                        saved_line_number = parsed_line_number;
-                        saved_opsource_offset = std::distance(opsource_lines.begin(), it);
-                        found_best_line = true;
-                    }
-                }
-            }
-        }
-    }
-
-    if (using_shader_debug_info) {
-        // For Shader Debug Info, we should have all the information we need
-        ss << '\n';
-        for (uint32_t line_index = line_number_start; line_index <= line_number_end; line_index++) {
-            if (line_index > opsource_lines.size()) {
-                ss << line_index << ": [No line found in source]";
-                break;
-            }
-            ss << line_index << ": " << opsource_lines[line_index - 1] << '\n';
-        }
-        // Only show column if since line is displayed
-        if (column_number > 0 && line_number_start == line_number_end) {
-            std::string spaces(column_number - 1, ' ');
-            ss << spaces << '^';
-        }
-
-    } else if (found_best_line) {
-        assert(line_number_start >= saved_line_number);
-        const size_t opsource_index = (line_number_start - saved_line_number) + 1 + saved_opsource_offset;
-        if (opsource_index < opsource_lines.size()) {
-            ss << '\n' << line_number_start << ": " << opsource_lines[opsource_index] << '\n';
-        } else {
-            ss << "Internal error: calculated source line of " << opsource_index << " for source size of " << opsource_lines.size()
-               << " lines\n";
-        }
-    } else if (line_number_start < opsource_lines.size() && line_number_start != 0) {
-        // file lines normally start at 1 index
-        ss << '\n' << opsource_lines[line_number_start - 1] << '\n';
-        if (column_number > 0) {
-            std::string spaces(column_number - 1, ' ');
-            ss << spaces << '^';
-        }
-    } else {
-        ss << "Unable to find a suitable line in SPIR-V OpSource\n";
     }
 
     return ss.str();
