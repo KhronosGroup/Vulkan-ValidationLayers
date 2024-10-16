@@ -422,8 +422,15 @@ class GoodRepo(object):
         if VERBOSE:
             print('Checking out {n} in {d}'.format(n=self.name, d=self.repo_dir))
 
-        if self._args.do_clean_repo:
+        if os.path.exists(os.path.join(self.repo_dir, '.git')):
+            url_changed = command_output(['git', 'config', '--get', 'remote.origin.url'], self.repo_dir).strip() != self.url
+        else:
+            url_changed = False
+
+        if self._args.do_clean_repo or url_changed:
             if os.path.isdir(self.repo_dir):
+                if VERBOSE:
+                    print('Clearing directory {d}'.format(d=self.repo_dir))
                 shutil.rmtree(self.repo_dir, onerror = on_rm_error)
         if not os.path.exists(os.path.join(self.repo_dir, '.git')):
             self.Clone()
