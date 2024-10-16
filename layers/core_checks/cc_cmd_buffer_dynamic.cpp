@@ -793,7 +793,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
-            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
+            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
+            !enabled_features.multisampledRenderToSingleSampled) {
             for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
                 const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
                 const auto* attachment = attachment_info.image_view;
