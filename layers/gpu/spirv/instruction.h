@@ -107,7 +107,5 @@ struct Instruction {
 #endif
 };
 
-void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions);
-
 }  // namespace spirv
 }  // namespace gpuav

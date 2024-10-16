@@ -769,7 +769,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         }
 
         // If we somehow can't find our state, we can still report our error message
-        std::vector<spirv::Instruction> instructions;
+        std::vector<Instruction> instructions;
         if (instrumented_shader && !instrumented_shader->instrumented_spirv.empty()) {
             spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
         }

@@ -278,20 +278,5 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
     UpdateDebugInfo();
 }
 
-// All post SPIR-V processing we do is just needing to inspect single instructions without knowledge of the rest of the module.
-// We turn the saved vector of uint32_t into the Instruction class to make it easier to use
-void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions) {
-    assert(instructions.empty());
-    spirv_iterator it = spirv.begin();
-    it += 5;  // skip first 5 word of header
-    instructions.reserve(spirv.size() * 4);
-
-    uint32_t instruction_count = 0;
-    while (it != spirv.end()) {
-        auto new_insn = instructions.emplace_back(it, instruction_count++);
-        it += new_insn.Length();
-    }
-}
-
 }  // namespace spirv
 }  // namespace gpuav
