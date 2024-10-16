@@ -1023,3 +1023,36 @@ bool CoreChecks::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const
 
     return skip;
 }
+
+class StaticAllocatedObject {
+  public:
+    StaticAllocatedObject() {
+        printf("--- StaticAllocatedObject() --\n");
+        fflush(stdout);
+    };
+    ~StaticAllocatedObject() {
+        // This is used to detect if the program has called exit() and we need to cleanup the layers. If we don't the app might have
+        // a fucntion in atexit() trying to still make Vulkan calls and if it hits our freed heap memory (such as our std::map) it
+        // will crash and will get a false report it "crashes only with VVL" (Currently this is only required in CoreChecks)
+        exit_called = true;
+        printf("--- ~~~StaticAllocatedObject() --\n");
+        fflush(stdout);
+    }
+    volatile bool exit_called = false;
+};
+
+const StaticAllocatedObject &GetStaticAllocatedObject() {
+    static const StaticAllocatedObject object;
+    return object;
+}
+
+// If the app has called exit() it should (and can) still do cleanup (vkDestory/vkFree) but we need to worry about it trying to
+// create things like command buffers. With this, we only need to check in a few pivotal create calls
+bool CoreChecks::CheckIfAppExited() const {
+    if (GetStaticAllocatedObject().exit_called) {
+        ReleaseDeviceDispatchObject(LayerObjectTypeCoreValidation);
+        return true;
+    } else {
+        return false;
+    }
+}
