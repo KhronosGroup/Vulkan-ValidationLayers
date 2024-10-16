@@ -320,7 +320,7 @@ jobs:
     # iOS is 10x expensive to run on GitHub machines, so only run if we know something else fast/simple passed as well
     # androidOnLinux does a basic build and only takes a 2 or 3 minutes to normally run
     needs: androidOnLinux
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
