@@ -575,6 +575,9 @@ std::vector<BatchContextConstPtr> QueueBatchContext::ResolveSubmitWaits(vvl::spa
         }
         // Binary semaphore wait:
         // * There must be a single resovling signal. If no signal is found, it is a validation error.
+        // * The resolving signal must not depend on another not yet submitted timeline signal. That's
+        //   not allowed by the specification. When this happens OnBinaryWait also reports that signal
+        //   not found.
         // Timeline semaphore wait:
         // * No resolving signal is allowed. It is a wait-before-signal scenario.
         // * A single resolving signal. The specification defines that exactly *one* signal resolves the wait.
@@ -586,7 +589,8 @@ std::vector<BatchContextConstPtr> QueueBatchContext::ResolveSubmitWaits(vvl::spa
         if (semaphore_state->type == VK_SEMAPHORE_TYPE_BINARY) {
             resolving_signal = signals_update.OnBinaryWait(wait_info.semaphore);
             if (!resolving_signal) {
-                continue;  // [core validation check]: binary signal not found
+                // [core validation check]: binary signal not found or depends on not yet submitted timeline signal
+                continue;
             }
         } else {
             // Special case when semaphore initial value satisfies the wait.
