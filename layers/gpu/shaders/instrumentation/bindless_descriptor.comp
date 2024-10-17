@@ -30,19 +30,6 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorLayoutData {
-    // BindingLayout[0]
-    uint num_bindings;
-    uint pad; // always zero, used to keep things aligned
-
-    // BindingLayout[1] - BindingLayout[N]
-    // struct glsl::BindingLayout {
-    //   x: count
-    //   y: state_start
-    // }
-    uvec2 data[];
-};
-
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetInData {
     // struct glsl::DescriptorState {
     //   x: id
@@ -51,47 +38,33 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetOutData {
-    // size of descriptor count (including all array elements)
-    // Used to mark which indexes were accessed
-    uint data[];
-};
-
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState {
     // Maps to DescriptorHeap and used to detect if descriptor is still valid on CPU
     uint data[];
 };
 
-struct DescriptorSetRecord {
-    DescriptorLayoutData layout_data;
-    DescriptorSetInData in_data;
-    DescriptorSetOutData out_data;
-};
-
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer BindlessStateBuffer {
     GlobalState global_state;
-    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
+    DescriptorSetInData desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
 bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const uint desc_set,
-                              const uint binding, const uint desc_index, const uint byte_offset) {
+                              const uint binding, const uint desc_index, const uint byte_offset,
+                              const uint layout_size, const uint layout_offset) {
     uint error = 0u;
     uint param_0 = 0u;
     uint param_1 = 0u;
     do {
-        DescriptorLayoutData layout_data = bindless_state_buffer.desc_sets[desc_set].layout_data;
-
-        uvec2 binding_state = layout_data.data[binding];
-        if (desc_index >= binding_state.x) {
+        if (desc_index >= layout_size) {
             error = kErrorSubCodeBindlessDescriptorBounds;
-            param_0 = binding_state.x;
+            param_0 = layout_size;
             break;
         }
 
-        DescriptorSetInData in_data = bindless_state_buffer.desc_sets[desc_set].in_data;
+        DescriptorSetInData in_data = bindless_state_buffer.desc_sets[desc_set];
 
         // check if the descriptor was ever initialized
-        uint state_index = binding_state.y + desc_index;
+        uint state_index = layout_offset + desc_index;
         uint desc_id = in_data.data[state_index].x & kDebugInputBindlessSkipId;
         uint desc_type = (in_data.data[state_index].x & ~kDebugInputBindlessSkipId) >> kDescBitShift;
         if (desc_id == 0u) {
@@ -135,13 +108,6 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
                 break;
             }
         }
-
-        DescriptorSetOutData out_data = bindless_state_buffer.desc_sets[desc_set].out_data;
-        // The index has been accessed, write out for post processing
-        //
-        // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
-        // ex - desc_sets[0].out_data == desc_sets[1].out_data
-        out_data.data[state_index] = kDescriptorSetWrittenMask | desc_set;
     } while (false);
 
     if (0u != error) {

@@ -20,13 +20,22 @@
 namespace gpuav {
 namespace spirv {
 
+struct BindingLayout {
+    uint32_t count;
+    uint32_t state_start;
+};
+
 // Create a pass to instrument bindless descriptor checking
 // This pass instruments all bindless references to check that descriptor
 // array indices are inbounds, and if the descriptor indexing extension is
 // enabled, that the descriptor has been initialized.
 class BindlessDescriptorPass : public InjectConditionalFunctionPass {
   public:
-    BindlessDescriptorPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    BindlessDescriptorPass(Module& module) : InjectConditionalFunctionPass(module) {
+        // To simulate the "Stress" test pipeline
+        layout_table_.push_back({1, 0});
+        layout_table_.push_back({64, 1});
+    }
     const char* Name() const final { return "BindlessDescriptorPass"; }
     void PrintDebugInfo();
 
@@ -49,6 +58,8 @@ class BindlessDescriptorPass : public InjectConditionalFunctionPass {
 
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
+
+    std::vector<BindingLayout> layout_table_;
 };
 
 }  // namespace spirv
