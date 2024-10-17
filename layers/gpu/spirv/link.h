@@ -26,6 +26,7 @@ enum class LinkFunctions {
     inst_non_bindless_oob_buffer,
     inst_non_bindless_oob_texel_buffer,
     inst_ray_query,
+    inst_post_process_descriptor_index,
 };
 
 struct LinkInfo {
