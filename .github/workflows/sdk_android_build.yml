@@ -19,7 +19,10 @@ name: SDK Android Build
 # artifacts to the release when a Vulkan SDK tag is pushed. The
 # Vulkan SDK does not include binaries for Android, so we publish
 # them here to provide Android binaries built from the same source
-# used to build the Vulkan SDK.
+# used to build the Vulkan SDK. The artifacts will also be bundled into an AAR
+# (the library counterpart the APK application format) and uploaded to GitHub
+# Packages so app developers can include the validation layers in their
+# application the same way they would any Java dependencies.
 #
 # The tag needs to be pushed by name, as `git push --tags` to push all
 # tags does not appear to trigger the action.
@@ -48,7 +51,23 @@ on:
     tags:
       - vulkan-sdk-*
 
+env:
+  MIN_SDK_VERSION: 26
+  ARTIFACT_ID: vulkan-validation-layers
+
 jobs:
+  sdk-version:
+    name: Get SDK version
+    runs-on: ubuntu-22.04
+    outputs:
+      sdk_version: ${{ steps.get_sdk_version.outputs.sdk_version}}
+    steps:
+    - name: Get sdk version string
+      id: get_sdk_version
+      run: |
+        sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
+        echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
+
   android:
     name: Android SDK Release
     runs-on: ubuntu-22.04
@@ -63,24 +82,85 @@ jobs:
       with:
         python-version: '3.10'
     - name: CMake Build
-      run: python scripts/android.py --config Release --app-abi ${{ matrix.abi }} --app-stl c++_static
+      run: python scripts/android.py --config Release --app-abi ${{ matrix.abi }} --app-stl c++_static --min-sdk-version $MIN_SDK_VERSION
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: vvl-android-${{ matrix.abi }}
         path: ./build-android/libs/lib/
 
+  aar:
+    name: Create AAR
+    runs-on: ubuntu-22.04
+    needs: [android, sdk-version]
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./libs
+        merge-multiple: true
+        pattern: vvl-android-*
+    - name: Assemble AAR
+      # GROUP_ID must be configured as a repoistory variable in Settings ->
+      # Actions -> Variables.
+      run: |
+        python scripts/aar.py \
+          --group-id ${{ vars.GROUP_ID }} \
+          --artifact-id ${{ env.ARTIFACT_ID }} \
+          --min-sdk-version $MIN_SDK_VERSION \
+          -o vulkan-validation-layers-${{ needs.sdk-version.outputs.sdk_version }}.aar \
+          libs
+    - name: Upload AAR
+      uses: actions/upload-artifact@v4
+      with:
+        name: vulkan-validation-layers-aar
+        path: vulkan-validation-layers-${{ needs.sdk-version.outputs.sdk_version }}.aar
+        if-no-files-found: error
+
+  maven:
+    name: Push AAR to GitHub Packages
+    runs-on: ubuntu-22.04
+    needs: [aar, sdk-version]
+    steps:
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        # Neither are really important. We need the mvn tool, but we aren't
+        # going to use it to build anything.
+        distribution: "temurin"
+        java-version: "21"
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: aar
+        name: vulkan-validation-layers-aar
+    - name: Publish
+      # Useful docs for this section:
+      # https://maven.apache.org/guides/mini/guide-3rd-party-jars-remote.html
+      # https://docs.github.com/en/actions/publishing-packages/publishing-java-packages-with-maven
+      run: |
+        mvn --batch-mode deploy:deploy-file \
+          -DgroupId=${{ vars.GROUP_ID }} \
+          -DartifactId=$ARTIFACT_ID \
+          -Dversion=${{ needs.sdk-version.outputs.sdk_version }} \
+          -Dpackaging=aar \
+          -DrepositoryId=github \
+          -Durl=https://maven.pkg.github.com/${{ github.repository }} \
+          -Dfile=aar/vulkan-validation-layers-${{ needs.sdk-version.outputs.sdk_version }}.aar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   release:
     name: Create Release for Tag
     permissions: write-all
     runs-on: ubuntu-22.04
-    needs: android
+    needs: [android, sdk-version]
     steps:
-    - name: Get sdk version string
-      id: get_sdk_version
-      run: |
-        sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
-        echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
@@ -88,11 +168,19 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: Android binaries for ${{ steps.get_sdk_version.outputs.sdk_version }} SDK release
+        release_name: Android binaries for ${{ needs.sdk-version.outputs.sdk_version }} SDK release
         body: |
             These Android Validation Layer binaries were built with ndk version 25.2.9519653
 
-            The validation binaries can only be used with a device that supports Android API version 26 or higher.
+            The validation binaries can only be used with a device that supports Android API version ${{ env.MIN_SDK_VERSION }} or higher.
+
+            If you're using Android Gradle to build your app, it will be easier
+            to use the validation layers direcetly from the GitHub Package
+            Repository: ${{ github.repositoryUrl }}/packages/. See
+            https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package
+            for instructions on using packages from this repository. To include
+            the validation layers only in your debug APK (recommended), use
+            `debugImplementation` rather than `implementation` as the docs say.
         draft: false
         prerelease: false
     - name: Get release URL
@@ -107,7 +195,7 @@ jobs:
   publish:
     runs-on: ubuntu-22.04
     permissions: write-all
-    needs: release
+    needs: [release, sdk-version]
     strategy:
       fail-fast: false
       matrix:
@@ -123,20 +211,15 @@ jobs:
           suffix: "zip"
           type: "application/zip"
     steps:
-    - name: Get sdk version string
-      id: get_sdk_version
-      run: |
-        sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
-        echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        path: ./android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
+        path: ./android-binaries-${{ needs.sdk-version.outputs.sdk_version }}
         merge-multiple: true
         pattern: ${{ matrix.config.artifact }}-*
     - name: Make release artifacts
       run: |
-        ${{ matrix.config.command }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }} android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}
+        ${{ matrix.config.command }} android-binaries-${{ needs.sdk-version.outputs.sdk_version }}.${{ matrix.config.suffix }} android-binaries-${{ needs.sdk-version.outputs.sdk_version }}
     - name: Download release URL
       uses: actions/download-artifact@v4
       with:
@@ -153,6 +236,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
-        asset_name: android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }}
-        asset_path: ./android-binaries-${{ steps.get_sdk_version.outputs.sdk_version }}.${{ matrix.config.suffix }}
+        asset_name: android-binaries-${{ needs.sdk-version.outputs.sdk_version }}.${{ matrix.config.suffix }}
+        asset_path: ./android-binaries-${{ needs.sdk-version.outputs.sdk_version }}.${{ matrix.config.suffix }}
         asset_content_type: ${{ matrix.config.type }}
