@@ -1,13 +1,11 @@
-
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See generate_spirv.py for modifications
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2021-2024 The Khronos Group Inc.
+ * Copyright (c) 2021-2024 Valve Corporation
+ * Copyright (c) 2021-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +18,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  ****************************************************************************/
 
 #pragma once
 
-#define GPU_AV_SHADER_GIT_HASH "2b3f6c536795213238a6bc96e80d5c679ee6690a"
+#include <cstdint>
+
+// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
+extern const uint32_t instrumentation_post_process_descriptor_index_comp_size;
+extern const uint32_t instrumentation_post_process_descriptor_index_comp[];

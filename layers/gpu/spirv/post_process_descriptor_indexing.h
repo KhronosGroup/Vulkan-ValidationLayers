@@ -24,15 +24,23 @@ struct Type;
 
 class PostProcessDescriptorIndexingPass : public Pass {
   public:
-    PostProcessDescriptorIndexingPass(Module& module) : Pass(module) {}
+    PostProcessDescriptorIndexingPass(Module& module);
     const char* Name() const final { return "PostProcessDescriptorIndexingPass"; }
 
     bool Run();
     void PrintDebugInfo();
 
   private:
-    bool AnalyzeInstruction(const Instruction& inst);
+    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
+    void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
     void Reset() final;
+
+    uint32_t link_function_id = 0;
+    uint32_t GetLinkFunctionId();
+
+    uint32_t descriptor_set_ = 0;
+    uint32_t descriptor_binding_ = 0;
+    uint32_t descriptor_index_id_ = 0;
 };
 
 }  // namespace spirv

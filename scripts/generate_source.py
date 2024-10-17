@@ -391,6 +391,8 @@ def main(argv):
         'instrumentation_non_bindless_oob_texel_buffer_comp.cpp',
         'instrumentation_ray_query_comp.h',
         'instrumentation_ray_query_comp.cpp',
+        'instrumentation_post_process_descriptor_index_comp.h',
+        'instrumentation_post_process_descriptor_index_comp.cpp',
         'gpuav_shader_hash.h'
     ]
 

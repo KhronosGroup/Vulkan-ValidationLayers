@@ -1179,11 +1179,9 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         modified |= module.RunPassRayQuery();
     }
 
-    // All Post Process instrumentation passes go at the end (before linking) to prevent the above passes from trying to instrument
-    // over the instrumented SPIR-V we added
+    // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
+    // in a if/else, this means they will be gaurded as if they were inside the above passes
     if (gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
-        // This being after RunPassBindlessDescriptor() means if there is an if/else wrapping we will only check if the index is
-        // valid (which is desired so things don't crash).
         modified |= module.RunPassPostProcessDescriptorIndexing();
     }
 

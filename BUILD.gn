@@ -373,6 +373,8 @@ vvl_sources = [
   "layers/vulkan/generated/instrumentation_buffer_device_address_comp.h",
   "layers/vulkan/generated/instrumentation_ray_query_comp.cpp",
   "layers/vulkan/generated/instrumentation_ray_query_comp.h",
+  "layers/vulkan/generated/instrumentation_post_process_descriptor_index_comp.cpp",
+  "layers/vulkan/generated/instrumentation_post_process_descriptor_index_comp.h",
   "layers/vulkan/generated/layer_chassis_dispatch.cpp",
   "layers/vulkan/generated/layer_chassis_dispatch.h",
   "layers/vulkan/generated/object_tracker.cpp",
