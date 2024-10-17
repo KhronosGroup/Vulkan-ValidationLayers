@@ -2079,6 +2079,69 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderSpirv, DeviceMemoryScopeDebugInfo) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+    RETURN_IF_SKIP(Init());
+
+    char const *csSource = R"(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+          %1 = OpString "a.comp"
+               OpSource GLSL 450 %1 "// OpModuleProcessed client vulkan100
+// OpModuleProcessed target-env vulkan1.0
+// OpModuleProcessed entry-point main
+#line 1
+#version 450
+#extension GL_KHR_memory_scope_semantics : enable
+layout(set = 0, binding = 0) buffer ssbo { uint y; };
+void main() {
+    atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
+}"
+               OpSourceExtension "GL_KHR_memory_scope_semantics"
+               OpName %main "main"
+               OpName %ssbo "ssbo"
+               OpMemberName %ssbo 0 "y"
+               OpName %_ ""
+               OpDecorate %ssbo BufferBlock
+               OpMemberDecorate %ssbo 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+       %ssbo = OpTypeStruct %uint
+%_ptr_Uniform_ssbo = OpTypePointer Uniform %ssbo
+          %_ = OpVariable %_ptr_Uniform_ssbo Uniform
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+     %uint_1 = OpConstant %uint 1
+      %int_1 = OpConstant %int 1
+     %int_64 = OpConstant %int 64
+     %uint_0 = OpConstant %uint 0
+    %uint_64 = OpConstant %uint 64
+               OpLine %1 4 19
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+               OpLine %1 5 0
+         %14 = OpAccessChain %_ptr_Uniform_uint %_ %int_0
+               OpAtomicStore %14 %int_1 %uint_64 %uint_1
+               OpLine %1 6 0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    // VUID-RuntimeSpirv-vulkanMemoryModel-06265
+    m_errorMonitor->SetDesiredError("5:     atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);");
+    VkShaderObj const cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, ConservativeRasterizationPostDepthCoverage) {
     TEST_DESCRIPTION("Make sure conservativeRasterizationPostDepthCoverage is set if needed.");
 
