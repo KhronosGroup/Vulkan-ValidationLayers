@@ -1589,15 +1589,12 @@ void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, cons
 }
 
 void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
     if (auto queue_state = Get<vvl::Queue>(queue)) {
         queue_state->NotifyAndWait(record_obj.location);
     }
 }
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
-
     // Sort the queues by id to notify in deterministic order (queue creation order).
     // This is not needed for correctness, but gives deterministic behavior to certain
     // types of bugs in the queue thread.
