@@ -354,12 +354,12 @@ bool CoreChecks::ValidateMemoryScope(const spirv::Module &module_state, const sp
                 scope_type == spv::Scope::ScopeDevice) {
                 skip |=
                     LogError("VUID-RuntimeSpirv-vulkanMemoryModel-06265", module_state.handle(), loc,
-                             "SPIR-V\n%s\nuses Device memory scope, but the vulkanMemoryModelDeviceScope feature was not enabled.",
-                             insn.Describe().c_str());
+                             "SPIR-V uses Device memory scope, but the vulkanMemoryModelDeviceScope feature was not enabled.\n%s\n",
+                             module_state.DescribeInstruction(insn).c_str());
             } else if (!enabled_features.vulkanMemoryModel && scope_type == spv::Scope::ScopeQueueFamily) {
                 skip |= LogError("VUID-RuntimeSpirv-vulkanMemoryModel-06266", module_state.handle(), loc,
-                                 "SPIR-V\n%s\nuses QueueFamily memory scope, but the vulkanMemoryModel feature was not enabled.",
-                                 insn.Describe().c_str());
+                                 "SPIR-V uses QueueFamily memory scope, but the vulkanMemoryModel feature was not enabled.\n%s\n",
+                                 module_state.DescribeInstruction(insn).c_str());
             }
         }
     }
@@ -372,8 +372,8 @@ bool CoreChecks::ValidateSubgroupRotateClustered(const spirv::Module &module_sta
     bool skip = false;
     if (!enabled_features.shaderSubgroupRotateClustered && insn.Opcode() == spv::OpGroupNonUniformRotateKHR && insn.Length() == 7) {
         skip |= LogError("VUID-RuntimeSpirv-shaderSubgroupRotateClustered-09566", module_state.handle(), loc,
-                         "SPIR-V\n%s\nuses ClusterSize operand, but the shaderSubgroupRotateClustered feature was not enabled.",
-                         insn.Describe().c_str());
+                         "SPIR-V uses ClusterSize operand, but the shaderSubgroupRotateClustered feature was not enabled.\n%s\n",
+                         module_state.DescribeInstruction(insn).c_str());
     }
     return skip;
 }
@@ -1235,18 +1235,18 @@ bool CoreChecks::ValidateShaderFloatControl(const spirv::Module &module_state, c
         if (float_16 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16) {
             skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat16-09560", module_state.handle(), loc,
                              "shaderSignedZeroInfNanPreserveFloat16 is false, FPFastMathMode has modes 0x%" PRIx32
-                             " but the target instruction\n%s\n is using 16-bit floats.",
-                             modes, target_insn->Describe().c_str());
+                             " but the target instruction is using 16-bit floats.\n%s\n",
+                             modes, module_state.DescribeInstruction(*target_insn).c_str());
         } else if (float_32 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32) {
             skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat32-09562", module_state.handle(), loc,
                              "shaderSignedZeroInfNanPreserveFloat32 is false, FPFastMathMode has modes 0x%" PRIx32
-                             " but the target instruction\n%s\n is using 32-bit floats.",
-                             modes, target_insn->Describe().c_str());
+                             " but the target instruction is using 32-bit floats.\n%s\n",
+                             modes, module_state.DescribeInstruction(*target_insn).c_str());
         } else if (float_64 && !phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64) {
             skip |= LogError("VUID-RuntimeSpirv-shaderSignedZeroInfNanPreserveFloat64-09564", module_state.handle(), loc,
                              "shaderSignedZeroInfNanPreserveFloat64 is false, FPFastMathMode has modes 0x%" PRIx32
-                             " but the target instruction\n%s\n is using 64-bit floats.",
-                             modes, target_insn->Describe().c_str());
+                             " but the target instruction is using 64-bit floats.\n%s\n",
+                             modes, module_state.DescribeInstruction(*target_insn).c_str());
         }
     }
 
@@ -1979,30 +1979,35 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
                     if (ImageGatherOperation(opcode)) {
                         // min/maxTexelGatherOffset
                         if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
-                            skip |= LogError("VUID-RuntimeSpirv-OpImage-06376", module_state.handle(), loc,
-                                             "SPIR-V uses\n%s\nwith offset (%" PRId32
-                                             ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRId32 ").",
-                                             insn.Describe().c_str(), signed_offset, phys_dev_props.limits.minTexelGatherOffset);
+                            skip |=
+                                LogError("VUID-RuntimeSpirv-OpImage-06376", module_state.handle(), loc,
+                                         "SPIR-V uses %s with offset (%" PRId32
+                                         ") less than VkPhysicalDeviceLimits::minTexelGatherOffset (%" PRId32 ").\n%s\n",
+                                         string_SpvOpcode(insn.Opcode()), signed_offset, phys_dev_props.limits.minTexelGatherOffset,
+                                         module_state.DescribeInstruction(insn).c_str());
                         } else if ((offset > phys_dev_props.limits.maxTexelGatherOffset) &&
                                    (!use_signed || (use_signed && signed_offset > 0))) {
                             skip |= LogError("VUID-RuntimeSpirv-OpImage-06377", module_state.handle(), loc,
-                                             "SPIR-V uses\n%s\nwith offset (%" PRIu32
-                                             ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").",
-                                             insn.Describe().c_str(), offset, phys_dev_props.limits.maxTexelGatherOffset);
+                                             "SPIR-V uses %s with offset (%" PRIu32
+                                             ") greater than VkPhysicalDeviceLimits::maxTexelGatherOffset (%" PRIu32 ").\n%s\n",
+                                             string_SpvOpcode(insn.Opcode()), offset, phys_dev_props.limits.maxTexelGatherOffset,
+                                             module_state.DescribeInstruction(insn).c_str());
                         }
                     } else {
                         // min/maxTexelOffset
                         if (use_signed && (signed_offset < phys_dev_props.limits.minTexelOffset)) {
                             skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06435", module_state.handle(), loc,
-                                             "SPIR-V uses\n%s\nwith offset (%" PRId32
-                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRId32 ").",
-                                             insn.Describe().c_str(), signed_offset, phys_dev_props.limits.minTexelOffset);
+                                             "SPIR-V uses %s with offset (%" PRId32
+                                             ") less than VkPhysicalDeviceLimits::minTexelOffset (%" PRId32 ").\n%s\n",
+                                             string_SpvOpcode(insn.Opcode()), signed_offset, phys_dev_props.limits.minTexelOffset,
+                                             module_state.DescribeInstruction(insn).c_str());
                         } else if ((offset > phys_dev_props.limits.maxTexelOffset) &&
                                    (!use_signed || (use_signed && signed_offset > 0))) {
                             skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06436", module_state.handle(), loc,
-                                             "SPIR-V uses\n%s\nwith offset (%" PRIu32
-                                             ") greater than VkPhysicalDeviceLimits::maxTexelOffset (%" PRIu32 ").",
-                                             insn.Describe().c_str(), offset, phys_dev_props.limits.maxTexelOffset);
+                                             "SPIR-V uses %s with offset (%" PRIu32
+                                             ") greater than VkPhysicalDeviceLimits::maxTexelOffset (%" PRIu32 ").\n%s\n",
+                                             string_SpvOpcode(insn.Opcode()), offset, phys_dev_props.limits.maxTexelOffset,
+                                             module_state.DescribeInstruction(insn).c_str());
                         }
                     }
                 }
@@ -2025,12 +2030,12 @@ bool CoreChecks::ValidateShaderClock(const spirv::Module &module_state, const sp
         // if scope isn't Subgroup or Device, spirv-val will catch
         if ((scope_type == spv::ScopeSubgroup) && (enabled_features.shaderSubgroupClock == VK_FALSE)) {
             skip |= LogError("VUID-RuntimeSpirv-shaderSubgroupClock-06267", device, loc,
-                             "SPIR-V uses\n%s\nwith a Subgroup scope but shaderSubgroupClock was not enabled.",
-                             insn.Describe().c_str());
+                             "SPIR-V uses OpReadClockKHR with a Subgroup scope but shaderSubgroupClock was not enabled.\n%s\n",
+                             module_state.DescribeInstruction(insn).c_str());
         } else if ((scope_type == spv::ScopeDevice) && (enabled_features.shaderDeviceClock == VK_FALSE)) {
-            skip |=
-                LogError("VUID-RuntimeSpirv-shaderDeviceClock-06268", device, loc,
-                         "SPIR-V uses\n%s\nwith a Device scope but shaderDeviceClock was not enabled.", insn.Describe().c_str());
+            skip |= LogError("VUID-RuntimeSpirv-shaderDeviceClock-06268", device, loc,
+                             "SPIR-V uses OpReadClockKHR with a Device scope but shaderDeviceClock was not enabled.\n%s\n",
+                             module_state.DescribeInstruction(insn).c_str());
         }
     }
     return skip;
@@ -2055,7 +2060,8 @@ bool CoreChecks::ValidateImageWrite(const spirv::Module &module_state, const Loc
                                      "SPIR-V OpImageWrite Texel operand only contains %" PRIu32
                                      " components, but the OpImage format mapping to %s has %" PRIu32 " components.\n%s\n%s\n",
                                      texel_component_count, string_VkFormat(compatible_format), format_component_count,
-                                     insn.Describe().c_str(), image_def->Describe().c_str());
+                                     module_state.DescribeInstruction(insn).c_str(),
+                                     module_state.DescribeInstruction(*image_def).c_str());
                 }
             }
         }
