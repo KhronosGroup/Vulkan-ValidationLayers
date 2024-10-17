@@ -479,8 +479,7 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::tessellationShader);
-    AddDisabledFeature(vkt::Feature::geometryShader);
+
     RETURN_IF_SKIP(Init());
 
     {
@@ -687,8 +686,7 @@ TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08607");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08684");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08688");
-    AddDisabledFeature(vkt::Feature::geometryShader);
-    AddDisabledFeature(vkt::Feature::tessellationShader);
+
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
@@ -704,9 +702,6 @@ TEST_F(NegativeShaderObject, DrawWithNoShadersBound) {
 
 TEST_F(NegativeShaderObject, DrawWithMissingShaders) {
     TEST_DESCRIPTION("Draw without setting all of the shader objects.");
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08607");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08687");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
 
@@ -726,6 +721,8 @@ TEST_F(NegativeShaderObject, DrawWithMissingShaders) {
     const VkShaderEXT shaders[] = {vertShader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, fragShader.handle()};
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 4u, stages, shaders);
 
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08607");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08687");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -870,6 +867,8 @@ TEST_F(NegativeShaderObject, MissingNextStage) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08409");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -952,8 +951,7 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::tessellationShader);
-    AddDisabledFeature(vkt::Feature::geometryShader);
+
     RETURN_IF_SKIP(Init());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -1125,9 +1123,8 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
 TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
     TEST_DESCRIPTION("Bind an incompatible descriptor set.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1156,6 +1153,8 @@ TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -1193,6 +1192,8 @@ TEST_F(NegativeShaderObject, DifferentViewportAndScissorCount) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03419");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1221,6 +1222,8 @@ TEST_F(NegativeShaderObject, InvalidViewportWScaling) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08636");
 
     AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1332,6 +1335,7 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07879");
 
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     AddRequiredFeature(vkt::Feature::exclusiveScissor);
     RETURN_IF_SKIP(InitBasicShaderObject());
     uint32_t count;
@@ -1696,6 +1700,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClampEnableEXT) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07620");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::depthClamp);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -2083,9 +2089,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXTActiveAttachments) {
 TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetRasterizationStreamEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07630");
-
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::geometryStreams);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
@@ -2103,11 +2108,11 @@ TEST_F(NegativeShaderObject, MissingCmdSetRasterizationStreamEXT) {
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
     const VkShaderEXT shaders[] = {vertShader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, geomShader.handle(), fragShader.handle()};
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07630");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeShaderObject, MissingCmdSetConservativeRasterizationModeEXT) {
@@ -2235,9 +2240,9 @@ TEST_F(NegativeShaderObject, MissingCmdSetProvokingVertexModeEXT) {
 TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineRasterizationModeEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08666");
-
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fillModeNonSolid);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -2251,11 +2256,13 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineRasterizationModeEXT) {
     vk::CmdSetPolygonModeEXT(m_command_buffer.handle(), VK_POLYGON_MODE_LINE);
     vk::CmdSetLineStippleEnableEXT(m_command_buffer.handle(), VK_FALSE);
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08666");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineRasterizationModeEXT) {
@@ -2290,6 +2297,8 @@ TEST_F(NegativeShaderObject, MissingPolygonModeCmdSetLineStippleEnableEXT) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08669");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fillModeNonSolid);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -3143,7 +3152,7 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
     TEST_DESCRIPTION("Draw when a shader is bound between linked shaders.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08699");
-
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -3290,6 +3299,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04875");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -3325,7 +3335,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetTessellationDomainOriginEXT.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07619");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -3447,7 +3457,7 @@ TEST_F(NegativeShaderObject, MissingPolygonLineCmdSetLineWidthEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineWidthEXT when polygon mode is line.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08617");
-
+    AddRequiredFeature(vkt::Feature::fillModeNonSolid);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -3798,7 +3808,8 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDepthBoundsTestEnable.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07846");
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::depthBounds);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     VkPhysicalDeviceFeatures features;
@@ -4333,7 +4344,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    AddDisabledFeature(vkt::Feature::shaderClipDistance);
+
     RETURN_IF_SKIP(Init());
 
     const char* vs_src = R"(
@@ -4482,7 +4493,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
+
     RETURN_IF_SKIP(Init());
 
     char const* cs_src = R"glsl(
@@ -4688,6 +4699,9 @@ TEST_F(NegativeShaderObject, Atomics) {
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderBufferInt64Atomics);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceFeatures available_features = {};
@@ -4729,7 +4743,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
-    AddDisabledFeature(vkt::Feature::shaderSubgroupExtendedTypes);
+
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
@@ -4836,7 +4850,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::maintenance4);
+
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* cs_src = R"(
@@ -5142,7 +5156,7 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
     TEST_DESCRIPTION("Draw with shaders outputing lines but not setting line width dynamic state.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08619");
-
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -5185,6 +5199,7 @@ TEST_F(NegativeShaderObject, InvalidViewportCount) {
 
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -5267,6 +5282,7 @@ TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08668");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -5309,6 +5325,7 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08671");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -5451,7 +5468,7 @@ TEST_F(NegativeShaderObject, Mismatched32BitAttributeType) {
     TEST_DESCRIPTION("Draw with vertex format not matching vertex input format.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-08937");
-
+    AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -5498,7 +5515,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
     TEST_DESCRIPTION("Draw with vertex format components not matching vertex input format components.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09203");
-
+    AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -5596,7 +5613,7 @@ TEST_F(NegativeShaderObject, DescriptorNotUpdated) {
     TEST_DESCRIPTION("Draw with shaders using a descriptor set that was never updated.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
-
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -5725,7 +5742,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
     TEST_DESCRIPTION("Create geometry shader with output vertices higher than maximum.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08454");
-
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceFeatures features;
@@ -5801,7 +5818,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
     TEST_DESCRIPTION("Create geometry shader with invocations higher than maximum.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08455");
-
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkPhysicalDeviceFeatures features;
@@ -6074,7 +6091,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
     AddRequiredFeature(vkt::Feature::primitivesGeneratedQuery);
-    AddDisabledFeature(vkt::Feature::primitivesGeneratedQueryWithRasterizerDiscard);
+
     RETURN_IF_SKIP(Init());
     InitDynamicRenderTarget();
 
@@ -6142,7 +6159,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different subdivision.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08867");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
@@ -6270,7 +6287,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different orientations.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08868");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
@@ -6397,7 +6414,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
     TEST_DESCRIPTION("Create linked tessellation control with point mode and evaluation shader without.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08869");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
@@ -6524,7 +6541,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
     TEST_DESCRIPTION("Create linked tessellation control and evaluation shaders with different spacing.");
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08870");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
@@ -6722,6 +6739,7 @@ TEST_F(NegativeShaderObject, InvalidViewportSwizzleCount) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-09421");
 
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -6755,6 +6773,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-08872");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tese_src = R"(
@@ -6820,7 +6839,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationOrientation) {
     TEST_DESCRIPTION("Create tessellation evaluation shader with missing orientation.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-08873");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tese_src = R"(
@@ -6886,7 +6905,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
     TEST_DESCRIPTION("Create tessellation evaluation shader with missing spacing.");
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-08874");
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tese_src = R"(
@@ -6951,6 +6970,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
 TEST_F(NegativeShaderObject, TessellationPatchSize) {
     TEST_DESCRIPTION("Create tessellation shader with invalid patch size.");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     for (uint32_t i = 0; i < 2; ++i) {

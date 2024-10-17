@@ -655,7 +655,7 @@ TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
 TEST_F(NegativeShaderCompute, LocalSizeIdExecutionMode) {
     TEST_DESCRIPTION("Test LocalSizeId spirv execution mode");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddDisabledFeature(vkt::Feature::maintenance4);
+
     RETURN_IF_SKIP(Init());
 
     const char *source = R"(
@@ -684,7 +684,7 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionModeMaintenance5) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
-    AddDisabledFeature(vkt::Feature::maintenance4);
+
     RETURN_IF_SKIP(Init());
 
     const char *source = R"(

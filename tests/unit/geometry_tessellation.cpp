@@ -444,6 +444,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
         "Test that errors are produced when the number of per-vertex input and/or output components to the tessellation control "
         "stage exceeds the device limit");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -547,6 +548,7 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
         "Test that errors are produced when the number of input and/or output components to the tessellation evaluation stage "
         "exceeds the device limit");
 
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -651,6 +653,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
         "Test that errors are produced when the number of input and/or output components to the geometry stage exceeds the device "
         "limit");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -757,6 +760,7 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
         "Test that errors are produced when the number of output vertices/instances in the geometry stage exceeds the device "
         "limit");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1274,9 +1278,9 @@ TEST_F(NegativeGeometryTessellation, GeometryStreamsCapability) {
     TEST_DESCRIPTION("Use geometry shader with geometryStreams capability, but geometryStreams feature not enabled");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::transformFeedback);
-    AddDisabledFeature(vkt::Feature::geometryStreams);
-    AddDisabledFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1567,6 +1571,7 @@ TEST_F(NegativeGeometryTessellation, MismatchedTessellationExecutionModes) {
 
 TEST_F(NegativeGeometryTessellation, WritingToLayerWithSingleFramebufferLayer) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3019");
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Creates a framebuffer with a single layer
     if (m_device->Physical().limits_.maxGeometryOutputVertices == 0) {

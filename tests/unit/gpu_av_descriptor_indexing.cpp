@@ -1346,7 +1346,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
-    AddDisabledFeature(vkt::Feature::descriptorBindingUniformBufferUpdateAfterBind);
+
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 

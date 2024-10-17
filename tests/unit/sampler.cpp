@@ -45,7 +45,6 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
 TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
     TEST_DESCRIPTION("Validation should check anisotropy parameters are correct with samplerAnisotropy disabled.");
 
-    AddDisabledFeature(vkt::Feature::samplerAnisotropy);
     RETURN_IF_SKIP(Init());
 
     m_errorMonitor->SetDesiredError("VUID-VkSamplerCreateInfo-anisotropyEnable-01070");
@@ -792,7 +791,7 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::customBorderColors);
-    AddDisabledFeature(vkt::Feature::customBorderColorWithoutFormat);
+
     RETURN_IF_SKIP(Init());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -1495,7 +1494,7 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
 
     AddRequiredExtensions(VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddDisabledFeature(vkt::Feature::nonSeamlessCubeMap);
+
     RETURN_IF_SKIP(Init());
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();

@@ -103,8 +103,7 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
 TEST_F(NegativeGpuAVOOB, Basic) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -164,7 +163,6 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     }
     RETURN_IF_SKIP(InitGpuAvFramework());
 
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     if (shader_objects) {
         AddRequiredFeature(vkt::Feature::dynamicRendering);
         AddRequiredFeature(vkt::Feature::shaderObject);
@@ -388,7 +386,7 @@ TEST_F(NegativeGpuAVOOB, ObjectUniformBufferTooSmall) {
 TEST_F(NegativeGpuAVOOB, GPLWrite) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -438,7 +436,7 @@ TEST_F(NegativeGpuAVOOB, GPLWrite) {
 TEST_F(NegativeGpuAVOOB, GPLRead) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -485,7 +483,7 @@ TEST_F(NegativeGpuAVOOB, GPLRead) {
 TEST_F(NegativeGpuAVOOB, GPLTexelFetch) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -536,7 +534,7 @@ TEST_F(NegativeGpuAVOOB, GPLTexelFetch) {
 TEST_F(NegativeGpuAVOOB, GPLImageLoad) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -587,7 +585,7 @@ TEST_F(NegativeGpuAVOOB, GPLImageLoad) {
 TEST_F(NegativeGpuAVOOB, GPLImageStore) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -638,7 +636,7 @@ TEST_F(NegativeGpuAVOOB, GPLImageStore) {
 TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -725,7 +723,7 @@ TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
 TEST_F(NegativeGpuAVOOB, GPLTexelFetchIndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -809,7 +807,7 @@ TEST_F(NegativeGpuAVOOB, GPLTexelFetchIndependentSets) {
 TEST_F(NegativeGpuAVOOB, GPLImageLoadStoreIndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -891,7 +889,7 @@ TEST_F(NegativeGpuAVOOB, GPLNonInlined) {
     TEST_DESCRIPTION("Make sure GPL works when shader modules are not inlined at pipeline creation time");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -988,7 +986,7 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1054,7 +1052,7 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
 
 void NegativeGpuAVOOB::ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1124,7 +1122,7 @@ TEST_F(NegativeGpuAVOOB, Matrix) {
 TEST_F(NegativeGpuAVOOB, TexelFetch) {
     TEST_DESCRIPTION("index into a texelFetch OOB");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1179,7 +1177,7 @@ TEST_F(NegativeGpuAVOOB, TexelFetch) {
 TEST_F(NegativeGpuAVOOB, TexelFetchArray) {
     TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1236,7 +1234,7 @@ TEST_F(NegativeGpuAVOOB, TexelFetchArray) {
 TEST_F(NegativeGpuAVOOB, ImageLoad) {
     TEST_DESCRIPTION("index into a imageLoad OOB");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1290,7 +1288,7 @@ TEST_F(NegativeGpuAVOOB, ImageLoad) {
 TEST_F(NegativeGpuAVOOB, ImageStore) {
     TEST_DESCRIPTION("index into a imageStore OOB");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1337,7 +1335,7 @@ TEST_F(NegativeGpuAVOOB, ImageStore) {
 TEST_F(NegativeGpuAVOOB, Geometry) {
     TEST_DESCRIPTION("Basic Geometry shader test");
     AddRequiredFeature(vkt::Feature::geometryShader);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1391,7 +1389,7 @@ TEST_F(NegativeGpuAVOOB, Geometry) {
 TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
     TEST_DESCRIPTION("Basic TessellationControl shader test");
     AddRequiredFeature(vkt::Feature::tessellationShader);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1451,7 +1449,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
 TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
     TEST_DESCRIPTION("Basic TessellationEvaluation shader test");
     AddRequiredFeature(vkt::Feature::tessellationShader);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1506,7 +1504,6 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
 }
 
 TEST_F(NegativeGpuAVOOB, VertexFragmentMultiEntrypoint) {
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1650,7 +1647,7 @@ TEST_F(NegativeGpuAVOOB, VertexFragmentMultiEntrypoint) {
 
 TEST_F(NegativeGpuAVOOB, PartialBoundDescriptorCopy) {
     TEST_DESCRIPTION("Copy the partial bound buffer the descriptor that is used");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1703,7 +1700,6 @@ TEST_F(NegativeGpuAVOOB, PartialBoundDescriptorCopy) {
 }
 
 TEST_F(NegativeGpuAVOOB, ConstantArrayOOBBuffer) {
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1761,7 +1757,7 @@ TEST_F(NegativeGpuAVOOB, ConstantArrayOOBBuffer) {
 TEST_F(NegativeGpuAVOOB, DISABLED_ConstantArrayOOBTexture) {
     TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1825,7 +1821,7 @@ TEST_F(NegativeGpuAVOOB, DeviceGeneratedCommandsCompute) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::deviceGeneratedCommands);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

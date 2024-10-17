@@ -34,8 +34,7 @@ void ShaderObjectTest::InitBasicMeshShaderObject(APIVersion target_api_version) 
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
 }
 
@@ -153,7 +152,8 @@ TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
 
 TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
     TEST_DESCRIPTION("Create linked vertex and fragment shaders.");
-
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -312,6 +312,8 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
 TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     TEST_DESCRIPTION("Test drawing using all graphics shader");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     VkPhysicalDeviceFeatures features;
     GetPhysicalDeviceFeatures(&features);
@@ -742,9 +744,6 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
 TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
     TEST_DESCRIPTION("Draw with only required dynamic states set.");
 
-    AddDisabledFeature(vkt::Feature::alphaToOne);
-    AddDisabledFeature(vkt::Feature::depthClamp);
-    AddDisabledFeature(vkt::Feature::logicOp);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
@@ -826,6 +825,7 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
 TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     TEST_DESCRIPTION("Draw with shaders using multiple descriptor sets.");
 
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1064,6 +1064,8 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
 TEST_F(PositiveShaderObject, IndirectDraw) {
     TEST_DESCRIPTION("Draw with all 5 shaders stages using indirect draw and seconary command buffers.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1340,6 +1342,8 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     TEST_DESCRIPTION("Draw after rebinding only some shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();
@@ -1473,6 +1477,8 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
     TEST_DESCRIPTION("Create and draw with some linked and some unlinked shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -1566,6 +1572,7 @@ TEST_F(PositiveShaderObject, DisabledColorBlend) {
 TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
     TEST_DESCRIPTION("Draw with vertex, geometry and fragment shader objects bound.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     InitDynamicRenderTarget();

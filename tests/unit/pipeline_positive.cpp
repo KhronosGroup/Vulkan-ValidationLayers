@@ -1419,6 +1419,7 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
 
 TEST_F(PositivePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1483,7 +1484,7 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     AddRequiredFeature(vkt::Feature::depthBiasExact);
     // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
     // depthBiasClamp being enabled
-    AddDisabledFeature(vkt::Feature::depthBiasClamp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1610,6 +1611,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1618,6 +1620,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
     rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
     rasterization_state.cullMode = VK_CULL_MODE_NONE;
     rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_state.lineWidth = 1.0f;
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
@@ -1631,6 +1634,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
 TEST_F(PositivePipeline, InterpolateAtSample) {
     TEST_DESCRIPTION("Test using spirv instruction InterpolateAtSample");
 
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(InitFramework());
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
@@ -1807,7 +1811,7 @@ TEST_F(PositivePipeline, ColorBlendUnsupportedLogicOpDynamic) {
     TEST_DESCRIPTION("VkPipelineColorBlendStateCreateInfo::logicOpEnable is ignored with VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
-    AddDisabledFeature(vkt::Feature::logicOp);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1824,9 +1828,7 @@ TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3AlphaToOneEnable);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3DepthClampEnable);
-    AddDisabledFeature(vkt::Feature::depthBounds);
-    AddDisabledFeature(vkt::Feature::depthClamp);
-    AddDisabledFeature(vkt::Feature::alphaToOne);
+
     RETURN_IF_SKIP(Init());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical().handle());

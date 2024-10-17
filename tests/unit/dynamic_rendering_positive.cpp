@@ -382,6 +382,7 @@ TEST_F(PositiveDynamicRendering, CommandDrawWithShaderTileImageRead) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     AddRequiredFeature(vkt::Feature::shaderTileImageDepthReadAccess);
     AddRequiredFeature(vkt::Feature::shaderTileImageStencilReadAccess);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
@@ -1226,7 +1227,9 @@ TEST_F(PositiveDynamicRendering, AttachmentCountDynamicState) {
 
 TEST_F(PositiveDynamicRendering, VertexOnlyDepth) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8015");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
 

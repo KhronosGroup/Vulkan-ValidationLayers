@@ -148,11 +148,9 @@ class VkRenderFramework : public VkTestFramework {
     void AllowPromotedExtensions() { allow_promoted_extensions_ = true; }
 
     // Add a feature required for the test to be executed. The currently targeted API version is used to add the correct struct, so
-    // be sure to call SetTargetApiVersion before
+    // be sure to call SetTargetApiVersion before.
+    // Only features added with this method will be enabled.
     void AddRequiredFeature(vkt::Feature feature);
-    // Add a feature that will be disabled when creating the device. The currently targeted API version is used to add the correct
-    // struct, so be sure to call SetTargetApiVersion before
-    void AddDisabledFeature(vkt::Feature feature);
 
     std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const char *code, const spv_target_env env = SPV_ENV_VULKAN_1_0);
 
@@ -186,7 +184,15 @@ class VkRenderFramework : public VkTestFramework {
     VkInstance instance_;
     VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties physDevProps_;
-    vkt::FeatureRequirements feature_requirements_;
+    // This set of required features is used for the features query.
+    // If any required feature is not available, test will fail
+    vkt::FeatureRequirements required_features_;
+    // This is the set of features that will be enable.
+    // The same features added to required_features_ are added here.
+    // But when querying features, required_features_ will be filled with all
+    // available features. Hence, if used to create a device, the required_features_ set
+    // would *also* enable available features, when we just want to enable required features.
+    vkt::FeatureRequirements features_to_enable_;
     bool all_queue_count_ = false;
 
     uint32_t m_gpu_index;

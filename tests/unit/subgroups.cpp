@@ -475,7 +475,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierGraphics) {
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
-    AddDisabledFeature(vkt::Feature::subgroupSizeControl);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -515,7 +515,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
-    AddDisabledFeature(vkt::Feature::subgroupSizeControl);
+
     RETURN_IF_SKIP(Init());
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
@@ -714,8 +714,7 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::taskShader);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     AddRequiredFeature(vkt::Feature::subgroupSizeControl);
     AddRequiredFeature(vkt::Feature::computeFullSubgroups);
     AddRequiredFeature(vkt::Feature::subgroupSizeControl);

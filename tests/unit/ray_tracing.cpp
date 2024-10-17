@@ -1018,6 +1018,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     {
         VkAccelerationStructureCreateInfoKHR invalid_as_create_info = as_create_info;
         invalid_as_create_info.deviceAddress = device_address;
+        m_errorMonitor->SetDesiredError("VUID-vkCreateAccelerationStructureKHR-deviceAddress-03488");
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-03612");
         vk::CreateAccelerationStructureKHR(device(), &invalid_as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
@@ -1059,7 +1060,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
 
 TEST_F(NegativeRayTracing, CreateAccelerationStructureFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddDisabledFeature(vkt::Feature::accelerationStructure);
+
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
@@ -1088,7 +1089,6 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
 
-    AddDisabledFeature(vkt::Feature::accelerationStructureCaptureReplay);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
@@ -1404,7 +1404,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysIndirect2KHRFeatureDisabled) {
     AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
 
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect2);
+
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
@@ -3591,6 +3591,7 @@ TEST_F(NegativeRayTracing, HostInstanceInvalid) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(Init());
@@ -3616,6 +3617,7 @@ TEST_F(NegativeRayTracing, HostAccelerationStructureBuildNullPointers) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(Init());
@@ -3682,6 +3684,7 @@ TEST_F(NegativeRayTracing, HostBuildOverlappingScratchBuffers) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
     RETURN_IF_SKIP(Init());
 

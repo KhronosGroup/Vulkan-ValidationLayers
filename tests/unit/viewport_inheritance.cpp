@@ -1048,7 +1048,11 @@ const VkPipelineRasterizationStateCreateInfo ViewportInheritanceTestData::kRaste
     VK_POLYGON_MODE_FILL,
     VK_CULL_MODE_BACK_BIT,
     VK_FRONT_FACE_COUNTER_CLOCKWISE,
-};
+    false,
+    0.0f,
+    0.0f,
+    0.0f,
+    1.0f};
 
 const VkPipelineMultisampleStateCreateInfo ViewportInheritanceTestData::kMultisampleState = {
     VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,

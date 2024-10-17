@@ -130,8 +130,7 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::meshShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -168,8 +167,7 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::meshShader);
     AddRequiredFeature(vkt::Feature::taskShader);
-    AddDisabledFeature(vkt::Feature::multiviewMeshShader);
-    AddDisabledFeature(vkt::Feature::primitiveFragmentShadingRateMeshShader);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -203,6 +201,7 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
 TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
     TEST_DESCRIPTION("Test maxFragmentDualSrcAttachments when blend is not enabled.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::independentBlend);
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
     RETURN_IF_SKIP(Init());
 
@@ -249,6 +248,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    AddRequiredFeature(vkt::Feature::independentBlend);
     RETURN_IF_SKIP(Init());
 
     const uint32_t count = m_device->Physical().limits_.maxFragmentDualSrcAttachments + 1;

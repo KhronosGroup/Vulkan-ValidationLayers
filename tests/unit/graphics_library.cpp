@@ -1584,8 +1584,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierFeatures) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
-    AddDisabledFeature(vkt::Feature::graphicsPipelineLibrary);
-    AddDisabledFeature(vkt::Feature::shaderModuleIdentifier);
+
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

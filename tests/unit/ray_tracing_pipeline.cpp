@@ -663,6 +663,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayTraversalPrimitiveCulling);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
@@ -769,6 +770,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
@@ -1121,7 +1123,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryGroupHandlesEXT) {
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddDisabledFeature(vkt::Feature::pipelineLibraryGroupHandles);
+
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 

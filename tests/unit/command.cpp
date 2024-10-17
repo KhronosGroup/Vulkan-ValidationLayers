@@ -2216,7 +2216,7 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::multiViewport);
+
     AddRequiredFeature(vkt::Feature::exclusiveScissor);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

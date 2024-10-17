@@ -396,6 +396,7 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
 TEST_F(PositivePipelineTopology, Rasterizer) {
     TEST_DESCRIPTION("Test topology set when creating a pipeline with tessellation and geometry shader.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
 
@@ -571,8 +572,7 @@ TEST_F(PositivePipelineTopology, PrimitiveTopologyListRestartDynamic) {
     AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
-    AddDisabledFeature(vkt::Feature::primitiveTopologyListRestart);
-    AddDisabledFeature(vkt::Feature::primitiveTopologyPatchListRestart);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

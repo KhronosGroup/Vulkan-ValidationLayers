@@ -285,8 +285,7 @@ TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
-    AddDisabledFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -323,7 +322,7 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
-    AddDisabledFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -542,7 +541,7 @@ TEST_F(NegativeVertexInput, AttributeDescriptions) {
 TEST_F(NegativeVertexInput, UsingProvokingVertexModeLastVertexExtDisabled) {
     TEST_DESCRIPTION("Test using VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't enable provokingVertexLast.");
     AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
-    AddDisabledFeature(vkt::Feature::provokingVertexLast);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -613,7 +612,7 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
 
 TEST_F(NegativeVertexInput, VertextBinding) {
     TEST_DESCRIPTION("Verify if VkPipelineVertexInputStateCreateInfo matches vkCmdBindVertexBuffers");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -653,7 +652,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
 
 TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
     TEST_DESCRIPTION("Have Binding not be in a linear order");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -692,7 +691,7 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
     TEST_DESCRIPTION("Test bad binding with VK_DYNAMIC_STATE_VERTEX_INPUT_EXT");
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -743,7 +742,7 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
 
 TEST_F(NegativeVertexInput, AttributeAlignment) {
     TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -842,7 +841,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
 
 TEST_F(NegativeVertexInput, BindVertexOffset) {
     TEST_DESCRIPTION("set the pOffset in vkCmdBindVertexBuffers to 3 and use R16");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -874,7 +873,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
 
 TEST_F(NegativeVertexInput, VertexStride) {
     TEST_DESCRIPTION("set the Stride to 3 and use R16");
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -908,7 +907,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicInput) {
     TEST_DESCRIPTION("set the Stride to 3 in VK_DYNAMIC_STATE_VERTEX_INPUT_EXT and use R16");
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -948,7 +947,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
     TEST_DESCRIPTION("set the Stride to 3 in vkCmdBindVertexBuffers2 and use R16");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -985,7 +984,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStrideArray) {
     TEST_DESCRIPTION("set the Stride to 3 in vkCmdBindVertexBuffers2 and use R16");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1025,7 +1024,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1711,8 +1710,7 @@ TEST_F(NegativeVertexInput, BindVertexBufferNullDraw) {
     TEST_DESCRIPTION("Have null vertex but use nullDescriptor feature");
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess2);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
+
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
