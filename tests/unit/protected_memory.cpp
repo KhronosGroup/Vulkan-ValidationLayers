@@ -148,6 +148,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
 TEST_F(NegativeProtectedMemory, Memory) {
     TEST_DESCRIPTION("Validate cases where protectedMemory feature is enabled and usages are invalid");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::protectedMemory);
     RETURN_IF_SKIP(InitFramework());
     RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));

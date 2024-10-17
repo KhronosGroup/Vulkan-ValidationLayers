@@ -3142,7 +3142,8 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
-        const VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper(&depth_bias_representation);
+        VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper(&depth_bias_representation);
+        raster_state.lineWidth = 1.0f;
         pipe.rs_state_ci_ = raster_state;
         pipe.CreateGraphicsPipeline();
     };

@@ -304,6 +304,7 @@ TEST_F(PositiveDescriptorIndexing, PipelineShaderImageBufferArray) {
 
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     AddRequiredFeature(vkt::Feature::shaderStorageTexelBufferArrayDynamicIndexing);
+    AddRequiredFeature(vkt::Feature::shaderStorageTexelBufferArrayNonUniformIndexing);
     ComputePipelineShaderTest(csSource, bindings);
 }
 
