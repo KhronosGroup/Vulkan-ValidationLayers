@@ -109,10 +109,13 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
+    const Constant& layout_size = module_.type_manager_.GetConstantUInt32(layout_table_[descriptor_binding_].count);
+    const Constant& layout_offset = module_.type_manager_.GetConstantUInt32(layout_table_[descriptor_binding_].state_start);
+
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_},
+         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, layout_size.Id(), layout_offset.Id()},
         inst_it);
 
     return function_result;
