@@ -1110,6 +1110,7 @@ TEST_F(NegativeQuery, Sizes) {
 TEST_F(NegativeQuery, PreciseBit) {
     TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
     AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    AddRequiredFeature(vkt::Feature::occlusionQueryPrecise);
     RETURN_IF_SKIP(Init());
 
     std::vector<const char *> device_extension_names;
@@ -1833,6 +1834,7 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
 
 TEST_F(NegativeQuery, CommandBufferInheritanceFlags) {
     TEST_DESCRIPTION("Test executing secondary command buffer with bad VkCommandBufferInheritanceInfo::queryFlags.");
+    AddRequiredFeature(vkt::Feature::occlusionQueryPrecise);
     AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1868,6 +1870,7 @@ TEST_F(NegativeQuery, MeshShaderQueries) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
     RETURN_IF_SKIP(Init());
 
     VkQueryPool pool = VK_NULL_HANDLE;

@@ -1075,7 +1075,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicDXC) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderInt64);
-    AddDisabledFeature(vkt::Feature::robustBufferAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 

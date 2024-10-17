@@ -499,6 +499,7 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
 TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     TEST_DESCRIPTION("Access different elements of the image array using dynamic indexing. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageArrayNonUniformIndexing);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());

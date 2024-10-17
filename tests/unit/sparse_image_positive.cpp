@@ -92,6 +92,7 @@ TEST_F(PositiveSparseImage, MultipleBinds) {
 TEST_F(PositiveSparseImage, BindFreeMemory) {
     TEST_DESCRIPTION("Test using a sparse image after freeing memory that was bound to it.");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
@@ -180,6 +181,7 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
 TEST_F(PositiveSparseImage, BindMetadata) {
     TEST_DESCRIPTION("Bind memory for the metadata aspect of a sparse image");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
@@ -257,6 +259,7 @@ TEST_F(PositiveSparseImage, BindMetadata) {
 TEST_F(PositiveSparseImage, OpImageSparse) {
     TEST_DESCRIPTION("Use OpImageSparse* operations at draw time");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     AddRequiredFeature(vkt::Feature::shaderResourceResidency);
     RETURN_IF_SKIP(Init());
@@ -328,6 +331,7 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
 }
 
 TEST_F(PositiveSparseImage, BindImage) {
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 

@@ -396,6 +396,7 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
 TEST_F(PositivePipelineTopology, Rasterizer) {
     TEST_DESCRIPTION("Test topology set when creating a pipeline with tessellation and geometry shader.");
 
+    AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
 

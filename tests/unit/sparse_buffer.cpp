@@ -619,6 +619,8 @@ TEST_F(NegativeSparseBuffer, BufferFlagsFeature) {
 
 TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
     TEST_DESCRIPTION("test VkSparseMemoryBind::memory is valid");
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -655,6 +657,8 @@ TEST_F(NegativeSparseBuffer, VkSparseMemoryBindMemory) {
 
 TEST_F(NegativeSparseBuffer, VkSparseMemoryBindFlags) {
     TEST_DESCRIPTION("test VkSparseMemoryBind::flags is valid");
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();

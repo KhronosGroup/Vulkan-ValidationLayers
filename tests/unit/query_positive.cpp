@@ -375,6 +375,7 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
 TEST_F(PositiveQuery, CommandBufferInheritanceFlags) {
     TEST_DESCRIPTION("Test executing secondary command buffer with VkCommandBufferInheritanceInfo::queryFlags.");
     AddRequiredFeature(vkt::Feature::inheritedQueries);
+    AddRequiredFeature(vkt::Feature::occlusionQueryPrecise);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

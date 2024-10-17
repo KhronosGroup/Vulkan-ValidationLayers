@@ -224,7 +224,7 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
-
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

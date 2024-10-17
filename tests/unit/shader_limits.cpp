@@ -277,6 +277,7 @@ TEST_F(NegativeShaderLimits, MaxFragmentDualSrcAttachments) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::dualSrcBlend);
+    AddRequiredFeature(vkt::Feature::independentBlend);
     RETURN_IF_SKIP(Init());
 
     const uint32_t count = m_device->Physical().limits_.maxFragmentDualSrcAttachments + 1;

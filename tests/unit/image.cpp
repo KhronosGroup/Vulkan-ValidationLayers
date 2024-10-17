@@ -2391,6 +2391,8 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
 TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::sparseResidencyAliased);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage3D);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFeatures device_features = {};

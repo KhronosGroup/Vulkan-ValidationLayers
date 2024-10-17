@@ -1419,6 +1419,7 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
 
 TEST_F(PositivePipeline, ViewportSwizzleNV) {
     AddRequiredExtensions(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1610,6 +1611,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
     AddRequiredFeature(vkt::Feature::extendedDynamicState2);
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
@@ -1618,6 +1620,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
     rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
     rasterization_state.cullMode = VK_CULL_MODE_NONE;
     rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_state.lineWidth = 1.0f;
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
@@ -1631,6 +1634,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
 TEST_F(PositivePipeline, InterpolateAtSample) {
     TEST_DESCRIPTION("Test using spirv instruction InterpolateAtSample");
 
+    AddRequiredFeature(vkt::Feature::sampleRateShading);
     RETURN_IF_SKIP(InitFramework());
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
