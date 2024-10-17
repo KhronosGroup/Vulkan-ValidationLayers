@@ -54,7 +54,7 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
                     // TODO - Hit crash running with Dota2, this shouldn't happen, need to look into
                     continue;
                 }
-                descriptor_set_buffers[update_index++].binding_req_map = slot->second;
+                descriptor_set_buffers[update_index++]->binding_req_map = slot->second;
             }
         }
     }
@@ -102,26 +102,25 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             continue;
         }
 
-        DescSetState desc_set_state;
-        desc_set_state.state = std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
-        bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutAddress(gpuav, loc);
+        std::shared_ptr<DescriptorSet> ds_state = std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
+        bindless_state->desc_sets[i].layout_data = ds_state->GetLayoutAddress(gpuav, loc);
         // The pipeline might not have been bound yet, so will need to update binding_req_map later
         if (last_bound.pipeline_state) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
             if (slot != last_bound.pipeline_state->active_slots.end()) {
-                desc_set_state.binding_req_map = slot->second;
+                ds_state->binding_req_map = slot->second;
             }
         }
-        if (!desc_set_state.state->IsUpdateAfterBind()) {
-            bindless_state->desc_sets[i].in_data = desc_set_state.state->GetInputAddress(gpuav, loc);
-            desc_set_state.post_process_buffer = desc_set_state.state->GetPostProcessBuffer(gpuav, loc);
-            if (!desc_set_state.post_process_buffer) {
+        if (!ds_state->IsUpdateAfterBind()) {
+            bindless_state->desc_sets[i].in_data = ds_state->GetInputAddress(gpuav, loc);
+            auto post_process_block = ds_state->GetPostProcessBuffer(gpuav, loc);
+            if (!post_process_block) {
                 di_buffers.bindless_state.UnmapMemory();
                 return;
             }
-            bindless_state->desc_sets[i].out_data = desc_set_state.post_process_buffer->Address();
+            bindless_state->desc_sets[i].out_data = post_process_block->Address();
         }
-        di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
+        di_buffers.descriptor_set_buffers.emplace_back(std::move(ds_state));
     }
     cb_state.di_input_buffer_list.emplace_back(std::move(di_buffers));
 
@@ -135,16 +134,14 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
         for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {
             auto &set_buffer = cmd_info.descriptor_set_buffers[i];
-            bindless_state->desc_sets[i].layout_data = set_buffer.state->GetLayoutAddress(gpuav, loc);
-            bindless_state->desc_sets[i].in_data = set_buffer.state->GetInputAddress(gpuav, loc);
-            if (!set_buffer.post_process_buffer) {
-                set_buffer.post_process_buffer = set_buffer.state->GetPostProcessBuffer(gpuav, loc);
-                if (!set_buffer.post_process_buffer) {
-                    cmd_info.bindless_state.UnmapMemory();
-                    return false;
-                }
-                bindless_state->desc_sets[i].out_data = set_buffer.post_process_buffer->Address();
+            bindless_state->desc_sets[i].layout_data = set_buffer->GetLayoutAddress(gpuav, loc);
+            bindless_state->desc_sets[i].in_data = set_buffer->GetInputAddress(gpuav, loc);
+            auto post_process_block = set_buffer->GetPostProcessBuffer(gpuav, loc);
+            if (!post_process_block) {
+                cmd_info.bindless_state.UnmapMemory();
+                return false;
             }
+            bindless_state->desc_sets[i].out_data = post_process_block->Address();
         }
         cmd_info.bindless_state.UnmapMemory();
     }
@@ -152,17 +149,20 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 }
 }  // namespace descriptor
 
-static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, const DeviceMemoryBlock &layout,
-                                                                 const DeviceMemoryBlock &output_state, uint32_t shader_set) {
+static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(Validator &gpuav, const Location &loc, DescriptorSet &ds_state,
+                                                                 uint32_t shader_set) {
+    // < binding , [indexes that were accessed] >
     std::map<uint32_t, std::vector<uint32_t>> used_descriptors;
-    if (output_state.Destroyed()) {
+    auto post_process_block = ds_state.GetPostProcessBuffer(gpuav, loc);
+    if (!post_process_block || post_process_block->Destroyed()) {
         return used_descriptors;
     }
 
+    auto layout = ds_state.LayoutBlock();
     auto layout_data = (glsl::BindingLayout *)layout.MapMemory(loc);
 
-    auto data = (uint32_t *)output_state.MapMemory(loc);
-    output_state.InvalidateAllocation(loc);
+    auto data = (uint32_t *)post_process_block->MapMemory(loc);
+    post_process_block->InvalidateAllocation(loc);
 
     uint32_t max_binding = layout_data[0].count;
     for (uint32_t binding = 0; binding < max_binding; binding++) {
@@ -177,7 +177,7 @@ static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location 
         }
     }
 
-    output_state.UnmapMemory();
+    post_process_block->UnmapMemory();
     layout.UnmapMemory();
     return used_descriptors;
 }
@@ -196,30 +196,30 @@ static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location 
         // For each descriptor set ...
         for (uint32_t i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
             auto &set = di_info->descriptor_set_buffers[i];
-            if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
+            if (validated_desc_sets.count(set->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
                 continue;
             }
-            validated_desc_sets.emplace(set.state->VkHandle());
-            if (!set.post_process_buffer) {
+            validated_desc_sets.emplace(set->VkHandle());
+            auto gpuav = static_cast<Validator *>(&dev_data);
+            if (!set->HasPostProcessBuffer()) {
                 std::stringstream error;
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, di_info[" << di_info_i << "].descriptor_set_buffers["
-                      << i << "].post_process_buffer was null. This should not happen. GPU-AV is in a bad state, aborting.";
-                auto gpuav = static_cast<Validator *>(&dev_data);
+                      << i << "]->HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
             }
 
-            vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
+            vvl::DescriptorValidator context(state_, *this, *set, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
             const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
-            auto used_descs = UsedDescriptors(loc, set.state->LayoutBlock(), *set.post_process_buffer, shader_set);
+            auto used_descs = UsedDescriptors(*gpuav, loc, *set, shader_set);
             // For each used binding ...
             for (const auto &u : used_descs) {
-                auto iter = set.binding_req_map.find(u.first);
+                auto iter = set->binding_req_map.find(u.first);
                 vvl::DescriptorBindingInfo binding_info;
                 binding_info.first = u.first;
-                while (iter != set.binding_req_map.end() && iter->first == u.first) {
+                while (iter != set->binding_req_map.end() && iter->first == u.first) {
                     binding_info.second.emplace_back(iter->second);
                     ++iter;
                 }

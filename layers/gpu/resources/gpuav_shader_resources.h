@@ -27,20 +27,11 @@
 
 namespace gpuav {
 
-struct DescSetState {
-    std::shared_ptr<DescriptorSet> state = {};
-    BindingVariableMap binding_req_map = {};
-    // State that will be used by the GPU-AV shader instrumentation
-    // For update-after-bind, this will be set during queue submission
-    // Otherwise it will be set when the DescriptorSet is bound.
-    std::shared_ptr<DeviceMemoryBlock> post_process_buffer = {};
-};
-
 struct DescBindingInfo {
     DeviceMemoryBlock bindless_state;
     // Hold a buffer for each descriptor set
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
-    std::vector<DescSetState> descriptor_set_buffers;
+    std::vector<std::shared_ptr<DescriptorSet>> descriptor_set_buffers;
 
     DescBindingInfo(Validator &gpuav) : bindless_state(gpuav) {}
 };

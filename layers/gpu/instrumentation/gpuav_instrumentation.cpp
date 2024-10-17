@@ -403,8 +403,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
         const DescBindingInfo *di_info = desc_binding_index != vvl::kU32Max ? &(*desc_binding_list)[desc_binding_index] : nullptr;
         skip |= LogInstrumentationError(gpuav, cb_state_handle, objlist, operation_index, error_record,
-                                        di_info ? di_info->descriptor_set_buffers : std::vector<DescSetState>(), bind_point,
-                                        uses_shader_object, uses_robustness, loc);
+                                        di_info ? di_info->descriptor_set_buffers : std::vector<std::shared_ptr<DescriptorSet>>(),
+                                        bind_point, uses_shader_object, uses_robustness, loc);
         return skip;
     };
 
@@ -457,7 +457,7 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
 }
 
 bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
-                                      std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets,
+                                      std::string &out_vuid_msg, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
                                       const Location &loc, bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
@@ -493,7 +493,7 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             const uint32_t desc_index = error_record[kInstBindlessBuffOOBDescIndexOffset];
             const uint32_t size = error_record[kInstBindlessBuffOOBBuffSizeOffset];
             const uint32_t offset = error_record[kInstBindlessBuffOOBBuffOffOffset];
-            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
             assert(binding_state);
             if (size == 0) {
                 strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
@@ -553,8 +553,8 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
 }
 
 bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
-                                  std::string &out_vuid_msg, const std::vector<DescSetState> &descriptor_sets, const Location &loc,
-                                  bool uses_shader_object, bool &out_oob_access) {
+                                  std::string &out_vuid_msg, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
+                                  const Location &loc, bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
     out_oob_access = true;
@@ -575,7 +575,7 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
         } break;
 
         case kErrorSubCodeNonBindlessOOBBufferBounds: {
-            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
             const vvl::Buffer *buffer_state =
                 static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
             assert(buffer_state);
@@ -602,7 +602,7 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
         } break;
 
         case kErrorSubCodeNonBindlessOOBTexelBufferBounds: {
-            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
             const vvl::BufferView *buffer_view_state =
                 static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
             assert(buffer_view_state);
@@ -722,7 +722,7 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
 bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist, uint32_t operation_index,
-                             const uint32_t *error_record, const std::vector<DescSetState> &descriptor_sets,
+                             const uint32_t *error_record, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have

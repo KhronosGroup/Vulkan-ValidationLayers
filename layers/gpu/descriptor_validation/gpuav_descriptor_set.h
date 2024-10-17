@@ -38,8 +38,11 @@ class DescriptorSet : public vvl::DescriptorSet {
     VkDeviceAddress GetLayoutAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetInputAddress(Validator &gpuav, const Location &loc);
     std::shared_ptr<DeviceMemoryBlock> GetPostProcessBuffer(Validator &gpuav, const Location &loc);
+    bool HasPostProcessBuffer() const { return post_process_block_ != nullptr; }
 
     const DeviceMemoryBlock &LayoutBlock() const { return layout_block_; }
+
+    BindingVariableMap binding_req_map = {};
 
   protected:
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
