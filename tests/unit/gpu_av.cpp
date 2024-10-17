@@ -901,6 +901,10 @@ TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
 TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
     TEST_DESCRIPTION("Make sure that GPU-AV enabled uniformAndStorageBuffer8BitAccess on behalf of app");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
     if (!DeviceExtensionSupported(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)) {

@@ -410,7 +410,6 @@ TEST_F(PositiveDynamicState, SetDepthBias2EXTDepthBiasClampEnabled) {
     VkPipelineRasterizationStateCreateInfo raster_state = vku::InitStructHelper();
     raster_state.depthBiasEnable = VK_TRUE;
     raster_state.lineWidth = 1.0f;
-    ;
     pipe.rs_state_ci_ = raster_state;
     pipe.CreateGraphicsPipeline();
 

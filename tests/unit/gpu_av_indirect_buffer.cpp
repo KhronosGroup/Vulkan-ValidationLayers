@@ -394,6 +394,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
 
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
@@ -547,6 +549,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
 TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     // silence MacOS issue
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
 

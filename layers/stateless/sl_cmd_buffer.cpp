@@ -732,7 +732,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         if (!enabled_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
             skip |= LogError(
                 "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056", commandBuffer, error_obj.location,
-                "Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.");
+                "inheritedQueries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.");
         }
 
         if (enabled_features.inheritedQueries) {

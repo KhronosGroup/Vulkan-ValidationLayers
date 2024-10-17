@@ -565,6 +565,7 @@ TEST_F(PositiveVertexInput, VertexAttributeDivisorFirstInstance) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
     AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

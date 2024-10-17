@@ -1108,6 +1108,8 @@ TEST_F(NegativeTransformFeedback, XfbExecutionModeCommand) {
 
 TEST_F(NegativeTransformFeedback, XfbExecutionModePipeline) {
     TEST_DESCRIPTION("missing Xfb execution mode");
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(InitBasicTransformFeedback());
 
     InitRenderTarget();

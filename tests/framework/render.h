@@ -187,7 +187,7 @@ class VkRenderFramework : public VkTestFramework {
     // This set of required features is used for the features query.
     // If any required feature is not available, test will fail
     vkt::FeatureRequirements required_features_;
-    // This is the set of features that will be enable.
+    // This is the set of features that will be enabled.
     // The same features added to required_features_ are added here.
     // But when querying features, required_features_ will be filled with all
     // available features. Hence, if used to create a device, the required_features_ set

@@ -368,6 +368,7 @@ TEST_F(PositiveSecondaryCommandBuffer, Nested) {
     AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
     AddRequiredFeature(vkt::Feature::nestedCommandBufferRendering);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

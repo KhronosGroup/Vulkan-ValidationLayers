@@ -609,6 +609,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
     TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::imageCubeArray);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -685,6 +687,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7932
 TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::imageCubeArray);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -988,6 +992,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MixingProtectedResources) {
 
 TEST_F(PositiveGpuAVDescriptorIndexing, PartialBoundDescriptorSSBO) {
     TEST_DESCRIPTION("Only bound part of a SSBO (with update after bind), but only use that part so it is still valid");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
 
     char const *shader_source = R"glsl(
@@ -1036,6 +1042,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, PartialBoundDescriptorSSBO) {
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
 
     VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
@@ -1140,6 +1148,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -1268,6 +1278,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
@@ -1388,6 +1400,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
@@ -1522,6 +1536,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsPushConstants) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -1611,6 +1627,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());

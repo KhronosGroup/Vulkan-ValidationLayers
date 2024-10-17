@@ -637,6 +637,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -755,6 +757,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -1344,8 +1348,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitGpuAvFramework());
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    RETURN_IF_SKIP(InitGpuAvFramework());
 
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -2524,6 +2529,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MixingProtectedResources) {
 
 TEST_F(NegativeGpuAVDescriptorIndexing, PartialBoundDescriptorSSBO) {
     TEST_DESCRIPTION("Only bound part of a SSBO (with update after bind), and use the part that is not valid");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
 
     char const *shader_source = R"glsl(

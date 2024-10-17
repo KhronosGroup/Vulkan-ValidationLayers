@@ -732,6 +732,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image unknown format with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
     RETURN_IF_SKIP(Init());
 
     // not valid GLSL, but would look like:
@@ -810,6 +811,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     TEST_DESCRIPTION("Test writing to image unknown format with VK_FORMAT_A8_UNORM_KHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderStorageImageWriteWithoutFormat);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 

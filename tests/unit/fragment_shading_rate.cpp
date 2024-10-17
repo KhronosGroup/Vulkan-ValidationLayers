@@ -1486,6 +1486,7 @@ TEST_F(NegativeFragmentShadingRate, PrimitiveWriteMultiViewportLimit) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
     AddOptionalExtensions(VK_NV_VIEWPORT_ARRAY_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
     AddRequiredFeature(vkt::Feature::multiViewport);
     AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);

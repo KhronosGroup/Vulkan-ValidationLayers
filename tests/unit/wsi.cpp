@@ -187,7 +187,7 @@ TEST_F(NegativeWsi, SwapchainImage) {
     const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
 
     AddSurfaceExtension();
-
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     RETURN_IF_SKIP(InitSwapchain());

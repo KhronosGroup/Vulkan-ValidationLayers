@@ -20,6 +20,9 @@ class NegativeSparseImage : public VkLayerTest {};
 
 TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     TEST_DESCRIPTION("Create buffer/image with sparse attributes but without the sparse_binding bit set");
+    AddRequiredFeature(vkt::Feature::sparseResidencyAliased);
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();
@@ -105,6 +108,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
 
 TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     TEST_DESCRIPTION("Create images with sparse residency with unsupported tiling or sample counts");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
 
     RETURN_IF_SKIP(Init());
@@ -144,6 +148,7 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
 TEST_F(NegativeSparseImage, ResidencyFlag) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBindInfo without sparse residency flag");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
@@ -208,6 +213,9 @@ TEST_F(NegativeSparseImage, ImageUsageBits) {
 
 TEST_F(NegativeSparseImage, MemoryBindOffset) {
     TEST_DESCRIPTION("Try to use VkSparseImageMemoryBind with offset not less than memory size");
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
     if (m_device->QueuesWithSparseCapability().empty()) {
@@ -310,6 +318,7 @@ TEST_F(NegativeSparseImage, MemoryBindOffset) {
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
     TEST_DESCRIPTION("Test QueueBindSparse with memory of a wrong type");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
@@ -485,6 +494,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType) {
 TEST_F(NegativeSparseImage, QueueBindSparseMemoryType2) {
     TEST_DESCRIPTION("Test QueueBindSparse with lazily allocated memory");
 
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
@@ -611,6 +621,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
         "Test QueueBindSparse with memory having export external handle types that do not match those of the resource");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());

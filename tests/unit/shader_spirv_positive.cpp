@@ -1685,6 +1685,7 @@ TEST_F(PositiveShaderSpirv, OpCopyObjectSampler) {
     // https://github.com/KhronosGroup/glslang/pull/1762 appears to be the change that introduces the OpCopyObject in this context.
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderSampledImageArrayNonUniformIndexing);
     AddRequiredFeature(vkt::Feature::shaderStorageTexelBufferArrayNonUniformIndexing);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

@@ -377,7 +377,7 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
         layout(std430, binding=1) writeonly restrict buffer _DstBuf_1_0 {
             layout(offset=0) uint dst[256];
         };
-        layout (local_size_x = 256, local_size_y = 1) in;
+        layout (local_size_x = 255, local_size_y = 1) in;
 
         void main() {
             uint word = src[_const_2_0 + gl_GlobalInvocationID.x];
@@ -439,7 +439,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
         layout(std430, binding=1) writeonly restrict buffer _DstBuf_1_0 {
             layout(offset=0) uint dst[256];
         };
-        layout (local_size_x = 256, local_size_y = 1) in;
+        layout (local_size_x = 255, local_size_y = 1) in;
 
         void main() {
             uint word = src[_const_2_0 + gl_GlobalInvocationID.x];
@@ -552,7 +552,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
         layout(std430, binding=1) writeonly restrict buffer _DstBuf_1_0 {
             layout(offset=0) uint dst[2][256];
         };
-        layout (local_size_x = 256, local_size_y = 1) in;
+        layout (local_size_x = 255, local_size_y = 1) in;
 
         void main() {
             uint word = src[_const_2_0 + gl_GlobalInvocationID.x];
@@ -863,6 +863,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
 TEST_F(PositiveGpuAV, FirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -1209,6 +1210,7 @@ class PositiveGpuAVParameterized : public GpuAVTest,
 TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
 
     std::vector<const char *> setting_names = std::get<0>(GetParam());
