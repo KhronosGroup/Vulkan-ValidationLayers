@@ -1297,10 +1297,23 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
 
 // Generate the stage-specific part of the message.
 static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1,
-                                 uint32_t stage_info_2) {
+                                 uint32_t stage_info_2, const std::vector<Instruction> &instructions) {
     switch (stage_id) {
         case glsl::kHeaderStageIdMultiEntryPoint: {
-            ss << "Stage has multiple OpEntryPoint and could not detect stage. ";
+            ss << "Stage has multiple OpEntryPoint (";
+            bool first_stage = true;
+            for (const auto &insn : instructions) {
+                if (insn.Opcode() == spv::OpFunction) break;  // early exit when possible
+                if (insn.Opcode() == spv::OpEntryPoint) {
+                    if (first_stage) {
+                        first_stage = false;
+                    } else {
+                        ss << ", ";
+                    }
+                    ss << string_SpvExecutionModel(insn.Word(1));
+                }
+            }
+            ss << ") and could not detect stage. ";
         } break;
         case spv::ExecutionModelVertex: {
             ss << "Stage = Vertex. Vertex Index = " << stage_info_0 << " Instance Index = " << stage_info_1 << ". ";
@@ -1431,7 +1444,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
         return ss.str();
     }
 
-    GenerateStageMessage(ss, stage_id, stage_info_0, stage_info_1, stage_info_2);
+    GenerateStageMessage(ss, stage_id, stage_info_0, stage_info_1, stage_info_2, instructions);
 
     ss << std::hex << std::showbase;
     if (instrumented_shader->shader_module == VK_NULL_HANDLE && instrumented_shader->shader_object == VK_NULL_HANDLE) {
