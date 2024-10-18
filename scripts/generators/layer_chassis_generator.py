@@ -432,6 +432,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 std::vector<ValidationObject*> aborted_object_dispatch;
                 LayerObjectTypeId container_type;
                 void ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const;
+                void ReleaseAllDispatchObjects() const;
 
                 vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
                 vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
@@ -868,6 +869,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 
             // Takes the layer and removes it from the chassis so it will not be called anymore
+            // Designed for things like GPU-AV to remove itself while keeping everything else alive
             void ValidationObject::ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const {
                 auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
                 for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
@@ -893,6 +895,25 @@ class LayerChassisOutputGenerator(BaseGenerator):
                         break;
                     }
                 }
+            }
+
+            // Incase we need to teardown things early, we want to do it safely, so we will keep the entrypoints into layer, but just remove all
+            // the internal chassis hooks so that any call becomes a no-op (but still dispatches into the driver)
+            void ValidationObject::ReleaseAllDispatchObjects() const {
+                assert(container_type == LayerObjectTypeInstance || container_type == LayerObjectTypeDevice);
+                auto dispatch_key = container_type == LayerObjectTypeInstance ? GetDispatchKey(instance) : GetDispatchKey(device);
+                auto layer_data = GetLayerDataPtr(dispatch_key, layer_data_map);
+
+                // Some chassis loops use the intercept_vectors instead of looking up the object
+                for (auto& intercept_vector : layer_data->intercept_vectors) {
+                    intercept_vector.clear();
+                }
+
+                for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
+                    ValidationObject* object = *object_it;
+                    layer_data->aborted_object_dispatch.push_back(object);
+                }
+                layer_data->object_dispatch.clear();
             }
 
             namespace vulkan_layer_chassis {
