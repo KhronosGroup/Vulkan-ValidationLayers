@@ -303,6 +303,9 @@ class ExternalMemorySyncTest : public VkLayerTest {
 class DeviceGeneratedCommandsTest : public VkLayerTest {
   public:
     void InitBasicDeviceGeneratedCommands();
+
+    void SetPreProcessBuffer(VkGeneratedCommandsInfoEXT &generated_commands_info);
+    std::unique_ptr<vkt::Buffer> pre_process_buffer_ = std::make_unique<vkt::Buffer>();
 };
 
 class GraphicsLibraryTest : public VkLayerTest {
