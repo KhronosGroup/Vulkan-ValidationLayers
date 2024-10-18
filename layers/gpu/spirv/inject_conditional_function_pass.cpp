@@ -145,10 +145,10 @@ bool InjectConditionalFunctionPass::Run() {
                     continue;
                 }
 
-                if (module_.max_instrumented_count_ != 0 && instrumented_count_ >= module_.max_instrumented_count_) {
+                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
                     return true;  // hit limit
                 }
-                instrumented_count_++;
+                instrumentations_count_++;
 
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
@@ -165,7 +165,7 @@ bool InjectConditionalFunctionPass::Run() {
         }
     }
 
-    return instrumented_count_ != 0;
+    return instrumentations_count_ != 0;
 }
 
 }  // namespace spirv

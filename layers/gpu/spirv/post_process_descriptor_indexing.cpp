@@ -172,7 +172,7 @@ bool PostProcessDescriptorIndexingPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
-                instrumented_count_++;
+                instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it);
                 Reset();
@@ -180,11 +180,11 @@ bool PostProcessDescriptorIndexingPass::Run() {
         }
     }
 
-    return (instrumented_count_ != 0);
+    return (instrumentations_count_ != 0);
 }
 
 void PostProcessDescriptorIndexingPass::PrintDebugInfo() {
-    std::cout << "PostProcessDescriptorIndexingPass instrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "PostProcessDescriptorIndexingPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

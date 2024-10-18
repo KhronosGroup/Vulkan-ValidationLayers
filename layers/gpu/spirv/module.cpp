@@ -34,7 +34,7 @@ namespace spirv {
 
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings)
     : type_manager_(*this),
-      max_instrumented_count_(settings.max_instrumented_count),
+      max_instrumentations_count_(settings.max_instrumentations_count),
       shader_id_(settings.shader_id),
       output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
       support_int64_(settings.support_int64),
