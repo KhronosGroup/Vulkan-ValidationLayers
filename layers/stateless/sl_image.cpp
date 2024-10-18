@@ -395,11 +395,24 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 bool StatelessValidation::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     const VkImageCreateFlags image_flags = create_info.flags;
-    if ((image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) &&
-        (image_flags &
-         (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT))) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-09403", device, create_info_loc.dot(Field::flags), "is %s.",
-                         string_VkImageCreateFlags(image_flags).c_str());
+    const VkImageCreateFlags sparse_flags =
+        VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
+    const bool has_sparse_flags = (image_flags & sparse_flags) != 0;
+
+    if (has_sparse_flags) {
+        if (create_info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
+            skip |= LogError("VUID-VkImageCreateInfo-None-01925", device, create_info_loc,
+                             "images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. (image flags %s)",
+                             string_VkImageCreateFlags(image_flags).c_str());
+        }
+        if (image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) {
+            skip |= LogError("VUID-VkImageCreateInfo-imageType-10197", device, create_info_loc.dot(Field::flags), "is %s.",
+                             string_VkImageCreateFlags(image_flags).c_str());
+        }
+        if (image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-09403", device, create_info_loc.dot(Field::flags), "is %s.",
+                             string_VkImageCreateFlags(image_flags).c_str());
+        }
     }
 
     if ((image_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) && (!enabled_features.sparseBinding)) {

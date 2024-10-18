@@ -101,7 +101,7 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, Vk
         }
 
         // From those VUIDs:
-        // VUID-vkCmdDraw-None-08878:
+        // VUID-vkCmdDraw-None-08878
         // - All bound graphics shader objects must have been created with identical or identically defined push constant ranges
         // VUID-vkCmdDraw-None-08879
         // - All bound graphics shader objects must have been created with identical or identically defined arrays of descriptor set
