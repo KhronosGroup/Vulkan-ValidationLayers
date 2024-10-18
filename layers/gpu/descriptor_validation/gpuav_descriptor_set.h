@@ -35,8 +35,8 @@ class DescriptorSet : public vvl::DescriptorSet {
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
     void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
 
-    VkDeviceAddress GetLayoutAddress(Validator &gpuav, const Location &loc);
-    VkDeviceAddress GetInputAddress(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetIndexLUTAddress(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
     std::shared_ptr<DeviceMemoryBlock> GetPostProcessBuffer(Validator &gpuav, const Location &loc);
 
     const DeviceMemoryBlock &LayoutBlock() const { return layout_block_; }

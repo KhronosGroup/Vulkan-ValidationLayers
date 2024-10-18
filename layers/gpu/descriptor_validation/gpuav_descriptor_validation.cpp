@@ -110,7 +110,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
         DescSetState desc_set_state;
         desc_set_state.state = std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
-        bindless_state->desc_sets[i].layout_data = desc_set_state.state->GetLayoutAddress(gpuav, loc);
+        bindless_state->desc_sets[i].descriptor_index_lut = desc_set_state.state->GetIndexLUTAddress(gpuav, loc);
         // The pipeline might not have been bound yet, so will need to update binding_req_map later
         if (last_bound.pipeline_state) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
@@ -119,13 +119,13 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             }
         }
         if (!desc_set_state.state->IsUpdateAfterBind()) {
-            bindless_state->desc_sets[i].in_data = desc_set_state.state->GetInputAddress(gpuav, loc);
+            bindless_state->desc_sets[i].ds_type = desc_set_state.state->GetTypeAddress(gpuav, loc);
             desc_set_state.post_process_buffer = desc_set_state.state->GetPostProcessBuffer(gpuav, loc);
             if (!desc_set_state.post_process_buffer) {
                 di_buffers.bindless_state.UnmapMemory();
                 return;
             }
-            bindless_state->desc_sets[i].out_data = desc_set_state.post_process_buffer->Address();
+            bindless_state->desc_sets[i].descriptor_index_post_process = desc_set_state.post_process_buffer->Address();
         }
         di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
     }
@@ -141,15 +141,15 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
         for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {
             auto &set_buffer = cmd_info.descriptor_set_buffers[i];
-            bindless_state->desc_sets[i].layout_data = set_buffer.state->GetLayoutAddress(gpuav, loc);
-            bindless_state->desc_sets[i].in_data = set_buffer.state->GetInputAddress(gpuav, loc);
+            bindless_state->desc_sets[i].descriptor_index_lut = set_buffer.state->GetIndexLUTAddress(gpuav, loc);
+            bindless_state->desc_sets[i].ds_type = set_buffer.state->GetTypeAddress(gpuav, loc);
             if (!set_buffer.post_process_buffer) {
                 set_buffer.post_process_buffer = set_buffer.state->GetPostProcessBuffer(gpuav, loc);
                 if (!set_buffer.post_process_buffer) {
                     cmd_info.bindless_state.UnmapMemory();
                     return false;
                 }
-                bindless_state->desc_sets[i].out_data = set_buffer.post_process_buffer->Address();
+                bindless_state->desc_sets[i].descriptor_index_post_process = set_buffer.post_process_buffer->Address();
             }
         }
         cmd_info.bindless_state.UnmapMemory();
