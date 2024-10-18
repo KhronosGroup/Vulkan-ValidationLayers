@@ -126,6 +126,8 @@ vvl_sources = [
   "layers/core_checks/cc_spirv.cpp",
   "layers/core_checks/cc_state_tracker.cpp",
   "layers/core_checks/cc_state_tracker.h",
+  "layers/core_checks/cc_submit.cpp",
+  "layers/core_checks/cc_submit.h",
   "layers/core_checks/cc_synchronization.cpp",
   "layers/core_checks/cc_video.cpp",
   "layers/core_checks/cc_vuid_maps.cpp",
