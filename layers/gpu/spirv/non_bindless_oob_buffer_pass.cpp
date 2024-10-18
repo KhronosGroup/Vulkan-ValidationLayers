@@ -81,7 +81,7 @@ void NonBindlessOOBBufferPass::Reset() {
     descriptor_offset_id_ = 0;
 }
 
-bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool NonBindlessOOBBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
@@ -184,7 +184,7 @@ bool NonBindlessOOBBufferPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
 
                 if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
                     return true;  // hit limit

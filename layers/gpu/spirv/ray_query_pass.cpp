@@ -57,7 +57,7 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst
 
 void RayQueryPass::Reset() { target_instruction_ = nullptr; }
 
-bool RayQueryPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     (void)function;
     const uint32_t opcode = inst.Opcode();
     if (opcode != spv::OpRayQueryInitializeKHR) {

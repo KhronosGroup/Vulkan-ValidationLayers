@@ -57,7 +57,7 @@ uint32_t NonBindlessOOBTexelBufferPass::CreateFunctionCall(BasicBlock& block, In
     }
 
     // Use the imageFetch() parameter to decide the offset
-    // TODO - This assumes no depth/arrayed/ms from AnalyzeInstruction
+    // TODO - This assumes no depth/arrayed/ms from RequiresInstrumentation
     descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
 
     const uint32_t function_result = module_.TakeNextId();
@@ -84,7 +84,7 @@ void NonBindlessOOBTexelBufferPass::Reset() {
     descriptor_offset_id_ = 0;
 }
 
-bool NonBindlessOOBTexelBufferPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool NonBindlessOOBTexelBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode != spv::OpImageFetch && opcode != spv::OpImageWrite && opcode != spv::OpImageRead) {
@@ -205,7 +205,7 @@ bool NonBindlessOOBTexelBufferPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
 
                 if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
                     return true;  // hit limit

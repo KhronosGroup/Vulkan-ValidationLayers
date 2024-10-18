@@ -129,7 +129,7 @@ void BindlessDescriptorPass::Reset() {
     descriptor_offset_id_ = 0;
 }
 
-bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool BindlessDescriptorPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {

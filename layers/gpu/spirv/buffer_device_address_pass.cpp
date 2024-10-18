@@ -65,7 +65,7 @@ void BufferDeviceAddressPass::Reset() {
     type_length_ = 0;
 }
 
-bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
         return false;
