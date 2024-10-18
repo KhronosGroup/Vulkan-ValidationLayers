@@ -641,16 +641,24 @@ TEST_F(NegativeDeviceGeneratedCommands, CmdExecuteGeneratedCommandsSecondary) {
 
     vkt::IndirectExecutionSet exe_set(*m_device, pipe.Handle(), 1);
 
-    VkIndirectCommandsLayoutTokenEXT token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
-    token.offset = 0;
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    tokens[1].offset = 8;
 
     vkt::PipelineLayout pipeline_layout(*m_device, {});
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
     command_layout_ci.pipelineLayout = pipeline_layout.handle();
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
@@ -664,13 +672,14 @@ TEST_F(NegativeDeviceGeneratedCommands, CmdExecuteGeneratedCommandsSecondary) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     secondary.Begin();
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-bufferlevel");
     vk::CmdExecuteGeneratedCommandsEXT(secondary.handle(), false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
@@ -1583,9 +1592,9 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundPipeline) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-11053");
@@ -1649,9 +1658,9 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundShaderObject) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-11053");
@@ -1663,17 +1672,25 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundShaderObject) {
 TEST_F(NegativeDeviceGeneratedCommands, ExecuteIsPreprocessed) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
-    VkIndirectCommandsLayoutTokenEXT token;
-    token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
-    token.offset = 0;
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_COMPUTE_BIT};
+
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
+    tokens[1].offset = 8;
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.flags = VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT;
     command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
     command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
     VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
@@ -1693,11 +1710,12 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteIsPreprocessed) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-11141");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
     m_errorMonitor->VerifyFound();
@@ -1745,9 +1763,9 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessNoBoundPipeline) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     vkt::CommandBuffer state_cb(*m_device, m_command_pool);
     state_cb.Begin();
@@ -1764,17 +1782,24 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessNoBoundPipeline) {
 TEST_F(NegativeDeviceGeneratedCommands, PreprocessRecordingState) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
-    VkIndirectCommandsLayoutTokenEXT token;
-    token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
-    token.offset = 0;
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_COMPUTE_BIT};
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
+    tokens[1].offset = 8;
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.flags = VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT;
     command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
     command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
     VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
@@ -1794,12 +1819,13 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessRecordingState) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     vkt::CommandBuffer state_cb(*m_device, m_command_pool);
     state_cb.Begin();
+    vk::CmdBindPipeline(state_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     state_cb.End();
 
     m_command_buffer.Begin();
@@ -1808,6 +1834,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessRecordingState) {
     m_errorMonitor->VerifyFound();
 
     state_cb.Begin();
+    vk::CmdBindPipeline(state_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     state_cb.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPreprocessGeneratedCommandsEXT-stateCommandBuffer-11138");
     vk::CmdPreprocessGeneratedCommandsEXT(m_command_buffer.handle(), &generated_commands_info, state_cb.handle());
@@ -1818,16 +1845,23 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessRecordingState) {
 TEST_F(NegativeDeviceGeneratedCommands, PreprocessCommandLayoutFlag) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
 
-    VkIndirectCommandsLayoutTokenEXT token;
-    token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
-    token.offset = 0;
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_COMPUTE_BIT};
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DISPATCH_EXT;
+    tokens[1].offset = 8;
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
     command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
     VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
@@ -1847,14 +1881,15 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessCommandLayoutFlag) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     vkt::CommandBuffer state_cb(*m_device, m_command_pool);
     state_cb.Begin();
 
     m_command_buffer.Begin();
+    vk::CmdBindPipeline(state_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdPreprocessGeneratedCommandsEXT-pGeneratedCommandsInfo-11082");
     vk::CmdPreprocessGeneratedCommandsEXT(m_command_buffer.handle(), &generated_commands_info, state_cb.handle());
     m_errorMonitor->VerifyFound();
@@ -1867,21 +1902,28 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoDynamicVertex) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
     VkIndirectCommandsVertexBufferTokenEXT vertex_buffer_token = {0};
-    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    VkIndirectCommandsLayoutTokenEXT tokens[3];
     tokens[0] = vku::InitStructHelper();
-    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT;
-    tokens[0].data.pVertexBuffer = &vertex_buffer_token;
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
     tokens[0].offset = 0;
 
     tokens[1] = vku::InitStructHelper();
-    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT;
+    tokens[1].data.pVertexBuffer = &vertex_buffer_token;
     tokens[1].offset = 8;
+
+    tokens[2] = vku::InitStructHelper();
+    tokens[2].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_EXT;
+    tokens[2].offset = 16;
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
     command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 2;
+    command_layout_ci.tokenCount = 3;
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
@@ -1897,14 +1939,14 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoDynamicVertex) {
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
-    generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
+    generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
     generated_commands_info.indirectExecutionSet = exe_set.handle();
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -1964,16 +2006,23 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoMultiDrawLimit) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkIndirectCommandsLayoutTokenEXT token;
-    token = vku::InitStructHelper();
-    token.type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT;
-    token.offset = 0;
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkIndirectCommandsLayoutTokenEXT tokens[2];
+    tokens[0] = vku::InitStructHelper();
+    tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
+    tokens[0].data.pExecutionSet = &exe_set_token;
+    tokens[0].offset = 0;
+
+    tokens[1] = vku::InitStructHelper();
+    tokens[1].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT;
+    tokens[1].offset = 8;
 
     VkIndirectCommandsLayoutCreateInfoEXT command_layout_ci = vku::InitStructHelper();
     command_layout_ci.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
     command_layout_ci.pipelineLayout = VK_NULL_HANDLE;
-    command_layout_ci.tokenCount = 1;
-    command_layout_ci.pTokens = &token;
+    command_layout_ci.tokenCount = 2;
+    command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
     VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
@@ -1993,7 +2042,6 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoMultiDrawLimit) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1 << 21;
     generated_commands_info.maxSequenceCount = 1 << 4;
@@ -2104,6 +2152,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecutePreprocessBufferUsage) {
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -2171,8 +2220,8 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
-    generated_commands_info.preprocessAddress = 0;
     generated_commands_info.maxDrawCount = 1;
+    SetPreProcessBuffer(generated_commands_info);
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
