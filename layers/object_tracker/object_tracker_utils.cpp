@@ -529,7 +529,11 @@ void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
                                                  const RecordObject &record_obj) {
     auto instance_data = GetLayerDataPtr(GetDispatchKey(physical_device), layer_data_map);
     auto object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
-    object_lifetimes->RecordDestroyObject(device, kVulkanObjectTypeDevice);
+    // If ObjectTracker was removed (in an early teardown) this might be null, could search in aborted_object_dispatch but if it is
+    // there, no need to record anything else
+    if (object_lifetimes) {
+        object_lifetimes->RecordDestroyObject(device, kVulkanObjectTypeDevice);
+    }
     DestroyLeakedDeviceObjects();
 
     // Clean up Queue's MemRef Linked Lists

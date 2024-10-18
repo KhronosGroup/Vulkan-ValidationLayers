@@ -26,3 +26,10 @@ There are VUID such as `VUID-VkBufferCreateInfo-pNext-pNext` that limit which `s
 There are VUs that will be worded something like `must be a valid pointer to ...`.
 
 The Validation Layers will check that the pointer is not null, but if the pointer is pointing to garbage, there is no way to safely dereference it.
+
+## stdlib exit()
+
+It is possible for an app to call `exit()` and do cleanup in their `atexit()` callback.
+Unfortunately, this will destroy our static allocation from under us and there is no way to detect it at runtime.
+We have our own `atexit()` call set at `vkCreateDevice()` time to cleanup the layers, so we require the application to call their `atexit()` **before** `vkCreateDevice()`.
+

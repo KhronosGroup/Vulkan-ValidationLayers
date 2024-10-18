@@ -266,6 +266,7 @@ template ObjectLifetimes* ValidationObject::GetValidationObject<ObjectLifetimes>
 template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
 
 // Takes the layer and removes it from the chassis so it will not be called anymore
+// Designed for things like GPU-AV to remove itself while keeping everything else alive
 void ValidationObject::ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
@@ -291,6 +292,25 @@ void ValidationObject::ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) co
             break;
         }
     }
+}
+
+// Incase we need to teardown things early, we want to do it safely, so we will keep the entrypoints into layer, but just remove all
+// the internal chassis hooks so that any call becomes a no-op (but still dispatches into the driver)
+void ValidationObject::ReleaseAllDispatchObjects() const {
+    assert(container_type == LayerObjectTypeInstance || container_type == LayerObjectTypeDevice);
+    auto dispatch_key = container_type == LayerObjectTypeInstance ? GetDispatchKey(instance) : GetDispatchKey(device);
+    auto layer_data = GetLayerDataPtr(dispatch_key, layer_data_map);
+
+    // Some chassis loops use the intercept_vectors instead of looking up the object
+    for (auto& intercept_vector : layer_data->intercept_vectors) {
+        intercept_vector.clear();
+    }
+
+    for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
+        ValidationObject* object = *object_it;
+        layer_data->aborted_object_dispatch.push_back(object);
+    }
+    layer_data->object_dispatch.clear();
 }
 
 namespace vulkan_layer_chassis {
