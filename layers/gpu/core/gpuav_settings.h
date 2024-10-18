@@ -36,7 +36,7 @@ struct GpuAVSettings {
 
     bool debug_validate_instrumented_shaders = false;
     bool debug_dump_instrumented_shaders = false;
-    uint32_t debug_max_instrumented_count = 0;  // zero is same as "unlimited"
+    uint32_t debug_max_instrumentations_count = 0;  // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
 
     // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is reflected

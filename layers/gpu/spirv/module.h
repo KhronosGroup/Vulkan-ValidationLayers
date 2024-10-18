@@ -38,7 +38,7 @@ struct Settings {
     uint32_t shader_id;
     uint32_t output_buffer_descriptor_set;
     bool print_debug_info;
-    uint32_t max_instrumented_count;
+    uint32_t max_instrumentations_count;
     bool support_int64;
     bool support_memory_model_device_scope;
     bool has_bindless_descriptors;
@@ -101,7 +101,7 @@ class Module {
     void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);
     void AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration, const std::vector<uint32_t>& operands);
 
-    const uint32_t max_instrumented_count_ = 0;  // zero is same as "unlimited"
+    const uint32_t max_instrumentations_count_ = 0;  // zero is same as "unlimited"
     bool use_bda_ = false;
     // provides a way to map back and know which original SPIR-V this was from
     const uint32_t shader_id_;
