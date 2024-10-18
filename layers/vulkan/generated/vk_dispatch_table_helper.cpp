@@ -520,9 +520,6 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdWaitEvents2KHR(VkCommandBuffer, uint32_
 static VKAPI_ATTR void VKAPI_CALL StubCmdPipelineBarrier2KHR(VkCommandBuffer, const VkDependencyInfo*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdWriteTimestamp2KHR(VkCommandBuffer, VkPipelineStageFlags2, VkQueryPool, uint32_t) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubQueueSubmit2KHR(VkQueue, uint32_t, const VkSubmitInfo2*, VkFence) { return VK_SUCCESS; }
-static VKAPI_ATTR void VKAPI_CALL StubCmdWriteBufferMarker2AMD(VkCommandBuffer, VkPipelineStageFlags2, VkBuffer, VkDeviceSize,
-                                                               uint32_t) {}
-static VKAPI_ATTR void VKAPI_CALL StubGetQueueCheckpointData2NV(VkQueue, uint32_t*, VkCheckpointData2NV*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCopyBuffer2KHR(VkCommandBuffer, const VkCopyBufferInfo2*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCopyImage2KHR(VkCommandBuffer, const VkCopyImageInfo2*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCopyBufferToImage2KHR(VkCommandBuffer, const VkCopyBufferToImageInfo2*) {}
@@ -835,6 +832,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetMemoryHostPointerPropertiesEXT(VkDe
 }
 static VKAPI_ATTR void VKAPI_CALL StubCmdWriteBufferMarkerAMD(VkCommandBuffer, VkPipelineStageFlagBits, VkBuffer, VkDeviceSize,
                                                               uint32_t) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdWriteBufferMarker2AMD(VkCommandBuffer, VkPipelineStageFlags2, VkBuffer, VkDeviceSize,
+                                                               uint32_t) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice, uint32_t*,
                                                                                        VkTimeDomainKHR*) {
     return VK_SUCCESS;
@@ -851,6 +850,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetExclusiveScissorEnableNV(VkCommandBu
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetExclusiveScissorNV(VkCommandBuffer, uint32_t, uint32_t, const VkRect2D*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetCheckpointNV(VkCommandBuffer, const void*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetQueueCheckpointDataNV(VkQueue, uint32_t*, VkCheckpointDataNV*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetQueueCheckpointData2NV(VkQueue, uint32_t*, VkCheckpointData2NV*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubInitializePerformanceApiINTEL(VkDevice, const VkInitializePerformanceApiInfoINTEL*) {
     return VK_SUCCESS;
 }
@@ -1524,8 +1524,6 @@ const auto& GetApiExtensionMap() {
         {"vkCmdPipelineBarrier2KHR", {vvl::Extension::_VK_KHR_synchronization2}},
         {"vkCmdWriteTimestamp2KHR", {vvl::Extension::_VK_KHR_synchronization2}},
         {"vkQueueSubmit2KHR", {vvl::Extension::_VK_KHR_synchronization2}},
-        {"vkCmdWriteBufferMarker2AMD", {vvl::Extension::_VK_KHR_synchronization2}},
-        {"vkGetQueueCheckpointData2NV", {vvl::Extension::_VK_KHR_synchronization2}},
         {"vkCmdCopyBuffer2KHR", {vvl::Extension::_VK_KHR_copy_commands2}},
         {"vkCmdCopyImage2KHR", {vvl::Extension::_VK_KHR_copy_commands2}},
         {"vkCmdCopyBufferToImage2KHR", {vvl::Extension::_VK_KHR_copy_commands2}},
@@ -1629,6 +1627,7 @@ const auto& GetApiExtensionMap() {
         {"vkCompileDeferredNV", {vvl::Extension::_VK_NV_ray_tracing}},
         {"vkGetMemoryHostPointerPropertiesEXT", {vvl::Extension::_VK_EXT_external_memory_host}},
         {"vkCmdWriteBufferMarkerAMD", {vvl::Extension::_VK_AMD_buffer_marker}},
+        {"vkCmdWriteBufferMarker2AMD", {vvl::Extension::_VK_AMD_buffer_marker}},
         {"vkGetCalibratedTimestampsEXT", {vvl::Extension::_VK_EXT_calibrated_timestamps}},
         {"vkCmdDrawMeshTasksNV", {vvl::Extension::_VK_NV_mesh_shader}},
         {"vkCmdDrawMeshTasksIndirectNV", {vvl::Extension::_VK_NV_mesh_shader}},
@@ -1637,6 +1636,7 @@ const auto& GetApiExtensionMap() {
         {"vkCmdSetExclusiveScissorNV", {vvl::Extension::_VK_NV_scissor_exclusive}},
         {"vkCmdSetCheckpointNV", {vvl::Extension::_VK_NV_device_diagnostic_checkpoints}},
         {"vkGetQueueCheckpointDataNV", {vvl::Extension::_VK_NV_device_diagnostic_checkpoints}},
+        {"vkGetQueueCheckpointData2NV", {vvl::Extension::_VK_NV_device_diagnostic_checkpoints}},
         {"vkInitializePerformanceApiINTEL", {vvl::Extension::_VK_INTEL_performance_query}},
         {"vkUninitializePerformanceApiINTEL", {vvl::Extension::_VK_INTEL_performance_query}},
         {"vkCmdSetPerformanceMarkerINTEL", {vvl::Extension::_VK_INTEL_performance_query}},
@@ -2701,14 +2701,6 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->QueueSubmit2KHR == nullptr) {
         table->QueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)StubQueueSubmit2KHR;
     }
-    table->CmdWriteBufferMarker2AMD = (PFN_vkCmdWriteBufferMarker2AMD)gpa(device, "vkCmdWriteBufferMarker2AMD");
-    if (table->CmdWriteBufferMarker2AMD == nullptr) {
-        table->CmdWriteBufferMarker2AMD = (PFN_vkCmdWriteBufferMarker2AMD)StubCmdWriteBufferMarker2AMD;
-    }
-    table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)gpa(device, "vkGetQueueCheckpointData2NV");
-    if (table->GetQueueCheckpointData2NV == nullptr) {
-        table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)StubGetQueueCheckpointData2NV;
-    }
     table->CmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)gpa(device, "vkCmdCopyBuffer2KHR");
     if (table->CmdCopyBuffer2KHR == nullptr) {
         table->CmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)StubCmdCopyBuffer2KHR;
@@ -3172,6 +3164,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdWriteBufferMarkerAMD == nullptr) {
         table->CmdWriteBufferMarkerAMD = (PFN_vkCmdWriteBufferMarkerAMD)StubCmdWriteBufferMarkerAMD;
     }
+    table->CmdWriteBufferMarker2AMD = (PFN_vkCmdWriteBufferMarker2AMD)gpa(device, "vkCmdWriteBufferMarker2AMD");
+    if (table->CmdWriteBufferMarker2AMD == nullptr) {
+        table->CmdWriteBufferMarker2AMD = (PFN_vkCmdWriteBufferMarker2AMD)StubCmdWriteBufferMarker2AMD;
+    }
     table->GetCalibratedTimestampsEXT = (PFN_vkGetCalibratedTimestampsEXT)gpa(device, "vkGetCalibratedTimestampsEXT");
     if (table->GetCalibratedTimestampsEXT == nullptr) {
         table->GetCalibratedTimestampsEXT = (PFN_vkGetCalibratedTimestampsEXT)StubGetCalibratedTimestampsEXT;
@@ -3204,6 +3200,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->GetQueueCheckpointDataNV = (PFN_vkGetQueueCheckpointDataNV)gpa(device, "vkGetQueueCheckpointDataNV");
     if (table->GetQueueCheckpointDataNV == nullptr) {
         table->GetQueueCheckpointDataNV = (PFN_vkGetQueueCheckpointDataNV)StubGetQueueCheckpointDataNV;
+    }
+    table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)gpa(device, "vkGetQueueCheckpointData2NV");
+    if (table->GetQueueCheckpointData2NV == nullptr) {
+        table->GetQueueCheckpointData2NV = (PFN_vkGetQueueCheckpointData2NV)StubGetQueueCheckpointData2NV;
     }
     table->InitializePerformanceApiINTEL = (PFN_vkInitializePerformanceApiINTEL)gpa(device, "vkInitializePerformanceApiINTEL");
     if (table->InitializePerformanceApiINTEL == nullptr) {

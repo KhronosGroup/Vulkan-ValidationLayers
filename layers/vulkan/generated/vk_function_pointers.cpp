@@ -440,8 +440,6 @@ PFN_vkCmdWaitEvents2KHR CmdWaitEvents2KHR;
 PFN_vkCmdPipelineBarrier2KHR CmdPipelineBarrier2KHR;
 PFN_vkCmdWriteTimestamp2KHR CmdWriteTimestamp2KHR;
 PFN_vkQueueSubmit2KHR QueueSubmit2KHR;
-PFN_vkCmdWriteBufferMarker2AMD CmdWriteBufferMarker2AMD;
-PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
 PFN_vkCmdCopyBuffer2KHR CmdCopyBuffer2KHR;
 PFN_vkCmdCopyImage2KHR CmdCopyImage2KHR;
 PFN_vkCmdCopyBufferToImage2KHR CmdCopyBufferToImage2KHR;
@@ -579,6 +577,7 @@ PFN_vkCmdWriteAccelerationStructuresPropertiesNV CmdWriteAccelerationStructuresP
 PFN_vkCompileDeferredNV CompileDeferredNV;
 PFN_vkGetMemoryHostPointerPropertiesEXT GetMemoryHostPointerPropertiesEXT;
 PFN_vkCmdWriteBufferMarkerAMD CmdWriteBufferMarkerAMD;
+PFN_vkCmdWriteBufferMarker2AMD CmdWriteBufferMarker2AMD;
 PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT GetPhysicalDeviceCalibrateableTimeDomainsEXT;
 PFN_vkGetCalibratedTimestampsEXT GetCalibratedTimestampsEXT;
 PFN_vkCmdDrawMeshTasksNV CmdDrawMeshTasksNV;
@@ -588,6 +587,7 @@ PFN_vkCmdSetExclusiveScissorEnableNV CmdSetExclusiveScissorEnableNV;
 PFN_vkCmdSetExclusiveScissorNV CmdSetExclusiveScissorNV;
 PFN_vkCmdSetCheckpointNV CmdSetCheckpointNV;
 PFN_vkGetQueueCheckpointDataNV GetQueueCheckpointDataNV;
+PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
 PFN_vkInitializePerformanceApiINTEL InitializePerformanceApiINTEL;
 PFN_vkUninitializePerformanceApiINTEL UninitializePerformanceApiINTEL;
 PFN_vkCmdSetPerformanceMarkerINTEL CmdSetPerformanceMarkerINTEL;
@@ -1729,8 +1729,6 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdPipelineBarrier2KHR = reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(GetDeviceProcAddr(device, "vkCmdPipelineBarrier2KHR"));
                 CmdWriteTimestamp2KHR = reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(GetDeviceProcAddr(device, "vkCmdWriteTimestamp2KHR"));
                 QueueSubmit2KHR = reinterpret_cast<PFN_vkQueueSubmit2KHR>(GetDeviceProcAddr(device, "vkQueueSubmit2KHR"));
-                CmdWriteBufferMarker2AMD = reinterpret_cast<PFN_vkCmdWriteBufferMarker2AMD>(GetDeviceProcAddr(device, "vkCmdWriteBufferMarker2AMD"));
-                GetQueueCheckpointData2NV = reinterpret_cast<PFN_vkGetQueueCheckpointData2NV>(GetDeviceProcAddr(device, "vkGetQueueCheckpointData2NV"));
             }
         },
         {
@@ -1958,6 +1956,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         {
             "VK_AMD_buffer_marker", [](VkInstance , VkDevice device) {
                 CmdWriteBufferMarkerAMD = reinterpret_cast<PFN_vkCmdWriteBufferMarkerAMD>(GetDeviceProcAddr(device, "vkCmdWriteBufferMarkerAMD"));
+                CmdWriteBufferMarker2AMD = reinterpret_cast<PFN_vkCmdWriteBufferMarker2AMD>(GetDeviceProcAddr(device, "vkCmdWriteBufferMarker2AMD"));
             }
         },
         {
@@ -1983,6 +1982,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             "VK_NV_device_diagnostic_checkpoints", [](VkInstance , VkDevice device) {
                 CmdSetCheckpointNV = reinterpret_cast<PFN_vkCmdSetCheckpointNV>(GetDeviceProcAddr(device, "vkCmdSetCheckpointNV"));
                 GetQueueCheckpointDataNV = reinterpret_cast<PFN_vkGetQueueCheckpointDataNV>(GetDeviceProcAddr(device, "vkGetQueueCheckpointDataNV"));
+                GetQueueCheckpointData2NV = reinterpret_cast<PFN_vkGetQueueCheckpointData2NV>(GetDeviceProcAddr(device, "vkGetQueueCheckpointData2NV"));
             }
         },
         {
@@ -2626,8 +2626,6 @@ void ResetAllExtensions() {
     CmdPipelineBarrier2KHR = nullptr;
     CmdWriteTimestamp2KHR = nullptr;
     QueueSubmit2KHR = nullptr;
-    CmdWriteBufferMarker2AMD = nullptr;
-    GetQueueCheckpointData2NV = nullptr;
     CmdCopyBuffer2KHR = nullptr;
     CmdCopyImage2KHR = nullptr;
     CmdCopyBufferToImage2KHR = nullptr;
@@ -2765,6 +2763,7 @@ void ResetAllExtensions() {
     CompileDeferredNV = nullptr;
     GetMemoryHostPointerPropertiesEXT = nullptr;
     CmdWriteBufferMarkerAMD = nullptr;
+    CmdWriteBufferMarker2AMD = nullptr;
     GetPhysicalDeviceCalibrateableTimeDomainsEXT = nullptr;
     GetCalibratedTimestampsEXT = nullptr;
     CmdDrawMeshTasksNV = nullptr;
@@ -2774,6 +2773,7 @@ void ResetAllExtensions() {
     CmdSetExclusiveScissorNV = nullptr;
     CmdSetCheckpointNV = nullptr;
     GetQueueCheckpointDataNV = nullptr;
+    GetQueueCheckpointData2NV = nullptr;
     InitializePerformanceApiINTEL = nullptr;
     UninitializePerformanceApiINTEL = nullptr;
     CmdSetPerformanceMarkerINTEL = nullptr;

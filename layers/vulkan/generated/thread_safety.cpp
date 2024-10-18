@@ -3866,32 +3866,6 @@ void ThreadSafety::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitC
     PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 
-void ThreadSafety::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                         VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
-                                                         const RecordObject& record_obj) {
-    StartWriteObject(commandBuffer, record_obj.location);
-    StartReadObject(dstBuffer, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                          VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
-                                                          const RecordObject& record_obj) {
-    FinishWriteObject(commandBuffer, record_obj.location);
-    FinishReadObject(dstBuffer, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                          VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
-}
-
-void ThreadSafety::PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                           VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
-}
-
 void ThreadSafety::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                   const RecordObject& record_obj) {
     PreCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
@@ -5489,6 +5463,22 @@ void ThreadSafety::PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer command
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                         VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                         const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(dstBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                          VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                          const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(dstBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
                                                            const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                            uint64_t* pTimestamps, uint64_t* pMaxDeviation,
@@ -5598,6 +5588,16 @@ void ThreadSafety::PreCallRecordGetQueueCheckpointDataNV(VkQueue queue, uint32_t
 
 void ThreadSafety::PostCallRecordGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                           VkCheckpointDataNV* pCheckpointData, const RecordObject& record_obj) {
+    FinishReadObject(queue, record_obj.location);
+}
+
+void ThreadSafety::PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                                          VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {
+    StartReadObject(queue, record_obj.location);
+}
+
+void ThreadSafety::PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                                           VkCheckpointData2NV* pCheckpointData, const RecordObject& record_obj) {
     FinishReadObject(queue, record_obj.location);
 }
 

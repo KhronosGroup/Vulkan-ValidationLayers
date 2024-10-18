@@ -915,10 +915,6 @@ bool PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipel
                                           uint32_t query, const ErrorObject& error_obj) const override;
 bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                     const ErrorObject& error_obj) const override;
-bool PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                             VkDeviceSize dstOffset, uint32_t marker, const ErrorObject& error_obj) const override;
-bool PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
-                                              const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                       const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
@@ -1260,6 +1256,8 @@ bool PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExterna
 bool PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                             VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
                                             const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                             VkDeviceSize dstOffset, uint32_t marker, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
                                                                  VkTimeDomainKHR* pTimeDomains,
                                                                  const ErrorObject& error_obj) const override;
@@ -1283,6 +1281,8 @@ bool PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void
                                        const ErrorObject& error_obj) const override;
 bool PreCallValidateGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData,
                                              const ErrorObject& error_obj) const override;
+bool PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
+                                              const ErrorObject& error_obj) const override;
 bool PreCallValidateInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                   const ErrorObject& error_obj) const override;
 bool PreCallValidateUninitializePerformanceApiINTEL(VkDevice device, const ErrorObject& error_obj) const override;

@@ -765,13 +765,6 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_BOTH, "kVUIDUndefined",
 }},
-{Func::vkCmdWriteBufferMarker2AMD, {
-    "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-recording",
-    nullptr,
-    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-cmdpool",
-    CMD_SCOPE_BOTH, "kVUIDUndefined",
-    CMD_SCOPE_OUTSIDE, "VUID-vkCmdWriteBufferMarker2AMD-videocoding",
-}},
 {Func::vkCmdCopyBuffer2KHR, {
     "VUID-vkCmdCopyBuffer2-commandBuffer-recording",
     nullptr,
@@ -1114,6 +1107,13 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-cmdpool",
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdWriteBufferMarkerAMD-videocoding",
+}},
+{Func::vkCmdWriteBufferMarker2AMD, {
+    "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-cmdpool",
+    CMD_SCOPE_BOTH, "kVUIDUndefined",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdWriteBufferMarker2AMD-videocoding",
 }},
 {Func::vkCmdDrawMeshTasksNV, {
     "VUID-vkCmdDrawMeshTasksNV-commandBuffer-recording",

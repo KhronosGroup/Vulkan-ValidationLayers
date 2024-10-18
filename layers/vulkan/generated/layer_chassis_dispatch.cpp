@@ -5084,21 +5084,6 @@ VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSu
     return result;
 }
 
-void DispatchCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                      VkDeviceSize dstOffset, uint32_t marker) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
-    { dstBuffer = layer_data->Unwrap(dstBuffer); }
-    layer_data->device_dispatch_table.CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
-}
-
-void DispatchGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
-
-    layer_data->device_dispatch_table.GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
-}
-
 void DispatchCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBuffer2KHR(commandBuffer, pCopyBufferInfo);
@@ -6729,6 +6714,15 @@ void DispatchCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineSt
     layer_data->device_dispatch_table.CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
 }
 
+void DispatchCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                      VkDeviceSize dstOffset, uint32_t marker) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
+    { dstBuffer = layer_data->Unwrap(dstBuffer); }
+    layer_data->device_dispatch_table.CmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
+}
+
 VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
                                                               VkTimeDomainKHR* pTimeDomains) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
@@ -6806,6 +6800,12 @@ void DispatchGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCo
     auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
 
     layer_data->device_dispatch_table.GetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData);
+}
+
+void DispatchGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
+
+    layer_data->device_dispatch_table.GetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
 }
 
 VkResult DispatchInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {

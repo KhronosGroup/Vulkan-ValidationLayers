@@ -456,8 +456,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdPipelineBarrier2KHR CmdPipelineBarrier2KHR;
     PFN_vkCmdWriteTimestamp2KHR CmdWriteTimestamp2KHR;
     PFN_vkQueueSubmit2KHR QueueSubmit2KHR;
-    PFN_vkCmdWriteBufferMarker2AMD CmdWriteBufferMarker2AMD;
-    PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
     PFN_vkCmdCopyBuffer2KHR CmdCopyBuffer2KHR;
     PFN_vkCmdCopyImage2KHR CmdCopyImage2KHR;
     PFN_vkCmdCopyBufferToImage2KHR CmdCopyBufferToImage2KHR;
@@ -567,6 +565,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCompileDeferredNV CompileDeferredNV;
     PFN_vkGetMemoryHostPointerPropertiesEXT GetMemoryHostPointerPropertiesEXT;
     PFN_vkCmdWriteBufferMarkerAMD CmdWriteBufferMarkerAMD;
+    PFN_vkCmdWriteBufferMarker2AMD CmdWriteBufferMarker2AMD;
     PFN_vkGetCalibratedTimestampsEXT GetCalibratedTimestampsEXT;
     PFN_vkCmdDrawMeshTasksNV CmdDrawMeshTasksNV;
     PFN_vkCmdDrawMeshTasksIndirectNV CmdDrawMeshTasksIndirectNV;
@@ -575,6 +574,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetExclusiveScissorNV CmdSetExclusiveScissorNV;
     PFN_vkCmdSetCheckpointNV CmdSetCheckpointNV;
     PFN_vkGetQueueCheckpointDataNV GetQueueCheckpointDataNV;
+    PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
     PFN_vkInitializePerformanceApiINTEL InitializePerformanceApiINTEL;
     PFN_vkUninitializePerformanceApiINTEL UninitializePerformanceApiINTEL;
     PFN_vkCmdSetPerformanceMarkerINTEL CmdSetPerformanceMarkerINTEL;

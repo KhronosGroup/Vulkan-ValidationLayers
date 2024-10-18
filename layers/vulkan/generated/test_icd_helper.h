@@ -1218,10 +1218,6 @@ static VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp2KHR(VkCommandBuffer commandB
                                                         VkQueryPool queryPool, uint32_t query);
 static VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
                                                       VkFence fence);
-static VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker);
-static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                            VkCheckpointData2NV* pCheckpointData);
 static VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo);
 static VKAPI_ATTR void VKAPI_CALL CmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo);
 static VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -1513,6 +1509,8 @@ GetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFla
                                   VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties);
 static VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker);
+static VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker);
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                                    uint32_t* pTimeDomainCount,
                                                                                    VkTimeDomainKHR* pTimeDomains);
@@ -1534,6 +1532,8 @@ static VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer comma
 static VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker);
 static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                            VkCheckpointDataNV* pCheckpointData);
+static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                                            VkCheckpointData2NV* pCheckpointData);
 static VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                                     const VkInitializePerformanceApiInfoINTEL* pInitializeInfo);
 static VKAPI_ATTR void VKAPI_CALL UninitializePerformanceApiINTEL(VkDevice device);
@@ -2389,8 +2389,6 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCmdPipelineBarrier2KHR", (void*)CmdPipelineBarrier2KHR},
     {"vkCmdWriteTimestamp2KHR", (void*)CmdWriteTimestamp2KHR},
     {"vkQueueSubmit2KHR", (void*)QueueSubmit2KHR},
-    {"vkCmdWriteBufferMarker2AMD", (void*)CmdWriteBufferMarker2AMD},
-    {"vkGetQueueCheckpointData2NV", (void*)GetQueueCheckpointData2NV},
     {"vkCmdCopyBuffer2KHR", (void*)CmdCopyBuffer2KHR},
     {"vkCmdCopyImage2KHR", (void*)CmdCopyImage2KHR},
     {"vkCmdCopyBufferToImage2KHR", (void*)CmdCopyBufferToImage2KHR},
@@ -2528,6 +2526,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCompileDeferredNV", (void*)CompileDeferredNV},
     {"vkGetMemoryHostPointerPropertiesEXT", (void*)GetMemoryHostPointerPropertiesEXT},
     {"vkCmdWriteBufferMarkerAMD", (void*)CmdWriteBufferMarkerAMD},
+    {"vkCmdWriteBufferMarker2AMD", (void*)CmdWriteBufferMarker2AMD},
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", (void*)GetPhysicalDeviceCalibrateableTimeDomainsEXT},
     {"vkGetCalibratedTimestampsEXT", (void*)GetCalibratedTimestampsEXT},
     {"vkCmdDrawMeshTasksNV", (void*)CmdDrawMeshTasksNV},
@@ -2537,6 +2536,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCmdSetExclusiveScissorNV", (void*)CmdSetExclusiveScissorNV},
     {"vkCmdSetCheckpointNV", (void*)CmdSetCheckpointNV},
     {"vkGetQueueCheckpointDataNV", (void*)GetQueueCheckpointDataNV},
+    {"vkGetQueueCheckpointData2NV", (void*)GetQueueCheckpointData2NV},
     {"vkInitializePerformanceApiINTEL", (void*)InitializePerformanceApiINTEL},
     {"vkUninitializePerformanceApiINTEL", (void*)UninitializePerformanceApiINTEL},
     {"vkCmdSetPerformanceMarkerINTEL", (void*)CmdSetPerformanceMarkerINTEL},
@@ -3962,12 +3962,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t su
     return QueueSubmit2(queue, submitCount, pSubmits, fence);
 }
 
-static VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {}
-
-static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                            VkCheckpointData2NV* pCheckpointData) {}
-
 static VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     CmdCopyBuffer2(commandBuffer, pCopyBufferInfo);
 }
@@ -4489,6 +4483,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL CompileDeferredNV(VkDevice device, VkPipel
 static VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {}
 
+static VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {}
+
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                                    uint32_t* pTimeDomainCount,
                                                                                    VkTimeDomainKHR* pTimeDomains) {
@@ -4522,6 +4519,9 @@ static VKAPI_ATTR void VKAPI_CALL CmdSetCheckpointNV(VkCommandBuffer commandBuff
 
 static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
                                                            VkCheckpointDataNV* pCheckpointData) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                                            VkCheckpointData2NV* pCheckpointData) {}
 
 static VKAPI_ATTR VkResult VKAPI_CALL InitializePerformanceApiINTEL(VkDevice device,
                                                                     const VkInitializePerformanceApiInfoINTEL* pInitializeInfo) {
