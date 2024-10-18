@@ -3757,3 +3757,67 @@ TEST_F(NegativeSyncObject, TimelineCannotFixBinaryWaitBeforeSignal) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncObject, DecreasingTimelineSignals) {
+    TEST_DESCRIPTION("Signal timeline value smaller than previous signal");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
+
+    // NOTE: VerifyFound goes after Wait because validation is performed by the Queue thread
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pSignalSemaphores-03242");
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder) {
+    TEST_DESCRIPTION("Timeline values are increasing in submit order but reordered by wait-before-signal at runtime");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
+
+    // Signal 3 resolves wait 1 then value 2 is signaled
+    // NOTE: VerifyFound goes after Wait because validation is performed by the Queue thread
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pSignalSemaphores-03242");
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 3));
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder2) {
+    TEST_DESCRIPTION("Timeline values are increasing in submit order but reordered by wait-before-signal at runtime");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "2 queues are needed";
+    }
+
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
+
+    // Signal 3 resolves wait 1 then value 1 is signaled
+    // NOTE: VerifyFound goes after Wait because validation is performed by the Queue thread
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo2-semaphore-03882");
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 3));
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
