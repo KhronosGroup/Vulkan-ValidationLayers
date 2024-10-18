@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
     module_settings.shader_id = kDefaultShaderId;
     module_settings.output_buffer_descriptor_set = kInstDefaultDescriptorSet;
     module_settings.print_debug_info = print_debug_info;
-    module_settings.max_instrumented_count = 0;
+    module_settings.max_instrumentations_count = 0;
     module_settings.support_int64 = true;
     module_settings.support_memory_model_device_scope = true;
     // for all passes, test worst case of using bindless

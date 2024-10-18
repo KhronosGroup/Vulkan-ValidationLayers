@@ -23,11 +23,11 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size,
-                             LinkFunctions::inst_buffer_device_address, 0, "inst_buffer_device_address"};
-
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
+    static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size,
+                                 LinkFunctions::inst_buffer_device_address, 0, "inst_buffer_device_address"};
+
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -65,7 +65,7 @@ void BufferDeviceAddressPass::Reset() {
     type_length_ = 0;
 }
 
-bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
         return false;
@@ -112,7 +112,7 @@ bool BufferDeviceAddressPass::AnalyzeInstruction(const Function& function, const
 }
 
 void BufferDeviceAddressPass::PrintDebugInfo() {
-    std::cout << "BufferDeviceAddressPass instrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "BufferDeviceAddressPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

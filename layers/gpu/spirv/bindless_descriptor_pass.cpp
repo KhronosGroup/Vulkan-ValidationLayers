@@ -24,11 +24,11 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumentation_bindless_descriptor_comp_size,
-                             LinkFunctions::inst_bindless_descriptor, 0, "inst_bindless_descriptor"};
-
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t BindlessDescriptorPass::GetLinkFunctionId() {
+    static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumentation_bindless_descriptor_comp_size,
+                                 LinkFunctions::inst_bindless_descriptor, 0, "inst_bindless_descriptor"};
+
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -129,7 +129,7 @@ void BindlessDescriptorPass::Reset() {
     descriptor_offset_id_ = 0;
 }
 
-bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool BindlessDescriptorPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
@@ -266,7 +266,7 @@ bool BindlessDescriptorPass::AnalyzeInstruction(const Function& function, const 
 }
 
 void BindlessDescriptorPass::PrintDebugInfo() {
-    std::cout << "BindlessDescriptorPass instrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "BindlessDescriptorPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

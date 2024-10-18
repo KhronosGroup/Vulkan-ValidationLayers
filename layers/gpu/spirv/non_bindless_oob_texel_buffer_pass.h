@@ -30,7 +30,7 @@ class NonBindlessOOBTexelBufferPass : public Pass {
     bool Run();
 
   private:
-    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
     void Reset() final;
 

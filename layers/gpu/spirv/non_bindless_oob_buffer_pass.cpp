@@ -26,11 +26,11 @@ namespace spirv {
 
 NonBindlessOOBBufferPass::NonBindlessOOBBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
-static LinkInfo link_info = {instrumentation_non_bindless_oob_buffer_comp, instrumentation_non_bindless_oob_buffer_comp_size,
-                             LinkFunctions::inst_non_bindless_oob_buffer, 0, "inst_non_bindless_oob_buffer"};
-
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t NonBindlessOOBBufferPass::GetLinkFunctionId() {
+    static LinkInfo link_info = {instrumentation_non_bindless_oob_buffer_comp, instrumentation_non_bindless_oob_buffer_comp_size,
+                                 LinkFunctions::inst_non_bindless_oob_buffer, 0, "inst_non_bindless_oob_buffer"};
+
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -81,7 +81,7 @@ void NonBindlessOOBBufferPass::Reset() {
     descriptor_offset_id_ = 0;
 }
 
-bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool NonBindlessOOBBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
@@ -169,7 +169,7 @@ bool NonBindlessOOBBufferPass::AnalyzeInstruction(const Function& function, cons
 }
 
 void NonBindlessOOBBufferPass::PrintDebugInfo() {
-    std::cout << "NonBindlessOOBBufferPass instrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "NonBindlessOOBBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 // Created own Run() because need to control finding the largest offset in a given block
@@ -184,12 +184,12 @@ bool NonBindlessOOBBufferPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
 
-                if (module_.max_instrumented_count_ != 0 && instrumented_count_ >= module_.max_instrumented_count_) {
+                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
                     return true;  // hit limit
                 }
-                instrumented_count_++;
+                instrumentations_count_++;
 
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
@@ -205,7 +205,7 @@ bool NonBindlessOOBBufferPass::Run() {
         }
     }
 
-    return instrumented_count_ != 0;
+    return instrumentations_count_ != 0;
 }
 
 }  // namespace spirv

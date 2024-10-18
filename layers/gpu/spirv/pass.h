@@ -60,11 +60,11 @@ class Pass {
     virtual void Reset() = 0;
 
     // As various things are modifiying the instruction streams, we need to get back to where we were.
-    // (normally set in the AnalyzeInstruction call)
+    // (normally set in the RequiresInstrumentation call)
     const Instruction* target_instruction_ = nullptr;
     InstructionIt FindTargetInstruction(BasicBlock& block) const;
 
-    uint32_t instrumented_count_ = 0;
+    uint32_t instrumentations_count_ = 0;
 };
 
 }  // namespace spirv

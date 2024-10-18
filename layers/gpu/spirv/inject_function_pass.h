@@ -31,7 +31,7 @@ class InjectFunctionPass : public Pass {
     InjectFunctionPass(Module& module);
 
     // Each pass decides if the instruction should needs to have its function check injected
-    virtual bool AnalyzeInstruction(const Function& function, const Instruction& inst) = 0;
+    virtual bool RequiresInstrumentation(const Function& function, const Instruction& inst) = 0;
     // A callback from the function injection logic.
     // Each pass creates a OpFunctionCall and returns its result id.
     // If |inst_it| is not null, it will update it to instruction post OpFunctionCall

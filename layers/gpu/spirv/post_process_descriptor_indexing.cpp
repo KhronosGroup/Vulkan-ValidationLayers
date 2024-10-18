@@ -25,12 +25,12 @@ namespace spirv {
 
 PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
-static LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
-                             instrumentation_post_process_descriptor_index_comp_size,
-                             LinkFunctions::inst_post_process_descriptor_index, 0, "inst_post_process_descriptor_index"};
-
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() {
+    static LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
+                                 instrumentation_post_process_descriptor_index_comp_size,
+                                 LinkFunctions::inst_post_process_descriptor_index, 0, "inst_post_process_descriptor_index"};
+
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
@@ -55,7 +55,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
         {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(), descriptor_index_id}, inst_it);
 }
 
-bool PostProcessDescriptorIndexingPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     const Instruction* var_inst = nullptr;
@@ -171,8 +171,8 @@ bool PostProcessDescriptorIndexingPass::Run() {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
-                instrumented_count_++;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it);
                 Reset();
@@ -180,11 +180,11 @@ bool PostProcessDescriptorIndexingPass::Run() {
         }
     }
 
-    return (instrumented_count_ != 0);
+    return (instrumentations_count_ != 0);
 }
 
 void PostProcessDescriptorIndexingPass::PrintDebugInfo() {
-    std::cout << "PostProcessDescriptorIndexingPass instrumentation count: " << instrumented_count_ << '\n';
+    std::cout << "PostProcessDescriptorIndexingPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 }  // namespace spirv

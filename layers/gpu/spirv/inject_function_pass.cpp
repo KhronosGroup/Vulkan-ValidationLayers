@@ -31,12 +31,12 @@ bool InjectFunctionPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
 
-                if (module_.max_instrumented_count_ != 0 && instrumented_count_ >= module_.max_instrumented_count_) {
+                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
                     return true;  // hit limit
                 }
-                instrumented_count_++;
+                instrumentations_count_++;
 
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
@@ -52,7 +52,7 @@ bool InjectFunctionPass::Run() {
         }
     }
 
-    return instrumented_count_ != 0;
+    return instrumentations_count_ != 0;
 }
 
 }  // namespace spirv

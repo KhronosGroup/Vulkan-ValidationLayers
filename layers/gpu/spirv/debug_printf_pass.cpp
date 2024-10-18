@@ -36,7 +36,7 @@ uint32_t DebugPrintfPass::GetLinkFunctionId(uint32_t argument_count) {
     return link_function_id;
 }
 
-bool DebugPrintfPass::AnalyzeInstruction(const Instruction& inst) {
+bool DebugPrintfPass::RequiresInstrumentation(const Instruction& inst) {
     if (inst.Opcode() == spv::OpExtInst && inst.Word(3) == ext_import_id_ && inst.Word(4) == NonSemanticDebugPrintfDebugPrintf) {
         target_instruction_ = &inst;
         return true;
@@ -480,9 +480,9 @@ bool DebugPrintfPass::Run() {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!AnalyzeInstruction(*(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*(inst_it->get()))) continue;
                 if (!Validate(*(function.get()))) continue;  // if not valid, don't attempt to instrument it
-                instrumented_count_++;
+                instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it);
 
@@ -494,7 +494,7 @@ bool DebugPrintfPass::Run() {
             }
         }
     }
-    if (instrumented_count_ == 0) {
+    if (instrumentations_count_ == 0) {
         return false;
     }
 
@@ -529,7 +529,9 @@ bool DebugPrintfPass::Run() {
     return true;
 }
 
-void DebugPrintfPass::PrintDebugInfo() { std::cout << "DebugPrintfPass instrumentation count: " << instrumented_count_ << '\n'; }
+void DebugPrintfPass::PrintDebugInfo() {
+    std::cout << "DebugPrintfPass instrumentation count: " << instrumentations_count_ << '\n';
+}
 
 // Strictly speaking - the format given in GLSL_EXT_debug_printf is a client side implementation of SPIR-V
 // NonSemantic.DebugPrintf There is nothing stopping someone from creating a debug printf implementation
