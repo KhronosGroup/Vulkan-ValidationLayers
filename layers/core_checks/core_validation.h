@@ -2632,4 +2632,8 @@ class CoreChecks : public ValidationStateTracker {
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                              const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                              const vvl::CommandPool* pool) final;
+
+    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                                            VkDeviceQueueCreateFlags flags,
+                                            const VkQueueFamilyProperties& queue_family_properties) final;
 };  // Class CoreChecks

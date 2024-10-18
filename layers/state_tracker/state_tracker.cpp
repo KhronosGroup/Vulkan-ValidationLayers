@@ -1180,7 +1180,7 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
     }
     // Now process each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        Location submit_loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo, vvl::Field::pSubmits, submit_idx);
         vvl::QueueSubmission submission(submit_loc);
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         auto *timeline_semaphore_submit = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
@@ -1270,7 +1270,7 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
     }
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        Location submit_loc = record_obj.location.dot(vvl::Field::pSubmits, submit_idx);
+        Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo2, vvl::Field::pSubmits, submit_idx);
         vvl::QueueSubmission submission(submit_loc);
         const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
@@ -1419,7 +1419,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
             }
         }
         auto timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
-        Location submit_loc = record_obj.location.dot(vvl::Field::pBindInfo, bind_idx);
+        Location submit_loc = record_obj.location.dot(vvl::Struct::VkBindSparseInfo, vvl::Field::pBindInfo, bind_idx);
         vvl::QueueSubmission submission(submit_loc);
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
             uint64_t payload = 0;

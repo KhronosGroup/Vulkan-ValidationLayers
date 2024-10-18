@@ -18,8 +18,10 @@
  * limitations under the License.
  */
 #pragma once
+#include "cc_submit.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/queue_state.h"
 
 namespace core {
 
@@ -33,6 +35,20 @@ class CommandBuffer : public vvl::CommandBuffer {
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
+};
+
+// Override Retire to validate submissions in the order defined by synchronization
+class Queue : public vvl::Queue {
+  public:
+    Queue(ValidationStateTracker& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties& queue_family_properties,
+          const ValidationObject& error_logger);
+
+  private:
+    void Retire(vvl::QueueSubmission&) override;
+
+  private:
+    QueueSubmissionValidator queue_submission_validator_;
 };
 
 }  // namespace core

@@ -59,3 +59,23 @@ std::shared_ptr<vvl::CommandBuffer> CoreChecks::CreateCmdBufferState(VkCommandBu
                                                                      const vvl::CommandPool* pool) {
     return std::static_pointer_cast<vvl::CommandBuffer>(std::make_shared<core::CommandBuffer>(*this, handle, allocate_info, pool));
 }
+
+core::Queue::Queue(ValidationStateTracker& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                   VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties& queue_family_properties,
+                   const ValidationObject& error_logger)
+    : vvl::Queue(dev_data, handle, family_index, queue_index, flags, queue_family_properties),
+      queue_submission_validator_(error_logger) {}
+
+void core::Queue::Retire(vvl::QueueSubmission& submission) {
+    // Call validation before parent call. Validation needs initial submission state (Retire updates state)
+    queue_submission_validator_.Validate(submission);
+
+    vvl::Queue::Retire(submission);
+}
+
+std::shared_ptr<vvl::Queue> CoreChecks::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
+                                                    VkDeviceQueueCreateFlags flags,
+                                                    const VkQueueFamilyProperties& queue_family_properties) {
+    return std::static_pointer_cast<vvl::Queue>(
+        std::make_shared<core::Queue>(*this, handle, family_index, queue_index, flags, queue_family_properties, *this));
+}
