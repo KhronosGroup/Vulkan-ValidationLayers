@@ -400,20 +400,49 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         }
     }
 
+    bool valid_dispatch = true;
     auto* pipeline_info = vku::FindStructInPNextChain<VkGeneratedCommandsPipelineInfoEXT>(generated_commands_info.pNext);
     auto* shader_info = vku::FindStructInPNextChain<VkGeneratedCommandsShaderInfoEXT>(generated_commands_info.pNext);
-    if (generated_commands_info.indirectExecutionSet == VK_NULL_HANDLE && !pipeline_info && !shader_info) {
-        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectExecutionSet-11080", cb_state.Handle(),
-                         info_loc.dot(Field::indirectExecutionSet),
-                         "is VK_NULL_HANDLE but the pNext is missing a VkGeneratedCommandsPipelineInfoEXT or "
-                         "VkGeneratedCommandsShaderInfoEXT.");
-    } else if (generated_commands_info.indirectExecutionSet == VK_NULL_HANDLE && indirect_commands_layout.has_execution_set_token) {
-        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11083", indirect_commands_layout.Handle(),
-                         info_loc.dot(Field::indirectExecutionSet),
-                         "is VK_NULL_HANDLE but indirectCommandsLayout was created with a "
-                         "VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT token.");
+    if (generated_commands_info.indirectExecutionSet == VK_NULL_HANDLE) {
+        if (!pipeline_info && !shader_info) {
+            skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectExecutionSet-11080", cb_state.Handle(),
+                             info_loc.dot(Field::indirectExecutionSet),
+                             "is VK_NULL_HANDLE but the pNext is missing a VkGeneratedCommandsPipelineInfoEXT or "
+                             "VkGeneratedCommandsShaderInfoEXT.");
+            valid_dispatch = false;
+        } else if (indirect_commands_layout.has_execution_set_token) {
+            skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11083", indirect_commands_layout.Handle(),
+                             info_loc.dot(Field::indirectExecutionSet),
+                             "is VK_NULL_HANDLE but indirectCommandsLayout was created with a "
+                             "VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT token.");
+            valid_dispatch = false;
+        }
     } else {
-        // Only dispatch if we know this is valid
+        if (!indirect_commands_layout.has_execution_set_token) {
+            // TODO - Get VU, but without, will end up causing
+            // VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-indirectCommandsLayout-11011 in our dispatch
+            skip |= LogError("UNASSIGNED-VkGeneratedCommandsInfoEXT-indirectExecutionSet-token", indirect_commands_layout.Handle(),
+                             info_loc.dot(Field::indirectExecutionSet),
+                             "is not VK_NULL_HANDLE but indirectCommandsLayout was not created with a "
+                             "VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT token.");
+            valid_dispatch = false;
+        } else {
+            auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(generated_commands_info.indirectExecutionSet);
+            ASSERT_AND_RETURN_SKIP(indirect_execution_set);
+            if (indirect_execution_set->shader_stage_flags != indirect_commands_layout.execution_set_token_shader_stage_flags) {
+                skip |=
+                    LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11002", indirect_commands_layout.Handle(),
+                             info_loc.dot(Field::indirectExecutionSet),
+                             "was created with shader stage %s but indirectCommandsLayout was created with shader stage %s.",
+                             string_VkShaderStageFlags(indirect_execution_set->shader_stage_flags).c_str(),
+                             string_VkShaderStageFlags(indirect_commands_layout.execution_set_token_shader_stage_flags).c_str());
+                valid_dispatch = false;
+            }
+        }
+    }
+
+    // Only dispatch if we know this is valid
+    if (valid_dispatch) {
         VkGeneratedCommandsMemoryRequirementsInfoEXT req_info = vku::InitStructHelper();
         req_info.maxSequenceCount = generated_commands_info.maxSequenceCount;
         req_info.indirectCommandsLayout = generated_commands_info.indirectCommandsLayout;
@@ -443,18 +472,6 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
             "VUID-VkGeneratedCommandsInfoEXT-maxSequenceCount-11067", cb_state.Handle(), info_loc.dot(Field::maxSequenceCount),
             "(%" PRIu32 ") is larger than maxIndirectSequenceCount (%" PRIu32 ").", generated_commands_info.maxSequenceCount,
             phys_dev_ext_props.device_generated_commands_props.maxIndirectSequenceCount);
-    }
-
-    if (generated_commands_info.indirectExecutionSet != VK_NULL_HANDLE && indirect_commands_layout.has_execution_set_token) {
-        auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(generated_commands_info.indirectExecutionSet);
-        ASSERT_AND_RETURN_SKIP(indirect_execution_set);
-        if (indirect_execution_set->shader_stage_flags != indirect_commands_layout.execution_set_token_shader_stage_flags) {
-            skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11002", indirect_commands_layout.Handle(),
-                             info_loc.dot(Field::indirectExecutionSet),
-                             "was created with shader stage %s but indirectCommandsLayout was created with shader stage %s.",
-                             string_VkShaderStageFlags(indirect_execution_set->shader_stage_flags).c_str(),
-                             string_VkShaderStageFlags(indirect_commands_layout.execution_set_token_shader_stage_flags).c_str());
-        }
     }
 
     const auto preprocess_buffer_states = GetBuffersByAddress(generated_commands_info.preprocessAddress);
@@ -929,7 +946,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                     if (!IsPipelineLayoutSetCompatible(set, initial_pipeline_layout.get(), update_pipeline_layout.get())) {
                         LogObjectList objlist(initial_pipeline->Handle(), initial_pipeline_layout->Handle(),
                                               update_pipeline->Handle(), update_pipeline_layout->Handle());
-                        LogError(
+                        skip |= LogError(
                             "VUID-vkUpdateIndirectExecutionSetPipelineEXT-None-11039", objlist, set_write_loc.dot(Field::pipeline),
                             "%s was created with a layout %s which is not compatible with the initialPipeline layout %s for set "
                             "%" PRIu32 ".\n%s",
