@@ -14261,81 +14261,6 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                                    VkDeviceSize dstOffset, uint32_t marker) {
-    VVL_ZoneScoped;
-
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkCmdWriteBufferMarker2AMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
-    {
-        VVL_ZoneScopedN("PreCallValidate");
-        for (const ValidationObject* intercept :
-             layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteBufferMarker2AMD]) {
-            auto lock = intercept->ReadLock();
-            skip |=
-                intercept->PreCallValidateCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, error_obj);
-            if (skip) return;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkCmdWriteBufferMarker2AMD);
-    {
-        VVL_ZoneScopedN("PreCallRecord");
-        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteBufferMarker2AMD]) {
-            auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
-        }
-    }
-    {
-        VVL_ZoneScopedN("Dispatch");
-        DispatchCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
-    }
-    {
-        VVL_ZoneScopedN("PostCallRecord");
-        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteBufferMarker2AMD]) {
-            auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
-        }
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                     VkCheckpointData2NV* pCheckpointData) {
-    VVL_ZoneScoped;
-
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkGetQueueCheckpointData2NV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
-    {
-        VVL_ZoneScopedN("PreCallValidate");
-        for (const ValidationObject* intercept :
-             layer_data->intercept_vectors[InterceptIdPreCallValidateGetQueueCheckpointData2NV]) {
-            auto lock = intercept->ReadLock();
-            skip |= intercept->PreCallValidateGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, error_obj);
-            if (skip) return;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkGetQueueCheckpointData2NV);
-    {
-        VVL_ZoneScopedN("PreCallRecord");
-        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetQueueCheckpointData2NV]) {
-            auto lock = intercept->WriteLock();
-            intercept->PreCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
-        }
-    }
-    {
-        VVL_ZoneScopedN("Dispatch");
-        DispatchGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
-    }
-    {
-        VVL_ZoneScopedN("PostCallRecord");
-        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointData2NV]) {
-            auto lock = intercept->WriteLock();
-            intercept->PostCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
-        }
-    }
-}
-
 VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo) {
     VVL_ZoneScoped;
 
@@ -18985,6 +18910,44 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer
     }
 }
 
+VKAPI_ATTR void VKAPI_CALL CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                                    VkDeviceSize dstOffset, uint32_t marker) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdWriteBufferMarker2AMD, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateCmdWriteBufferMarker2AMD]) {
+            auto lock = intercept->ReadLock();
+            skip |=
+                intercept->PreCallValidateCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdWriteBufferMarker2AMD);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdWriteBufferMarker2AMD]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        DispatchCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdWriteBufferMarker2AMD]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordCmdWriteBufferMarker2AMD(commandBuffer, stage, dstBuffer, dstOffset, marker, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                             uint32_t* pTimeDomainCount,
                                                                             VkTimeDomainKHR* pTimeDomains) {
@@ -19342,6 +19305,43 @@ VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCh
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointDataNV]) {
             auto lock = intercept->WriteLock();
             intercept->PostCallRecordGetQueueCheckpointDataNV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                                     VkCheckpointData2NV* pCheckpointData) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetQueueCheckpointData2NV, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept :
+             layer_data->intercept_vectors[InterceptIdPreCallValidateGetQueueCheckpointData2NV]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetQueueCheckpointData2NV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetQueueCheckpointData2NV]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        DispatchGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetQueueCheckpointData2NV]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordGetQueueCheckpointData2NV(queue, pCheckpointDataCount, pCheckpointData, record_obj);
         }
     }
 }
@@ -28212,8 +28212,6 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkCmdPipelineBarrier2KHR", {kFuncTypeDev, (void*)CmdPipelineBarrier2KHR}},
     {"vkCmdWriteTimestamp2KHR", {kFuncTypeDev, (void*)CmdWriteTimestamp2KHR}},
     {"vkQueueSubmit2KHR", {kFuncTypeDev, (void*)QueueSubmit2KHR}},
-    {"vkCmdWriteBufferMarker2AMD", {kFuncTypeDev, (void*)CmdWriteBufferMarker2AMD}},
-    {"vkGetQueueCheckpointData2NV", {kFuncTypeDev, (void*)GetQueueCheckpointData2NV}},
     {"vkCmdCopyBuffer2KHR", {kFuncTypeDev, (void*)CmdCopyBuffer2KHR}},
     {"vkCmdCopyImage2KHR", {kFuncTypeDev, (void*)CmdCopyImage2KHR}},
     {"vkCmdCopyBufferToImage2KHR", {kFuncTypeDev, (void*)CmdCopyBufferToImage2KHR}},
@@ -28351,6 +28349,7 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkCompileDeferredNV", {kFuncTypeDev, (void*)CompileDeferredNV}},
     {"vkGetMemoryHostPointerPropertiesEXT", {kFuncTypeDev, (void*)GetMemoryHostPointerPropertiesEXT}},
     {"vkCmdWriteBufferMarkerAMD", {kFuncTypeDev, (void*)CmdWriteBufferMarkerAMD}},
+    {"vkCmdWriteBufferMarker2AMD", {kFuncTypeDev, (void*)CmdWriteBufferMarker2AMD}},
     {"vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", {kFuncTypePdev, (void*)GetPhysicalDeviceCalibrateableTimeDomainsEXT}},
     {"vkGetCalibratedTimestampsEXT", {kFuncTypeDev, (void*)GetCalibratedTimestampsEXT}},
     {"vkCmdDrawMeshTasksNV", {kFuncTypeDev, (void*)CmdDrawMeshTasksNV}},
@@ -28360,6 +28359,7 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkCmdSetExclusiveScissorNV", {kFuncTypeDev, (void*)CmdSetExclusiveScissorNV}},
     {"vkCmdSetCheckpointNV", {kFuncTypeDev, (void*)CmdSetCheckpointNV}},
     {"vkGetQueueCheckpointDataNV", {kFuncTypeDev, (void*)GetQueueCheckpointDataNV}},
+    {"vkGetQueueCheckpointData2NV", {kFuncTypeDev, (void*)GetQueueCheckpointData2NV}},
     {"vkInitializePerformanceApiINTEL", {kFuncTypeDev, (void*)InitializePerformanceApiINTEL}},
     {"vkUninitializePerformanceApiINTEL", {kFuncTypeDev, (void*)UninitializePerformanceApiINTEL}},
     {"vkCmdSetPerformanceMarkerINTEL", {kFuncTypeDev, (void*)CmdSetPerformanceMarkerINTEL}},

@@ -6764,70 +6764,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                                 "VUID-VkVideoDecodeH264DpbSlotInfoKHR-pStdReferenceInfo-parameter");
             }
         } break;
-
-        // Validation code for VkRenderingFragmentShadingRateAttachmentInfoKHR structure members
-        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR: {  // Covers
-                                                                                       // VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR);
-                if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                    skip |= LogError(pnext_vuid, instance, pNext_loc,
-                                     "extended struct requires the extensions VK_KHR_dynamic_rendering");
-                }
-                VkRenderingFragmentShadingRateAttachmentInfoKHR* structure =
-                    (VkRenderingFragmentShadingRateAttachmentInfoKHR*)header;
-                skip |= ValidateRangedEnum(pNext_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, structure->imageLayout,
-                                           "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageLayout-parameter",
-                                           VK_NULL_HANDLE);
-            }
-        } break;
-
-        // Validation code for VkRenderingFragmentDensityMapAttachmentInfoEXT structure members
-        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT: {  // Covers
-                                                                                      // VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT);
-                if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                    skip |= LogError(pnext_vuid, instance, pNext_loc,
-                                     "extended struct requires the extensions VK_KHR_dynamic_rendering");
-                }
-                VkRenderingFragmentDensityMapAttachmentInfoEXT* structure = (VkRenderingFragmentDensityMapAttachmentInfoEXT*)header;
-                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::imageView), structure->imageView);
-
-                skip |=
-                    ValidateRangedEnum(pNext_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, structure->imageLayout,
-                                       "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageLayout-parameter", VK_NULL_HANDLE);
-            }
-        } break;
-
-        // Validation code for VkAttachmentSampleCountInfoAMD structure members
-        case VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD: {  // Covers VUID-VkAttachmentSampleCountInfoAMD-sType-sType
-
-            if ((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_VK_KHR_dynamic_rendering)) ||
-                (!is_physdev_api && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))) {
-                skip |= LogError(pnext_vuid, instance, loc.dot(Field::pNext),
-                                 "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD), "
-                                 "but its parent extension "
-                                 "VK_KHR_dynamic_rendering has not been enabled.");
-            }
-        } break;
-
-        // Validation code for VkMultiviewPerViewAttributesInfoNVX structure members
-        case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX: {  // Covers
-                                                                          // VUID-VkMultiviewPerViewAttributesInfoNVX-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkMultiviewPerViewAttributesInfoNVX);
-                if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                    skip |= LogError(pnext_vuid, instance, pNext_loc,
-                                     "extended struct requires the extensions VK_KHR_dynamic_rendering");
-                }
-                VkMultiviewPerViewAttributesInfoNVX* structure = (VkMultiviewPerViewAttributesInfoNVX*)header;
-                skip |= ValidateBool32(pNext_loc.dot(Field::perViewAttributes), structure->perViewAttributes);
-
-                skip |=
-                    ValidateBool32(pNext_loc.dot(Field::perViewAttributesPositionXOnly), structure->perViewAttributesPositionXOnly);
-            }
-        } break;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
         // Validation code for VkImportMemoryWin32HandleInfoKHR structure members
@@ -7092,6 +7028,23 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPipelineFragmentShadingRateStateCreateInfoKHR structure members  -- Covers
         // VUID-VkPipelineFragmentShadingRateStateCreateInfoKHR-sType-sType
 
+        // Validation code for VkRenderingFragmentShadingRateAttachmentInfoKHR structure members
+        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR: {  // Covers
+                                                                                       // VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR);
+                if (!IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_KHR_fragment_shading_rate");
+                }
+                VkRenderingFragmentShadingRateAttachmentInfoKHR* structure =
+                    (VkRenderingFragmentShadingRateAttachmentInfoKHR*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, structure->imageLayout,
+                                           "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageLayout-parameter",
+                                           VK_NULL_HANDLE);
+            }
+        } break;
+
         // No Validation code for VkRenderingAttachmentLocationInfoKHR structure members  -- Covers
         // VUID-VkRenderingAttachmentLocationInfoKHR-sType-sType
 
@@ -7196,9 +7149,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
 
         // No Validation code for VkVideoEncodeQualityLevelInfoKHR structure members  -- Covers
         // VUID-VkVideoEncodeQualityLevelInfoKHR-sType-sType
-
-        // No Validation code for VkQueueFamilyCheckpointProperties2NV structure members  -- Covers
-        // VUID-VkQueueFamilyCheckpointProperties2NV-sType-sType
 
         // Validation code for VkPipelineCreateFlags2CreateInfoKHR structure members
         case VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR: {  // Covers
@@ -7671,6 +7621,23 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             }
         } break;
 
+        // Validation code for VkMultiviewPerViewAttributesInfoNVX structure members
+        case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX: {  // Covers
+                                                                          // VUID-VkMultiviewPerViewAttributesInfoNVX-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkMultiviewPerViewAttributesInfoNVX);
+                if (!IsExtEnabled(device_extensions.vk_nvx_multiview_per_view_attributes)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_NVX_multiview_per_view_attributes");
+                }
+                VkMultiviewPerViewAttributesInfoNVX* structure = (VkMultiviewPerViewAttributesInfoNVX*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::perViewAttributes), structure->perViewAttributes);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::perViewAttributesPositionXOnly), structure->perViewAttributesPositionXOnly);
+            }
+        } break;
+
         // Validation code for VkPipelineViewportSwizzleStateCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV: {  // Covers
                                                                                   // VUID-VkPipelineViewportSwizzleStateCreateInfoNV-sType-sType
@@ -7842,6 +7809,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPipelineShaderStageNodeCreateInfoAMDX structure members  -- Covers
         // VUID-VkPipelineShaderStageNodeCreateInfoAMDX-sType-sType
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+
+        // No Validation code for VkAttachmentSampleCountInfoAMD structure members  -- Covers
+        // VUID-VkAttachmentSampleCountInfoAMD-sType-sType
 
         // Validation code for VkSampleLocationsInfoEXT structure members
         case VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT: {  // Covers VUID-VkSampleLocationsInfoEXT-sType-sType
@@ -8307,6 +8277,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkQueueFamilyCheckpointPropertiesNV structure members  -- Covers
         // VUID-VkQueueFamilyCheckpointPropertiesNV-sType-sType
 
+        // No Validation code for VkQueueFamilyCheckpointProperties2NV structure members  -- Covers
+        // VUID-VkQueueFamilyCheckpointProperties2NV-sType-sType
+
         // Validation code for VkQueryPoolPerformanceQueryCreateInfoINTEL structure members
         case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL: {  // Covers
                                                                                   // VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-sType-sType
@@ -8354,6 +8327,24 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRangedEnum(pNext_loc.dot(Field::layout), vvl::Enum::VkImageLayout,
                                            structure->fragmentDensityMapAttachment.layout,
                                            "VUID-VkAttachmentReference-layout-parameter", VK_NULL_HANDLE);
+            }
+        } break;
+
+        // Validation code for VkRenderingFragmentDensityMapAttachmentInfoEXT structure members
+        case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT: {  // Covers
+                                                                                      // VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderingFragmentDensityMapAttachmentInfoEXT);
+                if (!IsExtEnabled(device_extensions.vk_ext_fragment_density_map)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "extended struct requires the extensions VK_EXT_fragment_density_map");
+                }
+                VkRenderingFragmentDensityMapAttachmentInfoEXT* structure = (VkRenderingFragmentDensityMapAttachmentInfoEXT*)header;
+                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::imageView), structure->imageView);
+
+                skip |=
+                    ValidateRangedEnum(pNext_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, structure->imageLayout,
+                                       "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageLayout-parameter", VK_NULL_HANDLE);
             }
         } break;
 
@@ -19185,42 +19176,6 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                                  VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
-                                                                  const ErrorObject& error_obj) const {
-    bool skip = false;
-    [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
-    skip |= ValidateFlags(loc.dot(Field::stage), vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2, stage,
-                          kOptionalFlags, VK_NULL_HANDLE, "VUID-vkCmdWriteBufferMarker2AMD-stage-parameter");
-    skip |= ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
-    return skip;
-}
-
-bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                                   VkCheckpointData2NV* pCheckpointData,
-                                                                   const ErrorObject& error_obj) const {
-    bool skip = false;
-    [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
-    skip |= ValidateStructTypeArray(loc.dot(Field::pCheckpointDataCount), loc.dot(Field::pCheckpointData), pCheckpointDataCount,
-                                    pCheckpointData, VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV, true, false, false,
-                                    "VUID-VkCheckpointData2NV-sType-sType",
-                                    "VUID-vkGetQueueCheckpointData2NV-pCheckpointData-parameter",
-                                    "VUID-vkGetQueueCheckpointData2NV-pCheckpointDataCount-parameter", kVUIDUndefined);
-    if (pCheckpointData != nullptr) {
-        for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
-            [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
-            skip |= ValidateStructPnext(pCheckpointData_loc, pCheckpointData[pCheckpointDataIndex].pNext, 0, nullptr,
-                                        GeneratedVulkanHeaderVersion, "VUID-VkCheckpointData2NV-pNext-pNext", kVUIDUndefined,
-                                        VK_NULL_HANDLE, false);
-        }
-    }
-    return skip;
-}
-
 bool StatelessValidation::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
@@ -22224,6 +22179,19 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer
     return skip;
 }
 
+bool StatelessValidation::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                                  VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_amd_buffer_marker))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_buffer_marker});
+    skip |= ValidateFlags(loc.dot(Field::stage), vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2, stage,
+                          kOptionalFlags, VK_NULL_HANDLE, "VUID-vkCmdWriteBufferMarker2AMD-stage-parameter");
+    skip |= ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
+    return skip;
+}
+
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                                       uint32_t* pTimeDomainCount,
                                                                                       VkTimeDomainKHR* pTimeDomains,
@@ -22349,6 +22317,29 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(VkQueue queue,
             [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
             skip |= ValidateStructPnext(pCheckpointData_loc, pCheckpointData[pCheckpointDataIndex].pNext, 0, nullptr,
                                         GeneratedVulkanHeaderVersion, "VUID-VkCheckpointDataNV-pNext-pNext", kVUIDUndefined,
+                                        VK_NULL_HANDLE, false);
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
+                                                                   VkCheckpointData2NV* pCheckpointData,
+                                                                   const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_nv_device_diagnostic_checkpoints))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_diagnostic_checkpoints});
+    skip |= ValidateStructTypeArray(loc.dot(Field::pCheckpointDataCount), loc.dot(Field::pCheckpointData), pCheckpointDataCount,
+                                    pCheckpointData, VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV, true, false, false,
+                                    "VUID-VkCheckpointData2NV-sType-sType",
+                                    "VUID-vkGetQueueCheckpointData2NV-pCheckpointData-parameter",
+                                    "VUID-vkGetQueueCheckpointData2NV-pCheckpointDataCount-parameter", kVUIDUndefined);
+    if (pCheckpointData != nullptr) {
+        for (uint32_t pCheckpointDataIndex = 0; pCheckpointDataIndex < *pCheckpointDataCount; ++pCheckpointDataIndex) {
+            [[maybe_unused]] const Location pCheckpointData_loc = loc.dot(Field::pCheckpointData, pCheckpointDataIndex);
+            skip |= ValidateStructPnext(pCheckpointData_loc, pCheckpointData[pCheckpointDataIndex].pNext, 0, nullptr,
+                                        GeneratedVulkanHeaderVersion, "VUID-VkCheckpointData2NV-pNext-pNext", kVUIDUndefined,
                                         VK_NULL_HANDLE, false);
         }
     }

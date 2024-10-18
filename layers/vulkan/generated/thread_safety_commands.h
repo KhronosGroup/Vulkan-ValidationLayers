@@ -2007,18 +2007,6 @@ void PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkS
 void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                    const RecordObject& record_obj) override;
 
-void PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                           VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
-
-void PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                            VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
-
-void PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
-                                            const RecordObject& record_obj) override;
-
-void PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
-                                             const RecordObject& record_obj) override;
-
 void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                     const RecordObject& record_obj) override;
 
@@ -2818,6 +2806,12 @@ void PreCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipel
 void PostCallRecordCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer,
                                            VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
 
+void PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                           VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
+
+void PostCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                            VkDeviceSize dstOffset, uint32_t marker, const RecordObject& record_obj) override;
+
 void PreCallRecordGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                              uint64_t* pMaxDeviation, const RecordObject& record_obj) override;
@@ -2873,6 +2867,12 @@ void PreCallRecordGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointD
 
 void PostCallRecordGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData,
                                             const RecordObject& record_obj) override;
+
+void PreCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
+                                            const RecordObject& record_obj) override;
+
+void PostCallRecordGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData,
+                                             const RecordObject& record_obj) override;
 
 void PreCallRecordInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                 const RecordObject& record_obj) override;

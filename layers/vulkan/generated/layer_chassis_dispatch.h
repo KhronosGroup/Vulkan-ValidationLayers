@@ -626,9 +626,6 @@ void DispatchCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDepen
 void DispatchCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                    uint32_t query);
 VkResult DispatchQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence);
-void DispatchCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                      VkDeviceSize dstOffset, uint32_t marker);
-void DispatchGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData);
 void DispatchCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo);
 void DispatchCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo);
 void DispatchCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo);
@@ -868,6 +865,8 @@ VkResult DispatchGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMe
                                                    VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties);
 void DispatchCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkBuffer dstBuffer,
                                      VkDeviceSize dstOffset, uint32_t marker);
+void DispatchCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
+                                      VkDeviceSize dstOffset, uint32_t marker);
 VkResult DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice, uint32_t* pTimeDomainCount,
                                                               VkTimeDomainKHR* pTimeDomains);
 VkResult DispatchGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
@@ -885,6 +884,7 @@ void DispatchCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t fi
                                       const VkRect2D* pExclusiveScissors);
 void DispatchCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker);
 void DispatchGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointDataNV* pCheckpointData);
+void DispatchGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount, VkCheckpointData2NV* pCheckpointData);
 VkResult DispatchInitializePerformanceApiINTEL(VkDevice device, const VkInitializePerformanceApiInfoINTEL* pInitializeInfo);
 void DispatchUninitializePerformanceApiINTEL(VkDevice device);
 VkResult DispatchCmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer, const VkPerformanceMarkerInfoINTEL* pMarkerInfo);

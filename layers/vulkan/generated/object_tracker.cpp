@@ -4269,21 +4269,6 @@ bool ObjectLifetimes::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t sub
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
-bool ObjectLifetimes::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                              VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
-                                                              const ErrorObject& error_obj) const {
-    bool skip = false;
-    // Checked by chassis: commandBuffer: "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-parameter"
-    // Checked by chassis: commandBuffer: "VUID-vkCmdWriteBufferMarker2AMD-commonparent"
-    skip |= ValidateObject(dstBuffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdWriteBufferMarker2AMD-dstBuffer-parameter",
-                           "VUID-vkCmdWriteBufferMarker2AMD-commonparent", error_obj.location.dot(Field::dstBuffer));
-
-    return skip;
-}
-
-// vkGetQueueCheckpointData2NV:
-// Checked by chassis: queue: "VUID-vkGetQueueCheckpointData2NV-queue-parameter"
-
 bool ObjectLifetimes::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                        const ErrorObject& error_obj) const {
     return PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, error_obj);
@@ -5737,6 +5722,18 @@ bool ObjectLifetimes::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer com
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
+                                                              VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdWriteBufferMarker2AMD-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdWriteBufferMarker2AMD-commonparent"
+    skip |= ValidateObject(dstBuffer, kVulkanObjectTypeBuffer, false, "VUID-vkCmdWriteBufferMarker2AMD-dstBuffer-parameter",
+                           "VUID-vkCmdWriteBufferMarker2AMD-commonparent", error_obj.location.dot(Field::dstBuffer));
+
+    return skip;
+}
+
 // vkGetPhysicalDeviceCalibrateableTimeDomainsEXT:
 // Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsKHR-physicalDevice-parameter"
 
@@ -5785,6 +5782,9 @@ bool ObjectLifetimes::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBu
 
 // vkGetQueueCheckpointDataNV:
 // Checked by chassis: queue: "VUID-vkGetQueueCheckpointDataNV-queue-parameter"
+
+// vkGetQueueCheckpointData2NV:
+// Checked by chassis: queue: "VUID-vkGetQueueCheckpointData2NV-queue-parameter"
 
 // vkInitializePerformanceApiINTEL:
 // Checked by chassis: device: "VUID-vkInitializePerformanceApiINTEL-device-parameter"

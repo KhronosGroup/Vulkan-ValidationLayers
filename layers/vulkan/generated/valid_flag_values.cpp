@@ -458,12 +458,6 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_EXT_pipeline_creation_cache_control};
                 }
             }
-            if (value & (VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR |
-                         VK_PIPELINE_CREATE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-                if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
-                    return {vvl::Extension::_VK_KHR_dynamic_rendering};
-                }
-            }
             if (value & (VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR |
                          VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR |
                          VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR |
@@ -477,6 +471,16 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
             if (value & (VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV)) {
                 if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
                     return {vvl::Extension::_VK_NV_ray_tracing};
+                }
+            }
+            if (value & (VK_PIPELINE_CREATE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
+                if (!IsExtEnabled(device_extensions.vk_ext_fragment_density_map)) {
+                    return {vvl::Extension::_VK_EXT_fragment_density_map};
+                }
+            }
+            if (value & (VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
+                    return {vvl::Extension::_VK_KHR_fragment_shading_rate};
                 }
             }
             if (value &
