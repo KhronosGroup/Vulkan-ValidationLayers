@@ -2236,44 +2236,6 @@ TEST_F(PositiveSyncObject, TimelineSubmitWaitThenHostSignalLargerValue) {
     m_default_queue->Wait();
 }
 
-// TODO: non-monotonic signaling order, when validation can detect this convert to a negative test
-TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait) {
-    TEST_DESCRIPTION("Test that validation selects correct signal");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::timelineSemaphore);
-    RETURN_IF_SKIP(Init());
-
-    if (!m_second_queue) {
-        GTEST_SKIP() << "2 queues are needed";
-    }
-
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-
-    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
-    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));
-    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 3));
-    m_default_queue->Wait();
-}
-
-// TODO: non-monotonic signaling order, when validation can detect this convert to a negative test
-TEST_F(PositiveSyncObject, ClosestSignalValueDoesNotFinishWait2) {
-    TEST_DESCRIPTION("Test that validation selects correct signal");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::timelineSemaphore);
-    RETURN_IF_SKIP(Init());
-
-    if (!m_second_queue) {
-        GTEST_SKIP() << "2 queues are needed";
-    }
-
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
-
-    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, 1));
-    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
-    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 3));
-    m_default_queue->Wait();
-}
-
 TEST_F(PositiveSyncObject, PollSemaphoreCounter) {
     TEST_DESCRIPTION("Basic semaphore polling test");
     SetTargetApiVersion(VK_API_VERSION_1_2);
