@@ -2081,7 +2081,6 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
 TEST_F(NegativeShaderSpirv, DeviceMemoryScopeDebugInfo) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
-    AddDisabledFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(Init());
 
     char const *csSource = R"(
