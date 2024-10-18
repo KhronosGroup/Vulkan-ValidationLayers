@@ -26,12 +26,12 @@ namespace spirv {
 
 NonBindlessOOBTexelBufferPass::NonBindlessOOBTexelBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
-static LinkInfo link_info = {instrumentation_non_bindless_oob_texel_buffer_comp,
-                             instrumentation_non_bindless_oob_texel_buffer_comp_size,
-                             LinkFunctions::inst_non_bindless_oob_texel_buffer, 0, "inst_non_bindless_oob_texel_buffer"};
-
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t NonBindlessOOBTexelBufferPass::GetLinkFunctionId() {
+    static LinkInfo link_info = {instrumentation_non_bindless_oob_texel_buffer_comp,
+                                 instrumentation_non_bindless_oob_texel_buffer_comp_size,
+                                 LinkFunctions::inst_non_bindless_oob_texel_buffer, 0, "inst_non_bindless_oob_texel_buffer"};
+
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
         link_info.function_id = link_function_id;
