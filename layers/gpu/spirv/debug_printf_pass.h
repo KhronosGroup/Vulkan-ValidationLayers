@@ -32,7 +32,7 @@ class DebugPrintfPass : public Pass {
     void PrintDebugInfo();
 
   private:
-    bool AnalyzeInstruction(const Instruction& inst);
+    bool RequiresInstrumentation(const Instruction& inst);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
     void CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params, BasicBlock& block,
                               InstructionIt* inst_it);

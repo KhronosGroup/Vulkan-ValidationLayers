@@ -31,7 +31,7 @@ class PostProcessDescriptorIndexingPass : public Pass {
     void PrintDebugInfo();
 
   private:
-    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
     void Reset() final;
 

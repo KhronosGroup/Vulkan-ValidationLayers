@@ -124,7 +124,7 @@ bool InjectConditionalFunctionPass::Run() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) {
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) {
                     // TODO - This should be cleaned up then having it injected here
                     // we can have a situation where the incoming SPIR-V looks like
                     // %a = OpSampledImage %type %image %sampler

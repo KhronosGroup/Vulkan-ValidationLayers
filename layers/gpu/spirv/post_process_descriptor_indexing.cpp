@@ -55,7 +55,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
         {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(), descriptor_index_id}, inst_it);
 }
 
-bool PostProcessDescriptorIndexingPass::AnalyzeInstruction(const Function& function, const Instruction& inst) {
+bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     const Instruction* var_inst = nullptr;
@@ -171,7 +171,7 @@ bool PostProcessDescriptorIndexingPass::Run() {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!AnalyzeInstruction(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
                 instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it);
