@@ -98,6 +98,12 @@ khronos_validation.enables =
 # Enable shader instrumentation on SPV_KHR_ray_query
 #khronos_validation.gpuav_validate_ray_query = true
 
+# Post Process Descriptor Indexing
+# =====================
+# <LayerIdentifier>.gpuav_post_process_descriptor_indexing
+# Track which descriptor indexes were used in shader to run normal validation afterwards
+#khronos_validation.gpuav_post_process_descriptor_indexing = true
+
 # Cache instrumented shaders rather than instrumenting them on every run
 # =====================
 # <LayerIdentifier>.gpuav_cache_instrumented_shaders

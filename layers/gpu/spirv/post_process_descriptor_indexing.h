@@ -15,31 +15,32 @@
 #pragma once
 
 #include <stdint.h>
+#include "pass.h"
 
 namespace gpuav {
 namespace spirv {
 
-// Functions name match those found in the GLSL for ease of searching
-enum class LinkFunctions {
-    inst_buffer_device_address,
-    inst_bindless_descriptor,
-    inst_non_bindless_oob_buffer,
-    inst_non_bindless_oob_texel_buffer,
-    inst_ray_query,
-    inst_post_process_descriptor_index,
-};
+struct Type;
 
-struct LinkInfo {
-    // SPIR-V module to link in
-    const uint32_t* words;
-    const uint32_t word_count;
+class PostProcessDescriptorIndexingPass : public Pass {
+  public:
+    PostProcessDescriptorIndexingPass(Module& module);
+    const char* Name() const final { return "PostProcessDescriptorIndexingPass"; }
 
-    // Information about the function it has
-    LinkFunctions function;
-    uint32_t function_id;
+    bool Run();
+    void PrintDebugInfo();
 
-    // used for debugging
-    const char* opname;
+  private:
+    bool AnalyzeInstruction(const Function& function, const Instruction& inst);
+    void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
+    void Reset() final;
+
+    uint32_t link_function_id = 0;
+    uint32_t GetLinkFunctionId();
+
+    uint32_t descriptor_set_ = 0;
+    uint32_t descriptor_binding_ = 0;
+    uint32_t descriptor_index_id_ = 0;
 };
 
 }  // namespace spirv

@@ -1179,6 +1179,12 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         modified |= module.RunPassRayQuery();
     }
 
+    // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
+    // in a if/else, this means they will be gaurded as if they were inside the above passes
+    if (gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
+        modified |= module.RunPassPostProcessDescriptorIndexing();
+    }
+
     // If there were GLSL written function injected, we will grab them and link them in here
     for (const auto &info : module.link_info_) {
         module.LinkFunction(info);
