@@ -49,9 +49,9 @@ struct DescBindingInfo {
 namespace glsl {
 
 struct DescriptorSetRecord {
-    VkDeviceAddress layout_data;
-    VkDeviceAddress in_data;
-    VkDeviceAddress out_data;
+    VkDeviceAddress descriptor_index_lut;
+    VkDeviceAddress ds_type;
+    VkDeviceAddress descriptor_index_post_process;
 };
 
 struct BindlessStateBuffer {
