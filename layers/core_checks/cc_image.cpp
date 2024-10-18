@@ -204,13 +204,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
-    VkImageCreateFlags sparseFlags =
-        VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
-    if ((pCreateInfo->flags & sparseFlags) && (pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
-        skip |= LogError("VUID-VkImageCreateInfo-None-01925", device, create_info_loc,
-                         "images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set.");
-    }
-
     if (!enabled_features.fragmentDensityMapOffset && (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
         uint32_t ceiling_width = static_cast<uint32_t>(ceilf(
             static_cast<float>(device_limits->maxFramebufferWidth) /
@@ -2092,15 +2085,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                              "%s since the image doesn't have VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT flag set.",
                                              string_VkImageType(image_type));
                         }
-                        if ((image_flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
-                                            VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))) {
-                            skip |= LogError(
-                                "VUID-VkImageViewCreateInfo-image-04971", pCreateInfo->image, create_info_loc.dot(Field::viewType),
-                                "(%s) is not compatible with image type %s "
-                                "when the VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or "
-                                "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT flags are enabled.",
-                                string_VkImageViewType(view_type), string_VkImageType(image_type));
-                        } else if (normalized_subresource_range.levelCount != 1) {
+                        if (normalized_subresource_range.levelCount != 1) {
                             skip |= LogError("VUID-VkImageViewCreateInfo-image-04970", pCreateInfo->image,
                                              create_info_loc.dot(Field::viewType),
                                              "(%s) is with image type %s must have a "

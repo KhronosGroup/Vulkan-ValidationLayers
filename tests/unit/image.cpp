@@ -1445,29 +1445,12 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
         0,
         nullptr,
         VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImage imageSparse;
+    VkImage image_sparse;
 
     // Creating a sparse image means we should not bind memory to it.
-    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-09403");
-    res = vk::CreateImage(device(), &imgInfo, NULL, &imageSparse);
-    ASSERT_FALSE(res);
-
-    // Initialize VkImageViewCreateInfo to create a view that will attempt to utilize VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR.
-    ivci = vku::InitStructHelper();
-    ivci.image = imageSparse;
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    // Test for error message
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04971");
-
-    // Clean up
-    vk::DestroyImage(device(), imageSparse, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-09403");
+    vk::CreateImage(device(), &imgInfo, NULL, &image_sparse);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
@@ -2558,51 +2541,6 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     // Checking sparse flags are not set
     VkImageViewCreateInfo sparse_image_view_ci = volume_img_view_info_template;
     sparse_image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-
-    // using VK_IMAGE_CREATE_SPARSE_BINDING_BIT
-    if (device_features.sparseBinding) {
-        image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
-        vkt::Image sparse_image(*m_device, image_ci, vkt::no_mem);
-        sparse_image_view_ci.image = sparse_image.handle();
-
-        sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
-        CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
-        sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
-        CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
-    }
-    // using VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
-    if (device_features.sparseResidencyImage3D) {
-        image_ci.flags =
-            VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
-        vkt::Image sparse_image(*m_device, image_ci, vkt::no_mem);
-        sparse_image_view_ci.image = sparse_image.handle();
-
-        sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
-        CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
-        sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
-        CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
-    }
-    // using VK_IMAGE_CREATE_SPARSE_ALIASED_BIT
-    if (device_features.sparseResidencyAliased) {
-        image_ci.flags =
-            VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-09403");
-        vkt::Image sparse_image(*m_device, image_ci, vkt::no_mem);
-        sparse_image_view_ci.image = sparse_image.handle();
-
-        sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
-        CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
-        sparse_image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01020");
-        CreateImageViewTest(*this, &sparse_image_view_ci, "VUID-VkImageViewCreateInfo-image-04971");
-    }
 }
 
 TEST_F(NegativeImage, ImageViewLayerCount) {
@@ -5446,6 +5384,30 @@ TEST_F(NegativeImage, IncompatibleArrayAndSparseFlags) {
 
     VkImage image;
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-09403");
+    vk::CreateImage(*m_device, &create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImage, IncompatibleArrayViewAndSparseFlags) {
+    TEST_DESCRIPTION("Create image with invalid combination of create flags");
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo create_info = vku::InitStructHelper();
+    create_info.flags = VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_3D;
+    create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    create_info.extent = {32u, 32u, 1u};
+    create_info.mipLevels = 1u;
+    create_info.arrayLayers = 1u;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImage image;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-imageType-10197");
     vk::CreateImage(*m_device, &create_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 }
