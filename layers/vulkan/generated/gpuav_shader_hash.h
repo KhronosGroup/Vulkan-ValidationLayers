@@ -24,4 +24,4 @@
 
 #pragma once
 
-#define GPU_AV_SHADER_GIT_HASH "2b3f6c536795213238a6bc96e80d5c679ee6690a"
+#define GPU_AV_SHADER_GIT_HASH "b2c9ad218c8bd88bf550a09a3a422103abcef64c"

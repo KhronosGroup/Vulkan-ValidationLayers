@@ -31,10 +31,10 @@
 #include "common_descriptor_sets.h"
 
 // unused - TODO remove when LUT is removed
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetInData { uvec2 data[]; };
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType { uvec2 data[]; };
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState { uint data[]; };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorLayoutData {
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexLUT {
     // BindingLayout[0]
     uint num_bindings;
     uint pad; // always zero, used to keep things aligned
@@ -47,16 +47,16 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorLa
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetOutData {
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexPostProcess {
     // size of descriptor count (including all array elements)
     // Used to mark which indexes were accessed
     uint data[];
 };
 
 struct DescriptorSetRecord {
-    DescriptorLayoutData layout_data; // TODO - remove with LUT send into instrumentation of shader
-    DescriptorSetInData in_data; // unused
-    DescriptorSetOutData out_data;
+    DescriptorIndexLUT descriptor_index_lut; // TODO - remove with LUT send into instrumentation of shader
+    DescriptorSetType ds_type; // unused
+    DescriptorIndexPostProcess descriptor_index_post_process;
 };
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer BindlessStateBuffer {
@@ -65,14 +65,14 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor
 } bindless_state_buffer;
 
 void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index) {
-    DescriptorLayoutData layout_data = bindless_state_buffer.desc_sets[desc_set].layout_data;
-    uvec2 binding_state = layout_data.data[binding];
+    DescriptorIndexLUT descriptor_index_lut = bindless_state_buffer.desc_sets[desc_set].descriptor_index_lut;
+    uvec2 binding_state = descriptor_index_lut.data[binding];
     uint state_index = binding_state.y + desc_index;
 
-    DescriptorSetOutData out_data = bindless_state_buffer.desc_sets[desc_set].out_data;
+    DescriptorIndexPostProcess descriptor_index_post_process = bindless_state_buffer.desc_sets[desc_set].descriptor_index_post_process;
     // The index has been accessed, write out for post processing
     //
     // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
-    // ex - desc_sets[0].out_data == desc_sets[1].out_data
-    out_data.data[state_index] = kDescriptorSetWrittenMask | desc_set;
+    // ex - desc_sets[0].descriptor_index_post_process == desc_sets[1].descriptor_index_post_process
+    descriptor_index_post_process.data[state_index] = kDescriptorSetWrittenMask | desc_set;
 }

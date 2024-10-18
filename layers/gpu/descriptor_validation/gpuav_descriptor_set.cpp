@@ -47,7 +47,7 @@ DescriptorSet::~DescriptorSet() {
     }
 }
 
-VkDeviceAddress DescriptorSet::GetLayoutAddress(Validator &gpuav, const Location &loc) {
+VkDeviceAddress DescriptorSet::GetIndexLUTAddress(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
     if (layout_block_.Address() != 0) {
         return layout_block_.Address();
@@ -220,7 +220,7 @@ void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::Descripto
     data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
 }
 
-VkDeviceAddress DescriptorSet::GetInputAddress(Validator &gpuav, const Location &loc) {
+VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
     const uint32_t current_version = current_version_.load();
 
