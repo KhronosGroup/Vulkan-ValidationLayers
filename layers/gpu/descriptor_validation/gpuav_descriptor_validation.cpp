@@ -38,12 +38,12 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
     }
 
     // Catch if pipeline is bound before any descriptor sets
-    if (cb_state.di_input_buffer_list.empty()) {
+    if (cb_state.descriptor_command_bindings.empty()) {
         return;
     }
 
     // Update the last vkCmdBindDescriptorSet with the new pipeline
-    auto &descriptor_set_buffers = cb_state.di_input_buffer_list.back().descriptor_set_buffers;
+    auto &bound_descriptor_sets = cb_state.descriptor_command_bindings.back().bound_descriptor_sets;
 
     // If the user calls vkCmdBindDescriptorSet::firstSet to a non-zero value, these indexes don't line up
     size_t update_index = 0;
@@ -51,11 +51,11 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
         if (last_bound.per_set[i].bound_descriptor_set) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
             if (slot != last_bound.pipeline_state->active_slots.end()) {
-                if (update_index >= descriptor_set_buffers.size()) {
+                if (update_index >= bound_descriptor_sets.size()) {
                     // TODO - Hit crash running with Dota2, this shouldn't happen, need to look into
                     continue;
                 }
-                descriptor_set_buffers[update_index++].binding_req_map = slot->second;
+                bound_descriptor_sets[update_index++].binding_req_map = slot->second;
             }
         }
     }
@@ -86,71 +86,73 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    DescBindingInfo di_buffers(gpuav);
+    DescriptorCommandBinding descriptor_command_binding(gpuav);
 
     // Allocate buffer for device addresses of the input buffer for each descriptor set.  This is the buffer written to each
     // draw's descriptor set.
-    di_buffers.bindless_state.CreateBuffer(loc, &buffer_info, &alloc_info);
+    descriptor_command_binding.ssbo_block.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    auto bindless_state = (glsl::DescriptorStateSSBO *)di_buffers.bindless_state.MapMemory(loc);
+    auto ssbo_memory = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
 
-    memset(bindless_state, 0, static_cast<size_t>(buffer_info.size));
-    cb_state.current_bindless_buffer = di_buffers.bindless_state.Buffer();
+    memset(ssbo_memory, 0, static_cast<size_t>(buffer_info.size));
+    cb_state.current_bindless_buffer = descriptor_command_binding.ssbo_block.Buffer();
 
-    bindless_state->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
-    di_buffers.descriptor_set_buffers.reserve(di_buffers.descriptor_set_buffers.size() + last_bound.per_set.size());
+    ssbo_memory->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
+    descriptor_command_binding.bound_descriptor_sets.reserve(descriptor_command_binding.bound_descriptor_sets.size() +
+                                                             last_bound.per_set.size());
     for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
         const auto &last_bound_set = last_bound.per_set[i];
         if (!last_bound_set.bound_descriptor_set) {
             continue;
         }
 
-        DescSetState desc_set_state;
-        desc_set_state.state = std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
+        DescriptorCommandBountSet bound_descriptor_set;
+        bound_descriptor_set.state = std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
+        DescriptorSet &ds_state = *bound_descriptor_set.state;
         // The pipeline might not have been bound yet, so will need to update binding_req_map later
         if (last_bound.pipeline_state) {
             auto slot = last_bound.pipeline_state->active_slots.find(i);
             if (slot != last_bound.pipeline_state->active_slots.end()) {
-                desc_set_state.binding_req_map = slot->second;
+                bound_descriptor_set.binding_req_map = slot->second;
             }
         }
 
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
-        if (!desc_set_state.state->IsUpdateAfterBind()) {
-            bindless_state->desc_sets[i].descriptor_index_lut = desc_set_state.state->GetIndexLUTAddress(gpuav, loc);
+        if (!ds_state.IsUpdateAfterBind()) {
+            ssbo_memory->desc_sets[i].descriptor_index_lut = ds_state.GetIndexLUTAddress(gpuav, loc);
 
             if (need_descriptor_checks) {
-                bindless_state->desc_sets[i].ds_type = desc_set_state.state->GetTypeAddress(gpuav, loc);
+                ssbo_memory->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
             }
             if (need_post_processing) {
-                bindless_state->desc_sets[i].descriptor_index_post_process = desc_set_state.state->GetPostProcessBuffer(gpuav, loc);
+                ssbo_memory->desc_sets[i].descriptor_index_post_process = ds_state.GetPostProcessBuffer(gpuav, loc);
             }
         }
-        di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
+        descriptor_command_binding.bound_descriptor_sets.emplace_back(std::move(bound_descriptor_set));
     }
-    cb_state.di_input_buffer_list.emplace_back(std::move(di_buffers));
+    cb_state.descriptor_command_bindings.emplace_back(std::move(descriptor_command_binding));
 
-    di_buffers.bindless_state.UnmapMemory();
+    descriptor_command_binding.ssbo_block.UnmapMemory();
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
 [[nodiscard]] bool UpdateDescriptorStateSSBO(Validator &gpuav, CommandBuffer &cb_state, const Location &loc) {
     const bool need_post_processing = gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index;
     const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor;
-    for (auto &cmd_info : cb_state.di_input_buffer_list) {
-        auto bindless_state = (glsl::DescriptorStateSSBO *)cmd_info.bindless_state.MapMemory(loc);
+    for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {
+        auto ssbo_memory = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
 
-        for (size_t i = 0; i < cmd_info.descriptor_set_buffers.size(); i++) {
-            auto &set_buffer = cmd_info.descriptor_set_buffers[i];
-            bindless_state->desc_sets[i].descriptor_index_lut = set_buffer.state->GetIndexLUTAddress(gpuav, loc);
+        for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
+            DescriptorSet &ds_state = *descriptor_command_binding.bound_descriptor_sets[i].state;
+            ssbo_memory->desc_sets[i].descriptor_index_lut = ds_state.GetIndexLUTAddress(gpuav, loc);
             if (need_descriptor_checks) {
-                bindless_state->desc_sets[i].ds_type = set_buffer.state->GetTypeAddress(gpuav, loc);
+                ssbo_memory->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
             }
             if (need_post_processing) {
-                bindless_state->desc_sets[i].descriptor_index_post_process = set_buffer.state->GetPostProcessBuffer(gpuav, loc);
+                ssbo_memory->desc_sets[i].descriptor_index_post_process = ds_state.GetPostProcessBuffer(gpuav, loc);
             }
         }
-        cmd_info.bindless_state.UnmapMemory();
+        descriptor_command_binding.ssbo_block.UnmapMemory();
     }
     return true;
 }
@@ -162,14 +164,14 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid
     // checking them multiple times.
     vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
-    for (auto [di_info_i, di_info] : vvl::enumerate(di_input_buffer_list)) {
+    for (auto [command_binding_index, descriptor_command_binding] : vvl::enumerate(descriptor_command_bindings)) {
         // TODO - Currently we don't know the actual call that triggered this, but without just giving "vkCmdDraw" we will get
         // VUID_Undefined
         Location draw_loc(vvl::Func::vkCmdDraw);
 
         // For each descriptor set ...
-        for (uint32_t i = 0; i < di_info->descriptor_set_buffers.size(); i++) {
-            auto &set = di_info->descriptor_set_buffers[i];
+        for (uint32_t i = 0; i < descriptor_command_binding->bound_descriptor_sets.size(); i++) {
+            auto &set = descriptor_command_binding->bound_descriptor_sets[i];
             if (validated_desc_sets.count(set.state->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
@@ -178,8 +180,9 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             validated_desc_sets.emplace(set.state->VkHandle());
             if (!set.state->HasPostProcessBuffer()) {
                 std::stringstream error;
-                error << "In CommandBuffer::ValidateBindlessDescriptorSets, di_info[" << di_info_i << "].descriptor_set_buffers["
-                      << i << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
+                error << "In CommandBuffer::ValidateBindlessDescriptorSets, descriptor_command_binding[" << command_binding_index
+                      << "].bound_descriptor_sets[" << i
+                      << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
                 auto gpuav = static_cast<Validator *>(&dev_data);
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
