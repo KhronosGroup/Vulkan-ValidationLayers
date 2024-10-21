@@ -53,6 +53,7 @@ namespace glsl {
 // Not all GPU-AV code uses each, but group together for ease of managing the memory
 struct DescriptorSetRecord {
     VkDeviceAddress descriptor_index_lut;
+    // The type information will change with UpdateAfterBind so will need to update this before submitting the to the queue
     VkDeviceAddress ds_type;
     VkDeviceAddress descriptor_index_post_process;
 };
