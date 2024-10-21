@@ -51,7 +51,7 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
         if (!export_info) {
             skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
                              error_obj.location.dot(Field::pGetFdInfo).dot(Field::memory),
-                             "pNext chain does not include a VkExportMemoryAllocateInfo structure.");
+                             "pNext chain does not contain an instance of VkExportMemoryAllocateInfo.");
         } else if ((export_info->handleTypes & pGetFdInfo->handleType) == 0) {
             skip |= LogError("VUID-VkMemoryGetFdInfoKHR-handleType-00671", pGetFdInfo->memory,
                              error_obj.location.dot(Field::pGetFdInfo).dot(Field::memory),
@@ -195,7 +195,7 @@ bool CoreChecks::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const V
         if (!export_info) {
             skip |= LogError("VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662", pGetWin32HandleInfo->memory,
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::memory),
-                             "pNext chain does not include a VkExportMemoryAllocateInfo structure.");
+                             "pNext chain does not contain an instance of VkExportMemoryAllocateInfo.");
         } else if ((export_info->handleTypes & pGetWin32HandleInfo->handleType) == 0) {
             skip |= LogError("VUID-VkMemoryGetWin32HandleInfoKHR-handleType-00662", pGetWin32HandleInfo->memory,
                              error_obj.location.dot(Field::pGetWin32HandleInfo).dot(Field::memory),

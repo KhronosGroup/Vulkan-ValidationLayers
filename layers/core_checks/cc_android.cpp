@@ -393,8 +393,9 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
                                      "is %s but allocationSize is 0.", FormatHandle(mem_ded_alloc_info->buffer).c_str());
                 }
             } else if (0 == allocate_info.allocationSize) {
-                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-07900", device, allocate_info_loc,
-                                 "pNext chain does not include VkMemoryDedicatedAllocateInfo, but allocationSize is 0.");
+                skip |=
+                    LogError("VUID-VkMemoryAllocateInfo-pNext-07900", device, allocate_info_loc,
+                             "pNext chain does not contain an instance of VkMemoryDedicatedAllocateInfo, but allocationSize is 0.");
             }
         }
     }

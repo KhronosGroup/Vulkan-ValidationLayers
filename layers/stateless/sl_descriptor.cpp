@@ -1089,7 +1089,7 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
             }
             if (!vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext)) {
                 skip |= LogError("VUID-VkQueryPoolCreateInfo-queryType-03222", device, create_info_loc.dot(Field::queryType),
-                                 "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR, but the pNext chain does not contain in instance of "
+                                 "is VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR, but the pNext chain does not contain an instance of "
                                  "VkQueryPoolPerformanceCreateInfoKHR.");
             }
             break;

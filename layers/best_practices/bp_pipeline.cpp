@@ -124,8 +124,9 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
         (!graphics_lib_info ||
          (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
                                       VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0)) {
-        skip |= LogWarning("BestPractices-Pipeline-NoRendering", device, create_info_loc,
-                           "renderPass is VK_NULL_HANDLE and pNext chain does not contain VkPipelineRenderingCreateInfoKHR.");
+        skip |= LogWarning(
+            "BestPractices-Pipeline-NoRendering", device, create_info_loc,
+            "renderPass is VK_NULL_HANDLE and pNext chain does not contain an instance of VkPipelineRenderingCreateInfoKHR.");
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
