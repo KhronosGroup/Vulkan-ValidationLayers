@@ -36,15 +36,14 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *
                              const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                              ValidationStateTracker *state_data)
     : vvl::DescriptorSet(handle, pool, layout, variable_count, state_data),
+      post_process_block_(*static_cast<Validator *>(state_data)),
       layout_block_(*static_cast<Validator *>(state_data)),
       input_block_(*static_cast<Validator *>(state_data)) {}
 
 DescriptorSet::~DescriptorSet() {
+    post_process_block_.DestroyBuffer();
     layout_block_.DestroyBuffer();
     input_block_.DestroyBuffer();
-    if (post_process_block_) {
-        post_process_block_->DestroyBuffer();
-    }
 }
 
 VkDeviceAddress DescriptorSet::GetIndexLUTAddress(Validator &gpuav, const Location &loc) {
@@ -305,12 +304,11 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     return input_block_.Address();
 }
 
-std::shared_ptr<DeviceMemoryBlock> DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
+VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    if (post_process_block_) {
-        return post_process_block_;
+    if (post_process_block_.Address() != 0) {
+        return post_process_block_.Address();
     }
-    post_process_block_ = std::make_shared<DeviceMemoryBlock>(gpuav);
 
     uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
     for (const auto &binding : *this) {
@@ -324,7 +322,7 @@ std::shared_ptr<DeviceMemoryBlock> DescriptorSet::GetPostProcessBuffer(Validator
     }
     if (descriptor_count == 0) {
         // no descriptors case, return a dummy state object
-        return post_process_block_;
+        return post_process_block_.Address();
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -335,16 +333,16 @@ std::shared_ptr<DeviceMemoryBlock> DescriptorSet::GetPostProcessBuffer(Validator
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    post_process_block_->CreateBuffer(loc, &buffer_info, &alloc_info);
+    post_process_block_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    auto data = (uint32_t *)post_process_block_->MapMemory(loc);
+    auto data = (uint32_t *)post_process_block_.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
-    post_process_block_->FlushAllocation(loc);
-    post_process_block_->UnmapMemory();
+    post_process_block_.FlushAllocation(loc);
+    post_process_block_.UnmapMemory();
 
-    return post_process_block_;
+    return post_process_block_.Address();
 }
 
 void DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {

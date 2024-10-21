@@ -120,12 +120,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         }
         if (!desc_set_state.state->IsUpdateAfterBind()) {
             bindless_state->desc_sets[i].ds_type = desc_set_state.state->GetTypeAddress(gpuav, loc);
-            desc_set_state.post_process_buffer = desc_set_state.state->GetPostProcessBuffer(gpuav, loc);
-            if (!desc_set_state.post_process_buffer) {
-                di_buffers.bindless_state.UnmapMemory();
-                return;
-            }
-            bindless_state->desc_sets[i].descriptor_index_post_process = desc_set_state.post_process_buffer->Address();
+            bindless_state->desc_sets[i].descriptor_index_post_process = desc_set_state.state->GetPostProcessBuffer(gpuav, loc);
         }
         di_buffers.descriptor_set_buffers.emplace_back(std::move(desc_set_state));
     }
@@ -143,14 +138,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             auto &set_buffer = cmd_info.descriptor_set_buffers[i];
             bindless_state->desc_sets[i].descriptor_index_lut = set_buffer.state->GetIndexLUTAddress(gpuav, loc);
             bindless_state->desc_sets[i].ds_type = set_buffer.state->GetTypeAddress(gpuav, loc);
-            if (!set_buffer.post_process_buffer) {
-                set_buffer.post_process_buffer = set_buffer.state->GetPostProcessBuffer(gpuav, loc);
-                if (!set_buffer.post_process_buffer) {
-                    cmd_info.bindless_state.UnmapMemory();
-                    return false;
-                }
-                bindless_state->desc_sets[i].descriptor_index_post_process = set_buffer.post_process_buffer->Address();
-            }
+            bindless_state->desc_sets[i].descriptor_index_post_process = set_buffer.state->GetPostProcessBuffer(gpuav, loc);
         }
         cmd_info.bindless_state.UnmapMemory();
     }
@@ -208,10 +196,10 @@ static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location 
                 continue;
             }
             validated_desc_sets.emplace(set.state->VkHandle());
-            if (!set.post_process_buffer) {
+            if (!set.state->HasPostProcessBuffer()) {
                 std::stringstream error;
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, di_info[" << di_info_i << "].descriptor_set_buffers["
-                      << i << "].post_process_buffer was null. This should not happen. GPU-AV is in a bad state, aborting.";
+                      << i << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
                 auto gpuav = static_cast<Validator *>(&dev_data);
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
@@ -219,7 +207,7 @@ static std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location 
 
             vvl::DescriptorValidator context(state_, *this, *set.state, i, VK_NULL_HANDLE /*framebuffer*/, draw_loc);
             const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
-            auto used_descs = UsedDescriptors(loc, set.state->LayoutBlock(), *set.post_process_buffer, shader_set);
+            auto used_descs = UsedDescriptors(loc, set.state->LayoutBlock(), set.state->post_process_block_, shader_set);
             // For each used binding ...
             for (const auto &u : used_descs) {
                 auto iter = set.binding_req_map.find(u.first);
