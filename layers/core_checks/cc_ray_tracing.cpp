@@ -2035,7 +2035,6 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
              [table_loc, &binding_table]() {
                  return "The following buffers have a size inferior to " + table_loc.Fields() + "->stride (" +
                         std::to_string(binding_table.stride) + "):";
-                 ;
              }},
         }}};
 

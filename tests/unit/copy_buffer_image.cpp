@@ -1474,7 +1474,6 @@ TEST_F(NegativeCopyBufferImage, ImageSrcSizeExceeded) {
     copy_region.extent = {32, 32, 8};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    ;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 

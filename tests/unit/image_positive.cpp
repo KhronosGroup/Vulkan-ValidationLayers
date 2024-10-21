@@ -463,7 +463,7 @@ TEST_F(PositiveImage, ImagelessLayoutTracking) {
     vk::BindImageMemory2(device(), 1, &bind_info);
 
     const std::vector<VkImage> swapchain_images = m_swapchain.GetImages();
-    
+
     vkt::Semaphore image_acquired(*m_device);
     const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
 
@@ -1045,7 +1045,6 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
-    ;
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
     if (!FormatFeaturesAreSupported(Gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,

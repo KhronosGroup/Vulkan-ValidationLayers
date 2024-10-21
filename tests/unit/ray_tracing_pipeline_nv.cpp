@@ -40,7 +40,6 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-    ;
     stage_create_info.module = rgen_shader.handle();
     stage_create_info.pName = "main";
     VkRayTracingShaderGroupCreateInfoNV group_create_info = vku::InitStructHelper();
