@@ -839,7 +839,8 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
                 skip |= LogError(
                     "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-02313", physicalDevice, format_info_loc,
                     "tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and flags contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT "
-                    "bit, but the pNext chain does not include VkImageFormatListCreateInfo with non-zero viewFormatCount.");
+                    "bit, but the pNext chain does not contain an instance of VkImageFormatListCreateInfo with non-zero "
+                    "viewFormatCount.");
             }
         }
     }

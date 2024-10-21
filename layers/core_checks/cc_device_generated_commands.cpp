@@ -405,10 +405,11 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
     auto* shader_info = vku::FindStructInPNextChain<VkGeneratedCommandsShaderInfoEXT>(generated_commands_info.pNext);
     if (generated_commands_info.indirectExecutionSet == VK_NULL_HANDLE) {
         if (!pipeline_info && !shader_info) {
-            skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectExecutionSet-11080", cb_state.Handle(),
-                             info_loc.dot(Field::indirectExecutionSet),
-                             "is VK_NULL_HANDLE but the pNext element is missing a VkGeneratedCommandsPipelineInfoEXT or "
-                             "VkGeneratedCommandsShaderInfoEXT.");
+            skip |= LogError(
+                "VUID-VkGeneratedCommandsInfoEXT-indirectExecutionSet-11080", cb_state.Handle(),
+                info_loc.dot(Field::indirectExecutionSet),
+                "is VK_NULL_HANDLE but the pNext chain does not contain an instance of VkGeneratedCommandsPipelineInfoEXT or "
+                "VkGeneratedCommandsShaderInfoEXT.");
             valid_dispatch = false;
         } else if (indirect_commands_layout.has_execution_set_token) {
             skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11083", indirect_commands_layout.Handle(),
@@ -762,10 +763,11 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
         auto* pipeline_info = vku::FindStructInPNextChain<VkGeneratedCommandsPipelineInfoEXT>(pInfo->pNext);
         auto* shader_info = vku::FindStructInPNextChain<VkGeneratedCommandsShaderInfoEXT>(pInfo->pNext);
         if (!pipeline_info && !shader_info) {
-            skip |= LogError("VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-indirectExecutionSet-11012",
-                             indirect_commands_layout->Handle(), info_loc.dot(Field::indirectExecutionSet),
-                             "is VK_NULL_HANDLE but the pNext element is missing a VkGeneratedCommandsPipelineInfoEXT or "
-                             "VkGeneratedCommandsShaderInfoEXT.");
+            skip |= LogError(
+                "VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-indirectExecutionSet-11012", indirect_commands_layout->Handle(),
+                info_loc.dot(Field::indirectExecutionSet),
+                "is VK_NULL_HANDLE but the pNext chain does not contain an instance of VkGeneratedCommandsPipelineInfoEXT or "
+                "VkGeneratedCommandsShaderInfoEXT.");
         }
     } else {
         if (!indirect_commands_layout->has_execution_set_token) {

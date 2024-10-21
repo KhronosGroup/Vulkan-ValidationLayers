@@ -1029,7 +1029,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    // If the VkSubmitInfo::pNext chain does not include this structure, the batch is unprotected.
+    // If the VkSubmitInfo::pNext chain does not contain an instance of this structure, the batch is unprotected.
     submit_info.pNext = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pNext-04120");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
