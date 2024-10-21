@@ -9669,7 +9669,6 @@ TEST_F(NegativeVideo, DecodeInlineQueryUnavailable) {
 
     // Use custom begin info because the default uses VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    ;
 
     cb.begin(&begin_info);
     cb.BeginVideoCoding(context.Begin());
@@ -9943,7 +9942,6 @@ TEST_F(NegativeVideo, EncodeInlineQueryUnavailable) {
 
     // Use custom begin info because the default uses VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
-    ;
 
     cb.begin(&begin_info);
     cb.BeginVideoCoding(context.Begin());
