@@ -51,7 +51,7 @@ static std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(con
         return host_pointer_import->handleType;
     }
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    // AHB Import doesn't have handle in the pNext struct
+    // AHB Import doesn't have handle in the pNext chain
     // It should be assumed that all imported AHB can only have the same, single handleType
     auto ahb_import = vku::FindStructInPNextChain<VkImportAndroidHardwareBufferInfoANDROID>(p_alloc_info->pNext);
     if ((ahb_import) && (ahb_import->buffer != nullptr)) {

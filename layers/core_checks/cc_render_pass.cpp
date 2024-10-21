@@ -2468,7 +2468,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCreateInfo, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
+    // If the pNext chain in VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
         const Location subpass_loc = error_obj.location.dot(Field::pSubpasses, i);

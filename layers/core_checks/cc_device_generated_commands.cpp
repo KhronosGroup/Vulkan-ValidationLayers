@@ -168,7 +168,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                 } else if (!dynamic_layout_create) {
                     skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11102", device, token_loc.dot(Field::type),
                                      "is %s, pipelineLayout is VK_NULL_HANDLE, but no "
-                                     "there is no VkPipelineLayoutCreateInfo structure attached to the pNext.",
+                                     "there is no VkPipelineLayoutCreateInfo structure attached to the pNext chain.",
                                      string_VkIndirectCommandsTokenTypeEXT(token.type));
                 }
             }
@@ -407,7 +407,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         if (!pipeline_info && !shader_info) {
             skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectExecutionSet-11080", cb_state.Handle(),
                              info_loc.dot(Field::indirectExecutionSet),
-                             "is VK_NULL_HANDLE but the pNext is missing a VkGeneratedCommandsPipelineInfoEXT or "
+                             "is VK_NULL_HANDLE but the pNext element is missing a VkGeneratedCommandsPipelineInfoEXT or "
                              "VkGeneratedCommandsShaderInfoEXT.");
             valid_dispatch = false;
         } else if (indirect_commands_layout.has_execution_set_token) {
@@ -764,7 +764,7 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
         if (!pipeline_info && !shader_info) {
             skip |= LogError("VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-indirectExecutionSet-11012",
                              indirect_commands_layout->Handle(), info_loc.dot(Field::indirectExecutionSet),
-                             "is VK_NULL_HANDLE but the pNext is missing a VkGeneratedCommandsPipelineInfoEXT or "
+                             "is VK_NULL_HANDLE but the pNext element is missing a VkGeneratedCommandsPipelineInfoEXT or "
                              "VkGeneratedCommandsShaderInfoEXT.");
         }
     } else {

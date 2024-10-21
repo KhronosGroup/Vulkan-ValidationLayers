@@ -95,7 +95,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
     if ((create_info.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) {
         if (format_list_info == nullptr) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
-                             "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext does not contain "
+                             "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain does not contain "
                              "VkImageFormatListCreateInfo.");
         } else if (format_list_info->viewFormatCount == 0) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
