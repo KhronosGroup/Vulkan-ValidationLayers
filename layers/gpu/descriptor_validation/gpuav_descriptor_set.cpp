@@ -345,7 +345,10 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     return post_process_block_.Address();
 }
 
+// cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
+// where accessed
 std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const Location &loc, uint32_t shader_set) const {
+    // < binding , [indexes that were accessed] >
     std::map<uint32_t, std::vector<uint32_t>> used_descriptors;
     if (post_process_block_.Destroyed()) {
         return used_descriptors;
