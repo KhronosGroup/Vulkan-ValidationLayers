@@ -51,10 +51,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState {
-    // Maps to DescriptorHeap and used to detect if descriptor is still valid on CPU
-    uint data[];
-};
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedStatus; // unused
 
 struct DescriptorSetRecord {
     DescriptorIndexLUT descriptor_index_lut;
@@ -62,8 +59,8 @@ struct DescriptorSetRecord {
     uvec2 descriptor_index_post_process; // unused BDA pointer
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer BindlessStateBuffer {
-    GlobalState global_state;
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
+    InitializedStatus initialized_status; // unused
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 

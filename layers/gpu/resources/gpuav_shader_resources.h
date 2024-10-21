@@ -44,14 +44,17 @@ struct DescBindingInfo {
 // These match the Structures found in the instrumentation GLSL logic
 namespace glsl {
 
+// Every descriptor set has various BDA pointers to data from the CPU
+// Not all GPU-AV code uses each, but group together for ease of managing the memory
 struct DescriptorSetRecord {
     VkDeviceAddress descriptor_index_lut;
     VkDeviceAddress ds_type;
     VkDeviceAddress descriptor_index_post_process;
 };
 
-struct BindlessStateBuffer {
-    VkDeviceAddress global_state;
+// Shared among all Descriptor Indexing GPU-AV checks (so we onlyl have to create a single buffer)
+struct DescriptorStateSSBO {
+    VkDeviceAddress initialized_status;  // Used to know if descriptors are initialized or not
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 };
 

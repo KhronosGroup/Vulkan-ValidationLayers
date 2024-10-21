@@ -30,10 +30,6 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-// unused - TODO remove when LUT is removed
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType { uvec2 data[]; };
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState { uint data[]; };
-
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexLUT {
     // BindingLayout[0]
     uint num_bindings;
@@ -55,12 +51,12 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
 
 struct DescriptorSetRecord {
     DescriptorIndexLUT descriptor_index_lut; // TODO - remove with LUT send into instrumentation of shader
-    DescriptorSetType ds_type; // unused
+    uvec2 ds_type; // unused BDA pointer
     DescriptorIndexPostProcess descriptor_index_post_process;
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer BindlessStateBuffer {
-    GlobalState global_state; // unused
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
+    uvec2 initialized_status; // unused BDA pointer
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
