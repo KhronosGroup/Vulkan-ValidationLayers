@@ -512,7 +512,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually
     // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
     bool gpuav_success = false;
-    if (!skip) {
+    if (!skip && gpuav->gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
         gpuav_success = ValidateBindlessDescriptorSets(loc);
     }
 

@@ -345,6 +345,35 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     return post_process_block_.Address();
 }
 
+std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const Location &loc, uint32_t shader_set) const {
+    std::map<uint32_t, std::vector<uint32_t>> used_descriptors;
+    if (post_process_block_.Destroyed()) {
+        return used_descriptors;
+    }
+
+    auto layout_data = (glsl::BindingLayout *)layout_block_.MapMemory(loc);
+
+    auto data = (uint32_t *)post_process_block_.MapMemory(loc);
+    post_process_block_.InvalidateAllocation(loc);
+
+    uint32_t max_binding = layout_data[0].count;
+    for (uint32_t binding = 0; binding < max_binding; binding++) {
+        uint32_t count = layout_data[binding + 1].count;
+        uint32_t start = layout_data[binding + 1].state_start;
+        for (uint32_t i = 0; i < count; i++) {
+            uint32_t pos = start + i;
+            if (data[pos] == shader_set) {
+                auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
+                map_result.first->second.emplace_back(i);
+            }
+        }
+    }
+
+    post_process_block_.UnmapMemory();
+    layout_block_.UnmapMemory();
+    return used_descriptors;
+}
+
 void DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {
     vvl::DescriptorSet::PerformPushDescriptorsUpdate(write_count, write_descs);
     current_version_++;
