@@ -852,12 +852,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 skip |= LogError(
                     vuid, device, create_info_loc,
                     "Fragment Shader has a valid VkPipelineFragmentShadingRateStateCreateInfoKHR, but Pre Rasterization has "
-                    "no VkPipelineFragmentShadingRateStateCreateInfoKHR in the pNext.");
+                    "no VkPipelineFragmentShadingRateStateCreateInfoKHR in the pNext chain.");
             } else if (!frag_shader_info.shading_rate_state) {
                 skip |= LogError(
                     vuid, device, create_info_loc,
                     "Pre Rasterization has a valid VkPipelineFragmentShadingRateStateCreateInfoKHR, but Fragment Shader has "
-                    "no VkPipelineFragmentShadingRateStateCreateInfoKHR in the pNext.");
+                    "no VkPipelineFragmentShadingRateStateCreateInfoKHR in the pNext chain.");
             } else if (!ComparePipelineFragmentShadingRateStateCreateInfo(*frag_shader_info.shading_rate_state,
                                                                           *pre_raster_info.shading_rate_state)) {
                 skip |= LogError(vuid, device, create_info_loc,
