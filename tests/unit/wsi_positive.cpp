@@ -1742,3 +1742,31 @@ TEST_F(PositiveWsi, ReleaseSwapchainImages) {
 
     vk::DeviceWaitIdle(device());
 }
+
+TEST_F(PositiveWsi, ReleaseAndAcquireSwapchainImages) {
+    TEST_DESCRIPTION("Test vkReleaseSwapchainImagesEXT");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    vkt::Fence fence(*m_device);
+
+    for (uint32_t i = 0; i < 64; ++i) {
+        uint32_t image_index = m_swapchain.AcquireNextImage(fence, vvl::kU64Max);
+        vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+        vk::ResetFences(device(), 1, &fence.handle());
+
+        VkReleaseSwapchainImagesInfoEXT releaseInfo = vku::InitStructHelper();
+        releaseInfo.swapchain = m_swapchain.handle();
+        releaseInfo.imageIndexCount = 1u;
+        releaseInfo.pImageIndices = &image_index;
+        vk::ReleaseSwapchainImagesEXT(device(), &releaseInfo);
+    }
+
+    vk::DeviceWaitIdle(device());
+}
