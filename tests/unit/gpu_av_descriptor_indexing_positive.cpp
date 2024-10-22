@@ -1726,3 +1726,366 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSet) {
+    TEST_DESCRIPTION("Bind various valid descriptor sets and do dispatch on each of them");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    uint32_t *data = (uint32_t *)input_buffer.Memory().Map();
+    data[0] = 1;  // will be valid for both shaders
+    input_buffer.Memory().Unmap();
+
+    char const *cs_source_1 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform Input { uint index; };
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        void main() {
+           vec4 result = texture(tex[index], vec2(0, 0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_1(*this);
+    pipe_1.cs_ = std::make_unique<VkShaderObj>(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_1.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe_1.CreateComputePipeline();
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    pipe_1.descriptor_set_->WriteDescriptorBufferInfo(0, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe_1.descriptor_set_->WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    pipe_1.descriptor_set_->WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    pipe_1.descriptor_set_->UpdateDescriptorSets();
+
+    char const *cs_source_2 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 1) uniform Input { uint index; };
+        layout(set = 0, binding = 2) buffer StorageBuffer { uint data; } storage_buffers[];
+        void main() {
+            storage_buffers[index].data = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_2(*this);
+    pipe_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_2.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe_2.CreateComputePipeline();
+    pipe_2.descriptor_set_->WriteDescriptorBufferInfo(1, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe_2.descriptor_set_->WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, VK_WHOLE_SIZE,
+                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    pipe_2.descriptor_set_->WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, VK_WHOLE_SIZE,
+                                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipe_2.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_1.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_1.pipeline_layout_.handle(), 0, 1,
+                              &pipe_1.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_2.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_2.pipeline_layout_.handle(), 0, 1,
+                              &pipe_2.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsDifferentSet) {
+    TEST_DESCRIPTION("Bind various valid descriptor sets and do dispatch on each of them");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    uint32_t *data = (uint32_t *)input_buffer.Memory().Map();
+    data[0] = 1;  // will be valid for both shaders
+    input_buffer.Memory().Unmap();
+
+    char const *cs_source_1 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform Input { uint index; };
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        void main() {
+           vec4 result = texture(tex[index], vec2(0, 0));
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_1(*this);
+    pipe_1.cs_ = std::make_unique<VkShaderObj>(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_1.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe_1.CreateComputePipeline();
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    pipe_1.descriptor_set_->WriteDescriptorBufferInfo(0, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe_1.descriptor_set_->WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    pipe_1.descriptor_set_->WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    pipe_1.descriptor_set_->UpdateDescriptorSets();
+
+    char const *cs_source_2 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 1, binding = 1) uniform Input { uint index; };
+        layout(set = 1, binding = 2) buffer StorageBuffer { uint data; } storage_buffers[];
+        void main() {
+            storage_buffers[index].data = 0;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set_2(m_device, {
+                                                       {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                       {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                   });
+    const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set_2.layout_, &descriptor_set_2.layout_});
+
+    CreateComputePipelineHelper pipe_2(*this);
+    pipe_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_2.cp_ci_.layout = pipeline_layout_2.handle();
+    pipe_2.CreateComputePipeline();
+    descriptor_set_2.WriteDescriptorBufferInfo(1, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set_2.WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set_2.WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set_2.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_1.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_1.pipeline_layout_.handle(), 0, 1,
+                              &pipe_1.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_2.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 1, 1,
+                              &descriptor_set_2.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind) {
+    TEST_DESCRIPTION("Bind various valid descriptor sets and do dispatch on each of them with UpdateAfterBind");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingUniformBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    uint32_t *data = (uint32_t *)input_buffer.Memory().Map();
+    data[0] = 1;  // will be valid for both shaders
+    input_buffer.Memory().Unmap();
+
+    VkDescriptorBindingFlags ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+                                                    VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 2;
+    flags_create_info.pBindingFlags = ds_binding_flags;
+
+    char const *cs_source_1 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform Input { uint index; };
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        void main() {
+           vec4 result = texture(tex[index], vec2(0, 0));
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set_1(m_device,
+                                         {
+                                             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                         },
+                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
+                                         VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, {&descriptor_set_1.layout_});
+
+    CreateComputePipelineHelper pipe_1(*this);
+    pipe_1.cs_ = std::make_unique<VkShaderObj>(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_1.cp_ci_.layout = pipeline_layout_1.handle();
+    pipe_1.CreateComputePipeline();
+
+    char const *cs_source_2 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 1) uniform Input { uint index; };
+        layout(set = 0, binding = 2) buffer StorageBuffer { uint data; } storage_buffers[];
+        void main() {
+            storage_buffers[index].data = 0;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set_2(m_device,
+                                         {
+                                             {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                             {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                         },
+                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
+                                         VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set_2.layout_});
+
+    CreateComputePipelineHelper pipe_2(*this);
+    pipe_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_2.cp_ci_.layout = pipeline_layout_2.handle();
+    pipe_2.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_1.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_1.handle(), 0, 1,
+                              &descriptor_set_1.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_2.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 0, 1,
+                              &descriptor_set_2.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set_1.WriteDescriptorBufferInfo(0, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set_1.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set_1.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set_1.UpdateDescriptorSets();
+
+    descriptor_set_2.WriteDescriptorBufferInfo(1, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set_2.WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set_2.WriteDescriptorBufferInfo(2, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set_2.UpdateDescriptorSets();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfterBind) {
+    TEST_DESCRIPTION("Bind various valid descriptor sets and do dispatch on each of them with UpdateAfterBind");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingUniformBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    uint32_t *data = (uint32_t *)input_buffer.Memory().Map();
+    data[0] = 1;  // will be valid for both shaders
+    input_buffer.Memory().Unmap();
+
+    VkDescriptorBindingFlags ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+                                                    VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 2;
+    flags_create_info.pBindingFlags = ds_binding_flags;
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform Input { uint index; };
+        layout(set = 0, binding = 1) uniform sampler2D tex[];
+        void main() {
+           vec4 result = texture(tex[index], vec2(0, 0));
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
+                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    // same, but never will be updated
+    OneOffDescriptorSet descriptor_set_unused(m_device,
+                                              {
+                                                  {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                              },
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
+                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout_bad_1(*m_device, {&descriptor_set_unused.layout_});
+    // use vaild set, but put at set == 1 so doesn't match shader
+    const vkt::PipelineLayout pipeline_layout_bad_2(*m_device, {&descriptor_set_unused.layout_, &descriptor_set.layout_});
+    const VkDescriptorSet bad_sets[2] = {descriptor_set_unused.set_, descriptor_set.set_};
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_1.handle(), 0, 1,
+                              &bad_sets[1], 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_2.handle(), 0, 2,
+                              bad_sets, 0, nullptr);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_2.handle(), 0, 1,
+                              &bad_sets[0], 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_1.handle(), 0, 1,
+                              &bad_sets[1], 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_2.handle(), 0, 2,
+                              bad_sets, 0, nullptr);
+
+    // bound valid and dispatch
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_1.handle(), 0, 1,
+                              &bad_sets[1], 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_bad_2.handle(), 0, 2,
+                              bad_sets, 0, nullptr);
+    m_command_buffer.End();
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    descriptor_set.WriteDescriptorBufferInfo(0, input_buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}

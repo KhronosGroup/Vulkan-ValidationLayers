@@ -27,35 +27,40 @@
 
 namespace gpuav {
 
-struct DescSetState {
+// for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
+struct DescriptorCommandBountSet {
     std::shared_ptr<DescriptorSet> state = {};
+    // While the state object will be reused, but if the descriptor are aliased, we get the information from the last bound pipeline
+    // what type the descriptor is
     BindingVariableMap binding_req_map = {};
-    // State that will be used by the GPU-AV shader instrumentation
-    // For update-after-bind, this will be set during queue submission
-    // Otherwise it will be set when the DescriptorSet is bound.
-    std::shared_ptr<DeviceMemoryBlock> post_process_buffer = {};
 };
 
-struct DescBindingInfo {
-    DeviceMemoryBlock bindless_state;
-    // Hold a buffer for each descriptor set
-    // Note: The index here is from vkCmdBindDescriptorSets::firstSet
-    std::vector<DescSetState> descriptor_set_buffers;
+// "binding" here refers to "binding in the command buffer" and not the "binding in a descriptor set"
+struct DescriptorCommandBinding {
+    // The size of the SSBO doesn't change on an UpdateAfterBind so we can allocate it once and update its internals later
+    DeviceMemoryBlock ssbo_block;  // type DescriptorStateSSBO
 
-    DescBindingInfo(Validator &gpuav) : bindless_state(gpuav) {}
+    // Note: The index here is from vkCmdBindDescriptorSets::firstSet
+    std::vector<DescriptorCommandBountSet> bound_descriptor_sets;
+
+    DescriptorCommandBinding(Validator &gpuav) : ssbo_block(gpuav) {}
 };
 
 // These match the Structures found in the instrumentation GLSL logic
 namespace glsl {
 
+// Every descriptor set has various BDA pointers to data from the CPU
+// Not all GPU-AV code uses each, but group together for ease of managing the memory
 struct DescriptorSetRecord {
     VkDeviceAddress descriptor_index_lut;
+    // The type information will change with UpdateAfterBind so will need to update this before submitting the to the queue
     VkDeviceAddress ds_type;
     VkDeviceAddress descriptor_index_post_process;
 };
 
-struct BindlessStateBuffer {
-    VkDeviceAddress global_state;
+// Shared among all Descriptor Indexing GPU-AV checks (so we onlyl have to create a single buffer)
+struct DescriptorStateSSBO {
+    VkDeviceAddress initialized_status;  // Used to know if descriptors are initialized or not
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 };
 

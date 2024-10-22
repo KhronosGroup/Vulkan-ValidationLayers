@@ -35,7 +35,7 @@
 namespace gpuav {
 
 class Validator;
-struct DescBindingInfo;
+struct DescriptorCommandBinding;
 
 struct DebugPrintfBufferInfo {
     DeviceMemoryBlock output_mem_block;
@@ -51,7 +51,7 @@ struct DebugPrintfBufferInfo {
 class CommandBuffer : public vvl::CommandBuffer {
   public:
     // per vkCmdBindDescriptorSet() state
-    std::vector<DescBindingInfo> di_input_buffer_list;
+    std::vector<DescriptorCommandBinding> descriptor_command_bindings;
     VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;

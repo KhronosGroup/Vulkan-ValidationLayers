@@ -51,11 +51,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexPostProcess {
-    uint data[]; // unused
-};
-
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState {
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedStatus {
     // Maps to DescriptorHeap and used to detect if descriptor is still valid on CPU
     uint data[];
 };
@@ -63,11 +59,11 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer GlobalState 
 struct DescriptorSetRecord {
     DescriptorIndexLUT descriptor_index_lut;
     DescriptorSetType ds_type;
-    DescriptorIndexPostProcess descriptor_index_post_process; // unused
+    uvec2 descriptor_index_post_process; // unused BDA pointer
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer BindlessStateBuffer {
-    GlobalState global_state;
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
+    InitializedStatus initialized_status;
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
@@ -103,7 +99,7 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         // check that the resource is still valid
         uint desc_index = desc_id / 32;
         uint desc_bit = 1 << (desc_id & 31);
-        bool is_valid = (bindless_state_buffer.global_state.data[desc_index] & desc_bit) == 0;
+        bool is_valid = (bindless_state_buffer.initialized_status.data[desc_index] & desc_bit) == 0;
         if (is_valid) {
             error = kErrorSubCodeBindlessDescriptorDestroyed;
             break;
@@ -118,7 +114,7 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             // check that the resource is still valid
             desc_index = desc_id / 32;
             desc_bit = 1 << (desc_id & 31);
-            is_valid = (bindless_state_buffer.global_state.data[desc_index] & desc_bit) == 0;
+            is_valid = (bindless_state_buffer.initialized_status.data[desc_index] & desc_bit) == 0;
             if (is_valid) {
                 error = kErrorSubCodeBindlessDescriptorDestroyed;
                 break;

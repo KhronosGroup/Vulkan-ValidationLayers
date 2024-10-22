@@ -30,6 +30,6 @@ void UpdateBoundPipeline(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBi
                          const Location& loc);
 void UpdateBoundDescriptors(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location& loc);
-[[nodiscard]] bool UpdateBindlessStateBuffer(Validator& gpuav, CommandBuffer& cb_state, const Location& loc);
+[[nodiscard]] bool UpdateDescriptorStateSSBO(Validator& gpuav, CommandBuffer& cb_state, const Location& loc);
 }  // namespace descriptor
 }  // namespace gpuav

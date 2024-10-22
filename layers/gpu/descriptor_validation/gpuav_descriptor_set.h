@@ -37,15 +37,18 @@ class DescriptorSet : public vvl::DescriptorSet {
 
     VkDeviceAddress GetIndexLUTAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
-    std::shared_ptr<DeviceMemoryBlock> GetPostProcessBuffer(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
+    bool HasPostProcessBuffer() const { return !post_process_block_.Destroyed(); }
 
-    const DeviceMemoryBlock &LayoutBlock() const { return layout_block_; }
+    std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, uint32_t shader_set) const;
 
   protected:
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
 
   private:
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
+
+    DeviceMemoryBlock post_process_block_;
 
     DeviceMemoryBlock layout_block_;
 
@@ -56,7 +59,6 @@ class DescriptorSet : public vvl::DescriptorSet {
     uint32_t last_used_version_{0};
     DeviceMemoryBlock input_block_;
 
-    std::shared_ptr<DeviceMemoryBlock> post_process_block_;
     mutable std::mutex state_lock_;
 };
 

@@ -377,10 +377,10 @@ void CommandBuffer::ResetCBState() {
     gpu_resources_manager.DestroyResources();
     per_command_error_loggers.clear();
 
-    for (auto &buffer_info : di_input_buffer_list) {
-        buffer_info.bindless_state.DestroyBuffer();
+    for (auto &descriptor_command_binding : descriptor_command_bindings) {
+        descriptor_command_binding.ssbo_block.DestroyBuffer();
     }
-    di_input_buffer_list.clear();
+    descriptor_command_bindings.clear();
     current_bindless_buffer = VK_NULL_HANDLE;
 
     error_output_buffer_.DestroyBuffer();
@@ -430,7 +430,7 @@ void CommandBuffer::UpdateCommandCount(VkPipelineBindPoint bind_point) {
 bool CommandBuffer::PreProcess(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
-    bool succeeded = descriptor::UpdateBindlessStateBuffer(*gpuav, *this, loc);
+    bool succeeded = descriptor::UpdateDescriptorStateSSBO(*gpuav, *this, loc);
     if (!succeeded) {
         return false;
     }
@@ -512,7 +512,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually
     // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
     bool gpuav_success = false;
-    if (!skip) {
+    if (!skip && gpuav->gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
         gpuav_success = ValidateBindlessDescriptorSets(loc);
     }
 
