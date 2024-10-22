@@ -43,6 +43,7 @@ struct QueueSubmission {
     QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
     bool end_batch{false};
+    uint32_t present_fence_semaphore_count{0u};
     std::vector<std::shared_ptr<vvl::CommandBuffer>> cbs;
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;

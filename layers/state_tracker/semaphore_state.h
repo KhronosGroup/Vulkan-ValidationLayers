@@ -113,6 +113,9 @@ class Semaphore : public RefcountedStateObject {
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
 
+    void SetPresentFenceSignaled() { present_fence_signaled = true; };
+    bool WasPresentFenceSignaled() const { return present_fence_signaled; }
+
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
     std::optional<VkExternalSemaphoreHandleTypeFlagBits> ImportedHandleType() const;
@@ -154,6 +157,9 @@ class Semaphore : public RefcountedStateObject {
     SemOp completed_;
     // next payload value for binary semaphore operations
     uint64_t next_payload_;
+
+    // If any fences in VkSwapchainPresentFenceInfoEXT have signaled
+    bool present_fence_signaled;
 
     // Set of pending operations ordered by payload.
     // Timeline operations can be added in any order and multiple wait operations

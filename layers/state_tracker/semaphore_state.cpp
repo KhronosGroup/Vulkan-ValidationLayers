@@ -43,6 +43,7 @@ vvl::Semaphore::Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const
       completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, SubmissionReference{},
                  type_create_info ? type_create_info->initialValue : 0},
       next_payload_(completed_.payload + 1),
+      present_fence_signaled(false),
       dev_data_(dev) {
 }
 
@@ -60,6 +61,8 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
     assert(timeline_.find(payload) == timeline_.end() || !timeline_.find(payload)->second.signal_submit.has_value());
 
     timeline_[payload].signal_submit.emplace(signal_submit);
+
+    present_fence_signaled = false;
 }
 
 void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload) {

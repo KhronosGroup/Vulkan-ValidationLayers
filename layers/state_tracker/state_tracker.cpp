@@ -3819,6 +3819,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         present_submissions.emplace_back(present_loc.dot(vvl::Field::pSwapchains, i));
         if (present_fence_info) {
             present_submissions.back().AddFence(Get<vvl::Fence>(present_fence_info->pFences[i]));
+            present_submissions.back().present_fence_semaphore_count = pPresentInfo->waitSemaphoreCount;
         }
     }
 

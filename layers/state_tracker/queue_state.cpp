@@ -35,8 +35,19 @@ void vvl::QueueSubmission::BeginUse() {
 }
 
 void vvl::QueueSubmission::EndUse() {
-    for (auto &wait : wait_semaphores) {
-        wait.semaphore->EndUse();
+    if (present_fence_semaphore_count > 0) {
+        for (auto &wait : wait_semaphores) {
+            if (!wait.semaphore->WasPresentFenceSignaled()) {
+                for (uint32_t i = 0; i < present_fence_semaphore_count; ++i) {
+                    wait.semaphore->EndUse();
+                }
+                wait.semaphore->SetPresentFenceSignaled();
+            }
+        }
+    } else {
+        for (auto &wait : wait_semaphores) {
+            wait.semaphore->EndUse();
+        }
     }
     for (auto &cb_state : cbs) {
         cb_state->EndUse();
