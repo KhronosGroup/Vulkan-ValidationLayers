@@ -635,11 +635,19 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
             out_oob_access = true;
-            const char *access_type = error_record[kInstBuffAddrAccessInstructionOffset] == spv::OpStore ? "written" : "read";
+            const char *access_type = error_record[kInstBuffAddrAccessOpcodeOffset] == spv::OpStore ? "written" : "read";
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Out of bounds access: " << error_record[kInstBuffAddrAccessByteSizeOffset] << " bytes " << access_type
                  << " at buffer device address 0x" << std::hex << address << '.';
             out_vuid_msg = "UNASSIGNED-Device address out of bounds";
+        } break;
+        case kErrorSubCodeBufferDeviceAddressAlignment: {
+            const char *access_type = error_record[kInstBuffAddrAccessOpcodeOffset] == spv::OpStore ? "OpStore" : "OpLoad";
+            uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
+            strm << "Unaligned pointer access: The " << access_type << " at buffer device address 0x" << std::hex << address
+                 << " is not aligned to the instruction Aligned operand of " << std::dec
+                 << error_record[kInstBuffAddrAccessAlignmentOffset] << '.';
+            out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";
         } break;
         default:
             error_found = false;

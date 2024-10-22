@@ -558,9 +558,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     const uint32_t storage_buffer_size = 16 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = storage_buffer.Address();
-    data[1] = 5;
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer.Address();
+    uniform_buffer_ptr[1] = 5;
     uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
@@ -645,9 +645,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
         }
     }
 
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = storage_buffer_addr;
-    data[1] = 5;  // Will provoke a 4 bytes write past buffer end
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer_addr;
+    uniform_buffer_ptr[1] = 5;  // Will provoke a 4 bytes write past buffer end
     uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
@@ -714,9 +714,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     const uint32_t storage_buffer_size = 4 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = storage_buffer.Address();
-    data[1] = 5;
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer.Address();
+    uniform_buffer_ptr[1] = 5;
     uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
@@ -740,8 +740,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     // #version 450
     // #extension GL_EXT_buffer_reference : enable
     // layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
-    // layout(set = 0, binding = 0) uniform ufoo { bufStruct ptr; }
-    // ssbo;
+    // layout(set = 0, binding = 0) uniform ufoo { bufStruct ptr; } ssbo;
     //
     // layout(buffer_reference, std430) buffer bufStruct {
     //     float f;
@@ -803,7 +802,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
          %21 = OpAccessChain %_ptr_Uniform__ptr_PhysicalStorageBuffer_bufStruct %ssbo %int_0
          %22 = OpLoad %_ptr_PhysicalStorageBuffer_bufStruct %21
          %29 = OpAccessChain %_ptr_PhysicalStorageBuffer_v3float %22 %int_1
-               OpStore %29 %27 Aligned 16
+               OpStore %29 %27 Aligned 4
                OpReturn
                OpFunctionEnd
     )";
@@ -834,45 +833,115 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
 
     // Base buffer address is (storage_buffer_addr), so expect writing to `v.z` to cause an OOB access
-    {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-        data[0] = storage_buffer_addr;
-        uniform_buffer.Memory().Unmap();
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer_addr;
+    uniform_buffer.Memory().Unmap();
 
-        m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
-        m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 
-        // Make sure shader wrote to float
-        auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
-        ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
-        storage_buffer.Memory().Unmap();
-    }
+    // Make sure shader wrote to float
+    auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
+    ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
+    storage_buffer.Memory().Unmap();
+}
 
-    // Base buffer address is (storage_buffer_addr - 4), so expect writing to `f` to cause an OOB access
-    {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-        data[0] = storage_buffer_addr - sizeof(float);
-        uniform_buffer.Memory().Unmap();
+TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
+    TEST_DESCRIPTION("OOB detected reading just front of buffer- use VK_KHR_relaxed_block_layout");
+    AddRequiredExtensions(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-        m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
-        m_errorMonitor->VerifyFound();
+    // #version 450
+    // #extension GL_EXT_buffer_reference : enable
+    // layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+    // layout(set = 0, binding = 0) uniform ufoo { bufStruct ptr; } ssbo;
+    //
+    // layout(buffer_reference, std430) buffer bufStruct {
+    //     float f;
+    //     vec3 v;
+    // };
+    // void main() {
+    //     ssbo.ptr.f = 42.0;
+    // }
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %ssbo
+               OpExecutionMode %main LocalSize 1 1 1
+               OpMemberDecorate %ufoo 0 Offset 0
+               OpDecorate %ufoo Block
+               OpMemberDecorate %bufStruct 0 Offset 0
+               OpMemberDecorate %bufStruct 1 Offset 4
+               OpDecorate %bufStruct Block
+               OpDecorate %ssbo DescriptorSet 0
+               OpDecorate %ssbo Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_bufStruct PhysicalStorageBuffer
+       %ufoo = OpTypeStruct %_ptr_PhysicalStorageBuffer_bufStruct
+      %float = OpTypeFloat 32
+    %v3float = OpTypeVector %float 3
+  %bufStruct = OpTypeStruct %float %v3float
+%_ptr_PhysicalStorageBuffer_bufStruct = OpTypePointer PhysicalStorageBuffer %bufStruct
+%_ptr_Uniform_ufoo = OpTypePointer Uniform %ufoo
+       %ssbo = OpVariable %_ptr_Uniform_ufoo Uniform
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Uniform__ptr_PhysicalStorageBuffer_bufStruct = OpTypePointer Uniform %_ptr_PhysicalStorageBuffer_bufStruct
+   %float_42 = OpConstant %float 42
+%_ptr_PhysicalStorageBuffer_float = OpTypePointer PhysicalStorageBuffer %float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %16 = OpAccessChain %_ptr_Uniform__ptr_PhysicalStorageBuffer_bufStruct %ssbo %int_0
+         %17 = OpLoad %_ptr_PhysicalStorageBuffer_bufStruct %16
+         %20 = OpAccessChain %_ptr_PhysicalStorageBuffer_float %17 %int_0
+               OpStore %20 %float_42 Aligned 16
+               OpReturn
+               OpFunctionEnd
+    )";
 
-        // Make sure shader wrote to vec3
-        auto storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
-        ASSERT_EQ(storage_buffer_ptr[0], 1.0f);
-        ASSERT_EQ(storage_buffer_ptr[1], 2.0f);
-        ASSERT_EQ(storage_buffer_ptr[2], 3.0f);
-        storage_buffer.Memory().Unmap();
-    }
+    // Make a uniform buffer to be passed to the shader that contains the pointer
+    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ =
+        std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    const uint32_t storage_buffer_size = 3 * sizeof(float);  // only can fit 3 floats
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
+    const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
+
+    // Base buffer address is (storage_buffer_addr - 16), so expect writing to `f` to cause an OOB access
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    // The OpStore is aligned to 16 bytes, so need to substract by that
+    uniform_buffer_ptr[0] = storage_buffer_addr - 16;
+    uniform_buffer.Memory().Unmap();
+
+    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     TEST_DESCRIPTION("OOB detected - use VK_EXT_scalar_block_layout");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
@@ -923,40 +992,81 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
 
     // Base buffer address is (storage_buffer_addr), so expect writing to `v.z` to cause an OOB access
-    {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-        data[0] = storage_buffer_addr;
-        uniform_buffer.Memory().Unmap();
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer_addr;
+    uniform_buffer.Memory().Unmap();
 
-        m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
-        m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 
-        // Make sure shader wrote to float
-        auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
-        ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
-        storage_buffer.Memory().Unmap();
-    }
+    // Make sure shader wrote to float
+    auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
+    ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
+    storage_buffer.Memory().Unmap();
+}
 
-    // Base buffer address is (storage_buffer_addr - 4), so expect writing to `f` to cause an OOB access
-    {
-        auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-        data[0] = storage_buffer_addr - sizeof(float);
-        uniform_buffer.Memory().Unmap();
+TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
+    TEST_DESCRIPTION("OOB from front of buffer - use VK_EXT_scalar_block_layout");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
 
-        m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
-        m_errorMonitor->VerifyFound();
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
-        // Make sure shader wrote to vec3
-        auto storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
-        ASSERT_EQ(storage_buffer_ptr[0], 1.0f);
-        ASSERT_EQ(storage_buffer_ptr[1], 2.0f);
-        ASSERT_EQ(storage_buffer_ptr[2], 3.0f);
-        storage_buffer.Memory().Unmap();
-    }
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_scalar_block_layout : enable
+        #extension GL_EXT_buffer_reference : enable
+        layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+        layout(set = 0, binding = 0) uniform ufoo {
+            bufStruct ptr;
+        } ssbo;
+
+        layout(buffer_reference, scalar) buffer bufStruct {
+            float f;
+            vec3 v;
+        };
+        void main() {
+            ssbo.ptr.f = 42.0;
+        }
+    )glsl";
+
+    // Make a uniform buffer to be passed to the shader that contains the pointer
+    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipeline.CreateComputePipeline();
+
+    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    const uint32_t storage_buffer_size = 3 * sizeof(float);  // can only hold 3 floats, when SSBO uses 4
+    vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
+    const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
+
+    // Base buffer address is (storage_buffer_addr - 16), so expect writing to `f` to cause an OOB access
+    auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    // The OpStore is aligned to 16 bytes, so need to substract by that
+    uniform_buffer_ptr[0] = storage_buffer_addr - 16;
+    uniform_buffer.Memory().Unmap();
+
+    m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
@@ -1231,6 +1341,106 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) readonly buffer BlockBuffer {
+            uvec4 data; // aligned to 16
+        };
+
+        layout(set = 0, binding = 0) uniform Input {
+            BlockBuffer ptr;
+        };
+
+        void main() {
+            ptr.data = uvec4(0.0);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer block_buffer(*m_device, 256, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VkDeviceAddress block_ptr = block_buffer.Address();
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = block_ptr + 4;
+    in_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) readonly buffer BlockBuffer {
+            uvec4 data; // aligned to 16
+        };
+
+        layout(set = 0, binding = 0) buffer Input {
+            BlockBuffer ptr;
+            uvec4 out_data;
+        };
+
+        void main() {
+            out_data = ptr.data;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer block_buffer(*m_device, 256, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VkDeviceAddress block_ptr = block_buffer.Address();
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = block_ptr + 4;
+    in_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

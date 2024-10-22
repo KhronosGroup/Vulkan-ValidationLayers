@@ -219,9 +219,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     const uint32_t storage_buffer_size = 4 * 4;
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = storage_buffer.Address();
-    data[1] = 4;
+    auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer.Address();
+    uniform_buffer_ptr[1] = 4;
     uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
@@ -701,7 +701,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
          %21 = OpAccessChain %_ptr_Uniform__ptr_PhysicalStorageBuffer_bufStruct %ssbo %int_0
          %22 = OpLoad %_ptr_PhysicalStorageBuffer_bufStruct %21
          %29 = OpAccessChain %_ptr_PhysicalStorageBuffer_v3float %22 %int_1
-               OpStore %29 %27 Aligned 16
+               OpStore %29 %27 Aligned 4
                OpReturn
                OpFunctionEnd
     )";
@@ -730,8 +730,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     const uint32_t storage_buffer_size = 4 * sizeof(float);  // float + vec3
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = storage_buffer.Address();
+    auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
@@ -797,8 +797,8 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     const uint32_t storage_buffer_size = 4 * sizeof(float);  // float + vec3
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
-    auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = storage_buffer.Address();
+    auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
@@ -950,9 +950,9 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     const uint32_t bar_storage_buffer_size = sizeof(float) + sizeof(int32_t) + 4 * sizeof(float);
     vkt::Buffer bar_storage_buffer(*m_device, bar_storage_buffer_size, 0, vkt::device_address);
 
-    auto *data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
-    data[0] = foo_storage_buffer.Address();
-    data[1] = bar_storage_buffer.Address();
+    auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
+    uniform_buffer_ptr[0] = foo_storage_buffer.Address();
+    uniform_buffer_ptr[1] = bar_storage_buffer.Address();
     uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);

@@ -126,7 +126,8 @@ const int kInstNonBindlessOOBParamOffset1 = kHeaderSize + 4;
 const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
 const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
 const int kInstBuffAddrAccessByteSizeOffset = kHeaderSize + 2;
-const int kInstBuffAddrAccessInstructionOffset = kHeaderSize + 3;
+const int kInstBuffAddrAccessOpcodeOffset = kHeaderSize + 3;
+const int kInstBuffAddrAccessAlignmentOffset = kHeaderSize + 4;
 
 // Ray query
 // ---
