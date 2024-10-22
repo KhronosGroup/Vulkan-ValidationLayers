@@ -1968,7 +1968,7 @@
                 "VK_EXT_device_memory_report": 1,
                 "VK_EXT_direct_mode_display": 1,
                 "VK_EXT_directfb_surface": 1,
-                "VK_EXT_discard_rectangles": 1,
+                "VK_EXT_discard_rectangles": 2,
                 "VK_EXT_display_control": 1,
                 "VK_EXT_display_surface_counter": 1,
                 "VK_EXT_extended_dynamic_state": 1,

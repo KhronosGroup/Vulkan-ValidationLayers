@@ -2871,6 +2871,67 @@ TEST_F(NegativeDynamicState, DiscardRectanglesNotSet) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicState, DiscardRectanglesEnableNotSet) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
+    }
+    InitRenderTarget();
+
+    VkRect2D discard_rectangle = {{0, 0}, {16, 16}};
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
+    discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
+    discard_rect_ci.discardRectangleCount = 1;
+    discard_rect_ci.pDiscardRectangles = &discard_rectangle;
+
+    CreatePipelineHelper pipe(*this, &discard_rect_ci);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07880");
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, DiscardRectanglesModeNotSet) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
+    }
+    InitRenderTarget();
+
+    VkRect2D discard_rectangle = {{0, 0}, {16, 16}};
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
+    discard_rect_ci.discardRectangleCount = 1;
+    discard_rect_ci.pDiscardRectangles = &discard_rectangle;
+
+    CreatePipelineHelper pipe(*this, &discard_rect_ci);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07881");
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicState, StateNotSetWithCommandBufferResetBitmask) {
     TEST_DESCRIPTION("Make sure state tracker of dynamic state accounts for resetting command buffers");
 
@@ -4594,16 +4655,8 @@ TEST_F(NegativeDynamicState, DrawNotSetExclusiveScissor) {
     AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::exclusiveScissor);
     RETURN_IF_SKIP(Init());
-    uint32_t count;
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, nullptr);
-    std::vector<VkExtensionProperties> properties(count);
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, properties.data());
-    for (const auto &p : properties) {
-        if (std::strcmp(p.extensionName, VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME) == 0) {
-            if (p.specVersion < 2) {
-                GTEST_SKIP() << "exclusiveScissor specVersion 2 not supported.";
-            }
-        }
+    if (!DeviceExtensionSupported(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_NV_scissor_exclusive version 2";
     }
     InitRenderTarget();
 

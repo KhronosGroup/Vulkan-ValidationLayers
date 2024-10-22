@@ -209,8 +209,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDraw-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDraw-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDraw-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDraw-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDraw-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDraw-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDraw-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDraw-None-08659";
@@ -479,8 +477,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMultiEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMultiEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMultiEXT-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMultiEXT-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMultiEXT-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMultiEXT-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMultiEXT-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMultiEXT-None-08659";
@@ -750,8 +746,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawIndexed-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndexed-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndexed-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndexed-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndexed-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawIndexed-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawIndexed-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawIndexed-None-08659";
@@ -1021,8 +1015,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMultiIndexedEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMultiIndexedEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMultiIndexedEXT-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMultiIndexedEXT-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMultiIndexedEXT-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMultiIndexedEXT-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMultiIndexedEXT-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMultiIndexedEXT-None-08659";
@@ -1292,8 +1284,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawIndirect-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndirect-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndirect-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndirect-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndirect-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawIndirect-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawIndirect-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawIndirect-None-08659";
@@ -1562,8 +1552,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawIndexedIndirect-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndexedIndirect-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndexedIndirect-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndexedIndirect-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndexedIndirect-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawIndexedIndirect-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawIndexedIndirect-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawIndexedIndirect-None-08659";
@@ -1931,8 +1919,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawIndirectCount-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndirectCount-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndirectCount-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndirectCount-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndirectCount-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawIndirectCount-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawIndirectCount-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawIndirectCount-None-08659";
@@ -2204,8 +2190,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawIndexedIndirectCount-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndexedIndirectCount-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndexedIndirectCount-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndexedIndirectCount-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndexedIndirectCount-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawIndexedIndirectCount-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawIndexedIndirectCount-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawIndexedIndirectCount-None-08659";
@@ -2656,8 +2640,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksNV-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksNV-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksNV-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksNV-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksNV-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMeshTasksNV-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMeshTasksNV-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMeshTasksNV-None-08659";
@@ -2912,8 +2894,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08659";
@@ -3171,8 +3151,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08659";
@@ -3424,8 +3402,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksEXT-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksEXT-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksEXT-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMeshTasksEXT-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMeshTasksEXT-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMeshTasksEXT-None-08659";
@@ -3680,8 +3656,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08659";
@@ -3939,8 +3913,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08659";
@@ -4205,8 +4177,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_rasterization_samples_08644          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08644";
         set_color_write_enable_08646             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08646";
         set_color_write_enable_08647             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08647";
-        set_discard_rectangles_enable_08648      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08648";
-        set_discard_rectangles_mode_08649        = "VUID-vkCmdDrawIndirectByteCountEXT-None-08649";
         set_color_blend_enable_08657             = "VUID-vkCmdDrawIndirectByteCountEXT-None-08657";
         set_color_blend_equation_08658           = "VUID-vkCmdDrawIndirectByteCountEXT-None-08658";
         set_color_write_mask_08659               = "VUID-vkCmdDrawIndirectByteCountEXT-None-08659";

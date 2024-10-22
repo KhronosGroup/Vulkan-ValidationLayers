@@ -1339,16 +1339,8 @@ TEST_F(NegativeShaderObject, InvalidExclusiveScissorCount) {
     AddRequiredFeature(vkt::Feature::multiViewport);
     AddRequiredFeature(vkt::Feature::exclusiveScissor);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    uint32_t count;
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, nullptr);
-    std::vector<VkExtensionProperties> properties(count);
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, properties.data());
-    for (const auto& p : properties) {
-        if (std::strcmp(p.extensionName, VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME) == 0) {
-            if (p.specVersion < 2) {
-                GTEST_SKIP() << "exclusiveScissor specVersion 2 not supported.";
-            }
-        }
+    if (!DeviceExtensionSupported(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_NV_scissor_exclusive version 2";
     }
     InitDynamicRenderTarget();
 
@@ -1596,7 +1588,7 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
 TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEnableEXT) {
     TEST_DESCRIPTION("Draw with shaders without setting vkCmdSetDiscardRectangleEnableEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08648");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07880");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
@@ -1620,22 +1612,13 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetDiscardRectangleModeEXT().");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08649");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07881");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    uint32_t count;
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, nullptr);
-    std::vector<VkExtensionProperties> properties(count);
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, properties.data());
-    for (const auto& p : properties) {
-        if (std::strcmp(p.extensionName, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME) == 0) {
-            if (p.specVersion < 2) {
-                GTEST_SKIP() << "discard rectangles specVersion 2 not supported.";
-            }
-        }
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
     }
-
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -1665,18 +1648,9 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    uint32_t count;
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, nullptr);
-    std::vector<VkExtensionProperties> properties(count);
-    vk::EnumerateDeviceExtensionProperties(m_device->Physical(), nullptr, &count, properties.data());
-    for (const auto& p : properties) {
-        if (std::strcmp(p.extensionName, VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME) == 0) {
-            if (p.specVersion < 2) {
-                GTEST_SKIP() << "discard rectangles specVersion 2 not supported.";
-            }
-        }
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
     }
-
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
