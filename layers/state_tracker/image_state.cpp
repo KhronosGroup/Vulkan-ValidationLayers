@@ -584,6 +584,15 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id) {
     }
 }
 
+void Swapchain::ReleaseImage(uint32_t image_index) {
+    if (image_index >= images.size()) return;
+    assert(acquired_images > 0);
+    acquired_images--;
+    images[image_index].acquired = false;
+    images[image_index].acquire_semaphore.reset();
+    images[image_index].acquire_fence.reset();
+}
+
 void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
                              const std::shared_ptr<vvl::Fence> &fence_state) {
     acquired_images++;
