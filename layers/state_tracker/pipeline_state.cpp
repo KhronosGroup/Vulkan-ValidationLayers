@@ -1123,6 +1123,25 @@ bool LastBound::IsCoverageModulationTableEnable() const {
     return false;
 }
 
+bool LastBound::IsDiscardRectangleEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.discard_rectangle_enable;
+        }
+    } else {
+        // VK_EXT_discard_rectangles had a special v2 added right away to give it dynamic state
+        // "If the VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT dynamic state is not enabled for the pipeline the presence of this
+        // structure in the VkGraphicsPipelineCreateInfo chain, and a discardRectangleCount greater than zero, implicitly enables
+        // discard rectangles in the pipeline"
+        const void *pipeline_pnext = pipeline_state->GetCreateInfoPNext();
+        if (const auto *discard_rectangle_state =
+                vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline_pnext)) {
+            return discard_rectangle_state->discardRectangleCount > 0;
+        }
+    }
+    return false;
+}
+
 bool LastBound::IsShadingRateImageEnable() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {

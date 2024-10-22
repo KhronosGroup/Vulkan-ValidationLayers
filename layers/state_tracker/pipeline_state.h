@@ -726,6 +726,7 @@ struct LastBound {
     bool IsExclusiveScissorEnabled() const;
     bool IsCoverageToColorEnabled() const;
     bool IsCoverageModulationTableEnable() const;
+    bool IsDiscardRectangleEnable() const;
     bool IsShadingRateImageEnable() const;
     bool IsViewportWScalingEnable() const;
     VkCoverageModulationModeNV GetCoverageModulationMode() const;

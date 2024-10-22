@@ -1345,3 +1345,55 @@ TEST_F(PositiveDynamicState, MultisampledRenderToSingleSampled) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicState, DiscardRectanglesModeNotSetWithZeroCount) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
+    }
+    InitRenderTarget();
+
+    VkRect2D discard_rectangle = {{0, 0}, {16, 16}};
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
+    discard_rect_ci.discardRectangleCount = 0;  // implicitly set discardRectangleEnable to FALSE
+    discard_rect_ci.pDiscardRectangles = &discard_rectangle;
+
+    CreatePipelineHelper pipe(*this, &discard_rect_ci);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicState, DiscardRectanglesModeNotSetWithCommand) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
+    }
+    InitRenderTarget();
+
+    VkRect2D discard_rectangle = {{0, 0}, {16, 16}};
+    VkPipelineDiscardRectangleStateCreateInfoEXT discard_rect_ci = vku::InitStructHelper();
+    discard_rect_ci.discardRectangleCount = 1;
+    discard_rect_ci.pDiscardRectangles = &discard_rectangle;
+
+    CreatePipelineHelper pipe(*this, &discard_rect_ci);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), false);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}

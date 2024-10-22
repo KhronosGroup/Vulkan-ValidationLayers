@@ -1645,3 +1645,30 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveShaderObject, DiscardRectangleModeEXT) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
+    }
+    InitDynamicRenderTarget();
+
+    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+
+    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    VkRect2D discardRectangle;
+    discardRectangle.offset = {};
+    discardRectangle.extent = {100u, 100u};
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0u, 1u, &discardRectangle);
+    vk::CmdSetDiscardRectangleModeEXT(m_command_buffer.handle(), VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT);
+    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

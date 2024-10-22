@@ -200,6 +200,12 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
                 vuid_str = vuid.set_clip_space_w_scaling_04138;
                 break;
+            case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT:
+                vuid_str = vuid.dynamic_discard_rectangle_enable_07880;
+                break;
+            case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT:
+                vuid_str = vuid.dynamic_discard_rectangle_mode_07881;
+                break;
             default:
                 assert(false);
                 break;
@@ -360,6 +366,15 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
+        if (IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT, vuid);
+            if (last_bound_state.IsDiscardRectangleEnable()) {
+                skip |=
+                    ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT, vuid);
+            }
+        }
+
         if (vertex_shader_bound) {
             if (IsExtEnabled(device_extensions.vk_ext_provoking_vertex)) {
                 skip |=
@@ -383,7 +398,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                                                   CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, vuid);
             }
         }
-    }
+    }  // !IsRasterizationDisabled()
 
     if (cb_state.inheritedViewportDepths.empty()) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, vuid);
@@ -507,10 +522,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
 
     // VK_EXT_discard_rectangles
     {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_discard_rectangle_enable_07880);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_discard_rectangle_mode_07881);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, cb_state, objlist, loc,
                                           vuid.dynamic_discard_rectangle_07751);
     }
@@ -1583,12 +1594,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
     if (IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT, cb_state,
-                                          objlist, loc, vuid.set_discard_rectangles_enable_08648);
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT) &&
             cb_state.dynamic_state_value.discard_rectangle_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT,
-                                              cb_state, objlist, loc, vuid.set_discard_rectangles_mode_08649);
             skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, cb_state,
                                               objlist, loc, vuid.set_discard_rectangle_09236);
         }
