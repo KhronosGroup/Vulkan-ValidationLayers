@@ -152,6 +152,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     skip |= ValidateCreateImageFragmentShadingRate(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageCornerSampled(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageStencilUsage(*pCreateInfo, create_info_loc);
+    skip |= ValidateCreateImageCompressionControl(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageSwapchain(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageMetalObject(*pCreateInfo, create_info_loc);
 
@@ -302,20 +303,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 
-    if (const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext)) {
-        skip |= ValidateFlags(create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
-                              vvl::FlagBitmask::VkImageCompressionFlagBitsEXT, AllVkImageCompressionFlagBitsEXT,
-                              image_compression_control->flags, kOptionalSingleBit, VK_NULL_HANDLE,
-                              "VUID-VkImageCompressionControlEXT-flags-06747");
-
-        if (image_compression_control->flags == VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT &&
-            !image_compression_control->pFixedRateFlags) {
-            skip |= LogError("VUID-VkImageCompressionControlEXT-flags-06748", device,
-                             create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
-                             "is %s, but pFixedRateFlags is NULL.",
-                             string_VkImageCompressionFlagsEXT(image_compression_control->flags).c_str());
-        }
-    }
     return skip;
 }
 
@@ -554,6 +541,28 @@ bool StatelessValidation::ValidateCreateImageStencilUsage(const VkImageCreateInf
                              create_info_loc.pNext(Struct::VkImageStencilUsageCreateInfo, Field::stencilUsage).Fields().c_str(),
                              string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
         }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateCreateImageCompressionControl(const VkImageCreateInfo &create_info,
+                                                                const Location &create_info_loc) const {
+    bool skip = false;
+    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(create_info.pNext);
+    if (!image_compression_control) return skip;
+
+    skip |= ValidateFlags(create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
+                          vvl::FlagBitmask::VkImageCompressionFlagBitsEXT, AllVkImageCompressionFlagBitsEXT,
+                          image_compression_control->flags, kOptionalSingleBit, VK_NULL_HANDLE,
+                          "VUID-VkImageCompressionControlEXT-flags-06747");
+
+    if (image_compression_control->flags == VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT &&
+        !image_compression_control->pFixedRateFlags) {
+        skip |= LogError("VUID-VkImageCompressionControlEXT-flags-06748", device,
+                         create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
+                         "is %s, but pFixedRateFlags is NULL.",
+                         string_VkImageCompressionFlagsEXT(image_compression_control->flags).c_str());
     }
 
     return skip;
