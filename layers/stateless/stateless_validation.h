@@ -580,6 +580,7 @@ class StatelessValidation : public ValidationObject {
     bool ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageCompressionControl(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
