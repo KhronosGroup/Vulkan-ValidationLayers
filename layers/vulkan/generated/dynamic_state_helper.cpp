@@ -856,6 +856,13 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
                 ss << rasterizer_discard_enable_static;
             }
             break;
+        case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT:
+            if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+                ss << rasterizer_discard_enable_dynamic;
+            } else {
+                ss << rasterizer_discard_enable_static;
+            }
+            break;
         case CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV:
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
                 ss << rasterizer_discard_enable_dynamic;

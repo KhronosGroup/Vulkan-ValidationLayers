@@ -2193,7 +2193,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthClipEnableEXT) {
 TEST_F(NegativeShaderObject, MissingCmdSetSampleLocationsEnableEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetSampleLocationsEnableEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08664");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07634");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());

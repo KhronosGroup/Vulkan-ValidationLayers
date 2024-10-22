@@ -211,6 +211,7 @@ dynamic_state_map = {
     },
     "VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT" : {
         "command" : ["vkCmdSetSampleLocationsEnableEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT" : {
         "command" : ["vkCmdSetColorBlendAdvancedEXT"],

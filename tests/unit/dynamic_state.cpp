@@ -4273,6 +4273,31 @@ TEST_F(NegativeDynamicState, DrawNotSetSampleLocations) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicState, DrawNotSetSampleLocationsEnable) {
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3SampleLocationsEnable);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07634");
+    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicState, LineWidth) {
     TEST_DESCRIPTION("Test non-1.0 lineWidth errors when pipeline is created and in vkCmdSetLineWidth");
     VkPhysicalDeviceFeatures features{};

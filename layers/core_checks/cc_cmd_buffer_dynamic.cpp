@@ -113,6 +113,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE:
                 vuid_str = vuid.rasterizer_discard_enable_04876;
                 break;
+            case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT:
+                vuid_str = vuid.dynamic_sample_locations_enable_07634;
+                break;
             case CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT:
                 vuid_str = vuid.dynamic_sample_locations_06666;
                 break;
@@ -277,8 +280,12 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRONT_FACE, vuid);
         }
 
-        if (last_bound_state.IsSampleLocationsEnable() && IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
-            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, vuid);
+        if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT, vuid);
+            if (last_bound_state.IsSampleLocationsEnable()) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, vuid);
+            }
         }
 
         if (enabled_features.depthClipEnable) {
@@ -495,8 +502,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                                           vuid.color_blend_enable_07627);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, cb_state, objlist, loc,
                                           vuid.color_write_mask_07629);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_sample_locations_enable_07634);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_advanced_07635);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, cb_state, objlist, loc,
@@ -1420,11 +1425,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
                 }
             }
-        }
-
-        if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT,
-                                              cb_state, objlist, loc, vuid.set_sample_locations_enable_08664);
         }
 
         const bool line_rasterization_extension =
