@@ -1662,3 +1662,83 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     ReleaseWaylandContext(wayland_ctx);
 #endif
 }
+
+TEST_F(PositiveWsi, ReleaseSwapchainImages) {
+    TEST_DESCRIPTION("Test vkReleaseSwapchainImagesEXT");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    RETURN_IF_SKIP(InitSurface());
+
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Graphics queue does not support present";
+    }
+
+    SurfaceInformation info = GetSwapchainInfo(m_surface);
+    const uint32_t imageCount = 4;
+
+    if (info.surface_capabilities.maxImageCount < imageCount) {
+        GTEST_SKIP() << "Test maxImageCount to be at least 4";
+    }
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = info.surface_capabilities.maxImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
+                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    m_swapchain = vkt::Swapchain(*m_device, swapchain_create_info);
+
+    ASSERT_TRUE(m_swapchain.initialized());
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    vkt::Fence fence(*m_device);
+    const vkt::Semaphore submit_semaphore(*m_device);
+    std::vector<uint32_t> release_indices;
+    uint32_t present_index = 0u;
+
+    for (uint32_t i = 0; i < imageCount - 1; ++i) {
+        uint32_t image_index = m_swapchain.AcquireNextImage(fence, kWaitTimeout);
+        if (i == 1) {
+            present_index = image_index;
+        } else {
+            release_indices.push_back(image_index);
+        }
+        vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
+        vk::ResetFences(device(), 1, &fence.handle());
+    }
+
+    const auto present_transition = TransitionToPresent(swapchain_images[present_index], VK_IMAGE_LAYOUT_UNDEFINED, 0);
+
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &present_transition);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(submit_semaphore));
+
+    m_default_queue->Present(m_swapchain, present_index, submit_semaphore);
+
+    VkReleaseSwapchainImagesInfoEXT releaseInfo = vku::InitStructHelper();
+    releaseInfo.swapchain = m_swapchain.handle();
+    releaseInfo.imageIndexCount = (uint32_t)release_indices.size();
+    releaseInfo.pImageIndices = release_indices.data();
+    vk::ReleaseSwapchainImagesEXT(device(), &releaseInfo);
+
+    vk::DeviceWaitIdle(device());
+}
