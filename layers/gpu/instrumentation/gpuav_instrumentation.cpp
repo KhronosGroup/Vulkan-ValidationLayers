@@ -470,7 +470,7 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
                  << ", binding = " << error_record[kInstBindlessBoundsDescBindingOffset] << ") Index of "
                  << error_record[kInstBindlessBoundsDescIndexOffset] << " used to index descriptor array of length "
                  << error_record[kInstBindlessCustomOffset_0] << ".";
-            out_vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
+            out_vuid_msg = vuid.descriptor_index_oob_10068;
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorUninit: {
@@ -571,7 +571,7 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
             const uint32_t desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
             strm << " access out of bounds. The descriptor buffer array is " << desc_array_size
                  << " large, but as accessed at index [" << desc_index << "]";
-            out_vuid_msg = "UNASSIGNED-Descriptor Buffer index out of bounds";
+            out_vuid_msg = vuid.descriptor_index_oob_10068;
         } break;
 
         case kErrorSubCodeNonBindlessOOBBufferBounds: {
@@ -598,7 +598,7 @@ bool LogMessageInstNonBindlessOOB(Validator &gpuav, const uint32_t *error_record
             const uint32_t desc_array_size = error_record[kInstNonBindlessOOBParamOffset0];
             strm << " access out of bounds. The descriptor texel buffer array is " << desc_array_size
                  << " large, but as accessed at index [" << desc_index << "]";
-            out_vuid_msg = "UNASSIGNED-Descriptor Texel Buffer index out of bounds";
+            out_vuid_msg = vuid.descriptor_index_oob_10068;
         } break;
 
         case kErrorSubCodeNonBindlessOOBTexelBufferBounds: {

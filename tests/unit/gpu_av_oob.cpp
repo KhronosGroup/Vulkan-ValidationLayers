@@ -1745,7 +1745,7 @@ TEST_F(NegativeGpuAVOOB, ConstantArrayOOBBuffer) {
     *data = 8;
     offset_buffer.Memory().Unmap();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Buffer index out of bounds", 3);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();

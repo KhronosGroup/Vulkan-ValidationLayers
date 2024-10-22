@@ -124,7 +124,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ArrayOOBBuffer) {
         buffer0.Memory().Unmap();
 
         SCOPED_TRACE("Out of Bounds");
-        m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068");
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
@@ -244,7 +244,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     data[0] = 25;
     buffer0.Memory().Unmap();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", 2 * 3);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 2 * 3);
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -356,7 +356,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     data[0] = 25;
     buffer0.Memory().Unmap();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", gpuav::glsl::kMaxErrorsPerCmd);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -486,7 +486,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", gpuav::glsl::kMaxErrorsPerCmd);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -615,7 +615,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
     buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", gpuav::glsl::kMaxErrorsPerCmd);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -737,7 +737,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", 3);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -857,7 +857,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Out of Bounds");
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -970,7 +970,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
         data[0] = 25;
         buffer0.Memory().Unmap();
         // Invalid read and invalid write
-        m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds", 2);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068", 2);
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
@@ -1766,7 +1766,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSL) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -1947,7 +1947,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, PushConstant) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor index out of bounds");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
