@@ -1032,20 +1032,22 @@ bool CoreChecks::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const
 
     const Location release_info_loc = error_obj.location.dot(Field::pReleaseInfo);
     for (uint32_t i = 0; i < pReleaseInfo->imageIndexCount; i++) {
-        if (pReleaseInfo->pImageIndices[i] >= swapchain_state->images.size()) {
+        const uint32_t image_index = pReleaseInfo->pImageIndices[i];
+        if (image_index >= swapchain_state->images.size()) {
             skip |= LogError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785", pReleaseInfo->swapchain,
                              release_info_loc.dot(Field::pImageIndices, i),
-                             "%" PRIu32 " is too large, there are only %" PRIu32 " images in this swapchain.",
-                             pReleaseInfo->pImageIndices[i], static_cast<uint32_t>(swapchain_state->images.size()));
-        } else if (!swapchain_state->images[pReleaseInfo->pImageIndices[i]].acquired) {
-            assert(swapchain_state->images[pReleaseInfo->pImageIndices[i]].image_state);
-            skip |= LogError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785", pReleaseInfo->swapchain,
-                             release_info_loc.dot(Field::pImageIndices, i), "%" PRIu32 " was not acquired from the swapchain.",
-                             pReleaseInfo->pImageIndices[i]);
-        }
-
-        if (swapchain_state->images[i].image_state->InUse()) {
-            image_in_use = true;
+                             "%" PRIu32 " is too large, there are only %" PRIu32 " images in this swapchain.", image_index,
+                             static_cast<uint32_t>(swapchain_state->images.size()));
+        } else {
+            if (!swapchain_state->images[image_index].acquired) {
+                assert(swapchain_state->images[image_index].image_state);
+                skip |= LogError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785", pReleaseInfo->swapchain,
+                                 release_info_loc.dot(Field::pImageIndices, i), "%" PRIu32 " was not acquired from the swapchain.",
+                                 image_index);
+            }
+            if (swapchain_state->images[image_index].image_state->InUse()) {
+                image_in_use = true;
+            }
         }
     }
 
