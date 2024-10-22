@@ -25,7 +25,7 @@ struct GpuVuidsCmdDraw : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDraw-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDraw-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDraw-None-08613";
-        invalid_descriptor = "VUID-vkCmdDraw-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDraw-None-08114";
     }
 };
 
@@ -35,7 +35,7 @@ struct GpuVuidsCmdDrawMultiEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMultiEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMultiEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMultiEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMultiEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMultiEXT-None-08114";
     }
 };
 
@@ -45,7 +45,7 @@ struct GpuVuidsCmdDrawIndexed : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawIndexed-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndexed-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexed-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawIndexed-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawIndexed-None-08114";
     }
 };
 
@@ -55,7 +55,7 @@ struct GpuVuidsCmdDrawMultiIndexedEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMultiIndexedEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMultiIndexedEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMultiIndexedEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMultiIndexedEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMultiIndexedEXT-None-08114";
     }
 };
 
@@ -65,7 +65,7 @@ struct GpuVuidsCmdDrawIndirect : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawIndirect-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndirect-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndirect-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawIndirect-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawIndirect-None-08114";
         first_instance_not_zero = "VUID-VkDrawIndirectCommand-firstInstance-00501";
     }
 };
@@ -76,7 +76,7 @@ struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawIndexedIndirect-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndexedIndirect-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexedIndirect-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawIndexedIndirect-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawIndexedIndirect-None-08114";
         first_instance_not_zero = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
     }
 };
@@ -87,7 +87,7 @@ struct GpuVuidsCmdDispatch : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDispatch-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDispatch-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDispatch-None-08613";
-        invalid_descriptor = "VUID-vkCmdDispatch-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDispatch-None-08114";
     }
 };
 
@@ -97,7 +97,7 @@ struct GpuVuidsCmdDispatchIndirect : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDispatchIndirect-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDispatchIndirect-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDispatchIndirect-None-08613";
-        invalid_descriptor = "VUID-vkCmdDispatchIndirect-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDispatchIndirect-None-08114";
         group_exceeds_device_limit_x = "VUID-VkDispatchIndirectCommand-x-00417";
         group_exceeds_device_limit_y = "VUID-VkDispatchIndirectCommand-y-00418";
         group_exceeds_device_limit_z = "VUID-VkDispatchIndirectCommand-z-00419";
@@ -111,7 +111,7 @@ struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawIndirectCount-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndirectCount-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndirectCount-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawIndirectCount-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawIndirectCount-None-08114";
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
         count_exceeds_bufsize = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
         count_exceeds_device_limit = "VUID-vkCmdDrawIndirectCount-countBuffer-02717";
@@ -124,7 +124,7 @@ struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawIndexedIndirectCount-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndexedIndirectCount-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexedIndirectCount-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawIndexedIndirectCount-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawIndexedIndirectCount-None-08114";
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153";
         count_exceeds_bufsize = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154";
         count_exceeds_device_limit = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717";
@@ -137,7 +137,7 @@ struct GpuVuidsCmdTraceRaysNV : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysNV-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdTraceRaysNV-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdTraceRaysNV-None-08613";
-        invalid_descriptor = "VUID-vkCmdTraceRaysNV-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdTraceRaysNV-None-08114";
     }
 };
 
@@ -147,7 +147,7 @@ struct GpuVuidsCmdTraceRaysKHR : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysKHR-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdTraceRaysKHR-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdTraceRaysKHR-None-08613";
-        invalid_descriptor = "VUID-vkCmdTraceRaysKHR-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdTraceRaysKHR-None-08114";
     }
 };
 
@@ -157,7 +157,7 @@ struct GpuVuidsCmdTraceRaysIndirectKHR : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysIndirectKHR-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdTraceRaysIndirectKHR-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdTraceRaysIndirectKHR-None-08613";
-        invalid_descriptor = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
         trace_rays_width_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-width-03638";
         trace_rays_height_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-height-03639";
         trace_rays_depth_exceeds_device_limit = "VUID-VkTraceRaysIndirectCommandKHR-depth-03640";
@@ -170,7 +170,7 @@ struct GpuVuidsCmdTraceRaysIndirect2KHR : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdTraceRaysIndirect2KHR-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdTraceRaysIndirect2KHR-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdTraceRaysIndirect2KHR-None-08613";
-        invalid_descriptor = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
     }
 };
 
@@ -180,7 +180,7 @@ struct GpuVuidsCmdDrawMeshTasksNV : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksNV-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMeshTasksNV-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksNV-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMeshTasksNV-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksNV-None-08114";
     }
 };
 
@@ -190,7 +190,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectNV : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectNV-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08114";
         task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
         task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
         task_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324";
@@ -208,7 +208,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02191";
         count_exceeds_bufsize = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02192";
         count_exceeds_device_limit = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02717";
@@ -229,7 +229,7 @@ struct GpuVuidsCmdDrawMeshTasksEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMeshTasksEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMeshTasksEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksEXT-None-08114";
     }
 };
 
@@ -239,7 +239,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08114";
         task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
         task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
         task_group_count_exceeds_max_z = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324";
@@ -257,7 +257,7 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
         count_exceeds_bufsize_1 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07098";
         count_exceeds_bufsize = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099";
         count_exceeds_device_limit = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717";
@@ -278,7 +278,7 @@ struct GpuVuidsCmdDrawIndirectByteCountEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDrawIndirectByteCountEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndirectByteCountEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndirectByteCountEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdDrawIndirectByteCountEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDrawIndirectByteCountEXT-None-08114";
     }
 };
 
@@ -288,7 +288,7 @@ struct GpuVuidsCmdDispatchBase : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdDispatchBase-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdDispatchBase-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDispatchBase-None-08613";
-        invalid_descriptor = "VUID-vkCmdDispatchBase-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdDispatchBase-None-08114";
     }
 };
 
@@ -298,7 +298,7 @@ struct GpuVuidsCmdExecuteGeneratedCommandsEXT : GpuVuid {
         storage_access_oob_06936 = "VUID-vkCmdExecuteGeneratedCommandsEXT-storageBuffers-06936";
         uniform_access_oob_08612 = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08613";
-        invalid_descriptor = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08114";
+        invalid_descriptor_08114 = "VUID-vkCmdExecuteGeneratedCommandsEXT-None-08114";
     }
 };
 

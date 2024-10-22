@@ -477,7 +477,7 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             strm << "(set = " << error_record[kInstBindlessUninitDescSetOffset]
                  << ", binding = " << error_record[kInstBindlessUninitBindingOffset] << ") Descriptor index "
                  << error_record[kInstBindlessUninitDescIndexOffset] << " is uninitialized.";
-            out_vuid_msg = vuid.invalid_descriptor;
+            out_vuid_msg = vuid.invalid_descriptor_08114;
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorDestroyed: {
@@ -498,7 +498,7 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             if (size == 0) {
                 strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << desc_index
                      << " is uninitialized.";
-                out_vuid_msg = vuid.invalid_descriptor;
+                out_vuid_msg = vuid.invalid_descriptor_08114;
                 error_found = true;
                 break;
             }
