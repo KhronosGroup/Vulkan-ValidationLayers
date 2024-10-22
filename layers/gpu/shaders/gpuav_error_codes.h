@@ -58,6 +58,7 @@ const int kErrorSubCodeNonBindlessOOBTexelBufferBounds = 4;
 // Buffer Device Address
 //
 const int kErrorSubCodeBufferDeviceAddressUnallocRef = 1;
+const int kErrorSubCodeBufferDeviceAddressAlignment = 2;
 
 // Ray Query
 //

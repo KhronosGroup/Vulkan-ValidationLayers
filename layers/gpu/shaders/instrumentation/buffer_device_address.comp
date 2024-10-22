@@ -55,34 +55,42 @@ bool inst_buffer_device_address(
     const uvec4 stage_info,
     const uint64_t addr,
     const uint access_byte_size,
-    const uint access_instruction)
+    const uint access_opcode,
+    const uint alignment)
 {
-    const Range cache_range = bda_ranges[index_cache];
-    if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
-        return true;
-    }
-
-    // Find out if addr is valid
-    // ---
-    for (uint range_i = 0; range_i < uint(bda_ranges_count); ++range_i) {
-        const Range range = bda_ranges[range_i];
-        if (addr < range.begin) {
-            // Invalid address, proceed to error logging
-            break;
-        }
-        if ((addr < range.end) && (addr + access_byte_size > range.end)) {
-            // Ranges do not overlap,
-            // so if current range holds addr but not (add + access_byte_size), access is invalid
-            break;
-        }
-        if ((addr + access_byte_size) <= range.end) {
-            // addr >= range.begin && addr + access_byte_size <= range.end
-            // ==> valid access
-            index_cache = range_i;
+    uint error_sub_code = kErrorSubCodeBufferDeviceAddressUnallocRef;
+    // alignment is guaranteed to be a power of 2
+    // this is a valid way in GLSL to have it do OpUConvert for us
+    if ((addr & (alignment - 1)) != 0) {
+        error_sub_code = kErrorSubCodeBufferDeviceAddressAlignment;
+    } else {
+        const Range cache_range = bda_ranges[index_cache];
+        if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
             return true;
         }
-        // Address is above current range, proceed to next range.
-        // If at loop end, address is invalid.
+
+        // Find out if addr is valid
+        // ---
+        for (uint range_i = 0; range_i < uint(bda_ranges_count); ++range_i) {
+            const Range range = bda_ranges[range_i];
+            if (addr < range.begin) {
+                // Invalid address, proceed to error logging
+                break;
+            }
+            if ((addr < range.end) && (addr + access_byte_size > range.end)) {
+                // Ranges do not overlap,
+                // so if current range holds addr but not (add + access_byte_size), access is invalid
+                break;
+            }
+            if ((addr + access_byte_size) <= range.end) {
+                // addr >= range.begin && addr + access_byte_size <= range.end
+                // ==> valid access
+                index_cache = range_i;
+                return true;
+            }
+            // Address is above current range, proceed to next range.
+            // If at loop end, address is invalid.
+        }
     }
 
     // addr is invalid, try to print error
@@ -106,7 +114,7 @@ bool inst_buffer_device_address(
         inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
         inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBufferDeviceAddress;
-        inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = kErrorSubCodeBufferDeviceAddressUnallocRef;
+        inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error_sub_code;
 
 		inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
         inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
@@ -114,7 +122,8 @@ bool inst_buffer_device_address(
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
         inst_errors_buffer.data[write_pos + kInstBuffAddrAccessByteSizeOffset] = access_byte_size;
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessInstructionOffset] = access_instruction;
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessOpcodeOffset] = access_opcode;
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessAlignmentOffset] = alignment;
     }
 
     return false;
