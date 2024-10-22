@@ -111,8 +111,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
     bool skip = false;
     auto semaphore = semaphore_state.VkHandle();
     if ((semaphore_state.Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(semaphore))) {
-        VkQueue other_queue = AnotherQueueWaits(semaphore_state);
-        if (other_queue) {
+        if (VkQueue other_queue = AnotherQueueWaits(semaphore_state)) {
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kOtherQueueWaiting);
             const LogObjectList objlist(semaphore, queue, other_queue);
             skip |= core.LogError(vuid, objlist, loc, "queue (%s) is already waiting on semaphore (%s).",

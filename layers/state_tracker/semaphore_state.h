@@ -112,6 +112,7 @@ class Semaphore : public RefcountedStateObject {
 
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
+    bool HasResolvingTimelineSignal(uint64_t wait_payload) const;
 
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);

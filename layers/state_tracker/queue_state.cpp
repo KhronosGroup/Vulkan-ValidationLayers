@@ -71,6 +71,7 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
         submission.BeginUse();
         for (auto &wait : submission.wait_semaphores) {
             wait.semaphore->EnqueueWait(SubmissionReference(this, submission.seq), wait.payload);
+            timeline_wait_count_ += (wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0;
         }
 
         for (auto &signal : submission.signal_semaphores) {
@@ -132,6 +133,31 @@ void vvl::Queue::Wait(const Location &loc, uint64_t until_seq) {
 void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
     Notify(until_seq);
     Wait(loc, until_seq);
+}
+
+std::optional<vvl::QueueSubmission::SemaphoreInfo> vvl::Queue::HasTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const {
+    auto guard = Lock();
+
+    // A simple optimization for a long sequence of submits without host waits.
+    // Stop iteration over submits if there are no timeline waits left. If only
+    // binary semaphores are used this will return immediately.
+    uint32_t processed_waits = 0;
+
+    for (auto it = submissions_.rbegin(); it != submissions_.rend() && processed_waits < timeline_wait_count_; ++it) {
+        const vvl::QueueSubmission &submission = *it;
+        if (submission.seq > until_seq) {
+            continue;
+        }
+        for (const auto &wait_info : submission.wait_semaphores) {
+            if (wait_info.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+                if (!wait_info.semaphore->HasResolvingTimelineSignal(wait_info.payload)) {
+                    return wait_info;
+                }
+                processed_waits++;
+            }
+        }
+    }
+    return {};
 }
 
 void vvl::Queue::Destroy() {
@@ -197,6 +223,7 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
     submission.EndUse();
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);
+        timeline_wait_count_ -= (wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0;
     }
     for (auto &cb_state : submission.cbs) {
         auto cb_guard = cb_state->WriteLock();

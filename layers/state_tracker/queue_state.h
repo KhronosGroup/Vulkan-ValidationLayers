@@ -115,6 +115,11 @@ class Queue : public StateObject {
     // Helper that combines Notify and Wait
     void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
 
+    // Check if there is a timeline wait before or at until_seq submission that
+    // does not have a resolving timeline signal submitted yet. If such wait exists
+    // then the function returns not empty object with semaphore wait information.
+    std::optional<vvl::QueueSubmission::SemaphoreInfo> HasTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
+
   public:
     // Queue family index. As queueFamilyIndex parameter in vkGetDeviceQueue.
     const uint32_t queue_family_index;
@@ -142,6 +147,9 @@ class Queue : public StateObject {
     virtual void PostSubmit(QueueSubmission &submission) {}
     // called when the worker thread decides a submissions has finished executing
     virtual void Retire(QueueSubmission &submission);
+
+  private:
+    uint32_t timeline_wait_count_ = 0;
 
   private:
     using LockGuard = std::unique_lock<std::mutex>;
