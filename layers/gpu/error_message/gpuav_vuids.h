@@ -27,6 +27,7 @@ struct GpuVuid {
     const char* uniform_access_oob_08612 = kVUIDUndefined;
     const char* storage_access_oob_08613 = kVUIDUndefined;
     const char* invalid_descriptor_08114 = kVUIDUndefined;
+    const char* descriptor_index_oob_10068 = kVUIDUndefined;
     const char* count_exceeds_bufsize_1 = kVUIDUndefined;
     const char* count_exceeds_bufsize = kVUIDUndefined;
     const char* count_exceeds_device_limit = kVUIDUndefined;
