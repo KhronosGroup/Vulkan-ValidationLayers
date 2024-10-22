@@ -2930,29 +2930,17 @@ TEST_F(NegativeWsi, QueuePresentWaitingSameSemaphore) {
 TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     TEST_DESCRIPTION("Submit a present operation with a waiting binary semaphore not previously signaled.");
     AddSurfaceExtension();
-    AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
-    // timeline semaphore determines which VUID used, even though it isn't needed for the test
-    AddOptionalExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
 
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(timeline_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-    RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    uint32_t image_index{0};
     const auto images = m_swapchain.GetImages();
+    for (auto image : images) {
+        SetImageLayoutPresentSrc(image);
+    }
 
-    vkt::Fence fence(*m_device);
     vkt::Semaphore semaphore(*m_device);
-
-    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
-
-    fence.Wait(kWaitTimeout);
-    SetImageLayoutPresentSrc(images[image_index]);
-
-    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
+    const uint32_t image_index = m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore));
 
     // the semaphore has already been waited on
     m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pWaitSemaphores-03268");
@@ -2960,6 +2948,41 @@ TEST_F(NegativeWsi, QueuePresentBinarySemaphoreNotSignaled) {
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
+}
+
+TEST_F(NegativeWsi, QueuePresentDependsOnTimelineWait) {
+    TEST_DESCRIPTION("Present semaphore wait has corresponding signal, but that signal depends on timeline wait-before-signal");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    const auto images = m_swapchain.GetImages();
+    for (auto image : images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1));
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    vkt::Semaphore binary_semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(binary_semaphore));
+
+    // the semaphore has already been waited on
+    m_errorMonitor->SetDesiredError("VUID-vkQueuePresentKHR-pWaitSemaphores-03268");
+    m_default_queue->Present(m_swapchain, image_index, binary_semaphore);
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_device->Wait();
 }
 
 TEST_F(NegativeWsi, MissingWaitForImageAcquireSemaphore) {

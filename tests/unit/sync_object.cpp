@@ -3821,3 +3821,81 @@ TEST_F(NegativeSyncObject, DifferentSignalingOrderThanSubmitOrder2) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait) {
+    TEST_DESCRIPTION("Binary semaphore signal->wait after timeline wait-before-signal");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1));
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(binary_semaphore));
+
+    // There is a matching binary signal for this wait, but that signal depends on another not yet submitted timeline signal
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pWaitSemaphores-03238");
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait2) {
+    TEST_DESCRIPTION("Binary semaphore signal-wait depends on timeline wait-before-signal");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1), vkt::Signal(binary_semaphore));
+
+    // There is a matching binary signal for this wait, but that signal depends on another not yet submitted timeline signal
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-semaphore-03873");
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait3) {
+    TEST_DESCRIPTION("Binary semaphore signal-wait depends on timeline wait-before-signal");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore timeline_semaphore2(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1), vkt::TimelineSignal(timeline_semaphore2, 1));
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore2, 1), vkt::Signal(binary_semaphore));
+
+    // There is a matching binary signal for this wait, but that signal depends on another not yet submitted timeline signal
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-semaphore-03873");
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_device->Wait();
+}
