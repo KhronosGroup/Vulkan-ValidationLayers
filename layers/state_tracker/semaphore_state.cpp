@@ -183,11 +183,44 @@ bool vvl::Semaphore::CanBinaryBeWaited() const {
     if (timeline_.empty()) {
         return CanWaitBinarySemaphoreAfterOperation(completed_.op_type);
     }
+
+    const TimePoint &timepoint = timeline_.rbegin()->second;
+
+    assert(scope_ == vvl::Semaphore::kInternal);  // Ensured by all calling sites
+
     // Every timeline slot of binary semaphore should contain at least a signal.
     // Wait before signal is not allowed.
-    assert(timeline_.rbegin()->second.HasSignaler());
+    assert(timepoint.HasSignaler());
 
-    return !timeline_.rbegin()->second.HasWaiters();
+    // Already has waiters, cannot be double waited
+    if (timepoint.HasWaiters()) {
+        return false;
+    }
+
+    // Image acquire cannot be blocked by timeline wait, we can wait on it
+    if (timepoint.acquire_command.has_value()) {
+        return true;
+    }
+
+    // Check that synchronization is not blocked by timeline wait that does not have submitted signal.
+    // This part of various VUs (e.g. VUID-vkQueueSubmit-pWaitSemaphores-03238):
+    // "and any semaphore signal operations on which it depends must have also been submitted for execution"
+    return !timepoint.signal_submit->queue->HasTimelineWaitWithoutResolvingSignal(timepoint.signal_submit->seq).has_value();
+}
+
+bool vvl::Semaphore::HasResolvingTimelineSignal(uint64_t wait_payload) const {
+    assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
+    auto guard = ReadLock();
+    auto it = timeline_.find(wait_payload);
+    assert(it != timeline_.end());  // for each registered wait there is a timepoint
+    while (it != timeline_.end()) {
+        if (it->second.signal_submit.has_value()) {
+            assert(it->first >= wait_payload);  // timepoints are ordered in increasing order
+            return true;
+        }
+        ++it;
+    }
+    return false;
 }
 
 bool vvl::Semaphore::CanRetireBinaryWait(TimePoint &timepoint) const {
