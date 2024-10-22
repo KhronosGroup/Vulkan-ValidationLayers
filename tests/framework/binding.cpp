@@ -743,6 +743,56 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
     return result;
 }
 
+VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const TimelineSignal &signal, const Fence &fence) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.stageMask = wait.stage_mask;
+
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.value = signal.value;
+    signal_info.stageMask = signal.stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+
+    VkResult result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
+VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Signal &signal, const Fence &fence) {
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
+    cb_info.commandBuffer = cmd.handle();
+
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
+    wait_info.semaphore = wait.semaphore.handle();
+    wait_info.value = wait.value;
+    wait_info.stageMask = wait.stage_mask;
+
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
+    signal_info.semaphore = signal.semaphore.handle();
+    signal_info.stageMask = signal.stage_mask;
+
+    VkSubmitInfo2 submit = vku::InitStructHelper();
+    submit.waitSemaphoreInfoCount = 1;
+    submit.pWaitSemaphoreInfos = &wait_info;
+    submit.commandBufferInfoCount = cmd.initialized() ? 1 : 0;
+    submit.pCommandBufferInfos = &cb_info;
+    submit.signalSemaphoreInfoCount = 1;
+    submit.pSignalSemaphoreInfos = &signal_info;
+
+    VkResult result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    return result;
+}
+
 VkResult Queue::Present(const Swapchain &swapchain, uint32_t image_index, const Semaphore &wait_semaphore,
                         void *present_info_pnext) {
     VkPresentInfoKHR present = vku::InitStructHelper(present_info_pnext);

@@ -526,6 +526,9 @@ class Queue : public internal::Handle<VkQueue> {
     VkResult Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const TimelineSignal &signal,
                      const Fence &fence = no_fence, bool use_khr = false);
 
+    VkResult Submit2(const CommandBuffer &cmd, const Wait &wait, const TimelineSignal &signal, const Fence &fence = no_fence);
+    VkResult Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Signal &signal, const Fence &fence = no_fence);
+
     // vkQueuePresentKHR()
     VkResult Present(const Swapchain &swapchain, uint32_t image_index, const Semaphore &wait_semaphore,
                      void *present_info_pnext = nullptr);
