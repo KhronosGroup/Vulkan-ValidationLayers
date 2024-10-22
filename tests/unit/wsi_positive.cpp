@@ -1581,3 +1581,102 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     ReleaseWaylandContext(wayland_ctx);
 #endif
 }
+
+TEST_F(PositiveWsi, WaitSemaphoreAndPresentFence) {
+    TEST_DESCRIPTION("vkQueuePresent waits on a semaphore and signals a fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    constexpr uint32_t swapchain_count = 2u;
+
+    SurfaceContext surface_contexts[swapchain_count];
+    VkSurfaceKHR surfaces[swapchain_count];
+    vkt::Swapchain swapchains[swapchain_count];
+    for (uint32_t i = 0u; i < swapchain_count; ++i) {
+        CreateSurface(surface_contexts[i], surfaces[i]);
+        swapchains[i] = CreateSwapchain(surfaces[i], VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+    }
+
+    vkt::Semaphore acquire_semaphores[swapchain_count];
+    vkt::Semaphore submit_semaphores[swapchain_count];
+    std::vector<VkImage> swapchain_images[swapchain_count];
+    for (uint32_t i = 0u; i < swapchain_count; ++i) {
+        acquire_semaphores[i] = vkt::Semaphore(*m_device);
+        submit_semaphores[i] = vkt::Semaphore(*m_device);
+        swapchain_images[i] = swapchains[i].GetImages();
+    }
+
+    m_command_buffer.begin();
+
+    uint32_t image_indexes[swapchain_count];
+    for (uint32_t i = 0u; i < swapchain_count; ++i) {
+        vk::AcquireNextImageKHR(device(), swapchains[i], kWaitTimeout, acquire_semaphores[i], VK_NULL_HANDLE, &image_indexes[i]);
+        const auto present_transition = TransitionToPresent(swapchain_images[i][image_indexes[i]], VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
+                               nullptr, 0u, nullptr, 1u, &present_transition);
+    }
+
+    m_command_buffer.end();
+
+    VkSemaphore acquire_semaphores_handles[swapchain_count];
+    VkSemaphore submit_semaphores_handles[swapchain_count];
+    VkPipelineStageFlags wait_stage_masks[swapchain_count];
+    for (uint32_t i = 0u; i < swapchain_count; ++i) {
+        acquire_semaphores_handles[i] = acquire_semaphores[i];
+        submit_semaphores_handles[i] = submit_semaphores[i];
+        wait_stage_masks[i] = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+
+    VkSubmitInfo submitInfo = vku::InitStructHelper();
+    submitInfo.waitSemaphoreCount = swapchain_count;
+    submitInfo.pWaitSemaphores = acquire_semaphores_handles;
+    submitInfo.pWaitDstStageMask = wait_stage_masks;
+    submitInfo.commandBufferCount = 1u;
+    submitInfo.pCommandBuffers = &m_command_buffer.handle();
+    submitInfo.signalSemaphoreCount = swapchain_count;
+    submitInfo.pSignalSemaphores = submit_semaphores_handles;
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submitInfo, VK_NULL_HANDLE);
+
+    vkt::Fence present_fences[swapchain_count];
+    VkFence present_fences_handles[swapchain_count];
+    for (uint32_t i = 0u; i < swapchain_count; ++i) {
+        present_fences[i] = vkt::Fence(*m_device);
+        present_fences_handles[i] = present_fences[i].handle();
+    }
+    VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+    present_fence_info.swapchainCount = swapchain_count;
+    present_fence_info.pFences = present_fences_handles;
+
+    VkSwapchainKHR swapchain_handles[2] = {
+        swapchains[0].handle(),
+        swapchains[1].handle(),
+    };
+
+    VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
+    present.waitSemaphoreCount = swapchain_count;
+    present.pWaitSemaphores = submit_semaphores_handles;
+    present.swapchainCount = swapchain_count;
+    present.pSwapchains = swapchain_handles;
+    present.pImageIndices = image_indexes;
+    vk::QueuePresentKHR(*m_default_queue, &present);
+
+    for (uint32_t i = 0; i < swapchain_count; ++i) {
+        while (true) {
+            VkResult fence_status = vk::GetFenceStatus(*m_device, present_fences_handles[i]);
+            if (fence_status != VK_NOT_READY) {
+                break;
+            }
+        }
+
+        submit_semaphores[i] = {};
+    }
+
+    for (uint32_t i = 0; i < swapchain_count; ++i) {
+        swapchains[i].destroy();
+        DestroySurface(surfaces[i]);
+        DestroySurfaceContext(surface_contexts[i]);
+    }
+}
