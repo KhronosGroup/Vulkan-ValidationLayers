@@ -348,6 +348,8 @@ class Swapchain : public StateObject {
 
     void PresentImage(uint32_t image_index, uint64_t present_id);
 
+    void ReleaseImage(uint32_t image_index);
+
     void AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
                       const std::shared_ptr<vvl::Fence> &fence_state);
 
