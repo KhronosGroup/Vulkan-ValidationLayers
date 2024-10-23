@@ -252,9 +252,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndirectCount-countBuffer-03122",
-                                         "Indirect draw count of 2 would exceed buffer size 16 of buffer .* stride = 16 offset = 0 "
-                                         ".* = 36");
+    m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 2;
     count_buffer.Memory().Unmap();
@@ -274,7 +272,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     *count_ptr = 1;
     count_buffer.Memory().Unmap();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-countBuffer-03121");
+    m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -287,7 +285,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
+    m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
     vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
@@ -317,7 +315,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     *count_ptr = 1;
     count_buffer.Memory().Unmap();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153");
+    m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -355,7 +353,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         mesh_draw_ptr->groupCountY = 0;
         mesh_draw_ptr->groupCountZ = 0;
         mesh_draw_buffer.Memory().Unmap();
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07098");
+        m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
         count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
         *count_ptr = 1;
         count_buffer.Memory().Unmap();
@@ -370,7 +368,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099");
+        m_errorMonitor->SetDesiredWarning("WARNING-GPU-AV-drawCount");
         count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
         *count_ptr = 2;
         count_buffer.Memory().Unmap();
