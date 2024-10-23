@@ -7,7 +7,10 @@
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.3.299"
+            "commit": "v1.3.299",
+            "cmake_options": [
+                 "-DVULKAN_HEADERS_ENABLE_MODULE=OFF"
+            ]
         },
         {
             "name": "Vulkan-Utility-Libraries",
