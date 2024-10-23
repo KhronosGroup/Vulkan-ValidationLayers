@@ -3828,9 +3828,12 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             if (auto submission_ref = semaphore_state->GetPendingBinarySignalSubmission()) {
                 acquire_fence_sync.submission_refs.emplace_back(submission_ref.value());
             }
-            for (auto &submission : present_submissions) {
-                auto movable_semaphore = semaphore_state;
-                submission.AddWaitSemaphore(std::move(movable_semaphore), 0);
+            // Register present wait semaphores only in the first present batch.
+            // NOTE: when presenting images from multiple swapchains, if some swapchains use
+            // present fences, waiting on any present fence will retire all previous present batches.
+            // As a result, the present wait semaphores from the first batch will always be retired.
+            if (!present_submissions.empty()) {
+                present_submissions[0].AddWaitSemaphore(std::move(semaphore_state), 0);
             }
         }
     }
