@@ -120,8 +120,6 @@ struct GpuVuidsCmdDrawIndirectCount : GpuVuid {
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndirectCount-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndirectCount-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdDrawIndirectCount-None-08114";
-        count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndirectCount-countBuffer-03121";
-        count_exceeds_bufsize = "VUID-vkCmdDrawIndirectCount-countBuffer-03122";
         count_exceeds_device_limit = "VUID-vkCmdDrawIndirectCount-countBuffer-02717";
         descriptor_index_oob_10068 = "VUID-vkCmdDrawIndirectCount-None-10068";
     }
@@ -134,8 +132,6 @@ struct GpuVuidsCmdDrawIndexedIndirectCount : GpuVuid {
         uniform_access_oob_08612 = "VUID-vkCmdDrawIndexedIndirectCount-None-08612";
         storage_access_oob_08613 = "VUID-vkCmdDrawIndexedIndirectCount-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdDrawIndexedIndirectCount-None-08114";
-        count_exceeds_bufsize_1 = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03153";
-        count_exceeds_bufsize = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154";
         count_exceeds_device_limit = "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717";
         descriptor_index_oob_10068 = "VUID-vkCmdDrawIndexedIndirectCount-None-10068";
     }
@@ -226,8 +222,6 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountNV : GpuVuid {
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
         descriptor_index_oob_10068 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-10068";
-        count_exceeds_bufsize_1 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02191";
-        count_exceeds_bufsize = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02192";
         count_exceeds_device_limit = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02717";
         task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
         task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
@@ -278,8 +272,6 @@ struct GpuVuidsCmdDrawMeshTasksIndirectCountEXT : GpuVuid {
         storage_access_oob_08613 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08613";
         invalid_descriptor_08114 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
         descriptor_index_oob_10068 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-10068";
-        count_exceeds_bufsize_1 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07098";
-        count_exceeds_bufsize = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099";
         count_exceeds_device_limit = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717";
         task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
         task_group_count_exceeds_max_y = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323";
