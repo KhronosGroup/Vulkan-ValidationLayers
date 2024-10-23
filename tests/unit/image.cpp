@@ -4520,7 +4520,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     }
 
     // 2 plane format
-    const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
+    const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     if (multi_plane_extensions) {
         vkt::Image image;
         if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
@@ -4537,7 +4537,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
     }
 
     // 3 plane format
-    const VkFormat three_plane_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
+    const VkFormat three_plane_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     if (multi_plane_extensions) {
         vkt::Image image;
         if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {

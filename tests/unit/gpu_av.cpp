@@ -822,7 +822,7 @@ TEST_F(NegativeGpuAV, DISABLED_YcbcrDrawFetchIndexed) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-    const VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
+    const VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;

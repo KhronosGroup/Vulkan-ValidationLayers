@@ -71,7 +71,7 @@ TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR;
+    ci.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
     ci.extent = {256, 256, 1};
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
