@@ -1512,6 +1512,87 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
     DestroySurfaceContext(surface_context);
 }
 
+TEST_F(PositiveWsi, PresentFenceRetiresPresentSemaphores) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8578
+    TEST_DESCRIPTION("Delete present wait semaphore after waiting on present fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    SurfaceContext surface_context2;
+    VkSurfaceKHR surface2;
+    CreateSurface(surface_context2, surface2);
+    vkt::Swapchain swapchain2 =
+        CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    const auto swapchain_images = m_swapchain.GetImages();
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    vkt::Semaphore acquire_semaphore2(*m_device);
+    const auto swapchain_images2 = swapchain2.GetImages();
+    const uint32_t image_index2 = swapchain2.AcquireNextImage(acquire_semaphore2, kWaitTimeout);
+
+    m_command_buffer.Begin();
+    const auto present_transition = TransitionToPresent(swapchain_images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr,
+                           0u, nullptr, 1u, &present_transition);
+
+    const auto present_transition2 = TransitionToPresent(swapchain_images2[image_index2], VK_IMAGE_LAYOUT_UNDEFINED, 0u);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr,
+                           0u, nullptr, 1u, &present_transition2);
+    m_command_buffer.End();
+
+    const VkSemaphore acquire_semaphores_handles[2] = {acquire_semaphore, acquire_semaphore2};
+    const VkSwapchainKHR swapchain_handles[2] = {m_swapchain, swapchain2};
+    const VkPipelineStageFlags wait_stage_masks[2] = {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT};
+
+    vkt::Semaphore submit_semaphore(*m_device);
+
+    VkSubmitInfo submitInfo = vku::InitStructHelper();
+    submitInfo.waitSemaphoreCount = 2u;
+    submitInfo.pWaitSemaphores = acquire_semaphores_handles;
+    submitInfo.pWaitDstStageMask = wait_stage_masks;
+    submitInfo.commandBufferCount = 1u;
+    submitInfo.pCommandBuffers = &m_command_buffer.handle();
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &submit_semaphore.handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submitInfo, VK_NULL_HANDLE);
+
+    vkt::Fence present_fence(*m_device);
+    vkt::Fence present_fence2(*m_device);
+    const VkFence present_fences_handles[2] = {present_fence, present_fence2};
+
+    VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+    present_fence_info.swapchainCount = 2;
+    present_fence_info.pFences = present_fences_handles;
+
+    const uint32_t image_indices[2] = {image_index, image_index2};
+
+    VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &submit_semaphore.handle();
+    present.swapchainCount = 2;
+    present.pSwapchains = swapchain_handles;
+    present.pImageIndices = image_indices;
+    vk::QueuePresentKHR(*m_default_queue, &present);
+
+    vk::WaitForFences(*m_device, 1, &present_fences_handles[0], VK_TRUE, kWaitTimeout);
+
+    // Waiting on any present fence must retire all present wait semaphores.
+    // It was not the case in the original issue when multiple images were presented.
+    // Deleting semaphore after the fence wait resulted in semaphore in-use error.
+    submit_semaphore = {};
+
+    vk::WaitForFences(*m_device, 1, &present_fences_handles[1], VK_TRUE, kWaitTimeout);
+
+    swapchain2.destroy();
+    DestroySurface(surface2);
+    DestroySurfaceContext(surface_context2);
+}
+
 TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     TEST_DESCRIPTION("Create swapchain with per present mode minImageCount that is less than surface's general minImageCount");
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
