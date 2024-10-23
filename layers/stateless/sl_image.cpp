@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
@@ -154,6 +156,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     skip |= ValidateCreateImageStencilUsage(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageCompressionControl(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageSwapchain(*pCreateInfo, create_info_loc);
+    skip |= ValidateCreateImageFormatList(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageMetalObject(*pCreateInfo, create_info_loc);
 
     std::vector<uint64_t> image_create_drm_format_modifiers;
@@ -264,43 +267,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         skip |= LogError("VUID-VkImageCreateInfo-format-04713", device, create_info_loc.dot(Field::format),
                          "(%s) is Y Chroma Subsampled (has _420 suffix) so the height (%" PRIu32 ") must be a multiple of 2.",
                          string_VkFormat(image_format), pCreateInfo->extent.height);
-    }
-
-    const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
-    if (format_list_info) {
-        const uint32_t view_format_count = format_list_info->viewFormatCount;
-        const bool mutable_image = (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) != 0;
-        if (!mutable_image && view_format_count > 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-04738", device,
-                             create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
-                             "is %" PRIu32 " but flag (%s) does not include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.", view_format_count,
-                             string_VkImageCreateFlags(image_flags).c_str());
-        }
-        // Check if viewFormatCount is not zero that it is all compatible
-        for (uint32_t i = 0; i < view_format_count; i++) {
-            const VkFormat view_format = format_list_info->pViewFormats[i];
-            const Location format_loc = create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i);
-            const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);
-
-            if (view_format == VK_FORMAT_UNDEFINED) {
-                skip |= LogError("VUID-VkImageFormatListCreateInfo-viewFormatCount-09540", device, format_loc,
-                                 "is VK_FORMAT_UNDEFINED.");
-            } else if (!class_compatible && !vkuFormatIsMultiplane(image_format)) {
-                if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-                    const bool size_compatible = !vkuFormatIsCompressed(view_format) &&
-                                                 vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
-                    if (!size_compatible) {
-                        skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
-                                         "(%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",
-                                         string_VkFormat(view_format), string_VkFormat(image_format));
-                    }
-                } else {
-                    skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
-                                     "(%s) and VkImageCreateInfo::format (%s) are not compatible.", string_VkFormat(view_format),
-                                     string_VkFormat(image_format));
-                }
-            }
-        }
     }
 
     return skip;
@@ -610,6 +576,85 @@ bool StatelessValidation::ValidateCreateImageSwapchain(const VkImageCreateInfo &
         skip |=
             LogError(vuid, swapchain_create_info->swapchain, swapchain_loc, "flags are %s and must only have valid flags set (%s).",
                      string_VkImageCreateFlags(create_info.flags).c_str(), string_VkImageCreateFlags(valid_flags).c_str());
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateCreateImageFormatList(const VkImageCreateInfo &create_info,
+                                                        const Location &create_info_loc) const {
+    bool skip = false;
+    const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(create_info.pNext);
+    if (!format_list_info) return skip;
+
+    const VkImageCreateFlags image_flags = create_info.flags;
+    const uint32_t view_format_count = format_list_info->viewFormatCount;
+    const bool mutable_image = (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) != 0;
+    if (!mutable_image && view_format_count > 1) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-04738", device,
+                         create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::viewFormatCount),
+                         "is %" PRIu32 " but flag (%s) does not include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.", view_format_count,
+                         string_VkImageCreateFlags(image_flags).c_str());
+    }
+
+    // Check if viewFormatCount is not zero that it is all compatible
+    const VkFormat image_format = create_info.format;
+    const auto image_format_class = vkuFormatCompatibilityClass(image_format);
+    for (uint32_t i = 0; i < view_format_count; i++) {
+        const VkFormat view_format = format_list_info->pViewFormats[i];
+        const Location format_loc = create_info_loc.pNext(Struct::VkImageFormatListCreateInfo, Field::pViewFormats, i);
+        const auto view_format_class = vkuFormatCompatibilityClass(view_format);
+
+        if (view_format == VK_FORMAT_UNDEFINED) {
+            skip |=
+                LogError("VUID-VkImageFormatListCreateInfo-viewFormatCount-09540", device, format_loc, "is VK_FORMAT_UNDEFINED.");
+        } else if (vkuFormatIsMultiplane(image_format)) {
+            if (vkuFormatIsMultiplane(view_format)) {
+                // TODO - need VU to say these need to be the same
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6967
+            } else if (mutable_image) {
+                // Need to make sure it is compatible with any possible planes because we don't know the apsectMask yet
+                const VkFormat plane_0_format = vkuFindMultiplaneCompatibleFormat(image_format, VK_IMAGE_ASPECT_PLANE_0_BIT);
+                const VkFormat plane_1_format = vkuFindMultiplaneCompatibleFormat(image_format, VK_IMAGE_ASPECT_PLANE_1_BIT);
+                const VkFormat plane_2_format = vkuFindMultiplaneCompatibleFormat(image_format, VK_IMAGE_ASPECT_PLANE_2_BIT);
+                const uint32_t plane_count = vkuFormatPlaneCount(image_format);
+                bool found_compatible = false;
+                if (view_format_class == vkuFormatCompatibilityClass(plane_0_format)) {
+                    found_compatible = true;
+                } else if ((plane_count > 1) && view_format_class == vkuFormatCompatibilityClass(plane_1_format)) {
+                    found_compatible = true;
+                } else if ((plane_count > 2) && view_format_class == vkuFormatCompatibilityClass(plane_2_format)) {
+                    found_compatible = true;
+                }
+                if (!found_compatible) {
+                    std::stringstream ss;
+                    ss << "Plane 0 " << string_VkFormat(plane_0_format);
+                    if (plane_count > 1) {
+                        ss << "\nPlane 1 " << string_VkFormat(plane_1_format);
+                    }
+                    if (plane_count > 2) {
+                        ss << "\nPlane 2 " << string_VkFormat(plane_2_format);
+                    }
+                    skip |= LogError("VUID-VkImageCreateInfo-pNext-10062", device, format_loc,
+                                     "(%s) is not compatible with any plane of VkImageCreateInfo::format (%s)\n%s.",
+                                     string_VkFormat(view_format), string_VkFormat(image_format), ss.str().c_str());
+                }
+            }
+        } else if (view_format_class != image_format_class) {
+            if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
+                const bool size_compatible =
+                    !vkuFormatIsCompressed(view_format) && vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
+                if (!size_compatible) {
+                    skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
+                                     "(%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",
+                                     string_VkFormat(view_format), string_VkFormat(image_format));
+                }
+            } else {
+                skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
+                                 "(%s) and VkImageCreateInfo::format (%s) are not compatible.", string_VkFormat(view_format),
+                                 string_VkFormat(image_format));
+            }
+        }
     }
 
     return skip;

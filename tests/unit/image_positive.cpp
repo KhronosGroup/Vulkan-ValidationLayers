@@ -234,12 +234,9 @@ TEST_F(PositiveImage, BarrierLayoutToImageUsage) {
 
 TEST_F(PositiveImage, FormatCompatibility) {
     TEST_DESCRIPTION("Test format compatibility");
-
     AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkFormat format = VK_FORMAT_R12X4G12X4_UNORM_2PACK16;
 
@@ -259,11 +256,7 @@ TEST_F(PositiveImage, FormatCompatibility) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
-
-    VkImage image;
-    vk::CreateImage(device(), &image_create_info, nullptr, &image);
-
-    vk::DestroyImage(device(), image, nullptr);
+    vkt::Image image(*m_device, image_create_info);
 }
 
 TEST_F(PositiveImage, MultpilePNext) {

@@ -559,7 +559,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
                                   NULL,
                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
                                   VK_IMAGE_TYPE_2D,
-                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
+                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
                                   {128, 128, 1},
                                   1,
                                   1,
@@ -575,14 +575,14 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
     // Create Ycbcr conversion
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
-    ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
+    ycbcr_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
     ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -694,7 +694,7 @@ TEST_F(NegativeSampler, ImageSamplerConversionNullImageView) {
                                   NULL,
                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
                                   VK_IMAGE_TYPE_2D,
-                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
+                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
                                   {128, 128, 1},
                                   1,
                                   1,
@@ -706,12 +706,12 @@ TEST_F(NegativeSampler, ImageSamplerConversionNullImageView) {
     if (!ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR);
+    vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM);
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion.handle();
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
