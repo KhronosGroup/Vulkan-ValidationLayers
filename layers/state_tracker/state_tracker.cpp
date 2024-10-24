@@ -3863,6 +3863,16 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     }
 }
 
+void ValidationStateTracker::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device,
+                                                                     const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+                                                                     const RecordObject &record_obj) {
+    if (auto swapchain_data = Get<vvl::Swapchain>(pReleaseInfo->swapchain)) {
+        for (uint32_t i = 0; i < pReleaseInfo->imageIndexCount; ++i) {
+            swapchain_data->ReleaseImage(pReleaseInfo->pImageIndices[i]);
+        }
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                                      const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                                      const VkAllocationCallbacks *pAllocator,
