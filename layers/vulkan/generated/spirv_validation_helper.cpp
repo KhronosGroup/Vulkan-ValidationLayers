@@ -678,6 +678,18 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "RayTracingDisplacementMicromapNV";
         case spv::CapabilityRawAccessChainsNV:
             return "RawAccessChainsNV";
+        case spv::CapabilityCooperativeMatrixReductionsNV:
+            return "CooperativeMatrixReductionsNV";
+        case spv::CapabilityCooperativeMatrixConversionsNV:
+            return "CooperativeMatrixConversionsNV";
+        case spv::CapabilityCooperativeMatrixPerElementOperationsNV:
+            return "CooperativeMatrixPerElementOperationsNV";
+        case spv::CapabilityCooperativeMatrixTensorAddressingNV:
+            return "CooperativeMatrixTensorAddressingNV";
+        case spv::CapabilityCooperativeMatrixBlockLoadsNV:
+            return "CooperativeMatrixBlockLoadsNV";
+        case spv::CapabilityTensorAddressingNV:
+            return "TensorAddressingNV";
         case spv::CapabilityIntegerFunctions2INTEL:
             return "IntegerFunctions2INTEL";
         case spv::CapabilityFunctionPointersINTEL:

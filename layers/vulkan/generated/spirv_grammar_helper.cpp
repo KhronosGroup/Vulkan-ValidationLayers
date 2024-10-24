@@ -805,6 +805,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeHitObjectNV";
         case spv::OpImageSampleFootprintNV:
             return "OpImageSampleFootprintNV";
+        case spv::OpCooperativeMatrixConvertNV:
+            return "OpCooperativeMatrixConvertNV";
         case spv::OpEmitMeshTasksEXT:
             return "OpEmitMeshTasksEXT";
         case spv::OpSetMeshOutputsEXT:
@@ -849,10 +851,44 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpBeginInvocationInterlockEXT";
         case spv::OpEndInvocationInterlockEXT:
             return "OpEndInvocationInterlockEXT";
+        case spv::OpCooperativeMatrixReduceNV:
+            return "OpCooperativeMatrixReduceNV";
+        case spv::OpCooperativeMatrixLoadTensorNV:
+            return "OpCooperativeMatrixLoadTensorNV";
+        case spv::OpCooperativeMatrixStoreTensorNV:
+            return "OpCooperativeMatrixStoreTensorNV";
+        case spv::OpCooperativeMatrixPerElementOpNV:
+            return "OpCooperativeMatrixPerElementOpNV";
+        case spv::OpTypeTensorLayoutNV:
+            return "OpTypeTensorLayoutNV";
+        case spv::OpTypeTensorViewNV:
+            return "OpTypeTensorViewNV";
+        case spv::OpCreateTensorLayoutNV:
+            return "OpCreateTensorLayoutNV";
+        case spv::OpTensorLayoutSetDimensionNV:
+            return "OpTensorLayoutSetDimensionNV";
+        case spv::OpTensorLayoutSetStrideNV:
+            return "OpTensorLayoutSetStrideNV";
+        case spv::OpTensorLayoutSliceNV:
+            return "OpTensorLayoutSliceNV";
+        case spv::OpTensorLayoutSetClampValueNV:
+            return "OpTensorLayoutSetClampValueNV";
+        case spv::OpCreateTensorViewNV:
+            return "OpCreateTensorViewNV";
+        case spv::OpTensorViewSetDimensionNV:
+            return "OpTensorViewSetDimensionNV";
+        case spv::OpTensorViewSetStrideNV:
+            return "OpTensorViewSetStrideNV";
         case spv::OpDemoteToHelperInvocation:
             return "OpDemoteToHelperInvocation";
         case spv::OpIsHelperInvocationEXT:
             return "OpIsHelperInvocationEXT";
+        case spv::OpTensorViewSetClipNV:
+            return "OpTensorViewSetClipNV";
+        case spv::OpTensorLayoutSetBlockSizeNV:
+            return "OpTensorLayoutSetBlockSizeNV";
+        case spv::OpCooperativeMatrixTransposeNV:
+            return "OpCooperativeMatrixTransposeNV";
         case spv::OpConvertUToImageNV:
             return "OpConvertUToImageNV";
         case spv::OpConvertUToSamplerNV:
@@ -2255,6 +2291,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpReorderThreadWithHintNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeHitObjectNV, {{}}},
         {spv::OpImageSampleFootprintNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpCooperativeMatrixConvertNV, {{OperandKind::Id}}},
         {spv::OpEmitMeshTasksEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSetMeshOutputsEXT, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupNonUniformPartitionNV, {{OperandKind::Id}}},
@@ -2277,8 +2314,25 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpCooperativeMatrixLengthNV, {{OperandKind::Id}}},
         {spv::OpBeginInvocationInterlockEXT, {{}}},
         {spv::OpEndInvocationInterlockEXT, {{}}},
+        {spv::OpCooperativeMatrixReduceNV, {{OperandKind::Id, OperandKind::BitEnum, OperandKind::Id}}},
+        {spv::OpCooperativeMatrixLoadTensorNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum, OperandKind::BitEnum}}},
+        {spv::OpCooperativeMatrixStoreTensorNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum, OperandKind::BitEnum}}},
+        {spv::OpCooperativeMatrixPerElementOpNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTypeTensorLayoutNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTypeTensorViewNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCreateTensorLayoutNV, {{}}},
+        {spv::OpTensorLayoutSetDimensionNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTensorLayoutSetStrideNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTensorLayoutSliceNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTensorLayoutSetClampValueNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCreateTensorViewNV, {{}}},
+        {spv::OpTensorViewSetDimensionNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTensorViewSetStrideNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpDemoteToHelperInvocation, {{}}},
         {spv::OpIsHelperInvocationEXT, {{}}},
+        {spv::OpTensorViewSetClipNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTensorLayoutSetBlockSizeNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCooperativeMatrixTransposeNV, {{OperandKind::Id}}},
         {spv::OpConvertUToImageNV, {{OperandKind::Id}}},
         {spv::OpConvertUToSamplerNV, {{OperandKind::Id}}},
         {spv::OpConvertImageToUNV, {{OperandKind::Id}}},
