@@ -73,27 +73,23 @@ struct TimelineMaxDiffCheck {
 
 bool SemaphoreSubmitState::CannotWaitBinary(const vvl::Semaphore &semaphore_state) const {
     assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-    const auto semaphore = semaphore_state.VkHandle();
 
     // Check if this submission has signaled or unsignaled the semaphore
-    if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
-        const bool signaled = it->second;
+    if (const bool *signaled_state = vvl::Find(binary_signaling_state, semaphore_state.VkHandle())) {
+        const bool signaled = *signaled_state;
         return !signaled;  // not signaled => can't wait
     }
     // If not, then query semaphore's payload set by other submissions.
-    // This will return either the payload set by the previous submissions on the current queue,
-    // or the payload that is currently being updated by the async running queues.
     return !semaphore_state.CanBinaryBeWaited();
 }
 
 bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue,
                                               vvl::Func &other_command) const {
     assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-    const auto semaphore = semaphore_state.VkHandle();
 
     // Check if this submission has signaled or unsignaled the semaphore
-    if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
-        const bool signaled = it->second;
+    if (const bool *signaled_state = vvl::Find(binary_signaling_state, semaphore_state.VkHandle())) {
+        const bool signaled = *signaled_state;
         if (!signaled) {
             return false;  // not signaled => can't wait
         }

@@ -20,18 +20,21 @@
 #include "state_tracker/semaphore_state.h"
 
 class CoreChecks;
+
+// Tracks semaphore state changes during the validation phase of QueueSubmit commands.
+// Semaphore state object (vvl::Semaphore) is updated later in the record phase.
 struct SemaphoreSubmitState {
     const CoreChecks &core;
-    VkQueue queue;
-    VkQueueFlags queue_flags;
+    const VkQueue queue;
+    const VkQueueFlags queue_flags;
 
-    // This tracks how the payload of a binary semaphore changes **within the current submission**.
-    // Before the first wait or signal no map entry for the semaphore is defined, which means that
-    // semaphore's state is defined by the previous submissions on this queue or by the submissions on other queues.
-    // After the first wait/signal the map starts tracking binary payload value: true - signaled, false - unsignaled.
+    // Track binary semaphore payload
     vvl::unordered_map<VkSemaphore, bool> binary_signaling_state;
 
+    // Track semaphores that were temporary external and become internal after wait operation.
     vvl::unordered_set<VkSemaphore> internal_semaphores;
+
+    // Track timeline operations
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
 
