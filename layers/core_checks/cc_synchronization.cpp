@@ -24,6 +24,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
+#include "core_checks/cc_synchronization.h"
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
 #include "sync/sync_vuid_maps.h"
@@ -70,38 +71,91 @@ struct TimelineMaxDiffCheck {
     uint64_t max_diff;
 };
 
-bool CoreChecks::ValidateStageMaskHost(const LogObjectList &objlist, const Location &stage_mask_loc,
-                                       VkPipelineStageFlags2KHR stageMask) const {
-    bool skip = false;
-    if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
-        const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(stage_mask_loc, sync_vuid_maps::SubmitError::kHostStageMask);
-        skip |= LogError(vuid, objlist, stage_mask_loc,
-                         "must not include VK_PIPELINE_STAGE_HOST_BIT as the stage can't be invoked inside a command buffer.");
+bool SemaphoreSubmitState::CannotWaitBinary(const vvl::Semaphore &semaphore_state) const {
+    assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
+    const auto semaphore = semaphore_state.VkHandle();
+
+    // Check if this submission has signaled or unsignaled the semaphore
+    if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
+        const bool signaled = it->second;
+        return !signaled;  // not signaled => can't wait
     }
-    return skip;
+    // If not, then query semaphore's payload set by other submissions.
+    // This will return either the payload set by the previous submissions on the current queue,
+    // or the payload that is currently being updated by the async running queues.
+    return !semaphore_state.CanBinaryBeWaited();
 }
 
-bool CoreChecks::ValidateFenceForSubmit(const vvl::Fence &fence_state, const char *inflight_vuid, const char *retired_vuid,
-                                        const LogObjectList &objlist, const Location &loc) const {
-    bool skip = false;
+bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue,
+                                              vvl::Func &other_command) const {
+    assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
+    const auto semaphore = semaphore_state.VkHandle();
 
-    if (fence_state.Scope() == vvl::Fence::kInternal) {
-        switch (fence_state.State()) {
-            case vvl::Fence::kInflight:
-                skip |= LogError(inflight_vuid, objlist, loc, "(%s) is already in use by another submission.",
-                                 FormatHandle(fence_state.Handle()).c_str());
-                break;
-            case vvl::Fence::kRetired:
-                skip |= LogError(retired_vuid, objlist, loc,
-                                 "(%s) submitted in SIGNALED state. Fences must be reset before being submitted",
-                                 FormatHandle(fence_state.Handle()).c_str());
-                break;
-            default:
-                break;
+    // Check if this submission has signaled or unsignaled the semaphore
+    if (const auto it = binary_signaling_state.find(semaphore); it != binary_signaling_state.end()) {
+        const bool signaled = it->second;
+        if (!signaled) {
+            return false;  // not signaled => can't wait
+        }
+        other_queue = queue;
+        other_command = vvl::Func::Empty;
+        return true;  // signaled => can wait
+    }
+    // If not, get signaling state from the semaphore's last op.
+    // Last op was recorded either by the previous sumbissions on this queue,
+    // or it's a hot state from async running queues (so can get outdated immediately after was read).
+    const auto last_op = semaphore_state.LastOp();
+    if (!last_op || CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
+        return false;
+    }
+    other_queue = last_op->submit.queue ? last_op->submit.queue->VkHandle() : VK_NULL_HANDLE;
+    other_command = last_op->acquire_command ? *last_op->acquire_command : vvl::Func::Empty;
+    return true;
+}
+
+VkQueue SemaphoreSubmitState::AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const {
+    // VUID-vkQueueSubmit-pWaitSemaphores-00068 (and similar VUs):
+    // "When a semaphore wait operation referring to a binary semaphore defined
+    //  by any element of the pWaitSemaphores member of any element of pSubmits
+    //  executes on queue, there must be no other queues waiting on the same semaphore"
+    auto pending_wait_submit = semaphore_state.GetPendingBinaryWaitSubmission();
+    if (pending_wait_submit && pending_wait_submit->queue->VkHandle() != queue) {
+        return pending_wait_submit->queue->VkHandle();
+    }
+    return VK_NULL_HANDLE;
+}
+
+bool SemaphoreSubmitState::CheckSemaphoreValue(
+    const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
+    std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func) {
+    auto current_signal = timeline_signals.find(semaphore_state.VkHandle());
+    // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
+    if (current_signal != timeline_signals.end()) {
+        if (compare_func(vvl::Semaphore::kSignal, current_signal->second, false)) {
+            where = "current submit's signal";
+            bad_value = current_signal->second;
+            return true;
         }
     }
-
-    return skip;
+    auto current_wait = timeline_waits.find(semaphore_state.VkHandle());
+    if (current_wait != timeline_waits.end()) {
+        if (compare_func(vvl::Semaphore::kWait, current_wait->second, false)) {
+            where = "current submit's wait";
+            bad_value = current_wait->second;
+            return true;
+        }
+    }
+    auto pending = semaphore_state.LastOp(compare_func);
+    if (pending) {
+        if (pending->payload == semaphore_state.CurrentPayload()) {
+            where = "current";
+        } else {
+            where = pending->op_type == vvl::Semaphore::OpType::kSignal ? "pending signal" : "pending wait";
+        }
+        bad_value = pending->payload;
+        return true;
+    }
+    return false;
 }
 
 bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state) {
@@ -231,6 +285,40 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
         default:
             break;
     }
+    return skip;
+}
+
+bool CoreChecks::ValidateStageMaskHost(const LogObjectList &objlist, const Location &stage_mask_loc,
+                                       VkPipelineStageFlags2KHR stageMask) const {
+    bool skip = false;
+    if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
+        const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(stage_mask_loc, sync_vuid_maps::SubmitError::kHostStageMask);
+        skip |= LogError(vuid, objlist, stage_mask_loc,
+                         "must not include VK_PIPELINE_STAGE_HOST_BIT as the stage can't be invoked inside a command buffer.");
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateFenceForSubmit(const vvl::Fence &fence_state, const char *inflight_vuid, const char *retired_vuid,
+                                        const LogObjectList &objlist, const Location &loc) const {
+    bool skip = false;
+
+    if (fence_state.Scope() == vvl::Fence::kInternal) {
+        switch (fence_state.State()) {
+            case vvl::Fence::kInflight:
+                skip |= LogError(inflight_vuid, objlist, loc, "(%s) is already in use by another submission.",
+                                 FormatHandle(fence_state.Handle()).c_str());
+                break;
+            case vvl::Fence::kRetired:
+                skip |= LogError(retired_vuid, objlist, loc,
+                                 "(%s) submitted in SIGNALED state. Fences must be reset before being submitted",
+                                 FormatHandle(fence_state.Handle()).c_str());
+                break;
+            default:
+                break;
+        }
+    }
+
     return skip;
 }
 
