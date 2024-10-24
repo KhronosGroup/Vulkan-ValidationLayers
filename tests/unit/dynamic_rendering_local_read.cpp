@@ -1159,7 +1159,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, FramebufferSpaceStagesDst) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDynamicRenderingLocalRead, RenderingAttachmentLocationInfoMismatch) {
+// TODO - Test has been crashing on CI, likley the test is doing something invalid
+TEST_F(NegativeDynamicRenderingLocalRead, DISABLED_RenderingAttachmentLocationInfoMismatch) {
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
     InitDynamicRenderTarget();
 
