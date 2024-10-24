@@ -3256,10 +3256,7 @@ TEST_F(NegativeImage, AstcDecodeMode) {
 TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761");
     // original issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2203
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -3307,10 +3304,7 @@ TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
 
 TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
     TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761 with depth format");
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     const VkFormat depthOnlyFormat = FindSupportedDepthOnlyFormat(Gpu());
@@ -3985,7 +3979,6 @@ TEST_F(NegativeImage, BlockTexelViewFormat) {
 
 TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
     TEST_DESCRIPTION("Test creating Image with invalid VkImageSubresourceRange aspectMask.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
@@ -4351,15 +4344,10 @@ TEST_F(NegativeImage, ColorWthDepthAspect) {
 
 TEST_F(NegativeImage, ImageCompressionControl) {
     TEST_DESCRIPTION("Checks image compression controls with invalid parameters.");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imageCompressionControl);
     RETURN_IF_SKIP(Init());
-
-    const bool multi_plane_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 
     // A bit set flag bit
     {
@@ -4518,10 +4506,37 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             m_errorMonitor->VerifyFound();
         }
     }
+}
+
+TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imageCompressionControl);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    // Image creation lambda
+    const auto create_compressed_image = [&](VkFormat format, VkImageTiling imageTiling, vkt::Image &image) -> bool {
+        VkImageCompressionControlEXT compression_control = vku::InitStructHelper();  // specify the desired compression settings
+        compression_control.flags = VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT;
+
+        auto image_create_info =
+            vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, imageTiling);
+        image_create_info.pNext = &compression_control;
+
+        bool supported = ImageFormatIsSupported(instance(), Gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+
+        if (supported) {
+            image.init(*m_device, image_create_info, 0);
+        }
+
+        return supported;
+    };
 
     // 2 plane format
     const VkFormat two_plane_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    if (multi_plane_extensions) {
+    {
         vkt::Image image;
         if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-tiling-08717");
@@ -4538,7 +4553,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
 
     // 3 plane format
     const VkFormat three_plane_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    if (multi_plane_extensions) {
+    {
         vkt::Image image;
         if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2KHR-tiling-08717");

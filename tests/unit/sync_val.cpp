@@ -916,12 +916,12 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
 
-    VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 2};
-    VkImageSubresourceLayers layer0_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 1};
-    VkImageSubresourceLayers layer0_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT_KHR, 0, 0, 1};
-    VkImageSubresourceLayers layer1_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT_KHR, 0, 1, 1};
+    VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 2};
+    VkImageSubresourceLayers layer0_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
+    VkImageSubresourceLayers layer0_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
+    VkImageSubresourceLayers layer1_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 1, 1};
     VkImageSubresourceRange full_subresource_range{
-        VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR, 0, 1, 0, 2};
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 1, 0, 2};
     VkOffset3D zero_offset{0, 0, 0};
     VkOffset3D one_four_offset{32, 32, 0};
     VkExtent3D full_extent{128, 128, 1};    // <-- image type is 2D
@@ -1100,10 +1100,10 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
 
-    VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 1};
-    VkImageSubresourceLayers layer_all_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT_KHR, 0, 0, 1};
+    VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
+    VkImageSubresourceLayers layer_all_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
     VkImageSubresourceRange full_subresource_range{
-        VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR, 0, 1, 0, 1};
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 1, 0, 1};
     VkOffset3D zero_offset{0, 0, 0};
     VkOffset3D one_four_offset{32, 32, 0};
     VkExtent3D full_extent{128, 128, 1};    // <-- image type is 2D

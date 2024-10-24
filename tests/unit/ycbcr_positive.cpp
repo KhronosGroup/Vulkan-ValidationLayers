@@ -15,24 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-void YcbcrTest::InitBasicYcbcr(void *pNextFeatures) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper(pNextFeatures);
-    VkPhysicalDeviceFeatures2 features2;
-    features2 = GetPhysicalDeviceFeatures2(ycbcr_features);
-    if (ycbcr_features.samplerYcbcrConversion != VK_TRUE) {
-        GTEST_SKIP() << "samplerYcbcrConversion feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-}
-
-class PositiveYcbcr : public YcbcrTest {};
+class PositiveYcbcr : public VkLayerTest {};
 
 TEST_F(PositiveYcbcr, PlaneAspectNone) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -56,7 +39,9 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
 
 TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
     TEST_DESCRIPTION("Positive test, query layout of a single plane of a multiplane image. (repro Github #2530)");
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -77,7 +62,7 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
 
     // Query layout of 3rd plane
     VkImageSubresource subres = {};
-    subres.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    subres.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
     subres.mipLevel = 0;
     subres.arrayLayer = 0;
     VkSubresourceLayout layout = {};
@@ -87,7 +72,9 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
 
 TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     TEST_DESCRIPTION("Positive test of multiplane copy buffer to image");
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     auto ci = vku::InitStruct<VkImageCreateInfo>();
@@ -134,9 +121,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
 
 TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     TEST_DESCRIPTION("Copy Plane 0 to Plane 2");
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -170,9 +157,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 
     // Copy plane 0 to plane 2
     VkImageCopy copyRegion = {};
-    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT_KHR, 0, 0, 1};
+    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
     copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT_KHR, 0, 0, 1};
+    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0, 1};
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {128, 128, 1};
 
@@ -189,7 +176,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     TEST_DESCRIPTION("Bind image with disjoint memory");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -276,7 +264,8 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
 TEST_F(PositiveYcbcr, ImageLayout) {
     TEST_DESCRIPTION("Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -307,7 +296,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     VkBufferImageCopy copy_region = {};
     copy_region.bufferRowLength = 128;
     copy_region.bufferImageHeight = 128;
-    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
+    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
     copy_region.imageSubresource.layerCount = 1;
     copy_region.imageExtent.height = 64;
     copy_region.imageExtent.width = 64;
@@ -381,8 +370,9 @@ TEST_F(PositiveYcbcr, ImageLayout) {
 }
 
 TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     const VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
@@ -449,8 +439,9 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
 
 TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7903");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitBasicYcbcr());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
     const VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
 
