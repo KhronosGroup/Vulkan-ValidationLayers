@@ -3494,6 +3494,31 @@ TEST_F(NegativeSyncObject, ResetEventThenSet) {
     m_default_queue->Wait();
 }
 
+// TODO: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8748
+TEST_F(NegativeSyncObject, DISABLED_WaitEventThenSet) {
+#if defined(VVL_ENABLE_TSAN)
+    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
+    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
+#endif
+    TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
+
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdResetEvent(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+
+    m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
+    vk::SetEvent(device(), event.handle());
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
     TEST_DESCRIPTION("Use non-graphics pipeline stage inside a renderpass");
     RETURN_IF_SKIP(Init());

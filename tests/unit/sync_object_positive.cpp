@@ -1119,28 +1119,6 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
     m_device->Wait();
 }
 
-TEST_F(PositiveSyncObject, WaitEventThenSet) {
-#if defined(VVL_ENABLE_TSAN)
-    // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
-    GTEST_SKIP() << "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5965";
-#endif
-    TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
-
-    RETURN_IF_SKIP(Init());
-
-    vkt::Event event(*m_device);
-
-    m_command_buffer.Begin();
-    vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
-    vk::CmdResetEvent(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    m_command_buffer.End();
-
-    m_default_queue->Submit(m_command_buffer);
-    vk::SetEvent(device(), event.handle());
-    m_default_queue->Wait();
-}
-
 TEST_F(PositiveSyncObject, DoubleLayoutTransition) {
     TEST_DESCRIPTION("Attempt vkCmdPipelineBarrier with 2 layout transitions of the same image.");
 
