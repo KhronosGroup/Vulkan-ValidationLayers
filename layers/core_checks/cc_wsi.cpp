@@ -24,6 +24,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "generated/chassis.h"
+#include "cc_synchronization.h"
 #include "core_validation.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"

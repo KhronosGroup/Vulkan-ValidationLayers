@@ -177,6 +177,7 @@ target_sources(vvl PRIVATE
     core_checks/cc_state_tracker.cpp
     core_checks/cc_submit.h
     core_checks/cc_submit.cpp
+    core_checks/cc_synchronization.h
     core_checks/cc_synchronization.cpp
     core_checks/cc_video.cpp
     core_checks/cc_vuid_maps.cpp
