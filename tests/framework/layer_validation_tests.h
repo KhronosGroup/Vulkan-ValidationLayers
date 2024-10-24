@@ -390,11 +390,6 @@ class WsiTest : public VkLayerTest {
 #endif
 };
 
-class YcbcrTest : public VkLayerTest {
-  public:
-    void InitBasicYcbcr(void *pNextFeatures = nullptr);
-};
-
 class CooperativeMatrixTest : public VkLayerTest {
   public:
     void InitCooperativeMatrixKHR();
