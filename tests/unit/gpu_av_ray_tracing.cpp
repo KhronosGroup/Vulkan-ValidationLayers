@@ -109,9 +109,9 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     stridebufregion.size = stridebufregion.stride;
 
     // Create and fill buffers storing indirect data (ray query dimensions)
-    vkt::Buffer ray_query_dimensions_buffer_1(
-        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer ray_query_dimensions_buffer_1(*m_device, 4096,
+                                              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                              kHostVisibleMemProps, &alloc_flags);
 
     VkTraceRaysIndirectCommandKHR ray_query_dimensions{vvl::kU32Max, 1, 1};
 
@@ -121,9 +121,9 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     ray_query_dimensions = {1, vvl::kU32Max, 1};
 
-    vkt::Buffer ray_query_dimensions_buffer_2(
-        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer ray_query_dimensions_buffer_2(*m_device, 4096,
+                                              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                              kHostVisibleMemProps, &alloc_flags);
 
     uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)ray_query_dimensions_buffer_2.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_2_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
@@ -131,9 +131,9 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
 
     ray_query_dimensions = {1, 1, vvl::kU32Max};
 
-    vkt::Buffer ray_query_dimensions_buffer_3(
-        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer ray_query_dimensions_buffer_3(*m_device, 4096,
+                                              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                              kHostVisibleMemProps, &alloc_flags);
 
     uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)ray_query_dimensions_buffer_3.Memory().Map();
     std::memcpy(ray_query_dimensions_buffer_3_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
@@ -263,8 +263,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
 
     // Create uniform_buffer
     vkt::Buffer rt_params_buffer(*m_device, 4 * sizeof(float), 0, vkt::device_address);  // missing space for Tmin and Tmax
-    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     data[0] = rt_params_buffer.Address();
     uniform_buffer.Memory().Unmap();

@@ -204,7 +204,7 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
     vkt::Buffer instances_buffer(
         device, instances_.vk_instances.size() * sizeof(VkAccelerationStructureInstanceKHR),
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+        kHostVisibleMemProps, &alloc_flags);
 
     auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_buffer.memory().Map());
     for (size_t vk_instance_i = 0; vk_instance_i < instances_.vk_instances.size(); ++vk_instance_i) {
@@ -630,8 +630,8 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
 
     indirect_buffer_->init(*device_, 1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
-                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps,
+                           &alloc_flags);
 
     auto *ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR *>(indirect_buffer_->Memory().Map());
 
@@ -865,12 +865,10 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    vkt::Buffer vertex_buffer(device, 1024, buffer_usage,
-                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-    vkt::Buffer index_buffer(device, 1024 + 3 * triangles_count * sizeof(uint32_t), buffer_usage,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage,
-                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer vertex_buffer(device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer index_buffer(device, 1024 + 3 * triangles_count * sizeof(uint32_t), buffer_usage, kHostVisibleMemProps,
+                             &alloc_flags);
+    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
     // Fill vertex and index buffers with one triangle
     triangle_geometry.SetPrimitiveCount(triangles_count);
@@ -1015,12 +1013,9 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    vkt::Buffer vertex_buffer(device, sizeof(vertices[0]) * vertices.size(), buffer_usage,
-                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-    vkt::Buffer index_buffer(device, sizeof(indices[0]) * indices.size(), buffer_usage,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
-    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage,
-                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    vkt::Buffer vertex_buffer(device, sizeof(vertices[0]) * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer index_buffer(device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
     auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
@@ -1060,8 +1055,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device &device) {
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    aabb_buffer.init(device, aabb_buffer_size, buffer_usage,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &alloc_flags);
+    aabb_buffer.init(device, aabb_buffer_size, buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
     // Fill buffer with one AABB
     aabb_geometry.SetPrimitiveCount(static_cast<uint32_t>(aabbs.size()));
@@ -1139,7 +1133,7 @@ std::shared_ptr<vkt::as::AccelerationStructureKHR> AccelStructSimpleOnHostBottom
     as->SetSize(size);
     as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
     as->SetDeviceBufferMemoryAllocateFlags(0);
-    as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    as->SetDeviceBufferMemoryPropertyFlags(kHostVisibleMemProps);
     as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     as->SetDeviceBufferInitNoMem(false);
     return as;
@@ -1552,10 +1546,9 @@ void Pipeline::BuildSbt() {
     sbt_buffer_info.size = sbt_buffer_size;
     sbt_buffer_info.usage =
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    VkMemoryPropertyFlags sbt_buffer_mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    sbt_buffer_.init(*device_, sbt_buffer_info, sbt_buffer_mem_props, &alloc_flags);
+    sbt_buffer_.init(*device_, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
 
 #ifdef VVL_DEBUG_LOG_SBT
     std::cout << "SBT buffer fill:\n";

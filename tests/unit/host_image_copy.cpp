@@ -1969,7 +1969,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     RETURN_IF_SKIP(InitHostImageCopyTest(image_ci));
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
-    vkt::Image image(*m_device, image_ci, (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+    vkt::Image image(*m_device, image_ci, kHostVisibleMemProps);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     VkDeviceAddress *data = (VkDeviceAddress *)image.Memory().Map();

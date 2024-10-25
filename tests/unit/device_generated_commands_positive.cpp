@@ -213,8 +213,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsGraphics) {
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
@@ -316,8 +315,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsCompute) {
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -383,8 +381,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;

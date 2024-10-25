@@ -60,9 +60,8 @@ TEST_F(PositiveGpuAV, RobustBuffer) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, reqs);
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -140,8 +139,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
@@ -231,8 +229,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mem_props);
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
@@ -682,8 +679,7 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     InitState(nullptr, nullptr, pool_flags);
     InitRenderTarget();
 
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer write_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, reqs);
+    vkt::Buffer write_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -870,7 +866,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     InitRenderTarget();
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                            kHostVisibleMemProps);
     auto draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
@@ -896,7 +892,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
 
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                    kHostVisibleMemProps);
     auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
@@ -931,8 +927,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
-                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
 
     float *ptr = static_cast<float *>(copy_src_buffer.Memory().Map());
     for (size_t i = 0; i < 64 * 64; ++i) {
@@ -983,7 +978,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     RETURN_IF_SKIP(InitState());
 
     vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                kHostVisibleMemProps);
 
     auto ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
@@ -1090,8 +1085,7 @@ TEST_F(PositiveGpuAV, AliasImageBinding) {
     vkt::Image uint_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView uint_image_view = uint_image.CreateView();
 
-    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *data = (uint32_t *)buffer.Memory().Map();
     *data = 0;
     buffer.Memory().Unmap();
@@ -1156,8 +1150,7 @@ TEST_F(PositiveGpuAV, AliasImageBindingNonFixed) {
     uint_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView uint_image_view = uint_image.CreateView();
 
-    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *data = (uint32_t *)buffer.Memory().Map();
     *data = 0;
     buffer.Memory().Unmap();
@@ -1235,7 +1228,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     InitRenderTarget();
 
     vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                            kHostVisibleMemProps);
     VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
@@ -1261,7 +1254,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
 
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                    kHostVisibleMemProps);
     VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
@@ -1347,7 +1340,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     InitRenderTarget();
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                kHostVisibleMemProps);
     auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
@@ -1561,7 +1554,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     }
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                kHostVisibleMemProps);
     auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
@@ -1621,7 +1614,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     compute_pipe.CreateComputePipeline();
 
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                    kHostVisibleMemProps);
     auto &indirect_dispatch_parameters =
         *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
@@ -1677,7 +1670,7 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     InitRenderTarget();
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                kHostVisibleMemProps);
     auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
@@ -1848,8 +1841,7 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
     )glsl";
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -1963,16 +1955,14 @@ TEST_F(PositiveGpuAV, DeviceGeneratedCommandsIES) {
     write_exe_sets[1].pipeline = pipe_2.Handle();
     vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set.handle(), 2, write_exe_sets);
 
-    vkt::Buffer ssbo_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer ssbo_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     init_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, ssbo_buffer.handle(), 0, VK_WHOLE_SIZE,
                                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     init_pipe.descriptor_set_->UpdateDescriptorSets();
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &allocate_flag_info);
+    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
 
     VkDeviceSize pre_process_size = 0;
     {

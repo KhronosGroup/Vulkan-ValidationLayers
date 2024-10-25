@@ -155,8 +155,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::Buffer uniform_buffer(*m_device, 12, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 12, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
@@ -227,8 +226,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    vkt::Buffer uniform_buffer(*m_device, 12, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer uniform_buffer(*m_device, 12, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
@@ -320,8 +318,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     // Hold only 3 indices
     vkt::Buffer block_buffer(*m_device, 36, 0, vkt::device_address);
@@ -410,8 +407,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
     VkDeviceAddress block_ptr = block_buffer.Address();
     const uint32_t n_reads = 64;  // way too large
@@ -481,8 +477,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ArrayOfStruct) {
     vkt::Buffer block_buffer(*m_device, 32, 0, vkt::device_address);
     VkDeviceAddress block_ptr = block_buffer.Address();
 
-    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     uint8_t *buffer_ptr = (uint8_t *)storage_buffer.Memory().Map();
     const uint32_t index = 8;  // out of bounds
@@ -515,8 +510,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     char const *shader_source = R"glsl(
         #version 450
@@ -584,8 +578,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     char const *shader_source = R"glsl(
         #version 450
@@ -671,8 +664,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     const uint32_t uniform_buffer_size = 8 + 4;  // 64 bits pointer + int
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     char const *shader_source = R"glsl(
         #version 450
@@ -809,8 +801,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
     const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     CreateComputePipelineHelper pipeline(*this);
     pipeline.cs_ =
@@ -905,8 +896,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
     const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     CreateComputePipelineHelper pipeline(*this);
     pipeline.cs_ =
@@ -969,8 +959,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
     const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     CreateComputePipelineHelper pipeline(*this);
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
@@ -1034,9 +1023,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
     )glsl";
 
     // Make a uniform buffer to be passed to the shader that contains the pointer
-    const uint32_t uniform_buffer_size = 8;  // 64 bits pointer
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    const uint32_t uniform_buffer_size = 8;  // 64 bits pointers
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     CreateComputePipelineHelper pipeline(*this);
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
@@ -1075,8 +1063,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     const uint32_t uniform_buffer_size = 3 * sizeof(VkDeviceAddress);
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, mem_props);
+    vkt::Buffer uniform_buffer(*m_device, uniform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     char const *shader_source = R"glsl(
         #version 450
@@ -1196,8 +1183,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ProxyStructLoad) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
-    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
@@ -1260,8 +1246,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer bda_buffer(*m_device, 16, 0, vkt::device_address);
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
@@ -1322,8 +1307,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
-    vkt::Buffer in_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDeviceAddress buffer_ptr = bda_buffer.Address() + 256;  // wrong
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
@@ -1371,8 +1355,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer block_buffer(*m_device, 256, 0, vkt::device_address);
-    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDeviceAddress block_ptr = block_buffer.Address();
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
@@ -1422,8 +1405,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer block_buffer(*m_device, 256, 0, vkt::device_address);
-    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDeviceAddress block_ptr = block_buffer.Address();
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());

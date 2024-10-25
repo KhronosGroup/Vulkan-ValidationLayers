@@ -885,7 +885,7 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
         #extension GL_EXT_debug_printf : enable
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
         layout(location = 0) rayPayloadEXT vec3 hit;
-       
+
         void main() {
             debugPrintfEXT("In Raygen\n");
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
@@ -952,7 +952,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
 
     // Buffer used to count invocations for the 3 shader types
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                             kHostVisibleMemProps);
     m_command_buffer.begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.end();
@@ -972,7 +972,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         };
 
         layout(location = 0) rayPayloadEXT vec3 hit;
-       
+
         void main() {
             uint last = atomicAdd(debug_buffer[0], 1);
             debugPrintfEXT("In Raygen %u", last);
@@ -980,21 +980,21 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
             vec3 ray_origin = vec3(0,0,-50);
             vec3 ray_direction = vec3(0,0,1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             // Will miss
             ray_origin = vec3(0,0,-50);
             ray_direction = vec3(0,0,-1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             // Will miss
             ray_origin = vec3(0,0,50);
             ray_direction = vec3(0,0,1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             ray_origin = vec3(0,0,50);
             ray_direction = vec3(0,0,-1);
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
-            
+
             // Will miss
             ray_origin = vec3(0,0,0);
             ray_direction = vec3(0,0,1);
@@ -1136,7 +1136,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
 
     // Buffer used to count invocations for the 3 shader types
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                             kHostVisibleMemProps);
     m_command_buffer.begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.end();
@@ -1203,8 +1203,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
 
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
-                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
     m_command_buffer.begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.end();
@@ -1289,8 +1288,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
 
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
-                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
     m_command_buffer.begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.end();
@@ -1374,8 +1372,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
 
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
-                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
     m_command_buffer.begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.end();
