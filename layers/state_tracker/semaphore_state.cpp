@@ -20,6 +20,14 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
 
+static bool CanSignalBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) {
+    return op_type == vvl::Semaphore::kNone || op_type == vvl::Semaphore::kWait;
+}
+
+static bool CanWaitBinarySemaphoreAfterOperation(vvl::Semaphore::OpType op_type) {
+    return op_type == vvl::Semaphore::kSignal || op_type == vvl::Semaphore::kBinaryAcquire;
+}
+
 static VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo) {
     auto export_info = vku::FindStructInPNextChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
     return export_info ? export_info->handleTypes : 0;
@@ -208,6 +216,28 @@ bool vvl::Semaphore::CanBinaryBeWaited() const {
     return !timepoint.signal_submit->queue->HasTimelineWaitWithoutResolvingSignal(timepoint.signal_submit->seq).has_value();
 }
 
+void vvl::Semaphore::GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquire_command) const {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
+    queue = VK_NULL_HANDLE;
+    acquire_command = vvl::Func::Empty;
+
+    auto guard = ReadLock();
+    if (timeline_.empty()) {
+        if (completed_.op_type == kSignal && completed_.submit.queue) {
+            queue = completed_.submit.queue->VkHandle();
+        } else if (completed_.op_type == kBinaryAcquire) {
+            acquire_command = *completed_.acquire_command;
+        }
+    } else {
+        const TimePoint &timepoint = timeline_.rbegin()->second;
+        if (timepoint.signal_submit.has_value() && timepoint.signal_submit->queue) {
+            queue = timepoint.signal_submit->queue->VkHandle();
+        } else if (timepoint.acquire_command.has_value()) {
+            acquire_command = *timepoint.acquire_command;
+        }
+    }
+}
+
 bool vvl::Semaphore::HasResolvingTimelineSignal(uint64_t wait_payload) const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
@@ -252,15 +282,8 @@ bool vvl::Semaphore::CanRetireTimelineWait(const vvl::Queue *current_queue, uint
         if (!t.signal_submit.has_value()) {
             continue;
         }
-        // The only exception when the next timeline signal is not a resolving one, when it violates signaling order.
-        // Skip such signals.
-        //
-        // TODO: report validation error (from the queue thread?), use ClosestSignalValueDoesNotFinishWait for testing.
-        //
-        // DETAILS: if the next signal is on the waiting queue, it can't be a resolving signal (blocked by wait).
-        // During retirement phase we know that resolving signal exists -> it has larger value then the next timeline signal.
-        // This scenario can't be handled by the core checks - they detect a subset related to vkSignalSemaphore signals,
-        // but not other cases. Queue thread has more information about ordering.
+        // If the next signal is on the waiting (current) queue, it can't be a resolving signal (blocked by wait).
+        // QueueSubmissionValidator will also report an error about non-increasing signal values
         if (t.signal_submit->queue != nullptr && t.signal_submit->queue == current_queue) {
             continue;
         }

@@ -41,8 +41,8 @@ struct SemaphoreSubmitState {
     SemaphoreSubmitState(const CoreChecks &core_, VkQueue q_, VkQueueFlags queue_flags_)
         : core(core_), queue(q_), queue_flags(queue_flags_) {}
 
-    bool CannotWaitBinary(const vvl::Semaphore &semaphore_state) const;
-    bool CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_command) const;
+    bool CanWaitBinary(const vvl::Semaphore &semaphore_state) const;
+    bool CanSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_acquire_command) const;
 
     bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
                              std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func);

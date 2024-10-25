@@ -97,8 +97,7 @@ class Semaphore : public RefcountedStateObject {
     void RetireSignal(uint64_t payload);
 
     // Look for most recent / highest payload operation that matches
-    std::optional<SemOp> LastOp(
-        const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter = nullptr) const;
+    std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
 
     // Returns pending queue submission that signals this binary semaphore.
     std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
@@ -112,6 +111,8 @@ class Semaphore : public RefcountedStateObject {
 
     bool CanBinaryBeSignaled() const;
     bool CanBinaryBeWaited() const;
+
+    void GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquire_command) const;
     bool HasResolvingTimelineSignal(uint64_t wait_payload) const;
 
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
@@ -163,15 +164,5 @@ class Semaphore : public RefcountedStateObject {
     mutable std::shared_mutex lock_;
     ValidationStateTracker &dev_data_;
 };
-
-// NOTE: Present semaphores are waited on by the implementation, not queue operations.
-// We do not yet have a good way to figure out when this wait completes,
-// so we must assume they are safe to re-use.
-static inline bool CanSignalBinarySemaphoreAfterOperation(Semaphore::OpType op_type) {
-    return op_type == Semaphore::kNone || op_type == Semaphore::kWait;
-}
-static inline bool CanWaitBinarySemaphoreAfterOperation(Semaphore::OpType op_type) {
-    return op_type == Semaphore::kSignal || op_type == Semaphore::kBinaryAcquire;
-}
 
 }  // namespace vvl
