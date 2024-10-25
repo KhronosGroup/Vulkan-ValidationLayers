@@ -420,9 +420,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         }
     } else {
         if (!indirect_commands_layout.has_execution_set_token) {
-            // TODO - Get VU, but without, will end up causing
-            // VUID-VkGeneratedCommandsMemoryRequirementsInfoEXT-indirectCommandsLayout-11011 in our dispatch
-            skip |= LogError("UNASSIGNED-VkGeneratedCommandsInfoEXT-indirectExecutionSet-token", indirect_commands_layout.Handle(),
+            skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-10241", indirect_commands_layout.Handle(),
                              info_loc.dot(Field::indirectExecutionSet),
                              "is not VK_NULL_HANDLE but indirectCommandsLayout was not created with a "
                              "VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT token.");
