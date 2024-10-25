@@ -9306,6 +9306,16 @@ void DispatchUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExec
     }
 }
 
+VkResult DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
+
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+        physicalDevice, pPropertyCount, pProperties);
+
+    return result;
+}
+
 VkResult DispatchCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,
                                                 VkAccelerationStructureKHR* pAccelerationStructure) {

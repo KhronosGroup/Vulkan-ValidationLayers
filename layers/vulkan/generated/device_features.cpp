@@ -1579,6 +1579,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->depthClampControl |= enabled->depthClampControl == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV: {
+                const VkPhysicalDeviceCooperativeMatrix2FeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeMatrix2FeaturesNV *>(pNext);
+                features->cooperativeMatrixWorkgroupScope |= enabled->cooperativeMatrixWorkgroupScope == VK_TRUE;
+                features->cooperativeMatrixFlexibleDimensions |= enabled->cooperativeMatrixFlexibleDimensions == VK_TRUE;
+                features->cooperativeMatrixReductions |= enabled->cooperativeMatrixReductions == VK_TRUE;
+                features->cooperativeMatrixConversions |= enabled->cooperativeMatrixConversions == VK_TRUE;
+                features->cooperativeMatrixPerElementOperations |= enabled->cooperativeMatrixPerElementOperations == VK_TRUE;
+                features->cooperativeMatrixTensorAddressing |= enabled->cooperativeMatrixTensorAddressing == VK_TRUE;
+                features->cooperativeMatrixBlockLoads |= enabled->cooperativeMatrixBlockLoads == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR *>(pNext);

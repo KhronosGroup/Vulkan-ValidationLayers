@@ -252,6 +252,12 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites(
         {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
         {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
         {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
+        {spv::CapabilityTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixReductionsNV, {0, &DeviceFeatures::cooperativeMatrixReductions, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixConversionsNV, {0, &DeviceFeatures::cooperativeMatrixConversions, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixPerElementOperationsNV, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
+        {spv::CapabilityCooperativeMatrixBlockLoadsNV, {0, &DeviceFeatures::cooperativeMatrixBlockLoads, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -363,6 +369,8 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo> &GetSpirvExte
         {"SPV_KHR_compute_shader_derivatives", {0, nullptr, &DeviceExtensions::vk_khr_compute_shader_derivatives, ""}},
         {"SPV_EXT_replicated_composites", {0, nullptr, &DeviceExtensions::vk_ext_shader_replicated_composites, ""}},
         {"SPV_KHR_relaxed_extended_instruction", {0, nullptr, &DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, ""}},
+        {"SPV_NV_cooperative_matrix2", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_matrix2, ""}},
+        {"SPV_NV_tensor_addressing", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_matrix2, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -990,6 +998,12 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityQuadControlKHR, "VkPhysicalDeviceShaderQuadControlFeaturesKHR::shaderQuadControl"},
     {spv::CapabilityRawAccessChainsNV, "VkPhysicalDeviceRawAccessChainsFeaturesNV::shaderRawAccessChains"},
     {spv::CapabilityReplicatedCompositesEXT, "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT::shaderReplicatedComposites"},
+    {spv::CapabilityTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},
+    {spv::CapabilityCooperativeMatrixReductionsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixReductions"},
+    {spv::CapabilityCooperativeMatrixConversionsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixConversions"},
+    {spv::CapabilityCooperativeMatrixPerElementOperationsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixPerElementOperations"},
+    {spv::CapabilityCooperativeMatrixTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},
+    {spv::CapabilityCooperativeMatrixBlockLoadsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixBlockLoads"},
     };
 
     // VUs before catch unknown capabilities
@@ -1087,6 +1101,8 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_compute_shader_derivatives", {{vvl::Extension::_VK_KHR_compute_shader_derivatives}}},
     {"SPV_EXT_replicated_composites", {{vvl::Extension::_VK_EXT_shader_replicated_composites}}},
     {"SPV_KHR_relaxed_extended_instruction", {{vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction}}},
+    {"SPV_NV_cooperative_matrix2", {{vvl::Extension::_VK_NV_cooperative_matrix2}}},
+    {"SPV_NV_tensor_addressing", {{vvl::Extension::_VK_NV_cooperative_matrix2}}},
     };
 
     // VUs before catch unknown extensions

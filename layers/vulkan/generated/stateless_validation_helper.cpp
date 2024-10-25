@@ -4169,6 +4169,38 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceCooperativeMatrix2FeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV: {  // Covers
+                                                                                    // VUID-VkPhysicalDeviceCooperativeMatrix2FeaturesNV-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCooperativeMatrix2FeaturesNV);
+                if (!IsExtEnabled(device_extensions.vk_nv_cooperative_matrix2)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceCooperativeMatrix2FeaturesNV, but when creating "
+                                     "VkDevice, the parent extension "
+                                     "(VK_NV_cooperative_matrix2) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceCooperativeMatrix2FeaturesNV* structure = (VkPhysicalDeviceCooperativeMatrix2FeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixWorkgroupScope),
+                                       structure->cooperativeMatrixWorkgroupScope);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixFlexibleDimensions),
+                                       structure->cooperativeMatrixFlexibleDimensions);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixReductions), structure->cooperativeMatrixReductions);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixConversions), structure->cooperativeMatrixConversions);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixPerElementOperations),
+                                       structure->cooperativeMatrixPerElementOperations);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixTensorAddressing),
+                                       structure->cooperativeMatrixTensorAddressing);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixBlockLoads), structure->cooperativeMatrixBlockLoads);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -4922,6 +4954,9 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
 
             // No Validation code for VkPhysicalDeviceImageAlignmentControlPropertiesMESA structure members  -- Covers
             // VUID-VkPhysicalDeviceImageAlignmentControlPropertiesMESA-sType-sType
+
+            // No Validation code for VkPhysicalDeviceCooperativeMatrix2PropertiesNV structure members  -- Covers
+            // VUID-VkPhysicalDeviceCooperativeMatrix2PropertiesNV-sType-sType
 
             // No Validation code for VkPhysicalDeviceAccelerationStructurePropertiesKHR structure members  -- Covers
             // VUID-VkPhysicalDeviceAccelerationStructurePropertiesKHR-sType-sType
@@ -9888,6 +9923,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMMAND_BUFFER_INHERITANCE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV,
@@ -13317,6 +13353,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV,
@@ -26515,6 +26552,28 @@ bool StatelessValidation::PreCallValidateUpdateIndirectExecutionSetShaderEXT(
             [[maybe_unused]] const Location pExecutionSetWrites_loc = loc.dot(Field::pExecutionSetWrites, executionSetWriteIndex);
             skip |= ValidateRequiredHandle(pExecutionSetWrites_loc.dot(Field::shader),
                                            pExecutionSetWrites[executionSetWriteIndex].shader);
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, pProperties,
+        VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_FLEXIBLE_DIMENSIONS_PROPERTIES_NV, true, false, false,
+        "VUID-VkCooperativeMatrixFlexibleDimensionsPropertiesNV-sType-sType",
+        "VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-pProperties-parameter",
+        "VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-pPropertyCount-parameter", kVUIDUndefined);
+    if (pProperties != nullptr) {
+        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+            [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
+            skip |= ValidateStructPnext(
+                pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkCooperativeMatrixFlexibleDimensionsPropertiesNV-pNext-pNext", kVUIDUndefined, physicalDevice, false);
         }
     }
     return skip;

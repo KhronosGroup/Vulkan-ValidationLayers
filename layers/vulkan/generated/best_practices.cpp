@@ -3060,6 +3060,21 @@ void BestPractices::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
     }
 }
 
+void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
+    const RecordObject& record_obj) {
+    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+        physicalDevice, pPropertyCount, pProperties, record_obj);
+
+    if (record_obj.result > VK_SUCCESS) {
+        LogPositiveSuccessCode(record_obj);
+        return;
+    }
+    if (record_obj.result < VK_SUCCESS) {
+        LogErrorCode(record_obj);
+    }
+}
+
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
                                                                  const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator,

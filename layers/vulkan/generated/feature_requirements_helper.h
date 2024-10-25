@@ -98,6 +98,20 @@ enum class Feature {
     conditionalRendering,
     // VkPhysicalDeviceConditionalRenderingFeaturesEXT
     inheritedConditionalRendering,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixBlockLoads,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixConversions,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixFlexibleDimensions,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixPerElementOperations,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixReductions,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixTensorAddressing,
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    cooperativeMatrixWorkgroupScope,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     cooperativeMatrix,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV

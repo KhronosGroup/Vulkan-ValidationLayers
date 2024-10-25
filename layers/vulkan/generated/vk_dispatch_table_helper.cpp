@@ -1281,6 +1281,10 @@ static VKAPI_ATTR void VKAPI_CALL StubUpdateIndirectExecutionSetPipelineEXT(VkDe
                                                                             const VkWriteIndirectExecutionSetPipelineEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubUpdateIndirectExecutionSetShaderEXT(VkDevice, VkIndirectExecutionSetEXT, uint32_t,
                                                                           const VkWriteIndirectExecutionSetShaderEXT*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice, uint32_t*, VkCooperativeMatrixFlexibleDimensionsPropertiesNV*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice, const VkAccelerationStructureCreateInfoKHR*,
                                                                          const VkAllocationCallbacks*,
                                                                          VkAccelerationStructureKHR*) {
@@ -4667,6 +4671,14 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
     if (table->GetPhysicalDeviceOpticalFlowImageFormatsNV == nullptr) {
         table->GetPhysicalDeviceOpticalFlowImageFormatsNV =
             (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)StubGetPhysicalDeviceOpticalFlowImageFormatsNV;
+    }
+    table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV =
+        (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(
+            instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
+    if (table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV == nullptr) {
+        table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV =
+            (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)
+                StubGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
     }
 }
 

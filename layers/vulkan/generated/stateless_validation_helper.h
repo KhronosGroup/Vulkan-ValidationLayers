@@ -1782,6 +1782,9 @@ bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndir
                                                         uint32_t executionSetWriteCount,
                                                         const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                         const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
+    const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,

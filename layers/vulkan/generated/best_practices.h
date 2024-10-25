@@ -1003,6 +1003,10 @@ void PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device, const VkIndire
                                                  VkIndirectExecutionSetEXT* pIndirectExecutionSet,
                                                  const RecordObject& record_obj) override;
 
+void PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+    VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
+    const RecordObject& record_obj) override;
+
 void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator,
                                                   VkAccelerationStructureKHR* pAccelerationStructure,
