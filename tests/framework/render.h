@@ -35,6 +35,10 @@ using vkt::MakeVkHandles;
 static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
 static constexpr VkDeviceSize kZeroDeviceSize{0};
 
+// Common (and simple) enough to make global
+static constexpr VkMemoryPropertyFlags kHostVisibleMemProps =
+    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
 struct SurfaceContext {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     HWND m_win32Window{};

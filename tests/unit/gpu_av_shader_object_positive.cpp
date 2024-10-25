@@ -123,7 +123,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     InitDynamicRenderTarget();
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                kHostVisibleMemProps);
     auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
@@ -345,7 +345,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     }
 
     vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                kHostVisibleMemProps);
     auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
@@ -409,7 +409,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     const vkt::Shader cs(*m_device, cs_ci);
 
     vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                    kHostVisibleMemProps);
     auto &indirect_dispatch_parameters =
         *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
