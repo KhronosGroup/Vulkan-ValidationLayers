@@ -71,42 +71,36 @@ struct TimelineMaxDiffCheck {
     uint64_t max_diff;
 };
 
-bool SemaphoreSubmitState::CannotWaitBinary(const vvl::Semaphore &semaphore_state) const {
+bool SemaphoreSubmitState::CanWaitBinary(const vvl::Semaphore &semaphore_state) const {
     assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-
-    // Check if this submission has signaled or unsignaled the semaphore
-    if (const bool *signaled_state = vvl::Find(binary_signaling_state, semaphore_state.VkHandle())) {
-        const bool signaled = *signaled_state;
-        return !signaled;  // not signaled => can't wait
+    // Check if current submission has signaled or unsignaled the semaphore
+    if (const bool *signaling_state = vvl::Find(binary_signaling_state, semaphore_state.VkHandle())) {
+        const bool signaled = *signaling_state;
+        return signaled;  // signaled => can wait
     }
-    // If not, then query semaphore's payload set by other submissions.
-    return !semaphore_state.CanBinaryBeWaited();
+    // Query semaphore object (state set by previous submissions)
+    return semaphore_state.CanBinaryBeWaited();
 }
 
-bool SemaphoreSubmitState::CannotSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue,
-                                              vvl::Func &other_command) const {
+bool SemaphoreSubmitState::CanSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue,
+                                           vvl::Func &other_acquire_command) const {
     assert(semaphore_state.type == VK_SEMAPHORE_TYPE_BINARY);
-
-    // Check if this submission has signaled or unsignaled the semaphore
-    if (const bool *signaled_state = vvl::Find(binary_signaling_state, semaphore_state.VkHandle())) {
-        const bool signaled = *signaled_state;
+    // Check if current submission has signaled or unsignaled the semaphore
+    if (const bool *signaling_state = vvl::Find(binary_signaling_state, semaphore_state.VkHandle())) {
+        const bool signaled = *signaling_state;
         if (!signaled) {
-            return false;  // not signaled => can't wait
+            return true;  // not signaled => can signal
         }
         other_queue = queue;
-        other_command = vvl::Func::Empty;
-        return true;  // signaled => can wait
+        other_acquire_command = vvl::Func::Empty;
+        return false;  // already signaled => can't signal
     }
-    // If not, get signaling state from the semaphore's last op.
-    // Last op was recorded either by the previous sumbissions on this queue,
-    // or it's a hot state from async running queues (so can get outdated immediately after was read).
-    const auto last_op = semaphore_state.LastOp();
-    if (!last_op || CanSignalBinarySemaphoreAfterOperation(last_op->op_type)) {
-        return false;
+    // Query semaphore object (state set by previous submissions)
+    if (semaphore_state.CanBinaryBeSignaled()) {
+        return true;
     }
-    other_queue = last_op->submit.queue ? last_op->submit.queue->VkHandle() : VK_NULL_HANDLE;
-    other_command = last_op->acquire_command ? *last_op->acquire_command : vvl::Func::Empty;
-    return true;
+    semaphore_state.GetLastBinarySignalSource(other_queue, other_acquire_command);
+    return false;
 }
 
 VkQueue SemaphoreSubmitState::AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const {
@@ -166,7 +160,7 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
             const LogObjectList objlist(semaphore, queue, other_queue);
             skip |= core.LogError(vuid, objlist, loc, "queue (%s) is already waiting on semaphore (%s).",
                                   core.FormatHandle(other_queue).c_str(), core.FormatHandle(semaphore).c_str());
-        } else if (CannotWaitBinary(semaphore_state)) {
+        } else if (!CanWaitBinary(semaphore_state)) {
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kBinaryCannotBeSignalled);
             const LogObjectList objlist(semaphore, queue);
             skip |= core.LogError(vuid, objlist, loc, "queue (%s) is waiting on semaphore (%s) that has no way to be signaled.",
@@ -223,7 +217,7 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
             if ((semaphore_state.Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(handle))) {
                 VkQueue other_queue = VK_NULL_HANDLE;
                 vvl::Func other_command = vvl::Func::Empty;
-                if (CannotSignalBinary(semaphore_state, other_queue, other_command)) {
+                if (!CanSignalBinary(semaphore_state, other_queue, other_command)) {
                     std::stringstream initiator;
                     if (other_command != vvl::Func::Empty) {
                         initiator << String(other_command);
