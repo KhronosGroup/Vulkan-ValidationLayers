@@ -106,6 +106,20 @@ struct DeviceFeatures {
     bool conditionalRendering;
     // VkPhysicalDeviceConditionalRenderingFeaturesEXT
     bool inheritedConditionalRendering;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixBlockLoads;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixConversions;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixFlexibleDimensions;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixPerElementOperations;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixReductions;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixTensorAddressing;
+    // VkPhysicalDeviceCooperativeMatrix2FeaturesNV
+    bool cooperativeMatrixWorkgroupScope;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     bool cooperativeMatrix;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV

@@ -7900,6 +7900,10 @@ bool ObjectLifetimes::PreCallValidateUpdateIndirectExecutionSetShaderEXT(
     return skip;
 }
 
+// vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV:
+// Checked by chassis: physicalDevice:
+// "VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-physicalDevice-parameter"
+
 bool ObjectLifetimes::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                     const VkAllocationCallbacks* pAllocator,

@@ -797,6 +797,7 @@ PFN_vkCreateIndirectExecutionSetEXT CreateIndirectExecutionSetEXT;
 PFN_vkDestroyIndirectExecutionSetEXT DestroyIndirectExecutionSetEXT;
 PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEXT;
 PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
+PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
 PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;
@@ -2433,6 +2434,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_NV_cooperative_matrix2", [](VkInstance instance, VkDevice ) {
+                GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = reinterpret_cast<PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV"));
+            }
+        },
+        {
             "VK_KHR_acceleration_structure", [](VkInstance , VkDevice device) {
                 CreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR"));
                 DestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkDestroyAccelerationStructureKHR"));
@@ -2983,6 +2989,7 @@ void ResetAllExtensions() {
     DestroyIndirectExecutionSetEXT = nullptr;
     UpdateIndirectExecutionSetPipelineEXT = nullptr;
     UpdateIndirectExecutionSetShaderEXT = nullptr;
+    GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = nullptr;
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;
     CmdBuildAccelerationStructuresKHR = nullptr;

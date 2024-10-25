@@ -618,6 +618,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_device_generated_commands{kNotEnabled};
     ExtEnabled vk_mesa_image_alignment_control{kNotEnabled};
     ExtEnabled vk_ext_depth_clamp_control{kNotEnabled};
+    ExtEnabled vk_nv_cooperative_matrix2{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -1682,6 +1683,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_EXT_depth_clamp_control,
              Info(&DeviceExtensions::vk_ext_depth_clamp_control, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_cooperative_matrix2,
+             Info(&DeviceExtensions::vk_nv_cooperative_matrix2,
+                  {{{&DeviceExtensions::vk_khr_cooperative_matrix, VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_acceleration_structure,
              Info(&DeviceExtensions::vk_khr_acceleration_structure,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -2109,6 +2113,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_device_generated_commands:
         case vvl::Extension::_VK_MESA_image_alignment_control:
         case vvl::Extension::_VK_EXT_depth_clamp_control:
+        case vvl::Extension::_VK_NV_cooperative_matrix2:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:
