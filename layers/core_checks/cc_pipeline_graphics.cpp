@@ -526,12 +526,17 @@ bool CoreChecks::ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline &pip
 bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
+    const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
+    const bool is_create_library = (pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
+
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) && !pipeline.OwnsSubState(pipeline.fragment_shader_state) &&
         ((pipeline.create_info_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
+        // Hint to help as shown from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8761
+        const char *hint = is_create_library ? "" : " (Is rasterizerDiscardEnable mistakenly set to VK_TRUE?)";
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-06894", device, create_info_loc,
-                         "does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
-                         string_VkShaderStageFlags(pipeline.create_info_shaders).c_str());
+                         "does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.%s",
+                         string_VkShaderStageFlags(pipeline.create_info_shaders).c_str(), hint);
     }
 
     if (!pipeline.OwnsSubState(pipeline.fragment_shader_state) && !pipeline.OwnsSubState(pipeline.pre_raster_state) &&
@@ -540,9 +545,6 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                          "is %zu, but the pipeline does not have a pre-rasterization or fragment shader state.",
                          pipeline.shader_stages_ci.size());
     }
-
-    const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
-    const bool is_create_library = (pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
 
     if (is_create_library) {
         if (!enabled_features.graphicsPipelineLibrary) {
