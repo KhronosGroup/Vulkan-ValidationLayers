@@ -167,6 +167,25 @@ std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinaryWaitSubm
     return timepoint.wait_submits[0];
 }
 
+std::optional<vvl::SemaphoreInfo> vvl::Semaphore::GetPendingBinarySignalTimelineDependency() const {
+    assert(type == VK_SEMAPHORE_TYPE_BINARY);
+    auto guard = ReadLock();
+    if (timeline_.empty()) {
+        return {};
+    }
+    const TimePoint &timepoint = timeline_.rbegin()->second;
+    assert(timepoint.HasSignaler());
+    const auto &signal_submit = timepoint.signal_submit;
+
+    // A signal not associated with a queue cannot be blocked by timeline wait
+    // (host signal or image acquire signal)
+    if (!signal_submit.has_value() || signal_submit->queue == nullptr) {
+        return {};
+    }
+
+    return signal_submit->queue->FindTimelineWaitWithoutResolvingSignal(signal_submit->seq);
+}
+
 uint64_t vvl::Semaphore::CurrentPayload() const {
     auto guard = ReadLock();
     return completed_.payload;
@@ -200,20 +219,8 @@ bool vvl::Semaphore::CanBinaryBeWaited() const {
     // Wait before signal is not allowed.
     assert(timepoint.HasSignaler());
 
-    // Already has waiters, cannot be double waited
-    if (timepoint.HasWaiters()) {
-        return false;
-    }
-
-    // Image acquire cannot be blocked by timeline wait, we can wait on it
-    if (timepoint.acquire_command.has_value()) {
-        return true;
-    }
-
-    // Check that synchronization is not blocked by timeline wait that does not have submitted signal.
-    // This part of various VUs (e.g. VUID-vkQueueSubmit-pWaitSemaphores-03238):
-    // "and any semaphore signal operations on which it depends must have also been submitted for execution"
-    return !timepoint.signal_submit->queue->HasTimelineWaitWithoutResolvingSignal(timepoint.signal_submit->seq).has_value();
+    // Can wait if there are no waiters
+    return !timepoint.HasWaiters();
 }
 
 void vvl::Semaphore::GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquire_command) const {

@@ -30,6 +30,13 @@ class ValidationStateTracker;
 namespace vvl {
 
 class Queue;
+class Semaphore;
+
+struct SemaphoreInfo {
+    SemaphoreInfo(std::shared_ptr<Semaphore> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
+    std::shared_ptr<Semaphore> semaphore;
+    uint64_t payload{0};
+};
 
 class Semaphore : public RefcountedStateObject {
   public:
@@ -104,6 +111,12 @@ class Semaphore : public RefcountedStateObject {
 
     // Returns pending queue submission that waits on this binary semaphore.
     std::optional<SubmissionReference> GetPendingBinaryWaitSubmission() const;
+
+    // If a pending binary signal depends on an unresolved timeline wait, this function
+    // returns information about the timeline wait; otherwise, it returns an empty result.
+    // This is used to validate VUs (such as VUID-vkQueueSubmit-pWaitSemaphores-03238) that have this statement:
+    // "and any semaphore signal operations on which it depends must have also been submitted for execution"
+    std::optional<SemaphoreInfo> GetPendingBinarySignalTimelineDependency() const;  
 
     // Current payload value.
     // If a queue submission command is pending execution, then the returned value may immediately be out of date

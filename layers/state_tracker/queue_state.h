@@ -35,11 +35,6 @@ class CommandBuffer;
 class Queue;
 
 struct QueueSubmission {
-    struct SemaphoreInfo {
-        SemaphoreInfo(std::shared_ptr<Semaphore> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
-        std::shared_ptr<Semaphore> semaphore;
-        uint64_t payload{0};
-    };
     QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
     bool end_batch{false};
@@ -115,10 +110,9 @@ class Queue : public StateObject {
     // Helper that combines Notify and Wait
     void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
 
-    // Check if there is a timeline wait before or at until_seq submission that
-    // does not have a resolving timeline signal submitted yet. If such wait exists
-    // then the function returns not empty object with semaphore wait information.
-    std::optional<vvl::QueueSubmission::SemaphoreInfo> HasTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
+    // Find a timeline wait that does not have a resolving signal submitted yet.
+    // Check submissions up to and including until_seq.
+    std::optional<SemaphoreInfo> FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
 
   public:
     // Queue family index. As queueFamilyIndex parameter in vkGetDeviceQueue.
