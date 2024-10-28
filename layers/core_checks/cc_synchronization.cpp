@@ -165,6 +165,15 @@ bool SemaphoreSubmitState::ValidateBinaryWait(const Location &loc, VkQueue queue
             const LogObjectList objlist(semaphore, queue);
             skip |= core.LogError(vuid, objlist, loc, "queue (%s) is waiting on semaphore (%s) that has no way to be signaled.",
                                   core.FormatHandle(queue).c_str(), core.FormatHandle(semaphore).c_str());
+        } else if (auto timeline_wait_info = semaphore_state.GetPendingBinarySignalTimelineDependency()) {
+            const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kBinaryCannotBeSignalled);
+            const LogObjectList objlist(semaphore_state.Handle(), timeline_wait_info->semaphore->Handle(), queue);
+            skip |= core.LogError(
+                vuid, objlist, loc,
+                "queue (%s) is waiting on binary semaphore (%s) that has an associated signal but it depends on timeline semaphore "
+                "wait (%s, wait value = %" PRIu64 ") that does not have resolving signal submitted yet.",
+                core.FormatHandle(queue).c_str(), core.FormatHandle(semaphore).c_str(),
+                core.FormatHandle(timeline_wait_info->semaphore->VkHandle()).c_str(), timeline_wait_info->payload);
         } else {
             binary_signaling_state[semaphore] = false;
         }

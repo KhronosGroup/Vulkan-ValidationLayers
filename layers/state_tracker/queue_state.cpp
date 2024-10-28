@@ -135,14 +135,13 @@ void vvl::Queue::NotifyAndWait(const Location &loc, uint64_t until_seq) {
     Wait(loc, until_seq);
 }
 
-std::optional<vvl::QueueSubmission::SemaphoreInfo> vvl::Queue::HasTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const {
-    auto guard = Lock();
-
+std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const {
     // A simple optimization for a long sequence of submits without host waits.
     // Stop iteration over submits if there are no timeline waits left. If only
     // binary semaphores are used this will return immediately.
     uint32_t processed_waits = 0;
 
+    auto guard = Lock();
     for (auto it = submissions_.rbegin(); it != submissions_.rend() && processed_waits < timeline_wait_count_; ++it) {
         const vvl::QueueSubmission &submission = *it;
         if (submission.seq > until_seq) {
