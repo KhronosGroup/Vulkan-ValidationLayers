@@ -643,6 +643,12 @@ void Queue::PostSubmit(vvl::QueueSubmission &submission) {
 
 void Queue::Retire(vvl::QueueSubmission &submission) {
     vvl::Queue::Retire(submission);
+    if (submission.loc.Get().function == vvl::Func::vkQueuePresentKHR) {
+        // Present batch does not have any GPU-AV work to post process, skip it.
+        // This is also needed for correctness. QueuePresent does not have a PostSubmit call
+        // that signals barrier_sem_. The following timeline wait must not be called.
+        return;
+    }
     retiring_.emplace_back(submission.cbs);
     if (submission.end_batch) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
