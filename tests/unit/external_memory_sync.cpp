@@ -592,6 +592,51 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphore) {
     m_default_queue->Wait();
 }
 
+TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreTimelineDependency) {
+    TEST_DESCRIPTION("Export using handle with copy transference when semaphore signal depends on unresolved timeline wait");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed to run this test";
+    }
+
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+    VkPhysicalDeviceExternalSemaphoreInfo external_semahpore_info = vku::InitStructHelper();
+    external_semahpore_info.handleType = handle_type;
+    VkExternalSemaphoreProperties external_semahpore_props = vku::InitStructHelper();
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(Gpu(), &external_semahpore_info, &external_semahpore_props);
+    if (!(external_semahpore_props.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(external_semahpore_props.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External semaphore does not support importing and exporting";
+    }
+    if (!(external_semahpore_props.compatibleHandleTypes & handle_type)) {
+        GTEST_SKIP() << "External semaphore does not support VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT";
+    }
+
+    VkExportSemaphoreCreateInfo export_ci = vku::InitStructHelper();
+    export_ci.handleTypes = handle_type;
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper(&export_ci);
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_ci);
+    vkt::Semaphore binary_semaphore(*m_device, semaphore_ci);
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1), vkt::Signal(binary_semaphore));
+
+    int fd_handle = -1;
+    m_errorMonitor->SetDesiredError("VUID-VkSemaphoreGetFdInfoKHR-handleType-03254");
+    binary_semaphore.ExportHandle(fd_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_default_queue->Wait();
+}
+
 TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedSemaphore) {
     TEST_DESCRIPTION("Export from semaphore with imported payload that does not support export");
     SetTargetApiVersion(VK_API_VERSION_1_1);
