@@ -76,9 +76,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
 
     // to prevent VUID-VkBufferViewCreateInfo-buffer-02751
     const uint32_t block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
-
-    const VkBufferCreateInfo buffer_info = vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    vkt::Buffer buffer(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;

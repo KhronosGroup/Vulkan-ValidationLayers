@@ -2721,13 +2721,10 @@ TEST_F(NegativeCommand, CmdClearColorImageNullColor) {
 
 TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
     TEST_DESCRIPTION("Call EndCommandBuffer when conditional rendering is active");
-
     AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    auto buffer_ci =
-        vkt::Buffer::CreateInfo(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
-    vkt::Buffer buffer(*m_device, buffer_ci);
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
 
     VkConditionalRenderingBeginInfoEXT conditional_rendering_begin = vku::InitStructHelper();
     conditional_rendering_begin.buffer = buffer.handle();
@@ -3153,10 +3150,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
 
 TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
     TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
-
-    AddOptionalExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const bool separate_stencil_usage_supported = IsExtensionsEnabled(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     const auto depth_format = FindSupportedDepthStencilFormat(Gpu());
     InitRenderTarget();
 
@@ -3175,25 +3169,6 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
-
-    if (!separate_stencil_usage_supported) {
-        printf("VK_EXT_separate_stencil_usage Extension not supported, skipping part of test\n");
-    } else {
-        VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
-        image_stencil_create_info.stencilUsage =
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // not VK_IMAGE_USAGE_TRANSFER_DST_BIT
-
-        image_create_info.pNext = &image_stencil_create_info;
-        vkt::Image image(*m_device, image_create_info, vkt::set_layout);
-
-        // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was created with separate stencil usage,
-        // VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageStencilUsageCreateInfo::stencilUsage used to create image
-        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02658");
-        // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
-        m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
-        vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
-        m_errorMonitor->VerifyFound();
-    }
 
     image_create_info.pNext = nullptr;
 
@@ -3224,6 +3199,46 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
                                       &range);
         m_errorMonitor->VerifyFound();
     }
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCommand, ClearDepthStencilWithAspectSeparate) {
+    TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
+    AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const auto depth_format = FindSupportedDepthStencilFormat(Gpu());
+    InitRenderTarget();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = depth_format;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    const VkClearDepthStencilValue clear_value = {};
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+
+    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // not VK_IMAGE_USAGE_TRANSFER_DST_BIT
+
+    image_create_info.pNext = &image_stencil_create_info;
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+
+    // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was created with separate stencil usage,
+    // VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageStencilUsageCreateInfo::stencilUsage used to create image
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02658");
+    // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
+    m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
+    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
+    m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
 }

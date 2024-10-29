@@ -587,8 +587,7 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     swapchain_create_info.oldSwapchain = 0;
     swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
     if (m_surface_present_modes.size() <= 1) {
-        printf("TEST SKIPPED: Only %i presentation mode is available!", int(m_surface_present_modes.size()));
-        return;
+        GTEST_SKIP() << "Only 1 presentation mode is available";
     }
 
     for (size_t i = 0; i < m_surface_present_modes.size(); i++) {

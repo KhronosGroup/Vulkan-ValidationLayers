@@ -57,11 +57,8 @@ TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
 
 TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Anisotropy is enabled.");
-
-    AddOptionalExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::samplerAnisotropy);
     RETURN_IF_SKIP(Init());
-    const bool cubic_support = IsExtensionsEnabled(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     VkSamplerCreateInfo sampler_info_ref = SafeSaneSamplerCreateInfo();
     sampler_info_ref.anisotropyEnable = VK_TRUE;
     VkSamplerCreateInfo sampler_info = sampler_info_ref;
@@ -83,19 +80,26 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
     sampler_info.maxLod = 0;
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076");
     sampler_info.unnormalizedCoordinates = sampler_info_ref.unnormalizedCoordinates;
+}
 
-    // Both anisotropy and cubic filtering enabled
-    if (cubic_support) {
-        sampler_info.minFilter = VK_FILTER_CUBIC_IMG;
-        CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
-        sampler_info.minFilter = sampler_info_ref.minFilter;
+TEST_F(NegativeSampler, AnisotropyFeatureEnabledCubic) {
+    TEST_DESCRIPTION("Validation must check several conditions that apply only when Anisotropy is enabled.");
+    AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::samplerAnisotropy);
+    RETURN_IF_SKIP(Init());
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.anisotropyEnable = VK_TRUE;
+    // If unnormalizedCoordinates is VK_TRUE, minLod and maxLod must be zero
+    sampler_info.minLod = 0;
+    sampler_info.maxLod = 0;
 
-        sampler_info.magFilter = VK_FILTER_CUBIC_IMG;
-        CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
-        sampler_info.magFilter = sampler_info_ref.magFilter;
-    } else {
-        printf("Test requires unsupported extension \"VK_IMG_filter_cubic\". Skipped.\n");
-    }
+    sampler_info.minFilter = VK_FILTER_CUBIC_IMG;
+    sampler_info.magFilter = VK_FILTER_NEAREST;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
+
+    sampler_info.minFilter = VK_FILTER_NEAREST;
+    sampler_info.magFilter = VK_FILTER_CUBIC_IMG;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
 }
 
 TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {

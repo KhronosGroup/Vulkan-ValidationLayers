@@ -2482,8 +2482,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
 
     if (valid_count == 0) {
-        printf("multisample properties are not supported.\n");
-        return;
+        GTEST_SKIP() << "multisample properties are not supported";
     }
 
     std::vector<VkSampleLocationEXT> sample_location(valid_count, {0.5, 0.5});

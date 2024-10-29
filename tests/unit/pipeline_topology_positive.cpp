@@ -271,39 +271,39 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
     )asm";
     auto vs = VkShaderObj::CreateFromASM(this, vs_src.c_str(), VK_SHADER_STAGE_VERTEX_BIT);
 
-    if (vs) {
-        // struct has {
-        //     mat4x4
-        //     float
-        //     vec4
-        // }
-        // but std140 padding so the vec4 is offset 80
-        VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, 96}};
-
-        VkPipelineLayoutCreateInfo const pipeline_layout_info{
-            VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
-
-        VkVertexInputBindingDescription input_binding[2] = {
-            {0, 16, VK_VERTEX_INPUT_RATE_VERTEX},
-            {1, 16, VK_VERTEX_INPUT_RATE_VERTEX},
-        };
-        VkVertexInputAttributeDescription input_attribs[2] = {
-            {0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-            {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-        };
-
-        CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-        pipe.pipeline_layout_ci_ = pipeline_layout_info;
-        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        pipe.vi_ci_.pVertexBindingDescriptions = input_binding;
-        pipe.vi_ci_.vertexBindingDescriptionCount = 2;
-        pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
-        pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
-        pipe.CreateGraphicsPipeline();
-    } else {
-        printf("Error creating shader from assembly\n");
+    if (!vs) {
+        GTEST_SKIP() << "Error creating shader from assembly";
     }
+
+    // struct has {
+    //     mat4x4
+    //     float
+    //     vec4
+    // }
+    // but std140 padding so the vec4 is offset 80
+    VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, 96}};
+
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+
+    VkVertexInputBindingDescription input_binding[2] = {
+        {0, 16, VK_VERTEX_INPUT_RATE_VERTEX},
+        {1, 16, VK_VERTEX_INPUT_RATE_VERTEX},
+    };
+    VkVertexInputAttributeDescription input_attribs[2] = {
+        {0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+        {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+    };
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipe.vi_ci_.pVertexBindingDescriptions = input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 2;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositivePipelineTopology, PolygonModeValid) {

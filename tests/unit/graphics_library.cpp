@@ -1544,14 +1544,36 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-identifierSize-06852");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierGPL) {
+    TEST_DESCRIPTION("Test for VK_EXT_shader_module_identifier extension.");
+    TEST_DESCRIPTION("Create a pipeline using a shader module identifier");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);  // Pipeline cache control needed
+    AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
+    AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
+    stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci.module = vs.handle();
+    stage_ci.pName = "main";
+
+    VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
+    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    sm_id_create_info.pIdentifier = get_identifier.identifier;
+
     // Trying to create a pipeline with a shader module identifier at this point can result in a VK_PIPELINE_COMPILE_REQUIRED from
     // some drivers, and no pipeline creation. Create a pipeline using the module itself presumably getting the driver to compile
     // the shader so we can create a pipeline using the identifier
+    CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.flags = 0;
-    stage_ci.pNext = nullptr;
-    stage_ci.module = vs.handle();
     pipe.CreateGraphicsPipeline();
 
     // Now really create a pipeline with a smid
@@ -1563,8 +1585,7 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     stage_ci.module = VK_NULL_HANDLE;
     VkResult result = pipe2.CreateGraphicsPipeline();
     if (result != VK_SUCCESS) {
-        printf("Cannot create a pipeline with a shader module identifier, skipping gpl part of the test\n");
-        return;
+        GTEST_SKIP() << "Cannot create a pipeline with a shader module identifier";
     }
     // Now use it in a gpl
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
