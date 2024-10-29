@@ -4667,7 +4667,6 @@ TEST_F(NegativeShaderObject, Atomics) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
     VkShaderEXT shader;
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
     vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
