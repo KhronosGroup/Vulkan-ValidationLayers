@@ -1526,7 +1526,7 @@ TEST_F(NegativeWsi, SwapchainAcquireImageWithPendingSemaphoreWait) {
 
     // Add a wait, but don't let it finish.
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT));
-    
+
     m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-semaphore-01779");
     m_swapchain.AcquireNextImage(semaphore, kWaitTimeout);
     m_errorMonitor->VerifyFound();
@@ -1768,7 +1768,7 @@ TEST_F(NegativeWsi, GetSwapchainImagesCountButNotImages) {
     m_swapchain.Init(*m_device, swapchain_info);
 
     // This test initiates image count query, but don't need resulting value
-    m_swapchain.GetImageCount(); 
+    m_swapchain.GetImageCount();
 
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
     m_default_queue->Present(m_swapchain, 0, vkt::no_semaphore);

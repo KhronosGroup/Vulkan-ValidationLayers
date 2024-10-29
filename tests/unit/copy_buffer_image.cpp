@@ -2515,8 +2515,8 @@ TEST_F(NegativeCopyBufferImage, DifferentFormatTexelBlockExtent) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
 
-    VkFormat src_format = VK_FORMAT_BC7_UNORM_BLOCK;
-    VkFormat dst_format = VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK;
+    VkFormat src_format = VK_FORMAT_BC3_UNORM_BLOCK;
+    VkFormat dst_format = VK_FORMAT_ASTC_12x12_SRGB_BLOCK;
 
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), src_format, &format_properties);

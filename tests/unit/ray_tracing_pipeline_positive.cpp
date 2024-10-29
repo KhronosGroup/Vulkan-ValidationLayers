@@ -168,7 +168,6 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
     AddRequiredFeature(vkt::Feature::rayTracingPipelineShaderGroupHandleCaptureReplay);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
-
     RETURN_IF_SKIP(InitState());
 
     vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
