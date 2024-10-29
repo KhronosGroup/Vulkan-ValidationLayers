@@ -11331,6 +11331,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineCache(VkDevice device, co
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pPipelineCache), pPipelineCache,
                                     "VUID-vkCreatePipelineCache-pPipelineCache-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, error_obj);
     return skip;
 }
 

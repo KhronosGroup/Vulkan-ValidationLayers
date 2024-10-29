@@ -166,6 +166,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdSetVertexInputEXT',
             'vkCmdPushConstants',
             'vkCmdPushConstants2KHR',
+            'vkCreatePipelineCache',
             'vkMergePipelineCaches',
             'vkCmdClearColorImage',
             'vkCmdBeginRenderPass',

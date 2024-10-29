@@ -1579,18 +1579,20 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             }
         }
 
-        if ((!vkuFormatIsMultiplane(src_format)) && (!vkuFormatIsMultiplane(dst_format))) {
+        const VkImageAspectFlags src_aspect = src_subresource.aspectMask;
+        const VkImageAspectFlags dst_aspect = dst_subresource.aspectMask;
+        if (!vkuFormatIsMultiplane(src_format) && !vkuFormatIsMultiplane(dst_format)) {
             // If neither image is multi-plane the aspectMask member of src and dst must match
-            if (src_subresource.aspectMask != dst_subresource.aspectMask) {
+            if (src_aspect != dst_aspect) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01551" : "VUID-vkCmdCopyImage-srcImage-01551";
                 skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
-                                 string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
+                                 string_VkImageAspectFlags(src_aspect).c_str(),
                                  dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
-                                 string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
+                                 string_VkImageAspectFlags(dst_aspect).c_str());
             }
         } else {
             // Source image multiplane checks
-            VkImageAspectFlags aspect = src_subresource.aspectMask;
+            VkImageAspectFlags aspect = src_aspect;
             if (vkuFormatIsMultiplane(src_format) && !IsOnlyOneValidPlaneAspect(src_format, aspect)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08713" : "VUID-vkCmdCopyImage-srcImage-08713";
                 skip |= LogError(vuid, src_objlist, src_subresource_loc.dot(Field::aspectMask),
@@ -1598,8 +1600,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  string_VkFormat(src_format));
             }
             // Single-plane to multi-plane
-            if ((!vkuFormatIsMultiplane(src_format)) && (vkuFormatIsMultiplane(dst_format)) &&
-                (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+            if (!vkuFormatIsMultiplane(src_format) && vkuFormatIsMultiplane(dst_format) && VK_IMAGE_ASPECT_COLOR_BIT != aspect) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01557" : "VUID-vkCmdCopyImage-dstImage-01557";
                 skip |=
                     LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
@@ -1608,7 +1609,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Dest image multiplane checks
-            aspect = dst_subresource.aspectMask;
+            aspect = dst_aspect;
             if (vkuFormatIsMultiplane(dst_format) && !IsOnlyOneValidPlaneAspect(dst_format, aspect)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-08714" : "VUID-vkCmdCopyImage-dstImage-08714";
                 skip |= LogError(vuid, dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
@@ -1616,8 +1617,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  string_VkFormat(dst_format));
             }
             // Multi-plane to single-plane
-            if ((vkuFormatIsMultiplane(src_format)) && (!vkuFormatIsMultiplane(dst_format)) &&
-                (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+            if (vkuFormatIsMultiplane(src_format) && !vkuFormatIsMultiplane(dst_format) && VK_IMAGE_ASPECT_COLOR_BIT != aspect) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01556" : "VUID-vkCmdCopyImage-srcImage-01556";
                 skip |=
                     LogError(vuid, all_objlist, dst_subresource_loc.dot(Field::aspectMask),
@@ -1649,11 +1649,11 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         if (vkuFormatIsMultiplane(src_format) || vkuFormatIsMultiplane(dst_format)) {
             const VkFormat src_plane_format =
                 vkuFormatIsMultiplane(src_format)
-                    ? vkuFindMultiplaneCompatibleFormat(src_format, static_cast<VkImageAspectFlagBits>(src_subresource.aspectMask))
+                    ? vkuFindMultiplaneCompatibleFormat(src_format, static_cast<VkImageAspectFlagBits>(src_aspect))
                     : src_format;
             const VkFormat dst_plane_format =
                 vkuFormatIsMultiplane(dst_format)
-                    ? vkuFindMultiplaneCompatibleFormat(dst_format, static_cast<VkImageAspectFlagBits>(dst_subresource.aspectMask))
+                    ? vkuFindMultiplaneCompatibleFormat(dst_format, static_cast<VkImageAspectFlagBits>(dst_aspect))
                     : dst_format;
             const size_t src_format_size = vkuFormatElementSize(src_plane_format);
             const size_t dst_format_size = vkuFormatElementSize(dst_plane_format);
@@ -1663,16 +1663,16 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-None-01549" : "VUID-vkCmdCopyImage-None-01549";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "srcImage format %s with aspectMask %s is not compatible with dstImage format %s aspectMask %s.",
-                                 string_VkFormat(src_format), string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
-                                 string_VkFormat(dst_format), string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
+                                 string_VkFormat(src_format), string_VkImageAspectFlags(src_aspect).c_str(),
+                                 string_VkFormat(dst_format), string_VkImageAspectFlags(dst_aspect).c_str());
             }
         }
 
         // track aspect mask in loop through regions
-        if ((src_subresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+        if ((src_aspect & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
             has_stencil_aspect = true;
         }
-        if ((src_subresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
+        if ((src_aspect & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             has_non_stencil_aspect = true;
         }
 
@@ -3094,26 +3094,28 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                              dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), dst_subresource.layerCount);
         }
 
-        if (src_subresource.aspectMask != dst_subresource.aspectMask) {
+        const VkImageAspectFlags src_aspect = src_subresource.aspectMask;
+        const VkImageAspectFlags dst_aspect = dst_subresource.aspectMask;
+        if (src_aspect != dst_aspect) {
             vuid = is_2 ? "VUID-VkImageBlit2-aspectMask-00238" : "VUID-VkImageBlit-aspectMask-00238";
-            skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
-                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
-                             dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
-                             string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
+            skip |=
+                LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
+                         string_VkImageAspectFlags(src_aspect).c_str(), dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
+                         string_VkImageAspectFlags(dst_aspect).c_str());
         }
 
-        if (!VerifyAspectsPresent(src_subresource.aspectMask, src_format)) {
+        if (!VerifyAspectsPresent(src_aspect, src_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-aspectMask-00241" : "VUID-vkCmdBlitImage-aspectMask-00241";
             skip |= LogError(vuid, src_objlist, src_subresource_loc.dot(Field::aspectMask),
                              "(%s) cannot specify aspects not present in source image (%s).",
-                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(), string_VkFormat(src_format));
+                             string_VkImageAspectFlags(src_aspect).c_str(), string_VkFormat(src_format));
         }
 
-        if (!VerifyAspectsPresent(dst_subresource.aspectMask, dst_format)) {
+        if (!VerifyAspectsPresent(dst_aspect, dst_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-aspectMask-00242" : "VUID-vkCmdBlitImage-aspectMask-00242";
             skip |= LogError(vuid, dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
                              "(%s) cannot specify aspects not present in destination image (%s).",
-                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(), string_VkFormat(src_format));
+                             string_VkImageAspectFlags(src_aspect).c_str(), string_VkFormat(src_format));
         }
 
         // Validate source image offsets
@@ -3224,9 +3226,9 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             skip |= LogError(vuid, dst_objlist, region_loc, "destination image blit region exceeds image dimensions.");
         }
 
-        if ((VK_IMAGE_TYPE_3D == src_type) || (VK_IMAGE_TYPE_3D == dst_type)) {
-            if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount) ||
-                (0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
+        if ((src_type == VK_IMAGE_TYPE_3D || dst_type == VK_IMAGE_TYPE_3D)) {
+            if ((src_subresource.baseArrayLayer != 0) || (src_subresource.layerCount != 1) ||
+                (dst_subresource.baseArrayLayer != 0) || (dst_subresource.layerCount != 1)) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00240" : "VUID-vkCmdBlitImage-srcImage-00240";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "srcImage %s\n"
@@ -3432,13 +3434,13 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                              dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.dstSubresource.layerCount);
         }
         // For each region, src and dest image aspect must be color only
-        if ((src_subresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) ||
-            (dst_subresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+        const VkImageAspectFlags src_aspect = src_subresource.aspectMask;
+        const VkImageAspectFlags dst_aspect = dst_subresource.aspectMask;
+        if ((src_aspect != VK_IMAGE_ASPECT_COLOR_BIT) || (dst_aspect != VK_IMAGE_ASPECT_COLOR_BIT)) {
             vuid = is_2 ? "VUID-VkImageResolve2-aspectMask-00266" : "VUID-VkImageResolve-aspectMask-00266";
             skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
                              "(%s) and dstSubresource.aspectMask (%s) must only be VK_IMAGE_ASPECT_COLOR_BIT.",
-                             string_VkImageAspectFlags(src_subresource.aspectMask).c_str(),
-                             string_VkImageAspectFlags(dst_subresource.aspectMask).c_str());
+                             string_VkImageAspectFlags(src_aspect).c_str(), string_VkImageAspectFlags(dst_aspect).c_str());
         }
 
         const VkImageType src_image_type = src_image_state->create_info.imageType;

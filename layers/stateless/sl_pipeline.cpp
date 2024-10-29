@@ -1372,6 +1372,22 @@ bool StatelessValidation::ValidateDepthClampRange(const VkDepthClampRangeEXT &de
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
+                                                                    const VkAllocationCallbacks *pAllocator,
+                                                                    VkPipelineCache *pPipelineCache,
+                                                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+    const bool has_externally_sync = (pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0;
+
+    if (!enabled_features.pipelineCreationCacheControl && has_externally_sync) {
+        skip |= LogError("VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
+                         "includes VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT, but pipelineCreationCacheControl "
+                         "feature was not enabled");
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache,
                                                                     uint32_t srcCacheCount, const VkPipelineCache *pSrcCaches,
                                                                     const ErrorObject &error_obj) const {
