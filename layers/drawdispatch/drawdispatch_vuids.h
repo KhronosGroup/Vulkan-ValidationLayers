@@ -237,7 +237,6 @@ struct DrawDispatchVuid {
     const char* set_line_stipple_enable_08669 = kVUIDUndefined;
     const char* set_line_stipple_enable_08670 = kVUIDUndefined;
     const char* set_line_stipple_enable_08671 = kVUIDUndefined;
-    const char* set_line_stipple_08672 = kVUIDUndefined;
     const char* vertex_shader_08684 = kVUIDUndefined;
     const char* tessellation_control_shader_08685 = kVUIDUndefined;
     const char* tessellation_evaluation_shader_08686 = kVUIDUndefined;

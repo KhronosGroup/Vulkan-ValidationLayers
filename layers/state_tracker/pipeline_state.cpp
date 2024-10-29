@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #include "state_tracker/pipeline_state.h"
+#include "generated/dynamic_state_helper.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -1118,6 +1119,20 @@ bool LastBound::IsCoverageModulationTableEnable() const {
                     vku::FindStructInPNextChain<VkPipelineCoverageModulationStateCreateInfoNV>(ms_state->pNext)) {
                 return coverage_modulation_state->coverageModulationTableEnable;
             }
+        }
+    }
+    return false;
+}
+
+bool LastBound::IsStippledLineEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.stippled_line_enable;
+        }
+    } else {
+        if (const auto line_state_ci = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(
+                pipeline_state->RasterizationStatePNext())) {
+            return line_state_ci->stippledLineEnable;
         }
     }
     return false;
