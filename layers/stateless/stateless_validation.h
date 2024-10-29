@@ -1087,6 +1087,9 @@ class StatelessValidation : public ValidationObject {
                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
                                                 const ErrorObject &error_obj) const;
 
+    bool manual_PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkPipelineCache *pPipelineCache,
+                                                   const ErrorObject &error_obj) const;
     bool manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                    const VkPipelineCache *pSrcCaches, const ErrorObject &error_obj) const;
     bool manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT *pPipelineInfo,

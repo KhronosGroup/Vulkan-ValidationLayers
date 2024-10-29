@@ -1214,9 +1214,6 @@ class CoreChecks : public ValidationStateTracker {
                                              const Location& loc) const;
     bool ValidateImageImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkImage image,
                                             const Location& loc) const;
-    bool PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
-                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
