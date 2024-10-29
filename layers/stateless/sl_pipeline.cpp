@@ -552,8 +552,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 skip |= ValidatePipelineTessellationStateCreateInfo(*create_info.pTessellationState,
                                                                     create_info_loc.dot(Field::pTessellationState));
 
-                if (create_info.pTessellationState->patchControlPoints == 0 ||
-                    create_info.pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
+                const bool has_dynamic_patch_control_points =
+                    vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
+                if (!has_dynamic_patch_control_points &&
+                    (create_info.pTessellationState->patchControlPoints == 0 ||
+                     create_info.pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize)) {
                     skip |= LogError("VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214", device,
                                      create_info_loc.dot(Field::pTessellationState).dot(Field::patchControlPoints),
                                      "is %" PRIu32 ", but should be between 0 and maxTessellationPatchSize (%" PRIu32 ").",
