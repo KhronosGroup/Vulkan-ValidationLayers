@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
@@ -279,21 +280,16 @@ TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature11) {
 
 TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.2 with feature bit enabled");
-
     // use 1.2 to get the feature bit in VkPhysicalDeviceVulkan11Features
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
     features11.shaderDrawParameters = VK_TRUE;
     auto features2 = GetPhysicalDeviceFeatures2(features11);
-
     GetPhysicalDeviceFeatures2(features2);
-
-    if (features11.shaderDrawParameters != VK_TRUE) {
-        printf("shaderDrawParameters not supported, skipping test\n");
-        return;
+    if (features11.shaderDrawParameters == VK_FALSE) {
+        GTEST_SKIP() << "shaderDrawParameters not supported";
     }
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));

@@ -2963,36 +2963,47 @@ TEST_F(NegativeImage, MaxLimitsExtent) {
     CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02254");
 }
 
-TEST_F(NegativeImage, MaxLimitsFramebuffer) {
+TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
     RETURN_IF_SKIP(Init());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    if (dev_limits.maxFramebufferWidth == vvl::kU32Max) {
+        GTEST_SKIP() << "maxFramebufferWidth is already UINT32_MAX";
+    }
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
 
     VkImageFormatProperties img_limits;
     ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
 
-    if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
-        image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
-        if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
-            m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02252");
-        }
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00964");
-    } else {
-        printf("VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
+    image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+    if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
+        m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02252");
+    }
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00964");
+}
+
+TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
+    TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
+    RETURN_IF_SKIP(Init());
+
+    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    if (dev_limits.maxFramebufferHeight == vvl::kU32Max) {
+        GTEST_SKIP() << "maxFramebufferHeight is already UINT32_MAX";
     }
 
-    if (dev_limits.maxFramebufferHeight != vvl::kU32Max) {
-        image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
-        if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
-            m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02253");
-        }
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
-    } else {
-        printf("VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n");
+    VkImageCreateInfo image_ci = DefaultImageInfo();
+    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // (any attachment bit)
+
+    VkImageFormatProperties img_limits;
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
+
+    image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+    if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
+        m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02253");
     }
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
 }
 
 TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
@@ -3110,7 +3121,10 @@ TEST_F(NegativeImage, Stencil) {
 
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_stencil_create_info);
     image_create_info.flags = 0;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3120,10 +3134,6 @@ TEST_F(NegativeImage, Stencil) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
-    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
-
-    image_create_info.pNext = &image_stencil_create_info;
 
     VkPhysicalDeviceImageFormatInfo2 image_format_info2 =
         vku::InitStructHelper(&image_stencil_create_info);
@@ -3144,30 +3154,6 @@ TEST_F(NegativeImage, Stencil) {
     m_errorMonitor->VerifyFound();
     // test vkCreateImage as well for this case
     CreateImageTest(*this, &image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
-
-    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
-
-    if (dev_limits.maxFramebufferWidth != vvl::kU32Max) {
-        // depth-stencil format image with VkImageStencilUsageCreateInfo with
-        // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image width exceeding device maximum
-        image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        image_create_info.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
-        image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-Format-02536");
-    } else {
-        printf("VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
-    }
-
-    if (dev_limits.maxFramebufferHeight != vvl::kU32Max) {
-        // depth-stencil format image with VkImageStencilUsageCreateInfo with
-        // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image height exceeding device maximum
-        image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        image_create_info.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
-        image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02537");
-    } else {
-        printf("VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n");
-    }
 
     // depth-stencil format image with VkImageStencilUsageCreateInfo with
     // VK_IMAGE_USAGE_STORAGE_BIT and the multisampled storage images feature
@@ -3206,6 +3192,46 @@ TEST_F(NegativeImage, Stencil) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02798");
+}
+
+TEST_F(NegativeImage, StencilLimits) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
+    if (dev_limits.maxFramebufferWidth == vvl::kU32Max) {
+        GTEST_SKIP() << "maxFramebufferWidth is already UINT32_MAX";
+    }
+    if (dev_limits.maxFramebufferHeight == vvl::kU32Max) {
+        GTEST_SKIP() << "maxFramebufferHeight is already UINT32_MAX";
+    }
+
+    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_stencil_create_info);
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo with
+    // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image width exceeding device maximum
+    image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    image_create_info.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-Format-02536");
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo with
+    // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image height exceeding device maximum
+    image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    image_create_info.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02537");
 }
 
 TEST_F(NegativeImage, AstcDecodeMode) {

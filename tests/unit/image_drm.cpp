@@ -56,10 +56,6 @@ TEST_F(NegativeImageDrm, Basic) {
 
     VkSubresourceLayout fake_plane_layout = {0, 0, 0, 0, 0};
 
-    VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = vku::InitStructHelper();
-    drm_format_mod_list.drmFormatModifierCount = mods.size();
-    drm_format_mod_list.pDrmFormatModifiers = mods.data();
-
     VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit = vku::InitStructHelper();
     drm_format_mod_explicit.drmFormatModifierPlaneCount = 1;
     drm_format_mod_explicit.pPlaneLayouts = &fake_plane_layout;
@@ -76,9 +72,49 @@ TEST_F(NegativeImageDrm, Basic) {
     m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
     m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
     CreateImageTest(*this, &image_info, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
+}
 
-    // reset dummy plane layout
-    memset(&fake_plane_layout, 0, sizeof(fake_plane_layout));
+TEST_F(NegativeImageDrm, Basic2) {
+    RETURN_IF_SKIP(InitBasicImageDrm());
+    std::vector<uint64_t> mods = GetFormatModifier(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    if (mods.empty()) {
+        GTEST_SKIP() << "No valid Format Modifier found";
+    }
+
+    VkImageCreateInfo image_info = vku::InitStructHelper();
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.arrayLayers = 1;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.mipLevels = 1;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+    image_format_info.format = image_info.format;
+    image_format_info.tiling = image_info.tiling;
+    image_format_info.type = image_info.imageType;
+    image_format_info.usage = image_info.usage;
+    VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info = vku::InitStructHelper();
+    drm_format_mod_info.drmFormatModifier = mods[0];
+    drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_format_info.pNext = (void *)&drm_format_mod_info;
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
+
+    VkSubresourceLayout fake_plane_layout = {0, 0, 0, 0, 0};
+
+    VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = vku::InitStructHelper();
+    drm_format_mod_list.drmFormatModifierCount = mods.size();
+    drm_format_mod_list.pDrmFormatModifiers = mods.data();
+
+    VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit = vku::InitStructHelper();
+    drm_format_mod_explicit.drmFormatModifierPlaneCount = 1;
+    drm_format_mod_explicit.pPlaneLayouts = &fake_plane_layout;
+
+    image_info.pNext = (void *)&drm_format_mod_explicit;
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.drmFormatModifier = mods[1];
@@ -86,8 +122,7 @@ TEST_F(NegativeImageDrm, Basic) {
     VkResult result =
         vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
     if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
-        printf("Format VK_FORMAT_R8G8B8A8_UNORM not supported with format modifiers, Skipping the remaining tests.\n");
-        return;
+        GTEST_SKIP() << "Format VK_FORMAT_R8G8B8A8_UNORM not supported with format modifiers";
     }
     VkImage image = VK_NULL_HANDLE;
     // Postive check if only 1

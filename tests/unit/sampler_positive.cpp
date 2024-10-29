@@ -11,6 +11,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
 class PositiveSampler : public VkLayerTest {};
@@ -49,17 +51,14 @@ TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature12) {
 
 TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.2 with feature bit enabled");
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
     RETURN_IF_SKIP(InitFramework());
 
     VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
     features12.samplerMirrorClampToEdge = VK_TRUE;
     auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (features12.samplerMirrorClampToEdge != VK_TRUE) {
-        printf("samplerMirrorClampToEdge not supported, skipping test\n");
-        return;
+    if (features12.samplerMirrorClampToEdge == VK_FALSE) {
+        GTEST_SKIP() << "samplerMirrorClampToEdge not supported";
     }
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));

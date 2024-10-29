@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
 #include <thread>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
@@ -1203,6 +1204,10 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     RETURN_IF_SKIP(Init());
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        GTEST_SKIP()
+            << "Device has apiVersion greater than 1.0 -- skipping test cases that require external memory to be disabled.";
+    }
 
     // Find queues of two families
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
@@ -1216,103 +1221,156 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily) {
     if (only_one_family) {
         qf_indices.resize(1);
     }
+
     BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
 
+    BarrierQueueFamilyTestHelper excl_test(&test_context);
+    excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
+
+    excl_test("VUID-VkImageMemoryBarrier-image-09117", "VUID-VkBufferMemoryBarrier-buffer-09095", VK_QUEUE_FAMILY_IGNORED,
+              submit_family);
+    excl_test("VUID-VkImageMemoryBarrier-image-09118", "VUID-VkBufferMemoryBarrier-buffer-09096", submit_family,
+              VK_QUEUE_FAMILY_IGNORED);
+    excl_test(submit_family, submit_family);
+    excl_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+}
+
+TEST_F(NegativeSyncObject, BarrierQueueFamilyOneFamily) {
+    TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    RETURN_IF_SKIP(Init());
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        printf("Device has apiVersion greater than 1.0 -- skipping test cases that require external memory to be disabled.\n");
-    } else {
-        if (only_one_family) {
-            printf("Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
-        } else {
-            std::vector<uint32_t> families = {submit_family, other_family};
-            BarrierQueueFamilyTestHelper conc_test(&test_context);
-            conc_test.Init(&families);
-            {
-                // src
-                static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-                static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
-                conc_test(img_vuid, buf_vuid, submit_family, VK_QUEUE_FAMILY_IGNORED);
-            }
-            {
-                // dst
-                static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
-                static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
-                conc_test(img_vuid, buf_vuid, VK_QUEUE_FAMILY_IGNORED, submit_family);
-            }
-            {
-                // neither
-                static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-                static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
-                conc_test(img_vuid, buf_vuid, submit_family, submit_family);
-            }
-            conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
-        }
-
-        BarrierQueueFamilyTestHelper excl_test(&test_context);
-        excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
-
-        excl_test("VUID-VkImageMemoryBarrier-image-09117", "VUID-VkBufferMemoryBarrier-buffer-09095", VK_QUEUE_FAMILY_IGNORED,
-                  submit_family);
-        excl_test("VUID-VkImageMemoryBarrier-image-09118", "VUID-VkBufferMemoryBarrier-buffer-09096", submit_family,
-                  VK_QUEUE_FAMILY_IGNORED);
-        excl_test(submit_family, submit_family);
-        excl_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+        GTEST_SKIP()
+            << "Device has apiVersion greater than 1.0 -- skipping test cases that require external memory to be disabled.";
     }
+
+    // Find queues of two families
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (queue_family_count == 1) ||
+                                 (m_device->Physical().queue_properties_[other_family].queueCount == 0) ||
+                                 ((m_device->Physical().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
+    if (only_one_family) {
+        GTEST_SKIP() << "Single queue family found";
+    }
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
+
+    std::vector<uint32_t> families = {submit_family, other_family};
+    BarrierQueueFamilyTestHelper conc_test(&test_context);
+    conc_test.Init(&families);
+    {
+        // src
+        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+        conc_test(img_vuid, buf_vuid, submit_family, VK_QUEUE_FAMILY_IGNORED);
+    }
+    {
+        // dst
+        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09054";
+        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09051";
+        conc_test(img_vuid, buf_vuid, VK_QUEUE_FAMILY_IGNORED, submit_family);
+    }
+    {
+        // neither
+        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+        conc_test(img_vuid, buf_vuid, submit_family, submit_family);
+    }
+    conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+}
+
+TEST_F(NegativeSyncObject, BarrierQueueFamily2) {
+    TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    RETURN_IF_SKIP(Init());
+
+    // Find queues of two families
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (queue_family_count == 1) ||
+                                 (m_device->Physical().queue_properties_[other_family].queueCount == 0) ||
+                                 ((m_device->Physical().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
 
     if (only_one_family) {
-        printf("Single queue family found -- VK_SHARING_MODE_EXCLUSIVE submit testcases skipped.\n");
-    } else {
-        BarrierQueueFamilyTestHelper excl_test(&test_context);
-        excl_test.Init(nullptr);
+        GTEST_SKIP() << "Single queue family found";
+    }
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
 
-        // Although other_family does not match submit_family, because the barrier families are
-        // equal here, no ownership transfer actually happens, and this barrier is valid by the spec.
-        excl_test(other_family, other_family, submit_family);
+    BarrierQueueFamilyTestHelper excl_test(&test_context);
+    excl_test.Init(nullptr);
 
-        // positive test (testing both the index logic and the QFO transfer tracking.
-        excl_test(submit_family, other_family, submit_family);
-        excl_test(submit_family, other_family, other_family);
-        excl_test(other_family, submit_family, other_family);
-        excl_test(other_family, submit_family, submit_family);
+    // Although other_family does not match submit_family, because the barrier families are
+    // equal here, no ownership transfer actually happens, and this barrier is valid by the spec.
+    excl_test(other_family, other_family, submit_family);
 
-        // negative testing for QFO transfer tracking
-        // Duplicate release in one CB
-        excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family,
-                  other_family, submit_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
-        // Duplicate pending release
-        excl_test("WARNING-VkImageMemoryBarrier-image-00003", "WARNING-VkBufferMemoryBarrier-buffer-00003", submit_family,
-                  other_family, submit_family);
-        // Duplicate acquire in one CB
-        excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family,
-                  other_family, other_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
-        // No pending release
-        excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00004", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004", submit_family,
-                  other_family, other_family);
-        // Duplicate release in two CB
-        excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family,
-                  other_family, submit_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
-        // Duplicate acquire in two CB
-        excl_test(submit_family, other_family, submit_family);  // need a succesful release
-        excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family,
-                  other_family, other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
+    // positive test (testing both the index logic and the QFO transfer tracking.
+    excl_test(submit_family, other_family, submit_family);
+    excl_test(submit_family, other_family, other_family);
+    excl_test(other_family, submit_family, other_family);
+    excl_test(other_family, submit_family, submit_family);
 
-        // Need a third queue family to test this.
-        uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
-        for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
-            if (candidate != submit_family && candidate != other_family &&
-                m_device->Physical().queue_properties_[candidate].queueCount != 0) {
-                third_family = candidate;
-                break;
-            }
-        }
+    // negative testing for QFO transfer tracking
+    // Duplicate release in one CB
+    excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family, other_family,
+              submit_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
+    // Duplicate pending release
+    excl_test("WARNING-VkImageMemoryBarrier-image-00003", "WARNING-VkBufferMemoryBarrier-buffer-00003", submit_family, other_family,
+              submit_family);
+    // Duplicate acquire in one CB
+    excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family, other_family,
+              other_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
+    // No pending release
+    excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00004", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004", submit_family,
+              other_family, other_family);
+    // Duplicate release in two CB
+    excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family, other_family,
+              submit_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
+    // Duplicate acquire in two CB
+    excl_test(submit_family, other_family, submit_family);  // need a succesful release
+    excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family, other_family,
+              other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
+}
 
-        if (third_family == VK_QUEUE_FAMILY_IGNORED) {
-            printf("No third queue family found -- test skipped.\n");
-        } else {
-            excl_test("VUID-vkQueueSubmit-pSubmits-04626", "VUID-vkQueueSubmit-pSubmits-04626", other_family, third_family,
-                      submit_family);
+TEST_F(NegativeSyncObject, BarrierQueueFamily3) {
+    TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    RETURN_IF_SKIP(Init());
+
+    // Find queues of two families
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (queue_family_count == 1) ||
+                                 (m_device->Physical().queue_properties_[other_family].queueCount == 0) ||
+                                 ((m_device->Physical().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
+
+    if (only_one_family) {
+        GTEST_SKIP() << "Single queue family found";
+    }
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
+
+    BarrierQueueFamilyTestHelper excl_test(&test_context);
+    excl_test.Init(nullptr);
+
+    // Need a third queue family to test this.
+    uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
+    for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
+        if (candidate != submit_family && candidate != other_family &&
+            m_device->Physical().queue_properties_[candidate].queueCount != 0) {
+            third_family = candidate;
+            break;
         }
     }
+
+    if (third_family == VK_QUEUE_FAMILY_IGNORED) {
+        GTEST_SKIP() << "No third queue family found";
+    }
+    excl_test("VUID-vkQueueSubmit-pSubmits-04626", "VUID-vkQueueSubmit-pSubmits-04626", other_family, third_family, submit_family);
 }
 
 TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
@@ -1492,29 +1550,6 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     }
     BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
 
-    if (only_one_family) {
-        printf("Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
-    } else {
-        std::vector<uint32_t> families = {submit_family, other_family};
-        BarrierQueueFamilyTestHelper conc_test(&test_context);
-
-        conc_test.Init(&families);
-        static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
-        static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
-        conc_test(img_vuid, buf_vuid, submit_family, submit_family);
-        conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
-        conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
-        conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
-
-        conc_test("VUID-VkImageMemoryBarrier-None-09053", "VUID-VkBufferMemoryBarrier-None-09050", submit_family,
-                  VK_QUEUE_FAMILY_IGNORED);
-        conc_test("VUID-VkImageMemoryBarrier-None-09054", "VUID-VkBufferMemoryBarrier-None-09051", VK_QUEUE_FAMILY_IGNORED,
-                  submit_family);
-        // This is to flag the errors that would be considered only "unexpected" in the parallel case above
-        conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
-        conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
-    }
-
     BarrierQueueFamilyTestHelper excl_test(&test_context);
     excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
 
@@ -1523,6 +1558,44 @@ TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt) {
     excl_test(submit_family, submit_family);
     excl_test(submit_family, VK_QUEUE_FAMILY_EXTERNAL_KHR);
     excl_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, submit_family);
+}
+
+// TODO - Figure out if test or VU are bad
+TEST_F(NegativeSyncObject, BarrierQueueFamilyWithMemExt2) {
+    TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Find queues of two families
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t invalid = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (invalid == 1) || (m_device->Physical().queue_properties_[other_family].queueCount == 0);
+
+    if (only_one_family) {
+        GTEST_SKIP() << "Single queue family found";
+    }
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
+
+    std::vector<uint32_t> families = {submit_family, other_family};
+    BarrierQueueFamilyTestHelper conc_test(&test_context);
+
+    conc_test.Init(&families);
+    static const char *img_vuid = "VUID-VkImageMemoryBarrier-None-09053";
+    static const char *buf_vuid = "VUID-VkBufferMemoryBarrier-None-09050";
+    conc_test(img_vuid, buf_vuid, submit_family, submit_family);
+    conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED);
+    conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
+    conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
+
+    conc_test("VUID-VkImageMemoryBarrier-None-09053", "VUID-VkBufferMemoryBarrier-None-09050", submit_family,
+              VK_QUEUE_FAMILY_IGNORED);
+    conc_test("VUID-VkImageMemoryBarrier-None-09054", "VUID-VkBufferMemoryBarrier-None-09051", VK_QUEUE_FAMILY_IGNORED,
+              submit_family);
+    // This is to flag the errors that would be considered only "unexpected" in the parallel case above
+    conc_test(VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_EXTERNAL_KHR);
+    conc_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, VK_QUEUE_FAMILY_IGNORED);
 }
 
 TEST_F(NegativeSyncObject, ImageBarrierWithBadRange) {

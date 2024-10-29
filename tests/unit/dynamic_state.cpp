@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
@@ -395,7 +396,6 @@ TEST_F(NegativeDynamicState, SetScissorParam) {
 
 TEST_F(NegativeDynamicState, SetScissorParamMultiviewport) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetScissor with multiViewport feature enabled");
-
     AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
 
@@ -410,30 +410,36 @@ TEST_F(NegativeDynamicState, SetScissorParamMultiviewport) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-pScissors-parameter");
     vk::CmdSetScissor(m_command_buffer.handle(), 0, max_scissors, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(NegativeDynamicState, SetScissorParamMultiviewportLimit) {
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    RETURN_IF_SKIP(Init());
+    const auto max_scissors = m_device->Physical().limits_.maxViewports;
     const uint32_t too_big_max_scissors = 65536 + 1;  // let's say this is too much to allocate
     if (max_scissors >= too_big_max_scissors) {
-        printf("VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n");
-    } else {
-        const VkRect2D scissor = {{0, 0}, {16, 16}};
-        const std::vector<VkRect2D> scissors(max_scissors + 1, scissor);
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-firstScissor-00592");
-        vk::CmdSetScissor(m_command_buffer.handle(), 0, max_scissors + 1, scissors.data());
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-firstScissor-00592");
-        vk::CmdSetScissor(m_command_buffer.handle(), max_scissors, 1, scissors.data());
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-firstScissor-00592");
-        vk::CmdSetScissor(m_command_buffer.handle(), 1, max_scissors, scissors.data());
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-scissorCount-arraylength");
-        vk::CmdSetScissor(m_command_buffer.handle(), 1, 0, scissors.data());
-        m_errorMonitor->VerifyFound();
+        GTEST_SKIP() << "maxViewports is too large to practically test against";
     }
+
+    m_command_buffer.Begin();
+    const VkRect2D scissor = {{0, 0}, {16, 16}};
+    const std::vector<VkRect2D> scissors(max_scissors + 1, scissor);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-firstScissor-00592");
+    vk::CmdSetScissor(m_command_buffer.handle(), 0, max_scissors + 1, scissors.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-firstScissor-00592");
+    vk::CmdSetScissor(m_command_buffer.handle(), max_scissors, 1, scissors.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-firstScissor-00592");
+    vk::CmdSetScissor(m_command_buffer.handle(), 1, max_scissors, scissors.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-scissorCount-arraylength");
+    vk::CmdSetScissor(m_command_buffer.handle(), 1, 0, scissors.data());
+    m_errorMonitor->VerifyFound();
 }
 
 template <typename ExtType, typename Parm>
@@ -3384,7 +3390,6 @@ TEST_F(NegativeDynamicState, SetViewportParamMaintenance1) {
 
 TEST_F(NegativeDynamicState, SetViewportParamMultiviewport) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetViewport with multiViewport feature enabled");
-
     AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(Init());
 
@@ -3399,30 +3404,37 @@ TEST_F(NegativeDynamicState, SetViewportParamMultiviewport) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-pViewports-parameter");
     vk::CmdSetViewport(m_command_buffer.handle(), 0, max_viewports, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(NegativeDynamicState, SetViewportParamMultiviewportLimit) {
+    TEST_DESCRIPTION("Test parameters of vkCmdSetViewport with multiViewport feature enabled");
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    RETURN_IF_SKIP(Init());
+    const auto max_viewports = m_device->Physical().limits_.maxViewports;
     const uint32_t too_big_max_viewports = 65536 + 1;  // let's say this is too much to allocate
     if (max_viewports >= too_big_max_viewports) {
-        printf("VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n");
-    } else {
-        const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
-        const std::vector<VkViewport> viewports(max_viewports + 1, vp);
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-firstViewport-01223");
-        vk::CmdSetViewport(m_command_buffer.handle(), 0, max_viewports + 1, viewports.data());
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-firstViewport-01223");
-        vk::CmdSetViewport(m_command_buffer.handle(), max_viewports, 1, viewports.data());
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-firstViewport-01223");
-        vk::CmdSetViewport(m_command_buffer.handle(), 1, max_viewports, viewports.data());
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-viewportCount-arraylength");
-        vk::CmdSetViewport(m_command_buffer.handle(), 1, 0, viewports.data());
-        m_errorMonitor->VerifyFound();
+        GTEST_SKIP() << "maxViewports is too large to practically test against";
     }
+
+    m_command_buffer.Begin();
+    const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
+    const std::vector<VkViewport> viewports(max_viewports + 1, vp);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-firstViewport-01223");
+    vk::CmdSetViewport(m_command_buffer.handle(), 0, max_viewports + 1, viewports.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-firstViewport-01223");
+    vk::CmdSetViewport(m_command_buffer.handle(), max_viewports, 1, viewports.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-firstViewport-01223");
+    vk::CmdSetViewport(m_command_buffer.handle(), 1, max_viewports, viewports.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-viewportCount-arraylength");
+    vk::CmdSetViewport(m_command_buffer.handle(), 1, 0, viewports.data());
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTOffsets) {

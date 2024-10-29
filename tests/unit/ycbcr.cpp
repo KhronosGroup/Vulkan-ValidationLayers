@@ -315,21 +315,6 @@ TEST_F(NegativeYcbcr, Formats) {
     image_create_info.arrayLayers = 1;
     VkImageCreateInfo reset_create_info = image_create_info;
 
-    VkImageFormatProperties img_limits;
-    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_create_info, &img_limits));
-
-    // invalid mipLevels
-    if (img_limits.maxMipLevels == 1) {
-        printf("Multiplane image maxMipLevels is already 1.  Skipping test.\n");
-    } else {
-        // needs to be 2
-        // if more then 2 the VU since its larger the (depth^2 + 1)
-        // if up the depth the VU for IMAGE_TYPE_2D and depth != 1 hits
-        image_create_info.mipLevels = 2;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06410");
-        image_create_info = reset_create_info;
-    }
-
     // invalid samples count
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     // Might need to add extra validation because implementation probably doesn't support YUV
@@ -369,6 +354,58 @@ TEST_F(NegativeYcbcr, Formats) {
     image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260");
     image_create_info = reset_create_info;
+}
+
+TEST_F(NegativeYcbcr, FormatsLimits) {
+    TEST_DESCRIPTION("Creating images with Ycbcr Formats.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    if (!FormatIsSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM)) {
+        GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM is unsupported";
+    }
+
+    // Set format features as needed for tests
+    VkFormatProperties formatProps;
+    const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, &formatProps);
+    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+    formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_DISJOINT_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), mp_format, formatProps);
+
+    // Create ycbcr image with all valid values
+    // Each test changes needed values and returns them back after
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = mp_format;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.arrayLayers = 1;
+
+    VkImageFormatProperties img_limits;
+    ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_create_info, &img_limits));
+    if (img_limits.maxMipLevels == 1) {
+        GTEST_SKIP() << "Multiplane image maxMipLevels is already 1.";
+    }
+
+    // needs to be 2
+    // if more then 2 the VU since its larger the (depth^2 + 1)
+    // if up the depth the VU for IMAGE_TYPE_2D and depth != 1 hits
+    image_create_info.mipLevels = 2;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06410");
 }
 
 TEST_F(NegativeYcbcr, ImageViewFormat) {
@@ -1282,7 +1319,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     CreateImageViewTest(*this, &view_info, "VUID-VkImageViewCreateInfo-pNext-06658");
 }
 
-TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
+TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat3Plane) {
     TEST_DESCRIPTION("Postive/negative tests of multiplane imageview format compatibility");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
@@ -1292,22 +1329,6 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
-
-    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
-    ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                    VK_COMPONENT_SWIZZLE_IDENTITY};
-    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
-    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
-    ycbcr_create_info.forceExplicitReconstruction = false;
-
-    vkt::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info);
-
-    VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
-    ycbcr_info.conversion = conversion;
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
@@ -1324,76 +1345,95 @@ TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat) {
     bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
     // Verify format 3 Plane format
     if (!supported) {
-        printf("Multiplane image format not supported.  Skipping test.\n");
-    } else {
-        vkt::Image image_obj(*m_device, ci, vkt::set_layout);
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+    vkt::Image image_obj(*m_device, ci, vkt::set_layout);
 
-        VkImageViewCreateInfo ivci = vku::InitStructHelper();
-        ivci.image = image_obj.handle();
-        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.format = VK_FORMAT_R8G8_UNORM;  // Compat is VK_FORMAT_R8_UNORM
-        ivci.subresourceRange.layerCount = 1;
-        ivci.subresourceRange.baseMipLevel = 0;
-        ivci.subresourceRange.levelCount = 1;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = image_obj.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8_UNORM;  // Compat is VK_FORMAT_R8_UNORM
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
 
-        // Incompatible format error
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+    // Incompatible format error
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
 
-        // Correct format succeeds
-        ivci.format = VK_FORMAT_R8_UNORM;
-        CreateImageViewTest(*this, &ivci);
+    // Correct format succeeds
+    ivci.format = VK_FORMAT_R8_UNORM;
+    CreateImageViewTest(*this, &ivci);
 
-        // R8_SNORM is compatible with R8_UNORM
-        ivci.format = VK_FORMAT_R8_SNORM;
-        CreateImageViewTest(*this, &ivci);
+    // R8_SNORM is compatible with R8_UNORM
+    ivci.format = VK_FORMAT_R8_SNORM;
+    CreateImageViewTest(*this, &ivci);
 
-        // Try a multiplane imageview
-        ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-06415");
+    // Try a multiplane imageview
+    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-format-06415");
+}
 
-        // If using multiplane format, need a matching VkSamplerYcbcrConversion
-        ivci.pNext = &ycbcr_info;
-        CreateImageViewTest(*this, &ivci);
+TEST_F(NegativeYcbcr, MultiplaneIncompatibleViewFormat2Plane) {
+    TEST_DESCRIPTION("Postive/negative tests of multiplane imageview format compatibility");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
     }
 
+    VkImageCreateInfo ci = vku::InitStructHelper();
+    ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    const VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, features);
+
     // Verify format 2 Plane format
     if (!supported) {
-        printf("Multiplane image format not supported.  Skipping test.\n");
-    } else {
-        vkt::Image image_obj(*m_device, ci, vkt::set_layout);
-
-        VkImageViewCreateInfo ivci = vku::InitStructHelper();
-        ivci.image = image_obj.handle();
-        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.subresourceRange.layerCount = 1;
-        ivci.subresourceRange.baseMipLevel = 0;
-        ivci.subresourceRange.levelCount = 1;
-
-        // Plane 0 is compatible with VK_FORMAT_R8_UNORM
-        // Plane 1 is compatible with VK_FORMAT_R8G8_UNORM
-
-        // Correct format succeeds
-        ivci.format = VK_FORMAT_R8_UNORM;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-        CreateImageViewTest(*this, &ivci);
-
-        ivci.format = VK_FORMAT_R8G8_UNORM;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
-        CreateImageViewTest(*this, &ivci);
-
-        // Incompatible format error
-        ivci.format = VK_FORMAT_R8_UNORM;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
-
-        ivci.format = VK_FORMAT_R8G8_UNORM;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+        GTEST_SKIP() << "Multiplane image format not supported";
     }
+
+    vkt::Image image_obj(*m_device, ci, vkt::set_layout);
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = image_obj.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+
+    // Plane 0 is compatible with VK_FORMAT_R8_UNORM
+    // Plane 1 is compatible with VK_FORMAT_R8G8_UNORM
+
+    // Correct format succeeds
+    ivci.format = VK_FORMAT_R8_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    CreateImageViewTest(*this, &ivci);
+
+    ivci.format = VK_FORMAT_R8G8_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    CreateImageViewTest(*this, &ivci);
+
+    // Incompatible format error
+    ivci.format = VK_FORMAT_R8_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+
+    ivci.format = VK_FORMAT_R8G8_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
 }
 
 TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {

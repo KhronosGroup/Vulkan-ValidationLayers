@@ -1040,7 +1040,7 @@
                         "maxTessellationEvaluationOutputComponents": 128,
                         "maxTessellationGenerationLevel": 64,
                         "maxTessellationPatchSize": 32,
-                        "maxTexelBufferElements": 4294967000,
+                        "maxTexelBufferElements": 65536,
                         "maxTexelGatherOffset": 31,
                         "maxTexelOffset": 7,
                         "maxUniformBufferRange": 65536,

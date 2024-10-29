@@ -99,7 +99,6 @@ TEST_F(VkPositiveLayerTest, DeviceIDPropertiesExtensions) {
 
 TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
@@ -107,6 +106,12 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(features2);
+    if (!features2.features.samplerAnisotropy) {
+        GTEST_SKIP() << "samplerAnisotropy feature not supported";
+    }
+    if (!features2.features.pipelineStatisticsQuery) {
+        GTEST_SKIP() << "pipelineStatisticsQuery feature not supported";
+    }
 
     // We're not creating a valid m_device, but the phy wrapper is useful
     vkt::PhysicalDevice physical_device(Gpu());
@@ -134,7 +139,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     err = vk::CreateDevice(Gpu(), &dev_info, nullptr, &device);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    if (features2.features.samplerAnisotropy) {
+    {
         // Test that the parameter layer is caching the features correctly using CreateSampler
         VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
         // If the features were not captured correctly, this should cause an error
@@ -145,12 +150,10 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         err = vk::CreateSampler(device, &sampler_ci, nullptr, &sampler);
         ASSERT_EQ(VK_SUCCESS, err);
         vk::DestroySampler(device, sampler, nullptr);
-    } else {
-        printf("Feature samplerAnisotropy not enabled;  parameter_layer check skipped.\n");
     }
 
     // Verify the core validation layer has captured the physical device features by creating a a query pool.
-    if (features2.features.pipelineStatisticsQuery) {
+    {
         VkQueryPool query_pool;
         VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
         qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
@@ -158,8 +161,6 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         ASSERT_EQ(VK_SUCCESS, err);
 
         vk::DestroyQueryPool(device, query_pool, nullptr);
-    } else {
-        printf("Feature pipelineStatisticsQuery not enabled;  core_validation_layer check skipped.\n");
     }
 
     vk::DestroyDevice(device, nullptr);
