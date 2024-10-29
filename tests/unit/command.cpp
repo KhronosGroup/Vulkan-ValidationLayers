@@ -1913,13 +1913,7 @@ TEST_F(NegativeCommand, IndirectDraw) {
 
 TEST_F(NegativeCommand, MultiDrawIndirectFeature) {
     TEST_DESCRIPTION("use vkCmdDrawIndexedIndirect without MultiDrawIndirect");
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures features;
-    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-    features.multiDrawIndirect = VK_FALSE;
-    RETURN_IF_SKIP(InitState(&features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (m_device->Physical().limits_.maxDrawIndirectCount < 2) {

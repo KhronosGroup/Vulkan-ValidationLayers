@@ -3276,11 +3276,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetPatchControlPointsEXT) {
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.tessellationShader == VK_FALSE) {
-        GTEST_SKIP() << "tessellationShader not supported.";
-    }
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3312,11 +3307,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetTessellationDomainOriginEXT) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07619");
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.tessellationShader == VK_FALSE) {
-        GTEST_SKIP() << "tessellationShader not supported.";
-    }
     InitDynamicRenderTarget();
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
@@ -3787,11 +3777,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBoundsTestEnable) {
     AddRequiredFeature(vkt::Feature::depthBounds);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.depthBounds == VK_FALSE) {
-        GTEST_SKIP() << "depthBounds not supported.";
-    }
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
@@ -3815,11 +3800,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilTestEnable) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.depthBounds == VK_FALSE) {
-        GTEST_SKIP() << "depthBounds not supported.";
-    }
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
@@ -3843,11 +3823,6 @@ TEST_F(NegativeShaderObject, MissingCmdSetStencilOp) {
 
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.depthBounds == VK_FALSE) {
-        GTEST_SKIP() << "depthBounds not supported.";
-    }
 
     const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
@@ -4673,13 +4648,8 @@ TEST_F(NegativeShaderObject, Atomics) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitBasicShaderObject());
-
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
-    if (!available_features.shaderInt64) {
-        GTEST_SKIP() << "shaderInt64 is not supported";
-    }
 
     std::string cs_src = R"glsl(
         #version 450
@@ -5132,11 +5102,6 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08619");
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported.";
-    }
     InitDynamicRenderTarget();
 
     static char const geom_src[] = R"glsl(
@@ -5258,11 +5223,6 @@ TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported.";
-    }
     InitDynamicRenderTarget();
 
     static char const geom_src[] = R"glsl(
@@ -5301,11 +5261,6 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported.";
-    }
     InitDynamicRenderTarget();
 
     static char const geom_src[] = R"glsl(
@@ -5719,12 +5674,6 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported.";
-    }
-
     std::string geom_src = R"(
                OpCapability Geometry
           %1 = OpExtInstImport "GLSL.std.450"
@@ -5794,12 +5743,6 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08455");
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(InitBasicShaderObject());
-
-    VkPhysicalDeviceFeatures features;
-    GetPhysicalDeviceFeatures(&features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported.";
-    }
 
     std::string geom_src = R"(
                OpCapability Geometry

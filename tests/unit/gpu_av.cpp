@@ -335,9 +335,6 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
     m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-format-08779");
     InitRenderTarget();
 
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();
 

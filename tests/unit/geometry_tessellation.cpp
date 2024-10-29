@@ -187,14 +187,8 @@ TEST_F(NegativeGeometryTessellation, PointSizeGeomShaderWrite) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
 
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported";
-    }
-    features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    RETURN_IF_SKIP(InitState(&features));
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
@@ -451,11 +445,6 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationControlInputOutputComponents
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
-        VkPhysicalDeviceFeatures feat;
-        vk::GetPhysicalDeviceFeatures(Gpu(), &feat);
-        if (!feat.tessellationShader) {
-            GTEST_SKIP() << "tessellation shader stage(s) unsupported";
-        }
 
         // Tessellation control stage
         std::string tcsSourceStr =
@@ -555,11 +544,6 @@ TEST_F(NegativeGeometryTessellation, MaxTessellationEvaluationInputOutputCompone
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
-        VkPhysicalDeviceFeatures feat;
-        vk::GetPhysicalDeviceFeatures(Gpu(), &feat);
-        if (!feat.tessellationShader) {
-            GTEST_SKIP() << "tessellation shader stage(s) unsupported";
-        }
 
         // Tessellation evaluation stage
         std::string tesSourceStr =
@@ -660,11 +644,6 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInputOutputComponents) {
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
     for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
-        VkPhysicalDeviceFeatures feat;
-        vk::GetPhysicalDeviceFeatures(Gpu(), &feat);
-        if (!feat.geometryShader) {
-            GTEST_SKIP() << "geometry shader stage unsupported";
-        }
 
         std::string gsSourceStr =
             "#version 450\n"
@@ -766,11 +745,6 @@ TEST_F(NegativeGeometryTessellation, MaxGeometryInstanceVertexCount) {
 
     for (int overflow = 0; overflow < 2; ++overflow) {
         m_errorMonitor->Reset();
-        VkPhysicalDeviceFeatures feat;
-        vk::GetPhysicalDeviceFeatures(Gpu(), &feat);
-        if (!feat.geometryShader) {
-            GTEST_SKIP() << "geometry shader stage unsupported";
-        }
 
         std::string gsSourceStr = R"(
                OpCapability Geometry

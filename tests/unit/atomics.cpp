@@ -572,8 +572,6 @@ TEST_F(NegativeAtomic, Float) {
     AddRequiredFeature(vkt::Feature::shaderFloat64);
     // Create device without VK_EXT_shader_atomic_float extension or features enabled
     RETURN_IF_SKIP(Init());
-    VkPhysicalDeviceFeatures available_features = {};
-    GetPhysicalDeviceFeatures(&available_features);
 
     // clang-format off
     std::string cs_32_base = R"glsl(
@@ -764,12 +762,10 @@ TEST_F(NegativeAtomic, Float) {
         m_errorMonitor->VerifyFound();
     }
 
-    // shaderBufferFloat64Atomics
-    if (available_features.shaderFloat64) {
-        {
-            m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06284");
-            VkShaderObj const cs(this, cs_buffer_float_64_load.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-            m_errorMonitor->VerifyFound();
+    // shaderBufferFloat64Atomics (requires shaderFloat64)
+    {{m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06284");
+    VkShaderObj const cs(this, cs_buffer_float_64_load.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    m_errorMonitor->VerifyFound();
         }
         {
             m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06284");
@@ -816,8 +812,6 @@ TEST_F(NegativeAtomic, Float) {
             VkShaderObj const cs(this, cs_shared_float_64_add.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
             m_errorMonitor->VerifyFound();
         }
-    } else {
-        printf("Skipping 64-bit float tests\n");
     }
 
     // shaderImageFloat32Atomics

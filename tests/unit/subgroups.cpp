@@ -23,17 +23,8 @@ TEST_F(NegativeSubgroup, Properties) {
         "supportedOperations, quadOperationsInAllStages.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-    if (features.vertexPipelineStoresAndAtomics == VK_FALSE) {
-        GTEST_SKIP() << "vertexPipelineStoresAndAtomics not supported";
-    }
-
-    features = {};
-    features.vertexPipelineStoresAndAtomics = VK_TRUE;
-    RETURN_IF_SKIP(InitState(&features));
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    RETURN_IF_SKIP(Init());
 
     // Don't enable the extension on purpose
     const bool extension_support_partitioned =
