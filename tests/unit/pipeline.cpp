@@ -2882,12 +2882,6 @@ TEST_F(NegativePipeline, IncompatibleScissorCountAndViewportCount) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-    if (features.multiViewport == false) {
-        GTEST_SKIP() << "multiViewport feature not supported by device";
-    }
-
     VkViewport viewports[2] = {{0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}};
 
     auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
@@ -3483,14 +3477,8 @@ TEST_F(NegativePipeline, GeometryShaderConservativeRasterization) {
     TEST_DESCRIPTION("Use geometry shader with invalid conservative rasterization mode");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported";
-    }
-    features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    RETURN_IF_SKIP(InitState(&features));
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     static char const *gsSource = R"glsl(
@@ -3527,14 +3515,8 @@ TEST_F(NegativePipeline, VertexPointOutputConservativeRasterization) {
     TEST_DESCRIPTION("Use vertex shader with invalid conservative rasterization mode");
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFeatures features{};
-    vk::GetPhysicalDeviceFeatures(Gpu(), &features);
-    if (features.geometryShader == VK_FALSE) {
-        GTEST_SKIP() << "geometryShader not supported";
-    }
-    features.shaderTessellationAndGeometryPointSize = VK_FALSE;
-    RETURN_IF_SKIP(InitState(&features));
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props = vku::InitStructHelper();
