@@ -209,14 +209,18 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT:
                 vuid_str = vuid.dynamic_discard_rectangle_mode_07881;
                 break;
+            case CB_DYNAMIC_STATE_LINE_STIPPLE_KHR:
+                vuid_str = vuid.dynamic_line_stipple_ext_07849;
+                break;
             default:
                 assert(false);
                 break;
         }
 
-        return LogError(vuid_str, objlist, vuid.loc(), "%s state is dynamic, but the command buffer never called %s.\n%s",
+        return LogError(vuid_str, objlist, vuid.loc(), "%s state is dynamic, but the command buffer never called %s.\n%s%s",
                         DynamicStateToString(dynamic_state), DescribeDynamicStateCommand(dynamic_state).c_str(),
-                        DescribeDynamicStateDependency(dynamic_state, pipeline).c_str());
+                        DescribeDynamicStateDependency(dynamic_state, pipeline).c_str(),
+                        last_bound_state.cb_state.DescribeInvalidatedState(dynamic_state).c_str());
     }
     return false;
 }
@@ -379,6 +383,13 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             if (last_bound_state.IsDiscardRectangleEnable()) {
                 skip |=
                     ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT, vuid);
+            }
+        }
+
+        if (IsExtEnabled(device_extensions.vk_ext_line_rasterization) ||
+            IsExtEnabled(device_extensions.vk_khr_line_rasterization)) {
+            if (last_bound_state.IsStippledLineEnable()) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, vuid);
             }
         }
 
@@ -546,7 +557,7 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                                           vuid.dynamic_color_write_enable_07749);
     }
 
-    if (const auto* raster_state = pipeline.RasterizationState()) {
+    if (pipeline.RasterizationState()) {
         // Any line topology
         const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
         if (IsValueIn(topology,
@@ -554,12 +565,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                        VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                               vuid.dynamic_line_width_07833);
-            const auto* line_state =
-                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(raster_state->pNext);
-            if (line_state && line_state->stippledLineEnable) {
-                skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, cb_state, objlist, loc,
-                                                  vuid.dynamic_line_stipple_ext_07849);
-            }
         }
     }
 
@@ -1446,11 +1451,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                                   cb_state, objlist, loc, vuid.set_line_rasterization_mode_08666);
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
                                                   cb_state, objlist, loc, vuid.set_line_stipple_enable_08669);
-            }
-            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT) &&
-                cb_state.dynamic_state_value.stippled_line_enable) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, cb_state,
-                                                  objlist, loc, vuid.set_line_stipple_08672);
             }
         }
         if (vertex_shader_bound) {

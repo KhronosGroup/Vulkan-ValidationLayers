@@ -2323,7 +2323,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT)
 TEST_F(NegativeShaderObject, MissingCmdSetLineStippleEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetLineStippleEXT.");
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08672");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07849");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());

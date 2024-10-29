@@ -219,7 +219,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDraw-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDraw-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDraw-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDraw-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDraw-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDraw-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDraw-None-08686";
@@ -487,7 +486,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMultiEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMultiEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMultiEXT-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMultiEXT-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMultiEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMultiEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMultiEXT-None-08686";
@@ -756,7 +754,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndexed-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndexed-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndexed-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawIndexed-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndexed-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndexed-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndexed-None-08686";
@@ -1025,7 +1022,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMultiIndexedEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMultiIndexedEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMultiIndexedEXT-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMultiIndexedEXT-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMultiIndexedEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMultiIndexedEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMultiIndexedEXT-None-08686";
@@ -1294,7 +1290,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndirect-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndirect-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndirect-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawIndirect-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndirect-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndirect-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndirect-None-08686";
@@ -1562,7 +1557,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndexedIndirect-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndexedIndirect-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndexedIndirect-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawIndexedIndirect-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndexedIndirect-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndexedIndirect-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndexedIndirect-None-08686";
@@ -1929,7 +1923,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndirectCount-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndirectCount-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndirectCount-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawIndirectCount-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndirectCount-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndirectCount-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndirectCount-None-08686";
@@ -2200,7 +2193,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndexedIndirectCount-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndexedIndirectCount-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndexedIndirectCount-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawIndexedIndirectCount-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndexedIndirectCount-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndexedIndirectCount-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndexedIndirectCount-None-08686";
@@ -2650,7 +2642,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksNV-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMeshTasksNV-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksNV-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksNV-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksNV-None-08686";
@@ -2904,7 +2895,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08686";
@@ -3161,7 +3151,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08686";
@@ -3412,7 +3401,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksEXT-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMeshTasksEXT-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksEXT-None-08686";
@@ -3666,7 +3654,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08686";
@@ -3923,7 +3910,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08686";
@@ -4187,7 +4173,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08671";
-        set_line_stipple_08672                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-08672";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndirectByteCountEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08686";
