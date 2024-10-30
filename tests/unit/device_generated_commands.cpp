@@ -673,6 +673,7 @@ TEST_F(NegativeDeviceGeneratedCommands, CmdExecuteGeneratedCommandsSecondary) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1595,6 +1596,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundPipeline) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1661,6 +1663,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteNoBoundShaderObject) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1713,6 +1716,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteIsPreprocessed) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1766,6 +1770,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessNoBoundPipeline) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1822,6 +1827,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessRecordingState) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1884,6 +1890,7 @@ TEST_F(NegativeDeviceGeneratedCommands, PreprocessCommandLayoutFlag) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1947,6 +1954,7 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoDynamicVertex) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -1992,11 +2000,13 @@ TEST_F(NegativeDeviceGeneratedCommands, GeneratedCommandsInfoAddresses) {
     generated_commands_info.indirectAddress = 0;
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 3;
+    generated_commands_info.maxSequenceCount = 0;
     generated_commands_info.maxDrawCount = 1;
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11073");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkGeneratedCommandsInfoEXT-maxSequenceCount-zero");
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11076");
     m_errorMonitor->SetDesiredError("VUID-VkGeneratedCommandsInfoEXT-indirectAddressSize-11077");
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
@@ -2103,6 +2113,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteStageMismatch) {
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
 
     m_command_buffer.Begin();
@@ -2153,6 +2164,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecutePreprocessBufferUsage) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -2222,6 +2234,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteSequenceCountBufferUsage) {
     generated_commands_info.indirectCommandsLayout = command_layout.handle();
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -2311,6 +2324,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteShaderObjectStages) {
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = 0;
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
 
     m_command_buffer.Begin();

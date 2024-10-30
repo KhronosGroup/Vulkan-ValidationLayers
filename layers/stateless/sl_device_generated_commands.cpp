@@ -476,6 +476,11 @@ bool StatelessValidation::ValidateGeneratedCommandsInfo(VkCommandBuffer command_
                              generated_commands_info.sequenceCountAddress);
         }
     }
+    if (generated_commands_info.maxSequenceCount == 0) {
+        // VUID in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6970
+        skip |= LogError("UNASSIGNED-VkGeneratedCommandsInfoEXT-maxSequenceCount-zero", command_buffer,
+                         info_loc.dot(Field::maxSequenceCount), "is zero.");
+    }
 
     if (generated_commands_info.indirectAddress == 0) {
         skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectAddress-11076", command_buffer,
