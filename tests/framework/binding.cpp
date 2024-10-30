@@ -874,7 +874,13 @@ Fence &Fence::operator=(Fence &&rhs) noexcept {
     return *this;
 }
 
-void Fence::init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
+void Fence::Init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
+
+void Fence::Init(const Device &dev, const VkFenceCreateFlags flags) {
+    VkFenceCreateInfo fence_ci = vku::InitStructHelper();
+    fence_ci.flags = flags;
+    Init(dev, fence_ci);
+}
 
 VkResult Fence::Wait(uint64_t timeout) const { return vk::WaitForFences(device(), 1, &handle(), VK_TRUE, timeout); }
 
