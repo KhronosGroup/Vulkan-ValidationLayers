@@ -450,7 +450,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     }
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, shaderStages, shaders);
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExclude({}, true);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
@@ -1151,7 +1151,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExclude({}, true);
 
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
@@ -1366,7 +1366,7 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExclude({}, true);
 
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &vertStage, &vertShader.handle());
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tescStage, &nullShader);
@@ -1441,7 +1441,7 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExclude({}, true);
 
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, shaderStages, binaryShaders);
 
@@ -1514,7 +1514,7 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    SetDefaultDynamicStatesExclude();
+    SetDefaultDynamicStatesExclude({}, true);
 
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
 
@@ -1548,8 +1548,6 @@ TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(PositiveShaderObject, DisabledColorBlend) {
@@ -1697,6 +1695,4 @@ TEST_F(PositiveShaderObject, SetPatchControlPointsEXT) {
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.end();
-
-    m_errorMonitor->VerifyFound();
 }
