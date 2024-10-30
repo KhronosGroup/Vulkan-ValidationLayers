@@ -4064,3 +4064,58 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsIES) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8763");
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source_1 = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(binding = 0, set = 0) uniform UBO {
+            float x;
+        };
+        void main() {
+            debugPrintfEXT("float x == %f", x);
+        }
+    )glsl";
+    char const *shader_source_2 = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("float y == %f", 3.14f);
+        }
+    )glsl";
+
+    vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe1(*this);
+    pipe1.cs_ = std::make_unique<VkShaderObj>(this, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe1.cp_ci_.layout = pipeline_layout.handle();
+    pipe1.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe2(*this);
+    pipe2.cs_ = std::make_unique<VkShaderObj>(this, shader_source_2, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe2.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe2.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float x ==");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "float y ==");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
