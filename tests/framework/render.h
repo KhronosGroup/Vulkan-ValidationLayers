@@ -50,9 +50,16 @@ struct SurfaceContext {
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     xcb_connection_t *m_surface_xcb_conn{};
 #endif
-
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     void *caMetalLayer;
+#endif
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    static bool CanResize() { return true; }
+    void Resize(uint32_t width, uint32_t height);
+#else
+    static bool CanResize() { return false; }
+    void Resize(uint32_t width, uint32_t height) {}
 #endif
 };
 
@@ -104,6 +111,10 @@ class VkRenderFramework : public VkTestFramework {
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
     vkt::Swapchain CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
                                    VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
+
+    // Swapchain capabilities declaration to be used with RETURN_IF_SKIP
+    void SupportMultiSwapchain();
+    void SupportSurfaceResize();
 
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
