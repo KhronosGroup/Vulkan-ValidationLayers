@@ -124,25 +124,26 @@ class ValidationJSON:
         validation = self.json_dict['validation']
         for api_name in validation.keys():
             api_dict = validation[api_name]
-            for ext in api_dict.keys():
-                vlist = api_dict[ext]
-                for ventry in vlist:
-                    vuid_string = ventry['vuid']
-                    if (self.isExplicitVUID(vuid_string)):
-                        self.explicit_vuids.add(vuid_string)
-                        vtype = 'explicit'
-                    else:
-                        self.implicit_vuids.add(vuid_string)
-                        vtype = 'implicit'
+            if (len(api_dict.keys()) > 1):
+                print('There use to be muliple keys here, now it should only be "core". If others are added, need to update code accordingly')
+                sys.exit(-1)
 
-                    vuid_text = self.sanitize(ventry['text'], vuid_string)
+            for ventry in api_dict["core"]:
+                vuid_string = ventry['vuid']
+                if (self.isExplicitVUID(vuid_string)):
+                    self.explicit_vuids.add(vuid_string)
+                    vtype = 'explicit'
+                else:
+                    self.implicit_vuids.add(vuid_string)
+                    vtype = 'implicit'
 
-                    self.vuid_db[vuid_string].append({
-                        'api' : api_name,
-                        'ext' : ext,
-                        'type': vtype,
-                        'text': vuid_text
-                    })
+                vuid_text = self.sanitize(ventry['text'], vuid_string)
+
+                self.vuid_db[vuid_string].append({
+                    'api' : api_name,
+                    'type': vtype,
+                    'text': vuid_text
+                })
 
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
 
@@ -150,80 +151,6 @@ class ValidationJSON:
         if len(duplicate_vuids) > 0:
             print("Warning: duplicate VUIDs found in validusage.json")
 
-    # make list of spec versions containing given VUID
-@staticmethod
-def make_vuid_spec_version_list(pattern, max_minor_version):
-    assert pattern
-
-    all_editions_list = []
-    for e in reversed(range(max_minor_version+1)):
-        all_editions_list.append({"version": e, "ext": True,  "khr" : False})
-        all_editions_list.append({"version": e, "ext": False, "khr" : True})
-        all_editions_list.append({"version": e, "ext": False, "khr" : False})
-
-    if pattern == 'core':
-        return all_editions_list
-
-    # pattern is series of parentheses separated by plus
-    # each parentheses can be prepended by negation (!)
-    # each parentheses contains list of extensions or vk versions separated by either comma or plus
-    edition_list_out = []
-    for edition in all_editions_list:
-        resolved_pattern = True
-
-        raw_terms = re.split(r'\)\+', pattern)
-        for raw_term in raw_terms:
-            negated = raw_term.startswith('!')
-            term = raw_term.lstrip('!(').rstrip(')')
-            conjunction = '+' in term
-            disjunction = ',' in term
-            assert not (conjunction and disjunction)
-            if conjunction:
-                features = term.split('+')
-            elif disjunction:
-                features = term.split(',')
-            else:
-                features = [term]
-            assert features
-
-            def isDefined(feature, edition):
-                def getVersion(f): return int(f.replace('VK_VERSION_1_', '', 1))
-                def isVersion(f): return f.startswith('VK_VERSION_') and feature != 'VK_VERSION_1_0' and getVersion(feature) < 1024
-                def isScVersion(f): return f.startswith('VKSC_VERSION_')
-                def isExtension(f): return f.startswith('VK_') and not isVersion(f)
-                def isKhr(f): return f.startswith('VK_KHR_')
-
-                assert isExtension(feature) or isVersion(feature) or isScVersion(feature)
-
-                if isVersion(feature) and getVersion(feature) <= edition['version']:
-                    return True
-                elif isExtension(feature) and edition['ext']:
-                    return True
-                elif isKhr(feature) and edition['khr']:
-                    return True
-                else:
-                    return False
-
-            if not negated and (conjunction or (not conjunction and not disjunction)): # all defined
-                resolved_term = True
-                for feature in features:
-                    if not isDefined(feature, edition): resolved_term = False
-            elif negated and conjunction: # at least one not defined
-                resolved_term = False
-                for feature in features:
-                    if not isDefined(feature, edition): resolved_term = True
-            elif not negated and disjunction: # at least one defined
-                resolved_term = False
-                for feature in features:
-                    if isDefined(feature, edition): resolved_term = True
-            elif negated and (disjunction or (not conjunction and not disjunction)): # none defined
-                resolved_term = True
-                for feature in features:
-                    if isDefined(feature, edition): resolved_term = False
-
-            resolved_pattern = resolved_pattern and resolved_term
-        if resolved_pattern: edition_list_out.append(edition)
-    return edition_list_out
 
 # These VUs are huge because they are just listing every possible option that is valid.
 # The size of these make these VU error messages more harmful to print then helpful
@@ -280,17 +207,6 @@ typedef struct _vuid_spec_text_pair {{
     for vuid in vuid_list:
         db_entry = val_json.vuid_db[vuid][0]
 
-        spec_list = make_vuid_spec_version_list(db_entry['ext'], minor_version)
-
-        if not spec_list:
-            spec_url_id = 'default'
-        elif spec_list[0]['ext']:
-            spec_url_id = f'1.{spec_list[0]["version"]}-extensions'
-        elif spec_list[0]['khr']:
-            spec_url_id = f'1.{spec_list[0]["version"]}-khr-extensions'
-        else:
-            spec_url_id = f'1.{spec_list[0]["version"]}'
-
         # Escape quotes and backslashes when generating C strings for source code
         db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"').strip()
         html_remove_tags = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
@@ -303,7 +219,7 @@ typedef struct _vuid_spec_text_pair {{
         if vuid in oversized_vus:
             db_text = oversized_vus[vuid]
 
-        out.append(f'    {{"{vuid}", "{db_text}", "{spec_url_id}"}},\n')
+        out.append(f'    {{"{vuid}", "{db_text}", "1.{minor_version}-extensions"}},\n')
         # For multiply-defined VUIDs, include versions with extension appended
         if len(val_json.vuid_db[vuid]) > 1:
             print(f'Warning: Found a duplicate VUID: {vuid}')
