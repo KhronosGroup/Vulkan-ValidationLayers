@@ -2523,12 +2523,6 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
     const char *image_layout_vuid = from_image ? "VUID-VkCopyImageToMemoryInfoEXT-srcImageLayout-09064"
                                                : "VUID-VkCopyMemoryToImageInfoEXT-dstImageLayout-09059";
 
-    if (!(enabled_features.hostImageCopy)) {
-        const char *vuid =
-            from_image ? "VUID-vkCopyImageToMemoryEXT-hostImageCopy-09063" : "VUID-vkCopyMemoryToImageEXT-hostImageCopy-09058";
-        skip |= LogError(vuid, device, loc, "the hostImageCopy feature was not enabled");
-    }
-
     skip |= ValidateHeterogeneousCopyData(device, regionCount, info_ptr->pRegions, *image_state, loc);
     skip |= ValidateMemoryIsBoundToImage(
         image, *image_state, image_loc,
@@ -2824,11 +2818,6 @@ bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCop
     bool check_memcpy = (info_ptr->flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT);
     auto regionCount = info_ptr->regionCount;
     auto pRegions = info_ptr->pRegions;
-
-    if (!(enabled_features.hostImageCopy)) {
-        skip |= LogError("VUID-vkCopyImageToImageEXT-hostImageCopy-09068", device, error_obj.location,
-                         "the hostImageCopy feature was not enabled");
-    }
 
     skip |= ValidateHostCopyImageCreateInfos(*src_image_state, *dst_image_state, error_obj.location);
     skip |= ValidateImageCopyData(device, regionCount, pRegions, *src_image_state, *dst_image_state, true, error_obj.location);
