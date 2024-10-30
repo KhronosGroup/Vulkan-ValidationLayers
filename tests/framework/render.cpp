@@ -697,6 +697,10 @@ void VkRenderFramework::InitSurface() {
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
+
+void SurfaceContext::Resize(uint32_t width, uint32_t height) {
+    ::SetWindowPos(m_win32Window, NULL, 0, 0, (int)width, (int)height, SWP_NOMOVE);
+}
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance) {
@@ -711,7 +715,8 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
         wc.hInstance = window_instance;
         wc.lpszClassName = class_name;
         RegisterClass(&wc);
-        HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+        HWND window = CreateWindowEx(0, class_name, nullptr, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+        surface_context.m_win32Window = window;
         ShowWindow(window, SW_HIDE);
 
         VkWin32SurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
@@ -919,6 +924,18 @@ void VkRenderFramework::DestroySwapchain() {
         if (m_swapchain.initialized()) {
             m_swapchain.destroy();
         }
+    }
+}
+
+void VkRenderFramework::SupportMultiSwapchain() {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    GTEST_SKIP() << "Android currently doesn't support multiple swapchain on all devices";
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+}
+
+void VkRenderFramework::SupportSurfaceResize() {
+    if (!SurfaceContext::CanResize()) {
+        GTEST_SKIP() << "VVL test framework does not support surface resizing on the current platform";
     }
 }
 

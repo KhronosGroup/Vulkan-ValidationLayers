@@ -1770,3 +1770,115 @@ TEST_F(PositiveWsi, ReleaseAndAcquireSwapchainImages) {
 
     vk::DeviceWaitIdle(device());
 }
+
+TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8753
+    TEST_DESCRIPTION("Present swapchains with a single QueuePresent command. One of the swapchains is out of date.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(SupportMultiSwapchain());
+    RETURN_IF_SKIP(SupportSurfaceResize());
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    // This test make the second swapchain invalid (VK_ERROR_OUT_OF_DATE_KHR) and then try to present both swapchains.
+    // Presentation failure due to the second swapchain should not break state tracking for the first swapchain.
+    // In the origianl issue, state tracking for the first swapchain was skipped during QueuePresent and acquired
+    // images were never released. This generated false positives that too many images was acquired by the first swapchain.
+
+    SurfaceContext surface_context2;
+    VkSurfaceKHR surface2;
+    CreateSurface(surface_context2, surface2);
+    auto swapchain2 = CreateSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+    const VkSwapchainKHR swapchain_handles[2] = {m_swapchain, swapchain2};
+
+    auto cleanup_resources = [&] {
+        m_default_queue->Wait();
+        swapchain2.destroy();
+        DestroySurface(surface2);
+        DestroySurfaceContext(surface_context2);
+    };
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+    const auto swapchain_images2 = swapchain2.GetImages();
+    for (auto image2 : swapchain_images2) {
+        SetImageLayoutPresentSrc(image2);
+    }
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    vkt::Semaphore acquire_semaphore2(*m_device);
+    const VkSemaphore acquire_semaphore_handles[2] = {acquire_semaphore, acquire_semaphore2};
+
+    vkt::Semaphore submit_semaphore(*m_device);
+    vkt::Fence frame_fence(*m_device);
+
+    const VkPipelineStageFlags wait_stage_masks[2] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+
+    // The image index from the second swapchain.
+    uint32_t image_index2{};
+
+    // Resize second swapchain window. This potentially generates VK_ERROR_OUT_OF_DATE_KHR in QueuePresent.
+    surface_context2.Resize(m_width / 2, m_height / 2);
+
+    // The first frame.
+    // Presentation to the second swapchain fails due to resized window.
+    {
+        VkResult acquire_result2{};
+        image_index2 = swapchain2.AcquireNextImage(acquire_semaphore2, kWaitTimeout, &acquire_result2);
+        if (acquire_result2 != VK_SUCCESS) {
+            cleanup_resources();
+            GTEST_SKIP() << "Cannot acquire image from the second swapchain. The test is designed for a scenario when it is "
+                            "possible to acquire image after window resize (works on windows nvidia drivers)";
+        }
+
+        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+        const uint32_t image_indices[2] = {image_index, image_index2};
+
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.waitSemaphoreCount = 2;
+        submit_info.pWaitSemaphores = acquire_semaphore_handles;
+        submit_info.pWaitDstStageMask = wait_stage_masks;
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = &submit_semaphore.handle();
+        vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, frame_fence);
+
+        VkPresentInfoKHR present = vku::InitStructHelper();
+        present.waitSemaphoreCount = 1;
+        present.pWaitSemaphores = &submit_semaphore.handle();
+        present.swapchainCount = 2;
+        present.pSwapchains = swapchain_handles;
+        present.pImageIndices = image_indices;
+
+        VkResult present_result = vk::QueuePresentKHR(*m_default_queue, &present);
+        if (present_result != VK_ERROR_OUT_OF_DATE_KHR) {
+            cleanup_resources();
+            GTEST_SKIP() << "Cannot generate VK_ERROR_OUT_OF_DATE_KHR state required for this test";
+        }
+    }
+
+    // All other frames.
+    for (uint32_t i = 0; i < 5; i++) {
+        frame_fence.Wait(kWaitTimeout);
+        frame_fence.Reset();
+
+        // The test checks that image acquire from the first swapchain does not generate validation error that no images left.
+        // The second swapchain should not affect acquired image tracking in the first swapchain.
+        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, vvl::kU64Max);
+
+        // Do not try to acquire images from the second swapchain, it is broken.
+        // image_index presentation should succeed, image_index2 should fail.
+        const uint32_t image_indices[2] = {image_index, image_index2};
+
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore), frame_fence);
+
+        VkPresentInfoKHR present = vku::InitStructHelper();
+        present.waitSemaphoreCount = 1;
+        present.pWaitSemaphores = &submit_semaphore.handle();
+        present.swapchainCount = 2;
+        present.pSwapchains = swapchain_handles;
+        present.pImageIndices = image_indices;
+        vk::QueuePresentKHR(*m_default_queue, &present);
+    }
+    cleanup_resources();
+}
