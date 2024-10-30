@@ -3840,8 +3840,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
 
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
-        // confused itself just as much.
+        // For multi-swapchain present pResults are always available (chassis adds pResults if necessary)
+        assert(pPresentInfo->swapchainCount < 2 || pPresentInfo->pResults);
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI

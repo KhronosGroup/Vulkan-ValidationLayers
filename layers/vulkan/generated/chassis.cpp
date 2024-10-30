@@ -1257,6 +1257,61 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     return result;
 }
 
+// This API needs to ensure that per-swapchain VkResult results are available
+VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkQueuePresentKHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateQueuePresentKHR]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateQueuePresentKHR(queue, pPresentInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkQueuePresentKHR);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueuePresentKHR]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
+        }
+    }
+
+    // Track per-swapchain results when there is more than one swapchain and VkPresentInfoKHR::pResults is null
+    small_vector<VkResult, 2> present_results;
+    VkPresentInfoKHR modified_present_info;
+    if (pPresentInfo && pPresentInfo->swapchainCount > 1 && pPresentInfo->pResults == nullptr) {
+        present_results.resize(pPresentInfo->swapchainCount);
+        modified_present_info = *pPresentInfo;
+        modified_present_info.pResults = present_results.data();
+        pPresentInfo = &modified_present_info;
+    }
+
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchQueuePresentKHR(queue, pPresentInfo);
+    }
+    VVL_TracyCFrameMark;
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
+            auto lock = intercept->WriteLock();
+
+            if (result == VK_ERROR_DEVICE_LOST) {
+                intercept->is_device_lost = true;
+            }
+            intercept->PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
     VVL_ZoneScoped;
 
@@ -9262,49 +9317,6 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
                 intercept->is_device_lost = true;
             }
             intercept->PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
-        }
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
-    VVL_ZoneScoped;
-
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(queue), layer_data_map);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkQueuePresentKHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
-    {
-        VVL_ZoneScopedN("PreCallValidate");
-        for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateQueuePresentKHR]) {
-            auto lock = intercept->ReadLock();
-            skip |= intercept->PreCallValidateQueuePresentKHR(queue, pPresentInfo, error_obj);
-            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkQueuePresentKHR);
-    {
-        VVL_ZoneScopedN("PreCallRecord");
-        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordQueuePresentKHR]) {
-            auto lock = intercept->WriteLock();
-            intercept->PreCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
-        }
-    }
-    VkResult result;
-    {
-        VVL_ZoneScopedN("Dispatch");
-        result = DispatchQueuePresentKHR(queue, pPresentInfo);
-    }
-    VVL_TracyCFrameMark;
-    record_obj.result = result;
-    {
-        VVL_ZoneScopedN("PostCallRecord");
-        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
-            auto lock = intercept->WriteLock();
-
-            if (result == VK_ERROR_DEVICE_LOST) {
-                intercept->is_device_lost = true;
-            }
-            intercept->PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
         }
     }
     return result;
