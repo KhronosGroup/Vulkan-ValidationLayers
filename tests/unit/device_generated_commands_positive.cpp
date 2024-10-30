@@ -222,6 +222,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsGraphics) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -324,6 +325,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsCompute) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
@@ -390,6 +392,7 @@ TEST_F(PositiveDeviceGeneratedCommands, ExecuteShaderObjectVertex) {
     generated_commands_info.indirectAddressSize = 64;
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.sequenceCountAddress = 0;
+    generated_commands_info.maxSequenceCount = 1;
     generated_commands_info.maxDrawCount = 1;
     SetPreProcessBuffer(generated_commands_info);
 
