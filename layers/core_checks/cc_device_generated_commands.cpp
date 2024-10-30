@@ -844,13 +844,13 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
                              string_VkPipelineCreateFlags2KHR(update_pipeline->create_flags).c_str());
         }
 
-        if ((update_pipeline->active_shaders | props.supportedIndirectCommandsShaderStagesShaderBinding) !=
-            props.supportedIndirectCommandsShaderStagesShaderBinding) {
+        if ((update_pipeline->active_shaders | props.supportedIndirectCommandsShaderStagesPipelineBinding) !=
+            props.supportedIndirectCommandsShaderStagesPipelineBinding) {
             skip |= LogError("VUID-VkWriteIndirectExecutionSetPipelineEXT-pipeline-11030", update_pipeline->Handle(),
                              set_write_loc.dot(Field::pipeline),
-                             "is using stages (%s) but supportedIndirectCommandsShaderStagesShaderBinding only supports %s.",
+                             "is using stages (%s) but supportedIndirectCommandsShaderStagesPipelineBinding only supports %s.",
                              string_VkShaderStageFlags(update_pipeline->active_shaders).c_str(),
-                             string_VkShaderStageFlags(props.supportedIndirectCommandsShaderStagesShaderBinding).c_str());
+                             string_VkShaderStageFlags(props.supportedIndirectCommandsShaderStagesPipelineBinding).c_str());
         }
 
         if (const auto initial_pipeline = indirect_execution_set->initial_pipeline) {
