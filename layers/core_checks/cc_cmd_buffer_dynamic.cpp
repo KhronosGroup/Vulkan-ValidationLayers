@@ -1496,6 +1496,18 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                           vuid.set_line_width_08619);
     }
+
+    if (tessev_shader_bound) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+            cb_state.dynamic_state_value.primitive_topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+            // VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6981
+            skip |= LogError(
+                "UNASSIGNED-vkCmdDraw-None-topology", cb_state.Handle(), loc,
+                "Tessellation shaders were bound, but the last call to vkCmdSetPrimitiveTopology set primitiveTopology to %s.",
+                string_VkPrimitiveTopology(cb_state.dynamic_state_value.primitive_topology));
+        }
+    }
+
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
             const uint32_t attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
