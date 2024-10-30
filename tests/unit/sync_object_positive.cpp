@@ -271,7 +271,7 @@ TEST_F(PositiveSyncObject, TwoFencesThreeFrames) {
 
     for (uint32_t i = 0; i < NUM_OBJECTS; ++i) {
         cmd_buffers[i].Init(*m_device, m_command_pool);
-        fences[i].init(*m_device, vku::InitStruct<VkFenceCreateInfo>());
+        fences[i].Init(*m_device);
     }
     for (uint32_t frame = 0; frame < NUM_FRAMES; ++frame) {
         for (uint32_t obj = 0; obj < NUM_OBJECTS; ++obj) {
@@ -977,8 +977,8 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     fci.pNext = nullptr;
     fci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     std::array<vkt::Fence, 2> fences;
-    fences[0].init(*m_device, fci);
-    fences[1].init(*m_device, fci);
+    fences[0].Init(*m_device, fci);
+    fences[1].Init(*m_device, fci);
 
     for (uint32_t i = 0; i < 1000; i++) {
         auto submitter = i & 1;

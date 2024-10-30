@@ -637,13 +637,12 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     InitRenderTarget();
 
     constexpr int fence_warn_limit = 5;
-    const auto fence_ci = vkt::Fence::CreateInfo();
-    std::vector<vkt::Fence> test_fences(fence_warn_limit);
+    std::vector<vkt::Fence> test_fences;
     for (int i = 0; i < fence_warn_limit - 1; ++i) {
-        test_fences[i].init(*m_device, fence_ci);
+        test_fences.emplace_back(*m_device);
     }
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-SyncObjects-HighNumberOfFences");
-    test_fences[fence_warn_limit - 1].init(*m_device, fence_ci);
+    test_fences.emplace_back(*m_device);
     m_errorMonitor->VerifyFound();
 
     constexpr int semaphore_warn_limit = 12;

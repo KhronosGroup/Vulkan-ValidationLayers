@@ -371,15 +371,16 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 class Fence : public internal::NonDispHandle<VkFence> {
   public:
     Fence() = default;
-    Fence(const Device &dev) { init(dev, CreateInfo()); }
-    Fence(const Device &dev, const VkFenceCreateInfo &info) { init(dev, info); }
+    Fence(const Device &dev, const VkFenceCreateFlags flags = 0) { Init(dev, flags); }
+    Fence(const Device &dev, const VkFenceCreateInfo &info) { Init(dev, info); }
     Fence(Fence &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
     Fence &operator=(Fence &&) noexcept;
     ~Fence() noexcept;
     void destroy() noexcept;
 
     // vkCreateFence()
-    void init(const Device &dev, const VkFenceCreateInfo &info);
+    void Init(const Device &dev, const VkFenceCreateInfo &info);
+    void Init(const Device &dev, const VkFenceCreateFlags flags = 0);
     void SetName(const char *name) { NonDispHandle<VkFence>::SetName(VK_OBJECT_TYPE_FENCE, name); }
 
     // vkGetFenceStatus()
@@ -394,9 +395,6 @@ class Fence : public internal::NonDispHandle<VkFence> {
 #endif
     VkResult ExportHandle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type);
     VkResult ImportHandle(int fd_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags = 0);
-
-    static VkFenceCreateInfo CreateInfo(VkFenceCreateFlags flags);
-    static VkFenceCreateInfo CreateInfo();
 };
 
 inline const Fence no_fence;
@@ -1274,17 +1272,6 @@ inline VkBufferCreateInfo Buffer::CreateInfo(VkDeviceSize size, VkFlags usage, c
         info.pQueueFamilyIndices = queue_families.data();
     }
 
-    return info;
-}
-
-inline VkFenceCreateInfo Fence::CreateInfo(VkFenceCreateFlags flags) {
-    VkFenceCreateInfo info = vku::InitStructHelper();
-    info.flags = flags;
-    return info;
-}
-
-inline VkFenceCreateInfo Fence::CreateInfo() {
-    VkFenceCreateInfo info = vku::InitStructHelper();
     return info;
 }
 
