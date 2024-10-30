@@ -389,8 +389,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_ext_line_rasterization) ||
-            IsExtEnabled(device_extensions.vk_khr_line_rasterization)) {
+        if (enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
+            enabled_features.stippledSmoothLines) {
             if (last_bound_state.IsStippledLineEnable()) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_KHR, vuid);
             }
@@ -1453,9 +1453,9 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
 
-        const bool line_rasterization_extension =
-            IsExtEnabled(device_extensions.vk_ext_line_rasterization) || IsExtEnabled(device_extensions.vk_khr_line_rasterization);
-        if (line_rasterization_extension && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
+        const bool stippled_lines = enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
+                                    enabled_features.stippledSmoothLines;
+        if (stippled_lines && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
             if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   cb_state, objlist, loc, vuid.set_line_rasterization_mode_08666);
@@ -1465,7 +1465,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
         if (vertex_shader_bound) {
             if (isLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
-                if (line_rasterization_extension) {
+                if (stippled_lines) {
                     skip |=
                         ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   cb_state, objlist, loc, vuid.set_line_rasterization_mode_08667);
@@ -1478,7 +1478,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
 
         if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
-            if (line_rasterization_extension) {
+            if (stippled_lines) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   cb_state, objlist, loc, vuid.set_line_rasterization_mode_08668);
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
