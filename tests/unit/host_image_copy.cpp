@@ -1893,71 +1893,10 @@ TEST_F(NegativeHostImageCopy, Features) {
     TEST_DESCRIPTION("Use VK_EXT_host_image_copy routines without enabling the hostImageCopy feature");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceHostImageCopyFeaturesEXT host_copy_features = vku::InitStructHelper();
-    RETURN_IF_SKIP(InitState(nullptr, &host_copy_features));
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkImageCreateInfo-usage-hostImageCopy");
     image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT);
-    VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), image_ci.format, image_ci.imageType,
-                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
-        GTEST_SKIP() << "Required formats/features not supported";
-    }
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-
-    std::vector<uint8_t> pixels(32 * 32 * 4);
-    VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
-    region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = 32;
-    region_to_image.imageExtent.height = 32;
-    region_to_image.imageExtent.depth = 1;
-
-    VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
-    copy_to_image.dstImage = image;
-    copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    copy_to_image.regionCount = 1;
-    copy_to_image.pRegions = &region_to_image;
-    m_errorMonitor->SetDesiredError("VUID-vkCopyMemoryToImageEXT-hostImageCopy-09058");
-    vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
-    m_errorMonitor->VerifyFound();
-
-    VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
-    region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = 32;
-    region_from_image.imageExtent.height = 32;
-    region_from_image.imageExtent.depth = 1;
-
-    VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
-    copy_from_image.srcImage = image;
-    copy_from_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    copy_from_image.regionCount = 1;
-    copy_from_image.pRegions = &region_from_image;
-
-    m_errorMonitor->SetDesiredError("VUID-vkCopyImageToMemoryEXT-hostImageCopy-09063");
-    vk::CopyImageToMemoryEXT(*m_device, &copy_from_image);
-    m_errorMonitor->VerifyFound();
-
-    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
-    image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-
-    VkImageCopy2 image_copy_2 = vku::InitStructHelper();
-    image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    image_copy_2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    image_copy_2.extent = {32, 32, 1};
-    VkCopyImageToImageInfoEXT copy_image_to_image = vku::InitStructHelper();
-    copy_image_to_image.regionCount = 1;
-    copy_image_to_image.pRegions = &image_copy_2;
-    copy_image_to_image.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    copy_image_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    copy_image_to_image.srcImage = image;
-    copy_image_to_image.dstImage = image2;
-    m_errorMonitor->SetDesiredError("VUID-vkCopyImageToImageEXT-hostImageCopy-09068");
-    vk::CopyImageToImageEXT(*m_device, &copy_image_to_image);
+    vkt::Image image(*m_device, image_ci);
     m_errorMonitor->VerifyFound();
 }
 

@@ -179,6 +179,12 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkSampleCountFlagBits(pCreateInfo->samples));
     }
 
+    if (!enabled_features.hostImageCopy && (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) != 0) {
+        // VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6982
+        skip |= LogError("UNASSIGNED-VkImageCreateInfo-usage-hostImageCopy", device, create_info_loc.dot(Field::usage),
+                         "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, but hostImageCopy feature was not enabled.");
+    }
+
     static const uint64_t drm_format_mod_linear = 0;
     bool image_create_maybe_linear = false;
     if (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
