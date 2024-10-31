@@ -22,35 +22,28 @@
 class NegativeMemory : public VkLayerTest {};
 
 TEST_F(NegativeMemory, MapMemory) {
-    TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
-    bool pass;
     RETURN_IF_SKIP(Init());
 
-    VkBuffer buffer;
-    VkDeviceMemory mem;
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
     VkMemoryRequirements mem_reqs;
-
-    const VkDeviceSize atom_size = m_device->Physical().limits_.nonCoherentAtomSize;
-
-    VkBufferCreateInfo buf_info = vku::InitStructHelper();
-    buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buf_info.size = 256;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(device(), &buf_info, NULL, &buffer));
-
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.memoryTypeIndex = 0;
 
     // Ensure memory is big enough for both bindings
     // Want to make sure entire allocation is aligned to atom size
+    const VkDeviceSize atom_size = m_device->Physical().limits_.nonCoherentAtomSize;
     static const VkDeviceSize allocation_size = atom_size * 64;
     alloc_info.allocationSize = allocation_size;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
-        vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
     }
-    ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &mem));
+    vkt::DeviceMemory mem(*m_device, alloc_info);
 
     uint8_t *pData;
     // Attempt to map memory size 0 is invalid
@@ -81,111 +74,133 @@ TEST_F(NegativeMemory, MapMemory) {
     m_errorMonitor->SetDesiredError("VUID-vkUnmapMemory-memory-00689");
     vk::UnmapMemory(device(), mem);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(NegativeMemory, MapMemoryFlush) {
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+
+    // Ensure memory is big enough for both bindings
+    // Want to make sure entire allocation is aligned to atom
+    const VkDeviceSize atom_size = m_device->Physical().limits_.nonCoherentAtomSize;
+    static const VkDeviceSize allocation_size = atom_size * 64;
+    alloc_info.allocationSize = allocation_size;
+    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!pass) {
+        GTEST_SKIP() << "Failed to set memory type";
+    }
+    vkt::DeviceMemory mem(*m_device, alloc_info);
+
+    uint8_t *pData;
     // Now map memory and cause errors due to flushing invalid ranges
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 4 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData));
-    VkMappedMemoryRange mmr = vku::InitStructHelper();
-    mmr.memory = mem;
-    mmr.offset = atom_size;  // Error b/c offset less than offset of mapped mem
+    VkMappedMemoryRange mem_range = vku::InitStructHelper();
+    mem_range.memory = mem;
+    mem_range.offset = atom_size;  // Error b/c offset less than offset of mapped mem
     m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00685");
-    vk::FlushMappedMemoryRanges(device(), 1, &mmr);
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
     m_errorMonitor->VerifyFound();
 
     // Now flush range that oversteps mapped range
     vk::UnmapMemory(device(), mem);
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
-    mmr.offset = atom_size;
-    mmr.size = 4 * atom_size;  // Flushing bounds exceed mapped bounds
+    mem_range.offset = atom_size;
+    mem_range.size = 4 * atom_size;  // Flushing bounds exceed mapped bounds
     m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00685");
-    vk::FlushMappedMemoryRanges(device(), 1, &mmr);
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
     m_errorMonitor->VerifyFound();
 
     // Now flush range with VK_WHOLE_SIZE that oversteps offset
     vk::UnmapMemory(device(), mem);
     ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 2 * atom_size, 4 * atom_size, 0, (void **)&pData));
-    mmr.offset = atom_size;
-    mmr.size = VK_WHOLE_SIZE;
+    mem_range.offset = atom_size;
+    mem_range.size = VK_WHOLE_SIZE;
     m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-00686");
-    vk::FlushMappedMemoryRanges(device(), 1, &mmr);
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
     m_errorMonitor->VerifyFound();
-
-    // Some platforms have an atomsize of 1 which makes the test meaningless
-    if (atom_size > 3) {
-        // Now with an offset NOT a multiple of the device limit
-        vk::UnmapMemory(device(), mem);
-        ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
-        mmr.offset = 3;  // Not a multiple of atom_size
-        mmr.size = VK_WHOLE_SIZE;
-        m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-offset-00687");
-        vk::FlushMappedMemoryRanges(device(), 1, &mmr);
-        m_errorMonitor->VerifyFound();
-
-        // Now with a size NOT a multiple of the device limit
-        vk::UnmapMemory(device(), mem);
-        ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
-        mmr.offset = atom_size;
-        mmr.size = 2 * atom_size + 1;  // Not a multiple of atom_size
-        m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-01390");
-        vk::FlushMappedMemoryRanges(device(), 1, &mmr);
-        m_errorMonitor->VerifyFound();
-
-        // Now with VK_WHOLE_SIZE and a mapping that does not end at a multiple of atom_size nor at the end of the memory.
-        vk::UnmapMemory(device(), mem);
-        ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size + 1, 0, (void **)&pData));
-        mmr.offset = atom_size;
-        mmr.size = VK_WHOLE_SIZE;
-        m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-01389");
-        vk::FlushMappedMemoryRanges(device(), 1, &mmr);
-        m_errorMonitor->VerifyFound();
-    }
 
     // Try flushing and invalidating host memory not mapped
     vk::UnmapMemory(device(), mem);
-    mmr.offset = 0;
-    mmr.size = VK_WHOLE_SIZE;
+    mem_range.offset = 0;
+    mem_range.size = VK_WHOLE_SIZE;
     m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-memory-00684");
-    vk::FlushMappedMemoryRanges(device(), 1, &mmr);
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-memory-00684");
-    vk::InvalidateMappedMemoryRanges(device(), 1, &mmr);
+    vk::InvalidateMappedMemoryRanges(device(), 1, &mem_range);
     m_errorMonitor->VerifyFound();
+}
 
-    vk::DestroyBuffer(device(), buffer, NULL);
-    vk::FreeMemory(device(), mem, NULL);
+TEST_F(NegativeMemory, MapMemoryCoherentAtomSize) {
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, MapMemory will fail ASAN";
+    }
 
-    // device memory not atom size aligned
-    alloc_info.allocationSize = (atom_size * 4) + 1;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateBuffer(device(), &buf_info, NULL, &buffer));
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    const VkDeviceSize atom_size = m_device->Physical().limits_.nonCoherentAtomSize;
+    if (atom_size < 4) {
+        GTEST_SKIP() << "nonCoherentAtomSize is too small";
+    }
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+
+    // Ensure memory is big enough for both bindings
+    // Want to make sure entire allocation is aligned to atom
+    static const VkDeviceSize allocation_size = atom_size * 64;
+    alloc_info.allocationSize = allocation_size;
+    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
-        vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
     }
-    ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &alloc_info, NULL, &mem));
-    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
-    // Some platforms have an atomsize of 1 which makes the test meaningless
-    if (atom_size > 1) {
-        // Offset is atom size, but total memory range is not atom size
-        mmr.memory = mem;
-        mmr.offset = atom_size;
-        mmr.size = VK_WHOLE_SIZE;
-        vk::FlushMappedMemoryRanges(device(), 1, &mmr);
-    }
+    vkt::DeviceMemory mem(*m_device, alloc_info);
 
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint8_t *pData;
+
+    // Now with an offset NOT a multiple of the device limit
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
+    VkMappedMemoryRange mem_range = vku::InitStructHelper();
+    mem_range.memory = mem;
+    mem_range.offset = 3;  // Not a multiple of atom_size
+    mem_range.size = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-offset-00687");
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
+    m_errorMonitor->VerifyFound();
+
+    // Now with a size NOT a multiple of the device limit
     vk::UnmapMemory(device(), mem);
-    if (!pass) {
-        vk::FreeMemory(device(), mem, NULL);
-        vk::DestroyBuffer(device(), buffer, NULL);
-        GTEST_SKIP() << "Failed to set memory type";
-    }
-    // TODO : If we can get HOST_VISIBLE w/o HOST_COHERENT we can test cases of
-    //  kVUID_Core_MemTrack_InvalidMap in validateAndCopyNoncoherentMemoryToDriver()
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
+    mem_range.offset = atom_size;
+    mem_range.size = 2 * atom_size + 1;  // Not a multiple of atom_size
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-01390");
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
+    m_errorMonitor->VerifyFound();
 
-    vk::DestroyBuffer(device(), buffer, NULL);
-    vk::FreeMemory(device(), mem, NULL);
+    // Now with VK_WHOLE_SIZE and a mapping that does not end at a multiple of atom_size nor at the end of the memory.
+    vk::UnmapMemory(device(), mem);
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, 4 * atom_size + 1, 0, (void **)&pData));
+    mem_range.offset = atom_size;
+    mem_range.size = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("VUID-VkMappedMemoryRange-size-01389");
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeMemory, MapMemory2) {
