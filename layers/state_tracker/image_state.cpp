@@ -774,7 +774,23 @@ const Surface::PhysDevCache *Surface::GetPhysDevCache(VkPhysicalDevice phys_dev)
 
 void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &surface_caps) {
     auto guard = Lock();
-    cache_[phys_dev].capabilities = surface_caps;
+    PhysDevCache &cache = cache_[phys_dev];
+
+    cache.capabilities = surface_caps;
+
+    // The properties that vary per present mode are (check VkSurfacePresentModeEXT documentation):
+    //  VkSurfaceCapabilitiesKHR::minImageCount
+    //  VkSurfaceCapabilitiesKHR::maxImageCount
+    //  VkSurfacePresentScalingCapabilitiesEXT::minScaledImageExtent
+    //  VkSurfacePresentScalingCapabilitiesEXT::maxScaledImageExtent
+    //
+    // Update extent properties since they do not vary per present mode.
+    // NOTE: other present mode independent properties can be added too if needed for validation
+    for (PresentModeInfo &present_mode_info : cache.present_mode_infos) {
+        present_mode_info.surface_capabilities.currentExtent = surface_caps.currentExtent;
+        present_mode_info.surface_capabilities.minImageExtent = surface_caps.minImageExtent;
+        present_mode_info.surface_capabilities.maxImageExtent = surface_caps.maxImageExtent;
+    }
 }
 
 void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilities2KHR &surface_caps,
