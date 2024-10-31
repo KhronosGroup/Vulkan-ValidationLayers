@@ -219,6 +219,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const Location& field_loc,
                                       const QueueFamilyBarrier& barrier, const VulkanTypedHandle& handle,
                                       VkSharingMode sharing_mode) const;
+    bool ValidateSwapchainImageExtent(const VkSwapchainCreateInfoKHR& create_info, const VkSurfaceCapabilitiesKHR& surface_caps,
+                                      const Location& create_info_loc, const vvl::Surface* surface_state) const;
     bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
                                                  const VkSwapchainCreateInfoKHR& create_info,
                                                  const std::vector<VkPresentModeKHR>& present_modes,
