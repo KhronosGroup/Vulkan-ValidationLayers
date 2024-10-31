@@ -662,12 +662,13 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
                 "will not be seen.");
             report_flags |= kInformationBit;
         }
-        if (!settings_data->gpuav_settings->debug_printf_to_stdout && settings_data->gpuav_settings->debug_printf_verbose &&
-            debug_report->duplicate_message_limit != 0) {
-            // If verbose is disabled, it bypasses the LogMsgEnabled() check and not important
+        // If any non-stdout debugprintf is being used, just turn off duplicate_message_limit, it will prevent people thinking
+        // DebugPrintf is broken because nothing is printing.
+        if (!settings_data->gpuav_settings->debug_printf_to_stdout && debug_report->duplicate_message_limit != 0) {
+            debug_report->duplicate_message_limit = 0;
             setting_warnings.emplace_back("DebugPrintf logs can possibly print many times, but duplicate_message_limit is set to " +
                                           std::to_string(debug_report->duplicate_message_limit) +
-                                          " so no more logs will be shown after.");
+                                          ", setting duplicate_message_limit to zero.");
         }
     }
 
