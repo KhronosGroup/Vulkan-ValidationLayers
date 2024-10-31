@@ -20,6 +20,7 @@
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include <spirv/unified1/spirv.hpp>
 
+#include "generated/vk_extension_helper.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
@@ -1156,6 +1157,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
     module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
+    module_settings.support_non_semantic_info = IsExtEnabled(device_extensions.vk_khr_shader_non_semantic_info);
     module_settings.support_int64 = enabled_features.shaderInt64;
     module_settings.support_memory_model_device_scope = enabled_features.vulkanMemoryModelDeviceScope;
     module_settings.has_bindless_descriptors = has_bindless_descriptors;

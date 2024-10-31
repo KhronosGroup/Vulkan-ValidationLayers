@@ -487,8 +487,10 @@ bool DebugPrintfPass::Run() {
                 CreateFunctionCall(block_it, &inst_it);
 
                 // remove the OpExtInst incase they don't support VK_KHR_non_semantic_info
-                inst_it = block_instructions.erase(inst_it);
-                inst_it--;
+                if (!module_.support_non_semantic_info_) {
+                    inst_it = block_instructions.erase(inst_it);
+                    inst_it--;
+                }
 
                 Reset();
             }
@@ -506,22 +508,24 @@ bool DebugPrintfPass::Run() {
     }
 
     // remove the everything else possible incase they don't support VK_KHR_non_semantic_info
-    bool other_non_semantic = false;
-    for (auto inst_it = module_.ext_inst_imports_.begin(); inst_it != module_.ext_inst_imports_.end(); ++inst_it) {
-        const char* import_string = (inst_it->get())->GetAsString(2);
-        if (strcmp(import_string, "NonSemantic.DebugPrintf") == 0) {
-            module_.ext_inst_imports_.erase(inst_it);
-            break;
-        } else if (strncmp(import_string, "NonSemantic.", 12) == 0) {
-            other_non_semantic = true;
-        }
-    }
-    if (!other_non_semantic) {
-        for (auto inst_it = module_.extensions_.begin(); inst_it != module_.extensions_.end(); ++inst_it) {
-            const char* import_string = (inst_it->get())->GetAsString(1);
-            if (strcmp(import_string, "SPV_KHR_non_semantic_info") == 0) {
-                module_.extensions_.erase(inst_it);
+    if (!module_.support_non_semantic_info_) {
+        bool other_non_semantic = false;
+        for (auto inst_it = module_.ext_inst_imports_.begin(); inst_it != module_.ext_inst_imports_.end(); ++inst_it) {
+            const char* import_string = (inst_it->get())->GetAsString(2);
+            if (strcmp(import_string, "NonSemantic.DebugPrintf") == 0) {
+                module_.ext_inst_imports_.erase(inst_it);
                 break;
+            } else if (strncmp(import_string, "NonSemantic.", 12) == 0) {
+                other_non_semantic = true;
+            }
+        }
+        if (!other_non_semantic) {
+            for (auto inst_it = module_.extensions_.begin(); inst_it != module_.extensions_.end(); ++inst_it) {
+                const char* import_string = (inst_it->get())->GetAsString(1);
+                if (strcmp(import_string, "SPV_KHR_non_semantic_info") == 0) {
+                    module_.extensions_.erase(inst_it);
+                    break;
+                }
             }
         }
     }
