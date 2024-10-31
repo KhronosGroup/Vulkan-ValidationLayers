@@ -4699,13 +4699,12 @@ TEST_F(NegativeVideo, EncodeRateControlVirtualBufferSize) {
     // virtualBufferSizeInMs must be greater than 0
     rc_info->virtualBufferSizeInMs = 0;
     m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeRateControlInfoKHR-layerCount-08357");
-    m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeRateControlInfoKHR-layerCount-08358");
     cb.ControlVideoCoding(context.Control().RateControl(rc_info));
     m_errorMonitor->VerifyFound();
 
-    // initialVirtualBufferSizeInMs must be less than virtualBufferSizeInMs
+    // initialVirtualBufferSizeInMs must be less than or equal to virtualBufferSizeInMs
     rc_info->virtualBufferSizeInMs = 1000;
-    rc_info->initialVirtualBufferSizeInMs = 1000;
+    rc_info->initialVirtualBufferSizeInMs = 1001;
     m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeRateControlInfoKHR-layerCount-08358");
     cb.ControlVideoCoding(context.Control().RateControl(rc_info));
     m_errorMonitor->VerifyFound();

@@ -580,6 +580,43 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
     m_device->Wait();
 }
 
+TEST_F(PositiveVideo, EncodeRateControlVirtualBufferSize) {
+    TEST_DESCRIPTION(
+        "vkCmdControlVideoCodingKHR - test valid values for "
+        "virtualBufferSizeInMs and initialVirtualBufferSizeInMs");
+
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(GetConfigsWithRateControl(GetConfigsEncode()));
+    if (!config) {
+        GTEST_SKIP() << "Test requires video encode support with rate control";
+    }
+
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+
+    auto rc_info = VideoEncodeRateControlInfo(config).SetAnyMode();
+    rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.begin();
+    cb.BeginVideoCoding(context.Begin());
+
+    // initialVirtualBufferSizeInMs can be less than virtualBufferSizeInMs
+    rc_info->virtualBufferSizeInMs = 1000;
+    rc_info->initialVirtualBufferSizeInMs = 0;
+    cb.ControlVideoCoding(context.Control().RateControl(rc_info));
+
+    // initialVirtualBufferSizeInMs can be equal to virtualBufferSizeInMs
+    rc_info->virtualBufferSizeInMs = 1000;
+    rc_info->initialVirtualBufferSizeInMs = 1000;
+    cb.ControlVideoCoding(context.Control().RateControl(rc_info));
+
+    cb.EndVideoCoding(context.End());
+    cb.end();
+}
+
 TEST_F(PositiveVideo, EncodeRateControlH264LayerCount) {
     TEST_DESCRIPTION(
         "vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - H.264 temporal layer count must only match "
