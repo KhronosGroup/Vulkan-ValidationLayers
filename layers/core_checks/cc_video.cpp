@@ -206,10 +206,10 @@ bool CoreChecks::ValidateVideoEncodeRateControlInfo(const VkVideoEncodeRateContr
                              rc_info_loc.dot(Field::virtualBufferSizeInMs), "must not be zero if %s (%u) is not zero.",
                              rc_info_loc.dot(Field::layerCount).Fields().c_str(), rc_info.layerCount);
         }
-        if (rc_info.initialVirtualBufferSizeInMs >= rc_info.virtualBufferSizeInMs) {
+        if (rc_info.initialVirtualBufferSizeInMs > rc_info.virtualBufferSizeInMs) {
             skip |= LogError("VUID-VkVideoEncodeRateControlInfoKHR-layerCount-08358", cmdbuf,
                              rc_info_loc.dot(Field::initialVirtualBufferSizeInMs),
-                             "(%u) must be less than virtualBufferSizeInMs (%u) if %s (%u) is not zero.",
+                             "(%u) must be less than or equal to virtualBufferSizeInMs (%u) if %s (%u) is not zero.",
                              rc_info.initialVirtualBufferSizeInMs, rc_info.virtualBufferSizeInMs,
                              rc_info_loc.dot(Field::layerCount).Fields().c_str(), rc_info.layerCount);
         }
