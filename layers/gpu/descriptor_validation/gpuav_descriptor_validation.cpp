@@ -162,8 +162,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         Location draw_loc(vvl::Func::vkCmdDraw);
 
         // For each descriptor set ...
-        for (uint32_t i = 0; i < descriptor_command_binding->bound_descriptor_sets.size(); i++) {
-            auto &bound_descriptor_set = descriptor_command_binding->bound_descriptor_sets[i];
+        for (uint32_t set_index = 0; set_index < descriptor_command_binding->bound_descriptor_sets.size(); set_index++) {
+            auto &bound_descriptor_set = descriptor_command_binding->bound_descriptor_sets[set_index];
             if (validated_desc_sets.count(bound_descriptor_set.state->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
@@ -173,23 +173,23 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             if (!bound_descriptor_set.state->HasPostProcessBuffer()) {
                 std::stringstream error;
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, descriptor_command_binding[" << command_binding_index
-                      << "].bound_descriptor_sets[" << i
+                      << "].bound_descriptor_sets[" << set_index
                       << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
                 auto gpuav = static_cast<Validator *>(&dev_data);
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
             }
 
-            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set.state, i, VK_NULL_HANDLE /*framebuffer*/,
+            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set.state, set_index, VK_NULL_HANDLE /*framebuffer*/,
                                              draw_loc);
-            const uint32_t shader_set = glsl::kDescriptorSetWrittenMask | i;
-            auto used_descs = bound_descriptor_set.state->UsedDescriptors(loc, shader_set);
+            auto used_descs = bound_descriptor_set.state->UsedDescriptors(loc, set_index);
             // For each used binding ...
             for (const auto &u : used_descs) {
-                auto iter = bound_descriptor_set.binding_req_map.find(u.first);
+                const uint32_t binding = u.first;
+                auto iter = bound_descriptor_set.binding_req_map.find(binding);
                 vvl::DescriptorBindingInfo binding_info;
-                binding_info.first = u.first;
-                while (iter != bound_descriptor_set.binding_req_map.end() && iter->first == u.first) {
+                binding_info.first = binding;
+                while (iter != bound_descriptor_set.binding_req_map.end() && iter->first == binding) {
                     binding_info.second.emplace_back(iter->second);
                     ++iter;
                 }

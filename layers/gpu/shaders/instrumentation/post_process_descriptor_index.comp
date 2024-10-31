@@ -46,7 +46,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexPostProcess {
     // size of descriptor count (including all array elements)
     // Used to mark which indexes were accessed
-    uint data[];
+    uint slot[]; // PostProcessDescriptorIndexSlot
 };
 
 struct DescriptorSetRecord {
@@ -70,5 +70,5 @@ void inst_post_process_descriptor_index(const uint desc_set, const uint binding,
     //
     // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
     // ex - desc_sets[0].descriptor_index_post_process == desc_sets[1].descriptor_index_post_process
-    descriptor_index_post_process.data[state_index] = kDescriptorSetWrittenMask | desc_set;
+    descriptor_index_post_process.slot[state_index] = kDescriptorSetWrittenMask | desc_set;
 }

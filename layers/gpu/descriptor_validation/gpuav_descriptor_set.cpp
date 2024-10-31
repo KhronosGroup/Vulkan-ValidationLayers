@@ -48,6 +48,8 @@ DescriptorSet::~DescriptorSet() {
 
 VkDeviceAddress DescriptorSet::GetIndexLUTAddress(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
+    // Each set only needs to create the buffer for this once.
+    // It is based on total bindings which can't change after creating the set
     if (layout_block_.Address() != 0) {
         return layout_block_.Address();
     }
@@ -306,6 +308,8 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
 
 VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
+    // Each set only needs to create the buffer for this once. It is based on total descriptor count, and even with things like
+    // VARIABLE_DESCRIPTOR_COUNT_BIT, the size will only get smaller afterwards.
     if (post_process_block_.Address() != 0) {
         return post_process_block_.Address();
     }
@@ -326,7 +330,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = descriptor_count * sizeof(uint32_t);
+    buffer_info.size = descriptor_count * sizeof(glsl::PostProcessDescriptorIndexSlot);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
@@ -335,7 +339,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     post_process_block_.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    auto data = (uint32_t *)post_process_block_.MapMemory(loc);
+    void *data = post_process_block_.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
@@ -356,7 +360,7 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const L
 
     auto layout_data = (glsl::BindingLayout *)layout_block_.MapMemory(loc);
 
-    auto data = (uint32_t *)post_process_block_.MapMemory(loc);
+    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_block_.MapMemory(loc);
     post_process_block_.InvalidateAllocation(loc);
 
     uint32_t max_binding = layout_data[0].count;
@@ -364,10 +368,12 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const L
         uint32_t count = layout_data[binding + 1].count;
         uint32_t start = layout_data[binding + 1].state_start;
         for (uint32_t i = 0; i < count; i++) {
-            uint32_t pos = start + i;
-            if (data[pos] == shader_set) {
-                auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
-                map_result.first->second.emplace_back(i);
+            const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[start + i];
+            if (slot & glsl::kDescriptorSetWrittenMask) {
+                if ((slot & glsl::kDescriptorSetSelectionMask) == shader_set) {
+                    auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
+                    map_result.first->second.emplace_back(i);
+                }
             }
         }
     }
