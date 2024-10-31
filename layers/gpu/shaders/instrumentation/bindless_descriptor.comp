@@ -59,7 +59,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
 struct DescriptorSetRecord {
     DescriptorIndexLUT descriptor_index_lut;
     DescriptorSetType ds_type;
-    uvec2 descriptor_index_post_process; // unused BDA pointer
+    uvec2 unused_descriptor_index_post_process;
 };
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {

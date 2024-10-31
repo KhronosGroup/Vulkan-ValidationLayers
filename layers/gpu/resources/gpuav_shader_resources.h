@@ -58,7 +58,7 @@ struct DescriptorSetRecord {
     VkDeviceAddress descriptor_index_post_process;
 };
 
-// Shared among all Descriptor Indexing GPU-AV checks (so we onlyl have to create a single buffer)
+// Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
 struct DescriptorStateSSBO {
     VkDeviceAddress initialized_status;  // Used to know if descriptors are initialized or not
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];

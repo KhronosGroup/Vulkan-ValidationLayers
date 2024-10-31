@@ -51,16 +51,16 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedStatus; // unused
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
 
 struct DescriptorSetRecord {
     DescriptorIndexLUT descriptor_index_lut;
     DescriptorSetType ds_type;
-    uvec2 descriptor_index_post_process; // unused BDA pointer
+    uvec2 unused_descriptor_index_post_process;
 };
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
-    InitializedStatus initialized_status; // unused
+    UnusedInitializedStatus unused_initialized_status;
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
