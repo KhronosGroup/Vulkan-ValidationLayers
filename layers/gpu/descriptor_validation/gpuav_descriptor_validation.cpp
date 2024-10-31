@@ -92,12 +92,12 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     // draw's descriptor set.
     descriptor_command_binding.ssbo_block.CreateBuffer(loc, &buffer_info, &alloc_info);
 
-    auto ssbo_memory = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
+    auto ssbo_block_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
 
-    memset(ssbo_memory, 0, static_cast<size_t>(buffer_info.size));
+    memset(ssbo_block_ptr, 0, static_cast<size_t>(buffer_info.size));
     cb_state.current_bindless_buffer = descriptor_command_binding.ssbo_block.Buffer();
 
-    ssbo_memory->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
+    ssbo_block_ptr->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
     descriptor_command_binding.bound_descriptor_sets.reserve(descriptor_command_binding.bound_descriptor_sets.size() +
                                                              last_bound.per_set.size());
     for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
@@ -117,14 +117,14 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             }
         }
 
-        ssbo_memory->desc_sets[i].descriptor_index_lut = ds_state.GetIndexLUTAddress(gpuav, loc);
+        ssbo_block_ptr->desc_sets[i].descriptor_index_lut = ds_state.GetIndexLUTAddress(gpuav, loc);
         if (need_post_processing) {
-            ssbo_memory->desc_sets[i].descriptor_index_post_process = ds_state.GetPostProcessBuffer(gpuav, loc);
+            ssbo_block_ptr->desc_sets[i].descriptor_index_post_process = ds_state.GetPostProcessBuffer(gpuav, loc);
         }
 
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
         if (!ds_state.IsUpdateAfterBind() && need_descriptor_checks) {
-            ssbo_memory->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
+            ssbo_block_ptr->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
         }
         descriptor_command_binding.bound_descriptor_sets.emplace_back(std::move(bound_descriptor_set));
     }
@@ -139,10 +139,10 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     if (!need_descriptor_checks) return true;
 
     for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {
-        auto ssbo_memory = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
+        auto ssbo_block_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
         for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
             DescriptorSet &ds_state = *descriptor_command_binding.bound_descriptor_sets[i].state;
-            ssbo_memory->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
+            ssbo_block_ptr->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
         }
         descriptor_command_binding.ssbo_block.UnmapMemory();
     }

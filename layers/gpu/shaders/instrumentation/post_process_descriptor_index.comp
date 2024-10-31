@@ -51,12 +51,12 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
 
 struct DescriptorSetRecord {
     DescriptorIndexLUT descriptor_index_lut; // TODO - remove with LUT send into instrumentation of shader
-    uvec2 ds_type; // unused BDA pointer
+    uvec2 unused_ds_type;
     DescriptorIndexPostProcess descriptor_index_post_process;
 };
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
-    uvec2 initialized_status; // unused BDA pointer
+    uvec2 unused_initialized_status;
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
