@@ -70,6 +70,12 @@ struct BindingLayout {
     uint32_t state_start;
 };
 
+// Each indexing into a descriptor we have a 32-bit slot to mark what happend on the GPU
+// Since most devices can only support 32 descriptor sets, we can start to be clever and compress info into these 32-bits by
+// exploiting the fact certain data we are saving doesn't need a full 32-bit to save. GLSL doesn't have bitfields and don't want to
+// make this structs until we can't fit everything in 32-bits anymore.
+typedef uint32_t PostProcessDescriptorIndexSlot;
+
 // Represented as a uvec2 in the shader
 struct DescriptorState {
     DescriptorState() : id(0), extra_data(0) {}
