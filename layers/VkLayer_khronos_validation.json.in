@@ -88,7 +88,7 @@
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
-                        { "key": "enable_message_limit", "value": true }
+                        { "key": "duplicate_message_limit", "value": 10 }
                     ]
                 },
                 {
@@ -114,7 +114,7 @@
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
-                        { "key": "enable_message_limit", "value": true }
+                        { "key": "duplicate_message_limit", "value": 10 }
                     ]
                 },
                 {
@@ -140,7 +140,7 @@
                         { "key": "validate_best_practices", "value": true },
                         { "key": "report_flags", "value": [ "error", "warn", "perf" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
-                        { "key": "enable_message_limit", "value": true }
+                        { "key": "duplicate_message_limit", "value": 10 }
                     ]
                 },
                 {
@@ -168,7 +168,7 @@
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
-                        { "key": "enable_message_limit", "value": true }
+                        { "key": "duplicate_message_limit", "value": 10 }
                     ]
                 },
                 {
@@ -199,7 +199,7 @@
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
-                        { "key": "enable_message_limit", "value": true }
+                        { "key": "duplicate_message_limit", "value": 10 }
                     ]
                 },
                 {
@@ -225,7 +225,7 @@
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags",  "value": [ "error", "info" ] },
                         { "key": "debug_action",  "value": [] },
-                        { "key": "enable_message_limit",  "value": false }
+                        { "key": "duplicate_message_limit", "value": 0 }
                     ]
                 }
             ],
@@ -1051,30 +1051,15 @@
                     ]
                 },
                 {
-                    "key": "enable_message_limit",
-                    "label": "Limit Duplicated Messages",
-                    "description": "Enable limiting of duplicate messages.",
-                    "type": "BOOL",
-                    "default": true,
-                    "settings": [
-                        {
-                            "key": "duplicate_message_limit",
-                            "env": "VK_LAYER_DUPLICATE_MESSAGE_LIMIT",
-                            "label": "Max Duplicated Messages",
-                            "description": "Maximum number of times any single validation message should be reported.",
-                            "type": "INT",
-                            "default": 10,
-                            "range": {
-                                "min": 1
-                            },
-                            "dependence": {
-                                "mode": "ALL",
-                                "settings": [
-                                    { "key": "enable_message_limit", "value": true }
-                                ]
-                            }
-                        }
-                    ]
+                    "key": "duplicate_message_limit",
+                    "env": "VK_LAYER_DUPLICATE_MESSAGE_LIMIT",
+                    "label": "Max Duplicated Messages",
+                    "description": "Maximum number of times any single validation message should be reported. Value of zero will print forever",
+                    "type": "INT",
+                    "default": 10,
+                    "range": {
+                        "min": 0
+                    }
                 },
                 {
                     "key": "message_id_filter",

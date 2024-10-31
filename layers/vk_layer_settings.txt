@@ -25,12 +25,6 @@ khronos_validation.log_filename = stdout
 # reported
 khronos_validation.report_flags = error
 
-# Limit Duplicated Messages
-# =====================
-# <LayerIdentifier>.enable_message_limit
-# Enable limiting of duplicate messages.
-khronos_validation.enable_message_limit = true
-
 # Max Duplicated Messages
 # =====================
 # <LayerIdentifier>.duplicate_message_limit
