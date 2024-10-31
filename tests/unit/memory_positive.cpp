@@ -621,3 +621,43 @@ TEST_F(PositiveMemory, BindMemoryStatusImage) {
 
     ASSERT_NE(result, VK_RESULT_MAX_ENUM);
 }
+
+TEST_F(PositiveMemory, MapMemoryCoherentAtomSize) {
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, MapMemory will fail ASAN";
+    }
+
+    const VkDeviceSize atom_size = m_device->Physical().limits_.nonCoherentAtomSize;
+    if (atom_size == 1) {
+        // Some platforms have an atomsize of 1 which makes the test meaningless
+        GTEST_SKIP() << "nonCoherentAtomSize is 1";
+    }
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_ci.size = 256;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.memoryTypeIndex = 0;
+
+    alloc_info.allocationSize = (atom_size * 4) + 1;
+    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!pass) {
+        GTEST_SKIP() << "Failed to set memory type";
+    }
+    vkt::DeviceMemory mem(*m_device, alloc_info);
+
+    uint8_t *pData;
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
+    // Offset is atom size, but total memory range is not atom size
+    VkMappedMemoryRange mem_range = vku::InitStructHelper();
+    mem_range.memory = mem;
+    mem_range.offset = atom_size;
+    mem_range.size = VK_WHOLE_SIZE;
+    vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
+    vk::UnmapMemory(device(), mem);
+}

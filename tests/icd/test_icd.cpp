@@ -19,6 +19,7 @@
 #include "test_icd.h"
 #include "test_icd_helper.h"
 #include <vulkan/utility/vk_format_utils.h>
+#include <cstddef>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace icd {
@@ -633,7 +634,16 @@ static VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory 
         else
             size = 0x10000;
     }
-    void* map_addr = malloc((size_t)size);
+
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8776
+    // things like shaderGroupBaseAlignment can be as big as 64, since these values are dynamically set in the Profile JSON, we need
+    // to create the large alignment possible to satisfy them all
+    static const size_t memory_alignment = 64;
+#if defined(_WIN32)
+    void* map_addr = _aligned_malloc((size_t)size, memory_alignment);
+#else
+    void* map_addr = aligned_alloc(memory_alignment, (size_t)size);
+#endif
     mapped_memory_map[memory].push_back(map_addr);
     *ppData = map_addr;
     return VK_SUCCESS;
