@@ -37,6 +37,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
       max_instrumentations_count_(settings.max_instrumentations_count),
       shader_id_(settings.shader_id),
       output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
+      support_non_semantic_info_(settings.support_non_semantic_info),
       support_int64_(settings.support_int64),
       support_memory_model_device_scope_(settings.support_memory_model_device_scope),
       has_bindless_descriptors_(settings.has_bindless_descriptors),
@@ -591,6 +592,16 @@ void Module::LinkFunction(const LinkInfo& info) {
                 // It is valid to have duplicated Capabilities
                 capabilities_.emplace_back(std::move(new_inst));
             }
+        } else if (opcode == spv::OpExtInstImport) {
+            const uint32_t new_result_id = TakeNextId();
+            id_swap_map[old_result_id] = new_result_id;
+            new_inst->ReplaceResultId(new_result_id);
+            ext_inst_imports_.emplace_back(std::move(new_inst));
+        } else if (opcode == spv::OpString) {
+            const uint32_t new_result_id = TakeNextId();
+            id_swap_map[old_result_id] = new_result_id;
+            new_inst->ReplaceResultId(new_result_id);
+            debug_source_.emplace_back(std::move(new_inst));
         } else if (opcode == spv::OpExtension) {
             extensions_.emplace_back(std::move(new_inst));
         }

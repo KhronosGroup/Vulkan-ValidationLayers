@@ -266,10 +266,15 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpTypeFunction:
             swap_to_end(2);
             break;
-
+        case spv::OpExtInst:
+            swap(3);
+            swap_to_end(5);
+            break;
         case spv::OpReturn:
         case spv::OpLabel:
         case spv::OpFunctionEnd:
+        case spv::OpExtInstImport:
+        case spv::OpString:
             break;  // Instructions aware of, but nothing to swap
         default:
             assert(false && "Need to add support for new instruction");

@@ -39,6 +39,7 @@ struct Settings {
     uint32_t output_buffer_descriptor_set;
     bool print_debug_info;
     uint32_t max_instrumentations_count;
+    bool support_non_semantic_info;
     bool support_int64;
     bool support_memory_model_device_scope;
     bool has_bindless_descriptors;
@@ -109,6 +110,7 @@ class Module {
     // This allows anything to be set in the GLSL for the set value, as we change it at runtime
     const uint32_t output_buffer_descriptor_set_;
 
+    const bool support_non_semantic_info_;
     const bool support_int64_;
     const bool support_memory_model_device_scope_;
 
