@@ -316,12 +316,13 @@ void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
         unique_shader_id = unique_shader_module_id_++;
     }
 
-    const bool has_bindless_descriptors = HasBindlessDescriptors(create_info);
+    InstrumentationDescriptorSetLayouts instrumentation_dsl;
+    BuildDescriptorSetLayoutInfo(create_info, instrumentation_dsl);
 
     if (!cached) {
         pass = InstrumentShader(
             vvl::make_span(static_cast<const uint32_t *>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)),
-            unique_shader_id, has_bindless_descriptors, create_info_loc, instrumented_spirv);
+            unique_shader_id, instrumentation_dsl, create_info_loc, instrumented_spirv);
     }
 
     if (cached || pass) {
@@ -825,35 +826,35 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
     return true;
 }
 
-bool GpuShaderInstrumentor::HasBindlessDescriptors(vvl::Pipeline &pipeline_state) {
+void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
+                                                         InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
     const auto pipeline_layout = pipeline_state.PipelineLayoutState();
-    if (!pipeline_layout) return false;
+    if (!pipeline_layout) return;
 
     for (const auto &set_layout : pipeline_layout->set_layouts) {
         if (set_layout) {
             for (uint32_t i = 0; i < set_layout->GetBindingCount(); i++) {
                 const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(i);
                 if (vvl::IsBindless(flags)) {
-                    return true;
+                    out_instrumentation_dsl.has_bindless_descriptors = true;
                 }
             }
         }
     }
-    return false;
 }
 
-bool GpuShaderInstrumentor::HasBindlessDescriptors(VkShaderCreateInfoEXT &create_info) {
+void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const VkShaderCreateInfoEXT &create_info,
+                                                         InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
     for (const auto [layout_i, set_layout] : vvl::enumerate(create_info.pSetLayouts, create_info.setLayoutCount)) {
         if (auto set_layout_state = Get<vvl::DescriptorSetLayout>(*set_layout)) {
             for (uint32_t i = 0; i < set_layout_state->GetBindingCount(); i++) {
                 const VkDescriptorBindingFlags flags = set_layout_state->GetDescriptorBindingFlagsFromIndex(i);
                 if (vvl::IsBindless(flags)) {
-                    return true;
+                    out_instrumentation_dsl.has_bindless_descriptors = true;
                 }
             }
         }
     }
-    return false;
 }
 
 // Instrument all SPIR-V that is sent through pipeline. This can be done in various ways
@@ -875,9 +876,8 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
     const size_t total_stages = pipeline_state.stage_states.size();
     shader_instrumentation_metadata.resize(total_stages);
 
-    // TODO - measure and see if would be better to make a gpuav subclasses of pipeline layout and store this information once there
-    // (not sure how much pipeline layout re-usage there is)
-    const bool has_bindless_descriptors = HasBindlessDescriptors(pipeline_state);
+    InstrumentationDescriptorSetLayouts instrumentation_dsl;
+    BuildDescriptorSetLayoutInfo(pipeline_state, instrumentation_dsl);
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(pipeline_state.stage_states.size()); ++i) {
         const auto &stage_state = pipeline_state.stage_states[i];
@@ -916,8 +916,7 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
             unique_shader_id = unique_shader_module_id_++;
         }
         if (!cached) {
-            pass =
-                InstrumentShader(module_state->spirv->words_, unique_shader_id, has_bindless_descriptors, loc, instrumented_spirv);
+            pass = InstrumentShader(module_state->spirv->words_, unique_shader_id, instrumentation_dsl, loc, instrumented_spirv);
         }
         if (cached || pass) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1001,7 +1000,8 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
     const size_t total_stages = pipeline_state.stage_states.size();
     shader_instrumentation_metadata.resize(total_stages);
 
-    const bool has_bindless_descriptors = HasBindlessDescriptors(pipeline_state);
+    InstrumentationDescriptorSetLayouts instrumentation_dsl;
+    BuildDescriptorSetLayoutInfo(pipeline_state, instrumentation_dsl);
 
     auto library_create_info = const_cast<VkPipelineLibraryCreateInfoKHR *>(
         vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(new_pipeline_ci.pNext));
@@ -1061,8 +1061,8 @@ void GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 unique_shader_id = unique_shader_module_id_++;
             }
             if (!cached) {
-                pass = InstrumentShader(module_state->spirv->words_, unique_shader_id, has_bindless_descriptors, loc,
-                                        instrumented_spirv);
+                pass =
+                    InstrumentShader(module_state->spirv->words_, unique_shader_id, instrumentation_dsl, loc, instrumented_spirv);
             }
             if (cached || pass) {
                 instrumentation_metadata.unique_shader_id = unique_shader_id;
@@ -1174,7 +1174,7 @@ static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxB
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id,
-                                             bool has_bindless_descriptors, const Location &loc,
+                                             const InstrumentationDescriptorSetLayouts &instrumentation_dsl, const Location &loc,
                                              std::vector<uint32_t> &out_instrumented_spirv) {
     if (input_spirv[0] != spv::MagicNumber) return false;
 
@@ -1194,7 +1194,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.support_non_semantic_info = IsExtEnabled(device_extensions.vk_khr_shader_non_semantic_info);
     module_settings.support_int64 = enabled_features.shaderInt64;
     module_settings.support_memory_model_device_scope = enabled_features.vulkanMemoryModelDeviceScope;
-    module_settings.has_bindless_descriptors = has_bindless_descriptors;
+    module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
 
     spirv::Module module(input_spirv, debug_report, module_settings);
 
