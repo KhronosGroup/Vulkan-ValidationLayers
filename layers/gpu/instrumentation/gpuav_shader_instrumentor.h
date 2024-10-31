@@ -180,8 +180,19 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
   protected:
     bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state, const Location &loc);
-    bool HasBindlessDescriptors(vvl::Pipeline &pipeline_state);
-    bool HasBindlessDescriptors(VkShaderCreateInfoEXT &create_info);
+
+    // When instrumenting, we need information about the array of VkDescriptorSetLayouts. The core issue is for pipelines, we might
+    // have to merge 2 pipeline layouts together (because of GPL) and therefor both ShaderObject and PipelineLayout state objects
+    // don't have a single way to describe their VkDescriptorSetLayouts. If there are multiple shaders, we also want to only build
+    // this information once. This struct is designed to be filled in from both Pipeline and ShaderObject and then passed down to
+    // the SPIR-V Instrumentation, and afterwards we don't need to save it.
+    struct InstrumentationDescriptorSetLayouts {
+        bool has_bindless_descriptors;
+    };
+    void BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
+                                      InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
+    void BuildDescriptorSetLayoutInfo(const VkShaderCreateInfoEXT &create_info,
+                                      InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
 
     template <typename SafeCreateInfo>
     void PreCallRecordPipelineCreationShaderInstrumentation(
@@ -201,8 +212,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     // GPU-AV and DebugPrint are using the same way to do the actual shader instrumentation logic
     // Returns if shader was instrumented successfully or not
-    bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id, bool has_bindless_descriptors,
-                          const Location &loc, std::vector<uint32_t> &out_instrumented_spirv);
+    bool InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id,
+                          const InstrumentationDescriptorSetLayouts &instrumentation_dsl, const Location &loc,
+                          std::vector<uint32_t> &out_instrumented_spirv);
 
   public:
     VkDescriptorSetLayout GetInstrumentationDescriptorSetLayout() { return instrumentation_desc_layout_; }
