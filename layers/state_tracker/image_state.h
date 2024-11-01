@@ -423,6 +423,7 @@ class Surface : public StateObject {
     void UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilities2KHR &surface_caps,
                                  VkPresentModeKHR present_mode);
 
+    bool LastCapabilitiesQueryUsedPresentMode(VkPhysicalDevice phys_dev) const;
     VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(VkPhysicalDevice phys_dev, const void *surface_info_pnext) const;
     VkSurfaceCapabilitiesKHR GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev, VkPresentModeKHR present_mode) const;
     VkSurfacePresentScalingCapabilitiesEXT GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
@@ -455,6 +456,7 @@ class Surface : public StateObject {
         std::optional<std::vector<VkPresentModeKHR>> present_modes;
         std::optional<VkSurfaceCapabilitiesKHR> capabilities;
         std::vector<PresentModeInfo> present_mode_infos;
+        bool last_capabilities_query_used_present_mode = false;
 
         const PresentModeInfo *GetPresentModeInfo(VkPresentModeKHR present_mode) const;
     };

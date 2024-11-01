@@ -777,26 +777,15 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
     PhysDevCache &cache = cache_[phys_dev];
 
     cache.capabilities = surface_caps;
-
-    // The properties that vary per present mode are (check VkSurfacePresentModeEXT documentation):
-    //  VkSurfaceCapabilitiesKHR::minImageCount
-    //  VkSurfaceCapabilitiesKHR::maxImageCount
-    //  VkSurfacePresentScalingCapabilitiesEXT::minScaledImageExtent
-    //  VkSurfacePresentScalingCapabilitiesEXT::maxScaledImageExtent
-    //
-    // Update extent properties since they do not vary per present mode.
-    // NOTE: other present mode independent properties can be added too if needed for validation
-    for (PresentModeInfo &present_mode_info : cache.present_mode_infos) {
-        present_mode_info.surface_capabilities.currentExtent = surface_caps.currentExtent;
-        present_mode_info.surface_capabilities.minImageExtent = surface_caps.minImageExtent;
-        present_mode_info.surface_capabilities.maxImageExtent = surface_caps.maxImageExtent;
-    }
+    cache.last_capabilities_query_used_present_mode = false;
 }
 
 void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilities2KHR &surface_caps,
                                       VkPresentModeKHR present_mode) {
     auto guard = Lock();
     auto &cache = cache_[phys_dev];
+    cache.last_capabilities_query_used_present_mode = true;
+
     // Get entry for a given presentation mode
     PresentModeInfo *info = nullptr;
     for (auto &cur_info : cache.present_mode_infos) {
@@ -821,6 +810,13 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
         info->compatible_present_modes.emplace(compat_modes->pPresentModes,
                                                compat_modes->pPresentModes + compat_modes->presentModeCount);
     }
+}
+
+bool Surface::LastCapabilitiesQueryUsedPresentMode(VkPhysicalDevice phys_dev) const {
+    if (auto guard = Lock(); auto cache = GetPhysDevCache(phys_dev)) {
+        return cache->last_capabilities_query_used_present_mode;
+    }
+    return false;
 }
 
 VkSurfaceCapabilitiesKHR Surface::GetSurfaceCapabilities(VkPhysicalDevice phys_dev, const void *surface_info_pnext) const {
