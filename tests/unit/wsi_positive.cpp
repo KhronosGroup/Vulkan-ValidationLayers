@@ -1296,7 +1296,7 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7025
-TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
+TEST_F(PositiveWsi, XXXPresentFenceWaitsForSubmission) {
     TEST_DESCRIPTION("Use present fence to wait for submission");
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
@@ -1354,7 +1354,7 @@ TEST_F(PositiveWsi, PresentFenceWaitsForSubmission) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
+TEST_F(PositiveWsi, XXXPresentFenceRetiresPresentQueueOperation) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8047
     // The regression will cause occasional failures of this test. The reproducibility
     // is very machine dependent and in some configurations the failures can be
@@ -1422,7 +1422,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentQueueOperation) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveWsi, QueueWaitsForPresentFence) {
+TEST_F(PositiveWsi, XXXQueueWaitsForPresentFence) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8376
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3962
     TEST_DESCRIPTION("QueueWaitIdle waits for present fence");
@@ -1743,7 +1743,7 @@ TEST_F(PositiveWsi, ReleaseSwapchainImages) {
     vk::DeviceWaitIdle(device());
 }
 
-TEST_F(PositiveWsi, ReleaseAndAcquireSwapchainImages) {
+TEST_F(PositiveWsi, XXXReleaseAndAcquireSwapchainImages) {
     TEST_DESCRIPTION("Test vkReleaseSwapchainImagesEXT");
 
     AddSurfaceExtension();

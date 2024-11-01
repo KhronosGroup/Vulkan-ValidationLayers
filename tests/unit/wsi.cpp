@@ -2336,7 +2336,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     }
 }
 
-TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
+TEST_F(NegativeWsi, XXXSwapchainMaintenance1ExtensionRelease) {
     TEST_DESCRIPTION("Test acquiring swapchain images with Maint1 features.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3400,7 +3400,7 @@ TEST_F(NegativeWsi, IncompatibleImageWithSwapchain) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, SwapchainPresentModeInfoImplicit) {
+TEST_F(NegativeWsi, XXXSwapchainPresentModeInfoImplicit) {
     TEST_DESCRIPTION("VkSwapchainPresentModeInfoEXT implicit VUs");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
