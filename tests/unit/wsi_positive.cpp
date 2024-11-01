@@ -1145,42 +1145,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    RETURN_IF_SKIP(InitSurface());
-    InitSwapchainInfo();
-
-    // Implementations must support.
-    // Also most likely to have lower minImageCount than reported for other present modes
-    // (although this is implementation dependant)
-    const auto present_mode = VK_PRESENT_MODE_FIFO_KHR;
-
-    VkSurfacePresentModeEXT surface_present_mode = vku::InitStructHelper();
-    surface_present_mode.presentMode = present_mode;
-    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&surface_present_mode);
-    surface_info.surface = m_surface;
-
-    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper();
-    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(m_device->Physical(), &surface_info, &surface_caps);
-
-    VkSwapchainPresentModesCreateInfoEXT swapchain_present_mode_create_info = vku::InitStructHelper();
-    swapchain_present_mode_create_info.presentModeCount = 1;
-    swapchain_present_mode_create_info.pPresentModes = &present_mode;
-    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&swapchain_present_mode_create_info);
-    swapchain_create_info.surface = m_surface;
-    swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
-    swapchain_create_info.imageFormat = m_surface_formats[0].format;
-    swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
-                                         surface_caps.surfaceCapabilities.minImageExtent.height};
-    swapchain_create_info.imageArrayLayers = 1;
-    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
-    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    swapchain_create_info.compositeAlpha = m_surface_composite_alpha;
-    swapchain_create_info.presentMode = present_mode;
-    swapchain_create_info.clipped = VK_FALSE;
-    swapchain_create_info.oldSwapchain = 0;
-
-    m_swapchain.Init(*m_device, swapchain_create_info);
+    RETURN_IF_SKIP(InitSwapchain());
 }
 
 TEST_F(PositiveWsi, RegisterDisplayEvent) {
