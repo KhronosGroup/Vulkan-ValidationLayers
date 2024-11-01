@@ -1191,6 +1191,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
             }
             const uint32_t resolve_attachment = subpass->pResolveAttachments[0].attachment;
             const uint32_t color_attachment = subpass->pColorAttachments[0].attachment;
+            if (resolve_attachment == VK_ATTACHMENT_UNUSED || color_attachment == VK_ATTACHMENT_UNUSED) {
+                continue;
+            }
             const uint64_t attachment_external_format =
                 GetExternalFormat(render_pass_create_info->pAttachments[resolve_attachment].pNext);
             auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
