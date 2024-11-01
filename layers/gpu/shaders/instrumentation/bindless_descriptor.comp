@@ -30,19 +30,6 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexLUT {
-    // BindingLayout[0]
-    uint num_bindings;
-    uint pad; // always zero, used to keep things aligned
-
-    // BindingLayout[1] - BindingLayout[N]
-    // struct glsl::BindingLayout {
-    //   x: count
-    //   y: state_start
-    // }
-    uvec2 data[];
-};
-
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType {
     // struct glsl::DescriptorState {
     //   x: id
@@ -57,7 +44,6 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
 };
 
 struct DescriptorSetRecord {
-    DescriptorIndexLUT descriptor_index_lut;
     DescriptorSetType ds_type;
     uvec2 unused_descriptor_index_post_process;
 };
@@ -68,26 +54,23 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor
 } bindless_state_buffer;
 
 bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const uint desc_set,
-                              const uint binding, const uint desc_index, const uint byte_offset) {
+                              const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
     uint param_0 = 0u;
     uint param_1 = 0u;
     do {
-        DescriptorIndexLUT descriptor_index_lut = bindless_state_buffer.desc_sets[desc_set].descriptor_index_lut;
-
-        uvec2 binding_state = descriptor_index_lut.data[binding];
-        if (desc_index >= binding_state.x) {
+        if (desc_index >= binding_layout_size) {
             error = kErrorSubCodeBindlessDescriptorBounds;
-            param_0 = binding_state.x;
+            param_0 = binding_layout_size;
             break;
         }
 
         DescriptorSetType ds_type = bindless_state_buffer.desc_sets[desc_set].ds_type;
 
         // check if the descriptor was ever initialized
-        uint state_index = binding_state.y + desc_index;
-        uint desc_id = ds_type.data[state_index].x & kDebugInputBindlessSkipId;
-        uint desc_type = (ds_type.data[state_index].x & ~kDebugInputBindlessSkipId) >> kDescBitShift;
+        uint binding_layout_index = binding_layout_offset + desc_index;
+        uint desc_id = ds_type.data[binding_layout_index].x & kDebugInputBindlessSkipId;
+        uint desc_type = (ds_type.data[binding_layout_index].x & ~kDebugInputBindlessSkipId) >> kDescBitShift;
         if (desc_id == 0u) {
             error = kErrorSubCodeBindlessDescriptorUninit;
             break;
@@ -106,7 +89,7 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         }
         if (desc_type == kImageSamplerDesc) {
             // check sampler
-            desc_id = ds_type.data[state_index].y;
+            desc_id = ds_type.data[binding_layout_index].y;
             if (desc_id == 0u) {
                 error = kErrorSubCodeBindlessDescriptorUninit;
                 break;
@@ -121,7 +104,7 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             }
         } else if (desc_type == kTexelDesc || desc_type == kBufferDesc) {
             // check that the offset is in bounds
-            uint resource_size = ds_type.data[state_index].y;
+            uint resource_size = ds_type.data[binding_layout_index].y;
             if (byte_offset >= resource_size) {
                 error = kErrorSubCodeBindlessDescriptorOOB;
                 param_0 = byte_offset;

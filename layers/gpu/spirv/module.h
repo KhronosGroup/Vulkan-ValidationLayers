@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <vector>
 #include "link.h"
+#include "interface.h"
 #include "function_basic_block.h"
 #include "type_manager.h"
 #include "containers/custom_containers.h"
@@ -49,7 +50,8 @@ struct Settings {
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings);
+    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
+           const std::vector<std::vector<BindingLayout>>& binding_layout_lut);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -128,6 +130,9 @@ class Module {
     DebugReport* debug_report_ = nullptr;
     void InternalWarning(const char* tag, const char* message);
     void InternalError(const char* tag, const char* message);
+
+    // < set, [ bindings ] >
+    const std::vector<std::vector<BindingLayout>>& binding_layout_lut_;
 };
 
 }  // namespace spirv

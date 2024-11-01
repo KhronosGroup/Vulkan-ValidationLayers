@@ -2306,3 +2306,118 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipeline) {
+    TEST_DESCRIPTION(
+        "use VARIABLE_DESCRIPTOR_COUNT_BIT and allocate after creating the pipeline (so the pipeline layout has the full count "
+        "still).");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkDescriptorBindingFlags flags[3] = {
+        0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 3;
+    flags_create_info.pBindingFlags = flags;
+
+    VkDescriptorSetLayoutBinding binding[3] = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+    ds_layout_ci.bindingCount = 3;
+    ds_layout_ci.pBindings = &binding[0];
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0) uniform UBO { uint in_buffer; };
+        layout(set=0, binding=3) buffer  SSBO_B { float x; } B[4];
+        layout(set=0, binding=5) buffer  SSBO_C { float x; } C[];
+        void main(){
+           C[in_buffer].x = B[2].x;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    VkDescriptorPoolSize pool_sizes[3] = {
+        {binding[0].descriptorType, binding[0].descriptorCount},
+        {binding[1].descriptorType, binding[1].descriptorCount},
+        {binding[2].descriptorType, binding[2].descriptorCount},
+    };
+    VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper();
+    dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    dspci.poolSizeCount = 3;
+    dspci.pPoolSizes = &pool_sizes[0];
+    dspci.maxSets = 1;
+    vkt::DescriptorPool pool(*m_device, dspci);
+
+    uint32_t desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
+    variable_count.descriptorSetCount = 1;
+    variable_count.pDescriptorCounts = &desc_counts;
+
+    VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&variable_count);
+    ds_alloc_info.descriptorPool = pool.handle();
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
+
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
+    in_buffer_ptr[0] = 4;
+    in_buffer.Memory().Unmap();
+
+    vkt::Buffer storage_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorBufferInfo desc_buffer_infos[2] = {{in_buffer.handle(), 0, VK_WHOLE_SIZE},
+                                                   {storage_buffer.handle(), 0, VK_WHOLE_SIZE}};
+
+    VkWriteDescriptorSet descriptor_write[3] = {};
+    descriptor_write[0] = vku::InitStructHelper();
+    descriptor_write[0].dstSet = ds;
+    descriptor_write[0].dstBinding = 0;
+    descriptor_write[0].descriptorCount = 1;
+    descriptor_write[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write[0].pBufferInfo = &desc_buffer_infos[0];
+    descriptor_write[1] = descriptor_write[0];
+    descriptor_write[1].dstBinding = 3;
+    descriptor_write[1].dstArrayElement = 2;
+    descriptor_write[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write[1].pBufferInfo = &desc_buffer_infos[1];
+    descriptor_write[2] = descriptor_write[1];
+    descriptor_write[2].dstBinding = 5;
+    descriptor_write[2].dstArrayElement = 4;
+    vk::UpdateDescriptorSets(device(), 3, descriptor_write, 0, nullptr);
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &ds, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}

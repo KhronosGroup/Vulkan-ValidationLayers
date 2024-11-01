@@ -52,10 +52,10 @@ namespace glsl {
 // Every descriptor set has various BDA pointers to data from the CPU
 // Not all GPU-AV code uses each, but group together for ease of managing the memory
 struct DescriptorSetRecord {
-    VkDeviceAddress descriptor_index_lut;
     // The type information will change with UpdateAfterBind so will need to update this before submitting the to the queue
-    VkDeviceAddress ds_type;
-    VkDeviceAddress descriptor_index_post_process;
+    VkDeviceAddress ds_type;  // input data
+
+    VkDeviceAddress descriptor_index_post_process;  // output data
 };
 
 // Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
@@ -65,9 +65,11 @@ struct DescriptorStateSSBO {
 };
 
 // Represented as a uvec2 in the shader
+// TODO - Currently duplicated as needed by various parts
+// see interface.h for details
 struct BindingLayout {
+    uint32_t start;
     uint32_t count;
-    uint32_t state_start;
 };
 
 // Each indexing into a descriptor we have a 32-bit slot to mark what happend on the GPU

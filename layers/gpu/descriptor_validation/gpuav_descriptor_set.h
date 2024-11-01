@@ -21,6 +21,7 @@
 #include <mutex>
 #include "state_tracker/descriptor_sets.h"
 #include "gpu/resources/gpuav_resources.h"
+#include "gpu/spirv/interface.h"
 
 namespace gpuav {
 class Validator;
@@ -35,7 +36,6 @@ class DescriptorSet : public vvl::DescriptorSet {
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
     void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
 
-    VkDeviceAddress GetIndexLUTAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
     bool HasPostProcessBuffer() const { return !post_process_block_.Destroyed(); }
@@ -46,11 +46,14 @@ class DescriptorSet : public vvl::DescriptorSet {
     bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
 
   private:
+    void BuildBindingLayouts();
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
     DeviceMemoryBlock post_process_block_;
 
-    DeviceMemoryBlock layout_block_;
+    std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
+    // TODO - We probably should just use GetTotalDescriptorCount() but need to confirm will still work with Inline UBO
+    uint32_t total_descriptor_count_;
 
     // Since we will re-bind the same descriptor set many times, keeping a version allows us to know if things have changed and
     // worth re-saving the new information

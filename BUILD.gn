@@ -206,6 +206,7 @@ vvl_sources = [
   "layers/gpu/spirv/function_basic_block.h",
   "layers/gpu/spirv/instruction.cpp",
   "layers/gpu/spirv/instruction.h",
+  "layers/gpu/spirv/interface.h",
   "layers/gpu/spirv/link.h",
   "layers/gpu/spirv/module.cpp",
   "layers/gpu/spirv/module.h",

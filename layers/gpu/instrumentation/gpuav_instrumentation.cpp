@@ -464,6 +464,8 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
     bool error_found = true;
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
+    const uint32_t set_num = error_record[kInstBindlessBuffOOBDescSetOffset];
+    const uint32_t binding_num = error_record[kInstBindlessBuffOOBDescBindingOffset];
 
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeBindlessDescriptorBounds: {
@@ -475,9 +477,17 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorUninit: {
+            const auto &dsl = descriptor_sets[set_num].state->Layout();
             strm << "(set = " << error_record[kInstBindlessUninitDescSetOffset]
                  << ", binding = " << error_record[kInstBindlessUninitBindingOffset] << ") Descriptor index "
                  << error_record[kInstBindlessUninitDescIndexOffset] << " is uninitialized.";
+
+            const VkDescriptorBindingFlags binding_flags = dsl.GetDescriptorBindingFlagsFromBinding(binding_num);
+            if (binding_flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+                strm << " VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT was used and the original descriptorCount ("
+                     << dsl.GetDescriptorCountFromBinding(binding_num)
+                     << ") could have been reduced during AllocateDescriptorSets.";
+            }
             out_vuid_msg = vuid.invalid_descriptor_08114;
             error_found = true;
         } break;
@@ -489,8 +499,6 @@ bool LogMessageInstBindlessDescriptor(Validator &gpuav, const uint32_t *error_re
             error_found = true;
         } break;
         case kErrorSubCodeBindlessDescriptorOOB: {
-            const uint32_t set_num = error_record[kInstBindlessBuffOOBDescSetOffset];
-            const uint32_t binding_num = error_record[kInstBindlessBuffOOBDescBindingOffset];
             const uint32_t desc_index = error_record[kInstBindlessBuffOOBDescIndexOffset];
             const uint32_t size = error_record[kInstBindlessBuffOOBBuffSizeOffset];
             const uint32_t offset = error_record[kInstBindlessBuffOOBBuffOffOffset];
@@ -780,7 +788,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         // If we somehow can't find our state, we can still report our error message
         std::vector<Instruction> instructions;
         if (instrumented_shader && !instrumented_shader->instrumented_spirv.empty()) {
-            spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
+            ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
         }
 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
