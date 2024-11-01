@@ -307,6 +307,11 @@ class BaseGenerator(OutputGenerator):
                     for structName in dict[required][group]:
                         isAlias = structName in self.structAliasMap
                         structName = self.structAliasMap[structName] if isAlias else structName
+                        # An EXT struct can alias a KHR struct,
+                        # that in turns aliaes a core struct
+                        # => Try to propagate aliasing, it can safely result in a no-op
+                        isAlias = structName in self.structAliasMap
+                        structName = self.structAliasMap[structName] if isAlias else structName
                         if structName in self.vk.structs:
                             struct = self.vk.structs[structName]
                             struct.extensions.extend([extension] if extension not in struct.extensions else [])

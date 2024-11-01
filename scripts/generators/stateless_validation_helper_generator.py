@@ -352,20 +352,35 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
         #  VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT
         root = self.registry.reg
+        
+        ext_to_promoted_ext_dict = dict()
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
-                extensionName = extension.get('name')
+                extension_name = extension.get('name')
+                if extension_name not in ext_to_promoted_ext_dict.keys():
+                    ext_to_promoted_ext_dict[extension_name] = set()
                 promotedTo = extension.get('promotedto')
+                if promotedTo is not None:
+                    ext_to_promoted_ext_dict[extension_name] = promotedTo
+                else:
+                    ext_to_promoted_ext_dict[extension_name] = None
+        
+        for extensions in root.findall('extensions'):
+            for extension in extensions.findall('extension'):
+                extension_name = extension.get('name')
+                promoted_ext = ext_to_promoted_ext_dict[extension_name]
+                while promoted_ext is not None and not 'VK_VERSION' in promoted_ext:
+                    promoted_ext = ext_to_promoted_ext_dict[promoted_ext]
                 # TODO Issue 5103 - this is being used to remove false positive currently
-                promotedToCore = promotedTo is not None and 'VK_VERSION' in promotedTo
+                promoted_to_core = promoted_ext is not None and 'VK_VERSION' in promoted_ext
 
                 for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
                     if (entry.get('comment') is None or 'typo' not in entry.get('comment')):
                         alias = entry.get('alias')
-                        if (alias is not None and promotedToCore):
+                        if (alias is not None and promoted_to_core):
                             if (alias not in self.stype_version_dict.keys()):
                                 self.stype_version_dict[alias] = set()
-                            self.stype_version_dict[alias].add(extensionName)
+                            self.stype_version_dict[alias].add(extension_name)
 
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
