@@ -21,6 +21,7 @@
 #include "generated/chassis.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
+#include "gpu/spirv/interface.h"
 
 #include <vector>
 
@@ -187,11 +188,15 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     // this information once. This struct is designed to be filled in from both Pipeline and ShaderObject and then passed down to
     // the SPIR-V Instrumentation, and afterwards we don't need to save it.
     struct InstrumentationDescriptorSetLayouts {
-        bool has_bindless_descriptors;
+        bool has_bindless_descriptors = false;
+        // < set , [ bindings ] >
+        std::vector<std::vector<spirv::BindingLayout>> binding_layout_lut;
     };
     void BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
     void BuildDescriptorSetLayoutInfo(const VkShaderCreateInfoEXT &create_info,
+                                      InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
+    void BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout &set_layout_state, const uint32_t set_layout_index,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
 
     template <typename SafeCreateInfo>

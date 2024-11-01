@@ -30,19 +30,6 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexLUT {
-    // BindingLayout[0]
-    uint num_bindings;
-    uint pad; // always zero, used to keep things aligned
-
-    // BindingLayout[1] - BindingLayout[N]
-    // struct glsl::BindingLayout {
-    //   x: count
-    //   y: state_start
-    // }
-    uvec2 data[];
-};
-
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexPostProcess {
     // size of descriptor count (including all array elements)
     // Used to mark which indexes were accessed
@@ -50,7 +37,6 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
 };
 
 struct DescriptorSetRecord {
-    DescriptorIndexLUT descriptor_index_lut; // TODO - remove with LUT send into instrumentation of shader
     uvec2 unused_ds_type;
     DescriptorIndexPostProcess descriptor_index_post_process;
 };
@@ -60,15 +46,12 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
-void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index) {
-    DescriptorIndexLUT descriptor_index_lut = bindless_state_buffer.desc_sets[desc_set].descriptor_index_lut;
-    uvec2 binding_state = descriptor_index_lut.data[binding];
-    uint state_index = binding_state.y + desc_index;
-
+void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index, const uint binding_layout_offset) {
     DescriptorIndexPostProcess descriptor_index_post_process = bindless_state_buffer.desc_sets[desc_set].descriptor_index_post_process;
+    uint binding_layout_index = binding_layout_offset + desc_index;
     // The index has been accessed, write out for post processing
     //
     // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
     // ex - desc_sets[0].descriptor_index_post_process == desc_sets[1].descriptor_index_post_process
-    descriptor_index_post_process.slot[state_index] = kDescriptorSetWrittenMask | desc_set;
+    descriptor_index_post_process.slot[binding_layout_index] = kDescriptorSetWrittenMask | desc_set;
 }

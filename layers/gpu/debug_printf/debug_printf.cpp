@@ -216,7 +216,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         }
 
         std::vector<Instruction> instructions;
-        spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
+        ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);

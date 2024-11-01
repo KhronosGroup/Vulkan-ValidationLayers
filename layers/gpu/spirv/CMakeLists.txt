@@ -37,6 +37,7 @@ target_sources(gpu_av_spirv PRIVATE
     instruction.cpp
     function_basic_block.h
     function_basic_block.cpp
+    interface.h
     link.h
     module.h
     module.cpp

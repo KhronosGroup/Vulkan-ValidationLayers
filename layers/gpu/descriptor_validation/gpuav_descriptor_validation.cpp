@@ -117,7 +117,6 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             }
         }
 
-        ssbo_block_ptr->desc_sets[i].descriptor_index_lut = ds_state.GetIndexLUTAddress(gpuav, loc);
         if (need_post_processing) {
             ssbo_block_ptr->desc_sets[i].descriptor_index_post_process = ds_state.GetPostProcessBuffer(gpuav, loc);
         }

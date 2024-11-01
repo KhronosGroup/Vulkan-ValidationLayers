@@ -46,13 +46,17 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
+    auto binding_layout = module_.binding_layout_lut_[descriptor_set_][descriptor_binding_];
+    const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
+
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(), descriptor_index_id}, inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(),
+                             descriptor_index_id, binding_layout_offset.Id()},
+                            inst_it);
 }
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {

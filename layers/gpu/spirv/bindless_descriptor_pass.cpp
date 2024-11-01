@@ -105,6 +105,10 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
         descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
+    auto binding_layout = module_.binding_layout_lut_[descriptor_set_][descriptor_binding_];
+    const Constant& binding_layout_size = module_.type_manager_.GetConstantUInt32(binding_layout.count);
+    const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
+
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
@@ -112,7 +116,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_},
+         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, binding_layout_size.Id(), binding_layout_offset.Id()},
         inst_it);
 
     return function_result;

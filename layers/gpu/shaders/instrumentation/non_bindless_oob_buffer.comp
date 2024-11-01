@@ -30,19 +30,6 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexLUT {
-    // BindingLayout[0]
-    uint num_bindings;
-    uint pad; // always zero, used to keep things aligned
-
-    // BindingLayout[1] - BindingLayout[N]
-    // struct glsl::BindingLayout {
-    //   x: count
-    //   y: state_start
-    // }
-    uvec2 data[];
-};
-
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType {
     // struct glsl::DescriptorState {
     //   x: id
@@ -54,7 +41,6 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
 
 struct DescriptorSetRecord {
-    DescriptorIndexLUT descriptor_index_lut;
     DescriptorSetType ds_type;
     uvec2 unused_descriptor_index_post_process;
 };
@@ -65,7 +51,7 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor
 } bindless_state_buffer;
 
 bool inst_non_bindless_oob_buffer(const uint inst_num, const uvec4 stage_info, const uint desc_array_size,
-                        const uint desc_set, const uint binding, const uint desc_index, const uint byte_offset) {
+                        const uint desc_set, const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
     uint error = 0u;
     uint param_0 = 0u;
     uint param_1 = 0u;
@@ -77,15 +63,12 @@ bool inst_non_bindless_oob_buffer(const uint inst_num, const uvec4 stage_info, c
             break;
         }
 
-        DescriptorIndexLUT descriptor_index_lut = bindless_state_buffer.desc_sets[desc_set].descriptor_index_lut;
-        uvec2 binding_state = descriptor_index_lut.data[binding];
-
         DescriptorSetType ds_type = bindless_state_buffer.desc_sets[desc_set].ds_type;
 
-        uint state_index = binding_state.y + desc_index;
+        uint binding_layout_index = binding_layout_offset + desc_index;
 
         // check that the offset is in bounds
-        uint resource_size = ds_type.data[state_index].y;
+        uint resource_size = ds_type.data[binding_layout_index].y;
         if (byte_offset >= resource_size) {
             error = kErrorSubCodeNonBindlessOOBBufferBounds;
             param_0 = byte_offset;

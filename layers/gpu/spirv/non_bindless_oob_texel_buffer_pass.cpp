@@ -60,15 +60,18 @@ uint32_t NonBindlessOOBTexelBufferPass::CreateFunctionCall(BasicBlock& block, In
     // TODO - This assumes no depth/arrayed/ms from RequiresInstrumentation
     descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
 
+    auto binding_layout = module_.binding_layout_lut_[descriptor_set_][descriptor_binding_];
+    const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
+
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id,
-         descriptor_array_size_id_, set_constant.Id(), binding_constant.Id(), descriptor_index_id, descriptor_offset_id_},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {bool_type, function_result, function_def, injection_data.inst_position_id,
+                             injection_data.stage_info_id, descriptor_array_size_id_, set_constant.Id(), binding_constant.Id(),
+                             descriptor_index_id, descriptor_offset_id_, binding_layout_offset.Id()},
+                            inst_it);
 
     return function_result;
 }

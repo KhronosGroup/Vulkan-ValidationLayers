@@ -21,6 +21,15 @@ static constexpr uint32_t kDefaultShaderId = 23;
 static constexpr uint32_t kInstDefaultDescriptorSet = 3;
 static constexpr uint32_t kInstDefaultDebugPrintfBinding = 0;
 
+// While desireable for the instrumentation to be agnostic of the incoming pipeline, we do need to know how the descriptors are laid
+// out in the descriptor set layout
+//
+// This represents a shader that looks like
+//   layout(set = 0, binding = 0) type a[2];
+//   layout(set = 0, binding = 1) type b;
+//   layout(set = 0, binding = 2) type c[2];
+const std::vector<std::vector<gpuav::spirv::BindingLayout>> kBindingLayoutLUT = {{{0, 2}, {2, 1}, {3, 2}}};
+
 static bool timer = false;
 static bool print_debug_info = false;
 static bool all_passes = false;
@@ -160,7 +169,7 @@ int main(int argc, char** argv) {
     // for all passes, test worst case of using bindless
     module_settings.has_bindless_descriptors = all_passes || bindless_descriptor_pass;
 
-    gpuav::spirv::Module module(spirv_data, nullptr, module_settings);
+    gpuav::spirv::Module module(spirv_data, nullptr, module_settings, kBindingLayoutLUT);
     if (all_passes || bindless_descriptor_pass) {
         module.RunPassBindlessDescriptor();
     }
