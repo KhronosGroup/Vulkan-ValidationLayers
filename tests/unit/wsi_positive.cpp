@@ -1142,6 +1142,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
     TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
 
     AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
