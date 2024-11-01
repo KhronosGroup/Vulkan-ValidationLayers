@@ -368,7 +368,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     }
 #endif
     VkSurfacePresentModeEXT present_mode_info = vku::InitStructHelper();
-    if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
+    if (surface_state->IsLastCapabilityQueryUsedPresentMode(physical_device_state->VkHandle())) {
         present_mode_info.presentMode = create_info.presentMode;
         present_mode_info.pNext = surface_info_pnext;
         surface_info_pnext = &present_mode_info;

@@ -775,29 +775,16 @@ const Surface::PhysDevCache *Surface::GetPhysDevCache(VkPhysicalDevice phys_dev)
 void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &surface_caps) {
     auto guard = Lock();
     PhysDevCache &cache = cache_[phys_dev];
-
     cache.capabilities = surface_caps;
-
-    // The properties that vary per present mode are (check VkSurfacePresentModeEXT documentation):
-    //  VkSurfaceCapabilitiesKHR::minImageCount
-    //  VkSurfaceCapabilitiesKHR::maxImageCount
-    //  VkSurfacePresentScalingCapabilitiesEXT::minScaledImageExtent
-    //  VkSurfacePresentScalingCapabilitiesEXT::maxScaledImageExtent
-    //
-    // Update extent properties since they do not vary per present mode.
-    // NOTE: other present mode independent properties can be added too if needed for validation
-    for (PresentModeInfo &present_mode_info : cache.present_mode_infos) {
-        present_mode_info.surface_capabilities.currentExtent = surface_caps.currentExtent;
-        present_mode_info.surface_capabilities.minImageExtent = surface_caps.minImageExtent;
-        present_mode_info.surface_capabilities.maxImageExtent = surface_caps.maxImageExtent;
-    }
+    cache.last_capability_query_used_present_mode = false;
 }
 
 void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilities2KHR &surface_caps,
                                       VkPresentModeKHR present_mode) {
     auto guard = Lock();
     auto &cache = cache_[phys_dev];
-    // Get entry for a given presentation mode
+
+    // Get entry for the given presentation mode
     PresentModeInfo *info = nullptr;
     for (auto &cur_info : cache.present_mode_infos) {
         if (cur_info.present_mode == present_mode) {
@@ -810,6 +797,7 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
         info = &cache.present_mode_infos.back();
         info->present_mode = present_mode;
     }
+
     // Update entry
     info->surface_capabilities = surface_caps.surfaceCapabilities;
     const auto *present_scaling_caps = vku::FindStructInPNextChain<VkSurfacePresentScalingCapabilitiesEXT>(surface_caps.pNext);
@@ -821,6 +809,14 @@ void Surface::UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurface
         info->compatible_present_modes.emplace(compat_modes->pPresentModes,
                                                compat_modes->pPresentModes + compat_modes->presentModeCount);
     }
+    cache.last_capability_query_used_present_mode = true;
+}
+
+bool Surface::IsLastCapabilityQueryUsedPresentMode(VkPhysicalDevice phys_dev) const {
+    if (auto guard = Lock(); auto cache = GetPhysDevCache(phys_dev)) {
+        return cache->last_capability_query_used_present_mode;
+    }
+    return false;
 }
 
 VkSurfaceCapabilitiesKHR Surface::GetSurfaceCapabilities(VkPhysicalDevice phys_dev, const void *surface_info_pnext) const {
