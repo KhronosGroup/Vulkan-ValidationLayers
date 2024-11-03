@@ -50,7 +50,7 @@ There are currently 3 environment variables that are used for settings in Debug 
 To use Debug Printf in GLSL shaders, you need to enable the GL_EXT_debug_printf extension.
 Then add debugPrintfEXT calls at the locations in your shader where you want to print
 messages and/or values
-Here is a very simple example:
+Here is a very simple example ([Try Online](https://godbolt.org/z/MnYGj8azM)):
 ```
 #version 450
 #extension GL_EXT_debug_printf : enable
@@ -68,7 +68,7 @@ in a vertex shader and a triangle was drawn, it would be printed 3 times.
 
 ## Using Debug Printf in HLSL Shaders
 
-In HLSL, debug printf can be invoked as follows:
+In HLSL, debug printf can be invoked as follows ([Try Online](https://godbolt.org/z/3ThznsdK8)):
 ```
 void main() {
     float myfloat = 3.1415;
