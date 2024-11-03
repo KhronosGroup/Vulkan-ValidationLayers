@@ -55,6 +55,25 @@ VkImageMemoryBarrier WsiTest::TransitionToPresent(VkImage swapchain_image, VkIma
     return transition;
 }
 
+std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup() {
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+    if (physical_device_group_count == 0) {
+        return {};
+    }
+    std::vector<VkPhysicalDeviceGroupProperties> physical_device_groups(physical_device_group_count,
+                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_groups.data());
+    for (const auto &physical_device_group : physical_device_groups) {
+        for (uint32_t k = 0; k < physical_device_group.physicalDeviceCount; k++) {
+            if (physical_device_group.physicalDevices[k] == Gpu()) {
+                return physical_device_group;
+            }
+        }
+    }
+    return {};
+}
+
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 void WsiTest::InitWaylandContext(WaylandContext &context) {
     context.display = wl_display_connect(nullptr);
@@ -308,19 +327,14 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
 
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
-
-    if (physical_device_group_count == 0) {
-        GTEST_SKIP() << "physical_device_group_count is 0, skipping test";
+    const auto physical_device_group = FindPhysicalDeviceGroup();
+    if (!physical_device_group.has_value()) {
+        GTEST_SKIP() << "cannot find physical device group that contains selected physical device";
     }
 
-    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
-                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
-    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
-    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    create_device_pnext.physicalDeviceCount = physical_device_group->physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group->physicalDevices;
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     InitRenderTarget();
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT));
