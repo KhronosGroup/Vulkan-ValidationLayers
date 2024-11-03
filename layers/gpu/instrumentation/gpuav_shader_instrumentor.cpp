@@ -25,7 +25,6 @@
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpu/shaders/gpuav_error_codes.h"
-#include "spirv-tools/optimizer.hpp"
 #include "utils/vk_layer_utils.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/pipeline_state.h"
@@ -1227,45 +1226,6 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                  << instrumented_error << " Proceeding with non instrumented shader.";
             InternalError(device, loc, strm.str().c_str());
             return false;
-        }
-    }
-
-    // Run Dead Code elimination
-    // If DebugPrintf is the only thing, there will be nothing to eliminate so don't waste time on it
-    if (!gpuav_settings.debug_printf_only) {
-        using namespace spvtools;
-        OptimizerOptions opt_options;
-        opt_options.set_run_validator(false);
-        Optimizer dce_pass(target_env);
-
-        const MessageConsumer gpu_console_message_consumer =
-            [this, loc](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
-            switch (level) {
-                case SPV_MSG_FATAL:
-                case SPV_MSG_INTERNAL_ERROR:
-                case SPV_MSG_ERROR:
-                    this->LogError("UNASSIGNED-GPU-Assisted", this->device, loc,
-                                   "Error during shader instrumentation: line %zu: %s", position.index, message);
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        dce_pass.SetMessageConsumer(gpu_console_message_consumer);
-        // Call CreateAggressiveDCEPass with preserve_interface == true
-        dce_pass.RegisterPass(CreateAggressiveDCEPass(true));
-        if (!dce_pass.Run(out_instrumented_spirv.data(), out_instrumented_spirv.size(), &out_instrumented_spirv, opt_options)) {
-            InternalError(device, loc,
-                          "Failure to run spirv-opt DCE on instrumented shader. Proceeding with non-instrumented shader.");
-            return false;
-        }
-
-        if (gpuav_settings.debug_dump_instrumented_shaders) {
-            std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_opt.spv";
-            std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-            debug_file.write(reinterpret_cast<char *>(out_instrumented_spirv.data()),
-                             static_cast<std::streamsize>(out_instrumented_spirv.size() * sizeof(uint32_t)));
         }
     }
 
