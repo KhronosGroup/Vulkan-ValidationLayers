@@ -257,19 +257,14 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
-
-    if (physical_device_group_count == 0) {
-        GTEST_SKIP() << "physical_device_group_count is 0, skipping test";
+    const auto physical_device_group = FindPhysicalDeviceGroup();
+    if (!physical_device_group.has_value()) {
+        GTEST_SKIP() << "cannot find physical device group that contains selected physical device";
     }
 
-    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
-                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
-    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
-    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    create_device_pnext.physicalDeviceCount = physical_device_group->physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group->physicalDevices;
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     InitRenderTarget();
     RETURN_IF_SKIP(InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT));
@@ -1119,19 +1114,14 @@ TEST_F(NegativeWsi, DeviceMask) {
 
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
-
-    if (physical_device_group_count == 0) {
-        GTEST_SKIP() << "physical_device_group_count is 0";
+    const auto physical_device_group = FindPhysicalDeviceGroup();
+    if (!physical_device_group.has_value()) {
+        GTEST_SKIP() << "cannot find physical device group that contains selected physical device";
     }
 
-    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
-                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
-    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
-    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    create_device_pnext.physicalDeviceCount = physical_device_group->physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group->physicalDevices;
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
     InitRenderTarget();
     RETURN_IF_SKIP(InitSwapchain());
@@ -1220,7 +1210,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     m_errorMonitor->VerifyFound();
 
     dev_grp_rp_info.deviceMask = 0x00000001;
-    dev_grp_rp_info.deviceRenderAreaCount = physical_device_group[0].physicalDeviceCount + 1;
+    dev_grp_rp_info.deviceRenderAreaCount = physical_device_group->physicalDeviceCount + 1;
     std::vector<VkRect2D> device_render_areas(dev_grp_rp_info.deviceRenderAreaCount, m_renderPassBeginInfo.renderArea);
     dev_grp_rp_info.pDeviceRenderAreas = device_render_areas.data();
 
@@ -1231,7 +1221,7 @@ TEST_F(NegativeWsi, DeviceMask) {
     // Test vk::CmdSetDeviceMask()
     vk::CmdSetDeviceMask(m_command_buffer.handle(), 0x00000001);
 
-    dev_grp_rp_info.deviceRenderAreaCount = physical_device_group[0].physicalDeviceCount;
+    dev_grp_rp_info.deviceRenderAreaCount = physical_device_group->physicalDeviceCount;
     vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDeviceMask-deviceMask-00108");
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetDeviceMask-deviceMask-00110");
@@ -1420,19 +1410,14 @@ TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t physical_device_group_count = 0;
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
-
-    if (physical_device_group_count == 0) {
-        GTEST_SKIP() << "physical_device_group_count is 0, skipping test";
+    const auto physical_device_group = FindPhysicalDeviceGroup();
+    if (!physical_device_group.has_value()) {
+        GTEST_SKIP() << "cannot find physical device group that contains selected physical device";
     }
 
-    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
-                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
-    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
     VkDeviceGroupDeviceCreateInfo create_device_pnext = vku::InitStructHelper();
-    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
-    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    create_device_pnext.physicalDeviceCount = physical_device_group->physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group->physicalDevices;
     RETURN_IF_SKIP(InitState(nullptr, &create_device_pnext));
 
     VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = vku::InitStructHelper();

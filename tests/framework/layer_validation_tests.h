@@ -378,6 +378,10 @@ class WsiTest : public VkLayerTest {
     VkImageMemoryBarrier TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout, VkAccessFlags src_access_mask);
 
   protected:
+    // Find physical device group that contains physical device selected by the test framework
+    std::optional<VkPhysicalDeviceGroupProperties> FindPhysicalDeviceGroup();
+
+  protected:
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     struct WaylandContext {
         wl_display *display = nullptr;
