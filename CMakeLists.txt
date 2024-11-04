@@ -190,4 +190,6 @@ option(BUILD_TESTS "Build the tests")
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+    # Set tests as Visual Studio startup project
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT vk_layer_validation_tests)
 endif()
