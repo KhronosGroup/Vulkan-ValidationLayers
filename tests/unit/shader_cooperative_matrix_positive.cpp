@@ -57,6 +57,15 @@ void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
         coop_matrix_props.emplace_back(vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
     }
     vk::GetPhysicalDeviceCooperativeMatrixPropertiesKHR(Gpu(), &props_count, coop_matrix_props.data());
+
+    if (IsExtensionsEnabled(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME)) {
+        props_count = 0;
+        vk::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(Gpu(), &props_count, nullptr);
+        for (uint32_t i = 0; i < props_count; i++) {
+            coop_matrix_flex_props.emplace_back(vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
+        }
+        vk::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(Gpu(), &props_count, coop_matrix_flex_props.data());
+    }
 }
 
 bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {
@@ -78,7 +87,33 @@ bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint3
             found_r = true;
         }
     }
-    return found_a && found_b && found_c && found_r;
+    if (found_a && found_b && found_c && found_r) {
+        return true;
+    }
+
+    found_a = false;
+    found_b = false;
+    found_c = false;
+    found_r = false;
+    for (const auto &prop : coop_matrix_flex_props) {
+        if (prop.scope == scope && prop.AType == type && (m % prop.MGranularity) == 0 && (k % prop.KGranularity) == 0) {
+            found_a = true;
+        }
+        if (prop.scope == scope && prop.BType == type && (k % prop.KGranularity) == 0 && (n % prop.NGranularity) == 0) {
+            found_b = true;
+        }
+        if (prop.scope == scope && prop.CType == type && (m % prop.MGranularity) == 0 && (n % prop.NGranularity) == 0) {
+            found_c = true;
+        }
+        if (prop.scope == scope && prop.ResultType == type && (m % prop.MGranularity) == 0 && (n % prop.NGranularity) == 0) {
+            found_r = true;
+        }
+    }
+    if (found_a && found_b && found_c && found_r) {
+        return true;
+    }
+
+    return false;
 }
 
 class PositiveShaderCooperativeMatrix : public CooperativeMatrixTest {};
