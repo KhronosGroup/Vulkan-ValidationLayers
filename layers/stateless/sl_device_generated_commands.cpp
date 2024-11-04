@@ -477,8 +477,7 @@ bool StatelessValidation::ValidateGeneratedCommandsInfo(VkCommandBuffer command_
         }
     }
     if (generated_commands_info.maxSequenceCount == 0) {
-        // VUID in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6970
-        skip |= LogError("UNASSIGNED-VkGeneratedCommandsInfoEXT-maxSequenceCount-zero", command_buffer,
+        skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-maxSequenceCount-10246", command_buffer,
                          info_loc.dot(Field::maxSequenceCount), "is zero.");
     }
 
