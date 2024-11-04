@@ -190,7 +190,7 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -204,11 +204,10 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_UINT32_KHR)) {
+    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    // Tests are assume that Float16 3*5 is not available
     char const *csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
@@ -219,10 +218,10 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
         layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
         void main() {
-            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
-            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
-            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
-            coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> A;
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> B;
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> C;
+            coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
         }
     )glsl";
 
@@ -243,7 +242,69 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
     pipe.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-08987");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-08987", 3);
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) {
+    TEST_DESCRIPTION(
+        "Local workgroup size in the X dimension of the pipeline multiple of subgroupSize and less than or equal to "
+        "cooperativeMatrixWorkgroupScopeMaxWorkgroupSize");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+        GTEST_SKIP() << "Valid Property not found";
+    }
+
+    char const *csSource = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+        void main() {
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> A;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseB> B;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseAccumulator> C;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+        }
+    )glsl";
+
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV props2 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props2);
+
+    const uint32_t specData[] = {
+        props2.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize + 1,
+    };
+    const VkSpecializationMapEntry entries[] = {
+        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+    };
+    const VkSpecializationInfo specInfo = {
+        1,
+        entries,
+        sizeof(specData),
+        specData,
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10166");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-10169", 6);
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -257,7 +318,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
     AddRequiredFeature(vkt::Feature::shaderFloat16);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
-    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_UINT32_KHR)) {
+    if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
@@ -273,10 +334,10 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
         layout(constant_id = 1) const uint scope1 = gl_ScopeSubgroup;
         layout(local_size_x = 64) in;
         void main() {
-            coopmat<uint32_t, scope0, 16, 16, gl_MatrixUseA> A;
-            coopmat<uint32_t, scope1, 16, 16, gl_MatrixUseB> B;
-            coopmat<uint32_t, scope0, 16, 16, gl_MatrixUseAccumulator> C;
-            coopmat<uint32_t, scope0, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+            coopmat<float16_t, scope0, 16, 16, gl_MatrixUseA> A;
+            coopmat<float16_t, scope1, 16, 16, gl_MatrixUseB> B;
+            coopmat<float16_t, scope0, 16, 16, gl_MatrixUseAccumulator> C;
+            coopmat<float16_t, scope0, 16, 16, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
         }
     )glsl";
 
@@ -306,8 +367,174 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
     // The scope will be invalid
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
     // Expect gl_ScopeInvocation will not be found in the implementation since it is not allowed in Vulkan
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScope) {
+    TEST_DESCRIPTION("Workgroup scope requires cooperativeMatrixWorkgroupScope");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+        GTEST_SKIP() << "Valid Property not found";
+    }
+
+    char const *csSource = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(local_size_x = 64) in;
+        void main() {
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> A;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseB> B;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseAccumulator> C;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixWorkgroupScope-10164", 3);
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
+    TEST_DESCRIPTION("Matrix dimensions must be less than or equal to cooperativeMatrixFlexibleDimensionsMaxDimension");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+        GTEST_SKIP() << "Valid Property not found";
+    }
+
+    char const *csSource = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(constant_id = 0) const uint dim = 32;
+        layout(local_size_x = 64) in;
+        void main() {
+            coopmat<float16_t, gl_ScopeWorkgroup, dim, dim, gl_MatrixUseA> A;
+            coopmat<float16_t, gl_ScopeWorkgroup, dim, dim, gl_MatrixUseB> B;
+            coopmat<float16_t, gl_ScopeWorkgroup, dim, dim, gl_MatrixUseAccumulator> C;
+            coopmat<float16_t, gl_ScopeWorkgroup, dim, dim, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+        }
+    )glsl";
+
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV props2 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props2);
+    uint32_t dim = props2.cooperativeMatrixFlexibleDimensionsMaxDimension;
+    dim /= 32;
+    dim++;
+    dim *= 32;
+
+    const uint32_t specData[] = {
+        dim,
+    };
+    const VkSpecializationMapEntry entries[] = {
+        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+    };
+    const VkSpecializationInfo specInfo = {
+        1,
+        entries,
+        sizeof(specData),
+        specData,
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensionsMaxDimension-10167", 3);
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxSharedMemory) {
+    TEST_DESCRIPTION("cooperativeMatrixWorkgroupScopeReservedSharedMemory limit");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixFlexibleDimensions);
+    AddRequiredFeature(vkt::Feature::cooperativeMatrixWorkgroupScope);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    if (!HasValidProperty(VK_SCOPE_WORKGROUP_KHR, 32, 32, 32, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
+        GTEST_SKIP() << "Valid Property not found";
+    }
+
+    char const *csSource = R"glsl(
+        #version 450
+        #pragma use_vulkan_memory_model
+        #extension GL_KHR_cooperative_matrix : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+        layout(constant_id = 0) const uint dim = 32;
+        shared uint8_t sh[dim];
+        layout(local_size_x = 64) in;
+        void main() {
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseA> A;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseB> B;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseAccumulator> C;
+            coopmat<float16_t, gl_ScopeWorkgroup, 32, 32, gl_MatrixUseAccumulator> D = coopMatMulAdd(A, B, C);
+        }
+    )glsl";
+
+    VkPhysicalDeviceCooperativeMatrix2PropertiesNV props2 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props2);
+
+    uint32_t shmem_size =
+        m_device->Physical().limits_.maxComputeSharedMemorySize - props2.cooperativeMatrixWorkgroupScopeReservedSharedMemory + 1;
+
+    const uint32_t specData[] = {
+        shmem_size,
+    };
+    const VkSpecializationMapEntry entries[] = {
+        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+    };
+    const VkSpecializationInfo specInfo = {
+        1,
+        entries,
+        sizeof(specData),
+        specData,
+    };
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxComputeSharedMemorySize-10168");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -338,6 +565,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
         #extension GL_KHR_shader_subgroup_basic : enable
         #extension GL_KHR_memory_scope_semantics : enable
         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        layout(local_size_x = 32) in;
         void main() {
             coopmat<float16_t, gl_ScopeSubgroup, 8, 16, gl_MatrixUseA> A;
             coopmat<float16_t, gl_ScopeSubgroup, 16, 8, gl_MatrixUseB> B;
@@ -347,7 +575,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
     )glsl";
 
     // There is no way to avoid this message
-    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
     CreateComputePipelineHelper pipe(*this);
@@ -455,7 +683,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
         m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060");
-        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
 
         pipe.CreateComputePipeline();
 

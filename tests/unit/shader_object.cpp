@@ -6042,7 +6042,7 @@ TEST_F(NegativeShaderObject, PrimitivesGeneratedQuery) {
 TEST_F(NegativeShaderObject, CooperativeMatrix) {
     TEST_DESCRIPTION("Test cooperative matrix with shader objects");
 
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
