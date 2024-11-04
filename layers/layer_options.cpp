@@ -1143,8 +1143,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     // Grab application name here while we have access to it and know if to save it or not
     if (settings_data->debug_report->message_format_settings.display_application_name) {
+        const VkApplicationInfo *app_info = settings_data->create_info->pApplicationInfo;
         settings_data->debug_report->message_format_settings.application_name =
-            settings_data->create_info->pApplicationInfo ? settings_data->create_info->pApplicationInfo->pApplicationName : "";
+            (app_info && app_info->pApplicationName) ? app_info->pApplicationName : "";
     }
 
     for (const auto &warning : setting_warnings) {
