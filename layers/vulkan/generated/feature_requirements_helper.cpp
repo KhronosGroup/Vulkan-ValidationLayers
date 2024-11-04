@@ -2819,6 +2819,20 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->graphicsPipelineLibrary,
                     "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary"};
         }
+        case Feature::hdrVivid: {
+            auto vk_struct = const_cast<VkPhysicalDeviceHdrVividFeaturesHUAWEI *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceHdrVividFeaturesHUAWEI>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceHdrVividFeaturesHUAWEI;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->hdrVivid, "VkPhysicalDeviceHdrVividFeaturesHUAWEI::hdrVivid"};
+        }
         case Feature::hostImageCopy: {
             auto vk_struct = const_cast<VkPhysicalDeviceHostImageCopyFeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceHostImageCopyFeaturesEXT>(*inout_pnext_chain));

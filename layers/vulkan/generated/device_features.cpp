@@ -1579,6 +1579,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->depthClampControl |= enabled->depthClampControl == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI: {
+                const VkPhysicalDeviceHdrVividFeaturesHUAWEI *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceHdrVividFeaturesHUAWEI *>(pNext);
+                features->hdrVivid |= enabled->hdrVivid == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV: {
                 const VkPhysicalDeviceCooperativeMatrix2FeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceCooperativeMatrix2FeaturesNV *>(pNext);

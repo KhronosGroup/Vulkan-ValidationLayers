@@ -4169,6 +4169,22 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceHdrVividFeaturesHUAWEI structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI: {  // Covers
+                                                                             // VUID-VkPhysicalDeviceHdrVividFeaturesHUAWEI-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceHdrVividFeaturesHUAWEI);
+                if (!IsExtEnabled(device_extensions.vk_huawei_hdr_vivid)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceHdrVividFeaturesHUAWEI, but when creating VkDevice, "
+                                     "the parent extension "
+                                     "(VK_HUAWEI_hdr_vivid) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceHdrVividFeaturesHUAWEI* structure = (VkPhysicalDeviceHdrVividFeaturesHUAWEI*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::hdrVivid), structure->hdrVivid);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceCooperativeMatrix2FeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceCooperativeMatrix2FeaturesNV-sType-sType
@@ -9680,6 +9696,22 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
             }
         } break;
 
+        // Validation code for VkHdrVividDynamicMetadataHUAWEI structure members
+        case VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI: {  // Covers VUID-VkHdrVividDynamicMetadataHUAWEI-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkHdrVividDynamicMetadataHUAWEI);
+                if (!IsExtEnabled(device_extensions.vk_huawei_hdr_vivid)) {
+                    skip |=
+                        LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions VK_HUAWEI_hdr_vivid");
+                }
+                VkHdrVividDynamicMetadataHUAWEI* structure = (VkHdrVividDynamicMetadataHUAWEI*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::dynamicMetadataSize), pNext_loc.dot(Field::pDynamicMetadata),
+                                      structure->dynamicMetadataSize, &structure->pDynamicMetadata, true, true,
+                                      "VUID-VkHdrVividDynamicMetadataHUAWEI-dynamicMetadataSize-arraylength",
+                                      "VUID-VkHdrVividDynamicMetadataHUAWEI-pDynamicMetadata-parameter");
+            }
+        } break;
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -9972,6 +10004,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAME_BOUNDARY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT,
@@ -20859,8 +20892,12 @@ bool StatelessValidation::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint
     if (pMetadata != nullptr) {
         for (uint32_t swapchainIndex = 0; swapchainIndex < swapchainCount; ++swapchainIndex) {
             [[maybe_unused]] const Location pMetadata_loc = loc.dot(Field::pMetadata, swapchainIndex);
-            skip |= ValidateStructPnext(pMetadata_loc, pMetadata[swapchainIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                        "VUID-VkHdrMetadataEXT-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
+            constexpr std::array allowed_structs_VkHdrMetadataEXT = {VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI};
+
+            skip |= ValidateStructPnext(pMetadata_loc, pMetadata[swapchainIndex].pNext, allowed_structs_VkHdrMetadataEXT.size(),
+                                        allowed_structs_VkHdrMetadataEXT.data(), GeneratedVulkanHeaderVersion,
+                                        "VUID-VkHdrMetadataEXT-pNext-pNext", "VUID-VkHdrMetadataEXT-sType-unique", VK_NULL_HANDLE,
+                                        true);
         }
     }
     return skip;

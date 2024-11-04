@@ -454,6 +454,8 @@ enum class Feature {
     globalPriorityQuery,
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     graphicsPipelineLibrary,
+    // VkPhysicalDeviceHdrVividFeaturesHUAWEI
+    hdrVivid,
     // VkPhysicalDeviceHostImageCopyFeaturesEXT
     hostImageCopy,
     // VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceVulkan12Features

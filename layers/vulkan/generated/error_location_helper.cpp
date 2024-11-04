@@ -1042,6 +1042,7 @@ const char* String(Struct structure) {
     {"VkGraphicsPipelineShaderGroupsCreateInfoNV", 43},
     {"VkGraphicsShaderGroupCreateInfoNV", 34},
     {"VkHdrMetadataEXT", 17},
+    {"VkHdrVividDynamicMetadataHUAWEI", 32},
     {"VkHeadlessSurfaceCreateInfoEXT", 31},
     {"VkHostImageCopyDevicePerformanceQueryEXT", 41},
     {"VkHostImageLayoutTransitionInfoEXT", 35},
@@ -1302,6 +1303,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT", 51},
     {"VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT", 53},
     {"VkPhysicalDeviceGroupProperties", 32},
+    {"VkPhysicalDeviceHdrVividFeaturesHUAWEI", 39},
     {"VkPhysicalDeviceHostImageCopyFeaturesEXT", 41},
     {"VkPhysicalDeviceHostImageCopyPropertiesEXT", 43},
     {"VkPhysicalDeviceHostQueryResetFeatures", 39},
@@ -2294,6 +2296,7 @@ const char* String(Field field) {
     {"duration", 9},
     {"dwAccess", 9},
     {"dynamicGeneratedPipelineLayout", 31},
+    {"dynamicMetadataSize", 20},
     {"dynamicOffsetCount", 19},
     {"dynamicPipelineLayout", 22},
     {"dynamicPrimitiveTopologyUnrestricted", 37},
@@ -2516,6 +2519,7 @@ const char* String(Field field) {
     {"hasStdPPSOverrides", 19},
     {"hasStdSPSOverrides", 19},
     {"hasStdVPSOverrides", 19},
+    {"hdrVivid", 9},
     {"headerSize", 11},
     {"headerVersion", 14},
     {"heapBudget", 11},
@@ -3318,6 +3322,7 @@ const char* String(Field field) {
     {"pDrivers", 9},
     {"pDrmFormatModifierProperties", 29},
     {"pDrmFormatModifiers", 20},
+    {"pDynamicMetadata", 17},
     {"pDynamicOffsets", 16},
     {"pDynamicState", 14},
     {"pDynamicStates", 15},
@@ -5022,6 +5027,7 @@ const char* String(Extension extension) {
     {"VK_GOOGLE_surfaceless_query", 28},
     {"VK_GOOGLE_user_type", 20},
     {"VK_HUAWEI_cluster_culling_shader", 33},
+    {"VK_HUAWEI_hdr_vivid", 20},
     {"VK_HUAWEI_invocation_mask", 26},
     {"VK_HUAWEI_subpass_shading", 26},
     {"VK_IMG_filter_cubic", 20},
@@ -5390,6 +5396,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDrivers:
     case Field::pDrmFormatModifierProperties:
     case Field::pDrmFormatModifiers:
+    case Field::pDynamicMetadata:
     case Field::pDynamicOffsets:
     case Field::pDynamicState:
     case Field::pDynamicStates:
