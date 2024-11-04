@@ -405,6 +405,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_device_generated_commands", vvl::Extension::_VK_EXT_device_generated_commands},
         {"VK_MESA_image_alignment_control", vvl::Extension::_VK_MESA_image_alignment_control},
         {"VK_EXT_depth_clamp_control", vvl::Extension::_VK_EXT_depth_clamp_control},
+        {"VK_HUAWEI_hdr_vivid", vvl::Extension::_VK_HUAWEI_hdr_vivid},
         {"VK_NV_cooperative_matrix2", vvl::Extension::_VK_NV_cooperative_matrix2},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},

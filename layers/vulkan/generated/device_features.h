@@ -464,6 +464,8 @@ struct DeviceFeatures {
     bool globalPriorityQuery;
     // VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT
     bool graphicsPipelineLibrary;
+    // VkPhysicalDeviceHdrVividFeaturesHUAWEI
+    bool hdrVivid;
     // VkPhysicalDeviceHostImageCopyFeaturesEXT
     bool hostImageCopy;
     // VkPhysicalDeviceHostQueryResetFeatures, VkPhysicalDeviceVulkan12Features
