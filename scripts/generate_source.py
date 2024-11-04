@@ -401,8 +401,9 @@ def main(argv):
                         default='vulkan',
                         choices=['vulkan'],
                         help='Specify API name to generate')
-    parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
-    parser.add_argument('grammar', metavar='GRAMMAR_PATH', help='path to the SPIRV-Headers grammar directory')
+    parser.add_argument('paths', nargs='+',
+                        help='Either: Paths to the Vulkan-Headers registry directory and the SPIRV-Headers grammar directory'
+                        + ' OR path to the base directory containing the Vulkan-Headers and SPIRV-Headers repositories')
     parser.add_argument('--generated-version', help='sets the header version used to generate the repo')
     parser.add_argument('-o', help='Create target and related files in specified directory.', dest='output_directory')
     group = parser.add_mutually_exclusive_group()
@@ -449,14 +450,32 @@ def main(argv):
     if args.output_directory is not None:
       gen_dir = args.output_directory
 
-    registry = os.path.abspath(os.path.join(args.registry,  'vk.xml'))
-    grammar = os.path.abspath(os.path.join(args.grammar, 'spirv.core.grammar.json'))
+    if len(args.paths) == 1:
+        base = args.paths[0]
+        registry = os.path.join(base, 'Vulkan-Headers/registry')
+        grammar = os.path.join(base, 'SPIRV-Headers/include/spirv/unified1')
+    elif len(args.paths) == 2:
+        registry = args.paths[0]
+        grammar = args.paths[1]
+    else:
+        args.print_help()
+        return -1
+
+    registry = os.path.abspath(os.path.join(registry,  'vk.xml'))
+    if not os.path.isfile(registry):
+        print(f'{registry} does not exist')
+        return -1
+    grammar = os.path.abspath(os.path.join(grammar, 'spirv.core.grammar.json'))
+    if not os.path.isfile(grammar):
+        print(f'{grammar} does not exist')
+        return -1
+
     caching = not args.no_caching
     RunGenerators(args.api, registry, grammar, gen_dir, styleFile, args.target, caching)
 
     # Generate vk_validation_error_messages.h (ignore if targeting a single generator)
     if (not args.target):
-        valid_usage_file = os.path.abspath(os.path.join(args.registry, "validusage.json"))
+        valid_usage_file = os.path.abspath(os.path.join(os.path.dirname(registry), "validusage.json"))
         error_message_file = os.path.join(gen_dir, 'vk_validation_error_messages.h')
         GenerateSpecErrorMessage(args.api, valid_usage_file, error_message_file)
 
