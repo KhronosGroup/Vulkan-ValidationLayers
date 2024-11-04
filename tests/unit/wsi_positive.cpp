@@ -312,7 +312,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 }
 
-TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
+TEST_F(PositiveWsi, XXXTransferImageToSwapchainDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image  between device group");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)

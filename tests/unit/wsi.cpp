@@ -244,7 +244,7 @@ TEST_F(NegativeWsi, SwapchainImage) {
     }
 }
 
-TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
+TEST_F(NegativeWsi, XXXTransferImageToSwapchainLayoutDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image with a invalid layout between device group");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -1106,7 +1106,7 @@ TEST_F(NegativeWsi, SwapchainPresentShared) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, DeviceMask) {
+TEST_F(NegativeWsi, XXXDeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -1403,7 +1403,7 @@ TEST_F(NegativeWsi, WarningSwapchainCreateInfoPreTransform) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, DeviceGroupSubmitInfoSemaphoreCount) {
+TEST_F(NegativeWsi, XXXDeviceGroupSubmitInfoSemaphoreCount) {
     TEST_DESCRIPTION("Test semaphoreCounts in DeviceGroupSubmitInfo");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
