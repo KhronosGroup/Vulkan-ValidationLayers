@@ -20,6 +20,7 @@
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include <spirv/unified1/spirv.hpp>
 
+#include "error_message/error_location.h"
 #include "generated/vk_extension_helper.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/spirv/module.h"
@@ -348,7 +349,16 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
 
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         VkShaderCreateInfoEXT new_create_info = pCreateInfos[i];
+        const Location &create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
+
+        // See pipeline version for explanation
+        if (new_create_info.flags & VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT) {
+            InternalError(device, create_info_loc,
+                          "Unable to instrument shader using VkIndirectExecutionSetEXT validly, things might work, but likely will "
+                          "not because of GPU-AV's usage of VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC (If you don't "
+                          "need VK_SHADER_CREATE_INDIRECT_BINDABLE_BIT_EXT, turn it off).");
+        }
 
         if (new_create_info.setLayoutCount > instrumentation_desc_set_bind_index_) {
             std::ostringstream strm;
@@ -374,8 +384,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             new_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
         }
 
-        PreCallRecordShaderObjectInstrumentation(new_create_info, record_obj.location.dot(vvl::Field::pCreateInfos, i),
-                                                 instrumentation_data);
+        PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
 
         chassis_state.modified_create_infos.emplace_back(std::move(new_create_info));
     }
@@ -431,16 +440,16 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
+        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
 
         // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
         auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
         new_pipeline_ci.initialize(&pipeline_state->GraphicsCreateInfo());
 
-        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state)) {
+        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, create_info_loc)) {
             continue;
         }
 
-        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         if (pipeline_state->linking_shaders != 0) {
@@ -469,16 +478,16 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
+        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
 
         // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
         auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
         new_pipeline_ci.initialize(&pipeline_state->ComputeCreateInfo());
 
-        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state)) {
+        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, create_info_loc)) {
             continue;
         }
 
-        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
@@ -503,16 +512,16 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
+        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
 
         // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
         auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
         new_pipeline_ci = pipeline_state->RayTracingCreateInfo();  // use copy operation to fight the Common vs NV
 
-        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state)) {
+        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, create_info_loc)) {
             continue;
         }
 
-        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
@@ -535,16 +544,16 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
 
     for (uint32_t i = 0; i < count; ++i) {
         const auto &pipeline_state = pipeline_states[i];
+        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
 
         // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
         auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
         new_pipeline_ci.initialize(&pipeline_state->RayTracingCreateInfo());
 
-        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state)) {
+        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, create_info_loc)) {
             continue;
         }
 
-        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
 
         PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci, create_info_loc,
@@ -769,13 +778,24 @@ bool GpuShaderInstrumentor::IsSelectiveInstrumentationEnabled(const void *pNext)
     return false;
 }
 
-bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state) {
+bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state, const Location &loc) {
+    // Currently there is a VU (VUID-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-11019) that prevents
+    // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC in the pipeline layout, but we need it currently for GPU-AV.
+    // As a temporary solution, we will just not support people using DGC with IES
+    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT) {
+        InternalError(device, loc,
+                      "Unable to instrument shader using VkIndirectExecutionSetEXT validly, things might work, but likely will not "
+                      "because of GPU-AV's usage of VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC (If you don't need "
+                      "VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, turn it off).");
+        // don't return false, some drivers seem to not care and app might get away with it
+    }
+
     // will hit with using GPL without shaders in them (ex. fragment output)
     if (pipeline_state.stage_states.empty()) return false;
 
     // Move all instrumentation until the final linking time
     // This still needs to create a copy of the create_info (we *could* have a mix of GPL and non-GPL)
-    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) return false;
+    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) return false;
 
     // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
     // already instrumented shaders need to be replaced with uninstrumented shaders

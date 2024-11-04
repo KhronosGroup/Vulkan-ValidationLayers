@@ -17,6 +17,7 @@
 #pragma once
 
 #include "containers/custom_containers.h"
+#include "error_message/error_location.h"
 #include "generated/chassis.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
@@ -178,7 +179,7 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                          uint32_t operation_index) const;
 
   protected:
-    bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state);
+    bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state, const Location &loc);
     bool HasBindlessDescriptors(vvl::Pipeline &pipeline_state);
     bool HasBindlessDescriptors(VkShaderCreateInfoEXT &create_info);
 
