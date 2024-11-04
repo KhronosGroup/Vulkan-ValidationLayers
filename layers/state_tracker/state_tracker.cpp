@@ -1075,6 +1075,25 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
             physical_device, &num_cooperative_matrix_properties_khr, cooperative_matrix_properties_khr.data());
     }
 
+    if (IsExtEnabled(dev_ext.vk_nv_cooperative_matrix2)) {
+        // Get the needed NV cooperative_matrix2 properties
+        VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperative_matrix_props2_nv = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_matrix_props2_nv);
+        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
+        phys_dev_ext_props.cooperative_matrix_props2_nv = cooperative_matrix_props2_nv;
+
+        uint32_t num_cooperative_matrix_flexible_dimensions_properties = 0;
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+            physical_device, &num_cooperative_matrix_flexible_dimensions_properties, NULL);
+        cooperative_matrix_flexible_dimensions_properties.resize(
+            num_cooperative_matrix_flexible_dimensions_properties,
+            vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
+
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+            physical_device, &num_cooperative_matrix_flexible_dimensions_properties,
+            cooperative_matrix_flexible_dimensions_properties.data());
+    }
+
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
         uint32_t num_queue_families = 0;
