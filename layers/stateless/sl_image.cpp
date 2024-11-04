@@ -180,8 +180,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     }
 
     if (!enabled_features.hostImageCopy && (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) != 0) {
-        // VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6982
-        skip |= LogError("UNASSIGNED-VkImageCreateInfo-usage-hostImageCopy", device, create_info_loc.dot(Field::usage),
+        skip |= LogError("VUID-VkImageCreateInfo-usage-10245", device, create_info_loc.dot(Field::usage),
                          "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, but hostImageCopy feature was not enabled.");
     }
 

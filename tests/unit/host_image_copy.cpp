@@ -1894,7 +1894,7 @@ TEST_F(NegativeHostImageCopy, Features) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkImageCreateInfo-usage-hostImageCopy");
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-usage-10245");
     image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT);
     vkt::Image image(*m_device, image_ci);
     m_errorMonitor->VerifyFound();
