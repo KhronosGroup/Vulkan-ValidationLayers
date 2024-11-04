@@ -431,18 +431,18 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const spirv::Module 
 }
 
 // Map SPIR-V type to VK_COMPONENT_TYPE enum
-VkComponentTypeKHR GetComponentType(const spirv::Instruction *insn) {
+VkComponentTypeKHR GetComponentType(const spirv::Instruction *insn, bool is_signed_int) {
     switch (insn->Opcode()) {
         case spv::OpTypeInt:
             switch (insn->Word(2)) {
                 case 8:
-                    return insn->Word(3) != 0 ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR;
+                    return is_signed_int ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR;
                 case 16:
-                    return insn->Word(3) != 0 ? VK_COMPONENT_TYPE_SINT16_KHR : VK_COMPONENT_TYPE_UINT16_KHR;
+                    return is_signed_int ? VK_COMPONENT_TYPE_SINT16_KHR : VK_COMPONENT_TYPE_UINT16_KHR;
                 case 32:
-                    return insn->Word(3) != 0 ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR;
+                    return is_signed_int ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR;
                 case 64:
-                    return insn->Word(3) != 0 ? VK_COMPONENT_TYPE_SINT64_KHR : VK_COMPONENT_TYPE_UINT64_KHR;
+                    return is_signed_int ? VK_COMPONENT_TYPE_SINT64_KHR : VK_COMPONENT_TYPE_UINT64_KHR;
                 default:
                     return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
             }
@@ -462,22 +462,43 @@ VkComponentTypeKHR GetComponentType(const spirv::Instruction *insn) {
     }
 }
 
+static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {
+    switch (component_type) {
+        case VK_COMPONENT_TYPE_SINT8_KHR:
+        case VK_COMPONENT_TYPE_SINT16_KHR:
+        case VK_COMPONENT_TYPE_SINT32_KHR:
+        case VK_COMPONENT_TYPE_SINT64_KHR:
+            return true;
+        default:
+            return false;
+    }
+}
+
 // Validate SPV_KHR_cooperative_matrix (and SPV_NV_cooperative_matrix) behavior that can't be statically validated in SPIRV-Tools
 // (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                            const ShaderStageState &stage_state, const uint32_t local_size_x,
-                                           const Location &loc) const {
+                                           const uint32_t local_size_y, const uint32_t local_size_z, const Location &loc) const {
     bool skip = false;
+    const auto workgroup_size = local_size_x * local_size_y * local_size_z;
+
+    const auto &IsSignedIntType = [&module_state](const uint32_t type_id) {
+        const spirv::Instruction *type = module_state.FindDef(type_id);
+        if (type->Opcode() == spv::OpTypeCooperativeMatrixKHR || type->Opcode() == spv::OpTypeCooperativeMatrixNV) {
+            type = module_state.FindDef(type->Word(2));
+        }
+        return type->Opcode() == spv::OpTypeInt && type->Word(3) != 0;
+    };
 
     struct CoopMatType {
         VkScopeKHR scope;
         uint32_t rows;
         uint32_t cols;
         VkComponentTypeKHR component_type;
+        uint32_t use;
         bool all_constant;
-        bool is_signed_int;
 
-        CoopMatType(uint32_t id, const spirv::Module &module_state, const ShaderStageState &stage_state) {
+        CoopMatType(uint32_t id, const spirv::Module &module_state, const ShaderStageState &stage_state, bool is_signed_int) {
             const spirv::Instruction *insn = module_state.FindDef(id);
             const spirv::Instruction *component_type_insn = module_state.FindDef(insn->Word(2));
             const spirv::Instruction *scope_insn = module_state.FindDef(insn->Word(3));
@@ -496,16 +517,20 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
             if (!stage_state.GetInt32ConstantValue(*cols_insn, &cols)) {
                 all_constant = false;
             }
-            component_type = GetComponentType(component_type_insn);
+            component_type = GetComponentType(component_type_insn, is_signed_int);
 
-            is_signed_int = component_type == VK_COMPONENT_TYPE_SINT8_KHR || component_type == VK_COMPONENT_TYPE_SINT16_KHR ||
-                            component_type == VK_COMPONENT_TYPE_SINT32_KHR || component_type == VK_COMPONENT_TYPE_SINT64_KHR;
+            if (insn->Opcode() == spv::OpTypeCooperativeMatrixKHR) {
+                const spirv::Instruction *use_insn = module_state.FindDef(insn->Word(6));
+                if (!stage_state.GetInt32ConstantValue(*use_insn, &use)) {
+                    all_constant = false;
+                }
+            }
         }
 
         std::string Describe() {
             std::ostringstream ss;
             ss << "rows: " << rows << ", cols: " << cols << ", scope: " << string_VkScopeKHR(scope)
-               << ", type: " << string_VkComponentTypeKHR(component_type);
+               << ", type: " << string_VkComponentTypeKHR(component_type) << ", use: " << use;
             return ss.str();
         }
     };
@@ -555,172 +580,252 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
         return ss.str();
     };
 
+    auto print_flexible_properties = [this]() {
+        std::ostringstream ss;
+        for (uint32_t i = 0; i < cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
+            const auto &prop = cooperative_matrix_flexible_dimensions_properties[i];
+            ss << "[" << i << "] MGranularity = " << prop.MGranularity << " | NGranularity = " << prop.NGranularity
+               << " | KGranularity = " << prop.KGranularity << " | AType = " << string_VkComponentTypeKHR(prop.AType)
+               << " | BType = " << string_VkComponentTypeKHR(prop.BType) << " | CType = " << string_VkComponentTypeKHR(prop.CType)
+               << " | ResultType = " << string_VkComponentTypeKHR(prop.ResultType) << " | scope = " << string_VkScopeKHR(prop.scope)
+               << " | workgroupInvocations = " << prop.workgroupInvocations << '\n';
+        }
+        return ss.str();
+    };
+
     for (const spirv::Instruction *cooperative_matrix_inst : module_state.static_data_.cooperative_matrix_inst) {
         const spirv::Instruction &insn = *cooperative_matrix_inst;
         switch (insn.Opcode()) {
             case spv::OpTypeCooperativeMatrixKHR: {
-                CoopMatType m(insn.Word(1), module_state, stage_state);
+                CoopMatType m(insn.Word(1), module_state, stage_state, IsSignedIntType(insn.Word(2)));
+
+                if ((entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0) {
+                    if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
+                        const auto vuid_string = m.scope == VK_SCOPE_SUBGROUP_KHR
+                                                     ? "VUID-VkPipelineShaderStageCreateInfo-module-08987"
+                                                     : "VUID-VkPipelineShaderStageCreateInfo-module-10169";
+                        skip |= LogError(vuid_string, module_state.handle(), loc,
+                                         "SPIR-V (compute stage) Local workgroup size in the X dimension (%" PRIu32
+                                         ") is not multiple of subgroupSize (%" PRIu32 ")/.",
+                                         local_size_x, phys_dev_props_core11.subgroupSize);
+                    }
+                    if (m.scope == VK_SCOPE_WORKGROUP_KHR) {
+                        if (workgroup_size >
+                            phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize) {
+                            skip |= LogError(
+                                "VUID-VkPipelineShaderStageCreateInfo-module-10169", module_state.handle(), loc,
+                                "SPIR-V (compute stage) Total local workgroup size (%" PRIu32
+                                ") is larger than cooperativeMatrixWorkgroupScopeMaxWorkgroupSize (%" PRIu32 ").",
+                                workgroup_size,
+                                phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize);
+                        }
+                    }
+                }
 
                 if (!m.all_constant) {
                     break;
                 }
+
+                if (m.scope == VK_SCOPE_WORKGROUP_KHR && !enabled_features.cooperativeMatrixWorkgroupScope) {
+                    skip |= LogError("VUID-RuntimeSpirv-cooperativeMatrixWorkgroupScope-10164", module_state.handle(), loc,
+                                     "SPIR-V (compute stage) Cooperative matrix uses workgroup scope but "
+                                     "cooperativeMatrixWorkgroupScope is not enabled.");
+                }
+
                 // Validate that the type parameters are all supported for one of the
                 // operands of a cooperative matrix khr property.
                 bool valid = false;
                 for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
                     const auto &property = cooperative_matrix_properties_khr[i];
                     if (property.AType == m.component_type && property.MSize == m.rows && property.KSize == m.cols &&
-                        property.scope == m.scope) {
+                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAKHR) {
                         valid = true;
                         break;
                     }
                     if (property.BType == m.component_type && property.KSize == m.rows && property.NSize == m.cols &&
-                        property.scope == m.scope) {
+                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixBKHR) {
                         valid = true;
                         break;
                     }
                     if (property.CType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
-                        property.scope == m.scope) {
+                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                         valid = true;
                         break;
                     }
                     if (property.ResultType == m.component_type && property.MSize == m.rows && property.NSize == m.cols &&
-                        property.scope == m.scope) {
+                        property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
                         valid = true;
                         break;
                     }
                 }
-                if (!valid) {
-                    skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-08974", module_state.handle(), loc,
-                                     "SPIR-V (%s) has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR\n%s.",
-                                     string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(), m.Describe().c_str(),
-                                     print_properties().c_str());
-                }
-                break;
-            }
-            case spv::OpCooperativeMatrixMulAddKHR: {
-                CoopMatType r(id_to_type_id[insn.Word(2)], module_state, stage_state);
-                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, stage_state);
-                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, stage_state);
-                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, stage_state);
-                const uint32_t flags = insn.Length() > 6 ? insn.Word(6) : 0u;
-                if (a.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask) == 0)) {
-                    skip |= LogError(
-                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                        "SPIR-V (%s) Component type of matrix A is signed integer type, but MatrixASignedComponents flag is not "
-                        "present in flags (%s).",
-                        string_VkShaderStageFlagBits(entrypoint.stage), string_SpvCooperativeMatrixOperands(flags).c_str());
-                }
-                if (b.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask) == 0)) {
-                    skip |= LogError(
-                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                        "SPIR-V (%s) Component type of matrix B is signed integer type, but MatrixBSignedComponents flag is not "
-                        "present in flags (%s).",
-                        string_VkShaderStageFlagBits(entrypoint.stage), string_SpvCooperativeMatrixOperands(flags).c_str());
-                }
-                if (c.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask) == 0)) {
-                    skip |= LogError(
-                        "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                        "SPIR-V (%s) Component type of matrix C is signed integer type, but MatrixCSignedComponents flag is not "
-                        "present in flags (%s).",
-                        string_VkShaderStageFlagBits(entrypoint.stage), string_SpvCooperativeMatrixOperands(flags).c_str());
-                }
-                if (r.is_signed_int && ((flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask) == 0)) {
-                    skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                     "SPIR-V (%s) Component type of matrix Result is signed integer type, but "
-                                     "MatrixResultSignedComponents flag is not "
-                                     "present in flags (%s).",
-                                     string_VkShaderStageFlagBits(entrypoint.stage),
-                                     string_SpvCooperativeMatrixOperands(flags).c_str());
-                }
-                if (r.scope == VK_SCOPE_SUBGROUP_KHR && (entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0) {
-                    if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
-                        skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-module-08987", module_state.handle(), loc,
-                                         "SPIR-V (compute stage) Local workgroup size in the X dimension (%" PRIu32
-                                         ") is not multiple of subgroupSize (%" PRIu32 ")/.",
-                                         local_size_x, phys_dev_props_core11.subgroupSize);
-                    }
-                }
-                if (a.all_constant && b.all_constant && c.all_constant && r.all_constant) {
-                    if (r.scope != VK_SCOPE_SUBGROUP_KHR || a.scope != VK_SCOPE_SUBGROUP_KHR || b.scope != VK_SCOPE_SUBGROUP_KHR ||
-                        c.scope != VK_SCOPE_SUBGROUP_KHR) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                         "SPIR-V (%s) has a scopes mismatch for OpCooperativeMatrixMulAddKHR (all need to be "
-                                         "VK_SCOPE_SUBGROUP_KHR)\n"
-                                         "A: %s\n"
-                                         "B: %s\n"
-                                         "C: %s\n"
-                                         "Result: %s\n",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), string_VkScopeKHR(a.scope),
-                                         string_VkScopeKHR(b.scope), string_VkScopeKHR(c.scope), string_VkScopeKHR(r.scope));
-                    }
-                    // Validate that the type parameters are all supported for the same
-                    // cooperative matrix property.
-                    bool valid_a = false;
-                    bool valid_b = false;
-                    bool valid_c = false;
-                    bool valid_r = false;
-                    uint32_t i = 0;
-                    for (i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
-                        const auto &property = cooperative_matrix_properties_khr[i];
-                        valid_a |= property.AType == a.component_type && property.MSize == a.rows && property.KSize == a.cols &&
-                                   property.scope == a.scope;
-                        valid_b |= property.BType == b.component_type && property.KSize == b.rows && property.NSize == b.cols &&
-                                   property.scope == b.scope;
-                        valid_c |= property.CType == c.component_type && property.MSize == c.rows && property.NSize == c.cols &&
-                                   property.scope == c.scope;
-                        valid_r |= property.ResultType == r.component_type && property.MSize == r.rows &&
-                                   property.NSize == r.cols && property.scope == r.scope;
-                        if (valid_a && valid_b && valid_c && valid_r) {
+                if (enabled_features.cooperativeMatrixFlexibleDimensions) {
+                    for (uint32_t i = 0; i < cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
+                        const auto &property = cooperative_matrix_flexible_dimensions_properties[i];
+
+                        if (property.scope == VK_SCOPE_WORKGROUP_KHR && workgroup_size != property.workgroupInvocations) {
+                            continue;
+                        }
+
+                        if (property.AType == m.component_type && SafeModulo(m.rows, property.MGranularity) == 0 &&
+                            SafeModulo(m.cols, property.KGranularity) == 0 && property.scope == m.scope &&
+                            m.use == spv::CooperativeMatrixUseMatrixAKHR) {
+                            valid = true;
+                            break;
+                        }
+                        if (property.BType == m.component_type && SafeModulo(m.rows, property.KGranularity) == 0 &&
+                            SafeModulo(m.cols, property.NGranularity) == 0 && property.scope == m.scope &&
+                            m.use == spv::CooperativeMatrixUseMatrixBKHR) {
+                            valid = true;
+                            break;
+                        }
+                        if (property.CType == m.component_type && SafeModulo(m.rows, property.MGranularity) == 0 &&
+                            SafeModulo(m.cols, property.NGranularity) == 0 && property.scope == m.scope &&
+                            m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
+                            valid = true;
+                            break;
+                        }
+                        if (property.ResultType == m.component_type && SafeModulo(m.rows, property.MGranularity) == 0 &&
+                            SafeModulo(m.cols, property.NGranularity) == 0 && property.scope == m.scope &&
+                            m.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR) {
+                            valid = true;
                             break;
                         }
                     }
-                    if (i < cooperative_matrix_properties_khr.size()) {
-                        const bool spirv_saturating_accumulation =
-                            (flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask) != 0;
-                        const bool props_saturating_accumulation = cooperative_matrix_properties_khr[i].saturatingAccumulation;
-                        if (spirv_saturating_accumulation && !props_saturating_accumulation) {
-                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                             "SPIR-V (%s) SaturatingAccumulation cooperative matrix operand is present but "
-                                             "VkCooperativeMatrixPropertiesKHR[%" PRIu32 "].saturatingAccumulation is VK_FALSE.",
-                                             string_VkShaderStageFlagBits(entrypoint.stage), i);
-                        } else if (!spirv_saturating_accumulation && props_saturating_accumulation) {
-                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                             "SPIR-V (%s) SaturatingAccumulation cooperative matrix operand is not present but "
-                                             "VkCooperativeMatrixPropertiesKHR[%" PRIu32 "].saturatingAccumulation is VK_TRUE.",
-                                             string_VkShaderStageFlagBits(entrypoint.stage), i);
+                }
+                if (!valid) {
+                    if (!enabled_features.cooperativeMatrixFlexibleDimensions) {
+                        skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163", module_state.handle(), loc,
+                                         "SPIR-V (%s) has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR\n%s.",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         m.Describe().c_str(), print_properties().c_str());
+                    } else {
+                        skip |= LogError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", module_state.handle(), loc,
+                                         "SPIR-V (%s) has\n%s (%s)\nbut doesn't match any VkCooperativeMatrixPropertiesKHR or "
+                                         "VkCooperativeMatrixFlexibleDimensionsPropertiesNV\n%s\n%s.",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         m.Describe().c_str(), print_properties().c_str(), print_flexible_properties().c_str());
+                    }
+                }
+                if (IsExtEnabled(device_extensions.vk_nv_cooperative_matrix2)) {
+                    if (m.rows > phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension ||
+                        m.cols > phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension) {
+                        skip |= LogError(
+                            "VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensionsMaxDimension-10167", module_state.handle(), loc,
+                            "SPIR-V (%s) has\n%s (%s)\nbut number of rows or columns is greater than "
+                            "cooperativeMatrixFlexibleDimensionsMaxDimension (%" PRIu32 ").",
+                            string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(), m.Describe().c_str(),
+                            phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension);
+                    }
+                }
+
+                break;
+            }
+            case spv::OpCooperativeMatrixMulAddKHR: {
+                const uint32_t flags = insn.Length() > 6 ? insn.Word(6) : 0u;
+                CoopMatType r(id_to_type_id[insn.Word(2)], module_state, stage_state,
+                              (flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask));
+                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, stage_state,
+                              (flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask));
+                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, stage_state,
+                              (flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask));
+                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, stage_state,
+                              (flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask));
+                if (a.all_constant && b.all_constant && c.all_constant && r.all_constant) {
+                    // Validate that the type parameters are all supported for the same
+                    // cooperative matrix property.
+                    bool found_matching_prop = false;
+                    for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
+                        const auto &property = cooperative_matrix_properties_khr[i];
+
+                        bool valid = true;
+                        valid &= property.AType == a.component_type && property.MSize == a.rows && property.KSize == a.cols &&
+                                 property.scope == a.scope && a.use == spv::CooperativeMatrixUseMatrixAKHR;
+                        valid &= property.BType == b.component_type && property.KSize == b.rows && property.NSize == b.cols &&
+                                 property.scope == b.scope && b.use == spv::CooperativeMatrixUseMatrixBKHR;
+                        valid &= property.CType == c.component_type && property.MSize == c.rows && property.NSize == c.cols &&
+                                 property.scope == c.scope && c.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR;
+                        valid &= property.ResultType == r.component_type && property.MSize == r.rows && property.NSize == r.cols &&
+                                 property.scope == r.scope && r.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR;
+
+                        valid &= !IsSignedIntEnum(property.AType) ||
+                                 (flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask);
+                        valid &= !IsSignedIntEnum(property.BType) ||
+                                 (flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask);
+                        valid &= !IsSignedIntEnum(property.CType) ||
+                                 (flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask);
+                        valid &= !IsSignedIntEnum(property.ResultType) ||
+                                 (flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask);
+
+                        valid &= property.saturatingAccumulation ==
+                                 !!(flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask);
+
+                        if (valid) {
+                            found_matching_prop = true;
+                            break;
                         }
                     }
-                    if (!valid_a) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
-                                         "VkCooperativeMatrixPropertiesKHR for A type\n%s",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
-                                         a.Describe().c_str(), print_properties().c_str());
-                    } else if (!valid_b) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
-                                         "VkCooperativeMatrixPropertiesKHR for B type\n%s",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
-                                         b.Describe().c_str(), print_properties().c_str());
-                    } else if (!valid_c) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
-                                         "VkCooperativeMatrixPropertiesKHR for C type\n%s",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
-                                         c.Describe().c_str(), print_properties().c_str());
-                    } else if (!valid_r) {
-                        skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
-                                         "SPIR-V (%s) instruction\n%s (%s)\ndoesn't match a supported matrix "
-                                         "VkCooperativeMatrixPropertiesKHR for Result type\n%s",
-                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
-                                         r.Describe().c_str(), print_properties().c_str());
+                    bool found_matching_flexible_prop = false;
+                    if (enabled_features.cooperativeMatrixFlexibleDimensions) {
+                        for (uint32_t i = 0; i < cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
+                            const auto &property = cooperative_matrix_flexible_dimensions_properties[i];
+
+                            bool valid = true;
+                            valid &= property.AType == a.component_type && SafeModulo(a.rows, property.MGranularity) == 0 &&
+                                     SafeModulo(a.cols, property.KGranularity) == 0 && property.scope == a.scope &&
+                                     a.use == spv::CooperativeMatrixUseMatrixAKHR;
+                            valid &= property.BType == b.component_type && SafeModulo(b.rows, property.KGranularity) == 0 &&
+                                     SafeModulo(b.cols, property.NGranularity) == 0 && property.scope == b.scope &&
+                                     b.use == spv::CooperativeMatrixUseMatrixBKHR;
+                            valid &= property.CType == c.component_type && SafeModulo(c.rows, property.MGranularity) == 0 &&
+                                     SafeModulo(c.cols, property.NGranularity) == 0 && property.scope == c.scope &&
+                                     c.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR;
+                            valid &= property.ResultType == r.component_type && SafeModulo(r.rows, property.MGranularity) == 0 &&
+                                     SafeModulo(r.cols, property.NGranularity) == 0 && property.scope == r.scope &&
+                                     r.use == spv::CooperativeMatrixUseMatrixAccumulatorKHR;
+
+                            valid &= !IsSignedIntEnum(property.AType) ||
+                                     (flags & spv::CooperativeMatrixOperandsMatrixASignedComponentsKHRMask);
+                            valid &= !IsSignedIntEnum(property.BType) ||
+                                     (flags & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask);
+                            valid &= !IsSignedIntEnum(property.CType) ||
+                                     (flags & spv::CooperativeMatrixOperandsMatrixCSignedComponentsKHRMask);
+                            valid &= !IsSignedIntEnum(property.ResultType) ||
+                                     (flags & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask);
+
+                            valid &= property.saturatingAccumulation ==
+                                     !!(flags & spv::CooperativeMatrixOperandsSaturatingAccumulationKHRMask);
+
+                            valid &= property.scope != VK_SCOPE_WORKGROUP_KHR || workgroup_size == property.workgroupInvocations;
+
+                            if (valid) {
+                                found_matching_flexible_prop = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found_matching_prop && !found_matching_flexible_prop) {
+                        if (!enabled_features.cooperativeMatrixFlexibleDimensions) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060", module_state.handle(), loc,
+                                             "SPIR-V (%s) instruction\n%s\ndoesn't match a supported matrix "
+                                             "VkCooperativeMatrixPropertiesKHR\n%s\n%s\n%s\n%s\n%s\n",
+                                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                             a.Describe().c_str(), b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
+                                             print_properties().c_str());
+                        } else {
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10166", module_state.handle(), loc,
+                                             "SPIR-V (%s) instruction\n%s\ndoesn't match a supported matrix "
+                                             "VkCooperativeMatrixPropertiesKHR or "
+                                             "VkPhysicalDeviceCooperativeMatrix2PropertiesNV\n%s\n%s\n%s\n%s\n%s\n%s\n",
+                                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                             a.Describe().c_str(), b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
+                                             print_properties().c_str(), print_flexible_properties().c_str());
+                        }
                     }
                 }
                 break;
             }
             case spv::OpTypeCooperativeMatrixNV: {
-                CoopMatType m(insn.Word(1), module_state, stage_state);
+                CoopMatType m(insn.Word(1), module_state, stage_state, IsSignedIntType(insn.Word(2)));
 
                 if (!m.all_constant) {
                     break;
@@ -760,10 +865,10 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 break;
             }
             case spv::OpCooperativeMatrixMulAddNV: {
-                CoopMatType d(id_to_type_id[insn.Word(2)], module_state, stage_state);
-                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, stage_state);
-                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, stage_state);
-                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, stage_state);
+                CoopMatType d(id_to_type_id[insn.Word(2)], module_state, stage_state, IsSignedIntType(id_to_type_id[insn.Word(2)]));
+                CoopMatType a(id_to_type_id[insn.Word(3)], module_state, stage_state, IsSignedIntType(id_to_type_id[insn.Word(3)]));
+                CoopMatType b(id_to_type_id[insn.Word(4)], module_state, stage_state, IsSignedIntType(id_to_type_id[insn.Word(4)]));
+                CoopMatType c(id_to_type_id[insn.Word(5)], module_state, stage_state, IsSignedIntType(id_to_type_id[insn.Word(5)]));
 
                 if (a.all_constant && b.all_constant && c.all_constant && d.all_constant) {
                     // Validate that the type parameters are all supported for the same
@@ -1580,6 +1685,35 @@ bool CoreChecks::ValidateWorkgroupSharedMemory(const spirv::Module &module_state
                                  " bytes of shared memory, which is more than maxComputeSharedMemorySize (%" PRIu32 ").",
                                  total_workgroup_shared_memory, phys_dev_props.limits.maxComputeSharedMemorySize);
             }
+
+            if (enabled_features.cooperativeMatrixWorkgroupScope) {
+                bool usesWorkgroupScope = false;
+                for (auto &cooperative_matrix_inst : module_state.static_data_.cooperative_matrix_inst) {
+                    if (cooperative_matrix_inst->Opcode() == spv::OpTypeCooperativeMatrixKHR) {
+                        if (auto scope = module_state.GetConstantDef(cooperative_matrix_inst->Word(3))) {
+                            if (scope->GetConstantValue() == VK_SCOPE_WORKGROUP_KHR) {
+                                usesWorkgroupScope = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (usesWorkgroupScope) {
+                    if (total_workgroup_shared_memory >
+                        phys_dev_props.limits.maxComputeSharedMemorySize -
+                            phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeReservedSharedMemory) {
+                        skip |= LogError(
+                            "VUID-RuntimeSpirv-maxComputeSharedMemorySize-10168", module_state.handle(), loc,
+                            "SPIR-V uses %" PRIu32
+                            " bytes of shared memory, which is more than maxComputeSharedMemorySize (%" PRIu32
+                            ") minus "
+                            "cooperativeMatrixWorkgroupScopeReservedSharedMemory (%" PRIu32 ").",
+                            total_workgroup_shared_memory, phys_dev_props.limits.maxComputeSharedMemorySize,
+                            phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixWorkgroupScopeReservedSharedMemory);
+                    }
+                }
+            }
+
             break;
         }
         case VK_SHADER_STAGE_MESH_BIT_EXT: {
@@ -2364,6 +2498,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         if (skip) {
             return skip;  // if spec constants have errors, can produce false positives later
         }
+    } else {
+        module_state.FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z);
     }
 
     skip |= ValidateShaderTileImage(module_state, entrypoint, pipeline, stage, loc);
@@ -2371,7 +2507,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     skip |= ValidateShaderExecutionModes(module_state, entrypoint, stage, pipeline, loc);
     skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline, loc);
     if (enabled_features.cooperativeMatrix) {
-        skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size_x, loc);
+        skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z, loc);
     }
 
     if (pipeline) {
