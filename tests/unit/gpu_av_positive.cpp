@@ -1866,7 +1866,9 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveGpuAV, DeviceGeneratedCommandsIES) {
+// TODO - Currently can't use IES with GPU-AV due to us creating invalid Pipeline Layouts
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/8806
+TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);

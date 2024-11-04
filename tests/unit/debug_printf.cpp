@@ -3777,9 +3777,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
         }
     )glsl";
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
-    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
-    CreateComputePipelineHelper pipe(*this, &pipe_flags2);
+    CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
@@ -3873,9 +3871,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     )glsl";
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
-    pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
-    CreatePipelineHelper pipe(*this, &pipe_flags2);
+    CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
@@ -3935,7 +3931,9 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsIES) {
+// TODO - Currently can't use IES with GPU-AV due to us creating invalid Pipeline Layouts
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/8806
+TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
