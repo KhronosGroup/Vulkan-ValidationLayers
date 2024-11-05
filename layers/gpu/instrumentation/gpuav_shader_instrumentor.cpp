@@ -574,6 +574,10 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
     BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                      pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
+    // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
+    // no pipeline is created in this case
+    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -600,6 +604,10 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
+    // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
+    // no pipeline is created in this case
+    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -617,6 +625,10 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                          record_obj, pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
+    // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
+    // no pipeline is created in this case
+    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
@@ -635,6 +647,9 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
+    // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
+    // no pipeline is created in this case
+    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
 
     const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR;
 
