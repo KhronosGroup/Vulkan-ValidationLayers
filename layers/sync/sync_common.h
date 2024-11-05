@@ -75,7 +75,7 @@ constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | 
 
 class SyncValidationInfo {
   public:
-    SyncValidationInfo(const SyncValidator* sync_validator) : sync_state_(sync_validator) {}
+    SyncValidationInfo(const SyncValidator* sync_validator, VkQueueFlags queue_flags) : sync_state_(sync_validator), queue_flags_(queue_flags) {}
     const SyncValidator& GetSyncState() const {
         assert(sync_state_);
         return *sync_state_;
@@ -85,6 +85,7 @@ class SyncValidationInfo {
 
   protected:
     const SyncValidator* sync_state_;
+    const VkQueueFlags queue_flags_;
 };
 
 
