@@ -65,8 +65,8 @@ bool CommandExecutionContext::ValidForSyncOps() const {
     return valid;
 }
 
-CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync_validator)
-    : CommandExecutionContext(&sync_validator),
+CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags)
+    : CommandExecutionContext(&sync_validator, queue_flags),
       cb_state_(),
       access_log_(std::make_shared<AccessLog>()),
       cbs_referenced_(std::make_shared<CommandBufferSet>()),
@@ -81,14 +81,14 @@ CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync
       sync_ops_() {}
 
 CommandBufferAccessContext::CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state)
-    : CommandBufferAccessContext(sync_validator) {
+    : CommandBufferAccessContext(sync_validator, cb_state->GetQueueFlags()) {
     cb_state_ = cb_state;
     sync_state_->stats.AddCommandBufferContext();
 }
 
 // NOTE: Make sure the proxy doesn't outlive from, as the proxy is pointing directly to access contexts owned by from.
 CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccessContext &from, AsProxyContext dummy)
-    : CommandBufferAccessContext(*from.sync_state_) {
+    : CommandBufferAccessContext(*from.sync_state_, from.cb_state_->GetQueueFlags()) {
     // Copy only the needed fields out of from for a temporary, proxy command buffer context
     cb_state_ = from.cb_state_;
     access_log_ = std::make_shared<AccessLog>(*from.access_log_);  // potentially large, but no choice given tagging lookup.
@@ -686,7 +686,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
 bool CommandBufferAccessContext::ValidateDrawAttachment(const Location &loc) const {
     bool skip = false;
     if (current_renderpass_context_) {
-        skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(GetExecutionContext(), *cb_state_, loc.function);
+        skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(*this, *cb_state_, loc.function);
     } else if (dynamic_rendering_info_) {
         skip |= ValidateDrawDynamicRenderingAttachment(loc);
     }
@@ -1132,16 +1132,45 @@ static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAcces
     return info;
 }
 
-static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags, const char *sep = "|") {
+static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
+    VkPipelineStageFlags2 allowed_stages = 0;
+    for (const auto &[queue_flag, stages] : syncAllCommandStagesByQueueFlags()) {
+        if (queue_flag & allowed_queue_flags) {
+            allowed_stages |= stages;
+        }
+    }
+    SyncStageAccessFlags filtered_all_read_accesses = syncStageAccessReadMask;
+    SyncStageAccessFlags filtered_shader_read_accesses = syncStageAccessReadMask;
+    for (size_t i = 0; i < syncStageAccessReadMask.size(); i++) {
+        if (syncStageAccessReadMask[i]) {
+            const SyncStageAccessInfoType &access_info = syncStageAccessInfoByStageAccessIndex()[i];
+            const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
+            const bool is_shader_read = (access_info.access_mask & kShaderReadExpandBits) != 0;
+            if (!is_stage_allowed) {
+                filtered_all_read_accesses.reset(i);
+                filtered_shader_read_accesses.reset(i);
+            } else if (!is_shader_read) {
+                filtered_shader_read_accesses.reset(i);
+            }
+        }
+    }
+    if (accesses == filtered_all_read_accesses) {
+        // All allowed reads for the given queue family
+        return "SYNC_ALL_COMMANDS_MEMORY_READ";
+    } else if (accesses == filtered_shader_read_accesses) {
+        // All allowed shader reads for the given queue family (based on kShaderReadExpandBits accesses)
+        return "SYNC_ALL_COMMANDS_SHADER_READ";
+    }
+
     std::string out_str;
-    if (flags.none()) {
+    if (accesses.none()) {
         out_str = "0";
     } else {
         for (size_t i = 0; i < syncStageAccessInfoByStageAccessIndex().size(); i++) {
             const auto &info = syncStageAccessInfoByStageAccessIndex()[i];
-            if ((flags & info.stage_access_bit).any()) {
+            if ((accesses & info.stage_access_bit).any()) {
                 if (!out_str.empty()) {
-                    out_str.append(sep);
+                    out_str.append("|");
                 }
                 out_str.append(info.name);
             }
@@ -1236,7 +1265,8 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &hazard) {
+static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags) {
+    std::stringstream out;
     assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
     const auto &usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.usage_index];
     const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
@@ -1252,9 +1282,9 @@ std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &haz
         out << ", read_barriers: " << string_VkPipelineStageFlags2(barriers);
     } else {
         SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
-        out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier);
+        out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier, queue_flags);
     }
-    return out;
+    return out.str();
 }
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state)
@@ -1272,7 +1302,7 @@ SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl:
 std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
     std::stringstream out;
     assert(hazard.IsHazard());
-    out << hazard.State();
+    out << FormatHazardState(hazard.State(), queue_flags_);
     out << ", " << FormatUsage(hazard.TagEx()) << ")";
     return out.str();
 }

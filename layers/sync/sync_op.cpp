@@ -1135,7 +1135,7 @@ bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) c
     const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
     if (!renderpass_context) return skip;
 
-    skip |= renderpass_context->ValidateNextSubpass(cb_context.GetExecutionContext(), command_);
+    skip |= renderpass_context->ValidateNextSubpass(cb_context, command_);
     return skip;
 }
 
@@ -1168,7 +1168,7 @@ bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context)
     const auto *renderpass_context = cb_context.GetCurrentRenderPassContext();
 
     if (!renderpass_context) return skip;
-    skip |= renderpass_context->ValidateEndRenderPass(cb_context.GetExecutionContext(), command_);
+    skip |= renderpass_context->ValidateEndRenderPass(cb_context, command_);
     return skip;
 }
 

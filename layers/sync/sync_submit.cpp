@@ -239,7 +239,7 @@ class ApplyAcquireNextSemaphoreAction {
 };
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueSyncState& queue_state)
-    : CommandExecutionContext(&sync_state),
+    : CommandExecutionContext(&sync_state, queue_state.GetQueueFlags()),
       queue_state_(&queue_state),
       tag_range_(0, 0),
       current_access_context_(&access_context_),
@@ -249,7 +249,7 @@ QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const Queu
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
-    : CommandExecutionContext(&sync_state),
+    : CommandExecutionContext(&sync_state, 0),
       queue_state_(),
       tag_range_(0, 0),
       current_access_context_(&access_context_),
