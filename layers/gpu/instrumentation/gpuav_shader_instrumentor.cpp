@@ -831,7 +831,7 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pi
     const auto pipeline_layout = pipeline_state.PipelineLayoutState();
     if (!pipeline_layout) return;
 
-    out_instrumentation_dsl.binding_layout_lut.resize(pipeline_layout->set_layouts.size());
+    out_instrumentation_dsl.set_index_to_bindings_layout_lut.resize(pipeline_layout->set_layouts.size());
     for (uint32_t set_layout_index = 0; set_layout_index < pipeline_layout->set_layouts.size(); set_layout_index++) {
         if (const auto set_layout_state = pipeline_layout->set_layouts[set_layout_index]) {
             BuildDescriptorSetLayoutInfo(*set_layout_state, set_layout_index, out_instrumentation_dsl);
@@ -841,7 +841,7 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pi
 
 void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const VkShaderCreateInfoEXT &create_info,
                                                          InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
-    out_instrumentation_dsl.binding_layout_lut.resize(create_info.setLayoutCount);
+    out_instrumentation_dsl.set_index_to_bindings_layout_lut.resize(create_info.setLayoutCount);
     for (const auto [set_layout_index, set_layout] : vvl::enumerate(create_info.pSetLayouts, create_info.setLayoutCount)) {
         if (auto set_layout_state = Get<vvl::DescriptorSetLayout>(*set_layout)) {
             BuildDescriptorSetLayoutInfo(*set_layout_state, set_layout_index, out_instrumentation_dsl);
@@ -855,14 +855,14 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSe
     if (set_layout_state.GetBindingCount() == 0) return;
     const uint32_t binding_count = set_layout_state.GetMaxBinding() + 1;
 
-    auto &binding_layouts = out_instrumentation_dsl.binding_layout_lut[set_layout_index];
+    auto &binding_layouts = out_instrumentation_dsl.set_index_to_bindings_layout_lut[set_layout_index];
     binding_layouts.resize(binding_count);
 
     uint32_t start = 0;
     auto dsl_bindings = set_layout_state.GetBindings();
     for (uint32_t binding_index = 0; binding_index < dsl_bindings.size(); binding_index++) {
         auto &dsl_binding = dsl_bindings[binding_index];
-        if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == dsl_binding.descriptorType) {
+        if (dsl_binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
             binding_layouts[dsl_binding.binding] = {start, 1};
             start += 1;
         } else {
@@ -1216,7 +1216,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.support_memory_model_device_scope = enabled_features.vulkanMemoryModelDeviceScope;
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
 
-    spirv::Module module(input_spirv, debug_report, module_settings, instrumentation_dsl.binding_layout_lut);
+    spirv::Module module(input_spirv, debug_report, module_settings, instrumentation_dsl.set_index_to_bindings_layout_lut);
 
     bool modified = false;
 

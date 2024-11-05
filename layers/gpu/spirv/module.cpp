@@ -33,7 +33,7 @@ namespace gpuav {
 namespace spirv {
 
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
-               const std::vector<std::vector<BindingLayout>>& binding_layout_lut)
+               const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut)
     : type_manager_(*this),
       max_instrumentations_count_(settings.max_instrumentations_count),
       shader_id_(settings.shader_id),
@@ -44,7 +44,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
       has_bindless_descriptors_(settings.has_bindless_descriptors),
       print_debug_info_(settings.print_debug_info),
       debug_report_(debug_report),
-      binding_layout_lut_(binding_layout_lut) {
+      set_index_to_bindings_layout_lut_(set_index_to_bindings_layout_lut) {
     uint32_t instruction_count = 0;
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;

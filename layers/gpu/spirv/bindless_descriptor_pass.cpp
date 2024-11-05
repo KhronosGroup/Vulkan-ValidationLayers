@@ -105,7 +105,7 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
         descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
-    auto binding_layout = module_.binding_layout_lut_[descriptor_set_][descriptor_binding_];
+    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
     const Constant& binding_layout_size = module_.type_manager_.GetConstantUInt32(binding_layout.count);
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 

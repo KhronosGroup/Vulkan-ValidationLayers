@@ -51,7 +51,7 @@ struct Settings {
 class Module {
   public:
     Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
-           const std::vector<std::vector<BindingLayout>>& binding_layout_lut);
+           const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -132,7 +132,7 @@ class Module {
     void InternalError(const char* tag, const char* message);
 
     // < set, [ bindings ] >
-    const std::vector<std::vector<BindingLayout>>& binding_layout_lut_;
+    const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut_;
 };
 
 }  // namespace spirv

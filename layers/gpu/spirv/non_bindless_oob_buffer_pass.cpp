@@ -57,7 +57,7 @@ uint32_t NonBindlessOOBBufferPass::CreateFunctionCall(BasicBlock& block, Instruc
         descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
-    auto binding_layout = module_.binding_layout_lut_[descriptor_set_][descriptor_binding_];
+    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t function_result = module_.TakeNextId();

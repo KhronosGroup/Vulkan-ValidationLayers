@@ -51,9 +51,8 @@ void DescriptorSet::BuildBindingLayouts() {
 
     binding_layouts_.resize(binding_count);
     uint32_t start = 0;
-    for (size_t i = 0; i < bindings_.size(); i++) {
-        auto &binding = bindings_[i];
-        if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == binding->type) {
+    for (const BindingPtr &binding : bindings_) {
+        if (binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
             binding_layouts_[binding->binding] = {start, 1};
             start++;
         } else {
@@ -255,7 +254,7 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
 
 VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
-    // Each set only needs to create the buffer for this once. It is based on total descriptor count, and even with things like
+    // Each set only needs to create its post process buffer once. It is based on total descriptor count, and even with things like
     // VARIABLE_DESCRIPTOR_COUNT_BIT, the size will only get smaller afterwards.
     if (post_process_block_.Address() != 0) {
         return post_process_block_.Address();
@@ -299,14 +298,13 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const L
     post_process_block_.InvalidateAllocation(loc);
 
     for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
-        uint32_t count = binding_layouts_[binding].count;
-        uint32_t start = binding_layouts_[binding].start;
-        for (uint32_t i = 0; i < count; i++) {
-            const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[start + i];
+        const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
+        for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
+            const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
             if (slot & glsl::kDescriptorSetWrittenMask) {
                 if ((slot & glsl::kDescriptorSetSelectionMask) == shader_set) {
                     auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
-                    map_result.first->second.emplace_back(i);
+                    map_result.first->second.emplace_back(descriptor_i);
                 }
             }
         }
