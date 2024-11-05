@@ -182,15 +182,15 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
   protected:
     bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state, const Location &loc);
 
-    // When instrumenting, we need information about the array of VkDescriptorSetLayouts. The core issue is for pipelines, we might
-    // have to merge 2 pipeline layouts together (because of GPL) and therefor both ShaderObject and PipelineLayout state objects
-    // don't have a single way to describe their VkDescriptorSetLayouts. If there are multiple shaders, we also want to only build
-    // this information once. This struct is designed to be filled in from both Pipeline and ShaderObject and then passed down to
-    // the SPIR-V Instrumentation, and afterwards we don't need to save it.
+    // When instrumenting, we need information about the array of VkDescriptorSetLayouts. The core issue is that for pipelines, we
+    // might have to merge 2 pipeline layouts together (because of GPL) and therefore both ShaderObject and PipelineLayout state
+    // objects don't have a single way to describe their VkDescriptorSetLayouts. If there are multiple shaders, we also want to only
+    // build this information once. This struct is designed to be filled in from both Pipeline and ShaderObject and then passed down
+    // to the SPIR-V Instrumentation, and afterwards we don't need to save it.
     struct InstrumentationDescriptorSetLayouts {
         bool has_bindless_descriptors = false;
         // < set , [ bindings ] >
-        std::vector<std::vector<spirv::BindingLayout>> binding_layout_lut;
+        std::vector<std::vector<spirv::BindingLayout>> set_index_to_bindings_layout_lut;
     };
     void BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
