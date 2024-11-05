@@ -987,8 +987,8 @@ static const std::array<SyncStageAccessInfoType, 137> variable = { {
 }};
 return variable;
 }
-const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit() {
-    static const std::map<VkPipelineStageFlags2, SyncStageAccessFlags> variable = {
+const std::map<VkPipelineStageFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit() {
+    static const std::map<VkPipelineStageFlagBits2, SyncStageAccessFlags> variable = {
     { VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, (
         SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT |
         SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT
@@ -1197,8 +1197,8 @@ const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMask
     return variable;
 }
 
-const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit() {
-    static const std::map<VkAccessFlags2, SyncStageAccessFlags> variable = {
+const std::map<VkAccessFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit() {
+    static const std::map<VkAccessFlagBits2, SyncStageAccessFlags> variable = {
     { VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, (
         SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT |
         SYNC_ACCELERATION_STRUCTURE_BUILD_INDIRECT_COMMAND_READ_BIT
@@ -1423,8 +1423,8 @@ const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAcces
     return variable;
 }
 
-const vvl::unordered_map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask() {
-    static const vvl::unordered_map<VkPipelineStageFlags2, VkAccessFlags2> variable = {
+const vvl::unordered_map<VkPipelineStageFlagBits2, VkAccessFlags2>& syncDirectStageToAccessMask() {
+    static const vvl::unordered_map<VkPipelineStageFlagBits2, VkAccessFlags2> variable = {
     { VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, (
         VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT |
         VK_ACCESS_2_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT
@@ -1725,8 +1725,8 @@ const vvl::unordered_map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommand
     return variable;
 }
 
-const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages() {
-    static const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2> variable = {
+const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncLogicallyEarlierStages() {
+    static const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2> variable = {
     { VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, (
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT
     )},
@@ -1956,8 +1956,8 @@ const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogi
     return variable;
 }
 
-const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages() {
-    static const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2> variable = {
+const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncLogicallyLaterStages() {
+    static const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2> variable = {
     { VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, (
         VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
         VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |

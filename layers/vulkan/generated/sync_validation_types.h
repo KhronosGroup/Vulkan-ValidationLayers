@@ -319,8 +319,8 @@ static const SyncStageAccessFlags SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT = (Sy
 
 struct SyncStageAccessInfoType {
     const char *name;
-    VkPipelineStageFlags2 stage_mask;
-    VkAccessFlags2 access_mask;
+    VkPipelineStageFlagBits2 stage_mask;
+    VkAccessFlagBits2 access_mask;
     SyncStageAccessIndex stage_access_index;
     SyncStageAccessFlags stage_access_bit;
 };
@@ -472,22 +472,22 @@ static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all w
 );
 
 // Bit order mask of stage_access bit for each stage. Order matters, don't try to use vvl::unordered_map
-const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit();
+const std::map<VkPipelineStageFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit();
 
 // Bit order mask of stage_access bit for each access. Order matters, don't try to use vvl::unordered_map
-const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit();
+const std::map<VkAccessFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit();
 
 // Direct VkPipelineStageFlags to valid VkAccessFlags lookup table
-const vvl::unordered_map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask();
+const vvl::unordered_map<VkPipelineStageFlagBits2, VkAccessFlags2>& syncDirectStageToAccessMask();
 
 // Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT for each VkQueueFlagBits
 const vvl::unordered_map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags();
 
 // Masks of logically earlier stage flags for a given stage flag
-const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages();
+const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncLogicallyEarlierStages();
 
 // Masks of logically later stage flags for a given stage flag
-const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
+const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
 // clang-format on
 
 // NOLINTEND
