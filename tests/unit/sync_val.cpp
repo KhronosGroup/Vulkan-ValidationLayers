@@ -6491,3 +6491,57 @@ TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncVal, ExpandedMetaStage) {
+    TEST_DESCRIPTION("Barrier does not protect writes from SHADER_READ accesses. Check write barrier is printed in compact form");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR;  // Read access does not protect from subsequent copy writes
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 1;
+    dep_info.pMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "SYNC_ALL_COMMANDS_SHADER_READ");
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncVal, ExpandedMetaStage2) {
+    TEST_DESCRIPTION("Barrier does not protect writes from MEMORY_READ accesses. Check write barrier is printed in compact form");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;  // Read access does not protect from subsequent copy writes
+    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    dep_info.memoryBarrierCount = 1;
+    dep_info.pMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "SYNC_ALL_COMMANDS_MEMORY_READ");
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
