@@ -1240,6 +1240,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     draw_buffer.Memory().Unmap();
 
     CreatePipelineHelper pipe(*this);
+    pipe.rs_state_ci_.lineWidth = 1.0f;
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
