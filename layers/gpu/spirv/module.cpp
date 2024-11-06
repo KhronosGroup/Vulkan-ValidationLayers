@@ -111,12 +111,15 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                 annotations_.emplace_back(std::move(new_inst));
                 break;
 
+            case spv::OpSpecConstantTrue:
+            case spv::OpSpecConstantFalse:
             case spv::OpConstantTrue:
             case spv::OpConstantFalse: {
                 const Type& type = type_manager_.GetTypeBool();
                 type_manager_.AddConstant(std::move(new_inst), type);
                 break;
             }
+            case spv::OpSpecConstant:
             case spv::OpConstant:
             case spv::OpConstantNull:
             case spv::OpConstantComposite: {

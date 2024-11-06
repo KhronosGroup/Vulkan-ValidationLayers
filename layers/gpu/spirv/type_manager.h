@@ -58,15 +58,24 @@ struct Type {
     const Instruction& inst_;
 };
 
-// Represents a OpConstant*
-// Will not be a OpSpecConstant* because we don't know if the value will change
+static bool IsSpecConstant(uint32_t opcode) {
+    return opcode == spv::OpSpecConstant || opcode == spv::OpSpecConstantTrue || opcode == spv::OpSpecConstantFalse ||
+           opcode == spv::OpSpecConstantComposite || opcode == spv::OpSpecConstantOp;
+}
+
+// Represents a OpConstant* or OpSpecConstant*
+// (Currently doesn't handle OpSpecConstantComposite or OpSpecConstantOp)
 struct Constant {
-    Constant(const Type& type, const Instruction& inst) : type_(type), inst_(inst) {}
+    Constant(const Type& type, const Instruction& inst)
+        : type_(type), inst_(inst), is_spec_constant_(IsSpecConstant(inst.Opcode())) {}
 
     uint32_t Id() const { return inst_.ResultId(); }
 
     const Type& type_;
     const Instruction& inst_;
+    // Most times we just need Constant to get type or id, so being a spec const doesn't matter.
+    // This boolean is here incase we do care about the value of the constant.
+    const bool is_spec_constant_;
 };
 
 // Represents a global OpVariable found before the first function

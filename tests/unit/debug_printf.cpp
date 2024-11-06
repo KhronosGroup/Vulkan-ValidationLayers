@@ -4117,3 +4117,54 @@ TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, SpecConstant) {
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(constant_id = 0) const uint value = 22; // default
+        void main() {
+            debugPrintfEXT("value is = %u", value);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe_22(*this);
+    pipe_22.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe_22.CreateComputePipeline();
+
+    const uint32_t value_44 = 44;
+    const uint32_t value_88 = 88;
+
+    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
+    VkSpecializationInfo spec_info_44 = {1, &entry, sizeof(uint32_t), &value_44};
+    VkSpecializationInfo spec_info_88 = {1, &entry, sizeof(uint32_t), &value_88};
+
+    CreateComputePipelineHelper pipe_44(*this);
+    pipe_44.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                                SPV_SOURCE_GLSL, &spec_info_44);
+    pipe_44.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe_88(*this);
+    pipe_88.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                                SPV_SOURCE_GLSL, &spec_info_88);
+    pipe_88.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_22.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_44.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_88.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "value is = 22");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "value is = 44");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "value is = 88");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

@@ -303,6 +303,7 @@ uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& acces
             case SpvType::kStruct: {
                 // Get buffer byte offset for the referenced member
                 const Constant* member_constant = module_.type_manager_.FindConstantById(ac_index_id);
+                assert(!member_constant->is_spec_constant_);
                 uint32_t member_index = member_constant->inst_.Operand(0);
                 uint32_t member_offset = GetMemeberDecoration(current_type_id, member_index, spv::DecorationOffset)->Word(4);
                 current_offset_id = module_.type_manager_.GetConstantUInt32(member_offset).Id();
