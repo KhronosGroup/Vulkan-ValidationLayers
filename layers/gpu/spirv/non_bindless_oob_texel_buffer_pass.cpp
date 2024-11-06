@@ -152,9 +152,6 @@ bool NonBindlessOOBTexelBufferPass::RequiresInstrumentation(const Function& func
             return false;  // Currently we mark these as "bindless"
         } else if (pointer_type->inst_.Opcode() == spv::OpTypeArray) {
             const Constant* array_size_const = module_.type_manager_.FindConstantById(pointer_type->inst_.Operand(1));
-            if (!array_size_const) {
-                return false;  // TODO - Handle Spec Constants here
-            }
             descriptor_array_size_id_ = array_size_const->Id();
         } else {
             module_.InternalError(Name(), "OpAccessChain has no array in it");

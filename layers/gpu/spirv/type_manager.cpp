@@ -377,8 +377,8 @@ uint32_t TypeManager::TypeLength(const Type& type) {
             const Type* element_type = FindTypeById(type.inst_.Operand(0));
             const Constant* count = FindConstantById(type.inst_.Operand(1));
             // TODO - Need to handle spec constant here, for now return zero to have things not blowup
-            assert(count);
-            const uint32_t array_length = count ? count->inst_.Operand(0) : 0;
+            assert(count && !count->is_spec_constant_);
+            const uint32_t array_length = (count && !count->is_spec_constant_) ? count->inst_.Operand(0) : 0;
             return array_length * TypeLength(*element_type);
         }
         case spv::OpTypeStruct: {

@@ -115,9 +115,6 @@ bool NonBindlessOOBBufferPass::RequiresInstrumentation(const Function& function,
     const bool is_descriptor_array = pointer_type->inst_.Opcode() == spv::OpTypeArray;
     if (is_descriptor_array) {
         const Constant* array_size_const = module_.type_manager_.FindConstantById(pointer_type->inst_.Operand(1));
-        if (!array_size_const) {
-            return false;  // TODO - Handle Spec Constants here
-        }
         descriptor_array_size_id_ = array_size_const->Id();
     } else {
         descriptor_array_size_id_ = module_.type_manager_.GetConstantUInt32(1).Id();
