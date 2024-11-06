@@ -27,8 +27,8 @@ const std::array<SyncStageAccessInfoType, 137>& syncStageAccessInfoByStageAccess
 static const std::array<SyncStageAccessInfoType, 137> variable = { {
     {
         "SYNC_ACCESS_INDEX_NONE",
-        VK_PIPELINE_STAGE_2_NONE_KHR,
-        VK_ACCESS_2_NONE_KHR,
+        VK_PIPELINE_STAGE_2_NONE,
+        VK_ACCESS_2_NONE,
         SYNC_ACCESS_INDEX_NONE,
         SyncStageAccessFlags(0)
     },
@@ -972,15 +972,15 @@ static const std::array<SyncStageAccessInfoType, 137> variable = { {
     },
     {
         "SYNC_IMAGE_LAYOUT_TRANSITION",
-        VK_PIPELINE_STAGE_2_NONE_KHR,
-        VK_ACCESS_2_NONE_KHR,
+        VK_PIPELINE_STAGE_2_NONE,
+        VK_ACCESS_2_NONE,
         SYNC_IMAGE_LAYOUT_TRANSITION,
         SYNC_IMAGE_LAYOUT_TRANSITION_BIT
     },
     {
         "SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER",
-        VK_PIPELINE_STAGE_2_NONE_KHR,
-        VK_ACCESS_2_NONE_KHR,
+        VK_PIPELINE_STAGE_2_NONE,
+        VK_ACCESS_2_NONE,
         SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER,
         SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT
     },

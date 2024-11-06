@@ -19,7 +19,7 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
-    {{VK_PIPELINE_STAGE_2_NONE_KHR, SyncStageAccessFlags()},
+    {{VK_PIPELINE_STAGE_2_NONE, SyncStageAccessFlags()},
      {kColorAttachmentExecScope, kColorAttachmentAccessScope},
      {kDepthStencilAttachmentExecScope, kDepthStencilAttachmentAccessScope},
      {kRasterAttachmentExecScope, kRasterAttachmentAccessScope}}};
@@ -118,7 +118,7 @@ HazardResult ResourceAccessState::DetectHazard(const SyncStageAccessInfoType &us
         const bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
         if (last_reads.size()) {
             // Look for any WAR hazards outside the ordered set of stages
-            VkPipelineStageFlags2KHR ordered_stages = VK_PIPELINE_STAGE_2_NONE;
+            VkPipelineStageFlags2 ordered_stages = VK_PIPELINE_STAGE_2_NONE;
             if (usage_write_is_ordered) {
                 // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
                 ordered_stages = GetOrderedStages(queue_id, ordering);
@@ -255,7 +255,7 @@ HazardResult ResourceAccessState::DetectAsyncHazard(const ResourceAccessState &r
 }
 
 HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, QueueId queue_id,
-                                                      VkPipelineStageFlags2KHR src_exec_scope,
+                                                      VkPipelineStageFlags2 src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope) const {
     // Only supporting image layout transitions for now
     assert(usage_info.stage_access_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
@@ -279,7 +279,7 @@ HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoT
 
 HazardResult ResourceAccessState::DetectBarrierHazard(const SyncStageAccessInfoType &usage_info,
                                                       const ResourceAccessState &scope_state,
-                                                      VkPipelineStageFlags2KHR src_exec_scope,
+                                                      VkPipelineStageFlags2 src_exec_scope,
                                                       const SyncStageAccessFlags &src_access_scope, QueueId event_queue,
                                                       ResourceUsageTag event_tag) const {
     // Only supporting image layout transitions for now
@@ -363,7 +363,7 @@ void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
                         //                  May require tracking more than one access per stage.
                         my_read.barriers = other_read.barriers;
                         my_read.sync_stages = other_read.sync_stages;
-                        if (my_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
+                        if (my_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT) {
                             // Since I'm overwriting the fragement stage read, also update the input attachment info
                             // as this is the only stage that affects it.
                             input_attachment_read = other.input_attachment_read;
@@ -382,7 +382,7 @@ void ResourceAccessState::MergeReads(const ResourceAccessState &other) {
             // The other read stage doesn't exist in this, so add it.
             last_reads.emplace_back(other_read);
             last_read_stages |= other_read.stage;
-            if (other_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
+            if (other_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT) {
                 input_attachment_read = other.input_attachment_read;
             }
         }
@@ -488,7 +488,7 @@ void ResourceAccessState::Update(const SyncStageAccessInfoType &usage_info, Sync
         }
 
         // Fragment shader reads come in two flavors, and we need to track if the one we're tracking is the special one.
-        if (usage_stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
+        if (usage_stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT) {
             // TODO Revisit re: multiple reads for a given stage
             input_attachment_read = (usage_bit == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT);
         }
@@ -661,8 +661,8 @@ ResourceAccessState::ResourceAccessState()
       first_access_closed_(false) {}
 
 // This should be just Bits or Index, but we don't have an invalid state for Index
-VkPipelineStageFlags2KHR ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
-    VkPipelineStageFlags2KHR barriers = VK_PIPELINE_STAGE_2_NONE;
+VkPipelineStageFlags2 ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
+    VkPipelineStageFlags2 barriers = VK_PIPELINE_STAGE_2_NONE;
 
     for (const auto &read_access : last_reads) {
         if ((read_access.access & usage_bit).any()) {
@@ -683,22 +683,22 @@ void ResourceAccessState::SetQueueId(QueueId id) {
     if (last_write.has_value()) last_write->SetQueueId(id);
 }
 
-bool ResourceAccessState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                                                const SyncStageAccessFlags &src_access_scope) const {
     return last_write.has_value() && last_write->IsWriteBarrierHazard(queue_id, src_exec_scope, src_access_scope);
 }
 
-bool ResourceAccessState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessState::WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope,
                                                     SyncStageAccessFlags src_access_scope) const {
     return last_write.has_value() && last_write->WriteInSourceScopeOrChain(src_exec_scope, src_access_scope);
 }
 
-bool ResourceAccessState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
                                                          const SyncStageAccessFlags &src_access_scope) const {
     return last_write.has_value() && last_write->WriteInQueueSourceScopeOrChain(queue, src_exec_scope, src_access_scope);
 }
 
-bool ResourceAccessState::WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
+bool ResourceAccessState::WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncStageAccessFlags &src_access_scope,
                                             QueueId scope_queue, ResourceUsageTag scope_tag) const {
     return last_write.has_value() && last_write->WriteInEventScope(src_exec_scope, src_access_scope, scope_queue, scope_tag);
 }
@@ -751,7 +751,7 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
     const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
     if (input_attachment_ordering && input_attachment_read) {
         // If we have an input attachment in last_reads and input attachments are ordered we all that stage
-        ordered_stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+        ordered_stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     }
 
     return ordered_stages;
@@ -762,7 +762,7 @@ void ResourceAccessState::UpdateFirst(const ResourceUsageTagEx tag_ex, const Syn
     // Only record until we record a write.
     if (!first_access_closed_) {
         const bool is_read = IsRead(usage_info);
-        const VkPipelineStageFlags2KHR usage_stage = is_read ? usage_info.stage_mask : 0U;
+        const VkPipelineStageFlags2 usage_stage = is_read ? usage_info.stage_mask : 0U;
         if (0 == (usage_stage & first_read_stages_)) {
             // If this is a read we haven't seen or a write, record.
             // We always need to know what stages were found prior to write
@@ -786,8 +786,8 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
     }
 }
 
-ResourceAccessState::ReadState::ReadState(VkPipelineStageFlags2KHR stage_, SyncStageAccessFlags access_,
-                                          VkPipelineStageFlags2KHR barriers_, ResourceUsageTagEx tag_ex)
+ResourceAccessState::ReadState::ReadState(VkPipelineStageFlags2 stage_, SyncStageAccessFlags access_,
+                                          VkPipelineStageFlags2 barriers_, ResourceUsageTagEx tag_ex)
     : stage(stage_),
       access(access_),
       barriers(barriers_),
@@ -797,8 +797,8 @@ ResourceAccessState::ReadState::ReadState(VkPipelineStageFlags2KHR stage_, SyncS
       queue(kQueueIdInvalid),
       pending_dep_chain(VK_PIPELINE_STAGE_2_NONE) {}
 
-void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_,
-                                         VkPipelineStageFlags2KHR barriers_, ResourceUsageTagEx tag_ex) {
+void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2 stage_, const SyncStageAccessFlags &access_,
+                                         VkPipelineStageFlags2 barriers_, ResourceUsageTagEx tag_ex) {
     stage = stage_;
     access = access_;
     barriers = barriers_;
@@ -828,7 +828,7 @@ ResourceAccessWriteState::ResourceAccessWriteState(const SyncStageAccessInfoType
       tag_(tag_ex.tag),
       handle_index_(tag_ex.handle_index),
       queue_(kQueueIdInvalid),
-      dependency_chain_(VK_PIPELINE_STAGE_2_NONE_KHR),
+      dependency_chain_(VK_PIPELINE_STAGE_2_NONE),
       pending_layout_ordering_(),
       pending_dep_chain_(VK_PIPELINE_STAGE_2_NONE),
       pending_barriers_() {}
@@ -842,7 +842,7 @@ bool ResourceAccessWriteState::IsOrdered(const OrderingBarrier &ordering, QueueI
     return (queue_ == queue_id) && ordering.access_scope[access_->stage_access_index];
 }
 
-bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessWriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                                                     const SyncStageAccessFlags &src_access_scope) const {
     // Current implementation relies on TOP_OF_PIPE constant due to the fact that it's non-zero value
     // and AND-ing with it can create execution dependency when necessary. One example, it allows the
@@ -920,7 +920,7 @@ void ResourceAccessWriteState::SetQueueId(QueueId id) {
     }
 }
 
-bool ResourceAccessWriteState::WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const {
+bool ResourceAccessWriteState::WriteInChain(VkPipelineStageFlags2 src_exec_scope) const {
     return 0 != (dependency_chain_ & src_exec_scope);
 }
 
@@ -929,19 +929,19 @@ bool ResourceAccessWriteState::WriteInScope(const SyncStageAccessFlags &src_acce
     return src_access_scope[access_->stage_access_index];
 }
 
-bool ResourceAccessWriteState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessWriteState::WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope,
                                                          SyncStageAccessFlags src_access_scope) const {
     assert(access_);
     return WriteInChain(src_exec_scope) || WriteInScope(src_access_scope);
 }
 
-bool ResourceAccessWriteState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessWriteState::WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
                                                               const SyncStageAccessFlags &src_access_scope) const {
     assert(access_);
     return WriteInChain(src_exec_scope) || ((queue == queue_) && WriteInScope(src_access_scope));
 }
 
-bool ResourceAccessWriteState::WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope,
+bool ResourceAccessWriteState::WriteInEventScope(VkPipelineStageFlags2 src_exec_scope,
                                                  const SyncStageAccessFlags &src_access_scope, QueueId scope_queue,
                                                  ResourceUsageTag scope_tag) const {
     // The scope logic for events is, if we're asking, the resource usage was flagged as "in the first execution scope" at
@@ -977,8 +977,8 @@ HazardResult::HazardState::HazardState(const ResourceAccessState *access_state_,
     }
 }
 
-SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param,
-                                     const VkPipelineStageFlags2KHR disabled_feature_mask) {
+SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 mask_param,
+                                     const VkPipelineStageFlags2 disabled_feature_mask) {
     SyncExecScope result;
     result.mask_param = mask_param;
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
@@ -991,7 +991,7 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
     return result;
 }
 
-SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2KHR mask_param) {
+SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFlags2 mask_param) {
     SyncExecScope result;
     result.mask_param = mask_param;
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
@@ -1011,7 +1011,7 @@ SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, con
     : src_exec_scope(src), src_access_scope(src.valid_accesses), dst_exec_scope(dst), dst_access_scope(dst.valid_accesses) {}
 
 SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
-    const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(subpass.pNext);
+    const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(subpass.pNext);
     if (barrier) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
         src_exec_scope = src;

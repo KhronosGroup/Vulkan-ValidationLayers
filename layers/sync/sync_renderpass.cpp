@@ -95,7 +95,7 @@ static SyncStageAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, sync
 
 static SyncStageAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, syncval_state::AttachmentType type) {
     SyncStageAccessIndex usage_index;
-    if (store_op == VK_ATTACHMENT_STORE_OP_NONE_KHR) {
+    if (store_op == VK_ATTACHMENT_STORE_OP_NONE) {
         usage_index = SYNC_ACCESS_INDEX_NONE;
     } else if (type == syncval_state::AttachmentType::kColor) {
         usage_index = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
@@ -264,7 +264,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const SyncValidationInfo &v
             const bool has_depth = vkuFormatHasDepth(ci.format);
             const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
-            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_KHR;
+            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE;
             if (!has_stencil && !store_op_stores) continue;
 
             HazardResult hazard;
@@ -275,7 +275,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const SyncValidationInfo &v
                                                        SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kRaster);
                 aspect = "color";
             } else {
-                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_KHR;
+                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE;
                 if (has_depth && store_op_stores) {
                     hazard = CurrentContext().DetectHazard(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea,
                                                            SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
@@ -425,7 +425,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
             const bool has_depth = vkuFormatHasDepth(ci.format);
             const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
-            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_KHR;
+            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE;
 
             if (is_color && store_op_stores) {
                 access_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea,
@@ -436,7 +436,7 @@ void RenderPassAccessContext::UpdateAttachmentStoreAccess(const vvl::RenderPass 
                                                      SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster,
                                                      tag);
                 }
-                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_KHR;
+                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE;
                 if (has_stencil && stencil_op_stores) {
                     access_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea,
                                                      SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kRaster,

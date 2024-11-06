@@ -270,7 +270,7 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
         stage_to_stageAccess = {}
         for stageAccess_info in self.stageAccessCombo:
             stage = stageAccess_info['stage']
-            if stage == 'VK_PIPELINE_STAGE_2_NONE_KHR': continue
+            if stage == 'VK_PIPELINE_STAGE_2_NONE': continue
             stageAccess_bit = stageAccess_info['stage_access_bit']
             stage_to_stageAccess[stage] = stage_to_stageAccess.get(stage, []) + [stageAccess_bit]
         stages_in_bit_order = sorted([x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags], key=lambda x: x.value)
@@ -286,7 +286,8 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
         access_to_stageAccess = {}
         for stageAccess_info in self.stageAccessCombo:
             access = stageAccess_info['access']
-            if access == 'VK_ACCESS_2_FLAG_NONE_KHR': continue
+            if access == 'VK_ACCESS_2_NONE':
+                continue
             stageAccess_bit = stageAccess_info['stage_access_bit']
             access_to_stageAccess[access] = access_to_stageAccess.get(access, []) + [stageAccess_bit]
 
@@ -305,7 +306,8 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
         stage_to_access = {}
         for stageAccess_info in self.stageAccessCombo:
             stage = stageAccess_info['stage']
-            if stage == 'VK_PIPELINE_STAGE_2_NONE_KHR': continue
+            if stage == 'VK_PIPELINE_STAGE_2_NONE':
+                continue
             stage_to_access[stage] = stage_to_access.get(stage, []) + [stageAccess_info['access']]
 
         stages_in_bit_order = sorted([x for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags], key=lambda x: x.value)
@@ -467,8 +469,8 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
                         'stage_access_string' : '"' + none_stage_access + '"',
                         'stage_access_bit': None,
                         'index': 0,
-                        'stage': 'VK_PIPELINE_STAGE_2_NONE_KHR',
-                        'access': 'VK_ACCESS_2_NONE_KHR',
+                        'stage': 'VK_PIPELINE_STAGE_2_NONE',
+                        'access': 'VK_ACCESS_2_NONE',
                         'is_read': None}) #tri-state logic hack...
 
         # < stage, [accesses] >
@@ -532,8 +534,8 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
 
         # Add synthetic stage/access
         synth_stage_access = [ 'IMAGE_LAYOUT_TRANSITION', 'QUEUE_FAMILY_OWNERSHIP_TRANSFER']
-        stage = 'VK_PIPELINE_STAGE_2_NONE_KHR'
-        access = 'VK_ACCESS_2_NONE_KHR'
+        stage = 'VK_PIPELINE_STAGE_2_NONE'
+        access = 'VK_ACCESS_2_NONE'
 
         for synth in synth_stage_access :
             stage_access = enum_prefix + synth

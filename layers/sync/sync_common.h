@@ -103,13 +103,13 @@ struct SyncStageAccess {
     static bool IsWrite(SyncStageAccessIndex stage_access_index) { return syncStageAccessWriteMask[stage_access_index]; }
     static bool IsWrite(const SyncStageAccessInfoType &info) { return IsWrite(info.stage_access_index); }
 
-    static VkPipelineStageFlags2KHR PipelineStageBit(SyncStageAccessIndex stage_access_index) {
+    static VkPipelineStageFlags2 PipelineStageBit(SyncStageAccessIndex stage_access_index) {
         return syncStageAccessInfoByStageAccessIndex()[stage_access_index].stage_mask;
     }
-    static SyncStageAccessFlags AccessScopeByStage(VkPipelineStageFlags2KHR stages);
-    static SyncStageAccessFlags AccessScopeByAccess(VkAccessFlags2KHR access);
-    static SyncStageAccessFlags AccessScope(VkPipelineStageFlags2KHR stages, VkAccessFlags2KHR access);
-    static SyncStageAccessFlags AccessScope(const SyncStageAccessFlags &stage_scope, VkAccessFlags2KHR accesses) {
+    static SyncStageAccessFlags AccessScopeByStage(VkPipelineStageFlags2 stages);
+    static SyncStageAccessFlags AccessScopeByAccess(VkAccessFlags2 access);
+    static SyncStageAccessFlags AccessScope(VkPipelineStageFlags2 stages, VkAccessFlags2 access);
+    static SyncStageAccessFlags AccessScope(const SyncStageAccessFlags &stage_scope, VkAccessFlags2 accesses) {
         return stage_scope & AccessScopeByAccess(accesses);
     }
 };

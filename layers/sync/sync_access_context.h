@@ -274,12 +274,12 @@ class AccessContext {
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
 
     HazardResult DetectImageBarrierHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                                          VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
+                                          VkPipelineStageFlags2 src_exec_scope, const SyncStageAccessFlags &src_access_scope,
                                           QueueId queue_id, const ScopeMap &scope_map, ResourceUsageTag scope_tag,
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
                                           DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const ImageState &image, VkPipelineStageFlags2KHR src_exec_scope,
+    HazardResult DetectImageBarrierHazard(const ImageState &image, VkPipelineStageFlags2 src_exec_scope,
                                           const SyncStageAccessFlags &src_access_scope,
                                           const VkImageSubresourceRange &subresource_range, DetectOptions options) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
