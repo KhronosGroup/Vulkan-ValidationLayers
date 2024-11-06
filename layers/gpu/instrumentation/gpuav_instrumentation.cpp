@@ -30,8 +30,8 @@
 namespace gpuav {
 
 // If application is using shader objects, bindings count will be computed from bound shaders
-static uint32_t GetBindingsCountFromLastBoundPipelineOrShader(Validator &gpuav, VkPipelineBindPoint bind_point,
-                                                              CommandBuffer &cb_state, const LastBound &last_bound) {
+static uint32_t GetDescSetBindingsCountFromLastBoundPipelineOrShader(Validator &gpuav, VkPipelineBindPoint bind_point,
+                                                                     CommandBuffer &cb_state, const LastBound &last_bound) {
     if (last_bound.pipeline_state && last_bound.pipeline_state->PreRasterPipelineLayoutState()) {
         return static_cast<uint32_t>(last_bound.pipeline_state->PreRasterPipelineLayoutState()->set_layouts.size());
     }
@@ -345,7 +345,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
                     // If will also be cached: heuristic is next action command will likely need the same.
 
                     const uint32_t bindings_counts_from_last_pipeline =
-                        GetBindingsCountFromLastBoundPipelineOrShader(gpuav, bind_point, cb_state, last_bound);
+                        GetDescSetBindingsCountFromLastBoundPipelineOrShader(gpuav, bind_point, cb_state, last_bound);
 
                     // If the number of binding of the currently bound pipeline's layout (or the equivalent for shader objects) is
                     // less that the number of bindings in the pipeline layout used to bind descriptor sets,
@@ -432,25 +432,31 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
         std::shared_ptr<const vvl::PipelineLayout> last_bound_desc_set_pipe_layout_state =
             gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
         if (last_bound_desc_set_pipe_layout_state) {
-            const uint32_t bindings_counts_from_last_pipeline =
-                GetBindingsCountFromLastBoundPipelineOrShader(gpuav, bind_point, cb_state, last_bound);
+            const uint32_t desc_set_bindings_counts_from_last_pipeline =
+                GetDescSetBindingsCountFromLastBoundPipelineOrShader(gpuav, bind_point, cb_state, last_bound);
 
-            const bool any_disturbed_bindings = bindings_counts_from_last_pipeline <
-                                                static_cast<uint32_t>(last_bound_desc_set_pipe_layout_state->set_layouts.size());
+            const bool any_disturbed_desc_sets_bindings =
+                desc_set_bindings_counts_from_last_pipeline <
+                static_cast<uint32_t>(last_bound_desc_set_pipe_layout_state->set_layouts.size());
 
-            if (any_disturbed_bindings) {
+            if (any_disturbed_desc_sets_bindings) {
                 const uint32_t disturbed_bindings_count = static_cast<uint32_t>(
-                    last_bound_desc_set_pipe_layout_state->set_layouts.size() - bindings_counts_from_last_pipeline);
-                const uint32_t first_disturbed_set = bindings_counts_from_last_pipeline;
+                    last_bound_desc_set_pipe_layout_state->set_layouts.size() - desc_set_bindings_counts_from_last_pipeline);
+                const uint32_t first_disturbed_set = desc_set_bindings_counts_from_last_pipeline;
 
                 for (uint32_t set_i = 0; set_i < disturbed_bindings_count; ++set_i) {
                     const uint32_t last_bound_set_i = set_i + first_disturbed_set;
-                    VkDescriptorSet desc_set = last_bound.per_set[last_bound_set_i].bound_descriptor_set->VkHandle();
+                    const auto &last_bound_set_state = last_bound.per_set[last_bound_set_i].bound_descriptor_set;
+                    // last_bound.per_set is a LUT, and descriptor sets before the last one could be unbound.
+                    if (!last_bound_set_state) {
+                        continue;
+                    }
+                    VkDescriptorSet last_bound_set = last_bound_set_state->VkHandle();
                     const std::vector<uint32_t> &dynamic_offset = last_bound.per_set[last_bound_set_i].dynamicOffsets;
                     const uint32_t dynamic_offset_count = static_cast<uint32_t>(dynamic_offset.size());
                     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point,
-                                                  last_bound_desc_set_pipe_layout_state->VkHandle(), last_bound_set_i, 1, &desc_set,
-                                                  dynamic_offset_count, dynamic_offset.data());
+                                                  last_bound_desc_set_pipe_layout_state->VkHandle(), last_bound_set_i, 1,
+                                                  &last_bound_set, dynamic_offset_count, dynamic_offset.data());
                 }
             }
         }
