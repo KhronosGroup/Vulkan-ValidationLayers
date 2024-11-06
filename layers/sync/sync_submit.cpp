@@ -855,8 +855,7 @@ BatchAccessLog::AccessRecord BatchAccessLog::GetAccessRecord(ResourceUsageTag ta
 }
 
 std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageRecord& record) const {
-    // const auto& label_commands = (*cbs_)[0]->GetLabelCommands();
-    const auto& label_commands = label_commands_;  // TODO: use the above line when timelines are supported
+    const auto& label_commands = (*cbs_)[0]->GetLabelCommands();
     return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index, initial_label_stack_);
 }
 
@@ -877,9 +876,7 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch,
 
 BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const CommandBufferAccessContext& cb,
                                          const std::vector<std::string>& initial_label_stack)
-    : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {
-    label_commands_ = (*cbs_)[0]->GetLabelCommands();  // TODO: when timelines are supported use cbs directly
-}
+    : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
 PresentedImage::PresentedImage(const SyncValidator& sync_state, QueueBatchContext::Ptr batch_, VkSwapchainKHR swapchain,
                                uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)

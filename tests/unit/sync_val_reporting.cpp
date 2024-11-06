@@ -576,3 +576,46 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion_Secondary) {
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncValReporting, StaleLabelCommand) {
+    TEST_DESCRIPTION("Try to access stale label command when core validation error breaks state invariants");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    // Issue a bunch of label commands
+    label.pLabelName = "RegionA";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    label.pLabelName = "RegionB";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    // At this point 4 label commands were recorded.
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+
+    // Suppress error because we reset command buffer that is still in use.
+    // Simulate situation when core validation is disabled and synchronization
+    // validation runs with existing core validation error. This should not lead
+    // to syncval crashes (but does not guarantee correct syncval behavior).
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkBeginCommandBuffer-commandBuffer-00049");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkQueueSubmit-pCommandBuffers-00071");
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_command_buffer.End();
+
+    // This will detect write-after-write hazard. During error reporting debug label
+    // information says that prior read occured after the 4th label command. Attempt
+    // to access those label commands can lead to crash if out of bounds check is missing.
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
