@@ -1132,54 +1132,71 @@ static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAcces
     return info;
 }
 
-static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
+static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncStageAccessFlags &accesses,
+                                                              VkQueueFlags allowed_queue_flags) {
+    assert(accesses.any());  // otherwise can report 0 as one of compact forms
     VkPipelineStageFlags2 allowed_stages = 0;
     for (const auto &[queue_flag, stages] : syncAllCommandStagesByQueueFlags()) {
         if (queue_flag & allowed_queue_flags) {
             allowed_stages |= stages;
         }
     }
-    SyncStageAccessFlags filtered_all_read_accesses = syncStageAccessReadMask;
-    SyncStageAccessFlags filtered_shader_read_accesses = syncStageAccessReadMask;
-    for (size_t i = 0; i < syncStageAccessReadMask.size(); i++) {
-        if (syncStageAccessReadMask[i]) {
-            const SyncStageAccessInfoType &access_info = syncStageAccessInfoByStageAccessIndex()[i];
-            const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
-            const bool is_shader_read = (access_info.access_mask & kShaderReadExpandBits) != 0;
-            if (!is_stage_allowed) {
-                filtered_all_read_accesses.reset(i);
-                filtered_shader_read_accesses.reset(i);
-            } else if (!is_shader_read) {
-                filtered_shader_read_accesses.reset(i);
-            }
-        }
-    }
-    if (accesses == filtered_all_read_accesses) {
-        // All allowed reads for the given queue family
-        return "SYNC_ALL_COMMANDS_MEMORY_READ";
-    } else if (accesses == filtered_shader_read_accesses) {
-        // All allowed shader reads for the given queue family (based on kShaderReadExpandBits accesses)
-        return "SYNC_ALL_COMMANDS_SHADER_READ";
-    }
+    // Accesses filtered by allowed queue flags
+    SyncStageAccessFlags all_read_accesses = syncStageAccessReadMask;
+    SyncStageAccessFlags all_shader_read_accesses = syncStageAccessReadMask;
+    SyncStageAccessFlags all_shader_write_accesses = syncStageAccessWriteMask;
 
-    std::string out_str;
-    if (accesses.none()) {
-        out_str = "0";
-    } else {
-        for (size_t i = 0; i < syncStageAccessInfoByStageAccessIndex().size(); i++) {
-            const auto &info = syncStageAccessInfoByStageAccessIndex()[i];
-            if ((accesses & info.stage_access_bit).any()) {
-                if (!out_str.empty()) {
-                    out_str.append("|");
-                }
-                out_str.append(info.name);
+    const auto &access_infos = syncStageAccessInfoByStageAccessIndex();
+    for (size_t i = 0; i < access_infos.size(); i++) {
+        const SyncStageAccessInfoType &access_info = access_infos[i];
+        const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
+        if (!is_stage_allowed) {
+            all_read_accesses.reset(i);
+            all_shader_read_accesses.reset(i);
+            all_shader_write_accesses.reset(i);
+            continue;
+        }
+        if (all_shader_read_accesses[i]) {
+            const bool is_shader_read = (access_info.access_mask & kShaderReadExpandBits) != 0;
+            if (!is_shader_read) {
+                all_shader_read_accesses.reset(i);
             }
         }
-        if (out_str.length() == 0) {
-            out_str.append("Unhandled SyncStageAccess");
+        if (all_shader_write_accesses[i]) {
+            const bool is_shader_write = (access_info.access_mask & kShaderWriteExpandBits) != 0;
+            if (!is_shader_write) {
+                all_shader_write_accesses.reset(i);
+            }
         }
     }
-    return out_str;
+    if (accesses == all_read_accesses) {
+        return "SYNC_ALL_COMMANDS_MEMORY_READ";
+    } else if (accesses == all_shader_read_accesses) {
+        return "SYNC_ALL_COMMANDS_SHADER_READ";
+    } else if (accesses == all_shader_write_accesses) {
+        return "SYNC_ALL_COMMANDS_SHADER_WRITE";
+    }
+    return {};
+}
+
+static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
+    if (accesses.none()) {
+        return "0";
+    }
+    const auto compact_form = GetCompactFormOfAccessFlags(accesses, allowed_queue_flags);
+    if (compact_form.has_value()) {
+        return *compact_form;
+    }
+    std::string accesses_str;
+    for (const SyncStageAccessInfoType &info : syncStageAccessInfoByStageAccessIndex()) {
+        if ((accesses & info.stage_access_bit).any()) {
+            if (!accesses_str.empty()) {
+                accesses_str.append("|");
+            }
+            accesses_str.append(info.name);
+        }
+    }
+    return accesses_str;
 }
 
 std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) {
