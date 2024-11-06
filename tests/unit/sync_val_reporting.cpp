@@ -30,16 +30,15 @@ TEST_F(NegativeSyncValReporting, DebugRegion) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     m_command_buffer.Begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
-    vk::CmdCopyBuffer(m_command_buffer, buffer_a, buffer_b, 1, &region);
+    m_command_buffer.Copy(buffer_a, buffer_b);
 
     m_errorMonitor->SetDesiredError("RegionA");
-    vk::CmdCopyBuffer(m_command_buffer, buffer_c, buffer_a, 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
@@ -57,7 +56,6 @@ TEST_F(NegativeSyncValReporting, DebugRegion2) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     m_command_buffer.Begin();
@@ -76,11 +74,11 @@ TEST_F(NegativeSyncValReporting, DebugRegion2) {
 
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
-    vk::CmdCopyBuffer(m_command_buffer, buffer_a, buffer_b, 1, &region);
+    m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    vk::CmdCopyBuffer(m_command_buffer, buffer_c, buffer_a, 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
@@ -100,7 +98,6 @@ TEST_F(NegativeSyncValReporting, DebugRegion3) {
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_d(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     m_command_buffer.Begin();
@@ -109,14 +106,14 @@ TEST_F(NegativeSyncValReporting, DebugRegion3) {
 
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
-    vk::CmdCopyBuffer(m_command_buffer, buffer_a, buffer_d, 1, &region);
+    m_command_buffer.Copy(buffer_a, buffer_d);
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     // this is where prior access happens for the reported hazard
-    vk::CmdCopyBuffer(m_command_buffer, buffer_a, buffer_b, 1, &region);
+    m_command_buffer.Copy(buffer_a, buffer_b);
 
     m_errorMonitor->SetDesiredError("RegionA");
-    vk::CmdCopyBuffer(m_command_buffer, buffer_c, buffer_a, 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
@@ -134,7 +131,6 @@ TEST_F(NegativeSyncValReporting, DebugRegion4) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::Event event(*m_device);
@@ -154,7 +150,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion4) {
 
     label.pLabelName = "CopyAToB";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
-    vk::CmdCopyBuffer(m_command_buffer, buffer_a, buffer_b, 1, &region);
+    m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     label.pLabelName = "ResetEvent2";
@@ -163,7 +159,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion4) {
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VulkanFrame::FirstPass::CopyAToB");
-    vk::CmdCopyBuffer(m_command_buffer, buffer_c, buffer_a, 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);  // FirstPass
@@ -183,14 +179,13 @@ TEST_F(NegativeSyncValReporting, DebugRegion_Secondary) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.Begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &label);
-    vk::CmdCopyBuffer(secondary_cb, buffer_a, buffer_b, 1, &region);
+    secondary_cb.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
     secondary_cb.End();
 
@@ -200,7 +195,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion_Secondary) {
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb.handle());
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
-    vk::CmdCopyBuffer(m_command_buffer, buffer_c, buffer_a, 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_command_buffer.End();
 }
@@ -216,14 +211,13 @@ TEST_F(NegativeSyncValReporting, DebugRegion_Secondary2) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer secondary_cb0(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb0.Begin();
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb0, &label);
-    vk::CmdCopyBuffer(secondary_cb0, buffer_a, buffer_b, 1, &region);
+    secondary_cb0.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb0);
     secondary_cb0.End();
 
@@ -231,7 +225,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion_Secondary2) {
     secondary_cb1.Begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb1, &label);
-    vk::CmdCopyBuffer(secondary_cb1, buffer_c, buffer_a, 1, &region);
+    secondary_cb1.Copy(buffer_c, buffer_a);
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb1);
     secondary_cb1.End();
 
@@ -254,7 +248,6 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -263,14 +256,14 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion) {
     label.pLabelName = "RegionA";
     cb0.Begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
-    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    cb0.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb0);
     cb0.End();
 
     label.pLabelName = "RegionB";
     cb1.Begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
-    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    cb1.Copy(buffer_c, buffer_a);
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.End();
 
@@ -292,21 +285,20 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion2) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
     label.pLabelName = "RegionA";
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.Begin();
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
-    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    cb0.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb0);
     cb0.End();
     m_default_queue->Submit(cb0);
 
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.Begin();
-    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    cb1.Copy(buffer_c, buffer_a);
     cb1.End();
     m_errorMonitor->SetDesiredError("RegionA");
     m_default_queue->Submit(cb1);
@@ -325,7 +317,6 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -349,7 +340,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
 
     label.pLabelName = "CopyAToB";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
-    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    cb0.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb0);
 
     vk::CmdEndDebugUtilsLabelEXT(cb0);  // FirstPass
@@ -371,7 +362,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
 
     label.pLabelName = "CopyCToA";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
-    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    cb1.Copy(buffer_c, buffer_a);
     vk::CmdEndDebugUtilsLabelEXT(cb1);
 
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // SecondPass
@@ -396,7 +387,6 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion4) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -410,14 +400,14 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion4) {
     cb1.Begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
-    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    cb1.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
     cb1.End();
     m_default_queue->Submit(cb1);
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
+    cb2.Copy(buffer_c, buffer_a);
     vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
     cb2.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
@@ -437,7 +427,6 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -450,7 +439,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
     cb1.Begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
-    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    cb1.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
     cb1.End();
@@ -460,7 +449,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
+    cb2.Copy(buffer_c, buffer_a);
     cb2.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb2);
@@ -479,7 +468,6 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion6) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -492,7 +480,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion6) {
     cb1.Begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
-    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    cb1.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
     cb1.End();
@@ -508,7 +496,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion6) {
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdCopyBuffer(cb2, buffer_c, buffer_a, 1, &region);
+    cb2.Copy(buffer_c, buffer_a);
     cb2.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb2);
@@ -528,12 +516,11 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion7) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.Begin();
-    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    cb0.Copy(buffer_a, buffer_b);
     label.pLabelName = "RegionA";
     vk::CmdBeginDebugUtilsLabelEXT(cb0, &label);
     vk::CmdEndDebugUtilsLabelEXT(cb0);
@@ -542,7 +529,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion7) {
 
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.Begin();
-    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    cb1.Copy(buffer_c, buffer_a);
     cb1.End();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     m_default_queue->Submit(cb1);
@@ -561,14 +548,13 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion_Secondary) {
     vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
     vkt::Buffer buffer_c(*m_device, 256, buffer_usage);
-    VkBufferCopy region = {0, 0, 256};
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
 
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.Begin();
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &label);
-    vk::CmdCopyBuffer(secondary_cb, buffer_a, buffer_b, 1, &region);
+    secondary_cb.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
     secondary_cb.End();
 
@@ -583,7 +569,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion_Secondary) {
 
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.Begin();
-    vk::CmdCopyBuffer(cb1, buffer_c, buffer_a, 1, &region);
+    cb1.Copy(buffer_c, buffer_a);
     cb1.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb1);
