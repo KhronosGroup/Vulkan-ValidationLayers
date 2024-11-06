@@ -40,30 +40,30 @@ namespace sync_utils {
 
 static constexpr VkQueueFlags kAllQueueTypes = (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
 
-VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
 
 // Expand all pipeline stage bits. If queue_flags and disabled_feature_mask is provided, the expansion of ALL_COMMANDS_BIT
 // and ALL_GRAPHICS_BIT will be limited to what is supported.
-VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mask, VkQueueFlags queue_flags = kAllQueueTypes,
-                                              const VkPipelineStageFlags2KHR disabled_feature_mask = 0);
+VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags = kAllQueueTypes,
+                                           const VkPipelineStageFlags2 disabled_feature_mask = 0);
 
-VkAccessFlags2KHR ExpandAccessFlags(VkAccessFlags2KHR access_mask);
+VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask);
 
-VkAccessFlags2KHR CompatibleAccessMask(VkPipelineStageFlags2KHR stage_mask);
+VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask);
 
-VkPipelineStageFlags2KHR WithEarlierPipelineStages(VkPipelineStageFlags2KHR stage_mask);
+VkPipelineStageFlags2 WithEarlierPipelineStages(VkPipelineStageFlags2 stage_mask);
 
-VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_mask);
+VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask);
 
-std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask);
+std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask);
 
-std::string StringAccessFlags(VkAccessFlags2KHR mask);
+std::string StringAccessFlags(VkAccessFlags2 mask);
 
 struct ExecScopes {
-    VkPipelineStageFlags2KHR src;
-    VkPipelineStageFlags2KHR dst;
+    VkPipelineStageFlags2 src;
+    VkPipelineStageFlags2 dst;
 };
-ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR& dep_info);
+ExecScopes GetGlobalStageMasks(const VkDependencyInfo& dep_info);
 
 struct ShaderStageAccesses {
     SyncStageAccessIndex sampled_read;

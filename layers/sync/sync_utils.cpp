@@ -19,10 +19,10 @@
 #include "generated/enum_flag_bits.h"
 
 namespace sync_utils {
-static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2KHR) * 8;
+static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2) * 8;
 
-VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions& device_extensions) {
-    VkPipelineStageFlags2KHR result = 0;
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions& device_extensions) {
+    VkPipelineStageFlags2 result = 0;
     if (!features.geometryShader) {
         result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
     }
@@ -60,9 +60,9 @@ VkPipelineStageFlags2KHR DisabledPipelineStages(const DeviceFeatures &features, 
     return result;
 }
 
-VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mask, VkQueueFlags queue_flags,
-                                              const VkPipelineStageFlags2KHR disabled_feature_mask) {
-    VkPipelineStageFlags2KHR expanded = stage_mask;
+VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags,
+                                           const VkPipelineStageFlags2 disabled_feature_mask) {
+    VkPipelineStageFlags2 expanded = stage_mask;
 
     if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -80,45 +80,45 @@ VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mas
         expanded |=
             syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
     }
-    if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR & stage_mask) {
-        expanded &= ~VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR;
-        expanded |= VK_PIPELINE_STAGE_2_COPY_BIT_KHR | VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
-                    VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR;
+    if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT & stage_mask) {
+        expanded &= ~VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+        expanded |= VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT |
+                    VK_PIPELINE_STAGE_2_CLEAR_BIT;
     }
-    if (VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR & stage_mask) {
-        expanded &= ~VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR;
-        expanded |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR;
+    if (VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT & stage_mask) {
+        expanded &= ~VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
+        expanded |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT | VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
     }
-    if (VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR & stage_mask) {
-        expanded &= ~VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR;
-        expanded |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT_KHR |
-                    VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT_KHR;
+    if (VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT & stage_mask) {
+        expanded &= ~VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT;
+        expanded |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
     }
 
     return expanded;
 }
 
-VkAccessFlags2KHR ExpandAccessFlags(VkAccessFlags2KHR access_mask) {
-    VkAccessFlags2KHR expanded = access_mask;
+VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask) {
+    VkAccessFlags2 expanded = access_mask;
 
-    if (VK_ACCESS_2_SHADER_READ_BIT_KHR & access_mask) {
-        expanded = expanded & ~VK_ACCESS_2_SHADER_READ_BIT_KHR;
+    if (VK_ACCESS_2_SHADER_READ_BIT & access_mask) {
+        expanded = expanded & ~VK_ACCESS_2_SHADER_READ_BIT;
         expanded |= kShaderReadExpandBits;
     }
 
-    if (VK_ACCESS_2_SHADER_WRITE_BIT_KHR & access_mask) {
-        expanded = expanded & ~VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
+    if (VK_ACCESS_2_SHADER_WRITE_BIT & access_mask) {
+        expanded = expanded & ~VK_ACCESS_2_SHADER_WRITE_BIT;
         expanded |= kShaderWriteExpandBits;
     }
 
     return expanded;
 }
 
-VkAccessFlags2KHR CompatibleAccessMask(VkPipelineStageFlags2KHR stage_mask) {
-    VkAccessFlags2KHR result = 0;
+VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
+    VkAccessFlags2 result = 0;
     stage_mask = ExpandPipelineStages(stage_mask);
     for (size_t i = 0; i < kNumPipelineStageBits; i++) {
-        VkPipelineStageFlags2KHR bit = 1ULL << i;
+        VkPipelineStageFlags2 bit = 1ULL << i;
         if (stage_mask & bit) {
             auto access_rec = syncDirectStageToAccessMask().find(bit);
             if (access_rec != syncDirectStageToAccessMask().end()) {
@@ -130,20 +130,20 @@ VkAccessFlags2KHR CompatibleAccessMask(VkPipelineStageFlags2KHR stage_mask) {
 
     // put the meta-access bits back on
     if (result & kShaderReadExpandBits) {
-        result |= VK_ACCESS_2_SHADER_READ_BIT_KHR;
+        result |= VK_ACCESS_2_SHADER_READ_BIT;
     }
 
     if (result & kShaderWriteExpandBits) {
-        result |= VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
+        result |= VK_ACCESS_2_SHADER_WRITE_BIT;
     }
 
     return result;
 }
 
-static VkPipelineStageFlags2KHR RelatedPipelineStages(
-    VkPipelineStageFlags2 stage_mask, const vvl::unordered_map<VkPipelineStageFlags2KHR, VkPipelineStageFlags2KHR> &map) {
-    VkPipelineStageFlags2KHR unscanned = stage_mask;
-    VkPipelineStageFlags2KHR related = 0;
+static VkPipelineStageFlags2 RelatedPipelineStages(
+    VkPipelineStageFlags2 stage_mask, const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2> &map) {
+    VkPipelineStageFlags2 unscanned = stage_mask;
+    VkPipelineStageFlags2 related = 0;
     for (const auto &entry : map) {
         const auto &stage = entry.first;
         if (stage & unscanned) {
@@ -155,16 +155,16 @@ static VkPipelineStageFlags2KHR RelatedPipelineStages(
     return related;
 }
 
-VkPipelineStageFlags2KHR WithEarlierPipelineStages(VkPipelineStageFlags2KHR stage_mask) {
+VkPipelineStageFlags2 WithEarlierPipelineStages(VkPipelineStageFlags2 stage_mask) {
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages());
 }
 
-VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_mask) {
+VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask) {
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
 }
 
 // helper to extract the union of the stage masks in all of the barriers
-ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
+ExecScopes GetGlobalStageMasks(const VkDependencyInfo &dep_info) {
     ExecScopes result{};
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
         result.src |= dep_info.pMemoryBarriers[i].srcStageMask;
@@ -186,7 +186,7 @@ ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
 // print the old strings. There are common code paths where we need
 // to print masks as strings and this makes the output less confusing
 // for people not using synchronization2.
-std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask) {
+std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask) {
     VkPipelineStageFlags sync1_mask = static_cast<VkPipelineStageFlags>(mask & AllVkPipelineStageFlagBits);
     if (sync1_mask) {
         return string_VkPipelineStageFlags(sync1_mask);
@@ -194,7 +194,7 @@ std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask) {
     return string_VkPipelineStageFlags2(mask);
 }
 
-std::string StringAccessFlags(VkAccessFlags2KHR mask) {
+std::string StringAccessFlags(VkAccessFlags2 mask) {
     VkAccessFlags sync1_mask = static_cast<VkAccessFlags>(mask & AllVkAccessFlagBits);
     if (sync1_mask) {
         return string_VkAccessFlags(sync1_mask);

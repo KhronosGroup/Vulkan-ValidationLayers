@@ -40,7 +40,7 @@ struct SyncEventState {
     vvl::Func last_command;             // Only Event commands are valid here.
     ResourceUsageTag last_command_tag;  // Needed to filter replay validation
     vvl::Func unsynchronized_set;
-    VkPipelineStageFlags2KHR barriers;
+    VkPipelineStageFlags2 barriers;
     SyncExecScope scope;
     ResourceUsageTag first_scope_tag;
     bool destroyed;
@@ -63,8 +63,8 @@ struct SyncEventState {
 
     void ResetFirstScope();
     const AccessContext::ScopeMap &FirstScope() const { return first_scope->GetAccessStateMap(); }
-    IgnoreReason IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2KHR srcStageMask) const;
-    bool HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope) const;
+    IgnoreReason IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2 srcStageMask) const;
+    bool HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope) const;
     void AddReferencedTags(ResourceUsageTagSet &referenced) const;
 };
 
@@ -188,7 +188,7 @@ class SyncOpBarriers : public SyncOpBase {
                    const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                    const VkImageMemoryBarrier *pImageMemoryBarriers);
     SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
-                   const VkDependencyInfoKHR *pDependencyInfo);
+                   const VkDependencyInfo *pDependencyInfo);
 
     ~SyncOpBarriers() override = default;
 
@@ -228,7 +228,7 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
                           const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                           const VkImageMemoryBarrier *pImageMemoryBarriers);
     SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                          const VkDependencyInfoKHR &pDependencyInfo);
+                          const VkDependencyInfo &pDependencyInfo);
     ~SyncOpPipelineBarrier() override = default;
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
@@ -246,7 +246,7 @@ class SyncOpWaitEvents : public SyncOpBarriers {
                      const VkImageMemoryBarrier *pImageMemoryBarriers);
 
     SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t eventCount,
-                     const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo);
+                     const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfo);
     ~SyncOpWaitEvents() override = default;
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
@@ -267,7 +267,7 @@ class SyncOpWaitEvents : public SyncOpBarriers {
 class SyncOpResetEvent : public SyncOpBase {
   public:
     SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                     VkPipelineStageFlags2KHR stageMask);
+                     VkPipelineStageFlags2 stageMask);
     ~SyncOpResetEvent() override = default;
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
@@ -284,9 +284,9 @@ class SyncOpResetEvent : public SyncOpBase {
 class SyncOpSetEvent : public SyncOpBase {
   public:
     SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                   VkPipelineStageFlags2KHR stageMask, const AccessContext *access_context);
+                   VkPipelineStageFlags2 stageMask, const AccessContext *access_context);
     SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                   const VkDependencyInfoKHR &dep_info, const AccessContext *access_context);
+                   const VkDependencyInfo &dep_info, const AccessContext *access_context);
     ~SyncOpSetEvent() override = default;
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;

@@ -215,7 +215,7 @@ SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_stat
 }
 
 SyncOpBarriers::SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t event_count,
-                               const VkDependencyInfoKHR *dep_infos)
+                               const VkDependencyInfo *dep_infos)
     : SyncOpBase(command), barriers_(event_count) {
     for (uint32_t i = 0; i < event_count; i++) {
         const auto &dep_info = dep_infos[i];
@@ -245,7 +245,7 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
                      pImageMemoryBarriers) {}
 
 SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                             const VkDependencyInfoKHR &dep_info)
+                                             const VkDependencyInfo &dep_info)
     : SyncOpBarriers(command, sync_state, queue_flags, 1, &dep_info) {}
 
 bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_context) const {
@@ -495,7 +495,7 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
 }
 
 SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
-                                   uint32_t eventCount, const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfo)
+                                   uint32_t eventCount, const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfo)
     : SyncOpBarriers(command, sync_state, queue_flags, eventCount, pDependencyInfo) {
     MakeEventsList(sync_state, eventCount, pEvents);
     assert(events_.size() == barriers_.size());  // Just so nobody gets clever and decides to cull the event or barrier arrays
@@ -546,8 +546,8 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
     const auto &sync_state = exec_context.GetSyncState();
     const QueueId queue_id = exec_context.GetQueueId();
 
-    VkPipelineStageFlags2KHR event_stage_masks = 0U;
-    VkPipelineStageFlags2KHR barrier_mask_params = 0U;
+    VkPipelineStageFlags2 event_stage_masks = 0U;
+    VkPipelineStageFlags2 barrier_mask_params = 0U;
     bool events_not_found = false;
     const auto *events_context = exec_context.GetCurrentEventsContext();
     assert(events_context);
@@ -663,7 +663,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
     }
 
     // Note that we can't check for HOST in pEvents as we don't track that set event type
-    const auto extra_stage_bits = (barrier_mask_params & ~VK_PIPELINE_STAGE_2_HOST_BIT_KHR) & ~event_stage_masks;
+    const auto extra_stage_bits = (barrier_mask_params & ~VK_PIPELINE_STAGE_2_HOST_BIT) & ~event_stage_masks;
     if (extra_stage_bits) {
         // Issue error message that event waited for is not in wait events scope
         // NOTE: This isn't exactly the right VUID for WaitEvents2, but it's as close as we currently have support for
@@ -797,7 +797,7 @@ void SyncOpWaitEvents::MakeEventsList(const SyncValidator &sync_state, uint32_t 
 }
 
 SyncOpResetEvent::SyncOpResetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                                   VkPipelineStageFlags2KHR stageMask)
+                                   VkPipelineStageFlags2 stageMask)
     : SyncOpBase(command), event_(sync_state.Get<vvl::Event>(event)), exec_scope_(SyncExecScope::MakeSrc(queue_flags, stageMask)) {}
 
 bool SyncOpResetEvent::Validate(const CommandBufferAccessContext &cb_context) const {
@@ -877,7 +877,7 @@ void SyncOpResetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resou
 }
 
 SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                               VkPipelineStageFlags2KHR stageMask, const AccessContext *access_context)
+                               VkPipelineStageFlags2 stageMask, const AccessContext *access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
       recorded_context_(),
@@ -893,7 +893,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
 }
 
 SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                               const VkDependencyInfoKHR &dep_info, const AccessContext *access_context)
+                               const VkDependencyInfo &dep_info, const AccessContext *access_context)
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
       recorded_context_(),
@@ -1355,7 +1355,7 @@ void SyncEventState::ResetFirstScope() {
 }
 
 // Keep the "ignore this event" logic in same place for ValidateWait and RecordWait to use
-SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2KHR srcStageMask) const {
+SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, VkPipelineStageFlags2 srcStageMask) const {
     IgnoreReason reason = NotIgnored;
 
     if ((vvl::Func::vkCmdWaitEvents2KHR == command || vvl::Func::vkCmdWaitEvents2 == command) &&
@@ -1367,7 +1367,7 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, 
     } else if (unsynchronized_set != vvl::Func::Empty) {
         reason = SetRace;
     } else if (first_scope) {
-        const VkPipelineStageFlags2KHR missing_bits = scope.mask_param & ~srcStageMask;
+        const VkPipelineStageFlags2 missing_bits = scope.mask_param & ~srcStageMask;
         // Note it is the "not missing bits" path that is the only "NotIgnored" path
         if (missing_bits) reason = MissingStageBits;
     } else {
@@ -1377,7 +1377,7 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(vvl::Func command, 
     return reason;
 }
 
-bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope_arg) const {
+bool SyncEventState::HasBarrier(VkPipelineStageFlags2 stageMask, VkPipelineStageFlags2 exec_scope_arg) const {
     return (last_command == vvl::Func::Empty) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (barriers & exec_scope_arg) ||
            (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }

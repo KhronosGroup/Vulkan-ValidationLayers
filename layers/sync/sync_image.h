@@ -24,11 +24,11 @@ namespace syncval_state {
 class ImageState : public vvl::Image {
   public:
     ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkFormatFeatureFlags2KHR features)
+               VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, pCreateInfo, features), opaque_base_address_(0U) {}
 
     ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR features)
+               VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
@@ -50,7 +50,7 @@ class ImageState : public vvl::Image {
 class ImageViewState : public vvl::ImageView {
   public:
     ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
-                   VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
+                   VkFormatFeatureFlags2 ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
     ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
     const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
