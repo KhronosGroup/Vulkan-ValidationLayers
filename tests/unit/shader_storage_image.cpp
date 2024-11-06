@@ -154,6 +154,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     // Find storage formats with & without read without format support
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
+        if (!vkuFormatIsSampledFloat((VkFormat)fmt)) continue;
 
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
@@ -303,6 +304,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     // Find storage formats with & without write without format support
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
         if (has_without_format_test && has_with_format_test) break;
+        if (!vkuFormatIsSampledFloat((VkFormat)fmt)) continue;
 
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
