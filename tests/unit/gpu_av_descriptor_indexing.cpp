@@ -851,6 +851,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
 
     SCOPED_TRACE("Out of Bounds");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068");
+    // On Windows Arm, it re-runs the geometry shader 3 times on same primitive
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-10068");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-10068");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -861,6 +864,9 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
 
     SCOPED_TRACE("Uninitialized");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
+    // On Windows Arm, it re-runs the geometry shader 3 times on same primitive
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08114");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08114");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
