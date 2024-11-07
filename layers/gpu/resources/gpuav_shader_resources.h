@@ -102,8 +102,10 @@ struct DescriptorState {
                 return (kInlineUniformDesc << kDescBitShift);
             case vvl::DescriptorClass::AccelerationStructure:
                 return (kAccelDesc << kDescBitShift);
-            default:
+            case vvl::DescriptorClass::Mutable:
+            case vvl::DescriptorClass::Invalid:
                 assert(false);
+                break;
         }
         return 0;
     }

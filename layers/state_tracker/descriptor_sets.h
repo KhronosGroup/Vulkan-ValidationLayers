@@ -358,30 +358,26 @@ class DescriptorSetLayout : public StateObject {
     std::unique_ptr<VkDeviceSize> layout_size_in_bytes;
 };
 
-/*
- * Descriptor classes
- *  Descriptor is an abstract base class from which 5 separate descriptor types are derived.
- *   This allows the WriteUpdate() and CopyUpdate() operations to be specialized per
- *   descriptor type, but all descriptors in a set can be accessed via the common Descriptor*.
- */
-
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
 enum class DescriptorClass {
-    PlainSampler,
-    ImageSampler,
-    Image,
-    TexelBuffer,
-    GeneralBuffer,
-    InlineUniform,
-    AccelerationStructure,
-    Mutable,
-    NoDescriptorClass
+    PlainSampler,           // SAMPLER
+    ImageSampler,           // COMBINED_IMAGE_SAMPLER
+    Image,                  // SAMPLED_IMAGE/STORAGE_IMAGE/INPUT_ATTACHMENT
+    TexelBuffer,            // UNIFORM_TEXEL_BUFFER/VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+    GeneralBuffer,          // UNIFORM_BUFFER/VK_DESCRIPTOR_TYPE_STORAGE_BUFFER (and dynamic version)
+    InlineUniform,          // INLINE_UNIFORM_BLOCK
+    AccelerationStructure,  // ACCELERATION_STRUCTURE
+    Mutable,                // MUTABLE
+    Invalid
 };
 
 DescriptorClass DescriptorTypeToClass(VkDescriptorType type);
 
 class DescriptorSet;
 
+// Descriptor is an abstract base class from which many separate descriptor types are derived.
+// This allows the WriteUpdate() and CopyUpdate() operations to be specialized per descriptor type, but all descriptors in a set can
+// be accessed via the common Descriptor.
 class Descriptor {
   public:
     static bool SupportsNotifyInvalidate() { return false; }

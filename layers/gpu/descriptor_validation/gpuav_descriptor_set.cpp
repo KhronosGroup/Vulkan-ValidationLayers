@@ -21,6 +21,7 @@
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/resources/gpuav_shader_resources.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
+#include "state_tracker/descriptor_sets.h"
 
 using vvl::DescriptorClass;
 
@@ -155,7 +156,9 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             }
             return glsl::DescriptorState(desc_class, id);
         }
-        default:
+        case DescriptorClass::InlineUniform:
+        case DescriptorClass::Mutable:
+        case DescriptorClass::Invalid:
             assert(false);
             break;
     }
@@ -240,8 +243,8 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
             case DescriptorClass::AccelerationStructure:
                 FillBindingInData(static_cast<const vvl::AccelerationStructureBinding &>(binding), data, index);
                 break;
-            case DescriptorClass::NoDescriptorClass:
-                gpuav.InternalError(gpuav.device, loc, "NoDescriptorClass not supported.");
+            case DescriptorClass::Invalid:
+                gpuav.InternalError(gpuav.device, loc, "Unknown DescriptorClass");
         }
     }
 
