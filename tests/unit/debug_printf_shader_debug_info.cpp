@@ -53,7 +53,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Pipeline (bad_pipeline)");
+    m_errorMonitor->SetDesiredInfo("Pipeline (bad_pipeline)");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -91,7 +91,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Shader Object (bad_shader_object)");
+    m_errorMonitor->SetDesiredInfo("Shader Object (bad_shader_object)");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -277,7 +277,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Compute Dispatch Index 3");
+    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 3");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -334,8 +334,8 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndexMulti) {
     vk::CmdDispatch(cb1.handle(), 1, 1, 1);
     cb1.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Compute Dispatch Index 3");  // cb0
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Compute Dispatch Index 0");  // cb1
+    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 3");  // cb0
+    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 0");  // cb1
 
     VkCommandBuffer cbs[2] = {cb0.handle(), cb1.handle()};
     VkSubmitInfo submit = vku::InitStructHelper();
@@ -374,7 +374,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, StageInfo) {
     vk::CmdDispatch(m_command_buffer.handle(), 4, 4, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Global invocation ID (x, y, z) = (3, 1, 0)");
+    m_errorMonitor->SetDesiredInfo("Global invocation ID (x, y, z) = (3, 1, 0)");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -412,8 +412,8 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, Fragment) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Stage = Fragment.  Fragment coord (x,y) = (10.5, 10.5)");
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Stage = Fragment.  Fragment coord (x,y) = (10.5, 11.5)");
+    m_errorMonitor->SetDesiredInfo("Stage = Fragment.  Fragment coord (x,y) = (10.5, 10.5)");
+    m_errorMonitor->SetDesiredInfo("Stage = Fragment.  Fragment coord (x,y) = (10.5, 11.5)");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
