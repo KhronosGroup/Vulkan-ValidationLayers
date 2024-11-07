@@ -1630,7 +1630,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfo) {
+TEST_F(NegativeGpuAVShaderDebugInfo, StageInfo) {
     TEST_DESCRIPTION("Make sure we print the stage info correctly");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1651,7 +1651,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfo) {
             int x;
         };
         void main()  {
-            if (gl_WorkGroupSize.x == 1) {
+            if (gl_WorkGroupID.x == 1) {
                 x = data.indices[16];
             }
         }
