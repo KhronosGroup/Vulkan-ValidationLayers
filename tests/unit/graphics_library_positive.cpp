@@ -1233,7 +1233,10 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     CreatePipelineHelper pipe(*this);
     pipe.InitPreRasterLibInfo(&stage_ci);
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
-    pipe.CreateGraphicsPipeline();
+    VkResult result = pipe.CreateGraphicsPipeline();
+    if (result == VK_PIPELINE_COMPILE_REQUIRED) {
+        GTEST_SKIP() << "This test needs to be ran with driver cache on in order to know about this pipeline";
+    }
 
     // Create a fragment shader library with FS referencing an identifier queried from VkShaderModuleCreateInfo
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -1256,7 +1259,10 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     fs_pipe.InitFragmentLibInfo(&fs_stage_ci);
     fs_pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     fs_pipe.gp_ci_.layout = pipe.gp_ci_.layout;
-    fs_pipe.CreateGraphicsPipeline(false);
+    result = fs_pipe.CreateGraphicsPipeline(false);
+    if (result == VK_PIPELINE_COMPILE_REQUIRED) {
+        GTEST_SKIP() << "This test needs to be ran with driver cache on in order to know about this pipeline";
+    }
 
     // Create a complete pipeline with the above pre-raster fs libraries
     CreatePipelineHelper vi_pipe(*this);
@@ -1282,7 +1288,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     pipe_ci.layout = pipe.gp_ci_.layout;
     pipe_ci.renderPass = RenderPass();
     VkPipeline pipeline;
-    VkResult result = vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1u, &pipe_ci, nullptr, &pipeline);
+    result = vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1u, &pipe_ci, nullptr, &pipeline);
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_PIPELINE_COMPILE_REQUIRED);
     if (result == VK_SUCCESS) {
         vk::DestroyPipeline(device(), pipeline, nullptr);
