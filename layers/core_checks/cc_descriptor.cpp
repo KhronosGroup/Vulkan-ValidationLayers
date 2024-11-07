@@ -807,7 +807,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t
     bool result = false;
     VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
     // NOTE: GPU-AV needs non-const state objects to do lazy updates of descriptor state of only the dynamically used
-    // descriptors, via the non-const version of ValidateBinding(), this code uses the const path only even it gives up
+    // descriptors, via the non-const version of ValidateBindingDynamic(), this code uses the const path only even it gives up
     // non-const versions of its state objects here.
     const vvl::DescriptorValidator desc_val(const_cast<CoreChecks &>(*this), const_cast<vvl::CommandBuffer &>(cb_state),
                                             const_cast<DescriptorSet &>(descriptor_set), set_index, framebuffer, loc);
@@ -828,7 +828,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t
         binding_info.first = binding_pair.first;
         binding_info.second.emplace_back(binding_pair.second);
 
-        result |= desc_val.ValidateBinding(binding_info, *binding);
+        result |= desc_val.ValidateBindingStatic(binding_info, *binding);
     }
     return result;
 }
