@@ -192,7 +192,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                     binding_info.second.emplace_back(iter->second);
                     ++iter;
                 }
-                context.ValidateBinding(binding_info, u.second);
+                context.ValidateBindingDynamic(binding_info, u.second);
             }
         }
     }

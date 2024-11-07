@@ -77,7 +77,7 @@ vvl::DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, vvl::
       vuids(GetDrawDispatchVuid(loc.function)) {}
 
 template <typename T>
-bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding) const {
+bool vvl::DescriptorValidator::ValidateDescriptorsStatic(const DescriptorBindingInfo &binding_info, const T &binding) const {
     bool skip = false;
     for (uint32_t index = 0; !skip && index < binding.count; index++) {
         const auto &descriptor = binding.descriptors[index];
@@ -94,7 +94,8 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
     return skip;
 }
 
-bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const vvl::DescriptorBinding &binding) const {
+bool vvl::DescriptorValidator::ValidateBindingStatic(const DescriptorBindingInfo &binding_info,
+                                                     const vvl::DescriptorBinding &binding) const {
     using DescriptorClass = vvl::DescriptorClass;
     bool skip = false;
     switch (binding.descriptor_class) {
@@ -102,22 +103,22 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
             // Can't validate the descriptor because it may not have been updated.
             break;
         case DescriptorClass::GeneralBuffer:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::BufferBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(binding_info, static_cast<const vvl::BufferBinding &>(binding));
             break;
         case DescriptorClass::ImageSampler:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::ImageSamplerBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(binding_info, static_cast<const vvl::ImageSamplerBinding &>(binding));
             break;
         case DescriptorClass::Image:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::ImageBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(binding_info, static_cast<const vvl::ImageBinding &>(binding));
             break;
         case DescriptorClass::PlainSampler:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::SamplerBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(binding_info, static_cast<const vvl::SamplerBinding &>(binding));
             break;
         case DescriptorClass::TexelBuffer:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::TexelBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(binding_info, static_cast<const vvl::TexelBinding &>(binding));
             break;
         case DescriptorClass::AccelerationStructure:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::AccelerationStructureBinding &>(binding));
+            skip |= ValidateDescriptorsStatic(binding_info, static_cast<const vvl::AccelerationStructureBinding &>(binding));
             break;
         default:
             break;
@@ -126,8 +127,8 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
 }
 
 template <typename T>
-bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &binding_info, const T &binding,
-                                                    const std::vector<uint32_t> &indices) {
+bool vvl::DescriptorValidator::ValidateDescriptorsDynamic(const DescriptorBindingInfo &binding_info, const T &binding,
+                                                          const std::vector<uint32_t> &indices) {
     bool skip = false;
     for (auto index : indices) {
         const auto &descriptor = binding.descriptors[index];
@@ -144,7 +145,8 @@ bool vvl::DescriptorValidator::ValidateDescriptors(const DescriptorBindingInfo &
     return skip;
 }
 
-bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &binding_info, const std::vector<uint32_t> &indices) {
+bool vvl::DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &binding_info,
+                                                      const std::vector<uint32_t> &indices) {
     using DescriptorClass = vvl::DescriptorClass;
     bool skip = false;
     auto binding_ptr = descriptor_set.GetBinding(binding_info.first);
@@ -155,7 +157,7 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
             // Can't validate the descriptor because it may not have been updated.
             break;
         case DescriptorClass::GeneralBuffer:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::BufferBinding &>(binding), indices);
+            skip |= ValidateDescriptorsDynamic(binding_info, static_cast<const vvl::BufferBinding &>(binding), indices);
             break;
         case DescriptorClass::ImageSampler: {
             auto &imgs_binding = static_cast<vvl::ImageSamplerBinding &>(binding);
@@ -163,7 +165,7 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
                 auto &descriptor = imgs_binding.descriptors[index];
                 descriptor.UpdateDrawState(&dev_state, &cb_state);
             }
-            skip |= ValidateDescriptors(binding_info, imgs_binding, indices);
+            skip |= ValidateDescriptorsDynamic(binding_info, imgs_binding, indices);
             break;
         }
         case DescriptorClass::Image: {
@@ -172,17 +174,18 @@ bool vvl::DescriptorValidator::ValidateBinding(const DescriptorBindingInfo &bind
                 auto &descriptor = img_binding.descriptors[index];
                 descriptor.UpdateDrawState(&dev_state, &cb_state);
             }
-            skip |= ValidateDescriptors(binding_info, img_binding, indices);
+            skip |= ValidateDescriptorsDynamic(binding_info, img_binding, indices);
             break;
         }
         case DescriptorClass::PlainSampler:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::SamplerBinding &>(binding), indices);
+            skip |= ValidateDescriptorsDynamic(binding_info, static_cast<const vvl::SamplerBinding &>(binding), indices);
             break;
         case DescriptorClass::TexelBuffer:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::TexelBinding &>(binding), indices);
+            skip |= ValidateDescriptorsDynamic(binding_info, static_cast<const vvl::TexelBinding &>(binding), indices);
             break;
         case DescriptorClass::AccelerationStructure:
-            skip |= ValidateDescriptors(binding_info, static_cast<const vvl::AccelerationStructureBinding &>(binding), indices);
+            skip |=
+                ValidateDescriptorsDynamic(binding_info, static_cast<const vvl::AccelerationStructureBinding &>(binding), indices);
             break;
         default:
             break;
