@@ -1262,7 +1262,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     signal_submit_info.signalSemaphoreCount = 0;
     signal_submit_info.pSignalSemaphores = &semaphore_handle;
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "BestPractices-SignalSemaphores-SemaphoreCount");
+    m_errorMonitor->SetDesiredInfo("BestPractices-SignalSemaphores-SemaphoreCount");
     vk::QueueSubmit(m_default_queue->handle(), 1, &signal_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
@@ -1273,7 +1273,7 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     wait_submit_info.waitSemaphoreCount = 0;
     wait_submit_info.pWaitSemaphores = &semaphore_handle;
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "BestPractices-WaitSemaphores-SemaphoreCount");
+    m_errorMonitor->SetDesiredInfo("BestPractices-WaitSemaphores-SemaphoreCount");
     vk::QueueSubmit(m_default_queue->handle(), 1, &wait_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 

@@ -912,7 +912,7 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_command_buffer.end();
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "In Raygen");
+    m_errorMonitor->SetDesiredInfo("In Raygen");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
