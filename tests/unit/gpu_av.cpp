@@ -305,9 +305,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO the SPIRV-Tools instrumentation doesn't work for this shader
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
-TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
+TEST_F(NegativeGpuAV, InvalidAtomicStorageOperation) {
     TEST_DESCRIPTION(
         "If storage view use atomic operation, the view's format MUST support VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT or "
         "VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT ");
@@ -391,8 +389,8 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02691", 2);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07888", 2);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02691");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07888");
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -404,12 +402,10 @@ TEST_F(NegativeGpuAV, DISABLED_InvalidAtomicStorageOperation) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO: The SPIRV-Tools instrumentation doesn't work correctly for this shader
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
-TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
+TEST_F(NegativeGpuAV, UnnormalizedCoordinatesInBoundsAccess) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpInBoundsAccessChain");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -513,9 +509,7 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesInBoundsAccess) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO: The SPIRV-Tools instrumentation doesn't work correctly for this shader
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
-TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesCopyObject) {
+TEST_F(NegativeGpuAV, UnnormalizedCoordinatesCopyObject) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpCopyObject");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
