@@ -207,9 +207,9 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
         vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
 
     // We have GPL variations for graphics as they defer instrumentation until linking
-    void PreCallRecordPipelineCreationShaderInstrumentationGPL(
+    [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentationGPL(
         const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state,
-        vku::safe_VkGraphicsPipelineCreateInfo &new_pipeline_ci, const Location &loc,
+        vku::safe_VkGraphicsPipelineCreateInfo &modified_pipeline_ci, const Location &loc,
         std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
     void PostCallRecordPipelineCreationShaderInstrumentationGPL(
         vvl::Pipeline &pipeline_state, const VkAllocationCallbacks *pAllocator,
