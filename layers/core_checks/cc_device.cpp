@@ -325,109 +325,105 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                              const ErrorObject &error_obj) const {
     bool skip = false;
-    auto pd_state = Get<vvl::PhysicalDevice>(gpu);
-
     // TODO: object_tracker should perhaps do this instead
     //       and it does not seem to currently work anyway -- the loader just crashes before this point
+    auto pd_state = Get<vvl::PhysicalDevice>(gpu);
     if (!pd_state) {
         skip |= LogError("VUID-vkCreateDevice-physicalDevice-parameter", device, error_obj.location,
                          "Have not called vkEnumeratePhysicalDevices() yet.");
-    } else {
-        skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
-                                               error_obj.location.dot(Field::pCreateInfo));
+        return skip;
+    }
 
-        const VkPhysicalDeviceFragmentShadingRateFeaturesKHR *fragment_shading_rate_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+    skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
+                                           error_obj.location.dot(Field::pCreateInfo));
 
-        if (fragment_shading_rate_features) {
-            const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
-                vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+    if (const auto *fragment_shading_rate_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext)) {
+        const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
 
-            if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
-                if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04478", pd_state->Handle(), error_obj.location,
-                                     "Cannot enable shadingRateImage and pipelineFragmentShadingRate features simultaneously.");
-                }
-                if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04479", pd_state->Handle(), error_obj.location,
-                                     "Cannot enable shadingRateImage and primitiveFragmentShadingRate features simultaneously.");
-                }
-                if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04480", pd_state->Handle(), error_obj.location,
-                                     "Cannot enable shadingRateImage and attachmentFragmentShadingRate features "
-                                     "simultaneously.");
-                }
+        if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
+            if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04478", pd_state->Handle(), error_obj.location,
+                                 "Cannot enable shadingRateImage and pipelineFragmentShadingRate features simultaneously.");
             }
-
-            const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
-                vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
-
-            if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
-                if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04481", pd_state->Handle(), error_obj.location,
-                                     "Cannot enable fragmentDensityMap and pipelineFragmentShadingRate features "
-                                     "simultaneously.");
-                }
-                if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04482", pd_state->Handle(), error_obj.location,
-                                     "Cannot enable fragmentDensityMap and primitiveFragmentShadingRate features "
-                                     "simultaneously.");
-                }
-                if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
-                    skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04483", pd_state->Handle(), error_obj.location,
-                                     "Cannot enable fragmentDensityMap and attachmentFragmentShadingRate features "
-                                     "simultaneously.");
-                }
+            if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04479", pd_state->Handle(), error_obj.location,
+                                 "Cannot enable shadingRateImage and primitiveFragmentShadingRate features simultaneously.");
+            }
+            if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04480", pd_state->Handle(), error_obj.location,
+                                 "Cannot enable shadingRateImage and attachmentFragmentShadingRate features "
+                                 "simultaneously.");
             }
         }
 
-        const auto *shader_image_atomic_int64_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext);
-        if (shader_image_atomic_int64_features) {
-            if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
-                !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-None-04896", pd_state->Handle(), error_obj.location,
-                                 "if sparseImageInt64Atomics feature is enabled then shaderImageInt64Atomics "
-                                 "feature must also be enabled.");
+        const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+
+        if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
+            if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04481", pd_state->Handle(), error_obj.location,
+                                 "Cannot enable fragmentDensityMap and pipelineFragmentShadingRate features "
+                                 "simultaneously.");
+            }
+            if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04482", pd_state->Handle(), error_obj.location,
+                                 "Cannot enable fragmentDensityMap and primitiveFragmentShadingRate features "
+                                 "simultaneously.");
+            }
+            if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04483", pd_state->Handle(), error_obj.location,
+                                 "Cannot enable fragmentDensityMap and attachmentFragmentShadingRate features "
+                                 "simultaneously.");
             }
         }
-        const auto *shader_atomic_float_features = vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext);
-        if (shader_atomic_float_features) {
-            if (shader_atomic_float_features->sparseImageFloat32Atomics &&
-                !shader_atomic_float_features->shaderImageFloat32Atomics) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-None-04897", pd_state->Handle(), error_obj.location,
-                                 "if sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
-                                 "feature must also be enabled.");
-            }
-            if (shader_atomic_float_features->sparseImageFloat32AtomicAdd &&
-                !shader_atomic_float_features->shaderImageFloat32AtomicAdd) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-None-04898", pd_state->Handle(), error_obj.location,
-                                 "if sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
-                                 "feature must also be enabled.");
-            }
-        }
-        const auto *shader_atomic_float2_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext);
-        if (shader_atomic_float2_features) {
-            if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
-                !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
-                skip |=
-                    LogError("VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975", pd_state->Handle(), error_obj.location,
-                             "if sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
+    }
+
+    if (const auto *shader_image_atomic_int64_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext)) {
+        if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
+            !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-None-04896", pd_state->Handle(), error_obj.location,
+                             "If sparseImageInt64Atomics feature is enabled then shaderImageInt64Atomics "
                              "feature must also be enabled.");
-            }
         }
-        const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
-        if (device_group_ci) {
-            for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
-                for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
-                    if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
-                        skip |= LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", pd_state->Handle(),
-                                         error_obj.location,
-                                         "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
-                                         "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
-                                         i, j);
-                    }
+    }
+
+    if (const auto *shader_atomic_float_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext)) {
+        if (shader_atomic_float_features->sparseImageFloat32Atomics && !shader_atomic_float_features->shaderImageFloat32Atomics) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-None-04897", pd_state->Handle(), error_obj.location,
+                             "If sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
+                             "feature must also be enabled.");
+        }
+        if (shader_atomic_float_features->sparseImageFloat32AtomicAdd &&
+            !shader_atomic_float_features->shaderImageFloat32AtomicAdd) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-None-04898", pd_state->Handle(), error_obj.location,
+                             "If sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
+                             "feature must also be enabled.");
+        }
+    }
+
+    if (const auto *shader_atomic_float2_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext)) {
+        if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
+            !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975", pd_state->Handle(), error_obj.location,
+                             "If sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
+                             "feature must also be enabled.");
+        }
+    }
+
+    if (const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext)) {
+        for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
+            for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
+                if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
+                    skip |= LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", pd_state->Handle(),
+                                     error_obj.location,
+                                     "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
+                                     "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
+                                     i, j);
                 }
             }
         }
@@ -442,7 +438,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         if (!pipeline_binary_props.pipelineBinaryInternalCacheControl) {
             skip |= LogError("VUID-VkDevicePipelineBinaryInternalCacheControlKHR-disableInternalCache-09602", pd_state->Handle(),
                              error_obj.location,
-                             "if disableInternalCache is VK_TRUE then pipelineBinaryInternalCacheControl must also be VK_TRUE");
+                             "If disableInternalCache is VK_TRUE then pipelineBinaryInternalCacheControl must also be VK_TRUE");
         }
     }
 
