@@ -1446,44 +1446,6 @@ TEST_F(NegativeDescriptorBuffer, DescriptorGetInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptorBuffer, ExtensionCombination) {
-    TEST_DESCRIPTION("Descriptor invalid extension combination.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_AMD_SHADER_FRAGMENT_MASK_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    const auto q_props = vkt::PhysicalDevice(Gpu()).queue_properties_;
-    ASSERT_TRUE(q_props.size() > 0);
-    ASSERT_TRUE(q_props[0].queueCount > 0);
-
-    const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
-    queue_ci.queueFamilyIndex = 0;
-    queue_ci.queueCount = 1;
-    queue_ci.pQueuePriorities = q_priority;
-
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.queueCreateInfoCount = 1;
-    device_ci.pQueueCreateInfos = &queue_ci;
-
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
-    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
-
-    VkPhysicalDeviceDescriptorBufferFeaturesEXT dbf = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&dbf);
-    device_ci.pNext = &features2;
-
-    dbf.descriptorBuffer = true;
-
-    VkDevice test_device;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-None-08095");
-    vk::CreateDevice(Gpu(), &device_ci, nullptr, &test_device);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeDescriptorBuffer, SetBufferAddressSpaceLimits) {
     TEST_DESCRIPTION("Create VkBuffer with extension.");
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());

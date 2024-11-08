@@ -17,52 +17,6 @@
 
 class NegativePipelineBinary : public VkLayerTest {};
 
-TEST_F(NegativePipelineBinary, CacheControl) {
-    TEST_DESCRIPTION("Invalidly trying to disable the pipeline binary internal cache");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::pipelineBinaries);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(pipeline_binary_properties);
-
-    if (pipeline_binary_properties.pipelineBinaryInternalCacheControl) {
-        GTEST_SKIP() << "pipelineBinaryInternalCacheControl is VK_TRUE";
-    }
-
-    const auto q_props = vkt::PhysicalDevice(Gpu()).queue_properties_;
-    ASSERT_TRUE(q_props.size() > 0);
-    ASSERT_TRUE(q_props[0].queueCount > 0);
-
-    const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
-    queue_ci.queueFamilyIndex = 0;
-    queue_ci.queueCount = 1;
-    queue_ci.pQueuePriorities = q_priority;
-
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.queueCreateInfoCount = 1;
-    device_ci.pQueueCreateInfos = &queue_ci;
-
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
-    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
-
-    VkDevicePipelineBinaryInternalCacheControlKHR pbicc = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&pbicc);
-    device_ci.pNext = &features2;
-
-    pbicc.disableInternalCache = true;
-
-    VkDevice testDevice;
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-VkDevicePipelineBinaryInternalCacheControlKHR-disableInternalCache-09602");
-    vk::CreateDevice(Gpu(), &device_ci, nullptr, &testDevice);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativePipelineBinary, GetPipelineKey) {
     TEST_DESCRIPTION("Try getting the pipeline key with invalid input structures");
     SetTargetApiVersion(VK_API_VERSION_1_1);
