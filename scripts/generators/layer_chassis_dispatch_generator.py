@@ -207,6 +207,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             #include "layer_chassis_dispatch.h"
             #include <vulkan/utility/vk_safe_struct.hpp>
             #include "state_tracker/pipeline_state.h"
+            #include "containers/custom_containers.h"
 
             #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
@@ -375,15 +376,14 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
     # Clean up local declarations
     def cleanUpLocalDeclarations(self, prefix, name, len, deferred_name):
         cleanup = ''
-        if len is not None or deferred_name is not None:
+        if deferred_name is not None:
             delete_var = f'local_{prefix}{name}'
             if len is None:
                 delete_code = f'delete {delete_var}'
             else:
                 delete_code = f'delete[] {delete_var}'
             cleanup = f'if ({delete_var}) {{\n'
-            if deferred_name is not None:
-                cleanup += f'''
+            cleanup += f'''
                     // Fix check for deferred ray tracing pipeline creation
                     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
                     const bool is_operation_deferred = ({deferred_name} != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
@@ -393,8 +393,6 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                     }} else {{
                         {delete_code};
                     }}'''
-            else:
-                cleanup += f'{delete_code};\n'
             cleanup += '}\n'
         return cleanup
 
@@ -419,12 +417,13 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                 if (not topLevel) or (not isCreate) or (not member.pointer):
                     if count_name is not None:
                         if topLevel:
-                            decls += f'{member.type} var_local_{prefix}{member.name}[DISPATCH_MAX_STACK_ALLOCATIONS];\n'
+                            decls += f'small_vector<{member.type}, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_{prefix}{member.name};\n'
                             decls += f'{member.type} *local_{prefix}{member.name} = nullptr;\n'
                         pre_code += f' if ({prefix}{member.name}) {{\n'
                         if topLevel:
                             pre_code += f'''
-                                local_{prefix}{member.name} = {count_name} > DISPATCH_MAX_STACK_ALLOCATIONS ? new {member.type}[{count_name}] : var_local_{prefix}{member.name};
+                                var_local_{prefix}{member.name}.resize({count_name});
+                                local_{prefix}{member.name} = var_local_{prefix}{member.name}.data();
                                 for (uint32_t {index} = 0; {index} < {count_name}; ++{index}) {{
                                     local_{prefix}{member.name}[{index}] = layer_data->Unwrap({member.name}[{index}]);'''
                         else:
@@ -433,8 +432,6 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                                     {prefix}{member.name}[{index}] = layer_data->Unwrap({prefix}{member.name}[{index}]);'''
                         pre_code += '}\n'
                         pre_code += '}\n'
-                        if topLevel:
-                            post_code += f'if (local_{prefix}{member.name} != var_local_{prefix}{member.name}) delete[] local_{member.name};'
                     else:
                         if topLevel:
                             if not isDestroy:
@@ -462,12 +459,19 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
                         if topLevel:
                             new_prefix = f'local_{member.name}'
                             # Declare vku::safe_VkVarType for struct
+                            if not deferred_name:
+                                decls += f'small_vector<{safe_type}, DISPATCH_MAX_STACK_ALLOCATIONS> var_{new_prefix};\n'
                             decls += f'{safe_type} *{new_prefix} = nullptr;\n'
+
                         else:
                             new_prefix = f'{prefix}{member.name}'
                         pre_code += f'if ({prefix}{member.name}) {{\n'
                         if topLevel:
-                            pre_code += f'{new_prefix} = new {safe_type}[{member.length}];\n'
+                            if deferred_name:
+                                pre_code += f'{new_prefix} = new {safe_type}[{member.length}];\n'
+                            else:
+                                pre_code += f'var_{new_prefix}.resize({member.length});\n'
+                                pre_code += f'{new_prefix} = var_{new_prefix}.data();\n'
                         pre_code += f'for (uint32_t {index} = 0; {index} < {prefix}{member.length}; ++{index}) {{\n'
                         if topLevel:
                             if safe_type.startswith('vku::safe'):
