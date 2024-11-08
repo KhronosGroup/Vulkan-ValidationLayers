@@ -35,3 +35,5 @@ bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachme
 
 bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR &a,
                                                        const VkPipelineFragmentShadingRateStateCreateInfoKHR &b);
+
+bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b);

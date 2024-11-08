@@ -274,6 +274,9 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
         if (l.pImmutableSamplers) {
             for (uint32_t s = 0; s < l.descriptorCount; s++) {
                 if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
+                    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497
+                    // This just checks pointers, but two different VkSampler handles could be created with same createInfo.
+                    // Since this is rare enough, mark as "not the same" and check later when checking for compatibility.
                     return false;
                 }
             }

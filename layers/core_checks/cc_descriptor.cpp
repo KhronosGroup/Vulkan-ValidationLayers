@@ -30,14 +30,15 @@
 #include "cc_buffer_address.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "utils/vk_struct_compare.h"
 
 using DescriptorSet = vvl::DescriptorSet;
 using DescriptorSetLayout = vvl::DescriptorSetLayout;
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = vvl::DescriptorSetLayoutId;
 
-template <typename DSLayoutBindingA, typename DSLayoutBindingB>
-bool ImmutableSamplersAreEqual(const DSLayoutBindingA &b1, const DSLayoutBindingB &b2) {
+bool CoreChecks::ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding &b1, const VkDescriptorSetLayoutBinding &b2,
+                                           bool &out_exception) const {
     if (b1.pImmutableSamplers == b2.pImmutableSamplers) {
         return true;
     } else if (b1.pImmutableSamplers && b2.pImmutableSamplers) {
@@ -45,9 +46,17 @@ bool ImmutableSamplersAreEqual(const DSLayoutBindingA &b1, const DSLayoutBinding
             ((b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
              (b1.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) &&
             (b1.descriptorCount == b2.descriptorCount)) {
+            out_exception = true;  // If here, we might have two VkSampler that are defined the same
             for (uint32_t i = 0; i < b1.descriptorCount; ++i) {
-                if (b1.pImmutableSamplers[i] != b2.pImmutableSamplers[i]) {
-                    return false;
+                if (b1.pImmutableSamplers[i] == b2.pImmutableSamplers[i]) {
+                    continue;  // both null or same pointer
+                }
+                auto sampler_state_1 = Get<vvl::Sampler>(b1.pImmutableSamplers[i]);
+                auto sampler_state_2 = Get<vvl::Sampler>(b2.pImmutableSamplers[i]);
+                if (!sampler_state_1 || !sampler_state_2) {
+                    if (!CompareSamplerCreateInfo(sampler_state_1->create_info, sampler_state_2->create_info)) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -85,6 +94,7 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
         return false;  // trivial fail case
     }
 
+    bool exception = false;
     // Descriptor counts match so need to go through bindings one-by-one
     //  and verify that type and stageFlags match
     for (const auto &layout_binding : layout_ds_layout_def->GetBindings()) {
@@ -113,7 +123,7 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
                       << ", which is bound, has stageFlags " << string_VkShaderStageFlags(bound_binding->stageFlags);
             error_msg = error_str.str();
             return false;
-        } else if (!ImmutableSamplersAreEqual(layout_binding, *bound_binding)) {
+        } else if (!ImmutableSamplersAreEqual(*layout_binding.ptr(), *bound_binding, exception)) {
             error_msg = "Immutable samplers from binding " + std::to_string(layout_binding.binding) + " in pipeline layout " +
                         FormatHandle(layout_dsl_handle) + " do not match the immutable samplers in the layout currently bound (" +
                         FormatHandle(bound_dsl_handle) + ")";
@@ -137,10 +147,12 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
         return false;
     }
 
-    // No detailed check should succeed if the trivial check failed -- or the dictionary has failed somehow.
-    bool compatible = true;
-    assert(!compatible);
-    return compatible;
+    // If we got here, we failed IsCompatible() but didn't find what was different, likely missing a case
+    //
+    // There are exceptions where this is valid, example is the pImmutableSamplers pointing to 2 different handles are not hashed.
+    // It would be ugly to pass in the state object when hashing with hash_utils, so we just defer until here.
+    assert(exception);
+    return true;
 }
 
 // For given vvl::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
