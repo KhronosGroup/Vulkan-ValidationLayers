@@ -1189,3 +1189,80 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDescriptors, DuplicateLayoutSameSampler) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
+    RETURN_IF_SKIP(Init());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet ds_0(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler.handle()}});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    OneOffDescriptorSet ds_1(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler.handle()}});
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
+                              &ds_1.set_, 0, nullptr);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSampler) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
+    RETURN_IF_SKIP(Init());
+    vkt::Sampler sampler_0(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler_1(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet ds_0(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_0.handle()}});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    OneOffDescriptorSet ds_1(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_1.handle()}});
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
+                              &ds_1.set_, 0, nullptr);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptors, DuplicateLayoutSameSamplerArray) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
+    RETURN_IF_SKIP(Init());
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler sampler_array[3] = {sampler.handle(), sampler.handle(), sampler.handle()};
+
+    OneOffDescriptorSet ds_0(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array}});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    OneOffDescriptorSet ds_1(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array}});
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
+                              &ds_1.set_, 0, nullptr);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSamplerArray) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
+    RETURN_IF_SKIP(Init());
+    vkt::Sampler sampler_0(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Sampler sampler_1(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler sampler_array_0[3] = {sampler_0.handle(), sampler_0.handle(), sampler_0.handle()};
+    VkSampler sampler_array_1[3] = {sampler_1.handle(), sampler_1.handle(), sampler_1.handle()};
+
+    OneOffDescriptorSet ds_0(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array_0}});
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&ds_0.layout_});
+
+    OneOffDescriptorSet ds_1(m_device,
+                             {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array_1}});
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
+                              &ds_1.set_, 0, nullptr);
+    m_command_buffer.End();
+}
