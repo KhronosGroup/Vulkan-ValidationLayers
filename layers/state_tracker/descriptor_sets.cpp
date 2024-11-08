@@ -1234,7 +1234,7 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
                     ReplaceStatePtr(set_state, buffer_view_state_, mutable_src.GetSharedBufferViewState(), is_bindless);
                 } break;
                 case DescriptorClass::AccelerationStructure: {
-                    if (mutable_src.is_khr()) {
+                    if (mutable_src.IsKHR()) {
                         acc_ = mutable_src.GetAccelerationStructureKHR();
                         ReplaceStatePtr(set_state, acc_state_, dev_data.GetConstCastShared<vvl::AccelerationStructureKHR>(acc_),
                                         is_bindless);
