@@ -465,28 +465,24 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                          FormatHandle(physicalDevice).c_str());
     }
 
-    {
+    if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_AMD_negative_viewport_height))) {
         const bool maint1 = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_KHR_maintenance1));
-        bool negative_viewport =
-            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_AMD_negative_viewport_height));
-        if (negative_viewport) {
-            // Only need to check for VK_KHR_MAINTENANCE_1_EXTENSION_NAME if api version is 1.0, otherwise it's deprecated due to
-            // integration into api version 1.1
-            if (api_version >= VK_API_VERSION_1_1) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", physicalDevice, error_obj.location,
-                                 "ppEnabledExtensionNames must not include "
-                                 "VK_AMD_negative_viewport_height if api version is greater than or equal to 1.1.");
-            } else if (maint1) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", physicalDevice, error_obj.location,
-                                 "ppEnabledExtensionNames must not simultaneously include "
-                                 "VK_KHR_maintenance1 and VK_AMD_negative_viewport_height.");
-            }
+        // Only need to check for VK_KHR_MAINTENANCE_1_EXTENSION_NAME if api version is 1.0, otherwise it's deprecated due to
+        // integration into api version 1.1
+        if (api_version >= VK_API_VERSION_1_1) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", physicalDevice, error_obj.location,
+                             "ppEnabledExtensionNames must not include "
+                             "VK_AMD_negative_viewport_height if api version is greater than or equal to 1.1.");
+        } else if (maint1) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", physicalDevice, error_obj.location,
+                             "ppEnabledExtensionNames must not simultaneously include "
+                             "VK_KHR_maintenance1 and VK_AMD_negative_viewport_height.");
         }
     }
 
-    {
+    if (fragmentmask_requested) {
         const auto *descriptor_buffer_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
-        if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer && fragmentmask_requested) {
+        if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer) {
             skip |= LogError("VUID-VkDeviceCreateInfo-None-08095", physicalDevice, error_obj.location,
                              "If the descriptorBuffer feature is enabled, ppEnabledExtensionNames must not "
                              "contain VK_AMD_shader_fragment_mask.");
@@ -494,9 +490,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        bool khr_bda =
+        const bool khr_bda =
             IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_KHR_buffer_device_address));
-        bool ext_bda =
+        const bool ext_bda =
             IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_EXT_buffer_device_address));
         if (khr_bda && ext_bda) {
             skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328", physicalDevice, error_obj.location,
@@ -505,33 +501,34 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
-    if (pCreateInfo->pNext != NULL && pCreateInfo->pEnabledFeatures) {
-        // Check for get_physical_device_properties2 struct
-        const auto *features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
-        if (features2) {
-            // Cannot include VkPhysicalDeviceFeatures2 and have non-null pEnabledFeatures
-            skip |= LogError("VUID-VkDeviceCreateInfo-pNext-00373", physicalDevice, error_obj.location,
-                             "pNext includes a VkPhysicalDeviceFeatures2 struct when "
-                             "pCreateInfo->pEnabledFeatures is non-NULL.");
+    const auto features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+    if (pCreateInfo->pNext != nullptr && pCreateInfo->pEnabledFeatures && features2) {
+        // Cannot include VkPhysicalDeviceFeatures2 and have non-null pEnabledFeatures
+        skip |= LogError("VUID-VkDeviceCreateInfo-pNext-00373", physicalDevice, error_obj.location,
+                         "pNext includes a VkPhysicalDeviceFeatures2 struct when "
+                         "pCreateInfo->pEnabledFeatures is non-NULL.");
+    }
+
+    {
+        const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
+        const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
+        if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
+            skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000", physicalDevice,
+                             error_obj.location, "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
         }
     }
 
-    auto features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
-    const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
-    const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
-    if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
-        skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000", physicalDevice,
-                         error_obj.location, "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
-    }
-    const auto *raytracing_features = vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext);
-    if (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
-        !raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay) {
-        skip |= LogError(
-            "VUID-VkPhysicalDeviceRayTracingPipelineFeaturesKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03575",
-            physicalDevice, error_obj.location,
-            "If rayTracingPipelineShaderGroupHandleCaptureReplayMixed is VK_TRUE, "
-            "rayTracingPipelineShaderGroupHandleCaptureReplay "
-            "must also be VK_TRUE.");
+    if (const auto *raytracing_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(pCreateInfo->pNext)) {
+        if (raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplayMixed &&
+            !raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay) {
+            skip |= LogError(
+                "VUID-VkPhysicalDeviceRayTracingPipelineFeaturesKHR-rayTracingPipelineShaderGroupHandleCaptureReplayMixed-03575",
+                physicalDevice, error_obj.location,
+                "If rayTracingPipelineShaderGroupHandleCaptureReplayMixed is VK_TRUE, "
+                "rayTracingPipelineShaderGroupHandleCaptureReplay "
+                "must also be VK_TRUE.");
+        }
     }
 
     const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
@@ -686,7 +683,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
             // Need to know if protectedMemory feature is passed in preCall to creating the device
             VkBool32 protected_memory = VK_FALSE;
-            const VkPhysicalDeviceProtectedMemoryFeatures *protected_features =
+            const auto *protected_features =
                 vku::FindStructInPNextChain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
             if (protected_features) {
                 protected_memory = protected_features->protectedMemory;
@@ -702,56 +699,169 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     // feature dependencies for VK_KHR_variable_pointers
-    const auto *variable_pointers_features = vku::FindStructInPNextChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
-    VkBool32 variable_pointers = VK_FALSE;
-    VkBool32 variable_pointers_storage_buffer = VK_FALSE;
-    if (vulkan_11_features) {
-        variable_pointers = vulkan_11_features->variablePointers;
-        variable_pointers_storage_buffer = vulkan_11_features->variablePointersStorageBuffer;
-    } else if (variable_pointers_features) {
-        variable_pointers = variable_pointers_features->variablePointers;
-        variable_pointers_storage_buffer = variable_pointers_features->variablePointersStorageBuffer;
-    }
-    if ((variable_pointers == VK_TRUE) && (variable_pointers_storage_buffer == VK_FALSE)) {
-        skip |= LogError("VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431", physicalDevice, error_obj.location,
+    {
+        const auto *variable_pointers_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
+        VkBool32 variable_pointers = VK_FALSE;
+        VkBool32 variable_pointers_storage_buffer = VK_FALSE;
+        if (vulkan_11_features) {
+            variable_pointers = vulkan_11_features->variablePointers;
+            variable_pointers_storage_buffer = vulkan_11_features->variablePointersStorageBuffer;
+        } else if (variable_pointers_features) {
+            variable_pointers = variable_pointers_features->variablePointers;
+            variable_pointers_storage_buffer = variable_pointers_features->variablePointersStorageBuffer;
+        }
+        if ((variable_pointers == VK_TRUE) && (variable_pointers_storage_buffer == VK_FALSE)) {
+            skip |=
+                LogError("VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431", physicalDevice, error_obj.location,
                          "If variablePointers is VK_TRUE then variablePointersStorageBuffer also needs to be VK_TRUE");
+        }
     }
 
     // feature dependencies for VK_KHR_multiview
-    const auto *multiview_features = vku::FindStructInPNextChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
-    VkBool32 multiview = VK_FALSE;
-    VkBool32 multiview_geometry_shader = VK_FALSE;
-    VkBool32 multiview_tessellation_shader = VK_FALSE;
-    if (vulkan_11_features) {
-        multiview = vulkan_11_features->multiview;
-        multiview_geometry_shader = vulkan_11_features->multiviewGeometryShader;
-        multiview_tessellation_shader = vulkan_11_features->multiviewTessellationShader;
-    } else if (multiview_features) {
-        multiview = multiview_features->multiview;
-        multiview_geometry_shader = multiview_features->multiviewGeometryShader;
-        multiview_tessellation_shader = multiview_features->multiviewTessellationShader;
-    }
-    if ((multiview == VK_FALSE) && (multiview_geometry_shader == VK_TRUE)) {
-        skip |= LogError("VUID-VkPhysicalDeviceMultiviewFeatures-multiviewGeometryShader-00580", physicalDevice, error_obj.location,
-                         "If multiviewGeometryShader is VK_TRUE then multiview also needs to be VK_TRUE");
-    }
-    if ((multiview == VK_FALSE) && (multiview_tessellation_shader == VK_TRUE)) {
-        skip |= LogError("VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581", physicalDevice,
-                         error_obj.location, "If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
-    }
-    const auto *fsr_features = vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
-    const auto *mesh_shader_features = vku::FindStructInPNextChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
-    if (mesh_shader_features) {
-        if ((multiview == VK_FALSE) && (mesh_shader_features->multiviewMeshShader)) {
-            skip |= LogError("VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-multiviewMeshShader-07032", physicalDevice,
-                             error_obj.location, "If multiviewMeshShader is VK_TRUE then multiview also needs to be VK_TRUE");
+    {
+        const auto *multiview_features = vku::FindStructInPNextChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+        VkBool32 multiview = VK_FALSE;
+        VkBool32 multiview_geometry_shader = VK_FALSE;
+        VkBool32 multiview_tessellation_shader = VK_FALSE;
+        if (vulkan_11_features) {
+            multiview = vulkan_11_features->multiview;
+            multiview_geometry_shader = vulkan_11_features->multiviewGeometryShader;
+            multiview_tessellation_shader = vulkan_11_features->multiviewTessellationShader;
+        } else if (multiview_features) {
+            multiview = multiview_features->multiview;
+            multiview_geometry_shader = multiview_features->multiviewGeometryShader;
+            multiview_tessellation_shader = multiview_features->multiviewTessellationShader;
         }
-        if ((!fsr_features || !fsr_features->primitiveFragmentShadingRate) &&
-            (mesh_shader_features->primitiveFragmentShadingRateMeshShader)) {
-            skip |= LogError(
-                "VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033", physicalDevice,
-                error_obj.location,
-                "If primitiveFragmentShadingRateMeshShader is VK_TRUE then primitiveFragmentShadingRate also needs to be VK_TRUE");
+        if ((multiview == VK_FALSE) && (multiview_geometry_shader == VK_TRUE)) {
+            skip |= LogError("VUID-VkPhysicalDeviceMultiviewFeatures-multiviewGeometryShader-00580", physicalDevice,
+                             error_obj.location, "If multiviewGeometryShader is VK_TRUE then multiview also needs to be VK_TRUE");
+        }
+        if ((multiview == VK_FALSE) && (multiview_tessellation_shader == VK_TRUE)) {
+            skip |=
+                LogError("VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581", physicalDevice,
+                         error_obj.location, "If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
+        }
+
+        const auto *fsr_features = vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext);
+        const auto *mesh_shader_features = vku::FindStructInPNextChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
+        if (mesh_shader_features) {
+            if ((multiview == VK_FALSE) && (mesh_shader_features->multiviewMeshShader)) {
+                skip |= LogError("VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-multiviewMeshShader-07032", physicalDevice,
+                                 error_obj.location, "If multiviewMeshShader is VK_TRUE then multiview also needs to be VK_TRUE");
+            }
+            if ((!fsr_features || !fsr_features->primitiveFragmentShadingRate) &&
+                (mesh_shader_features->primitiveFragmentShadingRateMeshShader)) {
+                skip |= LogError("VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033",
+                                 physicalDevice, error_obj.location,
+                                 "If primitiveFragmentShadingRateMeshShader is VK_TRUE then primitiveFragmentShadingRate also "
+                                 "needs to be VK_TRUE");
+            }
+        }
+    }
+
+    if (const auto *fragment_shading_rate_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext)) {
+        const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+
+        if (shading_rate_image_features && shading_rate_image_features->shadingRateImage) {
+            if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04478", physicalDevice, error_obj.location,
+                                 "Cannot enable shadingRateImage and pipelineFragmentShadingRate features simultaneously.");
+            }
+            if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04479", physicalDevice, error_obj.location,
+                                 "Cannot enable shadingRateImage and primitiveFragmentShadingRate features simultaneously.");
+            }
+            if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-shadingRateImage-04480", physicalDevice, error_obj.location,
+                                 "Cannot enable shadingRateImage and attachmentFragmentShadingRate features "
+                                 "simultaneously.");
+            }
+        }
+
+        const VkPhysicalDeviceFragmentDensityMapFeaturesEXT *fragment_density_map_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+
+        if (fragment_density_map_features && fragment_density_map_features->fragmentDensityMap) {
+            if (fragment_shading_rate_features->pipelineFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04481", physicalDevice, error_obj.location,
+                                 "Cannot enable fragmentDensityMap and pipelineFragmentShadingRate features "
+                                 "simultaneously.");
+            }
+            if (fragment_shading_rate_features->primitiveFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04482", physicalDevice, error_obj.location,
+                                 "Cannot enable fragmentDensityMap and primitiveFragmentShadingRate features "
+                                 "simultaneously.");
+            }
+            if (fragment_shading_rate_features->attachmentFragmentShadingRate) {
+                skip |= LogError("VUID-VkDeviceCreateInfo-fragmentDensityMap-04483", physicalDevice, error_obj.location,
+                                 "Cannot enable fragmentDensityMap and attachmentFragmentShadingRate features "
+                                 "simultaneously.");
+            }
+        }
+    }
+
+    if (const auto *shader_image_atomic_int64_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>(pCreateInfo->pNext)) {
+        if (shader_image_atomic_int64_features->sparseImageInt64Atomics &&
+            !shader_image_atomic_int64_features->shaderImageInt64Atomics) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-None-04896", physicalDevice, error_obj.location,
+                             "If sparseImageInt64Atomics feature is enabled then shaderImageInt64Atomics "
+                             "feature must also be enabled.");
+        }
+    }
+
+    if (const auto *shader_atomic_float_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>(pCreateInfo->pNext)) {
+        if (shader_atomic_float_features->sparseImageFloat32Atomics && !shader_atomic_float_features->shaderImageFloat32Atomics) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-None-04897", physicalDevice, error_obj.location,
+                             "If sparseImageFloat32Atomics feature is enabled then shaderImageFloat32Atomics "
+                             "feature must also be enabled.");
+        }
+        if (shader_atomic_float_features->sparseImageFloat32AtomicAdd &&
+            !shader_atomic_float_features->shaderImageFloat32AtomicAdd) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-None-04898", physicalDevice, error_obj.location,
+                             "If sparseImageFloat32AtomicAdd feature is enabled then shaderImageFloat32AtomicAdd "
+                             "feature must also be enabled.");
+        }
+    }
+
+    if (const auto *shader_atomic_float2_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(pCreateInfo->pNext)) {
+        if (shader_atomic_float2_features->sparseImageFloat32AtomicMinMax &&
+            !shader_atomic_float2_features->shaderImageFloat32AtomicMinMax) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-sparseImageFloat32AtomicMinMax-04975", physicalDevice, error_obj.location,
+                             "If sparseImageFloat32AtomicMinMax feature is enabled then shaderImageFloat32AtomicMinMax "
+                             "feature must also be enabled.");
+        }
+    }
+
+    if (const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext)) {
+        for (uint32_t i = 0; i < device_group_ci->physicalDeviceCount - 1; ++i) {
+            for (uint32_t j = i + 1; j < device_group_ci->physicalDeviceCount; ++j) {
+                if (device_group_ci->pPhysicalDevices[i] == device_group_ci->pPhysicalDevices[j]) {
+                    skip |=
+                        LogError("VUID-VkDeviceGroupDeviceCreateInfo-pPhysicalDevices-00375", physicalDevice, error_obj.location,
+                                 "VkDeviceGroupDeviceCreateInfo has a duplicated physical device "
+                                 "in pPhysicalDevices [%" PRIu32 "] and [%" PRIu32 "].",
+                                 i, j);
+                }
+            }
+        }
+    }
+
+    const auto *cache_control = vku::FindStructInPNextChain<VkDevicePipelineBinaryInternalCacheControlKHR>(pCreateInfo->pNext);
+    if (cache_control && cache_control->disableInternalCache) {
+        VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&pipeline_binary_props);
+        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &props2);
+
+        if (!pipeline_binary_props.pipelineBinaryInternalCacheControl) {
+            skip |= LogError("VUID-VkDevicePipelineBinaryInternalCacheControlKHR-disableInternalCache-09602", physicalDevice,
+                             error_obj.location,
+                             "If disableInternalCache is VK_TRUE then pipelineBinaryInternalCacheControl must also be VK_TRUE");
         }
     }
 
