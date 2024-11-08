@@ -16,9 +16,8 @@
  */
 
 #pragma once
-// TODO - Should only need generated/chassis.h
-// Because of FormatHandle, we need to include all of state_tracker.h
-#include "state_tracker/state_tracker.h"
+#include <vulkan/vulkan.h>
+#include "error_message/error_location.h"
 
 class ValidationStateTracker;
 struct DescriptorRequirement;
@@ -45,11 +44,6 @@ class DescriptorValidator {
  public:
    DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set,
                        uint32_t set_index, VkFramebuffer framebuffer, const Location& loc);
-
-   template <typename T>
-   std::string FormatHandle(T&& handle) const {
-       return dev_state.FormatHandle(std::forward<T>(handle));
-   }
 
    // Used with normal validation where we know which descriptors are accessed.
    bool ValidateBindingStatic(const DescriptorBindingInfo& binding_info, const vvl::DescriptorBinding& binding) const;
