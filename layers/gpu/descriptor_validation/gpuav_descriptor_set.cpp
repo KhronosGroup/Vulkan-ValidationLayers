@@ -101,7 +101,7 @@ static glsl::DescriptorState GetInData(const vvl::ImageSamplerDescriptor &desc) 
 
 static glsl::DescriptorState GetInData(const vvl::AccelerationStructureDescriptor &ac) {
     uint32_t id;
-    if (ac.is_khr()) {
+    if (ac.IsKHR()) {
         auto ac_state = static_cast<const AccelerationStructureKHR *>(ac.GetAccelerationStructureStateKHR());
         id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
     } else {

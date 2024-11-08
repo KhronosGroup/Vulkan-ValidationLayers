@@ -52,7 +52,8 @@ class DescriptorSet : public vvl::DescriptorSet {
     DeviceMemoryBlock post_process_block_;
 
     std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
-    // TODO - We probably should just use GetTotalDescriptorCount() but need to confirm will still work with Inline UBO
+    // Can't use GetTotalDescriptorCount() because it handles Inline Uniforms as more than one count
+    // (since it is used to check if two layouts are the same or not)
     uint32_t total_descriptor_count_;
 
     // Since we will re-bind the same descriptor set many times, keeping a version allows us to know if things have changed and
