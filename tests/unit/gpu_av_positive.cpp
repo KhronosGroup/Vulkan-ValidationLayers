@@ -352,6 +352,144 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     }
 }
 
+// TODO - This test "could" trigger a warning, but we would have to allocate 4k buffer and track each DWORD updated/written to it,
+// so currently we just make sure we don't generate false positives.
+TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
+    TEST_DESCRIPTION(
+        "If you don't update an inline uniform block and accessed it, you get undefined values, but it is not invalid and we "
+        "should not crash or trigger an error.");
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
+        layout(set = 0, binding = 1) uniform InlineUBO {
+            uint updated_value;
+            uint non_updated_value; // will be undefined value
+        };
+        void main() {
+            out_buffer = non_updated_value;
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
+    pool_inline_info.maxInlineUniformBlockBindings = 1;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, nullptr, 0, nullptr, &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const uint32_t update_value = 0;
+    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    write_inline_uniform.dataSize = 4;
+    write_inline_uniform.pData = &update_value;
+    VkWriteDescriptorSet descriptor_writes = vku::InitStructHelper(&write_inline_uniform);
+    descriptor_writes.dstSet = descriptor_set.set_;
+    descriptor_writes.dstBinding = 1;
+    descriptor_writes.dstArrayElement = 0;
+    descriptor_writes.descriptorCount = 4;
+    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
+    TEST_DESCRIPTION(
+        "If you don't update an inline uniform block and accessed it, you get undefined values, but it is not invalid and we "
+        "should not crash or trigger an error.");
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    AddRequiredFeature(vkt::Feature::descriptorBindingInlineUniformBlockUpdateAfterBind);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
+        layout(set = 0, binding = 1) uniform InlineUBO {
+            uint updated_value;
+            uint non_updated_value; // will be undefined value
+        };
+        void main() {
+            out_buffer = non_updated_value;
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
+    pool_inline_info.maxInlineUniformBlockBindings = 1;
+
+    VkDescriptorBindingFlags ds_binding_flags[2] = {0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 2;
+    flags_create_info.pBindingFlags = ds_binding_flags;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
+                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT, nullptr, &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    const uint32_t update_value = 0;
+    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    write_inline_uniform.dataSize = 4;
+    write_inline_uniform.pData = &update_value;
+    VkWriteDescriptorSet descriptor_writes = vku::InitStructHelper(&write_inline_uniform);
+    descriptor_writes.dstSet = descriptor_set.set_;
+    descriptor_writes.dstBinding = 1;
+    descriptor_writes.dstArrayElement = 0;
+    descriptor_writes.descriptorCount = 4;
+    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
     TEST_DESCRIPTION("Makes sure we can use vkCmdBindDescriptorSets()");
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1825,9 +1963,9 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
 
     char const *cs_source = R"glsl(
         #version 450
-        layout(set = 0, binding = 0) buffer foo_0 { 
+        layout(set = 0, binding = 0) buffer foo_0 {
             int a;
-            int b; 
+            int b;
         };
         void main() {
             a = b;
