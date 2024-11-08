@@ -563,6 +563,8 @@ class CoreChecks : public ValidationStateTracker {
                            const std::vector<uint32_t>& dynamic_offsets, const vvl::CommandBuffer& cb_state, const Location& loc,
                            const vvl::DrawDispatchVuid& vuid) const;
 
+    bool ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding& b1, const VkDescriptorSetLayoutBinding& b2,
+                                   bool& out_exception) const;
     bool VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout& layout_dsl,
                                       const vvl::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
 

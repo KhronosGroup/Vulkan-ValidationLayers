@@ -83,3 +83,74 @@ bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentS
     return (a.fragmentSize.width == b.fragmentSize.width) && (a.fragmentSize.height == b.fragmentSize.height) &&
            (a.combinerOps[0] == b.combinerOps[0]) && (a.combinerOps[1] == b.combinerOps[1]);
 }
+
+static inline bool CompareSamplerYcbcrConversionInfo(const VkSamplerYcbcrConversionInfo &a, const VkSamplerYcbcrConversionInfo &b) {
+    return a.conversion == b.conversion;
+}
+static inline bool CompareSamplerReductionModeCreateInfo(const VkSamplerReductionModeCreateInfo &a,
+                                                         const VkSamplerReductionModeCreateInfo &b) {
+    return a.reductionMode == b.reductionMode;
+}
+
+static inline bool CompareSamplerBorderColorComponentMappingCreateInfo(const VkSamplerBorderColorComponentMappingCreateInfoEXT &a,
+                                                                       const VkSamplerBorderColorComponentMappingCreateInfoEXT &b) {
+    return (a.components.r == b.components.r) && (a.components.g == b.components.g) && (a.components.b == b.components.b) &&
+           (a.components.a == b.components.a) && (a.srgb == b.srgb);
+}
+
+static inline bool CompareSamplerCustomBorderColorCreateInfo(const VkSamplerCustomBorderColorCreateInfoEXT &a,
+                                                             const VkSamplerCustomBorderColorCreateInfoEXT &b) {
+    return (a.format == b.format);
+}
+
+bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b) {
+    if (a.pNext && b.pNext) {
+        auto *a_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(a.pNext);
+        auto *b_ycbcr_conversion = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(b.pNext);
+        if (a_ycbcr_conversion && b_ycbcr_conversion) {
+            if (!CompareSamplerYcbcrConversionInfo(*a_ycbcr_conversion, *b_ycbcr_conversion)) {
+                return false;
+            }
+        } else if (a_ycbcr_conversion != b_ycbcr_conversion) {
+            return false;  // both are not null
+        }
+
+        auto *a_reduction_mode = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(a.pNext);
+        auto *b_reduction_mode = vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(b.pNext);
+        if (a_reduction_mode && b_reduction_mode) {
+            if (!CompareSamplerReductionModeCreateInfo(*a_reduction_mode, *b_reduction_mode)) {
+                return false;
+            }
+        } else if (a_reduction_mode != b_reduction_mode) {
+            return false;  // both are not null
+        }
+
+        auto *a_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(a.pNext);
+        auto *b_component_mapping = vku::FindStructInPNextChain<VkSamplerBorderColorComponentMappingCreateInfoEXT>(b.pNext);
+        if (a_component_mapping && b_component_mapping) {
+            if (!CompareSamplerBorderColorComponentMappingCreateInfo(*a_component_mapping, *b_component_mapping)) {
+                return false;
+            }
+        } else if (a_component_mapping != b_component_mapping) {
+            return false;  // both are not null
+        }
+
+        auto *a_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(a.pNext);
+        auto *b_border_color = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(b.pNext);
+        if (a_border_color && b_border_color) {
+            if (!CompareSamplerCustomBorderColorCreateInfo(*a_border_color, *b_border_color)) {
+                return false;
+            }
+        } else if (a_border_color != b_border_color) {
+            return false;  // both are not null
+        }
+    } else if (a.pNext != b.pNext) {
+        return false;  // both are not null
+    }
+
+    return (a.flags == b.flags) && (a.magFilter == b.magFilter) && (a.minFilter == b.minFilter) && (a.mipmapMode == b.mipmapMode) &&
+           (a.addressModeU == b.addressModeU) && (a.addressModeV == b.addressModeV) && (a.addressModeW == b.addressModeW) &&
+           (a.mipLodBias == b.mipLodBias) && (a.anisotropyEnable == b.anisotropyEnable) && (a.maxAnisotropy == b.maxAnisotropy) &&
+           (a.compareEnable == b.compareEnable) && (a.compareOp == b.compareOp) && (a.minLod == b.minLod) &&
+           (a.maxLod == b.maxLod) && (a.borderColor == b.borderColor) && (a.unnormalizedCoordinates == b.unnormalizedCoordinates);
+}
