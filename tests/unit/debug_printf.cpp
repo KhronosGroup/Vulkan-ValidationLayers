@@ -4168,3 +4168,71 @@ TEST_F(NegativeDebugPrintf, SpecConstant) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) uniform UBO0 { uint ubo_0; };
+        layout(set = 0, binding = 1) uniform InlineUBO { uint dummy; uint inline_value; };
+        layout(set = 0, binding = 2) uniform UBO2 { uint ubo_2; };
+        void main() {
+            debugPrintfEXT("binding [0] = %u | [1] = %u | [2] = %u", ubo_0, inline_value, ubo_2);
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    VkDeviceAddress *buffer_ptr = (VkDeviceAddress *)buffer.Memory().Map();
+    buffer_ptr[0] = 3;
+    buffer.Memory().Unmap();
+
+    VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
+    pool_inline_info.maxInlineUniformBlockBindings = 1;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, nullptr, 0, nullptr, &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    const uint32_t print_value = 5;
+    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    write_inline_uniform.dataSize = 4;
+    write_inline_uniform.pData = &print_value;
+
+    VkWriteDescriptorSet descriptor_writes = vku::InitStructHelper(&write_inline_uniform);
+    descriptor_writes.dstSet = descriptor_set.set_;
+    descriptor_writes.dstBinding = 1;
+    descriptor_writes.dstArrayElement = 4;  // offset 4 bytes
+    descriptor_writes.descriptorCount = 4;  // Write 4 bytes
+    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("binding [0] = 3 | [1] = 5 | [2] = 3");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

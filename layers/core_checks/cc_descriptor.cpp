@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <sstream>
 #include <valarray>
 
 #include "containers/custom_containers.h"
@@ -1896,14 +1897,24 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
             if (current_binding->count > 0) {
                 // Check for consistent stageFlags and descriptorType
                 if ((current_binding->stage_flags != stage_flags) || (current_binding->type != descriptor_type)) {
+                    std::stringstream extra;
+                    // If using inline, easy to go outside of its range and not realize you are in the next descriptor
+                    if (descriptor_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+                        extra << " For inline uniforms blocks, you might have your VkWriteDescriptorSet::dstArrayElement ("
+                              << update.dstArrayElement << ") plus VkWriteDescriptorSet::descriptorCount ("
+                              << update.descriptorCount
+                              << ") larger than your VkDescriptorSetLayoutBinding::descriptorCount so this is trying to update the "
+                                 "next binding.";
+                    }
+
                     skip |= LogError(
                         "VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc,
                         "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] plus %" PRIu32
-                        " descriptors offset) has stageFlags of %s and descriptorType of %s, but previous binding was %s and %s.",
+                        " descriptors offset) has stageFlags of %s and descriptorType of %s, but previous binding was %s and %s.%s",
                         current_binding->binding, update.dstBinding, i,
                         string_VkShaderStageFlags(current_binding->stage_flags).c_str(),
                         string_VkDescriptorType(current_binding->type), string_VkShaderStageFlags(stage_flags).c_str(),
-                        string_VkDescriptorType(descriptor_type));
+                        string_VkDescriptorType(descriptor_type), extra.str().c_str());
                 }
                 // Check if all immutableSamplers or not
                 if (current_binding->has_immutable_samplers != immutable_samplers) {
