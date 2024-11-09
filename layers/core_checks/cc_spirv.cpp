@@ -606,7 +606,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                                                      : "VUID-VkPipelineShaderStageCreateInfo-module-10169";
                         skip |= LogError(vuid_string, module_state.handle(), loc,
                                          "SPIR-V (compute stage) Local workgroup size in the X dimension (%" PRIu32
-                                         ") is not multiple of subgroupSize (%" PRIu32 ")/.",
+                                         ") is not multiple of subgroupSize (%" PRIu32 ").",
                                          local_size_x, phys_dev_props_core11.subgroupSize);
                     }
                     if (m.scope == VK_SCOPE_WORKGROUP_KHR) {
