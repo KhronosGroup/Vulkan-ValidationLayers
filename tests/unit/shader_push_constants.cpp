@@ -79,7 +79,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
-    // offset not multiple of 4
+    // offset not a multiple of 4
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 1, 8};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00295");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
@@ -91,7 +91,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
-    // size not multiple of 4
+    // size not a multiple of 4
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 7};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00297");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
@@ -199,12 +199,12 @@ TEST_F(NegativeShaderPushConstants, Range) {
     vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 0, data);
     m_errorMonitor->VerifyFound();
 
-    // offset not multiple of 4
+    // offset not a multiple of 4
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-00368");
     vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 1, 4, data);
     m_errorMonitor->VerifyFound();
 
-    // size not multiple of 4
+    // size not a multiple of 4
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00369");
     vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 5, data);
     m_errorMonitor->VerifyFound();

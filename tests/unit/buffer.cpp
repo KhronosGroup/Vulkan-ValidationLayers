@@ -26,12 +26,12 @@ TEST_F(NegativeBuffer, UpdateBufferAlignment) {
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     m_command_buffer.Begin();
-    // Introduce failure by using dstOffset that is not multiple of 4
+    // Introduce failure by using dstOffset that is not a multiple of 4
     m_errorMonitor->SetDesiredError(" is not a multiple of 4");
     vk::CmdUpdateBuffer(m_command_buffer.handle(), buffer.handle(), 1, 4, updateData);
     m_errorMonitor->VerifyFound();
 
-    // Introduce failure by using dataSize that is not multiple of 4
+    // Introduce failure by using dataSize that is not a multiple of 4
     m_errorMonitor->SetDesiredError(" is not a multiple of 4");
     vk::CmdUpdateBuffer(m_command_buffer.handle(), buffer.handle(), 0, 6, updateData);
     m_errorMonitor->VerifyFound();
@@ -66,12 +66,12 @@ TEST_F(NegativeBuffer, FillBufferAlignmentAndSize) {
     vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 16, 12, 0x11111111);
     m_errorMonitor->VerifyFound();
 
-    // Introduce failure by using dstOffset that is not multiple of 4
+    // Introduce failure by using dstOffset that is not a multiple of 4
     m_errorMonitor->SetDesiredError(" is not a multiple of 4");
     vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 1, 4, 0x11111111);
     m_errorMonitor->VerifyFound();
 
-    // Introduce failure by using size that is not multiple of 4
+    // Introduce failure by using size that is not a multiple of 4
     m_errorMonitor->SetDesiredError(" is not a multiple of 4");
     vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0, 6, 0x11111111);
     m_errorMonitor->VerifyFound();

@@ -1911,10 +1911,10 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
         "Attempt to update buffer descriptor set that has VkDescriptorBufferInfo values that violate device limits.\n"
         "Test cases include:\n"
         "1. range of uniform buffer update exceeds maxUniformBufferRange\n"
-        "2. offset of uniform buffer update is not multiple of minUniformBufferOffsetAlignment\n"
+        "2. offset of uniform buffer update is not a multiple of minUniformBufferOffsetAlignment\n"
         "3. using VK_WHOLE_SIZE with uniform buffer size exceeding maxUniformBufferRange\n"
         "4. range of storage buffer update exceeds maxStorageBufferRange\n"
-        "5. offset of storage buffer update is not multiple of minStorageBufferOffsetAlignment\n"
+        "5. offset of storage buffer update is not a multiple of minStorageBufferOffsetAlignment\n"
         "6. using VK_WHOLE_SIZE with storage buffer size exceeding maxStorageBufferRange");
 
     RETURN_IF_SKIP(Init());
