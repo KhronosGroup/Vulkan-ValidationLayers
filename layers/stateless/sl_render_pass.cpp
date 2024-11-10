@@ -473,14 +473,14 @@ bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer comm
         if (width_granularity > 0 && (stripe_area.offset.x % width_granularity) != 0) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09452", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::x),
-                             "= %" PRIu32 " is not multiple of %" PRIu32 ". ", stripe_area.offset.x, width_granularity);
+                             "= %" PRIu32 " is not a multiple of %" PRIu32 ". ", stripe_area.offset.x, width_granularity);
         }
 
         if (width_granularity > 0 && (stripe_area.extent.width % width_granularity) != 0 &&
             ((stripe_area.extent.width + stripe_area.offset.x) != render_area.extent.width)) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09453", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::width),
-                             "= %" PRIu32 " is not multiple of %" PRIu32
+                             "= %" PRIu32 " is not a multiple of %" PRIu32
                              ", or when added to the stripeArea.offset.x is not equal render area width (%" PRIu32 ")",
                              stripe_area.extent.width, width_granularity, render_area.extent.width);
         }
@@ -488,14 +488,14 @@ bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer comm
         if (height_granularity > 0 && (stripe_area.offset.y % height_granularity) != 0) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09454", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::offset).dot(Field::y),
-                             "= %" PRIu32 ") is not multiple of %" PRIu32 ". ", stripe_area.offset.y, height_granularity);
+                             "= %" PRIu32 ") is not a multiple of %" PRIu32 ". ", stripe_area.offset.y, height_granularity);
         }
 
         if (height_granularity > 0 && (stripe_area.extent.height % height_granularity) != 0 &&
             (stripe_area.extent.height + stripe_area.offset.y) != render_area.extent.height) {
             skip |= LogError("VUID-VkRenderPassStripeInfoARM-stripeArea-09455", commandBuffer,
                              stripe_info_loc.dot(Field::stripeArea).dot(Field::extent).dot(Field::height),
-                             "= %" PRIu32 " is not multiple of %" PRIu32
+                             "= %" PRIu32 " is not a multiple of %" PRIu32
                              ", or when added to the stripeArea.offset.y is not equal to render area height (%" PRIu32 ")",
                              stripe_area.extent.height, height_granularity, render_area.extent.height);
         }

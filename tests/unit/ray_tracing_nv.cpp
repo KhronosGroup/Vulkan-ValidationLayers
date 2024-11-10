@@ -1134,7 +1134,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
         vk::CreateAccelerationStructureNV(device(), &as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
-    // Invalid vertex offset - not multiple of component size.
+    // Invalid vertex offset - not a multiple of component size.
     {
         VkGeometryNV geometry = valid_geometry_triangles;
         geometry.geometry.triangles.vertexOffset = 1;
@@ -1164,7 +1164,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
         vk::CreateAccelerationStructureNV(device(), &as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
-    // Invalid index offset - not multiple of index size.
+    // Invalid index offset - not a multiple of index size.
     {
         VkGeometryNV geometry = valid_geometry_triangles;
         geometry.geometry.triangles.indexOffset = 1;
@@ -1209,7 +1209,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Invalid transform offset - not multiple of 16.
+    // Invalid transform offset - not a multiple of 16.
     {
         VkGeometryNV geometry = valid_geometry_triangles;
         geometry.geometry.triangles.transformOffset = 1;
@@ -1229,8 +1229,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
         vk::CreateAccelerationStructureNV(device(), &as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
-
-    // Invalid aabb offset - not multiple of 8.
+    // Invalid aabb offset - not a multiple of 8.
     {
         VkGeometryNV geometry = valid_geometry_aabbs;
         geometry.geometry.aabbs.offset = 1;
@@ -1250,7 +1249,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
         vk::CreateAccelerationStructureNV(device(), &as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
-    // Invalid aabb stride - not multiple of 8.
+    // Invalid aabb stride - not a multiple of 8.
     {
         VkGeometryNV geometry = valid_geometry_aabbs;
         geometry.geometry.aabbs.stride = 1;

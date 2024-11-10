@@ -230,7 +230,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                 (stride % sizeof(VkPerformanceCounterResultKHR)) != 0) {
                 skip |= LogError("VUID-vkGetQueryPoolResults-queryType-03229", queryPool, error_obj.location.dot(Field::queryPool),
                                  "(%s) was created with a queryType of "
-                                 "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but pData & stride are not multiple of the "
+                                 "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR but pData & stride are not multiples of the "
                                  "size of VkPerformanceCounterResultKHR.",
                                  FormatHandle(queryPool).c_str());
             }

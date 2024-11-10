@@ -6319,7 +6319,7 @@ TEST_F(NegativeDynamicRendering, BeginRenderingWithRenderPassStriped) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
-    // Offset, width and height not multiple of granularity width and height
+    // Offset, width and height not a multiple of granularity width and height
     const uint32_t half_stripe_width = stripe_width / 2;
     for (uint32_t i = 0; i < stripe_count; ++i) {
         stripe_infos[i].stripeArea.offset.x = (i == 1 ? half_stripe_width : stripe_width) * i;
