@@ -241,6 +241,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # Example: pViewportState should always be validated, when not ignored. The logic of when it
         # isn't ignored gets complex and best done by hand in sl_pipeline.cpp
         self.generateStructHelper = [
+            # Graphic Pipeline states that can be ignored
             'VkPipelineViewportStateCreateInfo',
             'VkPipelineTessellationStateCreateInfo',
             'VkPipelineVertexInputStateCreateInfo',
@@ -250,6 +251,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'VkPipelineInputAssemblyStateCreateInfo',
             'VkPipelineRasterizationStateCreateInfo',
             'VkPipelineShaderStageCreateInfo',
+
+            # Ignored if not secondary command buffer
+            'VkCommandBufferInheritanceInfo',
+
+            # Uses an enum to decide which struct in a union to generate
             'VkDescriptorAddressInfoEXT',
         ]
 
@@ -352,7 +358,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         #  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
         #  VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT
         root = self.registry.reg
-        
+
         ext_to_promoted_ext_dict = dict()
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
@@ -364,7 +370,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     ext_to_promoted_ext_dict[extension_name] = promotedTo
                 else:
                     ext_to_promoted_ext_dict[extension_name] = None
-        
+
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
                 extension_name = extension.get('name')

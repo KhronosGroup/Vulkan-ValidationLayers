@@ -27952,6 +27952,31 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const VkPipeline
     }
     return skip;
 }
+bool StatelessValidation::ValidateCommandBufferInheritanceInfo(const VkCommandBufferInheritanceInfo& info,
+                                                               const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, false, kVUIDUndefined,
+                               "VUID-VkCommandBufferInheritanceInfo-sType-sType");
+
+    constexpr std::array allowed_structs_VkCommandBufferInheritanceInfo = {
+        VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV,
+        VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
+        VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
+        VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR,
+        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkCommandBufferInheritanceInfo.size(),
+                                allowed_structs_VkCommandBufferInheritanceInfo.data(), GeneratedVulkanHeaderVersion,
+                                "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
+                                "VUID-VkCommandBufferInheritanceInfo-sType-unique", VK_NULL_HANDLE, true);
+
+    skip |= ValidateBool32(loc.dot(Field::occlusionQueryEnable), info.occlusionQueryEnable);
+    return skip;
+}
 bool StatelessValidation::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& info, const Location& loc) const {
     bool skip = false;
     skip |= ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT, false, kVUIDUndefined,
