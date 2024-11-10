@@ -1883,5 +1883,6 @@ bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilSta
 bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo& info, const Location& loc) const;
 bool ValidatePipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo& info, const Location& loc) const;
 bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo& info, const Location& loc) const;
+bool ValidateCommandBufferInheritanceInfo(const VkCommandBufferInheritanceInfo& info, const Location& loc) const;
 bool ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& info, const Location& loc) const;
 // NOLINTEND
