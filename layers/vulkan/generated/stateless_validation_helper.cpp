@@ -27989,5 +27989,52 @@ bool StatelessValidation::ValidateDescriptorAddressInfoEXT(const VkDescriptorAdd
                                "VUID-VkDescriptorAddressInfoEXT-format-parameter", VK_NULL_HANDLE);
     return skip;
 }
+bool StatelessValidation::ValidateAccelerationStructureGeometryTrianglesDataKHR(
+    const VkAccelerationStructureGeometryTrianglesDataKHR& info, const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, false,
+                               kVUIDUndefined, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
+
+    constexpr std::array allowed_structs_VkAccelerationStructureGeometryTrianglesDataKHR = {
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_MOTION_TRIANGLES_DATA_NV,
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_DISPLACEMENT_MICROMAP_NV,
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT};
+
+    skip |= ValidateStructPnext(loc, info.pNext, allowed_structs_VkAccelerationStructureGeometryTrianglesDataKHR.size(),
+                                allowed_structs_VkAccelerationStructureGeometryTrianglesDataKHR.data(),
+                                GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext",
+                                "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-unique", VK_NULL_HANDLE, true);
+
+    skip |= ValidateRangedEnum(loc.dot(Field::vertexFormat), vvl::Enum::VkFormat, info.vertexFormat,
+                               "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter", VK_NULL_HANDLE);
+
+    skip |= ValidateRangedEnum(loc.dot(Field::indexType), vvl::Enum::VkIndexType, info.indexType,
+                               "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter", VK_NULL_HANDLE);
+    return skip;
+}
+bool StatelessValidation::ValidateAccelerationStructureGeometryInstancesDataKHR(
+    const VkAccelerationStructureGeometryInstancesDataKHR& info, const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, false,
+                               kVUIDUndefined, "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
+
+    skip |= ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                "VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE,
+                                true);
+
+    skip |= ValidateBool32(loc.dot(Field::arrayOfPointers), info.arrayOfPointers);
+    return skip;
+}
+bool StatelessValidation::ValidateAccelerationStructureGeometryAabbsDataKHR(const VkAccelerationStructureGeometryAabbsDataKHR& info,
+                                                                            const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, false, kVUIDUndefined,
+                               "VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType");
+
+    skip |=
+        ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                            "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
+    return skip;
+}
 
 // NOLINTEND
