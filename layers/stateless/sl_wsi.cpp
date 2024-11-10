@@ -146,31 +146,24 @@ bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevi
 bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
+    if (!pPresentInfo) return skip;
 
-    if (pPresentInfo && pPresentInfo->pNext) {
-        const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
-        if (present_regions) {
-            if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
-                skip |= LogError("VUID-VkPresentRegionsKHR-swapchainCount-01260", device,
-                                 error_obj.location.pNext(Struct::VkPresentRegionsKHR, Field::swapchainCount),
-                                 "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_regions->swapchainCount,
-                                 error_obj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
-                                 pPresentInfo->swapchainCount);
-            }
-            skip |= ValidateStructPnext(error_obj.location.pNext(Struct::VkPresentRegionsKHR), present_regions->pNext, 0, nullptr,
-                                        GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
-                                        "VUID-VkPresentInfoKHR-sType-unique");
+    if (const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext)) {
+        if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
+            skip |= LogError("VUID-VkPresentRegionsKHR-swapchainCount-01260", device,
+                             error_obj.location.pNext(Struct::VkPresentRegionsKHR, Field::swapchainCount),
+                             "(%" PRIu32 ") is not equal to %s (%" PRIu32 ").", present_regions->swapchainCount,
+                             error_obj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
+                             pPresentInfo->swapchainCount);
         }
     }
 
-    if (pPresentInfo) {
-        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-            for (uint32_t j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
-                if (pPresentInfo->pSwapchains[i] == pPresentInfo->pSwapchains[j]) {
-                    skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", device, error_obj.location.dot(Field::pSwapchain),
-                                     "at index %" PRIu32 " and index %" PRIu32 " are both %s.", i, j,
-                                     FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
-                }
+    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        for (uint32_t j = i + 1; j < pPresentInfo->swapchainCount; ++j) {
+            if (pPresentInfo->pSwapchains[i] == pPresentInfo->pSwapchains[j]) {
+                skip |= LogError("VUID-VkPresentInfoKHR-pSwapchain-09231", device, error_obj.location.dot(Field::pSwapchain),
+                                 "[%" PRIu32 "] and pSwapchain[%" PRIu32 "] are both %s.", i, j,
+                                 FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
             }
         }
     }
@@ -348,7 +341,8 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
         "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
     if (pSurfaceInfo != NULL) {
         constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
-                                                VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};
+                                                VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT,
+                                                VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT};
 
         skip |= ValidateStructPnext(error_obj.location.dot(Field::pSurfaceInfo), pSurfaceInfo->pNext, allowed_structs.size(),
                                     allowed_structs.data(), GeneratedVulkanHeaderVersion,
