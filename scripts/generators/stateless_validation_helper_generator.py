@@ -257,6 +257,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
             # Uses an enum to decide which struct in a union to generate
             'VkDescriptorAddressInfoEXT',
+            'VkAccelerationStructureGeometryTrianglesDataKHR',
+            'VkAccelerationStructureGeometryInstancesDataKHR',
+            'VkAccelerationStructureGeometryAabbsDataKHR',
         ]
 
         # Map of structs type names to generated validation code for that struct type

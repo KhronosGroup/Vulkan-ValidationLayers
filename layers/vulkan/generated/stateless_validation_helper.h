@@ -1885,4 +1885,10 @@ bool ValidatePipelineRasterizationStateCreateInfo(const VkPipelineRasterizationS
 bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo& info, const Location& loc) const;
 bool ValidateCommandBufferInheritanceInfo(const VkCommandBufferInheritanceInfo& info, const Location& loc) const;
 bool ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& info, const Location& loc) const;
+bool ValidateAccelerationStructureGeometryTrianglesDataKHR(const VkAccelerationStructureGeometryTrianglesDataKHR& info,
+                                                           const Location& loc) const;
+bool ValidateAccelerationStructureGeometryInstancesDataKHR(const VkAccelerationStructureGeometryInstancesDataKHR& info,
+                                                           const Location& loc) const;
+bool ValidateAccelerationStructureGeometryAabbsDataKHR(const VkAccelerationStructureGeometryAabbsDataKHR& info,
+                                                       const Location& loc) const;
 // NOLINTEND
