@@ -621,8 +621,8 @@ TEST_F(NegativeSyncValReporting, StaleLabelCommand) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncValReporting, DebugResourceName) {
-    TEST_DESCRIPTION("Test that hazardous buffer is reported. Two copies write to a buffer");
+TEST_F(NegativeSyncValReporting, ReportBufferResource_SubmitTime) {
+    TEST_DESCRIPTION("Test that hazardous buffer is reported by submit time validation");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -638,13 +638,57 @@ TEST_F(NegativeSyncValReporting, DebugResourceName) {
     cb0.End();
     m_default_queue->Submit(cb0);
 
+    // WAW for BufferB. Expect BufferB in the error message but not BufferA.
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
     cb1.Begin();
     vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
     cb1.End();
-    // Two writes without synchronization (WAW). Expect BufferB in the error message but not BufferA.
-    const char* contains_buffer_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_b_but_not_a);
+    const char* contains_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_a);
+    m_default_queue->Submit(cb1);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValReporting, ReportImageResource_SubmitTime) {
+    TEST_DESCRIPTION("Test that hazardous image is reported by submit time validation");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    buffer.SetName("BufferA");
+
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetName("ImageB");
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::Image image2(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image2.SetName("ImageC");
+    image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy image_copy{};
+    image_copy.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    image_copy.extent = {64, 64, 1};
+
+    VkBufferImageCopy buffer_image_copy{};
+    buffer_image_copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    buffer_image_copy.imageExtent = {64, 64, 1};
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    cb0.Begin();
+    vk::CmdCopyImage(cb0, image, VK_IMAGE_LAYOUT_GENERAL, image2, VK_IMAGE_LAYOUT_GENERAL, 1, &image_copy);
+    cb0.End();
+    m_default_queue->Submit(cb0);
+
+    // WAR for ImageB. Expect ImageB in the error message but not BufferA or ImageC.
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.Begin();
+    vk::CmdCopyBufferToImage(cb1, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_image_copy);
+    cb1.End();
+    const char* contains_b_but_not_a_c = "(?=.*ImageB)(?!.*BufferA)(?!.*ImageC)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-READ", contains_b_but_not_a_c);
     m_default_queue->Submit(cb1);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
