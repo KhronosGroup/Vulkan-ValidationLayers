@@ -16,6 +16,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 struct NegativeSyncValReporting : public VkSyncValTest {};
 
@@ -616,6 +617,233 @@ TEST_F(NegativeSyncValReporting, StaleLabelCommand) {
     // to access those label commands can lead to crash if out of bounds check is missing.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValReporting, DebugResourceName) {
+    TEST_DESCRIPTION("Test that hazardous buffer is reported. Two copies write to a buffer");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    buffer_a.SetName("BufferA");
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    buffer_b.SetName("BufferB");
+    VkBufferCopy region = {0, 0, 256};
+
+    vkt::CommandBuffer cb0(*m_device, m_command_pool);
+    cb0.Begin();
+    vk::CmdCopyBuffer(cb0, buffer_a, buffer_b, 1, &region);
+    cb0.End();
+    m_default_queue->Submit(cb0);
+
+    vkt::CommandBuffer cb1(*m_device, m_command_pool);
+    cb1.Begin();
+    vk::CmdCopyBuffer(cb1, buffer_a, buffer_b, 1, &region);
+    cb1.End();
+    // Two writes without synchronization (WAW). Expect BufferB in the error message but not BufferA.
+    const char* contains_buffer_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_b_but_not_a);
+    m_default_queue->Submit(cb1);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName) {
+    TEST_DESCRIPTION("Test that hazardous buffer is reported. Two dispatches write to a buffer");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_a.SetName("BufferA");
+    vkt::Buffer buffer_b(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_b.SetName("BufferB");
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer_b, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer buf_a { uint values_a[]; };
+        layout(set=0, binding=1) buffer buf_b { uint values_b[]; };
+        void main(){
+            values_b[0] = values_a[0];
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    // Submit dispatch that writes to buffer_b
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
+    cb.Begin();
+    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(cb.handle(), 1, 1, 1);
+    cb.End();
+    m_default_queue->Submit(cb);
+
+    // Submit one more dispatch that writes to the same buffer
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.Begin();
+    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(cb2.handle(), 1, 1, 1);
+    cb2.End();
+    // Two writes without synchronization (WAW). Expect BufferB in the error message but not bufferA.
+    const char* contains_buffer_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_b_but_not_a);
+    m_default_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName2) {
+    TEST_DESCRIPTION("Test that hazardous buffer is reported. Dispatch writes to a buffer, then copy to the same buffer");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_a.SetName("BufferA");
+    vkt::Buffer buffer_c(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_c.SetName("BufferC");
+    vkt::Buffer buffer_e(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_e.SetName("BufferD");
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer_c, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer_e, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer buf_a { uint values_a[]; };
+        layout(set=0, binding=1) buffer buf_c { uint values_c[]; };
+        layout(set=0, binding=2) buffer buf_e { uint values_e[]; };
+        void main(){
+            values_c[0] = values_e[0];
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    // Submit dispatch that writes to buffer_b
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
+    cb.Begin();
+    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(cb.handle(), 1, 1, 1);
+    cb.End();
+    m_default_queue->Submit(cb);
+
+    // Submit copy that writes to the same buffer
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.Begin();
+    cb2.Copy(buffer_a, buffer_c);
+    cb2.End();
+    // Two writes without synchronization (WAW). Expect BufferC in the error message but not bufferA/bufferE
+    const char* contains_buffer_c_but_not_a_and_e = "(?=.*BufferC)(?!.*BufferA)(?!.*BufferE)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_c_but_not_a_and_e);
+    m_default_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName3) {
+    TEST_DESCRIPTION("Different buffer of the same shader is reported depending on the previous access");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_copy_src(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    buffer_copy_src.SetName("BufferSrc");
+    vkt::Buffer buffer_a(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_a.SetName("BufferA");
+    vkt::Buffer buffer_b(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_b.SetName("BufferB");
+    vkt::Buffer buffer_c(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_c.SetName("BufferC");
+    vkt::Buffer buffer_d(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer_d.SetName("BufferD");
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer_b, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer_c, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(3, buffer_d, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer buf_a { uint values_a[]; };
+        layout(set=0, binding=1) buffer buf_b { uint values_b[]; };
+        layout(set=0, binding=2) buffer buf_c { uint values_c[]; };
+        layout(set=0, binding=3) buffer buf_d { uint values_d[]; };
+        void main(){
+            // Depending on which buffer was written before (B or D) one of the following writes causes a WAW hazard
+            values_b[0] = values_a[0];
+            values_d[0] = values_c[0];
+
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    // Create WAW with bufferB. Copy-write then dispatch-write.
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
+    cb.Begin();
+    cb.Copy(buffer_copy_src, buffer_b);
+    cb.End();
+    m_default_queue->Submit(cb);
+
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.Begin();
+    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(cb2.handle(), 1, 1, 1);
+    cb2.End();
+    const char* contains_buffer_b_but_not_d = "(?=.*BufferB)(?!.*BufferD)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_b_but_not_d);
+    m_default_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+
+    // Create WAW with bufferD. Copy-write then dispatch-write.
+    vkt::CommandBuffer cb3(*m_device, m_command_pool);
+    cb3.Begin();
+    cb3.Copy(buffer_copy_src, buffer_d);
+    cb3.End();
+    m_default_queue->Submit(cb3);
+    const char* contains_buffer_d_but_not_b = "(?=.*BufferD)(?!.*BufferB)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_d_but_not_b);
+    m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
