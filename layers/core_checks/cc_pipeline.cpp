@@ -539,7 +539,7 @@ bool CoreChecks::ValidateSpecializations(const vku::safe_VkSpecializationInfo *s
         }
         if (map_entry.offset + map_entry.size > spec->dataSize) {
             skip |= LogError("VUID-VkSpecializationInfo-pMapEntries-00774", device, map_loc.dot(Field::size),
-                             "(%zu) plus offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
+                             "(%zu) + offset (%" PRIu32 ") is greater than dataSize (%zu) (for constantID %" PRIu32 ").",
                              map_entry.size, map_entry.offset, spec->dataSize, map_entry.constantID);
         }
         for (uint32_t j = i + 1; j < spec->mapEntryCount; ++j) {

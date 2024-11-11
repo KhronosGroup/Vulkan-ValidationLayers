@@ -960,7 +960,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     if ((src_start_idx + update.descriptorCount) > src_set->GetTotalDescriptorCount()) {
         const LogObjectList objlist(update.srcSet, src_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-srcArrayElement-00346", objlist, copy_loc.dot(Field::srcArrayElement),
-                         "(%" PRIu32 ") plus descriptorCount (%" PRIu32 ") (plus offset index of %" PRIu32
+                         "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") + offset index (%" PRIu32
                          ") is larger than the total descriptors count (%" PRIu32 ") for the binding at srcBinding (%" PRIu32 ").",
                          update.srcArrayElement, update.descriptorCount,
                          src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).start, src_set->GetTotalDescriptorCount(),
@@ -970,7 +970,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     if ((dst_start_idx + update.descriptorCount) > dst_layout->GetTotalDescriptorCount()) {
         const LogObjectList objlist(update.dstSet, dst_layout->Handle());
         skip |= LogError("VUID-VkCopyDescriptorSet-dstArrayElement-00348", objlist, copy_loc.dot(Field::dstArrayElement),
-                         "(%" PRIu32 ") plus descriptorCount (%" PRIu32 ") (plus offset index of %" PRIu32
+                         "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") + offset index (%" PRIu32
                          ") is larger than the total descriptors count (%" PRIu32 ") for the binding at srcBinding (%" PRIu32 ").",
                          update.dstArrayElement, update.descriptorCount,
                          dst_set->GetGlobalIndexRangeFromBinding(update.dstBinding).start, dst_set->GetTotalDescriptorCount(),
@@ -1901,15 +1901,14 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
                     // If using inline, easy to go outside of its range and not realize you are in the next descriptor
                     if (descriptor_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
                         extra << " For inline uniforms blocks, you might have your VkWriteDescriptorSet::dstArrayElement ("
-                              << update.dstArrayElement << ") plus VkWriteDescriptorSet::descriptorCount ("
-                              << update.descriptorCount
+                              << update.dstArrayElement << ") + VkWriteDescriptorSet::descriptorCount (" << update.descriptorCount
                               << ") larger than your VkDescriptorSetLayoutBinding::descriptorCount so this is trying to update the "
                                  "next binding.";
                     }
 
                     skip |= LogError(
                         "VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc,
-                        "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] plus %" PRIu32
+                        "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] + %" PRIu32
                         " descriptors offset) has stageFlags of %s and descriptorType of %s, but previous binding was %s and %s.%s",
                         current_binding->binding, update.dstBinding, i,
                         string_VkShaderStageFlags(current_binding->stage_flags).c_str(),
@@ -1919,7 +1918,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
                 // Check if all immutableSamplers or not
                 if (current_binding->has_immutable_samplers != immutable_samplers) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00318", objlist, write_loc,
-                                     "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] plus %" PRIu32
+                                     "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] + %" PRIu32
                                      " descriptors offset) %s Immutable Samplers, which is different from the previous binding.",
                                      current_binding->binding, update.dstBinding, i,
                                      current_binding->has_immutable_samplers ? "has" : "doesn't have");
