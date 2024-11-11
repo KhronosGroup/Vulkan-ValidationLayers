@@ -622,7 +622,7 @@ TEST_F(NegativeSyncValReporting, StaleLabelCommand) {
 }
 
 TEST_F(NegativeSyncValReporting, ReportBufferResource_SubmitTime) {
-    TEST_DESCRIPTION("Test that hazardous buffer is reported by submit time validation");
+    TEST_DESCRIPTION("Test that hazardous buffer is reported");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -651,7 +651,7 @@ TEST_F(NegativeSyncValReporting, ReportBufferResource_SubmitTime) {
 }
 
 TEST_F(NegativeSyncValReporting, ReportImageResource_SubmitTime) {
-    TEST_DESCRIPTION("Test that hazardous image is reported by submit time validation");
+    TEST_DESCRIPTION("Test that hazardous image is reported");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -694,8 +694,8 @@ TEST_F(NegativeSyncValReporting, ReportImageResource_SubmitTime) {
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName) {
-    TEST_DESCRIPTION("Test that hazardous buffer is reported. Two dispatches write to a buffer");
+TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer_SubmitTime) {
+    TEST_DESCRIPTION("Test that hazardous buffer is reported");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -736,7 +736,7 @@ TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName) {
     cb.End();
     m_default_queue->Submit(cb);
 
-    // Submit one more dispatch that writes to the same buffer
+    // One more dispatch that writes to the same buffer (WAW hazard). Expect BufferB in the error message but not BufferA.
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -744,16 +744,15 @@ TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName) {
                               nullptr);
     vk::CmdDispatch(cb2.handle(), 1, 1, 1);
     cb2.End();
-    // Two writes without synchronization (WAW). Expect BufferB in the error message but not bufferA.
-    const char* contains_buffer_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_b_but_not_a);
+    const char* contains_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_a);
     m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName2) {
-    TEST_DESCRIPTION("Test that hazardous buffer is reported. Dispatch writes to a buffer, then copy to the same buffer");
+TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer2_SubmitTime) {
+    TEST_DESCRIPTION("Test that hazardous buffer is reported");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
 
@@ -799,20 +798,19 @@ TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName2) {
     cb.End();
     m_default_queue->Submit(cb);
 
-    // Submit copy that writes to the same buffer
+    // Submit copy that writes to the same buffer (WAW hazard). Expect BufferC in the error message but not BufferA/BufferE
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     cb2.Copy(buffer_a, buffer_c);
     cb2.End();
-    // Two writes without synchronization (WAW). Expect BufferC in the error message but not bufferA/bufferE
-    const char* contains_buffer_c_but_not_a_and_e = "(?=.*BufferC)(?!.*BufferA)(?!.*BufferE)";
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_c_but_not_a_and_e);
+    const char* contains_c_but_not_a_and_e = "(?=.*BufferC)(?!.*BufferA)(?!.*BufferE)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_c_but_not_a_and_e);
     m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
 
-TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName3) {
+TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer3_SubmitTime) {
     TEST_DESCRIPTION("Different buffer of the same shader is reported depending on the previous access");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncVal());
@@ -873,8 +871,8 @@ TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName3) {
                               nullptr);
     vk::CmdDispatch(cb2.handle(), 1, 1, 1);
     cb2.End();
-    const char* contains_buffer_b_but_not_d = "(?=.*BufferB)(?!.*BufferD)";
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_b_but_not_d);
+    const char* contains_b_but_not_d = "(?=.*BufferB)(?!.*BufferD)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_d);
     m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
@@ -887,6 +885,67 @@ TEST_F(NegativeSyncValReporting, DebugDescriptorBufferName3) {
     m_default_queue->Submit(cb3);
     const char* contains_buffer_d_but_not_b = "(?=.*BufferD)(?!.*BufferB)";
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_buffer_d_but_not_b);
+    m_default_queue->Submit(cb2);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
+    TEST_DESCRIPTION("Test that hazardous image is reported");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    buffer.SetName("BufferA");
+
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image.SetName("ImageB");
+
+    vkt::ImageView view = image.CreateView();
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorImageInfo(1, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char* cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer buf_a { uint values_a[]; };
+        layout(set=0, binding=1, rgba8) uniform image2D image_b;
+        void main(){
+            imageStore(image_b, ivec2(2, 5), vec4(1.0, 0.5, 0.5, 1.0));
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    // Submit dispatch that writes to image
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
+    cb.Begin();
+    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(cb.handle(), 1, 1, 1);
+    cb.End();
+    m_default_queue->Submit(cb);
+
+    // One more dispatch that writes to the same image (WAW hazard). Expect ImageB in the error message but not BufferA.
+    vkt::CommandBuffer cb2(*m_device, m_command_pool);
+    cb2.Begin();
+    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(cb2.handle(), 1, 1, 1);
+    cb2.End();
+    const char* contains_b_but_not_a = "(?=.*ImageB)(?!.*BufferA)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_a);
     m_default_queue->Submit(cb2);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
