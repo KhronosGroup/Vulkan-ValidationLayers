@@ -64,7 +64,7 @@ void UpdateBoundPipeline(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBi
 void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location &loc) {
     const bool need_post_processing = gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index;
-    const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor;
+    const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.descriptor_checks;
     if (!need_descriptor_checks && !need_post_processing) return;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
@@ -134,7 +134,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
 [[nodiscard]] bool UpdateDescriptorStateSSBO(Validator &gpuav, CommandBuffer &cb_state, const Location &loc) {
-    const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor;
+    const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.descriptor_checks;
     if (!need_descriptor_checks) return true;
 
     for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {

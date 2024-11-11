@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE: This file doesn't contain any entrypoints and should be compiled with then new --no-link option for glslang
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable

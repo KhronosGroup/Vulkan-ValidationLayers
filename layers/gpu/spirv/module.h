@@ -86,9 +86,9 @@ class Module {
 
     // Passes that can be ran
     // Return true if code was instrumented
-    bool RunPassBindlessDescriptor();
-    bool RunPassNonBindlessOOBBuffer();
-    bool RunPassNonBindlessOOBTexelBuffer();
+    bool RunPassDescriptorIndexingOOB();
+    bool RunPassDescriptorClassGeneralBuffer();
+    bool RunPassDescriptorClassTexelBuffer();
     bool RunPassBufferDeviceAddress();
     bool RunPassRayQuery();
     bool RunPassDebugPrintf(uint32_t binding_slot);

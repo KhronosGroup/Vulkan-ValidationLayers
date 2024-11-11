@@ -83,41 +83,21 @@ const int kHeaderSize = 11;
 // Error specific parameters offsets:
 // ----------------------------------
 
-// Bindless
+// Descriptor Indexing
 // ---
+const int kInstDescriptorIndexingDescSetOffset = kHeaderSize;
+const int kInstDescriptorIndexingDescBindingOffset = kHeaderSize + 1;
+const int kInstDescriptorIndexingDescIndexOffset = kHeaderSize + 2;
+const int kInstDescriptorIndexingParamOffset_0 = kHeaderSize + 3;
+const int kInstDescriptorIndexingParamOffset_1 = kHeaderSize + 4;
 
-const int kInstBindlessDescSetOffset = kHeaderSize;
-const int kInstBindlessDescBindingOffset = kHeaderSize + 1;
-const int kInstBindlessDescIndexOffset = kHeaderSize + 2;
-const int kInstBindlessCustomOffset_0 = kHeaderSize + 3;
-const int kInstBindlessCustomOffset_1 = kHeaderSize + 4;
-
-// A bindless bounds error will output the index and the bound.
-const int kInstBindlessBoundsDescSetOffset = kInstBindlessDescSetOffset;
-const int kInstBindlessBoundsDescBindingOffset = kInstBindlessDescBindingOffset;
-const int kInstBindlessBoundsDescIndexOffset = kInstBindlessDescIndexOffset;
-
-// A descriptor uninitialized error will output the index.
-const int kInstBindlessUninitDescSetOffset = kInstBindlessDescSetOffset;
-const int kInstBindlessUninitBindingOffset = kInstBindlessDescBindingOffset;
-const int kInstBindlessUninitDescIndexOffset = kInstBindlessDescIndexOffset;
-
-// A buffer out-of-bounds error will output the descriptor
-// index, the buffer offset and the buffer size
-const int kInstBindlessBuffOOBDescSetOffset = kInstBindlessDescSetOffset;
-const int kInstBindlessBuffOOBDescBindingOffset = kInstBindlessDescBindingOffset;
-const int kInstBindlessBuffOOBDescIndexOffset = kInstBindlessDescIndexOffset;
-const int kInstBindlessBuffOOBBuffOffOffset = kInstBindlessCustomOffset_0;
-const int kInstBindlessBuffOOBBuffSizeOffset = kInstBindlessCustomOffset_1;
-
-// Non-Bindless OOB
+// Descriptor Class
 // ---
-
-const int kInstNonBindlessOOBDescSetOffset = kHeaderSize;
-const int kInstNonBindlessOOBDescBindingOffset = kHeaderSize + 1;
-const int kInstNonBindlessOOBDescIndexOffset = kHeaderSize + 2;
-const int kInstNonBindlessOOBParamOffset0 = kHeaderSize + 3;
-const int kInstNonBindlessOOBParamOffset1 = kHeaderSize + 4;
+const int kInstDescriptorClassDescSetOffset = kHeaderSize;
+const int kInstDescriptorClassDescBindingOffset = kHeaderSize + 1;
+const int kInstDescriptorClassDescIndexOffset = kHeaderSize + 2;
+const int kInstDescriptorClassParamOffset_0 = kHeaderSize + 3;
+const int kInstDescriptorClassParamOffset_1 = kHeaderSize + 4;
 
 // Buffer device addresses
 // ---

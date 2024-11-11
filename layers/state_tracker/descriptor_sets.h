@@ -47,7 +47,7 @@ struct AllocateDescriptorSetsData;
 
 // "bindless" does not have a concrete definition, but we use it as means to know:
 // "is GPU-AV going to have to validate this or not"
-// (see docs/gpu_av_bindless.md for more details)
+// (see docs/gpu_av_descriptor_indexing.md for more details)
 static inline bool IsBindless(VkDescriptorBindingFlags flags) {
     return (flags & (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)) != 0;
 }

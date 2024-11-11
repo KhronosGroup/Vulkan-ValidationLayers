@@ -13,59 +13,47 @@
  * limitations under the License.
  */
 
-#include "bindless_descriptor_pass.h"
+#include "descriptor_indexing_oob_pass.h"
+#include "link.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
-#include "generated/instrumentation_bindless_descriptor_comp.h"
+#include "generated/instrumentation_descriptor_indexing_oob_bindless_comp.h"
+#include "generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 
 namespace gpuav {
 namespace spirv {
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t BindlessDescriptorPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_bindless_descriptor_comp, instrumentation_bindless_descriptor_comp_size,
-                                 LinkFunctions::inst_bindless_descriptor, 0, "inst_bindless_descriptor"};
+uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
+    // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
+    static LinkInfo link_info_bindless = {
+        instrumentation_descriptor_indexing_oob_bindless_comp, instrumentation_descriptor_indexing_oob_bindless_comp_size,
+        LinkFunctions::inst_descriptor_indexing_oob_bindless, 0, "inst_descriptor_indexing_oob_bindless"};
+    static LinkInfo link_info_non_bindless = {
+        instrumentation_descriptor_indexing_oob_non_bindless_comp, instrumentation_descriptor_indexing_oob_non_bindless_comp_size,
+        LinkFunctions::inst_descriptor_indexing_oob_non_bindless, 0, "inst_descriptor_indexing_oob_non_bindless"};
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
+        LinkInfo& link_info = module_.has_bindless_descriptors_ ? link_info_bindless : link_info_non_bindless;
         link_info.function_id = link_function_id;
         module_.link_info_.push_back(link_info);
     }
     return link_function_id;
 }
 
-uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                    const InjectionData& injection_data) {
+uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                       const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
     if (image_inst_) {
-        // Get Texel buffer offset
         const uint32_t opcode = target_instruction_->Opcode();
-        if (opcode == spv::OpImageRead || opcode == spv::OpImageFetch || opcode == spv::OpImageWrite) {
-            const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
-            if (target_instruction_->Length() > image_operand_position) {
-                const uint32_t image_operand_word = target_instruction_->Word(image_operand_position);
-                if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
-                    // TODO - Add support if there are image operands (like offset)
-                }
-            }
-
-            const Type* image_type = module_.type_manager_.FindTypeById(image_inst_->TypeId());
-            const uint32_t dim = image_type->inst_.Operand(1);
-            if (dim == spv::DimBuffer) {
-                const uint32_t depth = image_type->inst_.Operand(2);
-                const uint32_t arrayed = image_type->inst_.Operand(3);
-                const uint32_t multi_sampling = image_type->inst_.Operand(4);
-                if (depth == 0 && arrayed == 0 && multi_sampling == 0) {
-                    descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
-                }
-            }
-        } else {
+        if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
             // if not a direct read/write/fetch, will be a OpSampledImage
             // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
             // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
@@ -89,20 +77,6 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
                 }
             }
         }
-    } else {
-        // For now, only do bounds check for non-aggregate types
-        // TODO - Do bounds check for aggregate loads and stores
-        assert(access_chain_inst_ && var_inst_);
-        const Type* pointer_type = module_.type_manager_.FindTypeById(access_chain_inst_->TypeId());
-        const Type* pointee_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
-        if (pointee_type && pointee_type->spv_type_ != SpvType::kArray && pointee_type->spv_type_ != SpvType::kRuntimeArray &&
-            pointee_type->spv_type_ != SpvType::kStruct) {
-            descriptor_offset_id_ = GetLastByte(*var_inst_, *access_chain_inst_, block, inst_it);  // Get Last Byte Index
-        }
-    }
-
-    if (descriptor_offset_id_ == 0) {
-        descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
@@ -116,13 +90,13 @@ uint32_t BindlessDescriptorPass::CreateFunctionCall(BasicBlock& block, Instructi
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, binding_layout_size.Id(), binding_layout_offset.Id()},
+         binding_constant.Id(), descriptor_index_id, binding_layout_size.Id(), binding_layout_offset.Id()},
         inst_it);
 
     return function_result;
 }
 
-void BindlessDescriptorPass::Reset() {
+void DescriptorIndexingOOBPass::Reset() {
     access_chain_inst_ = nullptr;
     var_inst_ = nullptr;
     image_inst_ = nullptr;
@@ -130,16 +104,12 @@ void BindlessDescriptorPass::Reset() {
     descriptor_set_ = 0;
     descriptor_binding_ = 0;
     descriptor_index_id_ = 0;
-    descriptor_offset_id_ = 0;
 }
 
-bool BindlessDescriptorPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
+bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
-        // For now only have non-bindless support for buffers
-        if (!module_.has_bindless_descriptors_) return false;
-
         // TODO - Should have loop to walk Load/Store to the Pointer,
         // this case will not cover things such as OpCopyObject or double OpAccessChains
         access_chain_inst_ = function.FindInstruction(inst.Operand(0));
@@ -190,9 +160,7 @@ bool BindlessDescriptorPass::RequiresInstrumentation(const Function& function, c
         }
 
     } else {
-        // TODO - Once all non-bindless passes are added, this check can be places at top of Run()
-        if (!module_.has_bindless_descriptors_ &&
-            (opcode == spv::OpImageFetch || opcode == spv::OpImageRead || opcode == spv::OpImageWrite)) {
+        if (opcode == spv::OpImageFetch || opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
             return false;
         }
 
@@ -269,8 +237,9 @@ bool BindlessDescriptorPass::RequiresInstrumentation(const Function& function, c
     return true;
 }
 
-void BindlessDescriptorPass::PrintDebugInfo() {
-    std::cout << "BindlessDescriptorPass instrumentation count: " << instrumentations_count_ << '\n';
+void DescriptorIndexingOOBPass::PrintDebugInfo() {
+    std::cout << "DescriptorIndexingOOBPass instrumentation count: " << instrumentations_count_ << " ("
+              << (module_.has_bindless_descriptors_ ? "Bindless version" : "Non Bindless version") << ")\n";
 }
 
 }  // namespace spirv

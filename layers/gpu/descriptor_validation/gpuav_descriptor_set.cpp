@@ -67,7 +67,7 @@ void DescriptorSet::BuildBindingLayouts() {
 static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
     auto buffer_state = static_cast<const Buffer *>(desc.GetBufferState());
     if (!buffer_state) {
-        return glsl::DescriptorState(DescriptorClass::GeneralBuffer, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+        return glsl::DescriptorState(DescriptorClass::GeneralBuffer, glsl::kNullDescriptor, vvl::kU32Max);
     }
     return glsl::DescriptorState(DescriptorClass::GeneralBuffer, buffer_state->id, static_cast<uint32_t>(desc.GetEffectiveRange()));
 }
@@ -75,7 +75,7 @@ static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
 static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
     auto buffer_view_state = static_cast<const BufferView *>(desc.GetBufferViewState());
     if (!buffer_view_state) {
-        return glsl::DescriptorState(DescriptorClass::TexelBuffer, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+        return glsl::DescriptorState(DescriptorClass::TexelBuffer, glsl::kNullDescriptor, vvl::kU32Max);
     }
     auto view_size = buffer_view_state->Size();
     uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
@@ -84,7 +84,7 @@ static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
 
 static glsl::DescriptorState GetInData(const vvl::ImageDescriptor &desc) {
     auto image_state = static_cast<const ImageView *>(desc.GetImageViewState());
-    return glsl::DescriptorState(DescriptorClass::Image, image_state ? image_state->id : glsl::kDebugInputBindlessSkipId);
+    return glsl::DescriptorState(DescriptorClass::Image, image_state ? image_state->id : glsl::kNullDescriptor);
 }
 
 static glsl::DescriptorState GetInData(const vvl::SamplerDescriptor &desc) {
@@ -95,7 +95,7 @@ static glsl::DescriptorState GetInData(const vvl::SamplerDescriptor &desc) {
 static glsl::DescriptorState GetInData(const vvl::ImageSamplerDescriptor &desc) {
     auto image_state = static_cast<const ImageView *>(desc.GetImageViewState());
     auto sampler_state = static_cast<const Sampler *>(desc.GetSamplerState());
-    return glsl::DescriptorState(DescriptorClass::ImageSampler, image_state ? image_state->id : glsl::kDebugInputBindlessSkipId,
+    return glsl::DescriptorState(DescriptorClass::ImageSampler, image_state ? image_state->id : glsl::kNullDescriptor,
                                  sampler_state ? sampler_state->id : 0);
 }
 
@@ -103,10 +103,10 @@ static glsl::DescriptorState GetInData(const vvl::AccelerationStructureDescripto
     uint32_t id;
     if (ac.IsKHR()) {
         auto ac_state = static_cast<const AccelerationStructureKHR *>(ac.GetAccelerationStructureStateKHR());
-        id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
+        id = ac_state ? ac_state->id : glsl::kNullDescriptor;
     } else {
         auto ac_state = static_cast<const AccelerationStructureNV *>(ac.GetAccelerationStructureStateNV());
-        id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
+        id = ac_state ? ac_state->id : glsl::kNullDescriptor;
     }
     return glsl::DescriptorState(DescriptorClass::AccelerationStructure, id);
 }
@@ -117,14 +117,14 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
         case DescriptorClass::GeneralBuffer: {
             auto buffer_state = std::static_pointer_cast<const Buffer>(desc.GetSharedBufferState());
             if (!buffer_state) {
-                return glsl::DescriptorState(desc_class, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+                return glsl::DescriptorState(desc_class, glsl::kNullDescriptor, vvl::kU32Max);
             }
             return glsl::DescriptorState(desc_class, buffer_state->id, static_cast<uint32_t>(buffer_state->create_info.size));
         }
         case DescriptorClass::TexelBuffer: {
             auto buffer_view_state = std::static_pointer_cast<const BufferView>(desc.GetSharedBufferViewState());
             if (!buffer_view_state) {
-                return glsl::DescriptorState(desc_class, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+                return glsl::DescriptorState(desc_class, glsl::kNullDescriptor, vvl::kU32Max);
             }
             auto view_size = buffer_view_state->Size();
             uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
@@ -138,21 +138,21 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             auto image_state = std::static_pointer_cast<const ImageView>(desc.GetSharedImageViewState());
             auto sampler_state = std::static_pointer_cast<const Sampler>(desc.GetSharedSamplerState());
             // image can be null in some cases, but the sampler can't
-            return glsl::DescriptorState(desc_class, image_state ? image_state->id : glsl::kDebugInputBindlessSkipId,
+            return glsl::DescriptorState(desc_class, image_state ? image_state->id : glsl::kNullDescriptor,
                                          sampler_state ? sampler_state->id : 0);
         }
         case DescriptorClass::Image: {
             auto image_state = std::static_pointer_cast<const ImageView>(desc.GetSharedImageViewState());
-            return glsl::DescriptorState(desc_class, image_state ? image_state->id : glsl::kDebugInputBindlessSkipId);
+            return glsl::DescriptorState(desc_class, image_state ? image_state->id : glsl::kNullDescriptor);
         }
         case DescriptorClass::AccelerationStructure: {
             uint32_t id;
             if (desc.IsAccelerationStructureKHR()) {
                 auto ac_state = static_cast<const AccelerationStructureKHR *>(desc.GetAccelerationStructureStateKHR());
-                id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
+                id = ac_state ? ac_state->id : glsl::kNullDescriptor;
             } else {
                 auto ac_state = static_cast<const AccelerationStructureNV *>(desc.GetAccelerationStructureStateNV());
-                id = ac_state ? ac_state->id : glsl::kDebugInputBindlessSkipId;
+                id = ac_state ? ac_state->id : glsl::kNullDescriptor;
             }
             return glsl::DescriptorState(desc_class, id);
         }
@@ -162,7 +162,8 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
             assert(false);
             break;
     }
-    return glsl::DescriptorState(desc_class, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+    // If unsupported descriptor, act as if it is null and skip
+    return glsl::DescriptorState(desc_class, glsl::kNullDescriptor, vvl::kU32Max);
 }
 
 template <typename Binding>
@@ -179,7 +180,8 @@ void FillBindingInData(const Binding &binding, glsl::DescriptorState *data, uint
 // Inline Uniforms are currently treated as a single descriptor. Writes to any offsets cause the whole range to be valid.
 template <>
 void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::DescriptorState *data, uint32_t &index) {
-    data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kDebugInputBindlessSkipId, vvl::kU32Max);
+    // While not techincally a "null descriptor" we want to skip it as if it is one
+    data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kNullDescriptor, vvl::kU32Max);
 }
 
 VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &loc) {

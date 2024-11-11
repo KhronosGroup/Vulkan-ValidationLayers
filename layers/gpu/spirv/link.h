@@ -22,9 +22,10 @@ namespace spirv {
 // Functions name match those found in the GLSL for ease of searching
 enum class LinkFunctions {
     inst_buffer_device_address,
-    inst_bindless_descriptor,
-    inst_non_bindless_oob_buffer,
-    inst_non_bindless_oob_texel_buffer,
+    inst_descriptor_indexing_oob_bindless,
+    inst_descriptor_indexing_oob_non_bindless,
+    inst_descriptor_class_general_buffer,
+    inst_descriptor_class_texel_buffer,
     inst_ray_query,
     inst_post_process_descriptor_index,
 };

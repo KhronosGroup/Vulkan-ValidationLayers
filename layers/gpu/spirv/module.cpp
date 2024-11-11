@@ -20,9 +20,9 @@
 #include "error_message/log_message_type.h"
 
 #include "buffer_device_address_pass.h"
-#include "bindless_descriptor_pass.h"
-#include "non_bindless_oob_buffer_pass.h"
-#include "non_bindless_oob_texel_buffer_pass.h"
+#include "descriptor_indexing_oob_pass.h"
+#include "descriptor_class_general_buffer_pass.h"
+#include "descriptor_class_texel_buffer_pass.h"
 #include "ray_query_pass.h"
 #include "debug_printf_pass.h"
 #include "post_process_descriptor_indexing.h"
@@ -284,8 +284,8 @@ void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decora
     annotations_.emplace_back(std::move(new_inst));
 }
 
-bool Module::RunPassBindlessDescriptor() {
-    BindlessDescriptorPass pass(*this);
+bool Module::RunPassDescriptorIndexingOOB() {
+    DescriptorIndexingOOBPass pass(*this);
     const bool changed = pass.Run();
     if (print_debug_info_) {
         pass.PrintDebugInfo();
@@ -293,8 +293,8 @@ bool Module::RunPassBindlessDescriptor() {
     return changed;
 }
 
-bool Module::RunPassNonBindlessOOBBuffer() {
-    NonBindlessOOBBufferPass pass(*this);
+bool Module::RunPassDescriptorClassGeneralBuffer() {
+    DescriptorClassGeneralBufferPass pass(*this);
     const bool changed = pass.Run();
     if (print_debug_info_) {
         pass.PrintDebugInfo();
@@ -302,8 +302,8 @@ bool Module::RunPassNonBindlessOOBBuffer() {
     return changed;
 }
 
-bool Module::RunPassNonBindlessOOBTexelBuffer() {
-    NonBindlessOOBTexelBufferPass pass(*this);
+bool Module::RunPassDescriptorClassTexelBuffer() {
+    DescriptorClassTexelBufferPass pass(*this);
     const bool changed = pass.Run();
     if (print_debug_info_) {
         pass.PrintDebugInfo();

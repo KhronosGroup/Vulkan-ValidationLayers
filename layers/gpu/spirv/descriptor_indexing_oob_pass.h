@@ -15,23 +15,22 @@
 #pragma once
 
 #include <stdint.h>
-#include "pass.h"
+#include "inject_conditional_function_pass.h"
 
 namespace gpuav {
 namespace spirv {
 
-// Will make sure Texel Buffers that are non bindless are not OOB Uses robustBufferAccess to ensure if we
-// are OOB that it won't crash and we will return the error safely
-class NonBindlessOOBTexelBufferPass : public Pass {
+// Create a pass to instrument descriptor indexing.
+// This pass makes sure any index into an descriptor array is not OOB or uninitialized
+class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
   public:
-    NonBindlessOOBTexelBufferPass(Module& module);
+    DescriptorIndexingOOBPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    const char* Name() const final { return "DescriptorIndexingOOBPass"; }
     void PrintDebugInfo();
-    const char* Name() const final { return "NonBindlessOOBTexelBufferPass"; }
-    bool Run();
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst) final;
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
     uint32_t link_function_id = 0;
@@ -41,11 +40,12 @@ class NonBindlessOOBTexelBufferPass : public Pass {
     const Instruction* var_inst_ = nullptr;
     const Instruction* image_inst_ = nullptr;
 
-    uint32_t descriptor_array_size_id_ = 0;  // the size of the descriptor array (size is 1 if no array)
     uint32_t descriptor_set_ = 0;
     uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;  // index input the descriptor array
-    uint32_t descriptor_offset_id_ = 0;
+    uint32_t descriptor_index_id_ = 0;
+
+    // < original ID, new CopyObject ID >
+    vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
 };
 
 }  // namespace spirv
