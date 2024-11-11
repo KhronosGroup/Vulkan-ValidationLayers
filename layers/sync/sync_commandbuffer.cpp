@@ -1060,12 +1060,13 @@ void CommandBufferAccessContext::RecordClearAttachment(ResourceUsageTag tag, con
         assert((clear_info.aspects_to_clear & kDepthStencilAspects) == 0);
         access_context->UpdateAccessState(*clear_info.view->GetImageState(), SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
                                           SyncOrdering::kColorAttachment, subresource_range, clear_info.offset, clear_info.extent,
-                                          tag);
+                                          ResourceUsageTagEx{tag});
     } else {
         assert((clear_info.aspects_to_clear & kColorAspects) == 0);
-        access_context->UpdateAccessState(
-            *clear_info.view->GetImageState(), SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-            SyncOrdering::kDepthStencilAttachment, subresource_range, clear_info.offset, clear_info.extent, tag);
+        access_context->UpdateAccessState(*clear_info.view->GetImageState(),
+                                          SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
+                                          SyncOrdering::kDepthStencilAttachment, subresource_range, clear_info.offset,
+                                          clear_info.extent, ResourceUsageTagEx{tag});
     }
 }
 

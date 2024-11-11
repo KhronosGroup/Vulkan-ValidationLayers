@@ -516,23 +516,22 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
-    if (src_image) {
-        cb_access_context->AddCommandHandle(tag, src_image->Handle());
-    }
+    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_image = Get<ImageState>(dstImage);
-    if (dst_image) {
-        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
-    }
+    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent, tag);
+                                       RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent,
+                                       src_tag_ex);
         }
         if (dst_image) {
             context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent, tag);
+                                       RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent,
+                                       dst_tag_ex);
         }
     }
 }
@@ -598,23 +597,22 @@ void SyncValidator::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkC
     assert(context);
 
     auto src_image = Get<ImageState>(pCopyImageInfo->srcImage);
-    if (src_image) {
-        cb_access_context->AddCommandHandle(tag, src_image->Handle());
-    }
+    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_image = Get<ImageState>(pCopyImageInfo->dstImage);
-    if (dst_image) {
-        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
-    }
+    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < pCopyImageInfo->regionCount; region++) {
         const auto &copy_region = pCopyImageInfo->pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent, tag);
+                                       RangeFromLayers(copy_region.srcSubresource), copy_region.srcOffset, copy_region.extent,
+                                       src_tag_ex);
         }
         if (dst_image) {
             context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent, tag);
+                                       RangeFromLayers(copy_region.dstSubresource), copy_region.dstOffset, copy_region.extent,
+                                       dst_tag_ex);
         }
     }
 }
@@ -1115,9 +1113,7 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
     auto src_tag_ex = src_buffer ? cb_access_context->AddCommandHandle(tag, src_buffer->Handle()) : ResourceUsageTagEx{tag};
 
     auto dst_image = Get<ImageState>(dstImage);
-    if (dst_image) {
-        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
-    }
+    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
@@ -1131,7 +1127,7 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
             }
             context->UpdateAccessState(*dst_image, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
-                                       copy_region.imageExtent, tag);
+                                       copy_region.imageExtent, dst_tag_ex);
         }
     }
 }
@@ -1242,22 +1238,17 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
-    if (src_image) {
-        cb_access_context->AddCommandHandle(tag, src_image->Handle());
-    }
+    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
 
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
     auto dst_tag_ex = dst_buffer ? cb_access_context->AddCommandHandle(tag, dst_buffer->Handle()) : ResourceUsageTagEx{tag};
-
-    const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->VkHandle() : VK_NULL_HANDLE;
-    const VulkanTypedHandle dst_handle(dst_mem, kVulkanObjectTypeDeviceMemory);
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
-                                       copy_region.imageExtent, tag);
+                                       copy_region.imageExtent, src_tag_ex);
             if (dst_buffer) {
                 ResourceAccessRange dst_range = MakeRange(
                     copy_region.bufferOffset,
@@ -1383,13 +1374,10 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
-    if (src_image) {
-        cb_state->access_context.AddCommandHandle(tag, src_image->Handle());
-    }
+    auto src_tag_ex = src_image ? cb_state->access_context.AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_image = Get<ImageState>(dstImage);
-    if (dst_image) {
-        cb_state->access_context.AddCommandHandle(tag, dst_image->Handle());
-    }
+    auto dst_tag_ex = dst_image ? cb_state->access_context.AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &blit_region = pRegions[region];
@@ -1401,7 +1389,7 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].y - blit_region.srcOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.srcOffsets[1].z - blit_region.srcOffsets[0].z))};
             context->UpdateAccessState(*src_image, SYNC_BLIT_TRANSFER_READ, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(blit_region.srcSubresource), offset, extent, tag);
+                                       RangeFromLayers(blit_region.srcSubresource), offset, extent, src_tag_ex);
         }
         if (dst_image) {
             VkOffset3D offset = {std::min(blit_region.dstOffsets[0].x, blit_region.dstOffsets[1].x),
@@ -1411,7 +1399,7 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].y - blit_region.dstOffsets[0].y)),
                                  static_cast<uint32_t>(abs(blit_region.dstOffsets[1].z - blit_region.dstOffsets[0].z))};
             context->UpdateAccessState(*dst_image, SYNC_BLIT_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
-                                       RangeFromLayers(blit_region.dstSubresource), offset, extent, tag);
+                                       RangeFromLayers(blit_region.dstSubresource), offset, extent, dst_tag_ex);
         }
     }
 }
@@ -2187,25 +2175,22 @@ void SyncValidator::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, 
     assert(context);
 
     auto src_image = Get<ImageState>(srcImage);
-    if (src_image) {
-        cb_access_context->AddCommandHandle(tag, src_image->Handle());
-    }
+    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_image = Get<ImageState>(dstImage);
-    if (dst_image) {
-        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
-    }
+    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &resolve_region = pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset,
-                                       resolve_region.extent, tag);
+                                       resolve_region.extent, src_tag_ex);
         }
         if (dst_image) {
             context->UpdateAccessState(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
-                                       resolve_region.extent, tag);
+                                       resolve_region.extent, dst_tag_ex);
         }
     }
 }
@@ -2277,25 +2262,22 @@ void SyncValidator::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer,
     assert(context);
 
     auto src_image = Get<ImageState>(pResolveImageInfo->srcImage);
-    if (src_image) {
-        cb_access_context->AddCommandHandle(tag, src_image->Handle());
-    }
+    auto src_tag_ex = src_image ? cb_access_context->AddCommandHandle(tag, src_image->Handle()) : ResourceUsageTagEx{tag};
+
     auto dst_image = Get<ImageState>(pResolveImageInfo->dstImage);
-    if (dst_image) {
-        cb_access_context->AddCommandHandle(tag, dst_image->Handle());
-    }
+    auto dst_tag_ex = dst_image ? cb_access_context->AddCommandHandle(tag, dst_image->Handle()) : ResourceUsageTagEx{tag};
 
     for (uint32_t region = 0; region < pResolveImageInfo->regionCount; region++) {
         const auto &resolve_region = pResolveImageInfo->pRegions[region];
         if (src_image) {
             context->UpdateAccessState(*src_image, SYNC_RESOLVE_TRANSFER_READ, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(resolve_region.srcSubresource), resolve_region.srcOffset,
-                                       resolve_region.extent, tag);
+                                       resolve_region.extent, src_tag_ex);
         }
         if (dst_image) {
             context->UpdateAccessState(*dst_image, SYNC_RESOLVE_TRANSFER_WRITE, SyncOrdering::kNonAttachment,
                                        RangeFromLayers(resolve_region.dstSubresource), resolve_region.dstOffset,
-                                       resolve_region.extent, tag);
+                                       resolve_region.extent, dst_tag_ex);
         }
     }
 }
