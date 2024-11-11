@@ -199,10 +199,10 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
 }
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                      const VkExtent3D &extent, const ResourceUsageTag tag) {
+                                      const VkExtent3D &extent, const ResourceUsageTagEx tag_ex) {
     // range_gen is non-temporary to avoid an additional copy
     ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, offset, extent, false);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
+    UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
 }
 
 void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
@@ -238,11 +238,11 @@ void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const v
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTag tag) {
+                                      ResourceUsageTagEx tag_ex) {
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, ResourceUsageTagEx{tag});
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex);
     UpdateMemoryAccessState(action, range_gen);
 }
 
@@ -250,7 +250,7 @@ void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncStageA
                                       SyncOrdering ordering_rule, ResourceUsageTag tag) {
     // range_gen is non-temporary to avoid infinite call recursion
     ImageRangeGen mutable_range_gen(range_gen);
-    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag);
+    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
 }
 
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
