@@ -318,11 +318,11 @@ class AccessContext {
     void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
                            SyncOrdering ordering_rule, ResourceUsageTag tag);
     void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTag tag);
+                           const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTag tag);
+                           ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
-                           ResourceUsageTag tag);
+                           ResourceUsageTagEx tag_ex);
     void UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,

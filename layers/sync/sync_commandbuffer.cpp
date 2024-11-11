@@ -205,7 +205,8 @@ void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRender
             const SyncStageAccessIndex load_index = attachment.GetLoadUsage();
             if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
 
-            GetCurrentAccessContext()->UpdateAccessState(attachment.view_gen, load_index, attachment.GetOrdering(), tag);
+            GetCurrentAccessContext()->UpdateAccessState(attachment.view_gen, load_index, attachment.GetOrdering(),
+                                                         ResourceUsageTagEx{tag});
         }
     }
 
@@ -283,13 +284,14 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
             if (attachment.resolve_gen) {
                 const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
                 const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
-                access_context->UpdateAccessState(attachment.view_gen, kResolveRead, kResolveOrder, store_tag);
-                access_context->UpdateAccessState(*attachment.resolve_gen, kResolveWrite, kResolveOrder, store_tag);
+                access_context->UpdateAccessState(attachment.view_gen, kResolveRead, kResolveOrder, ResourceUsageTagEx{store_tag});
+                access_context->UpdateAccessState(*attachment.resolve_gen, kResolveWrite, kResolveOrder,
+                                                  ResourceUsageTagEx{store_tag});
             }
 
             const SyncStageAccessIndex store_index = attachment.GetStoreUsage();
             if (store_index == SYNC_ACCESS_INDEX_NONE) continue;
-            access_context->UpdateAccessState(attachment.view_gen, store_index, kStoreOrder, store_tag);
+            access_context->UpdateAccessState(attachment.view_gen, store_index, kStoreOrder, ResourceUsageTagEx{store_tag});
         }
     }
 
@@ -772,7 +774,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
         if (!attachment.IsWriteable(last_bound_state)) continue;
 
         access_context.UpdateAccessState(attachment.view_gen, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                         SyncOrdering::kColorAttachment, tag);
+                                         SyncOrdering::kColorAttachment, ResourceUsageTagEx{tag});
     }
 
     // TODO -- fixup this and Subpass attachment to correct map the various depth stencil enables/reads vs. writes
@@ -787,7 +789,7 @@ void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUs
 
         if (writeable) {
             access_context.UpdateAccessState(attachment.view_gen, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
-                                             SyncOrdering::kDepthStencilAttachment, tag);
+                                             SyncOrdering::kDepthStencilAttachment, ResourceUsageTagEx{tag});
         }
     }
 }
