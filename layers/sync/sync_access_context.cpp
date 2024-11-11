@@ -195,7 +195,7 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
                                       const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag) {
     // range_gen is non-temporary to avoid an additional copy
     ImageRangeGen range_gen = image.MakeImageRangeGen(subresource_range, false);
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
+    UpdateAccessState(range_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
 }
 void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                                       const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
@@ -207,16 +207,16 @@ void AccessContext::UpdateAccessState(const ImageState &image, SyncStageAccessIn
 
 void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
                                       SyncOrdering ordering_rule, const VkOffset3D &offset, const VkExtent3D &extent,
-                                      const ResourceUsageTag tag) {
+                                      const ResourceUsageTagEx tag_ex) {
     // range_gen is non-temporary to avoid an additional copy
     ImageRangeGen range_gen(image_view.MakeImageRangeGen(offset, extent));
-    UpdateAccessState(range_gen, current_usage, ordering_rule, tag);
+    UpdateAccessState(range_gen, current_usage, ordering_rule, tag_ex);
 }
 
 void AccessContext::UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage,
-                                      SyncOrdering ordering_rule, ResourceUsageTag tag) {
+                                      SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex) {
     // Get is const, and will be copied in callee
-    UpdateAccessState(image_view.GetFullViewImageRangeGen(), current_usage, ordering_rule, tag);
+    UpdateAccessState(image_view.GetFullViewImageRangeGen(), current_usage, ordering_rule, tag_ex);
 }
 
 void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
@@ -224,7 +224,7 @@ void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, Attachm
     const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
     if (attachment_gen) {
         // Value of const optional is const, and will be copied in callee
-        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, tag);
+        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
     }
 }
 
@@ -234,7 +234,7 @@ void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const v
     const auto offset = resource.GetEffectiveImageOffset(vs_state);
     const auto extent = resource.GetEffectiveImageExtent(vs_state);
     ImageRangeGen range_gen(image->MakeImageRangeGen(resource.range, offset, extent, false));
-    UpdateAccessState(range_gen, current_usage, SyncOrdering::kNonAttachment, tag);
+    UpdateAccessState(range_gen, current_usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag});
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -247,10 +247,10 @@ void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessI
 }
 
 void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage,
-                                      SyncOrdering ordering_rule, ResourceUsageTag tag) {
+                                      SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex) {
     // range_gen is non-temporary to avoid infinite call recursion
     ImageRangeGen mutable_range_gen(range_gen);
-    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
+    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag_ex);
 }
 
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
