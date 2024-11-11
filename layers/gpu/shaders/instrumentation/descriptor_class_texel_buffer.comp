@@ -30,80 +30,48 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
-{
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType {
+    // struct glsl::DescriptorState {
+    //   x: id
+    //   y: extra data depending on the descriptor type
+    // }
+    uvec2 data[];
+};
+
+layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
+
+struct DescriptorSetRecord {
+    DescriptorSetType ds_type;
+    uvec2 unused_descriptor_index_post_process;
+};
+
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
+    UnusedInitializedStatus unused_initialized_status;
+    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
+} bindless_state_buffer;
+
+// Matches the vvl::DescriptorClass::TexelBuffer
+bool inst_descriptor_class_texel_buffer(const uint inst_num, const uvec4 stage_info,
+                        const uint desc_set, const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
     uint error = 0u;
-    uint param_0 = 0u;
-
+    uint param_0 = byte_offset;
+    uint param_1 = 0u;
     do {
-        if (isnan(ray_tmin)) {
-            error = kErrorSubCodeRayQueryMinNaN;
-            break;
-        }
-        if (isnan(ray_tmax)) {
-            error = kErrorSubCodeRayQueryMaxNaN;
-            break;
-        }
-        if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
-            error = kErrorSubCodeRayQueryOriginNaN;
-            break;
-        }
-        if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
-            error = kErrorSubCodeRayQueryDirectionNaN;
-            break;
-        }
-        if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
-            error = kErrorSubCodeRayQueryOriginFinite;
-            break;
-        }
-        if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
-            error = kErrorSubCodeRayQueryDirectionFinite;
-            break;
-        }
-        if (ray_tmin < 0.0f) {
-            error = kErrorSubCodeRayQueryNegativeMin;
-            break;
-        }
-        if (ray_tmax < 0.0f) {
-            error = kErrorSubCodeRayQueryNegativeMax;
-            break;
-        }
-        if (ray_tmax < ray_tmin) {
-            error = kErrorSubCodeRayQueryMinMax;
-            break;
-        }
-        // From SPIRV-Headers
-        const uint OpaqueKHR = 0x00000001;
-        const uint NoOpaqueKHR = 0x00000002;
-        const uint CullBackFacingTrianglesKHR = 0x00000010;
-        const uint CullFrontFacingTrianglesKHR = 0x00000020;
-        const uint CullOpaqueKHR = 0x00000040;
-        const uint CullNoOpaqueKHR = 0x00000080;
-        const uint SkipTrianglesKHR = 0x00000100;
-        const uint SkipAABBsKHR = 0x00000200;
+        DescriptorSetType ds_type = bindless_state_buffer.desc_sets[desc_set].ds_type;
 
-        const uint both_skip = SkipTrianglesKHR | SkipAABBsKHR;
-        uint skip_cull_mask = ray_flags &(SkipTrianglesKHR | CullBackFacingTrianglesKHR | CullFrontFacingTrianglesKHR);
-        uint opaque_mask = ray_flags &(OpaqueKHR | NoOpaqueKHR | CullOpaqueKHR | CullNoOpaqueKHR);
+        uint binding_layout_index = binding_layout_offset + desc_index;
 
-        if ((ray_flags & both_skip) == both_skip) {
-            error = kErrorSubCodeRayQueryBothSkip;
-            param_0 = ray_flags;
-            break;
-        }
-        if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
-            error = kErrorSubCodeRayQuerySkipCull;
-            param_0 = ray_flags;
-            break;
-        }
-        if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
-            error = kErrorSubCodeRayQueryOpaque;
-            param_0 = ray_flags;
+        // check that the offset is in bounds
+        uint resource_size = ds_type.data[binding_layout_index].y;
+        if (byte_offset >= resource_size) {
+            error = kErrorSubCodeDescriptorClassTexelBufferBounds;
+            param_1 = resource_size;
             break;
         }
     } while (false);
 
     if (0u != error) {
+
         const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
         const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
@@ -122,16 +90,19 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstRayQuery;
+            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstDescriptorClass;
             inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
 
             inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
             inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstRayQueryParamOffset_0] = param_0;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescSetOffset] = desc_set;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescBindingOffset] = binding;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassParamOffset_0] = param_0;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassParamOffset_1] = param_1;
         }
         return false;
     }
-
     return true;
 }

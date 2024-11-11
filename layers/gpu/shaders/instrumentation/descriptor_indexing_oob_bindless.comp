@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE: This file doesn't contain any entrypoints and should be compiled with then new --no-link option for glslang
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
@@ -48,20 +48,20 @@ struct DescriptorSetRecord {
     uvec2 unused_descriptor_index_post_process;
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     InitializedStatus initialized_status;
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
-bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const uint desc_set,
-                              const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_size, const uint binding_layout_offset) {
+// Unlike the non-bindless version, bindless needs to check for Uninitialized and Destroyed descriptors.
+bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stage_info, const uint desc_set,
+                              const uint binding, const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
-    uint param_0 = 0u;
-    uint param_1 = 0u;
+    uint param_0 = binding_layout_size;
     do {
+        // First make sure the index is not OOB
         if (desc_index >= binding_layout_size) {
-            error = kErrorSubCodeBindlessDescriptorBounds;
-            param_0 = binding_layout_size;
+            error = kErrorSubCodeDescriptorIndexingBounds;
             break;
         }
 
@@ -69,13 +69,11 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
 
         // check if the descriptor was ever initialized
         uint binding_layout_index = binding_layout_offset + desc_index;
-        uint desc_id = ds_type.data[binding_layout_index].x & kDebugInputBindlessSkipId;
-        uint desc_type = (ds_type.data[binding_layout_index].x & ~kDebugInputBindlessSkipId) >> kDescBitShift;
+        uint desc_id = ds_type.data[binding_layout_index].x & kNullDescriptor;
         if (desc_id == 0u) {
-            error = kErrorSubCodeBindlessDescriptorUninit;
+            error = kErrorSubCodeDescriptorIndexingUninitialized;
             break;
-        }
-        if (desc_id == kDebugInputBindlessSkipId) {
+        } else if (desc_id == kNullDescriptor) {
             break;
         }
 
@@ -84,14 +82,17 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
         uint desc_bit = 1 << (desc_id & 31);
         bool is_valid = (bindless_state_buffer.initialized_status.data[desc_index] & desc_bit) == 0;
         if (is_valid) {
-            error = kErrorSubCodeBindlessDescriptorDestroyed;
+            error = kErrorSubCodeDescriptorIndexingDestroyed;
             break;
         }
+
+        // If dealing with a combined image sampler, need to check the sampler as well
+        uint desc_type = (ds_type.data[binding_layout_index].x & ~kNullDescriptor) >> kDescBitShift;
         if (desc_type == kImageSamplerDesc) {
             // check sampler
             desc_id = ds_type.data[binding_layout_index].y;
             if (desc_id == 0u) {
-                error = kErrorSubCodeBindlessDescriptorUninit;
+                error = kErrorSubCodeDescriptorIndexingUninitialized;
                 break;
             }
             // check that the resource is still valid
@@ -99,16 +100,7 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             desc_bit = 1 << (desc_id & 31);
             is_valid = (bindless_state_buffer.initialized_status.data[desc_index] & desc_bit) == 0;
             if (is_valid) {
-                error = kErrorSubCodeBindlessDescriptorDestroyed;
-                break;
-            }
-        } else if (desc_type == kTexelDesc || desc_type == kBufferDesc) {
-            // check that the offset is in bounds
-            uint resource_size = ds_type.data[binding_layout_index].y;
-            if (byte_offset >= resource_size) {
-                error = kErrorSubCodeBindlessDescriptorOOB;
-                param_0 = byte_offset;
-                param_1 = resource_size;
+                error = kErrorSubCodeDescriptorIndexingDestroyed;
                 break;
             }
         }
@@ -134,17 +126,16 @@ bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBindlessDescriptor;
+            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstDescriptorIndexingOOB;
             inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
 
-			inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
             inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstBindlessDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstBindlessDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstBindlessDescIndexOffset] = desc_index;
-            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_0] = param_0;
-            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_1] = param_1;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescSetOffset] = desc_set;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescBindingOffset] = binding;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = param_0;
         }
         return false;
     }

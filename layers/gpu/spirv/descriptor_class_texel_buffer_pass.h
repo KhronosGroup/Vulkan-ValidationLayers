@@ -20,13 +20,13 @@
 namespace gpuav {
 namespace spirv {
 
-// Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to ensure if we
+// Will make sure Texel Buffers that are non bindless are not OOB Uses robustBufferAccess to ensure if we
 // are OOB that it won't crash and we will return the error safely
-class NonBindlessOOBBufferPass : public Pass {
+class DescriptorClassTexelBufferPass : public Pass {
   public:
-    NonBindlessOOBBufferPass(Module& module);
+    DescriptorClassTexelBufferPass(Module& module);
     void PrintDebugInfo();
-    const char* Name() const final { return "NonBindlessOOBBufferPass"; }
+    const char* Name() const final { return "DescriptorClassTexelBufferPass"; }
     bool Run();
 
   private:
@@ -39,8 +39,8 @@ class NonBindlessOOBBufferPass : public Pass {
 
     const Instruction* access_chain_inst_ = nullptr;
     const Instruction* var_inst_ = nullptr;
+    const Instruction* image_inst_ = nullptr;
 
-    uint32_t descriptor_array_size_id_ = 0;  // the size of the descriptor array (size is 1 if no array)
     uint32_t descriptor_set_ = 0;
     uint32_t descriptor_binding_ = 0;
     uint32_t descriptor_index_id_ = 0;  // index input the descriptor array

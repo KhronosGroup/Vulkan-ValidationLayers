@@ -1268,10 +1268,13 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     bool modified = false;
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-    if (gpuav_settings.shader_instrumentation.bindless_descriptor) {
-        modified |= module.RunPassBindlessDescriptor();
-        modified |= module.RunPassNonBindlessOOBBuffer();
-        modified |= module.RunPassNonBindlessOOBTexelBuffer();
+    if (gpuav_settings.shader_instrumentation.descriptor_checks) {
+        // Will wrap descriptor indexing with if/else to prevent crashing if OOB
+        modified |= module.RunPassDescriptorIndexingOOB();
+
+        // Depending on the DescriptorClass, will add dedicated check
+        modified |= module.RunPassDescriptorClassGeneralBuffer();
+        modified |= module.RunPassDescriptorClassTexelBuffer();
     }
 
     if (gpuav_settings.shader_instrumentation.buffer_device_address) {

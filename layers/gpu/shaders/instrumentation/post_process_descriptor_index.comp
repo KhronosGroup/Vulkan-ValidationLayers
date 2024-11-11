@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE: This file doesn't contain any entrypoints and should be compiled with then new --no-link option for glslang
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
@@ -41,7 +41,7 @@ struct DescriptorSetRecord {
     DescriptorIndexPostProcess descriptor_index_post_process;
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     uvec2 unused_initialized_status;
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;

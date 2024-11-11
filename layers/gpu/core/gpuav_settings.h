@@ -43,21 +43,21 @@ struct GpuAVSettings {
     // in the settings (which are reflected in VkConfig). To make our lives easier, we just make these settings with the hierarchy
     // of the settings exposed
     struct ShaderInstrumentation {
-        bool bindless_descriptor = true;
+        bool descriptor_checks = true;
         bool buffer_device_address = true;
         bool ray_query = true;
         bool post_process_descriptor_index = true;
     } shader_instrumentation;
 
     bool IsShaderInstrumentationEnabled() const {
-        return shader_instrumentation.bindless_descriptor || shader_instrumentation.buffer_device_address ||
+        return shader_instrumentation.descriptor_checks || shader_instrumentation.buffer_device_address ||
                shader_instrumentation.ray_query || shader_instrumentation.post_process_descriptor_index;
     }
     bool IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
 
     // Also disables shader caching and select shader instrumentation
     void DisableShaderInstrumentationAndOptions() {
-        shader_instrumentation.bindless_descriptor = false;
+        shader_instrumentation.descriptor_checks = false;
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
         shader_instrumentation.post_process_descriptor_index = false;

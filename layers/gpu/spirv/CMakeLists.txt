@@ -17,12 +17,12 @@
 add_library(gpu_av_spirv STATIC)
 target_sources(gpu_av_spirv PRIVATE
     # Passes
-    bindless_descriptor_pass.h
-    bindless_descriptor_pass.cpp
-    non_bindless_oob_buffer_pass.h
-    non_bindless_oob_buffer_pass.cpp
-    non_bindless_oob_texel_buffer_pass.h
-    non_bindless_oob_texel_buffer_pass.cpp
+    descriptor_indexing_oob_pass.h
+    descriptor_indexing_oob_pass.cpp
+    descriptor_class_general_buffer_pass.h
+    descriptor_class_general_buffer_pass.cpp
+    descriptor_class_texel_buffer_pass.h
+    descriptor_class_texel_buffer_pass.cpp
     buffer_device_address_pass.h
     buffer_device_address_pass.cpp
     ray_query_pass.h
@@ -51,12 +51,14 @@ target_sources(gpu_av_spirv PRIVATE
     pass.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/spirv_grammar_helper.cpp
 
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_bindless_descriptor_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_bindless_descriptor_comp.cpp
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_non_bindless_oob_buffer_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_non_bindless_oob_buffer_comp.cpp
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_non_bindless_oob_texel_buffer_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_non_bindless_oob_texel_buffer_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_bindless_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_bindless_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_general_buffer_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_general_buffer_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_texel_buffer_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_texel_buffer_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_buffer_device_address_comp.h
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_buffer_device_address_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_ray_query_comp.h

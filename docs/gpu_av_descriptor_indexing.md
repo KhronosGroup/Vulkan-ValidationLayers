@@ -1,10 +1,14 @@
-# GPU-AV Bindless Validation
+# GPU-AV Descriptor Indexing Validation
 
-To validate the bindless use of descriptors, we will need to to use GPU-AV as the information is not known until execution time.
+To validate the descriptor indexing (sometimes known as `bindless`), we will need to to use GPU-AV as the information is not known until execution time.
 
-The trickest part becomes "what is bindless", and there is no concrete answer as things may "seem bindless" but underneath it might not be. From the VVL point of view, we can define this and need to in order to know when and how to validate various scenarios.
+## Background
 
-## Array of Descriptors vs Descriptor Array
+The first part of this documentation is to help educate you around the many ways descriptors can be used in Vulkan. It is needed to understand why things are split up the way they are.
+
+For those who want to understand what the code is doing, skip to the second section [How does GPU-AV descriptor check works](#how-does-gpu-av-descriptor-check-works)
+
+### Array of Descriptors vs Descriptor Array
 
 When talking about "arrays" and "descriptors" it is important to first no mix up the following
 
@@ -20,26 +24,47 @@ layout(set = 0, binding = 0) buffer B {
 
 The `uint data[];` is actually a known size at runtime, if you use `OpArrayLength` you can get the size of this runtime array while running your shader. This length is determined by the size at `vkUpdateDescriptorSets`.
 
-## OOB vs Bindless
+### OOB crashes regardless of bindless
 
-It is very easy to mix up what is invalid because it is `out-of-bounds` or `invalid binding`.
+It is very possible in Vulkan 1.0 to have code such as the following:
 
 ```glsl
-layout(set = 0, binding = 0) buffer StorageBuffer {
-    uint x;
-} Data[2];
+layout(constant_id = 0) const uint index = 1; // update later to be something like 5
+
+layout(set = 0, binding = 0) buffer foo { uint x; } descriptors[2];
 
 void main() {
-    uint index = ubo.runtime_value;
-    Data[index].x = 0;
+    descriptors[index].x = 0;
 }
 ```
 
-In the above example, `index` could be `4`, in that case, it is `out-of-bounds`. This can happen in Vulkan 1.0 (as long as `index` is a uniform value).
+This is will crash and we need to do descriptor indexing OOB checks regardless of the use of `VK_EXT_descriptor_indexing` or not.
 
-If `index` is `1` in Vulkan 1.0 it will **always** be valid because all elements of the descriptor are required to be bound at `vkCmdDraw`/`vkCmdDispatch` time.
+> Indexing into a descriptor can be done in Vulkan 1.0 as long as the index is a uniform value across all threads in a subgroup. (See features such as `shaderUniformBufferArrayNonUniformIndexing`)
 
-If using `VK_EXT_descriptor_indexing` and `PARTIALLY_BOUND` then it is possible that only `Data[0]` has a `VkBuffer` bound, but `Data[1]` is `VK_NULL_HANDLE`. For this case, we now need to do an additional check if `Data[index]` reference a bound descriptor or not
+### What does bindless reall mean
+
+The simplest way to think of `bindless` is you can have "uninitialized" and "destroyed" descriptors that you know won't be accessed.
+
+This lets you have code such as the following:
+
+```glsl
+if (some_condition_that_will_be_false) {
+    descriptors[bad_oob_index].x = 0;
+}
+```
+
+Without `VK_EXT_descriptor_indexing` at draw time, all descriptors must be valid (via a `vkUpdateDescriptorSets` call) **regardless if they are accessed or not**. This means if you use `descriptors[1]` and not using `VK_EXT_descriptor_indexing` we can validate everything on the CPU.
+
+The `PARTIALLY_BOUND` flag in `VK_EXT_descriptor_indexing` is what allows things to be uninitialized. This means GPU-AV now needs to check something like `descriptors[1]` is not accessing an uninitialized descriptor.
+
+### Null Descriptors
+
+`VK_EXT_robustness2` added a `nullDescriptor` which allows the user to set a descriptor to be `VK_NULL_HANDLE`. Loads from here return zero values and stores are discarded.
+
+So if `descriptors[1]` points a `VK_NULL_HANDLE` we can safely ignore it if `nullDescriptor` is turned on. Without `nullDescriptor` it is invalid to set the descriptor as `VK_NULL_HANDLE` and will be caught on the CPU.
+
+> Warning - Descriptors that are uninitialized are undefined and are not `VK_NULL_HANDLE`
 
 ### This occurs without arrays
 
@@ -62,6 +87,8 @@ With `VK_EXT_descriptor_indexing` there is a possiblity that `PARTIALLY_BOUND` i
 
 What this shows is the fact the descriptor is an array or not, does not matter, we have the same logic for both `out-of-bounds` and `invalid binding` we need to do
 
+We can just think of `Data` as being an implicit array of size 1 (ex `Data[1]`).
+
 ### Runtime Descriptors
 
 Going the other side of the spectrum, we might have a runtime array
@@ -82,6 +109,20 @@ This is not valid in Vulkan 1.0 and if all the accesses to `Data[]` are constant
 With `VK_EXT_descriptor_indexing` you can enable `runtimeDescriptorArray` which will allow you actually have a runtime array.
 
 The size of the array is only known by `VkDescriptorSetLayoutBinding::descriptorCount` which can be set up to `vkQueueSumit` and therefor the driver's compiler doesn't know the size. This means we will need to load in the size and can't use something like `OpArrayLength` (which won't work anyways because it will be invalid SPIR-V).
+
+### OOB never happens at front of buffer
+
+When you bind a buffer you set the `range` (size) and `offset` into that `VkBuffer`. This means when validating for `out-of-bounds`, you never need to check the starting range in the descriptor.
+
+```glsl
+// NOT possible
+layout(set = 0, binding = 0) buffer StorageBuffer {
+    uint a; // not-bound
+    uint b; // bind 12 bytes from here
+    uint c;
+    uint d;
+};
+```
 
 ### Texel Buffers and Storage Images
 
@@ -113,21 +154,7 @@ texture(tex_non_array, uv);
 texture(tex_array[3], uv);
 ```
 
-### OOB never happens at front of buffer
-
-When you bind a buffer you set the `range` (size) and `offset` into that `VkBuffer`. This means when validating for `out-of-bounds`, you never need to check the starting range in the descriptor.
-
-```glsl
-// NOT possible
-layout(set = 0, binding = 0) buffer StorageBuffer {
-    uint a; // not-bound
-    uint b; // bind 12 bytes from here
-    uint c;
-    uint d;
-};
-```
-
-## When we validate
+### When we validate
 
 The following is a break down of "when" we can validate descriptors:
 
@@ -139,7 +166,7 @@ The big thing to take from here is that `UPDATE_AFTER_BIND` doesn't mean we need
 
 The core reason we do **not** validate for `UPDATE_AFTER_BIND` on the CPU is some application (most notably Doom Eternal) will have 1 million descriptors (and not use `PARTIALLY_BOUND`). The time to check all of these on the CPU is a huge bottle neck and is better to just validate the accessed descriptors detected on the GPU.
 
-## Static vs Dynamically used
+### Static vs Dynamically used
 
 The ugly part of the spec starts when you get to when things are "statically used" or not
 
@@ -189,7 +216,7 @@ void main() {
 
 This is imporant to distinguish when dealing with code as it will be referencing both and can be easy to mix up.
 
-## Robustness
+### Robustness
 
 > Details about robustness itself can be found at https://docs.vulkan.org/guide/latest/robustness.html
 
@@ -200,3 +227,83 @@ One of the main reason to break-up changes between bindless vs non-bindless is b
 From Vulkan 1.0 we can use `robustBufferAccess` to check for `out-of-bounds` for non-bindless checks
 
 When dealing with bindless and invalid descriptors we will need to use `robustBufferAccess2`/`robustImageAccess2`
+
+## How does GPU-AV descriptor check works
+
+The descriptor checks in GPU-AV are done in 3 parts
+
+1. Descriptor Indexing OOB
+2. Descriptor Class
+3. Post Processing
+
+### Descriptor Indexing OOB
+
+To prevent crashing, no matter what, we **must** wrap all indexes into a descriptor with a `if/else`. Because non-bindless doesn't have to worry about descriptors being  uninitialized and destroyed it is a much simpler check.
+
+The GLSL (`descriptor_indexing_oob_bindless.comp`/`descriptor_indexing_oob_non_bindless.comp`) will look like the following when applied:
+
+```glsl
+if (inst_descriptor_indexing_oob_bindless(index)) {
+    descriptor[index] = 0;
+}
+
+// or
+
+if (inst_descriptor_indexing_oob_non_bindless(index)) {
+    descriptor[index] = 0;
+}
+```
+
+### Descriptor Class
+
+One we have indexed into the descriptor array, we must make sure the descriptor itself is being accessed correctly. Buffers, Images, Acceleration Structure, etc wll all have different rules how accessing it is valid or not.
+
+The main thing is **all** of these can prevented from crashing using one of the various robustness features (that we will enable for the user for them). This means we can apply the check without needing the `if/else`.
+
+There should be a Descriptor Class check for each of the `vvl::DescriptorClass` enums and look like the following
+
+```glsl
+// From descriptor_class_general_buffer.comp
+inst_descriptor_class_general_buffer(index, offset_to_value_inside);
+ssbo_descriptor[index].value_inside = 0;
+
+// From descriptor_class_texel_buffer.comp
+inst_descriptor_class_texel_buffer(index, offset_to_value_inside);
+texel_buffer_descriptor[index].value_inside = 0;
+```
+
+### Post Processing
+
+The final step is once we know which descriptor was accessed, we can run the normal "core validation" on the descriptor. There is a Post Process buffer that will write which indexes are accessed and after the `vkQueueSubmit` a timeline semaphore will validate it on the CPU.
+
+the GLSL (`post_process_descriptor_index.comp`) will look like
+
+```glsl
+inst_post_process_descriptor_index(index);
+descriptor[index].value_inside = 0;
+```
+
+### Putting it all together
+
+With these 3 parts the following GLSL
+
+```glsl
+layout(set=0, binding=0) uniform foo { uint index; };
+// assume not using bindless
+layout(set=0, binding=1) buffer foo { uint value_inside; } bar[2];
+void main() {
+    bar[index].value_inside = 0;
+}
+```
+
+will end up looking like the following
+
+```glsl
+void main() {
+    if (inst_descriptor_indexing_oob_non_bindless(index)) {
+        inst_descriptor_class_general_buffer(index, 4); // 4 bytes into SSBO accessed
+        inst_post_process_descriptor_index(index);
+        bar[index].value_inside = 0;
+    }
+}
+```

@@ -403,7 +403,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         // Error output buffer
         {glsl::kBindingInstErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Current bindless buffer
-        {glsl::kBindingInstBindlessDescriptor, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {glsl::kBindingInstDescriptorIndexingOOB, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding buffer device addresses
         {glsl::kBindingInstBufferDeviceAddress, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding action command index in command buffer
@@ -438,7 +438,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
     }
 
-    if (gpuav_settings.shader_instrumentation.bindless_descriptor) {
+    if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);
         DispatchGetPhysicalDeviceProperties2Helper(physical_device, &props2);
@@ -535,9 +535,9 @@ void Validator::InitSettings(const Location &loc) {
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
 
     GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
-    if (shader_instrumentation.bindless_descriptor || shader_instrumentation.post_process_descriptor_index) {
+    if (shader_instrumentation.descriptor_checks || shader_instrumentation.post_process_descriptor_index) {
         if (!enabled_features.bufferDeviceAddress) {
-            shader_instrumentation.bindless_descriptor = false;
+            shader_instrumentation.descriptor_checks = false;
             shader_instrumentation.post_process_descriptor_index = false;
             InternalWarning(device, loc,
                             "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not supported "

@@ -52,7 +52,7 @@ const int kBindingInstDebugPrintf = 0;
 // binding #1 is reserved for the output all non-DebugPrintf shaders write out too.
 const int kBindingInstErrorBuffer = 1;
 // Each check that requires additional input/output to be sent must reserve its own binding slot
-const int kBindingInstBindlessDescriptor = 2;
+const int kBindingInstDescriptorIndexingOOB = 2;
 const int kBindingInstBufferDeviceAddress = 3;
 const int kBindingInstActionIndex = 4;
 const int kBindingInstCmdResourceIndex = 5;
@@ -84,8 +84,8 @@ const int kDebugInputDataOffset = 0;
 // descriptor sets the device supports.
 const int kDebugInputBindlessMaxDescSets = 32;
 
-// Special global descriptor id that skips checking.
-const uint kDebugInputBindlessSkipId = 0x00ffffff;
+// Used to know that the descriptor is null and not uninitialized
+const uint kNullDescriptor = 0x00ffffff;
 
 // Top 8 bits of the descriptor id
 const uint kDescBitShift = 24;

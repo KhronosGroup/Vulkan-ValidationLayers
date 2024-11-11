@@ -26,5 +26,5 @@
 #include <cstdint>
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-extern const uint32_t instrumentation_bindless_descriptor_comp_size;
-extern const uint32_t instrumentation_bindless_descriptor_comp[];
+extern const uint32_t instrumentation_descriptor_indexing_oob_non_bindless_comp_size;
+extern const uint32_t instrumentation_descriptor_indexing_oob_non_bindless_comp[];

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE: This file doesn't contain any entrypoints and should be compiled with then new --no-link option for glslang
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
@@ -45,27 +45,29 @@ struct DescriptorSetRecord {
     uvec2 unused_descriptor_index_post_process;
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
 } bindless_state_buffer;
 
-// TODO - This currently the almost exact same code as inst_non_bindless_oob_buffer
-// We do not want to waste time deciding which descriptor type it is inside the shader.
-// While this is some code duplication, it keeps things seperated for non-bindlesss everywhere else
-bool inst_non_bindless_oob_texel_buffer(const uint inst_num, const uvec4 stage_info, const uint desc_array_size,
+// Matches the vvl::DescriptorClass::GeneralBuffer
+//
+// If we have a shader like
+//    layout(set=0, binding=0) buffer foo {
+//        uint a;
+//        uint b;
+//    }
+//    void main() {
+//        b = 0;
+//    }
+//
+// We might have only bound 4 bytes to the buffer, so 'b' is OOB and this function will detect it
+bool inst_descriptor_class_general_buffer(const uint inst_num, const uvec4 stage_info,
                         const uint desc_set, const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
     uint error = 0u;
-    uint param_0 = 0u;
-    uint param_1 = 0u;
+    uint param_0 = byte_offset;
+    uint param_1 = 0;
     do {
-        // For non-array this should hopefully optimized out as "if (0 > 1)"
-        if (desc_index > desc_array_size) {
-            error = kErrorSubCodeNonBindlessOOBTexelBufferArrays;
-            param_0 = desc_array_size;
-            break;
-        }
-
         DescriptorSetType ds_type = bindless_state_buffer.desc_sets[desc_set].ds_type;
 
         uint binding_layout_index = binding_layout_offset + desc_index;
@@ -73,8 +75,7 @@ bool inst_non_bindless_oob_texel_buffer(const uint inst_num, const uvec4 stage_i
         // check that the offset is in bounds
         uint resource_size = ds_type.data[binding_layout_index].y;
         if (byte_offset >= resource_size) {
-            error = kErrorSubCodeNonBindlessOOBTexelBufferBounds;
-            param_0 = byte_offset;
+            error = kErrorSubCodeDescriptorClassGeneralBufferBounds;
             param_1 = resource_size;
             break;
         }
@@ -100,17 +101,17 @@ bool inst_non_bindless_oob_texel_buffer(const uint inst_num, const uvec4 stage_i
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstNonBindlessOOB;
+            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstDescriptorClass;
             inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
 
-			inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
             inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstBindlessDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstBindlessDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstBindlessDescIndexOffset] = desc_index;
-            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_0] = param_0;
-            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_1] = param_1;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescSetOffset] = desc_set;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescBindingOffset] = binding;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassParamOffset_0] = param_0;
+            inst_errors_buffer.data[write_pos + kInstDescriptorClassParamOffset_1] = param_1;
         }
         return false;
     }

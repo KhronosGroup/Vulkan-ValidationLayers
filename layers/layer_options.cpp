@@ -827,7 +827,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     } else {
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DESCRIPTOR_CHECKS,
-                                    gpuav_settings.shader_instrumentation.bindless_descriptor);
+                                    gpuav_settings.shader_instrumentation.descriptor_checks);
         }
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING,

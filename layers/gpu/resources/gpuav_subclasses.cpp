@@ -145,7 +145,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     auto output_buffer_ptr = (uint32_t *)error_output_buffer.MapMemory(loc);
 
     memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
-    if (gpuav.gpuav_settings.shader_instrumentation.bindless_descriptor) {
+    if (gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
         output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
     }
 

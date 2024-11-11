@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// NOTE: This file doesn't contain any entrypoints and should be compiled with then new --no-link option for glslang
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the--no-link option for glslang
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
@@ -30,49 +30,17 @@
 #include "gpuav_shaders_constants.h"
 #include "common_descriptor_sets.h"
 
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType {
-    // struct glsl::DescriptorState {
-    //   x: id
-    //   y: extra data depending on the descriptor type
-    // }
-    uvec2 data[];
-};
-
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
-
-struct DescriptorSetRecord {
-    DescriptorSetType ds_type;
-    uvec2 unused_descriptor_index_post_process;
-};
-
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBindlessDescriptor, std430) buffer DescriptorStateSSBO {
-    UnusedInitializedStatus unused_initialized_status;
-    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
-} bindless_state_buffer;
-
-bool inst_non_bindless_oob_buffer(const uint inst_num, const uvec4 stage_info, const uint desc_array_size,
-                        const uint desc_set, const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
+// Unlike the bindless version, we don't need to check for Uninitialized and Destroyed descriptors.
+// At draw time on the CPU we can verify that information.
+bool inst_descriptor_indexing_oob_non_bindless(const uint inst_num, const uvec4 stage_info, const uint desc_set,
+                              const uint binding, const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
-    uint param_0 = 0u;
-    uint param_1 = 0u;
+    uint param_0 = binding_layout_size;
     do {
         // For non-array this should hopefully optimized out as "if (0 > 1)"
-        if (desc_index > desc_array_size) {
-            error = kErrorSubCodeNonBindlessOOBBufferArrays;
-            param_0 = desc_array_size;
-            break;
-        }
-
-        DescriptorSetType ds_type = bindless_state_buffer.desc_sets[desc_set].ds_type;
-
-        uint binding_layout_index = binding_layout_offset + desc_index;
-
-        // check that the offset is in bounds
-        uint resource_size = ds_type.data[binding_layout_index].y;
-        if (byte_offset >= resource_size) {
-            error = kErrorSubCodeNonBindlessOOBBufferBounds;
-            param_0 = byte_offset;
-            param_1 = resource_size;
+        // Have seen with Mesa, that the final NIR will optimize out all of inst_descriptor_indexing_oob_non_bindless if this is false.
+        if (desc_index >= binding_layout_size) {
+            error = kErrorSubCodeDescriptorIndexingBounds;
             break;
         }
     } while (false);
@@ -97,17 +65,16 @@ bool inst_non_bindless_oob_buffer(const uint inst_num, const uvec4 stage_info, c
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstNonBindlessOOB;
+            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstDescriptorIndexingOOB;
             inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error;
 
-			inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
             inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstBindlessDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstBindlessDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstBindlessDescIndexOffset] = desc_index;
-            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_0] = param_0;
-            inst_errors_buffer.data[write_pos + kInstBindlessCustomOffset_1] = param_1;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescSetOffset] = desc_set;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescBindingOffset] = binding;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = param_0;
         }
         return false;
     }
