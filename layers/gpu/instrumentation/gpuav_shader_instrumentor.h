@@ -200,8 +200,8 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
 
     template <typename SafeCreateInfo>
-    void PreCallRecordPipelineCreationShaderInstrumentation(
-        const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state, SafeCreateInfo &new_pipeline_ci,
+    [[nodiscard]] bool PreCallRecordPipelineCreationShaderInstrumentation(
+        const VkAllocationCallbacks *pAllocator, vvl::Pipeline &pipeline_state, SafeCreateInfo &modified_pipeline_ci,
         const Location &loc, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
     void PostCallRecordPipelineCreationShaderInstrumentation(
         vvl::Pipeline &pipeline_state, std::vector<chassis::ShaderInstrumentationMetadata> &shader_instrumentation_metadata);
