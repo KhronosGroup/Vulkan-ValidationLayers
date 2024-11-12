@@ -84,11 +84,13 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
             out << ", " << SyncNodeFormatter(formatter.sync_state, record.cb_state);
         }
-        out << ", seq_no: " << record.seq_num;
-        if (record.sub_command != 0) {
-            out << ", subcmd: " << record.sub_command;
+        if (formatter.sync_state.syncval_settings.message_include_debug_information) {
+            out << ", seq_no: " << record.seq_num;
+            if (record.sub_command != 0) {
+                out << ", subcmd: " << record.sub_command;
+            }
+            out << ", reset_no: " << std::to_string(record.reset_count);
         }
-        out << ", reset_no: " << std::to_string(record.reset_count);
 
         // Associated resource
         if (formatter.handle_index != vvl::kNoIndex32) {

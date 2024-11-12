@@ -539,7 +539,9 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
             out << SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState());
             out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
         }
-        out << ", batch_tag: " << batch.base_tag;
+        if (sync_state_->syncval_settings.message_include_debug_information) {
+            out << ", batch_tag: " << batch.base_tag;
+        }
 
         // Commandbuffer Usages Information
         out << ", " << record.Formatter(*sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index);
