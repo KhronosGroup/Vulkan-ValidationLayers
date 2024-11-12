@@ -17,6 +17,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
+#include "utils/vk_layer_utils.h"
 
 class NegativeDescriptorBuffer : public DescriptorBufferTest {};
 
@@ -1667,4 +1668,59 @@ TEST_F(NegativeDescriptorBuffer, TexelBufferFormat) {
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorAddressInfoEXT-None-09508");
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &out);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptorBuffer, MaxResourceDescriptorBufferBindings) {
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(descriptor_buffer_properties);
+    if (descriptor_buffer_properties.maxResourceDescriptorBufferBindings != 1) {
+        GTEST_SKIP() << "maxResourceDescriptorBufferBindings  is not 1";
+    }
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+
+    VkDeviceSize ds_layout_size = 0;
+    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
+
+    ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
+
+    vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
+                                  vkt::device_address);
+
+    vkt::Buffer buffer_data(*m_device, 32, 0, vkt::device_address);
+    VkDescriptorAddressInfoEXT addr_info = vku::InitStructHelper();
+    addr_info.address = buffer_data.Address();
+    addr_info.range = 32;
+    addr_info.format = VK_FORMAT_UNDEFINED;
+
+    VkDescriptorGetInfoEXT buffer_descriptor_info = vku::InitStructHelper();
+    buffer_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    buffer_descriptor_info.data.pStorageBuffer = &addr_info;
+
+    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+                         mapped_descriptor_data);
+    descriptor_buffer.Memory().Unmap();
+
+    m_command_buffer.Begin();
+
+    VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_infos[2];
+    descriptor_buffer_binding_infos[0] = vku::InitStructHelper();
+    descriptor_buffer_binding_infos[0].address = descriptor_buffer.Address();
+    descriptor_buffer_binding_infos[0].usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    descriptor_buffer_binding_infos[1] = vku::InitStructHelper();
+    descriptor_buffer_binding_infos[1].address = descriptor_buffer.Address();
+    descriptor_buffer_binding_infos[1].usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    // VUID-vkCmdBindDescriptorBuffersEXT-maxResourceDescriptorBufferBindings-08049
+    m_errorMonitor->SetDesiredError(
+        "Addresses pointing to the same VkBuffer still count as multiple 'descriptor buffer bindings' towards the limits");
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 2, descriptor_buffer_binding_infos);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
 }
