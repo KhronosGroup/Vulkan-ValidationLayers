@@ -22,7 +22,9 @@
 struct GpuAVSettings {
     bool warn_on_robust_oob = true;
     uint32_t max_bda_in_use = 10000;
-    bool cache_instrumented_shaders = true;
+    // Currently has known bugs so turning off - will work if just running same exact and not adjusting settings
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8850
+    bool cache_instrumented_shaders = false;
     bool select_instrumented_shaders = false;
 
     // Turned off until we can fix things

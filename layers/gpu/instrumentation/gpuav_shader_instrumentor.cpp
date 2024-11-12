@@ -1354,6 +1354,11 @@ void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Locatio
     LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
 }
 
+void GpuShaderInstrumentor::InternalInfo(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
+    char const *vuid = gpuav_settings.debug_printf_only ? "INFO-DEBUG-PRINTF" : "INFO-GPU-Assisted-Validation";
+    LogInfo(vuid, objlist, loc, "Internal Info: %s", specific_message);
+}
+
 // The lock (debug_output_mutex) is held by the caller,
 // because the latter has code paths that make multiple calls of this function,
 // and all such calls have to access the same debug reporting state to ensure consistency of output information.

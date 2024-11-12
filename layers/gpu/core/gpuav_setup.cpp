@@ -18,6 +18,7 @@
 #include <cmath>
 #include <fstream>
 #include <cstring>
+#include <string>
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
@@ -491,6 +492,9 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
             if (std::memcmp(inst_shader_hash, reinterpret_cast<char *>(&shader_cache_hash), sizeof(shader_cache_hash)) == 0) {
                 uint32_t num_shaders = 0;
                 file_stream.read(reinterpret_cast<char *>(&num_shaders), sizeof(uint32_t));
+                std::string msg =
+                    "Found instrumented shader cache and loading " + std::to_string(num_shaders) + " shaders into cache";
+                InternalInfo(device, loc, msg.c_str());
                 for (uint32_t i = 0; i < num_shaders; ++i) {
                     uint32_t hash;
                     uint32_t spirv_dwords_count;
@@ -501,8 +505,13 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
                     file_stream.read(reinterpret_cast<char *>(shader_code.data()), 4 * spirv_dwords_count);
                     instrumented_shaders_cache_.Add(hash, std::move(shader_code));
                 }
+            } else {
+                InternalWarning(device, loc, "Found instrumented shader cache, but hash is different and the cache is different");
             }
             file_stream.close();
+        } else {
+            std::string msg = "Could not find instrumented shader cache at " + instrumented_shader_cache_path_;
+            InternalWarning(device, loc, msg.c_str());
         }
     }
 
