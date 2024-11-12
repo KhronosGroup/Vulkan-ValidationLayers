@@ -2409,16 +2409,16 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
 
     bool skip = false;
 
-    // TODO - Understand what "descriptor buffer" means toward the limit, does the same VkBuffer reused count twice? (aka, could
-    // this be a set intead of a vector)
+    // A "descriptor buffer" binding is seperate from a "VkBuffer" so you can have the same address to the same VkBuffer and it will
+    // count as 2, not 1, towards the limit. (more info at https://gitlab.khronos.org/vulkan/vulkan/-/issues/4086)
     std::vector<VkBuffer> sampler_buffers;
     std::vector<VkBuffer> resource_buffers;
     std::vector<VkBuffer> push_descriptor_buffers;
 
     for (uint32_t i = 0; i < bufferCount; i++) {
         const Location binding_loc = error_obj.location.dot(Field::pBindingInfos, i);
-        const VkDescriptorBufferBindingInfoEXT &bindingInfo = pBindingInfos[i];
-        const auto buffer_states = GetBuffersByAddress(bindingInfo.address);
+        const VkDescriptorBufferBindingInfoEXT &binding_info = pBindingInfos[i];
+        const auto buffer_states = GetBuffersByAddress(binding_info.address);
         // Try to find a valid buffer in buffer_states.
         // If none if found, output each violated VUIDs, with the list of buffers that violate it.
         {
@@ -2430,7 +2430,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  []() { return BufferAddressValidation<1>::ValidateMemoryBoundToBufferErrorMsgHeader(); }},
 
                 {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
-                 [binding_usage = bindingInfo.usage](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
+                 [binding_usage = binding_info.usage](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
                      if ((buffer_state->usage &
                           (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                            VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) !=
@@ -2444,14 +2444,14 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                      }
                      return true;
                  },
-                 [binding_usage = bindingInfo.usage, i]() {
+                 [binding_usage = binding_info.usage, i]() {
                      return "The following buffers have a usage that does not match pBindingInfos[" + std::to_string(i) +
                             "].usage (" + string_VkBufferUsageFlags2KHR(binding_usage) + "):";
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
-                 [binding_usage = bindingInfo.usage, &sampler_buffers](vvl::Buffer *const buffer_state,
-                                                                       std::string *out_error_msg) {
+                 [binding_usage = binding_info.usage, &sampler_buffers](vvl::Buffer *const buffer_state,
+                                                                        std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
                          sampler_buffers.push_back(buffer_state->VkHandle());
                          if (!(buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) {
@@ -2466,8 +2466,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  []() { return "The following buffers were not created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT:"; }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08123",
-                 [binding_usage = bindingInfo.usage, &resource_buffers](vvl::Buffer *const buffer_state,
-                                                                        std::string *out_error_msg) {
+                 [binding_usage = binding_info.usage, &resource_buffers](vvl::Buffer *const buffer_state,
+                                                                         std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
                          resource_buffers.push_back(buffer_state->VkHandle());
                          if (!(buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)) {
@@ -2484,8 +2484,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                  }},
 
                 {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124",
-                 [binding_usage = bindingInfo.usage, &push_descriptor_buffers](vvl::Buffer *const buffer_state,
-                                                                               std::string *out_error_msg) {
+                 [binding_usage = binding_info.usage, &push_descriptor_buffers](vvl::Buffer *const buffer_state,
+                                                                                std::string *out_error_msg) {
                      if (binding_usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
                          push_descriptor_buffers.push_back(buffer_state->VkHandle());
                          if (!(buffer_state->usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) {
@@ -2504,7 +2504,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
             }}};
 
             skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, binding_loc.dot(Field::address),
-                                                                      LogObjectList(device), bindingInfo.address);
+                                                                      LogObjectList(device), binding_info.address);
         }
 
         const auto *buffer_handle =
@@ -2535,9 +2535,15 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
     }
 
     auto list_buffers = [this](std::vector<VkBuffer> &buffer_list) {
+        vvl::unordered_set<VkBuffer> unique_buffers;
         std::stringstream msg;
         for (const VkBuffer &buffer : buffer_list) {
             msg << FormatHandle(buffer) << '\n';
+            unique_buffers.insert(buffer);
+        }
+        if (unique_buffers.size() != buffer_list.size()) {
+            msg << "Addresses pointing to the same VkBuffer still count as multiple 'descriptor buffer bindings' towards the "
+                   "limits.\n";
         }
         return msg.str();
     };
