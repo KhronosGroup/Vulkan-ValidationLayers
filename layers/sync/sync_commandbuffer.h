@@ -419,20 +419,3 @@ class CommandBuffer : public vvl::CommandBuffer {
     void Reset(const Location &loc) override;
 };
 }  // namespace syncval_state
-
-// Message Creation Helpers
-struct SyncNodeFormatter {
-    const DebugReport *debug_report;
-    const vvl::StateObject *node;
-    const char *label;
-
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
-};
-
-std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter);
-std::ostream &operator<<(std::ostream &out, const HandleRecord::FormatterState &formatter);
-std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter);
-std::ostream &operator<<(std::ostream &out, const HazardResult::HazardState &hazard);
