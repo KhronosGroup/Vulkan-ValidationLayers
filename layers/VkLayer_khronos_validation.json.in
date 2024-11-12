@@ -419,6 +419,28 @@
                                             { "key": "validate_sync", "value": true }
                                         ]
                                     }
+                                },
+                                {
+                                    "key": "syncval_reporting",
+                                    "label": "Error messages",
+                                    "description": "Options to configure synchronization validation error reporting",
+                                    "type": "GROUP",
+                                    "expanded": false,
+                                    "settings": [
+                                        {
+                                            "key": "syncval_message_include_debug_information",
+                                            "label": "Include debug information",
+                                            "description": "Includes debug information for additional diagnostics. This can be useful for reporting issues or for users familiar with the validation codebase.",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "validate_sync", "value": true }
+                                                ]
+                                            }
+                                        }
+                                    ]
                                 }
                             ]
                         },
