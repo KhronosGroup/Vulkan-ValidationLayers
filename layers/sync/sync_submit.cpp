@@ -18,6 +18,7 @@
 #include "sync/sync_submit.h"
 #include "sync/sync_validation.h"
 #include "sync/sync_image.h"
+#include "sync/sync_reporting.h"
 
 AcquiredImage::AcquiredImage(const PresentedImage& presented, ResourceUsageTag acq_tag)
     : image(presented.image), generator(presented.range_gen), present_tag(presented.tag), acquire_tag(acq_tag) {}

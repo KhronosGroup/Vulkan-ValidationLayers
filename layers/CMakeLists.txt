@@ -346,6 +346,8 @@ target_sources(vvl PRIVATE
     sync/sync_op.h
     sync/sync_renderpass.cpp
     sync/sync_renderpass.h
+    sync/sync_reporting.cpp
+    sync/sync_reporting.h
     sync/sync_settings.h
     sync/sync_stats.cpp
     sync/sync_stats.h
