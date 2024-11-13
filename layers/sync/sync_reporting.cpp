@@ -31,7 +31,8 @@ SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl:
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_)
     : debug_report(sync_state.debug_report), node(state_object), label(label_) {}
 
-std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) {
+std::string FormatStateObject(const SyncNodeFormatter &formatter) {
+    std::stringstream out;
     if (formatter.label) {
         out << formatter.label << ": ";
     }
@@ -43,10 +44,11 @@ std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) 
     } else {
         out << "null handle";
     }
-    return out;
+    return out.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const HandleRecord::FormatterState &formatter) {
+static std::string FormatHandleRecord(const HandleRecord::FormatterState &formatter) {
+    std::stringstream out;
     const HandleRecord &handle = formatter.that;
     bool labeled = false;
 
@@ -71,10 +73,11 @@ std::ostream &operator<<(std::ostream &out, const HandleRecord::FormatterState &
         out << ": ";
     }
     out << formatter.state.FormatHandle(handle.TypedHandle());
-    return out;
+    return out.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter) {
+std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter) {
+    std::stringstream out;
     const ResourceUsageRecord &record = formatter.record;
     if (record.alt_usage) {
         out << record.alt_usage.Formatter(formatter.sync_state);
@@ -82,7 +85,7 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         out << "command: " << vvl::String(record.command);
         // Note: ex_cb_state set to null forces output of record.cb_state
         if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
-            out << ", " << SyncNodeFormatter(formatter.sync_state, record.cb_state);
+            out << ", " << FormatStateObject(SyncNodeFormatter(formatter.sync_state, record.cb_state));
         }
         if (formatter.sync_state.syncval_settings.message_include_debug_information) {
             out << ", seq_no: " << record.seq_num;
@@ -102,7 +105,7 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
             const bool valid_handle_index = formatter.handle_index < handle_records.size();
 
             if (valid_handle_index) {
-                out << ", resource: " << handle_records[formatter.handle_index].Formatter(formatter.sync_state);
+                out << ", resource: " << FormatHandleRecord(handle_records[formatter.handle_index].Formatter(formatter.sync_state));
             }
         }
         // Report debug region name. Empty name means that we are not inside any debug region.
@@ -113,7 +116,7 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
             }
         }
     }
-    return out;
+    return out.str();
 }
 
 static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAccessFlags flags) {

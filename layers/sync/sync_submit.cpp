@@ -536,7 +536,7 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
         const ResourceUsageRecord& record = *access.record;
         if (batch.queue) {
             // Queue and Batch information (for enqueued operations)
-            out << SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState());
+            out << FormatStateObject(SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState()));
             out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
         }
         if (sync_state_->syncval_settings.message_include_debug_information) {
@@ -544,7 +544,8 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
         }
 
         // Commandbuffer Usages Information
-        out << ", " << record.Formatter(*sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index);
+        out << ", "
+            << FormatResourceUsageRecord(record.Formatter(*sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index));
     }
     return out.str();
 }
@@ -666,9 +667,9 @@ std::ostream& QueueBatchContext::PresentResourceRecord::Format(std::ostream& out
     out << "vkQueuePresentKHR ";
     out << "present_tag:" << presented_.tag;
     out << ", pSwapchains[" << presented_.present_index << "]";
-    out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get());
+    out << ": " << FormatStateObject(SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get()));
     out << ", image_index: " << presented_.image_index;
-    out << SyncNodeFormatter(sync_state, presented_.image.get());
+    out << FormatStateObject(SyncNodeFormatter(sync_state, presented_.image.get()));
 
     return out;
 }
@@ -680,9 +681,9 @@ QueueBatchContext::AcquireResourceRecord::Base_::Record QueueBatchContext::Acqui
 std::ostream& QueueBatchContext::AcquireResourceRecord::Format(std::ostream& out, const SyncValidator& sync_state) const {
     out << vvl::String(command_) << " ";
     out << "aquire_tag:" << acquire_tag_;
-    out << ": " << SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get());
+    out << ": " << FormatStateObject(SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get()));
     out << ", image_index: " << presented_.image_index;
-    out << SyncNodeFormatter(sync_state, presented_.image.get());
+    out << FormatStateObject(SyncNodeFormatter(sync_state, presented_.image.get()));
 
     return out;
 }
