@@ -19,7 +19,6 @@
 
 #include "sync/sync_commandbuffer.h"
 
-// Message Creation Helpers
 struct SyncNodeFormatter {
     const DebugReport *debug_report;
     const vvl::StateObject *node;
@@ -30,7 +29,6 @@ struct SyncNodeFormatter {
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
 };
+std::string FormatStateObject(const SyncNodeFormatter &formatter);
 
-std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter);
-std::ostream &operator<<(std::ostream &out, const HandleRecord::FormatterState &formatter);
-std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter);
+std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter);

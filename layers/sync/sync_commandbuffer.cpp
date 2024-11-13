@@ -149,7 +149,7 @@ std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) c
     assert(tag_ex.tag < access_log_->size());
     const auto &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    out << record.Formatter(*sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index);
+    out << FormatResourceUsageRecord(record.Formatter(*sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index));
     return out.str();
 }
 
