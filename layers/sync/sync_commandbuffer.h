@@ -175,15 +175,12 @@ struct DebugNameProvider {
 };
 
 // Command execution context is the base class for command buffer and queue contexts
-// Preventing unintented leakage of subclass specific state, storing enough information
-// for message logging.
-// TODO: determine where to draw the design split for tag tracking (is there anything command to Queues and CB's)
-class CommandExecutionContext : public SyncValidationInfo {
+class CommandExecutionContext {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
     using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
     CommandExecutionContext(const SyncValidator *sync_validator, VkQueueFlags queue_flags)
-        : SyncValidationInfo(sync_validator, queue_flags) {}
+        : sync_state_(sync_validator), queue_flags_(queue_flags) {}
     virtual ~CommandExecutionContext() = default;
 
     // Are imported command buffers Submitted (QueueBatchContext), or Executed (CommandBufferAccessContext)
@@ -208,8 +205,10 @@ class CommandExecutionContext : public SyncValidationInfo {
     virtual const AccessContext *GetCurrentAccessContext() const = 0;
     virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
     virtual QueueId GetQueueId() const = 0;
-
     virtual VulkanTypedHandle Handle() const = 0;
+    virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
+
+    std::string FormatHazard(const HazardResult &hazard) const;
 
     virtual void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) {
         // Must override if use by derived type is valid
@@ -227,6 +226,15 @@ class CommandExecutionContext : public SyncValidationInfo {
     }
 
     bool ValidForSyncOps() const;
+
+    const SyncValidator &GetSyncState() const {
+        assert(sync_state_);
+        return *sync_state_;
+    }
+
+  protected:
+    const SyncValidator *sync_state_;
+    const VkQueueFlags queue_flags_;
 };
 
 class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProvider {

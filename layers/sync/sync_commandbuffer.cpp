@@ -142,17 +142,6 @@ void CommandBufferAccessContext::Reset() {
     dynamic_rendering_info_.reset();
 }
 
-std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
-    if (tag_ex.tag >= access_log_->size()) return std::string();
-
-    std::stringstream out;
-    assert(tag_ex.tag < access_log_->size());
-    const auto &record = (*access_log_)[tag_ex.tag];
-    const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    out << FormatResourceUsageRecord(record.Formatter(*sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index));
-    return out.str();
-}
-
 std::string CommandBufferAccessContext::FormatUsage(const char *usage_string, const ResourceFirstAccess &access) const {
     std::stringstream out;
     assert(access.usage_info);

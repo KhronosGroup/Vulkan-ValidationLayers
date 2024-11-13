@@ -108,16 +108,16 @@ class RenderPassAccessContext {
                             const std::vector<const syncval_state::ImageViewState *> &attachment_views,
                             const AccessContext *external_context);
 
-    static bool ValidateLayoutTransitions(const SyncValidationInfo &val_info, const AccessContext &access_context,
+    static bool ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
                                           const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
                                           const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
-    static bool ValidateLoadOperation(const SyncValidationInfo &val_info, const AccessContext &access_context,
+    static bool ValidateLoadOperation(const CommandBufferAccessContext &cb_context, const AccessContext &access_context,
                                       const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
                                       const AttachmentViewGenVector &attachment_views, vvl::Func command);
 
-    bool ValidateStoreOperation(const SyncValidationInfo &val_info, vvl::Func command) const;
-    bool ValidateResolveOperations(const SyncValidationInfo &val_info, vvl::Func command) const;
+    bool ValidateStoreOperation(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
+    bool ValidateResolveOperations(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
 
     static void UpdateAttachmentResolveAccess(const vvl::RenderPass &rp_state, const AttachmentViewGenVector &attachment_views,
                                               uint32_t subpass, const ResourceUsageTag tag, AccessContext access_context);
@@ -129,16 +129,16 @@ class RenderPassAccessContext {
                                         const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                         AccessContext &access_context);
 
-    bool ValidateDrawSubpassAttachment(const CommandExecutionContext &ex_context, const vvl::CommandBuffer &cmd_buffer,
+    bool ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, const vvl::CommandBuffer &cmd_buffer,
                                        vvl::Func command) const;
     void RecordDrawSubpassAttachment(const vvl::CommandBuffer &cmd_buffer, ResourceUsageTag tag);
 
     uint32_t GetAttachmentIndex(const VkClearAttachment &clear_attachment) const;
     ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
 
-    bool ValidateNextSubpass(const CommandExecutionContext &ex_context, vvl::Func command) const;
-    bool ValidateEndRenderPass(const CommandExecutionContext &ex_context, vvl::Func command) const;
-    bool ValidateFinalSubpassLayoutTransitions(const CommandExecutionContext &ex_context, vvl::Func command) const;
+    bool ValidateNextSubpass(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
+    bool ValidateEndRenderPass(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
+    bool ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
 
     void RecordLayoutTransitions(ResourceUsageTag tag);
     void RecordLoadOperations(ResourceUsageTag tag);
