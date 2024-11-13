@@ -11,7 +11,6 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "utils/vk_layer_utils.h"
 
 void DescriptorBufferTest::InitBasicDescriptorBuffer() {
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -165,8 +164,6 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     VkDeviceSize ds_layout_size = 0;
     vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
 
-    ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
-
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
 
@@ -256,8 +253,6 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
 
     VkDeviceSize ds_layout_size = 0;
     vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
-
-    ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
 
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size * 3, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
@@ -376,8 +371,6 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
 
     VkDeviceSize ds_layout_size = 0;
     vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
-
-    ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
 
     VkDeviceSize ds_layout_binding_offsets[3];
     vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout.handle(), 0, &ds_layout_binding_offsets[0]);

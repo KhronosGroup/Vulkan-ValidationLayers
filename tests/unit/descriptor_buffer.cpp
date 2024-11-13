@@ -17,7 +17,6 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
-#include "utils/vk_layer_utils.h"
 
 class NegativeDescriptorBuffer : public DescriptorBufferTest {};
 
@@ -1685,8 +1684,6 @@ TEST_F(NegativeDescriptorBuffer, MaxResourceDescriptorBufferBindings) {
 
     VkDeviceSize ds_layout_size = 0;
     vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
-
-    ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
 
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
