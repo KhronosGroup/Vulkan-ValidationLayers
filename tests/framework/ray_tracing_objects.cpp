@@ -297,7 +297,7 @@ AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferMemoryAllocat
 }
 
 AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferMemoryPropertyFlags(
-    VkMemoryAllocateFlags memory_property_flags) {
+    VkMemoryPropertyFlags memory_property_flags) {
     buffer_memory_property_flags_ = memory_property_flags;
     return *this;
 }
