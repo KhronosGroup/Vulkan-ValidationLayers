@@ -106,8 +106,11 @@ class AccelerationStructureKHR : public StateObject {
 
     void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, const bool is_host,
                const VkAccelerationStructureBuildRangeInfoKHR *build_range_info) {
-        built = true;
-        build_info_khr.initialize(pInfo, is_host, build_range_info);
+        is_built = true;
+        if (!build_info_khr.has_value()) {
+            build_info_khr = vku::safe_VkAccelerationStructureBuildGeometryInfoKHR();
+        }
+        build_info_khr->initialize(pInfo, is_host, build_range_info);
     };
 
     void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR *p_build_range_infos, uint32_t geometry_count) {
@@ -120,11 +123,13 @@ class AccelerationStructureKHR : public StateObject {
     const vku::safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
     const VkAccelerationStructureCreateInfoKHR &create_info;
 
-    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr{};
-    bool built = false;
     uint64_t opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};
+    std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
+    // You can't have is_built == false and a build_info_khr, but you can have is_built == true and no build_info_khr,
+    // if the acceleration structure was filled by a call to vkCmdCopyMemoryToAccelerationStructure
+    bool is_built = false;
 };
 
 }  // namespace vvl
