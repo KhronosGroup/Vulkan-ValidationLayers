@@ -1619,3 +1619,99 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     vk::DestroyAccelerationStructureKHR(*m_device, bottomAS, NULL);
     vk::DestroyMicromapEXT(*m_device, micromap, NULL);
 }
+
+TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
+    TEST_DESCRIPTION("Build a list of destination acceleration structures, then do an update build on that same list");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD: base buffer device addresses must be aligned";
+    }
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+
+    m_command_buffer.Begin();
+
+    blas.BuildCmdBuffer(m_command_buffer.handle());
+
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    vkt::QueryPool serialization_query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, 1);
+
+    m_command_buffer.Begin();
+
+    vk::CmdResetQueryPool(m_command_buffer.handle(), serialization_query_pool.handle(), 0, 1);
+    vk::CmdWriteAccelerationStructuresPropertiesKHR(m_command_buffer.handle(), 1, &blas.GetDstAS()->handle(),
+                                                    VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR,
+                                                    serialization_query_pool.handle(), 0);
+
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+    uint32_t accel_struct_serialization_size = 0;
+    serialization_query_pool.Results(0, 1, sizeof(uint32_t), &accel_struct_serialization_size, 0);
+
+    // See https://vkdoc.net/man/vkCmdCopyAccelerationStructureToMemoryKHR
+    const VkDeviceSize serialized_accel_struct_size =
+        Align<VkDeviceSize>(2 * VK_UUID_SIZE + 3 * sizeof(uint64_t) * accel_struct_serialization_size, 256);
+    vkt::Buffer serialized_accel_struct_buffer(
+        *m_device, serialized_accel_struct_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        vkt::device_address);
+
+    VkCopyAccelerationStructureToMemoryInfoKHR copy_accel_struct_to_memory_info = vku::InitStructHelper();
+    copy_accel_struct_to_memory_info.src = blas.GetDstAS()->handle();
+    copy_accel_struct_to_memory_info.dst.deviceAddress = serialized_accel_struct_buffer.address();
+    copy_accel_struct_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+
+    m_command_buffer.begin();
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer.handle(), &copy_accel_struct_to_memory_info);
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    vkt::Buffer de_serialized_accel_struct_buffer(
+        *m_device, serialized_accel_struct_size,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        vkt::device_address);
+
+    auto deserialized_blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    deserialized_blas.AddFlags(
+        VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR /*| VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR*/);
+    deserialized_blas.GetDstAS()->SetSize(Align<VkDeviceSize>(serialized_accel_struct_size, 256));
+    deserialized_blas.GetDstAS()->Build();
+
+    VkCopyMemoryToAccelerationStructureInfoKHR copy_memory_to_accel_struct_info = vku::InitStructHelper();
+    copy_memory_to_accel_struct_info.src.deviceAddress = serialized_accel_struct_buffer.address();
+    copy_memory_to_accel_struct_info.dst = deserialized_blas.GetDstAS()->handle();
+    copy_memory_to_accel_struct_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    m_command_buffer.begin();
+
+    vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer.handle(), &copy_memory_to_accel_struct_info);
+
+    m_command_buffer.end();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+
+    deserialized_blas.SetSrcAS(deserialized_blas.GetDstAS());
+    deserialized_blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+
+    m_command_buffer.Begin();
+
+    deserialized_blas.BuildCmdBuffer(m_command_buffer.handle());
+
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}

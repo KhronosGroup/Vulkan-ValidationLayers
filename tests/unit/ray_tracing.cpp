@@ -844,7 +844,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
 }
 
 TEST_F(NegativeRayTracing, BuildAccelerationStructureModeUpdate) {
-    TEST_DESCRIPTION("Validate buffers used in vkBuildAccelerationStructureKHR");
+    TEST_DESCRIPTION("In an acceleration structure update, source acceleration structure was not built");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
@@ -860,8 +860,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureModeUpdate) {
     host_cached_blas.SetSrcAS(vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096));
     host_cached_blas.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-    m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03758");
-    m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03760");
+    m_errorMonitor->SetDesiredError("VUID-vkBuildAccelerationStructuresKHR-pInfos-03667");
     host_cached_blas.BuildHost();
     m_errorMonitor->VerifyFound();
 }
