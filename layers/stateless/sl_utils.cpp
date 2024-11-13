@@ -120,10 +120,10 @@ static VkStringErrorFlags ValidateVkString(const int max_length, const char *utf
 }
 
 static const int kMaxParamCheckerStringLength = 256;
-bool StatelessValidation::ValidateString(const Location &loc, const std::string &vuid, const char *validateString) const {
+bool StatelessValidation::ValidateString(const Location &loc, const char *vuid, const char *validate_string) const {
     bool skip = false;
 
-    VkStringErrorFlags result = ValidateVkString(kMaxParamCheckerStringLength, validateString);
+    VkStringErrorFlags result = ValidateVkString(kMaxParamCheckerStringLength, validate_string);
 
     if (result == VK_STRING_ERROR_NONE) {
         return skip;
@@ -135,7 +135,7 @@ bool StatelessValidation::ValidateString(const Location &loc, const std::string 
     return skip;
 }
 
-bool StatelessValidation::ValidateNotZero(bool is_zero, const std::string &vuid, const Location &loc) const {
+bool StatelessValidation::ValidateNotZero(bool is_zero, const char *vuid, const Location &loc) const {
     bool skip = false;
     if (is_zero) {
         skip |= LogError(vuid, device, loc, "is zero.");
@@ -143,22 +143,11 @@ bool StatelessValidation::ValidateNotZero(bool is_zero, const std::string &vuid,
     return skip;
 }
 
-/**
- * Validate a required pointer.
- *
- * Verify that a required pointer is not NULL.
- *
- * @param loc Name of API call being validated.
- * @param value Pointer to validate.
- * @return Boolean value indicating that the call should be skipped.
- */
-bool StatelessValidation::ValidateRequiredPointer(const Location &loc, const void *value, const std::string &vuid) const {
+bool StatelessValidation::ValidateRequiredPointer(const Location &loc, const void *value, const char *vuid) const {
     bool skip = false;
-
     if (value == nullptr) {
         skip |= LogError(vuid, device, loc, "is NULL.");
     }
-
     return skip;
 }
 
@@ -187,29 +176,13 @@ bool StatelessValidation::ValidateAllocationCallbacks(const VkAllocationCallback
     return skip;
 }
 
-/**
- * Validate string array count and content.
- *
- * Verify that required count and array parameters are not 0 or NULL.  If the
- * count parameter is not optional, verify that it is not 0.  If the array
- * parameter is NULL, and it is not optional, verify that count is 0.  If the
- * array parameter is not NULL, verify that none of the strings are NULL.
- *
- * @param count_loc Name of count parameter.
- * @param array_loc Name of array parameter.
- * @param count Number of strings in the array.
- * @param array Array of strings to validate.
- * @param countRequired The 'count' parameter may not be 0 when true.
- * @param arrayRequired The 'array' parameter may not be NULL when true.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateStringArray(const Location &count_loc, const Location &array_loc, uint32_t count,
-                                              const char *const *array, bool countRequired, bool arrayRequired,
+                                              const char *const *array, bool count_required, bool array_required,
                                               const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
     if ((array == nullptr) || (count == 0)) {
-        skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
+        skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, array_required, count_required_vuid,
                               array_required_vuid);
     } else {
         // Verify that strings in the array are not NULL
@@ -223,23 +196,9 @@ bool StatelessValidation::ValidateStringArray(const Location &count_loc, const L
     return skip;
 }
 
-/**
- * Validate a structure's pNext member.
- *
- * Verify that the specified pNext value points to the head of a list of
- * allowed extension structures.  If no extension structures are allowed,
- * verify that pNext is null.
- *
- * @param loc Name of API call being validated.
- * @param next Pointer to validate.
- * @param allowed_type_count Total number of allowed structure types.
- * @param allowed_types Array of structure types allowed for pNext.
- * @param header_version Version of header defining the pNext validation rules.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
                                               const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
-                                              const char *stype_vuid, const VkPhysicalDevice physicalDevice,
+                                              const char *stype_vuid, const VkPhysicalDevice physical_device,
                                               const bool is_const_param) const {
     bool skip = false;
 
@@ -298,13 +257,13 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
                             }
                         }
                         // Send Location without pNext field so the pNext() connector can be used
-                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, physicalDevice, is_const_param);
+                        skip |= ValidatePnextStructContents(loc, current, pnext_vuid, physical_device, is_const_param);
                         if (loc.function == Func::vkGetPhysicalDeviceProperties2 ||
                             loc.function == Func::vkGetPhysicalDeviceProperties2KHR) {
-                            skip |= ValidatePnextPropertyStructContents(loc, current, pnext_vuid, physicalDevice, is_const_param);
+                            skip |= ValidatePnextPropertyStructContents(loc, current, pnext_vuid, physical_device, is_const_param);
                         } else if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
                                    loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
-                            skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, physicalDevice, is_const_param);
+                            skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, physical_device, is_const_param);
                         }
                     }
                 }
@@ -316,15 +275,6 @@ bool StatelessValidation::ValidateStructPnext(const Location &loc, const void *n
     return skip;
 }
 
-/**
- * Validate a VkBool32 value.
- *
- * Generate an error if a VkBool32 value is neither VK_TRUE nor VK_FALSE.
- *
- * @param loc Name of API call being validated.
- * @param value Boolean value to validate.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateBool32(const Location &loc, VkBool32 value) const {
     bool skip = false;
     if ((value != VK_TRUE) && (value != VK_FALSE)) {
@@ -337,26 +287,13 @@ bool StatelessValidation::ValidateBool32(const Location &loc, VkBool32 value) co
     return skip;
 }
 
-/**
- * Validate an array of VkBool32 values.
- *
- * Generate an error if any VkBool32 value in an array is neither VK_TRUE nor VK_FALSE.
- *
- * @param count_loc Name of count parameter.
- * @param array_loc Name of array parameter.
- * @param count Number of values in the array.
- * @param array Array of VkBool32 values to validate.
- * @param countRequired The 'count' parameter may not be 0 when true.
- * @param arrayRequired The 'array' parameter may not be NULL when true.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const Location &array_loc, uint32_t count,
-                                              const VkBool32 *array, bool countRequired, bool arrayRequired,
+                                              const VkBool32 *array, bool count_required, bool array_required,
                                               const char *count_required_vuid, const char *array_required_vuid) const {
     bool skip = false;
 
     if ((array == nullptr) || (count == 0)) {
-        skip |= ValidateArray(count_loc, array_loc, count, &array, countRequired, arrayRequired, count_required_vuid,
+        skip |= ValidateArray(count_loc, array_loc, count, &array, count_required, array_required, count_required_vuid,
                               array_required_vuid);
     } else {
         for (uint32_t i = 0; i < count; ++i) {
@@ -373,23 +310,11 @@ bool StatelessValidation::ValidateBool32Array(const Location &count_loc, const L
     return skip;
 }
 
-/**
- * Verify that a reserved VkFlags value is zero.
- *
- * Verify that the specified value is zero, to check VkFlags values that are reserved for
- * future use.
- *
- * @param loc Name of API call being validated.
- * @param value Value to validate.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateReservedFlags(const Location &loc, VkFlags value, const char *vuid) const {
     bool skip = false;
-
     if (value != 0) {
         skip |= LogError(vuid, device, loc, "is %" PRIu32 ", but must be 0.", value);
     }
-
     return skip;
 }
 
@@ -421,21 +346,6 @@ bool StatelessValidation::ValidateFlagsImplementation(const Location &loc, vvl::
     return skip;
 }
 
-/**
- * Validate a 32 bit Vulkan bitmask value.
- *
- * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
- * for that type.
- *
- * @param loc Name of API call being validated.
- * @param flag_bitmask Name of the VkFlags type being validated.
- * @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
- * @param value VkFlags value to validate.
- * @param flag_type The type of flag, like optional, or single bit.
- * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
- * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags all_flags, VkFlags value,
                                         const FlagType flag_type, const VkPhysicalDevice physical_device, const char *vuid,
                                         const char *flags_zero_vuid) const {
@@ -462,21 +372,6 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
     return skip;
 }
 
-/**
- * Validate a 64 bit Vulkan bitmask value.
- *
- * Generate a warning if a value with a VkFlags64 derived type does not contain valid flag bits
- * for that type.
- *
- * @param loc Name of API call being validated.
- * @param flag_bitmask Name of the VkFlags64 type being validated.
- * @param all_flags A bit mask combining all valid flag bits for the VkFlags64 type being validated.
- * @param value VkFlags64 value to validate.
- * @param flag_type The type of flag, like optional, or single bit.
- * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
- * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask flag_bitmask, VkFlags64 all_flags, VkFlags64 value,
                                         const FlagType flag_type, const VkPhysicalDevice physical_device, const char *vuid,
                                         const char *flags_zero_vuid) const {
@@ -503,22 +398,6 @@ bool StatelessValidation::ValidateFlags(const Location &loc, vvl::FlagBitmask fl
     return skip;
 }
 
-/**
- * Validate an array of Vulkan bitmask values.
- *
- * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
- * for that type.
- *
- * @param count_loc Name of parameter being validated.
- * @param array_loc Name of parameter being validated.
- * @param flag_bitmask Name of the VkFlags type being validated.
- * @param all_flags A bitmask combining all valid flag bits for the VkFlags type being validated.
- * @param count Number of VkFlags values in the array.
- * @param array Array of VkFlags value to validate.
- * @param count_required The 'count' parameter may not be 0 when true.
- * @param array_required_vuid The VUID for the 'array' parameter.
- * @return Boolean value indicating that the call should be skipped.
- */
 bool StatelessValidation::ValidateFlagsArray(const Location &count_loc, const Location &array_loc, vvl::FlagBitmask flag_bitmask,
                                              VkFlags all_flags, uint32_t count, const VkFlags *array, bool count_required,
                                              const char *count_required_vuid, const char *array_required_vuid) const {
