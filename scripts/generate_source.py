@@ -33,7 +33,12 @@ from generate_spec_error_message import GenerateSpecErrorMessage
 
 def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFile: str, targetFilter: str, caching: bool):
 
-    has_clang_format = shutil.which('clang-format') is not None
+    try:
+        code = common_ci.RunShellCmd(f'clang-format --version')
+        has_clang_format = True
+    except:
+        has_clang_format = False
+
     if not has_clang_format:
         print("WARNING: Unable to find clang-format!")
 
