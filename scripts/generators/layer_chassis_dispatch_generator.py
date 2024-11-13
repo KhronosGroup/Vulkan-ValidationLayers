@@ -79,6 +79,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             # Need to deal with VkAccelerationStructureGeometryKHR
             'vkBuildAccelerationStructuresKHR',
             'vkGetAccelerationStructureBuildSizesKHR',
+            'vkCmdBuildAccelerationStructuresKHR',
             # Depends on the VkDescriptorType to pick the union pointer
             'vkGetDescriptorEXT',
             # Depends on the VkIndirectExecutionSetInfoTypeEXT to pick the union pointer

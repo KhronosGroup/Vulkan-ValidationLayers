@@ -1284,6 +1284,45 @@ VkResult DispatchGetDeferredOperationResultKHR(VkDevice device, VkDeferredOperat
     return result;
 }
 
+void DispatchCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos,
+            ppBuildRangeInfos);
+    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR* local_pInfos = nullptr;
+    {
+        if (pInfos) {
+            local_pInfos = new vku::safe_VkAccelerationStructureBuildGeometryInfoKHR[infoCount];
+            for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
+                local_pInfos[index0].initialize(&pInfos[index0], false, nullptr);
+
+                if (pInfos[index0].srcAccelerationStructure) {
+                    local_pInfos[index0].srcAccelerationStructure = layer_data->Unwrap(pInfos[index0].srcAccelerationStructure);
+                }
+                if (pInfos[index0].dstAccelerationStructure) {
+                    local_pInfos[index0].dstAccelerationStructure = layer_data->Unwrap(pInfos[index0].dstAccelerationStructure);
+                }
+                for (uint32_t geometry_index = 0; geometry_index < local_pInfos[index0].geometryCount; ++geometry_index) {
+                    vku::safe_VkAccelerationStructureGeometryKHR& geometry_info =
+                        local_pInfos[index0].pGeometries != nullptr ? local_pInfos[index0].pGeometries[geometry_index]
+                        : *(local_pInfos[index0].ppGeometries[geometry_index]);
+
+                    if (geometry_info.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                        UnwrapPnextChainHandles(layer_data, geometry_info.geometry.triangles.pNext);
+                    }
+                }
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdBuildAccelerationStructuresKHR(
+        commandBuffer, infoCount, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pInfos, ppBuildRangeInfos);
+    if (local_pInfos) {
+        delete[] local_pInfos;
+    }
+}
+
 VkResult DispatchBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
                                                 const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
                                                 const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) {
@@ -1308,6 +1347,9 @@ VkResult DispatchBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOpera
                     vku::safe_VkAccelerationStructureGeometryKHR &geometry_info =
                         local_pInfos[index0].pGeometries != nullptr ? local_pInfos[index0].pGeometries[geometry_index]
                                                                     : *(local_pInfos[index0].ppGeometries[geometry_index]);
+                    if (geometry_info.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                        UnwrapPnextChainHandles(layer_data, geometry_info.geometry.triangles.pNext);
+                    }
                     if (geometry_info.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                         if (geometry_info.geometry.instances.arrayOfPointers) {
                             const uint8_t *byte_ptr =
