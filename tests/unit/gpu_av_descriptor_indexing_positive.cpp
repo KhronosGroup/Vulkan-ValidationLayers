@@ -778,7 +778,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     m_default_queue->Wait();
 }
 
-// Run with VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS=0
 // If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
 TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
     TEST_DESCRIPTION("Do many indexing into the shader");

@@ -191,7 +191,6 @@ const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 // Post Process are designed to allow the user to "assume" the access is valid and want to know after the GPU executes what
 // happened. These are much lighter checks and can be used while the rest of GPU-AV is turned off
 const char *VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
-const char *VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS = "gpuav_cache_instrumented_shaders";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
 
 const char *VK_LAYER_GPUAV_BUFFERS_VALIDATION = "gpuav_buffers_validation";
@@ -229,7 +228,6 @@ const char *DEPRECATED_VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER = "gpuav_validate
 const char *DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT = "reserve_binding_slot";
 const char *DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT = "vma_linear_output";
 const char *DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB = "warn_on_robust_oob";
-const char *DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE = "use_instrumented_shader_cache";
 const char *DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS = "select_instrumented_shaders";
 
 // These were deprecated after the 1.3.283 SDK release
@@ -863,17 +861,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                     gpuav_settings.shader_instrumentation.ray_query);
         }
 
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS)) {
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS,
-                                    gpuav_settings.cache_instrumented_shaders);
-        } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE)) {
-            vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE,
-                                    gpuav_settings.cache_instrumented_shaders);
-            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_USE_INSTRUMENTED_SHADER_CACHE) +
-                                          " setting was set, use " + std::string(VK_LAYER_GPUAV_CACHE_INSTRUMENTED_SHADERS) +
-                                          " instead.");
-        }
-
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS,
                                     gpuav_settings.select_instrumented_shaders);
@@ -946,11 +933,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_DEBUG_DUMP_INSTRUMENTED_SHADERS,
                                 gpuav_settings.debug_dump_instrumented_shaders);
-    }
-
-    if (gpuav_settings.debug_validate_instrumented_shaders || gpuav_settings.debug_dump_instrumented_shaders) {
-        // When debugging instrumented shaders, if it is cached, it will never get to the InstrumentShader() call
-        gpuav_settings.cache_instrumented_shaders = false;
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_MAX_INSTRUMENTATIONS_COUNT)) {
@@ -1107,13 +1089,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             setting_warnings.emplace_back(
                 "Disabling as much of normal validation as possible so that only DebugPrintf will be running.");
         }
-    }
-
-    if (gpuav_settings.cache_instrumented_shaders && gpuav_settings.debug_printf_enabled) {
-        gpuav_settings.cache_instrumented_shaders = false;
-        setting_warnings.emplace_back(
-            "Debug Printf was enabled, disabling caching of instrumented shaders as it might accidentally not print out the "
-            "expected output.");
     }
 
     // This is the "new" way to enable GPU-AV

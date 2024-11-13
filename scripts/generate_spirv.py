@@ -189,64 +189,6 @@ extern const uint32_t {name}[];
     with open(out_file_source, "w") as f:
         print(source, end="", file=f)
 
-
-def write_inst_hash(shaders_to_compile, outdir=None):
-    # Build a hash of the git hash for all instrumentation shaders
-    hash_string = ''
-    for shader in shaders_to_compile:
-        if os.path.basename(shader).find('instrumentation') == -1:
-            continue
-        result = subprocess.run(["git", "hash-object", shader], capture_output=True, text=True)
-        git_hash = result.stdout.rstrip('\n')
-
-        try:
-            int(git_hash, 16)
-        except ValueError:
-            raise ValueError(f'value for GPU_AV_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
-        if len(git_hash) != 40:
-            raise ValueError(f'value for GPU_AV_SHADER_GIT_HASH ({git_hash}) must be a SHA1 hash.')
-        hash_string += git_hash
-
-    out = []
-    out.append(f'''
-// *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See {os.path.basename(__file__)} for modifications
-
-/***************************************************************************
- *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
-
-#pragma once
-
-''')
-
-    out.append(f'#define GPU_AV_SHADER_GIT_HASH "{hashlib.sha1(hash_string.encode("utf-8")).hexdigest()}"\n')
-
-    if outdir:
-      out_file = os.path.join(outdir, 'layers/vulkan/generated')
-    else:
-      out_file = common_ci.RepoRelative('layers/vulkan/generated')
-    os.makedirs(out_file, exist_ok=True)
-    out_file = os.path.join(out_file, "gpuav_shader_hash.h")
-    with open(out_file, 'w') as outfile:
-        outfile.write("".join(out))
-
 def main():
     parser = argparse.ArgumentParser(description='Generate spirv code for this repository, see layers/gpu/shaders/README.md for more deatils')
     parser.add_argument('--api',
@@ -303,14 +245,6 @@ def main():
     for shader in shaders_to_compile:
         words = compile(gpu_shaders_dir, shader, glslang, spirv_opt, args.targetenv)
         write(words, shader, args.api, args.outdir)
-
-    # Hash after we have generated the output
-    shaders_to_hash = []
-    generated_cpp = common_ci.RepoRelative('layers/vulkan/generated/')
-    for filename in os.listdir(generated_cpp):
-        if (filename.startswith('cmd_validation') or filename.startswith('instrumentation_')) and filename.split(".")[-1] == 'cpp':
-            shaders_to_hash.append(os.path.join(generated_cpp, filename))
-    write_inst_hash(shaders_to_hash, args.outdir)
 
 if __name__ == '__main__':
   main()

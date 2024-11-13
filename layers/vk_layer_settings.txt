@@ -98,12 +98,6 @@ khronos_validation.enables =
 # Track which descriptor indexes were used in shader to run normal validation afterwards
 #khronos_validation.gpuav_post_process_descriptor_indexing = true
 
-# Cache instrumented shaders rather than instrumenting them on every run
-# =====================
-# <LayerIdentifier>.gpuav_cache_instrumented_shaders
-# Enable instrumented shader caching
-#khronos_validation.gpuav_cache_instrumented_shaders = false
-
 # Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext
 # =====================
 # <LayerIdentifier>.gpuav_select_instrumented_shaders

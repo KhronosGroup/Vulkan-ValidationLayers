@@ -51,17 +51,6 @@ static const VkShaderModule kPipelineStageInfoHandle = CastFromUint64<VkShaderMo
 // We set a reasonable max because we have to pad the pipeline layout with dummy descriptor set layouts.
 static const uint32_t kMaxAdjustedBoundDescriptorSet = 33;
 
-class SpirvCache {
-  public:
-    void Add(uint32_t hash, std::vector<uint32_t> spirv);
-    std::vector<uint32_t> *Get(uint32_t spirv_hash);
-    bool IsEmpty() { return spirv_shaders_.empty(); }
-
-  private:
-    friend class Validator;
-    vvl::unordered_map<uint32_t, std::vector<uint32_t>> spirv_shaders_{};
-};
-
 struct InstrumentedShader {
     VkPipeline pipeline;
     VkShaderModule shader_module;
@@ -239,7 +228,6 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
     VkDescriptorSetLayout dummy_desc_layout_ = VK_NULL_HANDLE;
     vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
-    SpirvCache instrumented_shaders_cache_;
 
   private:
     void Cleanup();
