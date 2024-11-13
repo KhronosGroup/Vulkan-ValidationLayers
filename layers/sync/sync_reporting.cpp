@@ -238,10 +238,43 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
     return out.str();
 }
 
-std::string SyncValidationInfo::FormatHazard(const HazardResult &hazard) const {
+std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) const {
     std::stringstream out;
     assert(hazard.IsHazard());
     out << FormatHazardState(hazard.State(), queue_flags_);
     out << ", " << FormatUsage(hazard.TagEx()) << ")";
+    return out.str();
+}
+
+std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
+    if (tag_ex.tag >= access_log_->size()) return std::string();
+
+    std::stringstream out;
+    assert(tag_ex.tag < access_log_->size());
+    const auto &record = (*access_log_)[tag_ex.tag];
+    const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
+    out << FormatResourceUsageRecord(record.Formatter(*sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index));
+    return out.str();
+}
+
+std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
+    std::stringstream out;
+    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
+    if (access.IsValid()) {
+        const BatchAccessLog::BatchRecord &batch = *access.batch;
+        const ResourceUsageRecord &record = *access.record;
+        if (batch.queue) {
+            // Queue and Batch information (for enqueued operations)
+            out << FormatStateObject(SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState()));
+            out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
+        }
+        if (sync_state_->syncval_settings.message_include_debug_information) {
+            out << ", batch_tag: " << batch.base_tag;
+        }
+
+        // Commandbuffer Usages Information
+        out << ", "
+            << FormatResourceUsageRecord(record.Formatter(*sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index));
+    }
     return out.str();
 }

@@ -25,8 +25,14 @@
 class ValidateResolveAction {
   public:
     ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, const AccessContext &context,
-                          const SyncValidationInfo &val_info, vvl::Func command)
-        : render_pass_(render_pass), subpass_(subpass), context_(context), val_info_(val_info), command_(command), skip_(false) {}
+                          const CommandBufferAccessContext &cb_context, vvl::Func command)
+        : render_pass_(render_pass),
+          subpass_(subpass),
+          context_(context),
+          cb_context_(cb_context),
+          command_(command),
+          skip_(false) {}
+
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
                     const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
                     SyncOrdering ordering_rule) {
@@ -34,11 +40,11 @@ class ValidateResolveAction {
         hazard = context_.DetectHazard(view_gen, gen_type, current_usage, ordering_rule);
         if (hazard.IsHazard()) {
             const Location loc(command_);
-            skip_ |= val_info_.GetSyncState().LogError(string_SyncHazardVUID(hazard.Hazard()), render_pass_, loc,
-                                                       "Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
-                                                       " to resolve attachment %" PRIu32 ". Access info %s.",
-                                                       string_SyncHazard(hazard.Hazard()), subpass_, aspect_name, attachment_name,
-                                                       src_at, dst_at, val_info_.FormatHazard(hazard).c_str());
+            skip_ |= cb_context_.GetSyncState().LogError(string_SyncHazardVUID(hazard.Hazard()), render_pass_, loc,
+                                                         "Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
+                                                         " to resolve attachment %" PRIu32 ". Access info %s.",
+                                                         string_SyncHazard(hazard.Hazard()), subpass_, aspect_name, attachment_name,
+                                                         src_at, dst_at, cb_context_.FormatHazard(hazard).c_str());
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -48,7 +54,7 @@ class ValidateResolveAction {
     VkRenderPass render_pass_;
     const uint32_t subpass_;
     const AccessContext &context_;
-    const SyncValidationInfo &val_info_;
+    const CommandBufferAccessContext &cb_context_;
     vvl::Func command_;
     bool skip_;
 };
@@ -122,10 +128,10 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
 }
 
 // Layout transitions are handled as if the were occuring in the beginning of the next subpass
-bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncValidationInfo &val_info, const AccessContext &access_context,
-                                                        const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                                        uint32_t subpass, const AttachmentViewGenVector &attachment_views,
-                                                        vvl::Func command) {
+bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAccessContext &cb_context,
+                                                        const AccessContext &access_context, const vvl::RenderPass &rp_state,
+                                                        const VkRect2D &render_area, uint32_t subpass,
+                                                        const AttachmentViewGenVector &attachment_views, vvl::Func command) {
     bool skip = false;
     // As validation methods are const and precede the record/update phase, for any tranistions from the immediately
     // previous subpass, we have to validate them against a copy of the AccessContext, with resolve operations applied, as
@@ -155,27 +161,28 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const SyncValidationInfo
         if (hazard.IsHazard()) {
             const Location loc(command);
             if (hazard.Tag() == kInvalidTag) {
-                skip |= val_info.GetSyncState().LogError(
+                skip |= cb_context.GetSyncState().LogError(
                     string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
                     "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                     " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32,
                     string_SyncHazard(hazard.Hazard()), subpass, transition.attachment, string_VkImageLayout(transition.old_layout),
                     string_VkImageLayout(transition.new_layout), transition.prev_pass);
             } else {
-                skip |= val_info.GetSyncState().LogError(
+                skip |= cb_context.GetSyncState().LogError(
                     string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
                     "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                     " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                     string_SyncHazard(hazard.Hazard()), subpass, transition.attachment, string_VkImageLayout(transition.old_layout),
-                    string_VkImageLayout(transition.new_layout), val_info.FormatHazard(hazard).c_str());
+                    string_VkImageLayout(transition.new_layout), cb_context.FormatHazard(hazard).c_str());
             }
         }
     }
     return skip;
 }
 
-bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &val_info, const AccessContext &access_context,
-                                                    const vvl::RenderPass &rp_state, const VkRect2D &render_area, uint32_t subpass,
+bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessContext &cb_context,
+                                                    const AccessContext &access_context, const vvl::RenderPass &rp_state,
+                                                    const VkRect2D &render_area, uint32_t subpass,
                                                     const AttachmentViewGenVector &attachment_views, vvl::Func command) {
     bool skip = false;
     const auto *attachment_ci = rp_state.create_info.pAttachments;
@@ -223,7 +230,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &va
 
             if (hazard.IsHazard()) {
                 auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
-                const auto &sync_state = val_info.GetSyncState();
+                const auto &sync_state = cb_context.GetSyncState();
                 const Location loc(command);
                 if (hazard.Tag() == kInvalidTag) {
                     // Hazard vs. ILT
@@ -236,7 +243,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &va
                                                 "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                                                 " aspect %s during load with loadOp %s. Access info %s.",
                                                 string_SyncHazard(hazard.Hazard()), subpass, i, aspect, load_op_string,
-                                                val_info.FormatHazard(hazard).c_str());
+                                                cb_context.FormatHazard(hazard).c_str());
                 }
             }
         }
@@ -248,7 +255,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const SyncValidationInfo &va
 // because of the ordering guarantees w.r.t. sample access and that the resolve validation hasn't altered the state, because
 // store is part of the same Next/End operation.
 // The latter is handled in layout transistion validation directly
-bool RenderPassAccessContext::ValidateStoreOperation(const SyncValidationInfo &val_info, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
     const auto *attachment_ci = rp_state_->create_info.pAttachments;
 
@@ -295,11 +302,11 @@ bool RenderPassAccessContext::ValidateStoreOperation(const SyncValidationInfo &v
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
                 const Location loc(command);
-                skip |= val_info.GetSyncState().LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
-                                                         "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                                                         " %s aspect during store with %s %s. Access info %s",
-                                                         string_SyncHazard(hazard.Hazard()), current_subpass_, i, aspect,
-                                                         op_type_string, store_op_string, val_info.FormatHazard(hazard).c_str());
+                skip |= cb_context.GetSyncState().LogError(
+                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
+                    "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " %s aspect during store with %s %s. Access info %s",
+                    string_SyncHazard(hazard.Hazard()), current_subpass_, i, aspect, op_type_string, store_op_string,
+                    cb_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -398,8 +405,8 @@ void ResolveOperation(Action &action, const vvl::RenderPass &rp_state, const Att
     }
 }
 
-bool RenderPassAccessContext::ValidateResolveOperations(const SyncValidationInfo &val_info, vvl::Func command) const {
-    ValidateResolveAction validate_action(rp_state_->VkHandle(), current_subpass_, CurrentContext(), val_info, command);
+bool RenderPassAccessContext::ValidateResolveOperations(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
+    ValidateResolveAction validate_action(rp_state_->VkHandle(), current_subpass_, CurrentContext(), cb_context, command);
     ResolveOperation(validate_action, *rp_state_, attachment_views_, current_subpass_);
     return validate_action.GetSkip();
 }
@@ -479,10 +486,10 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
     }
 }
 
-bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecutionContext &exec_context,
+bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context,
                                                             const vvl::CommandBuffer &cmd_buffer, vvl::Func command) const {
     bool skip = false;
-    const auto &sync_state = exec_context.GetSyncState();
+    const auto &sync_state = cb_context.GetSyncState();
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
@@ -511,7 +518,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                                             "Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.",
                                             string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_handle).c_str(),
                                             sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(), location,
-                                            exec_context.FormatHazard(hazard).c_str());
+                                            cb_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -545,7 +552,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                     "Hazard %s for %s in %s, Subpass #%d, and depth part of pDepthStencilAttachment. Access info %s.",
                     string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_state).c_str(),
                     sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
-                    exec_context.FormatHazard(hazard).c_str());
+                    cb_context.FormatHazard(hazard).c_str());
             }
         }
         if (stencil_write) {
@@ -559,7 +566,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandExecuti
                     "Hazard %s for %s in %s, Subpass #%d, and stencil part of pDepthStencilAttachment. Access info %s.",
                     string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_state).c_str(),
                     sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
-                    exec_context.FormatHazard(hazard).c_str());
+                    cb_context.FormatHazard(hazard).c_str());
             }
         }
     }
@@ -726,36 +733,34 @@ ClearAttachmentInfo RenderPassAccessContext::GetClearAttachmentInfo(const VkClea
     return ClearAttachmentInfo(clear_attachment, rect, *view_state, attachment_index, GetCurrentSubpass());
 }
 
-bool RenderPassAccessContext::ValidateNextSubpass(const CommandExecutionContext &exec_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateNextSubpass(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     // PHASE1 TODO: Add Validate Preserve attachments
     bool skip = false;
-    skip |= ValidateResolveOperations(exec_context, command);
-    skip |= ValidateStoreOperation(exec_context, command);
+    skip |= ValidateResolveOperations(cb_context, command);
+    skip |= ValidateStoreOperation(cb_context, command);
 
     const auto next_subpass = current_subpass_ + 1;
     if (next_subpass >= subpass_contexts_.size()) {
         return skip;
     }
     const auto &next_context = subpass_contexts_[next_subpass];
-    skip |=
-        ValidateLayoutTransitions(exec_context, next_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
+    skip |= ValidateLayoutTransitions(cb_context, next_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
     if (!skip) {
         // To avoid complex (and buggy) duplication of the affect of layout transitions on load operations, we'll record them
         // on a copy of the (empty) next context.
         // Note: The resource access map should be empty so hopefully this copy isn't too horrible from a perf POV.
         AccessContext temp_context(next_context);
         RecordLayoutTransitions(*rp_state_, next_subpass, attachment_views_, kInvalidTag, temp_context);
-        skip |=
-            ValidateLoadOperation(exec_context, temp_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
+        skip |= ValidateLoadOperation(cb_context, temp_context, *rp_state_, render_area_, next_subpass, attachment_views_, command);
     }
     return skip;
 }
-bool RenderPassAccessContext::ValidateEndRenderPass(const CommandExecutionContext &exec_context, vvl::Func command) const {
+bool RenderPassAccessContext::ValidateEndRenderPass(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     // PHASE1 TODO: Validate Preserve
     bool skip = false;
-    skip |= ValidateResolveOperations(exec_context, command);
-    skip |= ValidateStoreOperation(exec_context, command);
-    skip |= ValidateFinalSubpassLayoutTransitions(exec_context, command);
+    skip |= ValidateResolveOperations(cb_context, command);
+    skip |= ValidateStoreOperation(cb_context, command);
+    skip |= ValidateFinalSubpassLayoutTransitions(cb_context, command);
     return skip;
 }
 
@@ -763,7 +768,7 @@ AccessContext *RenderPassAccessContext::CreateStoreResolveProxy() const {
     return CreateStoreResolveProxyContext(CurrentContext(), *rp_state_, current_subpass_, attachment_views_);
 }
 
-bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandExecutionContext &exec_context,
+bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const CommandBufferAccessContext &cb_context,
                                                                     vvl::Func command) const {
     bool skip = false;
 
@@ -797,20 +802,20 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             const Location loc(command);
             if (hazard.Tag() == kInvalidTag) {
                 // Hazard vs. ILT
-                skip |= exec_context.GetSyncState().LogError(
+                skip |= cb_context.GetSyncState().LogError(
                     string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
                     "Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
                     " final image layout transition (old_layout: %s, new_layout: %s).",
                     string_SyncHazard(hazard.Hazard()), transition.prev_pass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout));
             } else {
-                skip |= exec_context.GetSyncState().LogError(
+                skip |= cb_context.GetSyncState().LogError(
                     string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
                     "Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
                     " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
                     string_SyncHazard(hazard.Hazard()), transition.prev_pass, transition.attachment,
                     string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
-                    exec_context.FormatHazard(hazard).c_str());
+                    cb_context.FormatHazard(hazard).c_str());
             }
         }
     }

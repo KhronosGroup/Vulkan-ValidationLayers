@@ -30,5 +30,3 @@ struct SyncNodeFormatter {
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
 };
 std::string FormatStateObject(const SyncNodeFormatter &formatter);
-
-std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter);

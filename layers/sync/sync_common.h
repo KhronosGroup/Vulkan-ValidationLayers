@@ -73,22 +73,6 @@ constexpr VkImageAspectFlags kColorAspects =
     VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
-class SyncValidationInfo {
-  public:
-    SyncValidationInfo(const SyncValidator* sync_validator, VkQueueFlags queue_flags) : sync_state_(sync_validator), queue_flags_(queue_flags) {}
-    const SyncValidator& GetSyncState() const {
-        assert(sync_state_);
-        return *sync_state_;
-    }
-    std::string FormatHazard(const HazardResult& hazard) const;
-    virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
-
-  protected:
-    const SyncValidator* sync_state_;
-    const VkQueueFlags queue_flags_;
-};
-
-
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
     static inline const SyncStageAccessInfoType &UsageInfo(SyncStageAccessIndex stage_access_index) {
