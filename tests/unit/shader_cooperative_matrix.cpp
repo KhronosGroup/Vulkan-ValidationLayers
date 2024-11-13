@@ -303,7 +303,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
-    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10166");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-10169", 6);
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

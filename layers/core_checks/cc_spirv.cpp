@@ -812,13 +812,14 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                                              a.Describe().c_str(), b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
                                              print_properties().c_str());
                         } else {
-                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10166", module_state.handle(), loc,
-                                             "SPIR-V (%s) instruction\n%s\ndoesn't match a supported matrix "
-                                             "VkCooperativeMatrixPropertiesKHR or "
-                                             "VkPhysicalDeviceCooperativeMatrix2PropertiesNV\n%s\n%s\n%s\n%s\n%s\n%s\n",
-                                             string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
-                                             a.Describe().c_str(), b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
-                                             print_properties().c_str(), print_flexible_properties().c_str());
+                            skip |=
+                                LogError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166", module_state.handle(), loc,
+                                         "SPIR-V (%s) instruction\n%s\ndoesn't match a supported matrix "
+                                         "VkCooperativeMatrixPropertiesKHR or "
+                                         "VkPhysicalDeviceCooperativeMatrix2PropertiesNV\n%s\n%s\n%s\n%s\n%s\n%s\n",
+                                         string_VkShaderStageFlagBits(entrypoint.stage), insn.Describe().c_str(),
+                                         a.Describe().c_str(), b.Describe().c_str(), c.Describe().c_str(), r.Describe().c_str(),
+                                         print_properties().c_str(), print_flexible_properties().c_str());
                         }
                     }
                 }
