@@ -192,7 +192,6 @@
                         { "key": "printf_enable", "value": false },
                         { "key": "gpuav_enable", "value": true },
                         { "key": "gpuav_shader_instrumentation", "value": true },
-                        { "key": "gpuav_cache_instrumented_shaders", "value": false },
                         { "key": "gpuav_select_instrumented_shaders", "value": false },
                         { "key": "gpuav_buffers_validation", "value": true },
                         { "key": "gpuav_reserve_binding_slot", "value": true },
@@ -663,21 +662,6 @@
                                             "description": "Track which descriptor indexes were used in shader to run normal validation afterwards",
                                             "type": "BOOL",
                                             "default": true,
-                                            "platforms": [ "WINDOWS", "LINUX" ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "gpuav_enable", "value": true },
-                                                    { "key": "gpuav_shader_instrumentation", "value": true }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "gpuav_cache_instrumented_shaders",
-                                            "label": "Cache instrumented shaders rather than instrumenting them on every run",
-                                            "description": "Enable instrumented shader caching",
-                                            "type": "BOOL",
-                                            "default": false,
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",

@@ -41,16 +41,6 @@
 
 namespace gpuav {
 
-void SpirvCache::Add(uint32_t hash, std::vector<uint32_t> spirv) { spirv_shaders_.emplace(hash, std::move(spirv)); }
-
-std::vector<uint32_t> *SpirvCache::Get(uint32_t spirv_hash) {
-    auto it = spirv_shaders_.find(spirv_hash);
-    if (it != spirv_shaders_.end()) {
-        return &it->second;
-    }
-    return nullptr;
-}
-
 ReadLockGuard GpuShaderInstrumentor::ReadLock() const {
     if (global_settings.fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
@@ -302,36 +292,20 @@ void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
     chassis::ShaderObjectInstrumentationData &instrumentation_data) {
     if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(create_info.pNext)) return;
-    uint32_t unique_shader_id = 0;
-    bool is_instrumented_shader_cached = false;
-    bool is_shader_instrumented = false;
-    std::vector<uint32_t> &instrumented_spirv = instrumentation_data.instrumented_spirv;
-    if (gpuav_settings.cache_instrumented_shaders) {
-        unique_shader_id = hash_util::ShaderHash(create_info.pCode, create_info.codeSize);
-        if (const auto spirv = instrumented_shaders_cache_.Get(unique_shader_id)) {
-            instrumented_spirv = *spirv;
-            is_instrumented_shader_cached = true;
-        }
-    } else {
-        unique_shader_id = unique_shader_module_id_++;
-    }
 
+    std::vector<uint32_t> &instrumented_spirv = instrumentation_data.instrumented_spirv;
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
     BuildDescriptorSetLayoutInfo(create_info, instrumentation_dsl);
 
-    if (!is_instrumented_shader_cached) {
-        is_shader_instrumented = InstrumentShader(
-            vvl::make_span(static_cast<const uint32_t *>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)),
-            unique_shader_id, instrumentation_dsl, create_info_loc, instrumented_spirv);
-    }
+    const uint32_t unique_shader_id = unique_shader_module_id_++;
+    const bool is_shader_instrumented =
+        InstrumentShader(vvl::make_span(static_cast<const uint32_t *>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)),
+                         unique_shader_id, instrumentation_dsl, create_info_loc, instrumented_spirv);
 
-    if (is_instrumented_shader_cached || is_shader_instrumented) {
+    if (is_shader_instrumented) {
         instrumentation_data.unique_shader_id = unique_shader_id;
         create_info.pCode = instrumented_spirv.data();
         create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
-        if (gpuav_settings.cache_instrumented_shaders && !is_instrumented_shader_cached) {
-            instrumented_shaders_cache_.Add(unique_shader_id, instrumented_spirv);
-        }
     }
 }
 
@@ -938,25 +912,11 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 }
             }
         }
-        uint32_t unique_shader_id = 0;
-        bool is_instrumented_shader_cached = false;
-        bool is_shader_instrumented = false;
         std::vector<uint32_t> instrumented_spirv;
-        if (gpuav_settings.cache_instrumented_shaders) {
-            unique_shader_id = hash_util::ShaderHash(modified_module_state->spirv->words_.data(),
-                                                     modified_module_state->spirv->words_.size() * sizeof(uint32_t));
-            if (const auto spirv = instrumented_shaders_cache_.Get(unique_shader_id)) {
-                instrumented_spirv = *spirv;
-                is_instrumented_shader_cached = true;
-            }
-        } else {
-            unique_shader_id = unique_shader_module_id_++;
-        }
-        if (!is_instrumented_shader_cached) {
-            is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id, instrumentation_dsl,
-                                                      loc, instrumented_spirv);
-        }
-        if (is_instrumented_shader_cached || is_shader_instrumented) {
+        const uint32_t unique_shader_id = unique_shader_module_id_++;
+        const bool is_shader_instrumented =
+            InstrumentShader(modified_module_state->spirv->words_, unique_shader_id, instrumentation_dsl, loc, instrumented_spirv);
+        if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
             if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
                 // If the user used vkCreateShaderModule, we create a new VkShaderModule to replace with the instrumented
@@ -987,10 +947,6 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
             } else {
                 assert(false);
                 return false;
-            }
-
-            if (gpuav_settings.cache_instrumented_shaders && !is_instrumented_shader_cached) {
-                instrumented_shaders_cache_.Add(unique_shader_id, instrumented_spirv);
             }
         }
     }
@@ -1101,26 +1057,11 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
 
             // Instrument shader
             // ---
-            uint32_t unique_shader_id = 0;
             std::vector<uint32_t> instrumented_spirv;
-            bool is_instrumented_shader_cached = false;
-            bool is_shader_instrumented = false;
-            if (gpuav_settings.cache_instrumented_shaders) {
-                unique_shader_id = hash_util::ShaderHash(modified_module_state->spirv->words_.data(),
-                                                         modified_module_state->spirv->words_.size() * sizeof(uint32_t));
-                if (const auto spirv = instrumented_shaders_cache_.Get(unique_shader_id)) {
-                    instrumented_spirv = *spirv;
-
-                    is_instrumented_shader_cached = true;
-                }
-            } else {
-                unique_shader_id = unique_shader_module_id_++;
-            }
-            if (!is_instrumented_shader_cached) {
-                is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
-                                                          instrumentation_dsl, loc, instrumented_spirv);
-            }
-            if (is_instrumented_shader_cached || is_shader_instrumented) {
+            const uint32_t unique_shader_id = unique_shader_module_id_++;
+            const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
+                                                                 instrumentation_dsl, loc, instrumented_spirv);
+            if (is_shader_instrumented) {
                 instrumentation_metadata.unique_shader_id = unique_shader_id;
                 if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
                     // If the user used vkCreateShaderModule, we create a new VkShaderModule to replace with the instrumented
@@ -1151,10 +1092,6 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                 } else {
                     assert(false);
                     return false;
-                }
-
-                if (gpuav_settings.cache_instrumented_shaders && !is_instrumented_shader_cached) {
-                    instrumented_shaders_cache_.Add(unique_shader_id, instrumented_spirv);
                 }
             }
         }

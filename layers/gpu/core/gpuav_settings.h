@@ -22,9 +22,6 @@
 struct GpuAVSettings {
     bool warn_on_robust_oob = true;
     uint32_t max_bda_in_use = 10000;
-    // Currently has known bugs so turning off - will work if just running same exact and not adjusting settings
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8850
-    bool cache_instrumented_shaders = false;
     bool select_instrumented_shaders = false;
 
     // Turned off until we can fix things
@@ -63,8 +60,7 @@ struct GpuAVSettings {
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
         shader_instrumentation.post_process_descriptor_index = false;
-        // Because of those 2 settings, cannot really have an "enabled" parameter to pass to this method
-        cache_instrumented_shaders = false;
+        // Because of this setting, cannot really have an "enabled" parameter to pass to this method
         select_instrumented_shaders = false;
     }
     bool IsBufferValidationEnabled() const {

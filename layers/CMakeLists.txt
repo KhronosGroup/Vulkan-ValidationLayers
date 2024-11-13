@@ -215,7 +215,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_counter_bodies.h
     ${API_TYPE}/generated/thread_safety_counter_definitions.h
     ${API_TYPE}/generated/thread_safety_counter_instances.h
-    ${API_TYPE}/generated/gpuav_shader_hash.h
     ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.h
     ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.cpp
     ${API_TYPE}/generated/cmd_validation_dispatch_comp.h
@@ -225,7 +224,6 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
     ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
     gpu/core/gpuav_settings.h
-    gpu/core/gpuav_shader_cache_hash.h
     gpu/core/gpuav_constants.h
     gpu/cmd_validation/gpuav_cmd_validation_common.h
     gpu/cmd_validation/gpuav_cmd_validation_common.cpp

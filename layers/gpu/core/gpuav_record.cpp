@@ -16,8 +16,6 @@
  */
 
 #include <cmath>
-#include <fstream>
-#include "utils/hash_util.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_draw.h"
 #include "gpu/cmd_validation/gpuav_dispatch.h"
@@ -29,10 +27,6 @@
 #include "gpu/instrumentation/gpuav_instrumentation.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpu/core/gpuav_shader_cache_hash.h"
-
-// Generated shaders
-#include "generated/gpuav_shader_hash.h"
 
 namespace gpuav {
 
@@ -93,24 +87,6 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     desc_heap_.reset();
 
     shared_resources_manager.Clear();
-
-    if (gpuav_settings.cache_instrumented_shaders && !instrumented_shaders_cache_.IsEmpty()) {
-        std::ofstream file_stream(instrumented_shader_cache_path_, std::ofstream::out | std::ofstream::binary);
-        if (file_stream) {
-            ShaderCacheHash shader_cache_hash(gpuav_settings.shader_instrumentation);
-            file_stream.write(reinterpret_cast<const char *>(&shader_cache_hash), sizeof(shader_cache_hash));
-            uint32_t datasize = static_cast<uint32_t>(instrumented_shaders_cache_.spirv_shaders_.size());
-            file_stream.write(reinterpret_cast<char *>(&datasize), sizeof(uint32_t));
-            for (auto &record : instrumented_shaders_cache_.spirv_shaders_) {
-                // Hash of shader
-                file_stream.write(reinterpret_cast<const char *>(&record.first), sizeof(uint32_t));
-                const size_t spirv_dwords_count = record.second.size();
-                file_stream.write(reinterpret_cast<const char *>(&spirv_dwords_count), sizeof(uint32_t));
-                file_stream.write(reinterpret_cast<const char *>(record.second.data()), spirv_dwords_count * sizeof(uint32_t));
-            }
-            file_stream.close();
-        }
-    }
 
     indices_buffer_.DestroyBuffer();
 

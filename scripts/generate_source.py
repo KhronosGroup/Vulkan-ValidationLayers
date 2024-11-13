@@ -395,7 +395,6 @@ def main(argv):
         'instrumentation_ray_query_comp.cpp',
         'instrumentation_post_process_descriptor_index_comp.h',
         'instrumentation_post_process_descriptor_index_comp.cpp',
-        'gpuav_shader_hash.h'
     ]
 
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
