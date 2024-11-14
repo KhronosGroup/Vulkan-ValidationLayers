@@ -24622,6 +24622,7 @@ bool StatelessValidation::PreCallValidateCreateMicromapEXT(VkDevice device, cons
         skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pMicromap), pMicromap, "VUID-vkCreateMicromapEXT-pMicromap-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, error_obj);
     return skip;
 }
 
@@ -24636,6 +24637,7 @@ bool StatelessValidation::PreCallValidateDestroyMicromapEXT(VkDevice device, VkM
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
     }
+    if (!skip) skip |= manual_PreCallValidateDestroyMicromapEXT(device, micromap, pAllocator, error_obj);
     return skip;
 }
 
@@ -24678,6 +24680,7 @@ bool StatelessValidation::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer co
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBuildMicromapsEXT(commandBuffer, infoCount, pInfos, error_obj);
     return skip;
 }
 
@@ -24720,6 +24723,7 @@ bool StatelessValidation::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDe
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, error_obj);
     return skip;
 }
 
@@ -24743,6 +24747,7 @@ bool StatelessValidation::PreCallValidateCopyMicromapEXT(VkDevice device, VkDefe
         skip |= ValidateRangedEnum(pInfo_loc.dot(Field::mode), vvl::Enum::VkCopyMicromapModeEXT, pInfo->mode,
                                    "VUID-VkCopyMicromapInfoEXT-mode-parameter", VK_NULL_HANDLE);
     }
+    if (!skip) skip |= manual_PreCallValidateCopyMicromapEXT(device, deferredOperation, pInfo, error_obj);
     return skip;
 }
 
@@ -24765,6 +24770,7 @@ bool StatelessValidation::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device
         skip |= ValidateRangedEnum(pInfo_loc.dot(Field::mode), vvl::Enum::VkCopyMicromapModeEXT, pInfo->mode,
                                    "VUID-VkCopyMicromapToMemoryInfoEXT-mode-parameter", VK_NULL_HANDLE);
     }
+    if (!skip) skip |= manual_PreCallValidateCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, error_obj);
     return skip;
 }
 
@@ -24787,6 +24793,7 @@ bool StatelessValidation::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device
         skip |= ValidateRangedEnum(pInfo_loc.dot(Field::mode), vvl::Enum::VkCopyMicromapModeEXT, pInfo->mode,
                                    "VUID-VkCopyMemoryToMicromapInfoEXT-mode-parameter", VK_NULL_HANDLE);
     }
+    if (!skip) skip |= manual_PreCallValidateCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, error_obj);
     return skip;
 }
 
@@ -24805,6 +24812,9 @@ bool StatelessValidation::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice de
     skip |= ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
                           "VUID-vkWriteMicromapsPropertiesEXT-dataSize-arraylength",
                           "VUID-vkWriteMicromapsPropertiesEXT-pData-parameter");
+    if (!skip)
+        skip |= manual_PreCallValidateWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData,
+                                                                  stride, error_obj);
     return skip;
 }
 
@@ -24828,6 +24838,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer comm
         skip |= ValidateRangedEnum(pInfo_loc.dot(Field::mode), vvl::Enum::VkCopyMicromapModeEXT, pInfo->mode,
                                    "VUID-VkCopyMicromapInfoEXT-mode-parameter", VK_NULL_HANDLE);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyMicromapEXT(commandBuffer, pInfo, error_obj);
     return skip;
 }
 
@@ -24851,6 +24862,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuf
         skip |= ValidateRangedEnum(pInfo_loc.dot(Field::mode), vvl::Enum::VkCopyMicromapModeEXT, pInfo->mode,
                                    "VUID-VkCopyMicromapToMemoryInfoEXT-mode-parameter", VK_NULL_HANDLE);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyMicromapToMemoryEXT(commandBuffer, pInfo, error_obj);
     return skip;
 }
 
@@ -24874,6 +24886,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuf
         skip |= ValidateRangedEnum(pInfo_loc.dot(Field::mode), vvl::Enum::VkCopyMicromapModeEXT, pInfo->mode,
                                    "VUID-VkCopyMemoryToMicromapInfoEXT-mode-parameter", VK_NULL_HANDLE);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyMemoryToMicromapEXT(commandBuffer, pInfo, error_obj);
     return skip;
 }
 
@@ -24890,6 +24903,9 @@ bool StatelessValidation::PreCallValidateCmdWriteMicromapsPropertiesEXT(VkComman
     skip |= ValidateRangedEnum(loc.dot(Field::queryType), vvl::Enum::VkQueryType, queryType,
                                "VUID-vkCmdWriteMicromapsPropertiesEXT-queryType-parameter", VK_NULL_HANDLE);
     skip |= ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
+    if (!skip)
+        skip |= manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(commandBuffer, micromapCount, pMicromaps, queryType, queryPool,
+                                                                     firstQuery, error_obj);
     return skip;
 }
 
@@ -24914,6 +24930,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMicromapCompatibilityEXT(VkDev
     }
     skip |= ValidateRequiredPointer(loc.dot(Field::pCompatibility), pCompatibility,
                                     "VUID-vkGetDeviceMicromapCompatibilityEXT-pCompatibility-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetDeviceMicromapCompatibilityEXT(device, pVersionInfo, pCompatibility, error_obj);
     return skip;
 }
 
@@ -24958,6 +24975,7 @@ bool StatelessValidation::PreCallValidateGetMicromapBuildSizesEXT(VkDevice devic
     skip |=
         ValidateStructType(loc.dot(Field::pSizeInfo), pSizeInfo, VK_STRUCTURE_TYPE_MICROMAP_BUILD_SIZES_INFO_EXT, true,
                            "VUID-vkGetMicromapBuildSizesEXT-pSizeInfo-parameter", "VUID-VkMicromapBuildSizesInfoEXT-sType-sType");
+    if (!skip) skip |= manual_PreCallValidateGetMicromapBuildSizesEXT(device, buildType, pBuildInfo, pSizeInfo, error_obj);
     return skip;
 }
 
