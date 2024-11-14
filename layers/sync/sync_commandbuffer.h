@@ -208,21 +208,6 @@ class CommandExecutionContext {
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
 
-    virtual void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) {
-        // Must override if use by derived type is valid
-        assert(false);
-    }
-
-    virtual void NextSubpassReplaySetup(ReplayState &replay) {
-        // Must override if use by derived type is valid
-        assert(false);
-    }
-
-    virtual void EndRenderPassReplayCleanup(ReplayState &replay) {
-        // Must override if use by derived type is valid
-        assert(false);
-    }
-
     std::string FormatHazard(const HazardResult &hazard) const;
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }

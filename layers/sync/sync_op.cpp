@@ -1106,9 +1106,11 @@ ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_co
 }
 
 bool SyncOpBeginRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
-    // Need to update the exec_contexts state (which for RenderPass operations *must* be a QueueBatchContext, as
-    // render pass operations are not allowed in secondary command buffers.
-    replay.BeginRenderPassReplaySetup(*this);
+    CommandExecutionContext &exec_context = replay.GetExecutionContext();
+    // can't be kExecuted, this operation is not allowed in secondary command buffers
+    assert(exec_context.Type() == CommandExecutionContext::kSubmitted);
+    auto &batch_context = static_cast<QueueBatchContext &>(exec_context);
+    batch_context.BeginRenderPassReplaySetup(replay, *this);
 
     // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
@@ -1145,7 +1147,11 @@ ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_contex
 
 bool SyncOpNextSubpass::ReplayValidate(ReplayState &replay, ResourceUsageTag recorded_tag) const {
     // Any store/resolve operations happen before the NextSubpass tag so we can advance to the next subpass state
-    replay.NextSubpassReplaySetup();
+    CommandExecutionContext &exec_context = replay.GetExecutionContext();
+    // can't be kExecuted, this operation is not allowed in secondary command buffers
+    assert(exec_context.Type() == CommandExecutionContext::kSubmitted);
+    auto &batch_context = static_cast<QueueBatchContext &>(exec_context);
+    batch_context.NextSubpassReplaySetup(replay);
 
     // Only the layout transitions happen at the replay tag, loadOp's happen at a subsequent tag
     ResourceUsageRange first_use_range = {recorded_tag, recorded_tag + 1};
@@ -1183,8 +1189,12 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag r
     bool skip = false;
     skip |= replay.DetectFirstUseHazard(first_use_range);
 
-    // We can cleanup here as the recorded tag represents the final layout transition (which is the last operation or the RP
-    replay.EndRenderPassReplayCleanup();
+    // We can cleanup here as the recorded tag represents the final layout transition (which is the last operation or the RP)
+    CommandExecutionContext &exec_context = replay.GetExecutionContext();
+    // can't be kExecuted, this operation is not allowed in secondary command buffers
+    assert(exec_context.Type() == CommandExecutionContext::kSubmitted);
+    auto &batch_context = static_cast<QueueBatchContext &>(exec_context);
+    batch_context.EndRenderPassReplayCleanup(replay);
 
     return skip;
 }
@@ -1194,14 +1204,6 @@ void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, Re
 ReplayState::ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
                          const ErrorObject &error_obj, uint32_t index, ResourceUsageTag base_tag)
     : exec_context_(exec_context), recorded_context_(recorded_context), error_obj_(error_obj), index_(index), base_tag_(base_tag) {}
-
-void ReplayState::BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op) {
-    exec_context_.BeginRenderPassReplaySetup(*this, begin_op);
-}
-
-void ReplayState::NextSubpassReplaySetup() { exec_context_.NextSubpassReplaySetup(*this); }
-
-void ReplayState::EndRenderPassReplayCleanup() { exec_context_.EndRenderPassReplayCleanup(*this); }
 
 AccessContext *ReplayState::ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
                                                        const AccessContext &external_context) {

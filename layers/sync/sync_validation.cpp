@@ -804,6 +804,9 @@ void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                                              const VkSubpassBeginInfo *pSubpassBeginInfo, Func command) {
     auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
     if (cb_state) {
+        if (!cb_state->IsPrimary()) {
+            return;  // [core validation check]: only primary command buffer can begin render pass
+        }
         cb_state->access_context.RecordSyncOp<SyncOpBeginRenderPass>(command, *this, pRenderPassBegin, pSubpassBeginInfo);
     }
 }
@@ -871,6 +874,9 @@ void SyncValidator::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const Vk
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
+    if (!cb_state->IsPrimary()) {
+        return;  // [core validation check]: only primary command buffer can start next subpass
+    }
     cb_context->RecordSyncOp<SyncOpNextSubpass>(command, *this, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
@@ -932,6 +938,9 @@ void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const 
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
 
+    if (!cb_state->IsPrimary()) {
+        return;  // [core validation check]: only primary command buffer can end render pass
+    }
     cb_context->RecordSyncOp<SyncOpEndRenderPass>(command, *this, pSubpassEndInfo);
 }
 
