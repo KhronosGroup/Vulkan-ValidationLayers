@@ -67,7 +67,7 @@ bool CommandExecutionContext::ValidForSyncOps() const {
 }
 
 CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags)
-    : CommandExecutionContext(&sync_validator, queue_flags),
+    : CommandExecutionContext(sync_validator, queue_flags),
       cb_state_(),
       access_log_(std::make_shared<AccessLog>()),
       cbs_referenced_(std::make_shared<CommandBufferSet>()),
@@ -84,12 +84,12 @@ CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync
 CommandBufferAccessContext::CommandBufferAccessContext(SyncValidator &sync_validator, vvl::CommandBuffer *cb_state)
     : CommandBufferAccessContext(sync_validator, cb_state->GetQueueFlags()) {
     cb_state_ = cb_state;
-    sync_state_->stats.AddCommandBufferContext();
+    sync_state_.stats.AddCommandBufferContext();
 }
 
 // NOTE: Make sure the proxy doesn't outlive from, as the proxy is pointing directly to access contexts owned by from.
 CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccessContext &from, AsProxyContext dummy)
-    : CommandBufferAccessContext(*from.sync_state_, from.cb_state_->GetQueueFlags()) {
+    : CommandBufferAccessContext(from.sync_state_, from.cb_state_->GetQueueFlags()) {
     // Copy only the needed fields out of from for a temporary, proxy command buffer context
     cb_state_ = from.cb_state_;
     access_log_ = std::make_shared<AccessLog>(*from.access_log_);  // potentially large, but no choice given tagging lookup.
@@ -98,7 +98,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     reset_count_ = from.reset_count_;
 
     handles_ = from.handles_;
-    sync_state_->stats.AddHandleRecord((uint32_t)from.handles_.size());
+    sync_state_.stats.AddHandleRecord((uint32_t)from.handles_.size());
 
     const auto *from_context = from.GetCurrentAccessContext();
     assert(from_context);
@@ -111,12 +111,12 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     events_context_ = from.events_context_;
 
     // We don't want to copy the full render_pass_context_ history just for the proxy.
-    sync_state_->stats.AddCommandBufferContext();
+    sync_state_.stats.AddCommandBufferContext();
 }
 
 CommandBufferAccessContext::~CommandBufferAccessContext() {
-    sync_state_->stats.RemoveCommandBufferContext();
-    sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size());
+    sync_state_.stats.RemoveCommandBufferContext();
+    sync_state_.stats.RemoveHandleRecord((uint32_t)handles_.size());
 }
 
 void CommandBufferAccessContext::Reset() {
@@ -130,7 +130,7 @@ void CommandBufferAccessContext::Reset() {
     subcommand_number_ = 0;
     reset_count_++;
 
-    sync_state_->stats.RemoveHandleRecord((uint32_t)handles_.size());
+    sync_state_.stats.RemoveHandleRecord((uint32_t)handles_.size());
     handles_.clear();
 
     current_command_tag_ = vvl::kNoIndex32;
@@ -171,10 +171,10 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(error_obj.location, i);
-            skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                          "(%s), with loadOp %s. Access info %s.",
-                                          sync_state_->FormatHandle(attachment.view->Handle()).c_str(),
-                                          string_VkAttachmentLoadOp(attachment.info.loadOp), FormatHazard(hazard).c_str());
+            skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
+                                         "(%s), with loadOp %s. Access info %s.",
+                                         sync_state_.FormatHandle(attachment.view->Handle()).c_str(),
+                                         string_VkAttachmentLoadOp(attachment.info.loadOp), FormatHazard(hazard).c_str());
             if (skip) break;
         }
     }
@@ -214,10 +214,10 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
         auto report_resolve_hazard = [this](const HazardResult &hazard, const Location &loc, const VulkanTypedHandle image_handle,
                                             const VkResolveModeFlagBits resolve_mode) {
             LogObjectList obj_list(cb_state_->Handle(), image_handle);
-            return sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc,
-                                         "(%s), during resolve with resolveMode %s. Access info %s.",
-                                         sync_state_->FormatHandle(image_handle).c_str(),
-                                         string_VkResolveModeFlagBits(resolve_mode), FormatHazard(hazard).c_str());
+            return sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc,
+                                        "(%s), during resolve with resolveMode %s. Access info %s.",
+                                        sync_state_.FormatHandle(image_handle).c_str(), string_VkResolveModeFlagBits(resolve_mode),
+                                        FormatHazard(hazard).c_str());
         };
 
         for (uint32_t i = 0; i < attachment_count && !skip; i++) {
@@ -251,10 +251,10 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
                     const VulkanTypedHandle image_handle = attachment.view->Handle();
                     LogObjectList obj_list(cb_state_->Handle(), image_handle);
                     Location loc = attachment.GetLocation(error_obj.location, i);
-                    skip |= sync_state_->LogError(
-                        string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                        "(%s), during store with storeOp %s. Access info %s.", sync_state_->FormatHandle(image_handle).c_str(),
-                        string_VkAttachmentStoreOp(attachment.info.storeOp), FormatHazard(hazard).c_str());
+                    skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
+                                                 "(%s), during store with storeOp %s. Access info %s.",
+                                                 sync_state_.FormatHandle(image_handle).c_str(),
+                                                 string_VkAttachmentStoreOp(attachment.info.storeOp), FormatHazard(hazard).c_str());
                 }
             }
         }
@@ -291,7 +291,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
 bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                    const Location &loc) const {
     bool skip = false;
-    if (!sync_state_->syncval_settings.shader_accesses_heuristic) {
+    if (!sync_state_.syncval_settings.shader_accesses_heuristic) {
         return skip;
     }
     const vvl::Pipeline *pipe = nullptr;
@@ -369,15 +369,15 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                             hazard = current_context_->DetectHazard(*img_view_state, sync_index);
                         }
 
-                        if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
-                            skip |= sync_state_->LogError(
+                        if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
+                            skip |= sync_state_.LogError(
                                 string_SyncHazardVUID(hazard.Hazard()), img_view_state->Handle(), loc,
                                 "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
                                 ", index %" PRIu32 ". Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(img_view_state->Handle()).c_str(),
-                                sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_->FormatHandle(pipe->Handle()).c_str(),
-                                sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
+                                string_SyncHazard(hazard.Hazard()), sync_state_.FormatHandle(img_view_state->Handle()).c_str(),
+                                sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
+                                sync_state_.FormatHandle(pipe->Handle()).c_str(),
+                                sync_state_.FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
                                 variable.decorations.binding, index, FormatHazard(hazard).c_str());
                         }
@@ -392,14 +392,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const auto *buf_state = buf_view_state->buffer_state.get();
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
-                            skip |= sync_state_->LogError(
+                        if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
+                            skip |= sync_state_.LogError(
                                 string_SyncHazardVUID(hazard.Hazard()), buf_view_state->Handle(), loc,
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_view_state->Handle()).c_str(),
-                                sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_->FormatHandle(pipe->Handle()).c_str(),
-                                sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
+                                string_SyncHazard(hazard.Hazard()), sync_state_.FormatHandle(buf_view_state->Handle()).c_str(),
+                                sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
+                                sync_state_.FormatHandle(pipe->Handle()).c_str(),
+                                sync_state_.FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
                         }
@@ -423,14 +423,14 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const ResourceAccessRange range =
                             MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.IsHazard() && !sync_state_->SupressedBoundDescriptorWAW(hazard)) {
-                            skip |= sync_state_->LogError(
+                        if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
+                            skip |= sync_state_.LogError(
                                 string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
                                 "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_->FormatHandle(buf_state->Handle()).c_str(),
-                                sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_->FormatHandle(pipe->Handle()).c_str(),
-                                sync_state_->FormatHandle(descriptor_set->Handle()).c_str(),
+                                string_SyncHazard(hazard.Hazard()), sync_state_.FormatHandle(buf_state->Handle()).c_str(),
+                                sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
+                                sync_state_.FormatHandle(pipe->Handle()).c_str(),
+                                sync_state_.FormatHandle(descriptor_set->Handle()).c_str(),
                                 string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
                         }
@@ -449,7 +449,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
 // TODO: Record structure repeats Validate. Unify this code, it was the source of bugs few times already.
 void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
                                                                  const ResourceUsageTag tag) {
-    if (!sync_state_->syncval_settings.shader_accesses_heuristic) {
+    if (!sync_state_.syncval_settings.shader_accesses_heuristic) {
         return;
     }
     const vvl::Pipeline *pipe = nullptr;
@@ -578,7 +578,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
             continue;
         }
         if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
-            const auto buf_state = sync_state_->Get<vvl::Buffer>(vertex_buffer->buffer);
+            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
             ResourceAccessRange range;
@@ -590,10 +590,10 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
 
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
-                skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
-                                              "Hazard %s for vertex %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
-                                              sync_state_->FormatHandle(buf_state->Handle()).c_str(),
-                                              sync_state_->FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
+                skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
+                                             "Hazard %s for vertex %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                                             sync_state_.FormatHandle(buf_state->Handle()).c_str(),
+                                             sync_state_.FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
             }
         }
     }
@@ -618,7 +618,7 @@ void CommandBufferAccessContext::RecordDrawVertex(std::optional<uint32_t> vertex
             continue;
         }
         if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
-            const auto buf_state = sync_state_->Get<vvl::Buffer>(vertex_buffer->buffer);
+            const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
             ResourceAccessRange range;
@@ -638,7 +638,7 @@ void CommandBufferAccessContext::RecordDrawVertex(std::optional<uint32_t> vertex
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, uint32_t firstIndex, const Location &loc) const {
     bool skip = false;
     const auto &index_binding = cb_state_->index_buffer_binding;
-    const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
+    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.buffer);
     if (!index_buf_state) return skip;
 
     const auto index_size = GetIndexAlignment(index_binding.index_type);
@@ -646,10 +646,10 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
-        skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), index_buf_state->Handle(), loc,
+        skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), index_buf_state->Handle(), loc,
                                       "Hazard %s for index %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
-                                      sync_state_->FormatHandle(index_buf_state->Handle()).c_str(),
-                                      sync_state_->FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
+                                      sync_state_.FormatHandle(index_buf_state->Handle()).c_str(),
+                                      sync_state_.FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
     }
 
     // TODO: Shader instrumentation support is needed to read index buffer content and determine more accurate range
@@ -661,7 +661,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
 
 void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
     const auto &index_binding = cb_state_->index_buffer_binding;
-    const auto index_buf_state = sync_state_->Get<vvl::Buffer>(index_binding.buffer);
+    const auto index_buf_state = sync_state_.Get<vvl::Buffer>(index_binding.buffer);
     if (!index_buf_state) return;
 
     const auto index_size = GetIndexAlignment(index_binding.index_type);
@@ -706,9 +706,9 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
-            skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                          "(%s). Access info %s.", sync_state_->FormatHandle(attachment.view->Handle()).c_str(),
-                                          FormatHazard(hazard).c_str());
+            skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
+                                         "(%s). Access info %s.", sync_state_.FormatHandle(attachment.view->Handle()).c_str(),
+                                         FormatHazard(hazard).c_str());
         }
     }
 
@@ -730,9 +730,9 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
             if (hazard.IsHazard()) {
                 LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
-                skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                              "(%s). Access info %s.", sync_state_->FormatHandle(attachment.view->Handle()).c_str(),
-                                              FormatHazard(hazard).c_str());
+                skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
+                                             "(%s). Access info %s.", sync_state_.FormatHandle(attachment.view->Handle()).c_str(),
+                                             FormatHazard(hazard).c_str());
             }
         }
     }
@@ -941,7 +941,7 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command
 uint32_t CommandBufferAccessContext::AddHandle(const VulkanTypedHandle &typed_handle, uint32_t index) {
     const uint32_t handle_index = static_cast<uint32_t>(handles_.size());
     handles_.emplace_back(HandleRecord(typed_handle, index));
-    sync_state_->stats.AddHandleRecord();
+    sync_state_.stats.AddHandleRecord();
     return handle_index;
 }
 
@@ -1010,10 +1010,10 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cb_state_->Handle(), info.view->Handle());
-            skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
-                                          "Hazard %s while clearing color attachment%s. Access info %s.",
-                                          string_SyncHazard(hazard.Hazard()), info.GetSubpassAttachmentText().c_str(),
-                                          FormatHazard(hazard).c_str());
+            skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
+                                         "Hazard %s while clearing color attachment%s. Access info %s.",
+                                         string_SyncHazard(hazard.Hazard()), info.GetSubpassAttachmentText().c_str(),
+                                         FormatHazard(hazard).c_str());
         }
     }
 
@@ -1031,10 +1031,10 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
 
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state_->Handle(), info.view->Handle());
-                skip |= sync_state_->LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
-                                              "Hazard %s when clearing %s aspect of depth-stencil attachment%s. Access info %s.",
-                                              string_SyncHazard(hazard.Hazard()), string_VkImageAspectFlagBits(aspect),
-                                              info.GetSubpassAttachmentText().c_str(), FormatHazard(hazard).c_str());
+                skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
+                                             "Hazard %s when clearing %s aspect of depth-stencil attachment%s. Access info %s.",
+                                             string_SyncHazard(hazard.Hazard()), string_VkImageAspectFlagBits(aspect),
+                                             info.GetSubpassAttachmentText().c_str(), FormatHazard(hazard).c_str());
             }
         }
     }
@@ -1082,15 +1082,15 @@ void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
         vvl::ToLower(object_name);
         return object_name;
     };
-    if (sync_state_->debug_command_number == command_number_ && sync_state_->debug_reset_count == reset_count_) {
-        const auto cmdbuf_name = get_cmdbuf_name(*sync_state_->debug_report, cb_state_->Handle().handle);
-        const auto &pattern = sync_state_->debug_cmdbuf_pattern;
+    if (sync_state_.debug_command_number == command_number_ && sync_state_.debug_reset_count == reset_count_) {
+        const auto cmdbuf_name = get_cmdbuf_name(*sync_state_.debug_report, cb_state_->Handle().handle);
+        const auto &pattern = sync_state_.debug_cmdbuf_pattern;
         const bool cmdbuf_match = pattern.empty() || (cmdbuf_name.find(pattern) != std::string::npos);
         if (cmdbuf_match) {
-            sync_state_->LogInfo("SYNCVAL_DEBUG_COMMAND", LogObjectList(), Location(access_log_->back().command),
-                                 "Command stream has reached command #%" PRIu32 " in command buffer %s with reset count #%" PRIu32,
-                                 sync_state_->debug_command_number, sync_state_->FormatHandle(cb_state_->Handle()).c_str(),
-                                 sync_state_->debug_reset_count);
+            sync_state_.LogInfo("SYNCVAL_DEBUG_COMMAND", LogObjectList(), Location(access_log_->back().command),
+                                "Command stream has reached command #%" PRIu32 " in command buffer %s with reset count #%" PRIu32,
+                                sync_state_.debug_command_number, sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
+                                sync_state_.debug_reset_count);
         }
     }
 }
