@@ -1443,6 +1443,7 @@ TEST_F(NegativeDescriptors, BindInvalidPipelineLayout) {
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
 TEST_F(NegativeDescriptors, DISABLED_ConstantArrayElementNotBound) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

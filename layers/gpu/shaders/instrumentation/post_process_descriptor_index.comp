@@ -53,5 +53,5 @@ void inst_post_process_descriptor_index(const uint desc_set, const uint binding,
     //
     // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
     // ex - desc_sets[0].descriptor_index_post_process == desc_sets[1].descriptor_index_post_process
-    descriptor_index_post_process.slot[binding_layout_index] = kDescriptorSetWrittenMask | desc_set;
+    descriptor_index_post_process.slot[binding_layout_index] = kDescriptorSetAccessedMask | desc_set;
 }

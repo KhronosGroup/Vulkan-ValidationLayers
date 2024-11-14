@@ -1708,8 +1708,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, PostProcesingOnly) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Currently we are not able to detect this
-TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ImageTypeMismatch) {
+TEST_F(NegativeGpuAVDescriptorIndexing, ImageTypeMismatch) {
     TEST_DESCRIPTION("Detect that the index image is 3D but VkImage is only 2D");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
