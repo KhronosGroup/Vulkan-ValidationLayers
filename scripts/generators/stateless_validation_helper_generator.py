@@ -643,8 +643,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     checkExpr.append(f'skip |= ValidatePointerArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenPtrRequired}, {lenValueRequired}, {valueRequired},{count_ptr_required_vuid}, {count_required_vuid}, {array_required_vuid});\n')
             # This is an array with an integer count value
             else:
+                # Can't check if a non-null pointer is a valid pointer in a layer
+                unimplementable = member.optional and (lengthMember.optional or lengthMember.optionalPointer)
                 # If count and array parameters are optional, there will be no validation
-                if valueRequired == 'true' or lenValueRequired == 'true':
+                if (valueRequired == 'true' or lenValueRequired == 'true') and not unimplementable:
                     if member.type == 'char':
                         # Arrays of strings receive special processing
                         checkExpr.append(f'skip |= ValidateStringArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
@@ -849,6 +851,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         paramVUID = self.GetVuid(callerName, f"{member.name}-parameter")
                         if lengthMember:
                             count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
+                            # There is no way to test checking a non-null pointer to be valid, so don't falsly print the VUID out
+                            if paramVUID != 'kVUIDUndefined' and valueRequired == 'false':
+                                paramVUID = 'kVUIDUndefined'
                             # This is an array of struct pointers
                             if member.cDeclaration.count('*') == 2:
                                 usedLines.append(f'skip |= ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {lenValueRequired}, {valueRequired}, {stypeVUID}, {paramVUID}, {count_required_vuid});\n')
