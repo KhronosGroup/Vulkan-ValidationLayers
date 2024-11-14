@@ -1758,7 +1758,7 @@ typedef enum InterceptId {
 } InterceptId;
 
 // clang-format off
-void ValidationObject::InitObjectDispatchVectors() {
+void DispatchObject::InitObjectDispatchVectors() {
 
 #define BUILD_DISPATCH_VECTOR(name) \
     init_object_dispatch_vector(InterceptId ## name, \
@@ -1803,9 +1803,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                 break;
             case LayerObjectTypeSyncValidation:
                 if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeInstance:
-            case LayerObjectTypeDevice:
                 break;
             default:
                 /* Chassis codegen needs to be updated for unknown validation object type */

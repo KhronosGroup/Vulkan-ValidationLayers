@@ -280,6 +280,11 @@ class ThreadSafety : public ValidationObject {
     vvl::concurrent_unordered_map<VkDescriptorSetLayout, bool, 4> dsl_read_only_map;
     vvl::concurrent_unordered_map<VkDescriptorSet, bool, 6> ds_read_only_map;
     bool DsReadOnly(VkDescriptorSet) const;
+    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+    vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+    // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+    vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
     counter<VkCommandBuffer> c_VkCommandBuffer;
     counter<VkDevice> c_VkDevice;

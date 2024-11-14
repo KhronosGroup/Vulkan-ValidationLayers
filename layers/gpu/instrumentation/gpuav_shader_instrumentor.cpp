@@ -1286,7 +1286,7 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
-    ReleaseDeviceDispatchObject(LayerObjectTypeGpuAssisted);
+    dispatch_->ReleaseDeviceValidationObject(LayerObjectTypeGpuAssisted);
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

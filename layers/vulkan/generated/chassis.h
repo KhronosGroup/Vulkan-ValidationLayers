@@ -2232,8 +2232,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer comm
 
 // Layer object type identifiers
 enum LayerObjectTypeId {
-    LayerObjectTypeInstance,             // Container for an instance dispatch object
-    LayerObjectTypeDevice,               // Container for a device dispatch object
     LayerObjectTypeThreading,            // Instance or device threading layer object
     LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
     LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object
@@ -2267,108 +2265,96 @@ enum class ValidValue {
 #else
 #define DECORATE_PRINTF(_fmt_num, _first_param_num)
 #endif
-// Layer chassis validation object base class definition
-class ValidationObject {
+
+class ValidationObject;
+
+class DispatchObject {
   public:
     APIVersion api_version;
     DebugReport* debug_report = nullptr;
-    template <typename T>
-    std::string FormatHandle(T&& h) const {
-        return debug_report->FormatHandle(std::forward<T>(h));
-    }
-
-    std::vector<std::vector<ValidationObject*>> intercept_vectors;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
 
     VkLayerInstanceDispatchTable instance_dispatch_table;
     VkLayerDispatchTable device_dispatch_table;
 
     InstanceExtensions instance_extensions;
     DeviceExtensions device_extensions = {};
-    CHECK_DISABLED disabled = {};
-    CHECK_ENABLED enabled = {};
     GlobalSettings global_settings = {};
     GpuAVSettings gpuav_settings = {};
     SyncValSettings syncval_settings = {};
 
-    VkInstance instance = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
-    bool is_device_lost = false;
+    CHECK_DISABLED disabled = {};
+    CHECK_ENABLED enabled = {};
 
-    std::vector<ValidationObject*> object_dispatch;
-    std::vector<ValidationObject*> aborted_object_dispatch;
-    LayerObjectTypeId container_type;
-    void ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const;
-    void ReleaseAllDispatchObjects() const;
+    mutable std::vector<std::vector<ValidationObject*>> intercept_vectors;
+    mutable std::vector<ValidationObject*> object_dispatch;
+    mutable std::vector<ValidationObject*> aborted_object_dispatch;
+
+    // Handle Wrapping Data
+    // Reverse map display handles
+    vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
+    // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+    vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
+    struct SubpassesUsageStates {
+        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+    };
+    // Uses unwrapped handles
+    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+    vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+    // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+    vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
         deferred_operation_post_check;
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
 
-    std::string layer_name = "CHASSIS";
-
-    ValidationObject() {}
-    virtual ~ValidationObject() {}
-
     void InitObjectDispatchVectors();
+    void ReleaseDeviceValidationObject(LayerObjectTypeId type_id) const;
+    void ReleaseAllValidationObjects() const;
 
-    mutable std::shared_mutex validation_object_mutex;
-    virtual ReadLockGuard ReadLock() const { return ReadLockGuard(validation_object_mutex); }
-    virtual WriteLockGuard WriteLock() { return WriteLockGuard(validation_object_mutex); }
-
-    // If the Record phase calls a function that blocks, we might need to release
-    // the lock that protects Record itself in order to avoid mutual waiting.
-    static thread_local WriteLockGuard* record_guard;
-
-    // Should be used instead of WriteLock() if the Record phase wants to release
-    // its lock during the blocking operation.
-    struct BlockingOperationGuard {
-        WriteLockGuard lock;
-        ValidationObject* validation_object = nullptr;
-
-        BlockingOperationGuard(ValidationObject* validation_object) : validation_object(validation_object) {
-            // This assert detects recursive calls. It is here mostly for documentation purposes
-            // because WriteLock() also triggers errors during recursion.
-            // Recursion is not allowed since record_guard is a thread-local variable and it can
-            // reference only one frame of the callstack.
-            assert(validation_object->record_guard == nullptr);
-
-            lock = validation_object->WriteLock();
-
-            // Initialize record_guard only when Record is actually protected by the
-            // mutex. It's not the case when fine grained locking is enabled.
-            record_guard = lock.owns_lock() ? &lock : nullptr;
-        }
-
-        ~BlockingOperationGuard() { validation_object->record_guard = nullptr; }
-    };
-
-    // The following Begin/End methods should be called during the Record phase
-    // around blocking operation that causes mutual waiting (deadlock).
-    void BeginBlockingOperation() {
-        if (record_guard) {
-            record_guard->unlock();
-        }
-    }
-    void EndBlockingOperation() {
-        if (record_guard) {
-            record_guard->lock();
-        }
-    }
-
-    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const {
-        for (auto validation_object : object_dispatch) {
-            if (validation_object->container_type == object_type) {
-                return validation_object;
-            }
-        }
-        return nullptr;
-    }
+    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
 
     template <typename ValidationObjectType>
     ValidationObjectType* GetValidationObject() const;
+    // Unwrap a handle.
+    template <typename HandleType>
+    HandleType Unwrap(HandleType wrapped_handle) {
+        if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
+        auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
+        if (iter == unique_id_mapping.end()) return (HandleType)0;
+        return (HandleType)iter->second;
+    }
 
+    // Wrap a newly created handle with a new unique ID, and return the new ID.
+    template <typename HandleType>
+    HandleType WrapNew(HandleType new_created_handle) {
+        if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
+        auto unique_id = global_unique_id++;
+        unique_id = HashedUint64::hash(unique_id);
+        assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
+        unique_id_mapping.insert_or_assign(unique_id, CastToUint64(new_created_handle));
+        return (HandleType)unique_id;
+    }
+
+    // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
+    // They live with the PhyiscalDevice and apps never created/destroy them.
+    // Apps needs will query for them and the first time we see it we wrap it
+    VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle) {
+        // See if this display is already known
+        auto it = display_id_reverse_mapping.find(handle);
+        if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+
+        // First time see this VkDisplayKHR, so wrap
+        const uint64_t unique_id = (uint64_t)WrapNew(handle);
+        display_id_reverse_mapping.insert_or_assign(handle, unique_id);
+        return (VkDisplayKHR)unique_id;
+    }
     // Debug Logging Helpers
     bool DECORATE_PRINTF(5, 6)
         LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
@@ -2433,56 +2419,150 @@ class ValidationObject {
         LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
                  failure_location.data(), entrypoint.data(), err_string.data());
     }
+};
 
-    // Handle Wrapping Data
-    // Reverse map display handles
-    vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
-    // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-    vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
-    struct SubpassesUsageStates {
-        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
-        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+// Layer chassis validation object base class definition
+class ValidationObject {
+  public:
+    APIVersion api_version;
+    DebugReport* debug_report = nullptr;
+    template <typename T>
+    std::string FormatHandle(T&& h) const {
+        return debug_report->FormatHandle(std::forward<T>(h));
+    }
+    DispatchObject* dispatch_{};
+
+    VkLayerInstanceDispatchTable instance_dispatch_table;
+    VkLayerDispatchTable device_dispatch_table;
+
+    InstanceExtensions instance_extensions;
+    DeviceExtensions device_extensions = {};
+    GlobalSettings global_settings = {};
+    GpuAVSettings gpuav_settings = {};
+    SyncValSettings syncval_settings = {};
+
+    CHECK_DISABLED disabled = {};
+    CHECK_ENABLED enabled = {};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    bool is_device_lost = false;
+
+    LayerObjectTypeId container_type;
+
+    std::string layer_name = "CHASSIS";
+
+    ValidationObject() {}
+    virtual ~ValidationObject() {}
+
+    mutable std::shared_mutex validation_object_mutex;
+    virtual ReadLockGuard ReadLock() const { return ReadLockGuard(validation_object_mutex); }
+    virtual WriteLockGuard WriteLock() { return WriteLockGuard(validation_object_mutex); }
+
+    // If the Record phase calls a function that blocks, we might need to release
+    // the lock that protects Record itself in order to avoid mutual waiting.
+    static thread_local WriteLockGuard* record_guard;
+
+    // Should be used instead of WriteLock() if the Record phase wants to release
+    // its lock during the blocking operation.
+    struct BlockingOperationGuard {
+        WriteLockGuard lock;
+        ValidationObject* validation_object = nullptr;
+
+        BlockingOperationGuard(ValidationObject* validation_object) : validation_object(validation_object) {
+            // This assert detects recursive calls. It is here mostly for documentation purposes
+            // because WriteLock() also triggers errors during recursion.
+            // Recursion is not allowed since record_guard is a thread-local variable and it can
+            // reference only one frame of the callstack.
+            assert(validation_object->record_guard == nullptr);
+
+            lock = validation_object->WriteLock();
+
+            // Initialize record_guard only when Record is actually protected by the
+            // mutex. It's not the case when fine grained locking is enabled.
+            record_guard = lock.owns_lock() ? &lock : nullptr;
+        }
+
+        ~BlockingOperationGuard() { validation_object->record_guard = nullptr; }
     };
-    // Uses unwrapped handles
-    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
-    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-    vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
-    // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-    vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
-    // Unwrap a handle.
-    template <typename HandleType>
-    HandleType Unwrap(HandleType wrapped_handle) {
-        if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
-        auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
-        if (iter == unique_id_mapping.end()) return (HandleType)0;
-        return (HandleType)iter->second;
+    // The following Begin/End methods should be called during the Record phase
+    // around blocking operation that causes mutual waiting (deadlock).
+    void BeginBlockingOperation() {
+        if (record_guard) {
+            record_guard->unlock();
+        }
+    }
+    void EndBlockingOperation() {
+        if (record_guard) {
+            record_guard->lock();
+        }
     }
 
-    // Wrap a newly created handle with a new unique ID, and return the new ID.
-    template <typename HandleType>
-    HandleType WrapNew(HandleType new_created_handle) {
-        if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
-        auto unique_id = global_unique_id++;
-        unique_id = HashedUint64::hash(unique_id);
-        assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
-        unique_id_mapping.insert_or_assign(unique_id, CastToUint64(new_created_handle));
-        return (HandleType)unique_id;
+    // Debug Logging Helpers
+    bool DECORATE_PRINTF(5, 6)
+        LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kErrorBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
     }
 
-    // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
-    // They live with the PhyiscalDevice and apps never created/destroy them.
-    // Apps needs will query for them and the first time we see it we wrap it
-    VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle) {
-        // See if this display is already known
-        auto it = display_id_reverse_mapping.find(handle);
-        if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+    // Currently works like LogWarning, but allows developer to better categorize the warning
+    bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                 const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
 
-        // First time see this VkDisplayKHR, so wrap
-        const uint64_t unique_id = (uint64_t)WrapNew(handle);
-        display_id_reverse_mapping.insert_or_assign(handle, unique_id);
-        return (VkDisplayKHR)unique_id;
+    bool DECORATE_PRINTF(5, 6)
+        LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                     const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6)
+        LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kInformationBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6)
+        LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kVerboseBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, const Location& loc,
+                          std::string_view entrypoint, VkResult err) const {
+        const std::string_view err_string = string_VkResult(err);
+        std::string vuid = "INTERNAL-ERROR-";
+        vuid += entrypoint;
+        LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                 failure_location.data(), entrypoint.data(), err_string.data());
     }
     // We make many internal dispatch calls to extended query functions which can depend on the API version
     void DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) const;
@@ -4726,5 +4806,5 @@ class ValidationObject {
         }
 };
 // clang-format on
-extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
+extern small_unordered_map<void*, DispatchObject*, 2> layer_data_map;
 // NOLINTEND

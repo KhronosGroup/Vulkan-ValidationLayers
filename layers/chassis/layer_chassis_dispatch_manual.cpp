@@ -150,14 +150,9 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                                                 dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
             }
 
-            auto &graphics_info = pCreateInfos[idx0];
-            auto state_info = dynamic_cast<ValidationStateTracker *>(layer_data);
-            vku::PNextCopyState pnext_copy_state = {
-                [state_info, &graphics_info](VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) -> bool {
-                    return vvl::Pipeline::PnextRenderingInfoCustomCopy(state_info, graphics_info, safe_struct, in_struct);
-                }};
-            local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment,
-                                                &pnext_copy_state);
+            // TODO: this used to use vvl::Pipeline::PnextRenderingInfoCustomCopy() but it was effectively a no-op
+            // since the layer_data returned by GetLayerDataPtr() above was NEVER an instance of ValidationStateTracker
+            local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment);
 
             if (pCreateInfos[idx0].basePipelineHandle) {
                 local_pCreateInfos[idx0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[idx0].basePipelineHandle);
@@ -236,7 +231,7 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
 }
 
 template <typename T>
-static void UpdateCreateRenderPassState(ValidationObject *layer_data, const T *pCreateInfo, VkRenderPass renderPass) {
+static void UpdateCreateRenderPassState(DispatchObject *layer_data, const T *pCreateInfo, VkRenderPass renderPass) {
     auto &renderpass_state = layer_data->renderpasses_states[renderPass];
 
     for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
@@ -255,8 +250,7 @@ static void UpdateCreateRenderPassState(ValidationObject *layer_data, const T *p
 }
 
 template <>
-void UpdateCreateRenderPassState(ValidationObject *layer_data, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                 VkRenderPass renderPass) {
+void UpdateCreateRenderPassState(DispatchObject *layer_data, const VkRenderPassCreateInfo2 *pCreateInfo, VkRenderPass renderPass) {
     auto &renderpass_state = layer_data->renderpasses_states[renderPass];
 
     for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex) {
@@ -648,7 +642,7 @@ void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpd
     layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
 }
 
-void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t descriptorUpdateTemplate, const void *pData) {
+void *BuildUnwrappedUpdateTemplateBuffer(DispatchObject *layer_data, uint64_t descriptorUpdateTemplate, const void *pData) {
     auto const template_map_entry = layer_data->desc_template_createinfo_map.find(descriptorUpdateTemplate);
     auto const &create_info = template_map_entry->second->create_info;
     size_t allocation_size = 0;

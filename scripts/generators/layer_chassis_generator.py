@@ -117,7 +117,7 @@ class APISpecific:
             case 'vulkan':
                 return '''
 // clang-format off
-void ValidationObject::InitObjectDispatchVectors() {
+void DispatchObject::InitObjectDispatchVectors() {
 
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
@@ -162,9 +162,6 @@ void ValidationObject::InitObjectDispatchVectors() {
                 break;
             case LayerObjectTypeSyncValidation:
                 if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeInstance:
-            case LayerObjectTypeDevice:
                 break;
             default:
                 /* Chassis codegen needs to be updated for unknown validation object type */
@@ -366,8 +363,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
         out.append('''
             // Layer object type identifiers
             enum LayerObjectTypeId {
-                LayerObjectTypeInstance,             // Container for an instance dispatch object
-                LayerObjectTypeDevice,               // Container for a device dispatch object
                 LayerObjectTypeThreading,            // Instance or device threading layer object
                 LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
                 LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object
@@ -401,51 +396,196 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #else
             #define DECORATE_PRINTF(_fmt_num, _first_param_num)
             #endif
-            // Layer chassis validation object base class definition
-            class ValidationObject {
-            public:
+
+            class ValidationObject;
+
+            class DispatchObject {
+              public:
                 APIVersion api_version;
                 DebugReport* debug_report = nullptr;
-                template <typename T>
-                std::string FormatHandle(T&& h) const {
-                    return debug_report->FormatHandle(std::forward<T>(h));
-                }
-
-                std::vector<std::vector<ValidationObject*>> intercept_vectors;
+                VkInstance instance = VK_NULL_HANDLE;
+                VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+                VkDevice device = VK_NULL_HANDLE;
 
                 VkLayerInstanceDispatchTable instance_dispatch_table;
                 VkLayerDispatchTable device_dispatch_table;
 
                 InstanceExtensions instance_extensions;
                 DeviceExtensions device_extensions = {};
-                CHECK_DISABLED disabled = {};
-                CHECK_ENABLED enabled = {};
                 GlobalSettings global_settings = {};
                 GpuAVSettings gpuav_settings = {};
                 SyncValSettings syncval_settings = {};
+
+                CHECK_DISABLED disabled = {};
+                CHECK_ENABLED enabled = {};
+
+                mutable std::vector<std::vector<ValidationObject*>> intercept_vectors;
+                mutable std::vector<ValidationObject*> object_dispatch;
+                mutable std::vector<ValidationObject*> aborted_object_dispatch;
+
+                // Handle Wrapping Data
+                // Reverse map display handles
+                vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
+                // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+                vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
+                struct SubpassesUsageStates {
+                    vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+                    vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+                };
+                // Uses unwrapped handles
+                vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+                // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+                // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+                vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+                // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+                vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
+
+                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
+                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
+        deferred_operation_post_check;
+                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
+
+                void InitObjectDispatchVectors();
+                void ReleaseDeviceValidationObject(LayerObjectTypeId type_id) const;
+                void ReleaseAllValidationObjects() const;
+
+                ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
+
+                template <typename ValidationObjectType>
+                ValidationObjectType* GetValidationObject() const;
+                // Unwrap a handle.
+                template <typename HandleType>
+                HandleType Unwrap(HandleType wrapped_handle) {
+                    if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
+                    auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
+                    if (iter == unique_id_mapping.end()) return (HandleType)0;
+                    return (HandleType)iter->second;
+                }
+
+                // Wrap a newly created handle with a new unique ID, and return the new ID.
+                template <typename HandleType>
+                HandleType WrapNew(HandleType new_created_handle) {
+                    if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
+                    auto unique_id = global_unique_id++;
+                    unique_id = HashedUint64::hash(unique_id);
+                    assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
+                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(new_created_handle));
+                    return (HandleType)unique_id;
+                }
+
+                // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
+                // They live with the PhyiscalDevice and apps never created/destroy them.
+                // Apps needs will query for them and the first time we see it we wrap it
+                VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle) {
+                    // See if this display is already known
+                    auto it = display_id_reverse_mapping.find(handle);
+                    if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+
+                    // First time see this VkDisplayKHR, so wrap
+                    const uint64_t unique_id = (uint64_t)WrapNew(handle);
+                    display_id_reverse_mapping.insert_or_assign(handle, unique_id);
+                    return (VkDisplayKHR)unique_id;
+                }
+                // Debug Logging Helpers
+                bool DECORATE_PRINTF(5, 6)
+                    LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = debug_report->LogMsg(kErrorBit, objlist, loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
+                // Currently works like LogWarning, but allows developer to better categorize the warning
+                bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                 const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
+                bool DECORATE_PRINTF(5, 6)
+                    LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
+                bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                                 const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
+                bool DECORATE_PRINTF(5, 6)
+                    LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = debug_report->LogMsg(kInformationBit, objlist, loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
+                bool DECORATE_PRINTF(5, 6)
+                    LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                    va_list argptr;
+                    va_start(argptr, format);
+                    const bool result = debug_report->LogMsg(kVerboseBit, objlist, loc, vuid_text, format, argptr);
+                    va_end(argptr);
+                    return result;
+                }
+
+                void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, const Location& loc,
+                                      std::string_view entrypoint, VkResult err) const {
+                    const std::string_view err_string = string_VkResult(err);
+                    std::string vuid = "INTERNAL-ERROR-";
+                    vuid += entrypoint;
+                    LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                             failure_location.data(), entrypoint.data(), err_string.data());
+                }
+            };
+
+            // Layer chassis validation object base class definition
+            class ValidationObject {
+              public:
+                APIVersion api_version;
+                DebugReport* debug_report = nullptr;
+                template <typename T>
+                std::string FormatHandle(T&& h) const {
+                    return debug_report->FormatHandle(std::forward<T>(h));
+                }
+                DispatchObject* dispatch_{};
+
+                VkLayerInstanceDispatchTable instance_dispatch_table;
+                VkLayerDispatchTable device_dispatch_table;
+
+                InstanceExtensions instance_extensions;
+                DeviceExtensions device_extensions = {};
+                GlobalSettings global_settings = {};
+                GpuAVSettings gpuav_settings = {};
+                SyncValSettings syncval_settings = {};
+
+                CHECK_DISABLED disabled = {};
+                CHECK_ENABLED enabled = {};
 
                 VkInstance instance = VK_NULL_HANDLE;
                 VkPhysicalDevice physical_device = VK_NULL_HANDLE;
                 VkDevice device = VK_NULL_HANDLE;
                 bool is_device_lost = false;
 
-                std::vector<ValidationObject*> object_dispatch;
-                std::vector<ValidationObject*> aborted_object_dispatch;
                 LayerObjectTypeId container_type;
-                void ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const;
-                void ReleaseAllDispatchObjects() const;
-
-                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
-                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
-                    deferred_operation_post_check;
-                vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
 
                 std::string layer_name = "CHASSIS";
 
-                ValidationObject() {}
+                ValidationObject( ) {}
                 virtual ~ValidationObject() {}
-
-                void InitObjectDispatchVectors();
 
                 mutable std::shared_mutex validation_object_mutex;
                 virtual ReadLockGuard ReadLock() const { return ReadLockGuard(validation_object_mutex); }
@@ -491,18 +631,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     }
                 }
 
-                ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const {
-                    for (auto validation_object : object_dispatch) {
-                        if (validation_object->container_type == object_type) {
-                            return validation_object;
-                        }
-                    }
-                    return nullptr;
-                }
-
-                template <typename ValidationObjectType>
-                ValidationObjectType* GetValidationObject() const;
-
                 // Debug Logging Helpers
                 bool DECORATE_PRINTF(5, 6)
                     LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
@@ -514,7 +642,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
 
                 // Currently works like LogWarning, but allows developer to better categorize the warning
-                bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                             const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
                     const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
@@ -522,7 +651,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                bool DECORATE_PRINTF(5, 6) LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6)
+                    LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
                     const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
@@ -530,7 +660,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                                 const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
                     const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
@@ -538,7 +669,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                bool DECORATE_PRINTF(5, 6) LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6)
+                    LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
                     const bool result = debug_report->LogMsg(kInformationBit, objlist, loc, vuid_text, format, argptr);
@@ -546,7 +678,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                bool DECORATE_PRINTF(5, 6) LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+                bool DECORATE_PRINTF(5, 6)
+                    LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
                     va_list argptr;
                     va_start(argptr, format);
                     const bool result = debug_report->LogMsg(kVerboseBit, objlist, loc, vuid_text, format, argptr);
@@ -554,64 +687,13 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
 
-                void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, const Location& loc, std::string_view entrypoint,
-                                    VkResult err) const {
+                void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, const Location& loc,
+                                      std::string_view entrypoint, VkResult err) const {
                     const std::string_view err_string = string_VkResult(err);
                     std::string vuid = "INTERNAL-ERROR-";
                     vuid += entrypoint;
                     LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
-                            failure_location.data(), entrypoint.data(), err_string.data());
-                }
-
-                // Handle Wrapping Data
-                // Reverse map display handles
-                vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
-                // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-                vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
-                struct SubpassesUsageStates {
-                    vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
-                    vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
-                };
-                // Uses unwrapped handles
-                vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-                // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
-                // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-                vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
-                // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-                vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
-
-                // Unwrap a handle.
-                template <typename HandleType>
-                HandleType Unwrap(HandleType wrapped_handle) {
-                    if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
-                    auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
-                    if (iter == unique_id_mapping.end()) return (HandleType)0;
-                    return (HandleType)iter->second;
-                }
-
-                // Wrap a newly created handle with a new unique ID, and return the new ID.
-                template <typename HandleType>
-                HandleType WrapNew(HandleType new_created_handle) {
-                    if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
-                    auto unique_id = global_unique_id++;
-                    unique_id = HashedUint64::hash(unique_id);
-                    assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
-                    unique_id_mapping.insert_or_assign(unique_id, CastToUint64(new_created_handle));
-                    return (HandleType)unique_id;
-                }
-
-                // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
-                // They live with the PhyiscalDevice and apps never created/destroy them.
-                // Apps needs will query for them and the first time we see it we wrap it
-                VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle) {
-                    // See if this display is already known
-                    auto it = display_id_reverse_mapping.find(handle);
-                    if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
-
-                    // First time see this VkDisplayKHR, so wrap
-                    const uint64_t unique_id = (uint64_t)WrapNew(handle);
-                    display_id_reverse_mapping.insert_or_assign(handle, unique_id);
-                    return (VkDisplayKHR)unique_id;
+                          failure_location.data(), entrypoint.data(), err_string.data());
                 }
             ''')
 
@@ -727,7 +809,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
 // clang-format on
 ''')
 
-        out.append('extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;')
+        out.append('extern small_unordered_map<void*, DispatchObject*, 2> layer_data_map;')
         self.write("".join(out))
 
     def generateSource(self):
@@ -747,7 +829,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             thread_local WriteLockGuard* ValidationObject::record_guard{};
 
-            small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
+            small_unordered_map<void*, DispatchObject*, 2> layer_data_map;
 
             // Global unique object identifier.
             std::atomic<uint64_t> global_unique_id(1ULL);
@@ -808,7 +890,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         out.append('}\n')
 
         out.append('''
-            static void InitDeviceObjectDispatch(ValidationObject *instance_interceptor, ValidationObject *device_interceptor) {
+            static void InitDeviceDispatchObject(DispatchObject *instance_interceptor, DispatchObject *device_interceptor) {
                 auto disables = instance_interceptor->disabled;
                 auto enables = instance_interceptor->enabled;
 
@@ -845,8 +927,17 @@ class LayerChassisOutputGenerator(BaseGenerator):
     return custom_stype_info;
             }
 
+            ValidationObject* DispatchObject::GetValidationObject(LayerObjectTypeId object_type) const {
+                for (auto validation_object : object_dispatch) {
+                    if (validation_object->container_type == object_type) {
+                        return validation_object;
+                    }
+                }
+                return nullptr;
+            }
+
             template <typename ValidationObjectType>
-            ValidationObjectType* ValidationObject::GetValidationObject() const {
+            ValidationObjectType* DispatchObject::GetValidationObject() const {
                 LayerObjectTypeId type_id;
                 if constexpr (std::is_same_v<ValidationObjectType, ThreadSafety>) {
                     type_id = LayerObjectTypeThreading;
@@ -862,23 +953,22 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 return static_cast<ValidationObjectType*>(GetValidationObject(type_id));
             }
 
-            template ThreadSafety* ValidationObject::GetValidationObject<ThreadSafety>() const;
-            template StatelessValidation* ValidationObject::GetValidationObject<StatelessValidation>() const;
-            template ObjectLifetimes* ValidationObject::GetValidationObject<ObjectLifetimes>() const;
-            template CoreChecks* ValidationObject::GetValidationObject<CoreChecks>() const;
+            template ThreadSafety* DispatchObject::GetValidationObject<ThreadSafety>() const;
+            template StatelessValidation* DispatchObject::GetValidationObject<StatelessValidation>() const;
+            template ObjectLifetimes* DispatchObject::GetValidationObject<ObjectLifetimes>() const;
+            template CoreChecks* DispatchObject::GetValidationObject<CoreChecks>() const;
 
-            // Takes the layer and removes it from the chassis so it will not be called anymore
+            // Takes the validation type and removes it from the chassis so it will not be called anymore
             // Designed for things like GPU-AV to remove itself while keeping everything else alive
-            void ValidationObject::ReleaseDeviceDispatchObject(LayerObjectTypeId type_id) const {
-                auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-                for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
+            void DispatchObject::ReleaseDeviceValidationObject(LayerObjectTypeId type_id) const {
+                for (auto object_it = object_dispatch.begin(); object_it != object_dispatch.end(); object_it++) {
                     if ((*object_it)->container_type == type_id) {
                         ValidationObject* object = *object_it;
 
-                        layer_data->object_dispatch.erase(object_it);
+                        object_dispatch.erase(object_it);
 
-                        for (auto intercept_vector_it = layer_data->intercept_vectors.begin();
-                            intercept_vector_it != layer_data->intercept_vectors.end(); intercept_vector_it++) {
+                        for (auto intercept_vector_it = intercept_vectors.begin();
+                            intercept_vector_it != intercept_vectors.end(); intercept_vector_it++) {
                             for (auto intercept_object_it = intercept_vector_it->begin(); intercept_object_it != intercept_vector_it->end();
                                 intercept_object_it++) {
                                 if (object == *intercept_object_it) {
@@ -890,7 +980,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
                         // We can't destroy the object itself now as it might be unsafe (things are still being used)
                         // If the rare case happens we need to release, we will cleanup later when we normally would have cleaned this up
-                        layer_data->aborted_object_dispatch.push_back(object);
+                        aborted_object_dispatch.push_back(object);
                         break;
                     }
                 }
@@ -898,21 +988,18 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             // Incase we need to teardown things early, we want to do it safely, so we will keep the entrypoints into layer, but just remove all
             // the internal chassis hooks so that any call becomes a no-op (but still dispatches into the driver)
-            void ValidationObject::ReleaseAllDispatchObjects() const {
-                assert(container_type == LayerObjectTypeInstance || container_type == LayerObjectTypeDevice);
-                auto dispatch_key = container_type == LayerObjectTypeInstance ? GetDispatchKey(instance) : GetDispatchKey(device);
-                auto layer_data = GetLayerDataPtr(dispatch_key, layer_data_map);
+            void DispatchObject::ReleaseAllValidationObjects() const {
 
                 // Some chassis loops use the intercept_vectors instead of looking up the object
-                for (auto& intercept_vector : layer_data->intercept_vectors) {
+                for (auto& intercept_vector : intercept_vectors) {
                     intercept_vector.clear();
                 }
 
-                for (auto object_it = layer_data->object_dispatch.begin(); object_it != layer_data->object_dispatch.end(); object_it++) {
+                for (auto object_it = object_dispatch.begin(); object_it != object_dispatch.end(); object_it++) {
                     ValidationObject* object = *object_it;
-                    layer_data->aborted_object_dispatch.push_back(object);
+                    aborted_object_dispatch.push_back(object);
                 }
-                layer_data->object_dispatch.clear();
+                object_dispatch.clear();
             }
 
             namespace vulkan_layer_chassis {
@@ -938,7 +1025,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             // Manually written functions
 
             // Check enabled instance extensions against supported instance extension whitelist
-            static void InstanceExtensionWhitelist(ValidationObject* layer_data, const VkInstanceCreateInfo* pCreateInfo, VkInstance instance) {
+            static void InstanceExtensionWhitelist(DispatchObject* layer_data, const VkInstanceCreateInfo* pCreateInfo, VkInstance instance) {
                 for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                     // Check for recognized instance extensions
                     vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
@@ -953,7 +1040,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             }
 
             // Check enabled device extensions against supported device extension whitelist
-            static void DeviceExtensionWhitelist(ValidationObject* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
+            static void DeviceExtensionWhitelist(DispatchObject* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
                 for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
                     // Check for recognized device extensions
                     vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
@@ -967,7 +1054,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 }
             }
 
-            void OutputLayerStatusInfo(ValidationObject* context) {
+            void OutputLayerStatusInfo(DispatchObject* context) {
                 std::string list_of_enables;
                 std::string list_of_disables;
                 for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
@@ -1091,8 +1178,25 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
             }
 
+            // This is here as some applications will call exit() which results in all our static allocations (like std::map) having their
+            // destructor called and destroyed from under us. It is not possible to detect as sometimes (when using things like robin hood) the
+            // size()/empty() will give false positive that memory is there there. We add this global hook that will go through and remove all
+            // the function calls such that things can safely run in the case the applicaiton still wants to make Vulkan calls in their atexit()
+            // handler
+            void ApplicationAtExit() {
+                // On a "normal" application, this function is called after vkDestroyInstance and layer_data_map is empty
+                //
+                // If there are multiple devices we still want to delete them all as exit() is a global scope call
+                for (auto object : layer_data_map) {
+                    object.second->ReleaseAllValidationObjects();
+                }
+            }
+
             VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                         VkInstance* pInstance) {
+
+                atexit(ApplicationAtExit);
+
                 VVL_ZoneScoped;
                 VkLayerInstanceCreateInfo* chain_info = GetChainInfo(pCreateInfo, VK_LAYER_LINK_INFO);
 
@@ -1129,20 +1233,34 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     wrap_handles = false;
                 }
 
+                DispatchObject* framework = new DispatchObject();
+
+                framework->api_version = api_version;
+                framework->object_dispatch = local_object_dispatch;
+                framework->disabled = local_disables;
+                framework->enabled = local_enables;
+                framework->global_settings = local_global_settings;
+                framework->gpuav_settings = local_gpuav_settings;
+                framework->syncval_settings = local_syncval_settings;
+                framework->debug_report = debug_report;
+                framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+
                 // Initialize the validation objects
                 for (auto* intercept : local_object_dispatch) {
                     intercept->api_version = api_version;
                     intercept->debug_report = debug_report;
+                    intercept->dispatch_ = framework;
                 }
 
                 // Define logic to cleanup everything in case of an error
-                auto cleanup_allocations = [debug_report, &local_object_dispatch]() {
+                auto cleanup_allocations = [debug_report, framework, &local_object_dispatch]() {
                     DeactivateInstanceDebugCallbacks(debug_report);
                     vku::FreePnextChain(debug_report->instance_pnext_chain);
                     LayerDebugUtilsDestroyInstance(debug_report);
                     for (ValidationObject* object : local_object_dispatch) {
                         delete object;
                     }
+                    delete framework;
                 };
 
                 // Init dispatch array and call registration functions
@@ -1169,26 +1287,15 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     return result;
                 }
                 record_obj.result = result;
-                auto framework = GetLayerDataPtr(GetDispatchKey(*pInstance), layer_data_map);
-
-                framework->object_dispatch = local_object_dispatch;
-                framework->container_type = LayerObjectTypeInstance;
-                framework->disabled = local_disables;
-                framework->enabled = local_enables;
-                framework->global_settings = local_global_settings;
-                framework->gpuav_settings = local_gpuav_settings;
-                framework->syncval_settings = local_syncval_settings;
-
                 framework->instance = *pInstance;
+
                 layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
-                framework->debug_report = debug_report;
-                framework->api_version = api_version;
-                framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
                 // We need to call this to properly check which device extensions have been promoted when validating query functions
                 // that take as input a physical device, which can be called before a logical device has been created.
                 framework->device_extensions.InitFromDeviceCreateInfo(&framework->instance_extensions, specified_version);
 
+                layer_data_map[GetDispatchKey(*pInstance)] = framework;
                 OutputLayerStatusInfo(framework);
 
                 for (auto* intercept : framework->object_dispatch) {
@@ -1199,6 +1306,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     intercept->gpuav_settings = framework->gpuav_settings;
                     intercept->syncval_settings = framework->syncval_settings;
                     intercept->instance = *pInstance;
+                    intercept->debug_report = debug_report;
+                    intercept->api_version = api_version;
                 }
 
                 for (ValidationObject* intercept : framework->object_dispatch) {
@@ -1287,10 +1396,21 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
                 auto effective_api_version = std::min(APIVersion(device_properties.apiVersion), instance_interceptor->api_version);
 
-                DeviceExtensions device_extensions = {};
-                device_extensions.InitFromDeviceCreateInfo(&instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
-                for (auto item : instance_interceptor->object_dispatch) {
-                    item->device_extensions = device_extensions;
+
+                DispatchObject* device_interceptor = new DispatchObject();
+
+                device_interceptor->device_extensions.InitFromDeviceCreateInfo(&instance_interceptor->instance_extensions,
+                                                                               effective_api_version, pCreateInfo);
+                device_interceptor->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
+                device_interceptor->instance_extensions = instance_interceptor->instance_extensions;
+                device_interceptor->physical_device = gpu;
+                device_interceptor->instance = instance_interceptor->instance;
+                device_interceptor->debug_report = instance_interceptor->debug_report;
+
+                // This is odd but we need to set the current device_extensions in all of the
+                // instance validation objects so that they are available for validating CreateDevice
+                for (auto* object : instance_interceptor->object_dispatch) {
+                    object->device_extensions = device_interceptor->device_extensions;
                 }
 
                 // Make copy to modify as some ValidationObjects will want to add extensions/features on
@@ -1301,7 +1421,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 for (const ValidationObject* intercept : instance_interceptor->object_dispatch) {
                     auto lock = intercept->ReadLock();
                     skip |= intercept->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, error_obj);
-                    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+                    if (skip) {
+                        delete device_interceptor;
+                        return VK_ERROR_VALIDATION_FAILED_EXT;
+                    }
                 }
 
                 RecordObject record_obj(vvl::Func::vkCreateDevice);
@@ -1312,31 +1435,26 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
                 VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
                 if (result != VK_SUCCESS) {
+                    delete device_interceptor;
                     return result;
                 }
                 record_obj.result = result;
-
-                auto device_interceptor = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
-                device_interceptor->container_type = LayerObjectTypeDevice;
+                device_interceptor->device = *pDevice;
 
                 // Save local info in device object
                 device_interceptor->api_version = device_interceptor->device_extensions.InitFromDeviceCreateInfo(
                     &instance_interceptor->instance_extensions, effective_api_version, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
-                device_interceptor->device_extensions = device_extensions;
 
                 layer_init_device_dispatch_table(*pDevice, &device_interceptor->device_dispatch_table, fpGetDeviceProcAddr);
-
-                device_interceptor->device = *pDevice;
-                device_interceptor->physical_device = gpu;
-                device_interceptor->instance = instance_interceptor->instance;
-                device_interceptor->debug_report = instance_interceptor->debug_report;
+                layer_data_map[GetDispatchKey(*pDevice)] = device_interceptor;
 
                 instance_interceptor->debug_report->device_created++;
 
-                InitDeviceObjectDispatch(instance_interceptor, device_interceptor);
+                InitDeviceDispatchObject(instance_interceptor, device_interceptor);
 
                 // Initialize all of the objects with the appropriate data
                 for (auto* object : device_interceptor->object_dispatch) {
+                    object->dispatch_ = device_interceptor;
                     object->device = device_interceptor->device;
                     object->physical_device = device_interceptor->physical_device;
                     object->instance = instance_interceptor->instance;
