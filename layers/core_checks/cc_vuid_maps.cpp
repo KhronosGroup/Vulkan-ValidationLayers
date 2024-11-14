@@ -17,6 +17,7 @@
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
 #include "utils/vk_layer_utils.h"
+#include "state_tracker/pipeline_state.h"
 #include <map>
 
 namespace vvl {
@@ -615,6 +616,40 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
         return unhandled;
     }
     return result;
+}
+
+const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, PipelineInterfaceVariableError error) {
+    VkStructureType sType = pipeline.GetCreateInfoSType();
+    switch (error) {
+        case PipelineInterfaceVariableError::ShaderStage_07988:
+            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988"
+                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07988"
+                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988"
+                       : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
+        case PipelineInterfaceVariableError::Mutable_07990:
+            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990"
+                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07990"
+                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
+                       : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
+        case PipelineInterfaceVariableError::DescriptorCount_07991:
+            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
+                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07991"
+                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
+                       : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
+        case PipelineInterfaceVariableError::Inline:
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7020
+            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
+                       ? "UNASSIGNED-VkGraphicsPipelineCreateInfo-layout-inline"
+                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
+                       ? "UNASSIGNED-VkComputePipelineCreateInfo-layout-inline"
+                   : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
+                       ? "UNASSIGNED-VkRayTracingPipelineCreateInfoKHR-layout-inline"
+                       : "UNASSIGNED-VkRayTracingPipelineCreateInfoNV-layout-inline";
+    }
+    return "UNASSIGNED-CoreChecks-unhandled-pipeline-interface-variable";
 }
 
 }  // namespace vvl
