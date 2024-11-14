@@ -21,6 +21,23 @@
 #include "generated/layer_chassis_dispatch.h"
 #include "stateless/sl_vuid_maps.h"
 
+bool StatelessValidation::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkShaderModule *pShaderModule,
+                                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (pCreateInfo) {
+        constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+                                                VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
+
+        skip |=
+            ValidateStructPnext(error_obj.location.dot(Field::pCreateInfo), pCreateInfo->pNext, allowed_structs.size(),
+                                allowed_structs.data(), GeneratedVulkanHeaderVersion, "VUID-vkCreateShaderModule-pCreateInfo-06904",
+                                "VUID-vkCreateShaderModule-pCreateInfo-06904", VK_NULL_HANDLE, true);
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkPipelineLayout *pPipelineLayout,

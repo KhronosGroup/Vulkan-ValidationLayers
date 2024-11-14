@@ -2530,3 +2530,14 @@ TEST_F(NegativeShaderSpirv, ScalarBlockLayoutShaderCache) {
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, VkShaderModuleCreateInfoPNext) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCreateShaderModule-pCreateInfo-06904");
+    VkShaderObj vs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
+                   &pd_features2);
+    m_errorMonitor->VerifyFound();
+}
