@@ -20,6 +20,7 @@
 struct Location;
 
 namespace vvl {
+class Pipeline;
 
 enum class CopyError {
     TexelBlockSize_07975,
@@ -98,7 +99,14 @@ enum class SubresourceRangeError {
     BaseLayer_01488,
     LayerCount_01725,
 };
-
 const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error);
+
+enum class PipelineInterfaceVariableError {
+    ShaderStage_07988,
+    Mutable_07990,
+    DescriptorCount_07991,
+    Inline,
+};
+const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, PipelineInterfaceVariableError error);
 
 }  // namespace vvl

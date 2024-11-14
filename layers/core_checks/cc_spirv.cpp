@@ -26,6 +26,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
+#include "core_checks/cc_vuid_maps.h"
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/shader_stage_state.h"
@@ -1921,73 +1922,36 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
                                                          const Location &loc) const {
     bool skip = false;
 
-    auto get_vuid_07988 = [&pipeline]() {
-        auto sType = pipeline.GetCreateInfoSType();
-        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07988"
-               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07988"
-               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                   ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988"
-                   : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07988";
-    };
-    auto get_vuid_07990 = [&pipeline]() {
-        auto sType = pipeline.GetCreateInfoSType();
-        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07990"
-               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07990"
-               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                   ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07990"
-                   : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07990";
-    };
-    auto get_vuid_07991 = [&pipeline]() {
-        auto sType = pipeline.GetCreateInfoSType();
-        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-layout-07991"
-               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-layout-07991"
-               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                   ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
-                   : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
-    };
-
-    auto get_vuid_inline = [&pipeline]() {
-        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7020
-        auto sType = pipeline.GetCreateInfoSType();
-        return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "UNASSIGNED-VkGraphicsPipelineCreateInfo-layout-inline"
-               : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "UNASSIGNED-VkComputePipelineCreateInfo-layout-inline"
-               : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                   ? "UNASSIGNED-VkRayTracingPipelineCreateInfoKHR-layout-inline"
-                   : "UNASSIGNED-VkRayTracingPipelineCreateInfoNV-layout-inline";
-    };
-
+    const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
     const auto binding =
         GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
 
     if (!binding) {
-        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-        skip |= LogError(get_vuid_07988(), objlist, loc,
-                         "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the pipeline layout.",
+        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::ShaderStage_07988),
+                         objlist, loc, "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in the pipeline layout.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_DescriptorTypeSet(descriptor_type_set).c_str());
     } else if (~binding->stageFlags & variable.stage) {
-        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
         skip |=
-            LogError(get_vuid_07988(), objlist, loc,
-                     "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
+            LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::ShaderStage_07988), objlist,
+                     loc, "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                      string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
     } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-        skip |= LogError(get_vuid_07990(), objlist, loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
+        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::Mutable_07990), objlist,
+                         loc, "SPIR-V (%s) uses descriptor %s of type %s but expected %s.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
-        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
         skip |=
-            LogError(get_vuid_inline(), objlist, loc,
+            LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::Inline), objlist, loc,
                      "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
 
     } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
-        const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-        skip |= LogError(get_vuid_07991(), objlist, loc,
+        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::DescriptorCount_07991),
+                         objlist, loc,
                          "SPIR-V (%s) uses descriptor %s with %" PRIu32 " descriptors, but requires at least %" PRIu32 ".",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          binding->descriptorCount, variable.array_length);
