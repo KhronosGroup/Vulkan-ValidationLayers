@@ -176,8 +176,8 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
 
             extern bool wrap_handles;
 
-            class ValidationObject;
-            void UnwrapPnextChainHandles(ValidationObject *layer_data, const void *pNext);
+            class DispatchObject;
+            void UnwrapPnextChainHandles(DispatchObject *layer_data, const void *pNext);
 
             ''')
         guard_helper = PlatformGuardHelper()
@@ -213,7 +213,7 @@ class LayerChassisDispatchOutputGenerator(BaseGenerator):
             #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
             // Unique Objects pNext extension handling function
-            void UnwrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
+            void UnwrapPnextChainHandles(DispatchObject *layer_data, const void *pNext) {
                 void *cur_pnext = const_cast<void *>(pNext);
                 while (cur_pnext != nullptr) {
                     VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);

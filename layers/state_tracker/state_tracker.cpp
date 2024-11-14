@@ -692,7 +692,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (VK_SUCCESS != record_obj.result) return;
 
     // The current object represents the VkInstance, look up / create the object for the device.
-    ValidationObject *device_object = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
+    DispatchObject *device_object = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     ValidationObject *validation_data = device_object->GetValidationObject(this->container_type);
     ValidationStateTracker *device_state = static_cast<ValidationStateTracker *>(validation_data);
 
@@ -3952,32 +3952,12 @@ std::shared_ptr<vvl::PhysicalDevice> ValidationStateTracker::CreatePhysicalDevic
     return std::make_shared<vvl::PhysicalDevice>(handle);
 }
 
-// This is here as some applications will call exit() which results in all our static allocations (like std::map) having their
-// destructor called and destroyed from under us. It is not possible to detect as sometimes (when using things like robin hood) the
-// size()/empty() will give false positive that memory is there there. We add this global hook that will go through and remove all
-// the function calls such that things can safely run in the case the applicaiton still wants to make Vulkan calls in their atexit()
-// handler
-void ApplicationAtExit() {
-    // On a "normal" application, this function is called after vkDestroyInstance and layer_data_map is empty
-    //
-    // If there are multiple devices we still want to delete them all as exit() is a global scope call
-    for (auto object : layer_data_map) {
-        // Should only be a instance and device object, but being safe.
-        // Need to clean up both the instance and device function hooks
-        if (object.second->container_type == LayerObjectTypeInstance || object.second->container_type == LayerObjectTypeDevice) {
-            object.second->ReleaseAllDispatchObjects();
-        }
-    }
-}
-
 void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
                                                           const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
-
-    atexit(ApplicationAtExit);
 
     instance_state = this;
     uint32_t count = 0;

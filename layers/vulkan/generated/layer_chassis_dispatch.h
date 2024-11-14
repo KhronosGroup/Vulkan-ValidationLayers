@@ -27,8 +27,8 @@
 
 extern bool wrap_handles;
 
-class ValidationObject;
-void UnwrapPnextChainHandles(ValidationObject* layer_data, const void* pNext);
+class DispatchObject;
+void UnwrapPnextChainHandles(DispatchObject* layer_data, const void* pNext);
 
 VkResult DispatchCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                 VkInstance* pInstance);
