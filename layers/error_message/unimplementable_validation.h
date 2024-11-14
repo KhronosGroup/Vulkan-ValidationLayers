@@ -42,6 +42,14 @@ const char* unimplementable_validation[] = {
     "VUID-VkShaderModuleCreateInfo-pCode-08736", "VUID-VkShaderCreateInfoEXT-pCode-08736",
     "VUID-VkShaderModuleCreateInfo-pCode-08738", "VUID-VkShaderCreateInfoEXT-pCode-08738",
 
+    // We can't detect what user does in their callback
+    "VUID-PFN_vkDebugUtilsMessengerCallbackEXT-None-04769",
+    "VUID-VkDeviceMemoryReportCallbackDataEXT-pNext-pNext",
+    "VUID-VkDeviceMemoryReportCallbackDataEXT-sType-sType",
+
+    // We are not going to package glslang inside the VVL layer just to validate VK_NV_glsl_shader
+    "VUID-VkShaderModuleCreateInfo-pCode-01379",
+
     // These are checked already in VUID-vkGetPrivateData-objectType-04018 and VUID-vkSetPrivateData-objectHandle-04016
     "VUID-vkGetPrivateData-device-parameter",
     "VUID-vkSetPrivateData-device-parameter",
