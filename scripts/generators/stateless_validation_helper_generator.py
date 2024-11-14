@@ -938,11 +938,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             memberDisplayNamePrefix = f'{valueDisplayName}->'
                         # Expand the struct validation lines
                         expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, expr)
+                        # If only 4 lines and no "skip" then this is an empty check
+                        hasChecks = len(expr) > 4 or "skip" in expr[3]
                         if lengthMember:
                             expr.append('}\n')
                         expr.append('}\n')
-                        usedLines.append(expr)
 
+                        if hasChecks:
+                            usedLines.append(expr)
                     is_const_str = 'true' if member.const else 'false'
                     isPhysDevice_str = 'physicalDevice' if isPhysDevice else 'VK_NULL_HANDLE'
                     for setter, _, elem in multi_string_iter(usedLines):
