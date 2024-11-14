@@ -188,7 +188,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetPhysicalDeviceSurfaceCapabilities2KHR',
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceSurfacePresentModes2EXT',
-            'vkExportMetalObjectsEXT',
             'vkCmdSetDiscardRectangleEnableEXT',
             'vkCmdSetDiscardRectangleModeEXT',
             'vkCmdSetExclusiveScissorEnableNV',
@@ -912,8 +911,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {extStructCount}, {extStructData}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, valueRequired, lenValueRequired, lenPtrRequired, funcName, structTypeName)
+
+                    # Feature structs are large and just wasting time checking booleans that are almost impossible to be invalid
+                    featureStruct = member.type in ['VkPhysicalDeviceFeatures', 'VkPhysicalDeviceFeatures2']
                     # If this is a pointer to a struct (input), see if it contains members that need to be checked
-                    if member.type in self.validatedStructs and (member.const or self.vk.structs[member.type].returnedOnly):
+                    if member.type in self.validatedStructs and (member.const or self.vk.structs[member.type].returnedOnly or member.pointer) and not featureStruct:
                         # Process struct pointer/array validation code, performing name substitution if required
                         expr = []
                         expr.append(f'if ({valuePrefix}{member.name} != nullptr)\n')
@@ -936,16 +938,20 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             expr.append(f'[[maybe_unused]] const Location {newErrorLoc} = {errorLoc}.dot(Field::{member.name});')
                             memberNamePrefix = f'{valuePrefix}{member.name}->'
                             memberDisplayNamePrefix = f'{valueDisplayName}->'
+
                         # Expand the struct validation lines
                         expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, expr)
                         # If only 4 lines and no "skip" then this is an empty check
-                        hasChecks = len(expr) > 4 or "skip" in expr[3]
+                        hasChecks = len(expr) > 4 or 'skip' in expr[3]
+                        hasChecks = hasChecks if member.type != 'VkRect2D' else False # exception that doesn't have check actually
+
                         if lengthMember:
                             expr.append('}\n')
                         expr.append('}\n')
 
                         if hasChecks:
                             usedLines.append(expr)
+
                     is_const_str = 'true' if member.const else 'false'
                     isPhysDevice_str = 'physicalDevice' if isPhysDevice else 'VK_NULL_HANDLE'
                     for setter, _, elem in multi_string_iter(usedLines):

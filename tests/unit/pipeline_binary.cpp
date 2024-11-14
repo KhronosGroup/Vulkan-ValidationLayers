@@ -747,3 +747,33 @@ TEST_F(NegativePipelineBinary, CreateCacheControl) {
     vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativePipelineBinary, InvalidPNext) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_PIPELINE_BINARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelineBinaries);
+    RETURN_IF_SKIP(Init());
+
+    VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+
+    VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
+    compute_create_info.stage = cs.GetStageCreateInfo();
+    compute_create_info.layout = pipeline_layout.handle();
+
+    VkPipelineBinaryInfoKHR pipeline_binary_info = vku::InitStructHelper();
+    pipeline_binary_info.binaryCount = 0;
+
+    compute_create_info.pNext = &pipeline_binary_info;
+
+    VkPipelineCreateInfoKHR pipeline_create_info = vku::InitStructHelper(&compute_create_info);
+
+    VkPipelineBinaryKeyKHR pipeline_key = vku::InitStructHelper(&pipeline_create_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineBinaryKeyKHR-pNext-pNext");
+    vk::GetPipelineKeyKHR(device(), &pipeline_create_info, &pipeline_key);
+    m_errorMonitor->VerifyFound();
+}
