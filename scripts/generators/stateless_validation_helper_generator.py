@@ -201,7 +201,21 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCmdBindDescriptorBuffersEXT',
             'vkGetPhysicalDeviceExternalBufferProperties',
             'vkGetPipelinePropertiesEXT',
-            ]
+            'vkBuildMicromapsEXT',
+            'vkCmdBuildMicromapsEXT',
+            'vkCmdCopyMemoryToMicromapEXT',
+            'vkCmdCopyMicromapEXT',
+            'vkCmdCopyMicromapToMemoryEXT',
+            'vkCmdWriteMicromapsPropertiesEXT',
+            'vkCopyMemoryToMicromapEXT',
+            'vkCopyMicromapEXT',
+            'vkCopyMicromapToMemoryEXT',
+            'vkCreateMicromapEXT',
+            'vkDestroyMicromapEXT',
+            'vkGetDeviceMicromapCompatibilityEXT',
+            'vkGetMicromapBuildSizesEXT',
+            'vkWriteMicromapsPropertiesEXT',
+        ]
 
         # Commands to ignore
         self.blacklist = [

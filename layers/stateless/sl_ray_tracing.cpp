@@ -1847,3 +1847,268 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkComma
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCreateMicromapEXT(
+    VkDevice                                    device,
+    const VkMicromapCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator,
+    VkMicromapEXT* pMicromap, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromap) {
+        skip |= LogError("VUID-vkCreateMicromapEXT-micromap-07430", device,
+            error_obj.location, "micromap feature was not enabled.");
+    }
+
+    if ((pCreateInfo->deviceAddress != 0ULL) && !enabled_features.micromapCaptureReplay) {
+        skip |= LogError("VUID-vkCreateMicromapEXT-deviceAddress-07431", device,
+            error_obj.location, "micromapCaptureReplay feature was not enabled.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateDestroyMicromapEXT(
+    VkDevice                                    device,
+    VkMicromapEXT                               micromap,
+    const VkAllocationCallbacks*                pAllocator, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    // XXX Spec doesn't actually require the feature right now (oversight)
+
+    //if (!enabled_features.micromap) {
+    //    skip |= LogError("VUID-vkCreateMicromapEXT-micromap-NNNN", device,
+    //        error_obj.location, "micromap feature was not enabled.");
+    //}
+
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBuildMicromapsEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    infoCount,
+    const VkMicromapBuildInfoEXT*               pInfos, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    for (const auto [info_i, info] : vvl::enumerate(pInfos, infoCount)) {
+        const Location info_loc = error_obj.location.dot(Field::pInfos, info_i);
+
+        if (SafeModulo(info->scratchData.deviceAddress,
+            phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment) != 0) {
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07514", commandBuffer,
+                info_loc.dot(Field::scratchData).dot(Field::deviceAddress),
+                "(%" PRIu64 ") must be a multiple of minAccelerationStructureScratchOffsetAlignment (%" PRIu32 ").",
+                info->scratchData.deviceAddress,
+                phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment);
+        }
+        if (SafeModulo(info->triangleArray.deviceAddress, 256) != 0) {
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
+                info_loc.dot(Field::triangleArray).dot(Field::deviceAddress),
+                "(%" PRIu64 ") must be a multiple of 256).",
+                info->triangleArray.deviceAddress);
+        }
+        if (SafeModulo(info->data.deviceAddress, 256) != 0) {
+            skip |= LogError("VUID-vkCmdBuildMicromapsEXT-pInfos-07515", commandBuffer,
+                info_loc.dot(Field::data).dot(Field::deviceAddress),
+                "(%" PRIu64 ") must be a multiple of 256).",
+                info->data.deviceAddress);
+        }
+        if (info->pUsageCounts && info->ppUsageCounts) {
+            skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", commandBuffer, info_loc,
+                "both pUsageCounts and ppUsageCounts are not NULL.");
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateBuildMicromapsEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    uint32_t                                    infoCount,
+    const VkMicromapBuildInfoEXT*               pInfos, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromapHostCommands) {
+        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07555", device,
+            error_obj.location, "micromapHostCommands feature was not enabled.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCopyMicromapEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMicromapInfoEXT*                pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromapHostCommands) {
+        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07560", device,
+            error_obj.location, "micromapHostCommands feature was not enabled.");
+    }
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT &&
+        pInfo->mode != VK_COPY_MICROMAP_MODE_CLONE_EXT) {
+        skip |= LogError("VUID-VkCopyMicromapInfoEXT-mode-07531", device, info_loc.dot(Field::mode), "is %s.",
+            string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCopyMicromapToMemoryEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMicromapToMemoryInfoEXT*        pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromapHostCommands) {
+        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07571", device,
+            error_obj.location, "micromapHostCommands feature was not enabled.");
+    }
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_SERIALIZE_EXT) {
+        skip |= LogError("VUID-VkCopyMicromapToMemoryInfoEXT-mode-07542", device, info_loc.dot(Field::mode), "is %s.",
+            string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCopyMemoryToMicromapEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMemoryToMicromapInfoEXT*        pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromapHostCommands) {
+        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07560", device,
+            error_obj.location, "micromapHostCommands feature was not enabled.");
+    }
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_DESERIALIZE_EXT) {
+        skip |= LogError("UID-VkCopyMemoryToMicromapInfoEXT-mode-07548", device, info_loc.dot(Field::mode), "is %s.",
+            string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateWriteMicromapsPropertiesEXT(
+    VkDevice                                    device,
+    uint32_t                                    micromapCount,
+    const VkMicromapEXT*                        pMicromaps,
+    VkQueryType                                 queryType,
+    size_t                                      dataSize,
+    void*                                       pData,
+    size_t                                      stride, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT &&
+        queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
+        skip |= LogError("VUID-vkWriteMicromapsPropertiesEXT-queryType-07503", device, error_obj.location, "is %s.",
+            string_VkQueryType(queryType));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdCopyMicromapEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyMicromapInfoEXT*                pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_COMPACT_EXT &&
+        pInfo->mode != VK_COPY_MICROMAP_MODE_CLONE_EXT) {
+        skip |= LogError("VUID-VkCopyMicromapInfoEXT-mode-07531", commandBuffer, info_loc.dot(Field::mode), "is %s.",
+            string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyMicromapToMemoryInfoEXT*        pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_SERIALIZE_EXT) {
+        skip |= LogError("VUID-VkCopyMicromapToMemoryInfoEXT-mode-07542", commandBuffer, info_loc.dot(Field::mode), "is %s.",
+            string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyMemoryToMicromapInfoEXT*        pInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+    if (pInfo->mode != VK_COPY_MICROMAP_MODE_DESERIALIZE_EXT) {
+        skip |= LogError("VUID-VkCopyMemoryToMicromapInfoEXT-mode-07548", commandBuffer, info_loc.dot(Field::mode), "is %s.",
+            string_VkCopyMicromapModeEXT(pInfo->mode));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    micromapCount,
+    const VkMicromapEXT*                        pMicromaps,
+    VkQueryType                                 queryType,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (queryType != VK_QUERY_TYPE_MICROMAP_COMPACTED_SIZE_EXT &&
+        queryType != VK_QUERY_TYPE_MICROMAP_SERIALIZATION_SIZE_EXT) {
+        skip |= LogError("VUID-vkCmdWriteMicromapsPropertiesEXT-queryType-07503", commandBuffer, error_obj.location, "is %s.",
+            string_VkQueryType(queryType));
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceMicromapCompatibilityEXT(
+    VkDevice                                    device,
+    const VkMicromapVersionInfoEXT*             pVersionInfo,
+    VkAccelerationStructureCompatibilityKHR*    pCompatibility, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromap) {
+        skip |= LogError("VUID-vkGetDeviceMicromapCompatibilityEXT-micromap-07551", device,
+            error_obj.location, "micromap feature was not enabled.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetMicromapBuildSizesEXT(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkMicromapBuildInfoEXT*               pBuildInfo,
+    VkMicromapBuildSizesInfoEXT*                pSizeInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.micromap) {
+        skip |= LogError("VUID-vkGetMicromapBuildSizesEXT-micromap-07439", device,
+            error_obj.location, "micromap feature was not enabled.");
+    }
+    
+    if (pBuildInfo->pUsageCounts && pBuildInfo->ppUsageCounts) {
+        skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", device, error_obj.location,
+            "both pUsageCounts and ppUsageCounts are not NULL.");
+    }
+    
+    return skip;
+}

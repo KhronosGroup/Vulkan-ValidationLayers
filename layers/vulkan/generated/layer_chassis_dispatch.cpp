@@ -9339,35 +9339,6 @@ void DispatchDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStru
     layer_data->device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
-void DispatchCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                               const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-                                               const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos) {
-    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
-    if (!wrap_handles)
-        return layer_data->device_dispatch_table.CmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos,
-                                                                                   ppBuildRangeInfos);
-    small_vector<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pInfos;
-    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR* local_pInfos = nullptr;
-    {
-        if (pInfos) {
-            var_local_pInfos.resize(infoCount);
-            local_pInfos = var_local_pInfos.data();
-            for (uint32_t index0 = 0; index0 < infoCount; ++index0) {
-                local_pInfos[index0].initialize(&pInfos[index0], false, nullptr);
-
-                if (pInfos[index0].srcAccelerationStructure) {
-                    local_pInfos[index0].srcAccelerationStructure = layer_data->Unwrap(pInfos[index0].srcAccelerationStructure);
-                }
-                if (pInfos[index0].dstAccelerationStructure) {
-                    local_pInfos[index0].dstAccelerationStructure = layer_data->Unwrap(pInfos[index0].dstAccelerationStructure);
-                }
-            }
-        }
-    }
-    layer_data->device_dispatch_table.CmdBuildAccelerationStructuresKHR(
-        commandBuffer, infoCount, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pInfos, ppBuildRangeInfos);
-}
-
 void DispatchCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                        const VkDeviceAddress* pIndirectDeviceAddresses,

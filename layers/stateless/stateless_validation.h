@@ -1217,6 +1217,83 @@ class StatelessValidation : public ValidationObject {
                                                               const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
                                                               const ErrorObject &error_obj) const;
 
+    bool manual_PreCallValidateCreateMicromapEXT(
+        VkDevice                                    device,
+        const VkMicromapCreateInfoEXT* pCreateInfo,
+        const VkAllocationCallbacks* pAllocator,
+        VkMicromapEXT* pMicromap, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateDestroyMicromapEXT(
+        VkDevice                                    device,
+        VkMicromapEXT                               micromap,
+        const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCmdBuildMicromapsEXT(
+        VkCommandBuffer                             commandBuffer,
+        uint32_t                                    infoCount,
+        const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateBuildMicromapsEXT(
+        VkDevice                                    device,
+        VkDeferredOperationKHR                      deferredOperation,
+        uint32_t                                    infoCount,
+        const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCopyMicromapEXT(
+        VkDevice                                    device,
+        VkDeferredOperationKHR                      deferredOperation,
+        const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCopyMicromapToMemoryEXT(
+        VkDevice                                    device,
+        VkDeferredOperationKHR                      deferredOperation,
+        const VkCopyMicromapToMemoryInfoEXT* pInfo, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCopyMemoryToMicromapEXT(
+        VkDevice                                    device,
+        VkDeferredOperationKHR                      deferredOperation,
+        const VkCopyMemoryToMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateWriteMicromapsPropertiesEXT(
+        VkDevice                                    device,
+        uint32_t                                    micromapCount,
+        const VkMicromapEXT* pMicromaps,
+        VkQueryType                                 queryType,
+        size_t                                      dataSize,
+        void* pData,
+        size_t                                      stride, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCmdCopyMicromapEXT(
+        VkCommandBuffer                             commandBuffer,
+        const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCmdCopyMicromapToMemoryEXT(
+        VkCommandBuffer                             commandBuffer,
+        const VkCopyMicromapToMemoryInfoEXT* pInfo, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCmdCopyMemoryToMicromapEXT(
+        VkCommandBuffer                             commandBuffer,
+        const VkCopyMemoryToMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(
+        VkCommandBuffer                             commandBuffer,
+        uint32_t                                    micromapCount,
+        const VkMicromapEXT* pMicromaps,
+        VkQueryType                                 queryType,
+        VkQueryPool                                 queryPool,
+        uint32_t                                    firstQuery, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateGetDeviceMicromapCompatibilityEXT(
+        VkDevice                                    device,
+        const VkMicromapVersionInfoEXT* pVersionInfo,
+        VkAccelerationStructureCompatibilityKHR* pCompatibility, const ErrorObject& error_obj) const;
+
+    bool manual_PreCallValidateGetMicromapBuildSizesEXT(
+        VkDevice                                    device,
+        VkAccelerationStructureBuildTypeKHR         buildType,
+        const VkMicromapBuildInfoEXT* pBuildInfo,
+        VkMicromapBuildSizesInfoEXT* pSizeInfo, const ErrorObject& error_obj) const;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool manual_PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,
                                                      const ErrorObject &error_obj) const;
