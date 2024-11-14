@@ -237,8 +237,8 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     return false;
 }
 
-static const spirv::ResourceInterfaceVariable *FindMatchingImageVar(const std::vector<DescriptorRequirement> &reqs,
-                                                                    const VkImageViewCreateInfo &image_view_ci) {
+static const spirv::ResourceInterfaceVariable *FindMatchingImageVariable(const std::vector<DescriptorRequirement> &reqs,
+                                                                         const VkImageViewCreateInfo &image_view_ci) {
     if (reqs.empty()) {
         return nullptr;
     }
@@ -337,7 +337,7 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
         return false;
     }
     const auto &image_view_ci = image_view_state->create_info;
-    const auto *variable = FindMatchingImageVar(binding_info.second, image_view_ci);
+    const auto *variable = FindMatchingImageVariable(binding_info.second, image_view_ci);
     if (!variable || !variable->IsAccessed()) return false;
 
     // If not an image array, the set of indexes will be empty and we guarantee this is the only element.
@@ -392,9 +392,10 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
 
         // Because you can have a runtime array with different types in it, without extensive GPU-AV tracking, we have no way to
         // detect if the types match up in a given index
-        const bool potentially_aliased =
+        const bool is_descriptor_potentially_aliased =
             variable->array_length == spirv::kRuntimeArray || (is_gpu_av && variable->array_length > 1);
-        if (!potentially_aliased && ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0)) {
+        if (!is_descriptor_potentially_aliased &&
+            ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0)) {
             const bool signed_override =
                 ((variable->info.image_format_type & spirv::NumericTypeUint) && variable->info.is_sign_extended);
             const bool unsigned_override =
@@ -938,7 +939,7 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     return skip;
 }
 
-static const spirv::ResourceInterfaceVariable *FindMatchingTexelVar(const std::vector<DescriptorRequirement> &reqs) {
+static const spirv::ResourceInterfaceVariable *FindMatchingTexelVariable(const std::vector<DescriptorRequirement> &reqs) {
     if (reqs.empty()) {
         return nullptr;
     }
@@ -970,7 +971,7 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     if (buffer_view == VK_NULL_HANDLE) {
         return false;
     }
-    const auto *variable = FindMatchingTexelVar(binding_info.second);
+    const auto *variable = FindMatchingTexelVariable(binding_info.second);
     if (!variable || !variable->IsAccessed()) return false;
 
     auto buffer = buffer_view_state->create_info.buffer;

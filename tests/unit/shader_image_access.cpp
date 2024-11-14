@@ -262,7 +262,7 @@ TEST_F(NegativeShaderImageAccess, MultisampleMismatchWithPipeline) {
 }
 
 TEST_F(NegativeShaderImageAccess, NonMultisampleMismatchWithPipeline) {
-    TEST_DESCRIPTION("Shader uses non-Multisample, but image view is.");
+    TEST_DESCRIPTION("Shader uses non-Multisample, but image view is Multisample.");
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
