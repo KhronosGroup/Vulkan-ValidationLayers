@@ -306,7 +306,7 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const L
         const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
         for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
             const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
-            if (slot & glsl::kDescriptorSetWrittenMask) {
+            if (slot & glsl::kDescriptorSetAccessedMask) {
                 if ((slot & glsl::kDescriptorSetSelectionMask) == shader_set) {
                     auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
                     map_result.first->second.emplace_back(descriptor_i);

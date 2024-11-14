@@ -519,6 +519,7 @@ TEST_F(NegativeShaderImageAccess, SampledImageShareBinding) {
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6944
 TEST_F(NegativeShaderImageAccess, DISABLED_SampledImageShareBindingArray) {
     TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
+    AddRequiredFeature(vkt::Feature::imageCubeArray);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 

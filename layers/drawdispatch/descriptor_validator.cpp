@@ -296,6 +296,8 @@ static const spirv::ResourceInterfaceVariable *FindMatchingImageVar(const std::v
 
 bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
                                              VkDescriptorType descriptor_type, const ImageDescriptor &image_descriptor) const {
+    // We skip various parts of checks for core check to prevent false positive when we don't know the index
+    const bool is_gpu_av = dev_state.container_type == LayerObjectTypeGpuAssisted;
     std::vector<const Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
     const ImageView *image_view_state = image_descriptor.GetImageViewState();
@@ -338,8 +340,9 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     const auto *variable = FindMatchingImageVar(binding_info.second, image_view_ci);
     if (!variable || !variable->IsAccessed()) return false;
 
-    // If not an image array, the set of indexes will be empty and we guarantee this is the only element
-    if (!variable->image_access_chain_indexes.empty() &&
+    // If not an image array, the set of indexes will be empty and we guarantee this is the only element.
+    // For GPU-AV image_access_chain_indexes will be filled with invalid values because it wasn't known when created.
+    if (!is_gpu_av && !variable->image_access_chain_indexes.empty() &&
         variable->image_access_chain_indexes.find(index) == variable->image_access_chain_indexes.end()) {
         return false;
     }
@@ -389,8 +392,9 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
 
         // Because you can have a runtime array with different types in it, without extensive GPU-AV tracking, we have no way to
         // detect if the types match up in a given index
-        if (variable->array_length != spirv::kRuntimeArray &&
-            ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0)) {
+        const bool potentially_aliased =
+            variable->array_length == spirv::kRuntimeArray || (is_gpu_av && variable->array_length > 1);
+        if (!potentially_aliased && ((variable->info.image_format_type & image_view_state->descriptor_format_bits) == 0)) {
             const bool signed_override =
                 ((variable->info.image_format_type & spirv::NumericTypeUint) && variable->info.is_sign_extended);
             const bool unsigned_override =

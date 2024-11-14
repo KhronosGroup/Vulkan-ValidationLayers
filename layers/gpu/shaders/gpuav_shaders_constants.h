@@ -127,7 +127,7 @@ const int kDebugInputBuffAddrLengthOffset = 0;
 const uint kDescriptorSetSelectionMask = 0x1F;
 // We use "0" as an initialization value, but the set could be "0" in SPIR-V
 // This mask lets know the descriptor was written to while saving the set value used.
-const uint kDescriptorSetWrittenMask = 1u << 31;
+const uint kDescriptorSetAccessedMask = 1u << 31;
 
 #ifdef __cplusplus
 }  // namespace glsl
