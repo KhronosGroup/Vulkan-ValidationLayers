@@ -18,6 +18,7 @@
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/device_state.h"
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 
@@ -286,7 +287,6 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
     }
 
-    skip |= ValidateDeviceQueueSupport(error_obj.location);
     if (enabled_features.shaderObject == VK_FALSE) {
         skip |=
             LogError("VUID-vkCreateShadersEXT-None-08400", device, error_obj.location, "the shaderObject feature was not enabled.");
@@ -302,6 +302,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
     bool tese_linked_point_mode = false;
     uint32_t tesc_linked_spacing = 0u;
     uint32_t tese_linked_spacing = 0u;
+    bool has_compute = false;
 
     // Currently we don't provide a way for apps to supply their own cache for shader object
     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3570
@@ -325,6 +326,8 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
         if (create_info.stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
             skip |= ValidateCreateShadersMesh(create_info, *spirv, create_info_loc);
         }
+
+        has_compute = create_info.stage == VK_SHADER_STAGE_COMPUTE_BIT;
 
         // Validate tessellation stages
         if (stage_state.entrypoint && (create_info.stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
@@ -391,6 +394,15 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                          "The spacing specified in tessellation control shader (%s) does not match the spacing in "
                          "tessellation evaluation shader (%s).",
                          string_SpvExecutionMode(tesc_linked_spacing), string_SpvExecutionMode(tese_linked_spacing));
+    }
+
+    skip |= ValidateDeviceQueueSupport(error_obj.location);  // check if compute or graphics
+    const VkQueueFlags queue_flag = has_compute ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT;
+    if ((physical_device_state->supported_queues & queue_flag) == 0) {
+        const char* vuid = has_compute ? "VUID-vkCreateShadersEXT-stage-09670" : "VUID-vkCreateShadersEXT-stage-09671";
+        skip |=
+            LogError(vuid, device, error_obj.location, "device only supports (%s) but require %s.",
+                     string_VkQueueFlags(physical_device_state->supported_queues).c_str(), string_VkQueueFlags(queue_flag).c_str());
     }
 
     return skip;
