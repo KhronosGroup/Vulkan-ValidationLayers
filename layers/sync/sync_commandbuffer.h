@@ -179,7 +179,7 @@ class CommandExecutionContext {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
     using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
-    CommandExecutionContext(const SyncValidator *sync_validator, VkQueueFlags queue_flags)
+    CommandExecutionContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags)
         : sync_state_(sync_validator), queue_flags_(queue_flags) {}
     virtual ~CommandExecutionContext() = default;
 
@@ -208,8 +208,6 @@ class CommandExecutionContext {
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
 
-    std::string FormatHazard(const HazardResult &hazard) const;
-
     virtual void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) {
         // Must override if use by derived type is valid
         assert(false);
@@ -225,15 +223,12 @@ class CommandExecutionContext {
         assert(false);
     }
 
+    std::string FormatHazard(const HazardResult &hazard) const;
     bool ValidForSyncOps() const;
-
-    const SyncValidator &GetSyncState() const {
-        assert(sync_state_);
-        return *sync_state_;
-    }
+    const SyncValidator &GetSyncState() const { return sync_state_; }
 
   protected:
-    const SyncValidator *sync_state_;
+    const SyncValidator &sync_state_;
     const VkQueueFlags queue_flags_;
 };
 

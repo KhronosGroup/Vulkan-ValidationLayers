@@ -240,26 +240,26 @@ class ApplyAcquireNextSemaphoreAction {
 };
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state, const QueueSyncState& queue_state)
-    : CommandExecutionContext(&sync_state, queue_state.GetQueueFlags()),
+    : CommandExecutionContext(sync_state, queue_state.GetQueueFlags()),
       queue_state_(&queue_state),
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
-    sync_state_->stats.AddQueueBatchContext();
+    sync_state_.stats.AddQueueBatchContext();
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator& sync_state)
-    : CommandExecutionContext(&sync_state, 0),
+    : CommandExecutionContext(sync_state, 0),
       queue_state_(),
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
       queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {
-    sync_state_->stats.AddQueueBatchContext();
+    sync_state_.stats.AddQueueBatchContext();
 }
 
-QueueBatchContext::~QueueBatchContext() { sync_state_->stats.RemoveQueueBatchContext(); }
+QueueBatchContext::~QueueBatchContext() { sync_state_.stats.RemoveQueueBatchContext(); }
 
 void QueueBatchContext::Trim() {
     // Clean up unneeded access context contents and log information
@@ -447,11 +447,11 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
             const auto queue_handle = queue_state_->Handle();
             const auto swap_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
             const auto image_handle = vvl::StateObject::Handle(presented.image);
-            skip |= sync_state_->LogError(
+            skip |= sync_state_.LogError(
                 string_SyncHazardVUID(hazard.Hazard()), queue_handle, loc,
                 "Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32 " %s, Access info %s.",
-                string_SyncHazard(hazard.Hazard()), presented.present_index, sync_state_->FormatHandle(swap_handle).c_str(),
-                presented.image_index, sync_state_->FormatHandle(image_handle).c_str(), FormatHazard(hazard).c_str());
+                string_SyncHazard(hazard.Hazard()), presented.present_index, sync_state_.FormatHandle(swap_handle).c_str(),
+                presented.image_index, sync_state_.FormatHandle(image_handle).c_str(), FormatHazard(hazard).c_str());
             if (skip) break;
         }
     }
@@ -504,8 +504,8 @@ void QueueBatchContext::SetupAccessContext(const PresentedImage& presented) {
 std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::RegisterAsyncContexts(const std::vector<ConstPtr>& batches_resolved) {
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     auto skip_resolved_filter = [&batches_resolved](auto& batch) { return !vvl::Contains(batches_resolved, batch); };
-    std::vector<ConstPtr> async_batches = sync_state_->GetLastBatches(skip_resolved_filter);
-    std::vector<ConstPtr> async_pending_batches = sync_state_->GetLastPendingBatches(skip_resolved_filter);
+    std::vector<ConstPtr> async_batches = sync_state_.GetLastBatches(skip_resolved_filter);
+    std::vector<ConstPtr> async_pending_batches = sync_state_.GetLastPendingBatches(skip_resolved_filter);
     if (!async_pending_batches.empty()) {
         vvl::Append(async_batches, async_pending_batches);
     }
@@ -533,7 +533,7 @@ QueueId QueueBatchContext::GetQueueId() const {
 }
 
 ResourceUsageTag QueueBatchContext::SetupBatchTags(uint32_t tag_count) {
-    tag_range_ = sync_state_->ReserveGlobalTagRange(tag_count);
+    tag_range_ = sync_state_.ReserveGlobalTagRange(tag_count);
     access_context_.SetStartTag(tag_range_.begin);
 
     // Needed for ImportSyncTags to pick up the "from" own sync tag.
@@ -550,7 +550,7 @@ std::vector<BatchContextConstPtr> QueueBatchContext::ResolveSubmitWaits(vvl::spa
                                                                         SignalsUpdate& signals_update) {
     std::vector<BatchContextConstPtr> resolved_batches;
     for (const auto& wait_info : wait_infos) {
-        auto semaphore_state = sync_state_->Get<vvl::Semaphore>(wait_info.semaphore);
+        auto semaphore_state = sync_state_.Get<vvl::Semaphore>(wait_info.semaphore);
         if (!semaphore_state) {
             continue;  // [core validation check]
         }
