@@ -6132,10 +6132,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                     ValidateRequiredPointer(pNext_loc.dot(Field::pPipelineCreationFeedback), structure->pPipelineCreationFeedback,
                                             "VUID-VkPipelineCreationFeedbackCreateInfo-pPipelineCreationFeedback-parameter");
 
-                if (structure->pPipelineCreationFeedback != nullptr) {
-                    [[maybe_unused]] const Location pPipelineCreationFeedback_loc = pNext_loc.dot(Field::pPipelineCreationFeedback);
-                }
-
                 skip |= ValidateArray(
                     pNext_loc.dot(Field::pipelineStageCreationFeedbackCount), pNext_loc.dot(Field::pPipelineStageCreationFeedbacks),
                     structure->pipelineStageCreationFeedbackCount, &structure->pPipelineStageCreationFeedbacks, false, true,
@@ -9420,10 +9416,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 VkRenderPassCreationFeedbackCreateInfoEXT* structure = (VkRenderPassCreationFeedbackCreateInfoEXT*)header;
                 skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pRenderPassFeedback), structure->pRenderPassFeedback,
                                                 "VUID-VkRenderPassCreationFeedbackCreateInfoEXT-pRenderPassFeedback-parameter");
-
-                if (structure->pRenderPassFeedback != nullptr) {
-                    [[maybe_unused]] const Location pRenderPassFeedback_loc = pNext_loc.dot(Field::pRenderPassFeedback);
-                }
             }
         } break;
 
@@ -9439,10 +9431,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 VkRenderPassSubpassFeedbackCreateInfoEXT* structure = (VkRenderPassSubpassFeedbackCreateInfoEXT*)header;
                 skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pSubpassFeedback), structure->pSubpassFeedback,
                                                 "VUID-VkRenderPassSubpassFeedbackCreateInfoEXT-pSubpassFeedback-parameter");
-
-                if (structure->pSubpassFeedback != nullptr) {
-                    [[maybe_unused]] const Location pSubpassFeedback_loc = pNext_loc.dot(Field::pSubpassFeedback);
-                }
             }
         } break;
 
@@ -9689,10 +9677,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 skip |= ValidateRangedEnum(
                     pNext_loc.dot(Field::depthClampMode), vvl::Enum::VkDepthClampModeEXT, structure->depthClampMode,
                     "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-depthClampMode-parameter", VK_NULL_HANDLE);
-
-                if (structure->pDepthClampRange != nullptr) {
-                    [[maybe_unused]] const Location pDepthClampRange_loc = pNext_loc.dot(Field::pDepthClampRange);
-                }
             }
         } break;
 
@@ -9832,10 +9816,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhy
                                "VUID-vkGetPhysicalDeviceFormatProperties-format-parameter", physicalDevice);
     skip |= ValidateRequiredPointer(loc.dot(Field::pFormatProperties), pFormatProperties,
                                     "VUID-vkGetPhysicalDeviceFormatProperties-pFormatProperties-parameter");
-    if (pFormatProperties != nullptr) {
-        [[maybe_unused]] const Location pFormatProperties_loc = loc.dot(Field::pFormatProperties);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -9859,10 +9839,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties(
                           kOptionalFlags, physicalDevice, "VUID-vkGetPhysicalDeviceImageFormatProperties-flags-parameter");
     skip |= ValidateRequiredPointer(loc.dot(Field::pImageFormatProperties), pImageFormatProperties,
                                     "VUID-vkGetPhysicalDeviceImageFormatProperties-pImageFormatProperties-parameter");
-    if (pImageFormatProperties != nullptr) {
-        [[maybe_unused]] const Location pImageFormatProperties_loc = loc.dot(Field::pImageFormatProperties);
-        // No xml-driven validation
-    }
     if (!skip)
         skip |= manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
                                                                              pImageFormatProperties, error_obj);
@@ -9876,10 +9852,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalD
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= ValidateRequiredPointer(loc.dot(Field::pProperties), pProperties,
                                     "VUID-vkGetPhysicalDeviceProperties-pProperties-parameter");
-    if (pProperties != nullptr) {
-        [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -9911,10 +9883,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhy
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= ValidateRequiredPointer(loc.dot(Field::pMemoryProperties), pMemoryProperties,
                                     "VUID-vkGetPhysicalDeviceMemoryProperties-pMemoryProperties-parameter");
-    if (pMemoryProperties != nullptr) {
-        [[maybe_unused]] const Location pMemoryProperties_loc = loc.dot(Field::pMemoryProperties);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -10583,10 +10551,6 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements(VkDevice de
     skip |= ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= ValidateRequiredPointer(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
                                     "VUID-vkGetBufferMemoryRequirements-pMemoryRequirements-parameter");
-    if (pMemoryRequirements != nullptr) {
-        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -10598,10 +10562,6 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements(VkDevice dev
     skip |= ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= ValidateRequiredPointer(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
                                     "VUID-vkGetImageMemoryRequirements-pMemoryRequirements-parameter");
-    if (pMemoryRequirements != nullptr) {
-        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -12728,10 +12688,6 @@ bool StatelessValidation::PreCallValidateCmdClearDepthStencilImage(VkCommandBuff
                                "VUID-vkCmdClearDepthStencilImage-imageLayout-parameter", VK_NULL_HANDLE);
     skip |= ValidateRequiredPointer(loc.dot(Field::pDepthStencil), pDepthStencil,
                                     "VUID-vkCmdClearDepthStencilImage-pDepthStencil-parameter");
-    if (pDepthStencil != nullptr) {
-        [[maybe_unused]] const Location pDepthStencil_loc = loc.dot(Field::pDepthStencil);
-        // No xml-driven validation
-    }
     skip |= ValidateArray(loc.dot(Field::rangeCount), loc.dot(Field::pRanges), rangeCount, &pRanges, true, true,
                           "VUID-vkCmdClearDepthStencilImage-rangeCount-arraylength",
                           "VUID-vkCmdClearDepthStencilImage-pRanges-parameter");
@@ -16186,10 +16142,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR
     skip |= ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= ValidateRequiredPointer(loc.dot(Field::pSurfaceCapabilities), pSurfaceCapabilities,
                                     "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-pSurfaceCapabilities-parameter");
-    if (pSurfaceCapabilities != nullptr) {
-        [[maybe_unused]] const Location pSurfaceCapabilities_loc = loc.dot(Field::pSurfaceCapabilities);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -16567,10 +16519,6 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysic
     skip |= ValidateRequiredHandle(loc.dot(Field::mode), mode);
     skip |= ValidateRequiredPointer(loc.dot(Field::pCapabilities), pCapabilities,
                                     "VUID-vkGetDisplayPlaneCapabilitiesKHR-pCapabilities-parameter");
-    if (pCapabilities != nullptr) {
-        [[maybe_unused]] const Location pCapabilities_loc = loc.dot(Field::pCapabilities);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -17077,11 +17025,6 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(VkDevice device, 
 
         skip |= ValidateRequiredPointer(pCreateInfo_loc.dot(Field::pStdHeaderVersion), pCreateInfo->pStdHeaderVersion,
                                         "VUID-VkVideoSessionCreateInfoKHR-pStdHeaderVersion-parameter");
-
-        if (pCreateInfo->pStdHeaderVersion != nullptr) {
-            [[maybe_unused]] const Location pStdHeaderVersion_loc = pCreateInfo_loc.dot(Field::pStdHeaderVersion);
-            // No xml-driven validation
-        }
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -18635,10 +18578,6 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandB
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_fragment_shading_rate});
     skip |= ValidateRequiredPointer(loc.dot(Field::pFragmentSize), pFragmentSize,
                                     "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-parameter");
-    if (pFragmentSize != nullptr) {
-        [[maybe_unused]] const Location pFragmentSize_loc = loc.dot(Field::pFragmentSize);
-        // No xml-driven validation
-    }
     skip |= ValidateRangedEnumArray(loc, loc.dot(Field::combinerOps), vvl::Enum::VkFragmentShadingRateCombinerOpKHR, 2, combinerOps,
                                     false, true, kVUIDUndefined, "VUID-vkCmdSetFragmentShadingRateKHR-combinerOps-parameter");
     return skip;
@@ -19602,11 +19541,6 @@ bool StatelessValidation::PreCallValidateCreatePipelineBinariesKHR(VkDevice devi
                                    VK_STRUCTURE_TYPE_PIPELINE_CREATE_INFO_KHR, false,
                                    "VUID-VkPipelineBinaryCreateInfoKHR-pPipelineCreateInfo-parameter",
                                    "VUID-VkPipelineCreateInfoKHR-sType-sType");
-
-        if (pCreateInfo->pPipelineCreateInfo != nullptr) {
-            [[maybe_unused]] const Location pPipelineCreateInfo_loc = pCreateInfo_loc.dot(Field::pPipelineCreateInfo);
-            // No xml-driven validation
-        }
     }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -19642,10 +19576,6 @@ bool StatelessValidation::PreCallValidateGetPipelineKeyKHR(VkDevice device, cons
     skip |= ValidateStructType(loc.dot(Field::pPipelineCreateInfo), pPipelineCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_CREATE_INFO_KHR,
                                false, "VUID-vkGetPipelineKeyKHR-pPipelineCreateInfo-parameter",
                                "VUID-VkPipelineCreateInfoKHR-sType-sType");
-    if (pPipelineCreateInfo != nullptr) {
-        [[maybe_unused]] const Location pPipelineCreateInfo_loc = loc.dot(Field::pPipelineCreateInfo);
-        // No xml-driven validation
-    }
     skip |= ValidateStructType(loc.dot(Field::pPipelineKey), pPipelineKey, VK_STRUCTURE_TYPE_PIPELINE_BINARY_KEY_KHR, true,
                                "VUID-vkGetPipelineKeyKHR-pPipelineKey-parameter", "VUID-VkPipelineBinaryKeyKHR-sType-sType");
     return skip;
@@ -20526,10 +20456,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalImageFormatPro
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pExternalImageFormatProperties), pExternalImageFormatProperties,
                                 "VUID-vkGetPhysicalDeviceExternalImageFormatPropertiesNV-pExternalImageFormatProperties-parameter");
-    if (pExternalImageFormatProperties != nullptr) {
-        [[maybe_unused]] const Location pExternalImageFormatProperties_loc = loc.dot(Field::pExternalImageFormatProperties);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -20796,10 +20722,6 @@ bool StatelessValidation::PreCallValidateGetRefreshCycleDurationGOOGLE(VkDevice 
     skip |= ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= ValidateRequiredPointer(loc.dot(Field::pDisplayTimingProperties), pDisplayTimingProperties,
                                     "VUID-vkGetRefreshCycleDurationGOOGLE-pDisplayTimingProperties-parameter");
-    if (pDisplayTimingProperties != nullptr) {
-        [[maybe_unused]] const Location pDisplayTimingProperties_loc = loc.dot(Field::pDisplayTimingProperties);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -21486,10 +21408,6 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer co
     if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |= ValidateRequiredPointer(loc.dot(Field::pCountInfo), pCountInfo, "VUID-vkCmdDispatchGraphAMDX-pCountInfo-parameter");
-    if (pCountInfo != nullptr) {
-        [[maybe_unused]] const Location pCountInfo_loc = loc.dot(Field::pCountInfo);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -21503,10 +21421,6 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandB
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pCountInfo), pCountInfo, "VUID-vkCmdDispatchGraphIndirectAMDX-pCountInfo-parameter");
-    if (pCountInfo != nullptr) {
-        [[maybe_unused]] const Location pCountInfo_loc = loc.dot(Field::pCountInfo);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -22566,10 +22480,6 @@ bool StatelessValidation::PreCallValidateGetPerformanceParameterINTEL(VkDevice d
     skip |= ValidateRangedEnum(loc.dot(Field::parameter), vvl::Enum::VkPerformanceParameterTypeINTEL, parameter,
                                "VUID-vkGetPerformanceParameterINTEL-parameter-parameter", VK_NULL_HANDLE);
     skip |= ValidateRequiredPointer(loc.dot(Field::pValue), pValue, "VUID-vkGetPerformanceParameterINTEL-pValue-parameter");
-    if (pValue != nullptr) {
-        [[maybe_unused]] const Location pValue_loc = loc.dot(Field::pValue);
-        // No xml-driven validation
-    }
     return skip;
 }
 
@@ -26061,10 +25971,6 @@ bool StatelessValidation::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffe
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object, vvl::Extension::_VK_EXT_depth_clamp_control});
     skip |= ValidateRangedEnum(loc.dot(Field::depthClampMode), vvl::Enum::VkDepthClampModeEXT, depthClampMode,
                                "VUID-vkCmdSetDepthClampRangeEXT-depthClampMode-parameter", VK_NULL_HANDLE);
-    if (pDepthClampRange != nullptr) {
-        [[maybe_unused]] const Location pDepthClampRange_loc = loc.dot(Field::pDepthClampRange);
-        // No xml-driven validation
-    }
     if (!skip) skip |= manual_PreCallValidateCmdSetDepthClampRangeEXT(commandBuffer, depthClampMode, pDepthClampRange, error_obj);
     return skip;
 }
@@ -27309,28 +27215,12 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer command
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= ValidateRequiredPointer(loc.dot(Field::pRaygenShaderBindingTable), pRaygenShaderBindingTable,
                                     "VUID-vkCmdTraceRaysKHR-pRaygenShaderBindingTable-parameter");
-    if (pRaygenShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pRaygenShaderBindingTable_loc = loc.dot(Field::pRaygenShaderBindingTable);
-        // No xml-driven validation
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pMissShaderBindingTable), pMissShaderBindingTable,
                                     "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-parameter");
-    if (pMissShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pMissShaderBindingTable_loc = loc.dot(Field::pMissShaderBindingTable);
-        // No xml-driven validation
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pHitShaderBindingTable), pHitShaderBindingTable,
                                     "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-parameter");
-    if (pHitShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pHitShaderBindingTable_loc = loc.dot(Field::pHitShaderBindingTable);
-        // No xml-driven validation
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pCallableShaderBindingTable), pCallableShaderBindingTable,
                                     "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-parameter");
-    if (pCallableShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pCallableShaderBindingTable_loc = loc.dot(Field::pCallableShaderBindingTable);
-        // No xml-driven validation
-    }
     if (!skip)
         skip |= manual_PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                       pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth,
@@ -27551,28 +27441,12 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= ValidateRequiredPointer(loc.dot(Field::pRaygenShaderBindingTable), pRaygenShaderBindingTable,
                                     "VUID-vkCmdTraceRaysIndirectKHR-pRaygenShaderBindingTable-parameter");
-    if (pRaygenShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pRaygenShaderBindingTable_loc = loc.dot(Field::pRaygenShaderBindingTable);
-        // No xml-driven validation
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pMissShaderBindingTable), pMissShaderBindingTable,
                                     "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-parameter");
-    if (pMissShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pMissShaderBindingTable_loc = loc.dot(Field::pMissShaderBindingTable);
-        // No xml-driven validation
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pHitShaderBindingTable), pHitShaderBindingTable,
                                     "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-parameter");
-    if (pHitShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pHitShaderBindingTable_loc = loc.dot(Field::pHitShaderBindingTable);
-        // No xml-driven validation
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pCallableShaderBindingTable), pCallableShaderBindingTable,
                                     "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-parameter");
-    if (pCallableShaderBindingTable != nullptr) {
-        [[maybe_unused]] const Location pCallableShaderBindingTable_loc = loc.dot(Field::pCallableShaderBindingTable);
-        // No xml-driven validation
-    }
     if (!skip)
         skip |= manual_PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                                               pHitShaderBindingTable, pCallableShaderBindingTable,
