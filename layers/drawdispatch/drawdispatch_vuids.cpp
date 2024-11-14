@@ -4248,7 +4248,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         compatible_pipeline_08600                = "VUID-vkCmdDispatchBase-None-08600";
         linear_filter_sampler_04553              = "VUID-vkCmdDispatchBase-magFilter-04553";
         linear_mipmap_sampler_04770              = "VUID-vkCmdDispatchBase-mipmapMode-04770";
-        linear_filter_sampler_09598              = "VUID-vkCmdDispatchBase-magFilter-04553";
+        linear_filter_sampler_09598              = "VUID-vkCmdDispatchBase-magFilter-09598";
         linear_mipmap_sampler_09599              = "VUID-vkCmdDispatchBase-mipmapMode-09599";
         unnormalized_coordinates_09635           = "VUID-vkCmdDispatchBase-unnormalizedCoordinates-09635";
         cubic_sampler_02692                      = "VUID-vkCmdDispatchBase-None-02692";
