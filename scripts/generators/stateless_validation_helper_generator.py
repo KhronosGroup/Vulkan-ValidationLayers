@@ -635,9 +635,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             count_required_vuid = self.GetVuid(callerName, f"{member.length}-arraylength")
             array_required_vuid = self.GetVuid(callerName, f"{member.name}-parameter")
             count_ptr_required_vuid = self.GetVuid(callerName, f"{member.length}-parameter")
-            # TODO: Remove workaround for missing optional tag in vk.xml
-            if array_required_vuid == '"VUID-VkFramebufferCreateInfo-pAttachments-parameter"':
-                return []
             # This is an array with a pointer to a count value
             if lengthMember.pointer and not length_deref:
                 # If count and array parameters are optional, there will be no validation
@@ -648,7 +645,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             else:
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenValueRequired == 'true':
-                    if member.type != 'char':
+                    if member.type == 'char':
+                        # Arrays of strings receive special processing
+                        checkExpr.append(f'skip |= ValidateStringArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
+                    else:
                         # A valid VU can't use '->' in the middle so the generated VUID from the spec uses '::' instead
                         count_required_vuid = self.GetVuid(callerName, f"{member.length.replace('->', '::')}-arraylength")
                         if structTypeName == 'VkShaderModuleCreateInfo' and member.name == 'pCode':
@@ -668,9 +668,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         elif ' / ' in member.length:
                             count_loc = f'{errorLoc}.dot(Field::{member.length.split(" / ")[0]})'
                         checkExpr.append(f'skip |= ValidateArray({count_loc}, {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
-                    else:
-                        # Arrays of strings receive special processing
-                        checkExpr.append(f'skip |= ValidateStringArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {lenValueRequired}, {valueRequired}, {count_required_vuid}, {array_required_vuid});\n')
             if checkExpr and lengthMember and length_deref and member.length.count('->'):
                 # Add checks to ensure the validation call does not dereference a NULL pointer to obtain the count
                 count = member.length.count('->')
