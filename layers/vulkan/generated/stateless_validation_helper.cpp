@@ -11323,6 +11323,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(VkDevice device, con
     }
     skip |=
         ValidateRequiredPointer(loc.dot(Field::pShaderModule), pShaderModule, "VUID-vkCreateShaderModule-pShaderModule-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, error_obj);
     return skip;
 }
 

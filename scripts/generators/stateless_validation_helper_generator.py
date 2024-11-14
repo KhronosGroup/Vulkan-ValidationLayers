@@ -63,6 +63,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkCreateRenderPass2',
             'vkCreateBuffer',
             'vkCreateImage',
+            'vkCreateShaderModule',
             'vkCreatePipelineLayout',
             'vkCreateGraphicsPipelines',
             'vkCreateComputePipelines',
