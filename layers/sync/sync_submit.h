@@ -334,9 +334,9 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
 
-    void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op) override;
-    void NextSubpassReplaySetup(ReplayState &replay) override;
-    void EndRenderPassReplayCleanup(ReplayState &replay) override;
+    void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op);
+    void NextSubpassReplaySetup(ReplayState &replay);
+    void EndRenderPassReplayCleanup(ReplayState &replay);
 
     [[nodiscard]] std::vector<ConstPtr> RegisterAsyncContexts(const std::vector<ConstPtr> &batches_resolved);
     void ResolveLastBatch(const QueueBatchContext::ConstPtr &last_batch);

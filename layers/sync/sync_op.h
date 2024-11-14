@@ -435,10 +435,6 @@ class ReplayState {
     CommandExecutionContext &GetExecutionContext() const { return exec_context_; }
     ResourceUsageTag GetBaseTag() const { return base_tag_; }
 
-    void BeginRenderPassReplaySetup(const SyncOpBeginRenderPass &begin_op);
-    void NextSubpassReplaySetup();
-    void EndRenderPassReplayCleanup();
-
     AccessContext *ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,
                                               const AccessContext &external_context);
     AccessContext *ReplayStateRenderPassNext();
