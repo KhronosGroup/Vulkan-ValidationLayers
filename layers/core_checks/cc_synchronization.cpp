@@ -1947,47 +1947,50 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
 void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const BufferBarrier &barrier,
                                              QFOTransferBarrierSets<QFOBufferTransferBarrier> &barrier_sets) {
     if (IsOwnershipTransfer(barrier)) {
-        if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
-            barrier_sets.release.emplace(barrier);
-        } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
-            barrier_sets.acquire.emplace(barrier);
-        }
-        auto buffer = Get<vvl::Buffer>(barrier.buffer);
-        const bool mode_concurrent = buffer && buffer->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
-        if (!mode_concurrent) {
-            const auto typed_handle = buffer->Handle();
-            vvl::LocationCapture loc_capture(loc);
-            cb_state.queue_submit_functions.emplace_back(
-                [loc_capture, typed_handle, src_queue_family = barrier.srcQueueFamilyIndex,
-                 dst_queue_family = barrier.dstQueueFamilyIndex](
-                    const ValidationStateTracker &device_data, const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) {
-                    return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
-                                                             src_queue_family, dst_queue_family);
-                });
+        if (auto buffer = Get<vvl::Buffer>(barrier.buffer)) {
+            if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
+                barrier_sets.release.emplace(barrier);
+            } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+                barrier_sets.acquire.emplace(barrier);
+            }
+            const bool mode_concurrent = buffer->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
+            if (!mode_concurrent) {
+                cb_state.queue_submit_functions.emplace_back(
+                    [loc_capture = vvl::LocationCapture(loc), typed_handle = buffer->Handle(),
+                     src_queue_family = barrier.srcQueueFamilyIndex, dst_queue_family = barrier.dstQueueFamilyIndex](
+                        const ValidationStateTracker &device_data, const vvl::Queue &queue_state,
+                        const vvl::CommandBuffer &cb_state) {
+                        return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state,
+                                                                 typed_handle, src_queue_family, dst_queue_family);
+                    });
+            }
         }
     }
 }
 
-void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
+void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const ImageBarrier &image_barrier,
                                              QFOTransferBarrierSets<QFOImageTransferBarrier> &barrier_sets) {
-    if (IsOwnershipTransfer(barrier)) {
-        if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
-            barrier_sets.release.emplace(barrier);
-        } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
-            barrier_sets.acquire.emplace(barrier);
-        }
-        auto image = Get<vvl::Image>(barrier.image);
-        const bool mode_concurrent = image && image->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
-        if (!mode_concurrent) {
-            const auto typed_handle = image->Handle();
-            vvl::LocationCapture loc_capture(loc);
-            cb_state.queue_submit_functions.emplace_back(
-                [loc_capture, typed_handle, src_queue_family = barrier.srcQueueFamilyIndex,
-                 dst_queue_family = barrier.dstQueueFamilyIndex](
-                    const ValidationStateTracker &device_data, const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) {
-                    return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
-                                                             src_queue_family, dst_queue_family);
-                });
+    if (IsOwnershipTransfer(image_barrier)) {
+        if (auto image = Get<vvl::Image>(image_barrier.image)) {
+            ImageBarrier barrier = image_barrier;
+            barrier.subresourceRange = NormalizeSubresourceRange(image->create_info, image_barrier.subresourceRange);
+
+            if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
+                barrier_sets.release.emplace(barrier);
+            } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+                barrier_sets.acquire.emplace(barrier);
+            }
+            const bool mode_concurrent = image->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
+            if (!mode_concurrent) {
+                cb_state.queue_submit_functions.emplace_back(
+                    [loc_capture = vvl::LocationCapture(loc), typed_handle = image->Handle(),
+                     src_queue_family = barrier.srcQueueFamilyIndex, dst_queue_family = barrier.dstQueueFamilyIndex](
+                        const ValidationStateTracker &device_data, const vvl::Queue &queue_state,
+                        const vvl::CommandBuffer &cb_state) {
+                        return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state,
+                                                                 typed_handle, src_queue_family, dst_queue_family);
+                    });
+            }
         }
     }
 }
