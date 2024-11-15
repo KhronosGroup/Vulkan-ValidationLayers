@@ -1891,4 +1891,5 @@ bool ValidateAccelerationStructureGeometryInstancesDataKHR(const VkAccelerationS
                                                            const Location& loc) const;
 bool ValidateAccelerationStructureGeometryAabbsDataKHR(const VkAccelerationStructureGeometryAabbsDataKHR& info,
                                                        const Location& loc) const;
+bool ValidateIndirectExecutionSetPipelineInfoEXT(const VkIndirectExecutionSetPipelineInfoEXT& info, const Location& loc) const;
 // NOLINTEND
