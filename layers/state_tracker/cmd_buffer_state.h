@@ -595,13 +595,11 @@ class CommandBuffer : public RefcountedStateObject {
 
     VkQueueFlags GetQueueFlags() const { return command_pool->queue_flags; }
 
-    template <typename Barrier>
-    inline bool IsReleaseOp(const Barrier &barrier) const {
-        return (IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.srcQueueFamilyIndex);
+    bool IsReleaseOp(const sync_utils::OwnershipTransferBarrier &barrier) const {
+        return (IsOwnershipTransfer(barrier)) && (command_pool->queueFamilyIndex == barrier.srcQueueFamilyIndex);
     }
-    template <typename Barrier>
-    inline bool IsAcquireOp(const Barrier &barrier) const {
-        return (IsTransferOp(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
+    bool IsAcquireOp(const sync_utils::OwnershipTransferBarrier &barrier) const {
+        return (IsOwnershipTransfer(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
     }
 
     void Begin(const VkCommandBufferBeginInfo *pBeginInfo);
@@ -733,31 +731,5 @@ class CommandBuffer : public RefcountedStateObject {
     void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void UnbindResources();
 };
-
-// specializations for barriers that cannot do queue family ownership transfers
-template <>
-inline bool CommandBuffer::IsReleaseOp(const sync_utils::MemoryBarrier &barrier) const {
-    return false;
-}
-template <>
-inline bool CommandBuffer::IsReleaseOp(const VkMemoryBarrier &barrier) const {
-    return false;
-}
-template <>
-inline bool CommandBuffer::IsReleaseOp(const VkMemoryBarrier2KHR &barrier) const {
-    return false;
-}
-template <>
-inline bool CommandBuffer::IsAcquireOp(const sync_utils::MemoryBarrier &barrier) const {
-    return false;
-}
-template <>
-inline bool CommandBuffer::IsAcquireOp(const VkMemoryBarrier &barrier) const {
-    return false;
-}
-template <>
-inline bool CommandBuffer::IsAcquireOp(const VkMemoryBarrier2KHR &barrier) const {
-    return false;
-}
 
 }  // namespace vvl
