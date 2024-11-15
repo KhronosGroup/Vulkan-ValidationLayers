@@ -172,8 +172,8 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     const VkDeviceSize buffer_size = 1024;
 
     // Create export and import buffers
-    const VkExternalMemoryBufferCreateInfoKHR external_buffer_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR,
-                                                                      nullptr, handle_type};
+    VkExternalMemoryBufferCreateInfoKHR external_buffer_info = vku::InitStructHelper();
+    external_buffer_info.handleTypes = handle_type;
     auto buffer_info = vkt::Buffer::CreateInfo(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
     vkt::Buffer buffer_export(*m_device, buffer_info, vkt::no_mem);
@@ -183,12 +183,15 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_export.MemoryRequirements(), mem_flags);
 
     // Add export allocation info to pNext chain
-    VkExportMemoryAllocateInfoKHR export_info = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR, nullptr, handle_type};
+    VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper();
+    export_info.handleTypes = handle_type;
     alloc_info.pNext = &export_info;
 
     // Add dedicated allocation info to pNext chain if required
-    VkMemoryDedicatedAllocateInfoKHR dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr,
-                                                       VK_NULL_HANDLE, buffer_export.handle()};
+    VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
+    dedicated_info.image = VK_NULL_HANDLE;
+    dedicated_info.buffer = buffer_export.handle();
+
     if (dedicated_allocation) {
         export_info.pNext = &dedicated_info;
     }

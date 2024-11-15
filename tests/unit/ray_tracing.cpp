@@ -1001,7 +1001,8 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
 
-    VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer.handle()};
+    VkBufferDeviceAddressInfo device_address_info = vku::InitStructHelper();
+    device_address_info.buffer = buffer.handle();
     VkDeviceAddress device_address = vk::GetBufferDeviceAddressKHR(device(), &device_address_info);
     // invalid buffer;
     {
@@ -3715,13 +3716,10 @@ TEST_F(NegativeRayTracing, OpacityMicromapFeatureDisable) {
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredError("VUID-vkCreateMicromapEXT-micromap-07430");
-
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
 
     VkMicromapEXT micromap;
-    VkMicromapCreateInfoEXT maCreateInfo = {VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT};
-
+    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
     maCreateInfo.createFlags = 0;
     maCreateInfo.buffer = buffer;
     maCreateInfo.offset = 0;
@@ -3729,8 +3727,8 @@ TEST_F(NegativeRayTracing, OpacityMicromapFeatureDisable) {
     maCreateInfo.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
     maCreateInfo.deviceAddress = 0ull;
 
+    m_errorMonitor->SetDesiredError("VUID-vkCreateMicromapEXT-micromap-07430");
     vk::CreateMicromapEXT(device(), &maCreateInfo, nullptr, &micromap);
-
     m_errorMonitor->VerifyFound();
 }
 
@@ -3744,13 +3742,10 @@ TEST_F(NegativeRayTracing, OpacityMicromapCaptureReplayFeatureDisable) {
     AddRequiredFeature(vkt::Feature::micromap);
     RETURN_IF_SKIP(Init());
 
-    m_errorMonitor->SetDesiredError("VUID-vkCreateMicromapEXT-deviceAddress-07431");
-
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT);
 
     VkMicromapEXT micromap;
-    VkMicromapCreateInfoEXT maCreateInfo = {VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT};
-
+    VkMicromapCreateInfoEXT maCreateInfo = vku::InitStructHelper();
     maCreateInfo.createFlags = 0;
     maCreateInfo.buffer = buffer;
     maCreateInfo.offset = 0;
@@ -3758,7 +3753,7 @@ TEST_F(NegativeRayTracing, OpacityMicromapCaptureReplayFeatureDisable) {
     maCreateInfo.type = VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT;
     maCreateInfo.deviceAddress = 0x100000ull;
 
+    m_errorMonitor->SetDesiredError("VUID-vkCreateMicromapEXT-deviceAddress-07431");
     vk::CreateMicromapEXT(device(), &maCreateInfo, nullptr, &micromap);
-
     m_errorMonitor->VerifyFound();
 }

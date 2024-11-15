@@ -30,24 +30,20 @@ GeometryKHR &GeometryKHR::SetFlags(VkGeometryFlagsKHR flags) {
 
 GeometryKHR &GeometryKHR::SetType(Type type) {
     type_ = type;
-    vk_obj_.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    vk_obj_.pNext = nullptr;
+    vk_obj_ = vku::InitStructHelper();
     switch (type_) {
         case Type::Triangle:
             vk_obj_.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-            vk_obj_.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-            vk_obj_.geometry.triangles.pNext = nullptr;
+            vk_obj_.geometry.triangles = vku::InitStructHelper();
             vk_obj_.geometry.triangles.transformData = {0};
             break;
         case Type::AABB:
             vk_obj_.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
-            vk_obj_.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
-            vk_obj_.geometry.aabbs.pNext = nullptr;
+            vk_obj_.geometry.aabbs = vku::InitStructHelper();
             break;
         case Type::Instance:
             vk_obj_.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-            vk_obj_.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-            vk_obj_.geometry.instances.pNext = nullptr;
+            vk_obj_.geometry.instances = vku::InitStructHelper();
             break;
         case Type::_INTERNAL_UNSPECIFIED:
             [[fallthrough]];

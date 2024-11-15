@@ -25,8 +25,9 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_che
     const VkLayerSettingEXT settings[] = {{OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT,
                                            static_cast<uint32_t>(std::size(input_values)), input_values}};
 
-    const VkLayerSettingsCreateInfoEXT layer_settings_create_info{VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-                                                                  static_cast<uint32_t>(std::size(settings)), settings};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
+    layer_settings_create_info.settingCount = static_cast<uint32_t>(std::size(settings));
+    layer_settings_create_info.pSettings = settings;
 
     features_.pNext = &layer_settings_create_info;
 
@@ -47,10 +48,8 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     RETURN_IF_SKIP(InitSwapchain());
 
     // Attempt to force an invalid return code for an unsupported format
-    VkImageFormatProperties2 image_format_prop = {};
-    image_format_prop.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
-    VkPhysicalDeviceImageFormatInfo2 image_format_info = {};
-    image_format_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+    VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
     image_format_info.format = VK_FORMAT_R32G32B32_SFLOAT;
     image_format_info.tiling = VK_IMAGE_TILING_LINEAR;
     image_format_info.type = VK_IMAGE_TYPE_3D;
@@ -138,16 +137,12 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
 
     VkDevice local_device;
-    VkDeviceCreateInfo dev_info = {};
-    VkDeviceQueueCreateInfo queue_info = {};
-    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = NULL;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     float qp = 1;
     queue_info.pQueuePriorities = &qp;
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = nullptr;
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
@@ -169,16 +164,12 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     RETURN_IF_SKIP(InitBestPracticesFramework());
 
     VkDevice local_device;
-    VkDeviceCreateInfo dev_info = {};
-    VkDeviceQueueCreateInfo queue_info = {};
-    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info.pNext = NULL;
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
     float qp = 1;
     queue_info.pQueuePriorities = &qp;
-    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = nullptr;
+    VkDeviceCreateInfo dev_info = vku::InitStructHelper();
     dev_info.queueCreateInfoCount = 1;
     dev_info.pQueueCreateInfos = &queue_info;
     dev_info.enabledLayerCount = 0;
@@ -231,9 +222,9 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
 
     vkt::CommandBuffer secondary_full_clear(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary_small_clear(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
+    VkCommandBufferInheritanceInfo inherit_info = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &inherit_info;
     inherit_info.subpass = 0;
     inherit_info.renderPass = m_renderPassBeginInfo.renderPass;
@@ -392,8 +383,7 @@ TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCreateCommandPool-command-buffer-reset");
 
     VkCommandPool command_pool;
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
@@ -454,8 +444,7 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
 
     m_errorMonitor->SetAllowedFailureMsg("vkBeginCommandBuffer-one-time-submit");
 
-    VkCommandBufferBeginInfo cmd_begin_info{};
-    cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo cmd_begin_info = vku::InitStructHelper();
     cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     vk::BeginCommandBuffer(m_command_buffer.handle(), &cmd_begin_info);
 
@@ -482,8 +471,7 @@ TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
 
     const uint32_t kSmallAllocationSize = 1024;
 
-    VkMemoryAllocateInfo alloc_info{};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = kSmallAllocationSize;
     alloc_info.memoryTypeIndex = mem_type_index;
 
@@ -534,8 +522,7 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
 
     VkSubpassDescription sd{};
 
-    VkRenderPassCreateInfo rp_info{};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPassCreateInfo rp_info = vku::InitStructHelper();
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
     rp_info.subpassCount = 1;
@@ -625,8 +612,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     attributes[1].location = 1;
     attributes[1].format = VK_FORMAT_R32_SFLOAT;
 
-    VkPipelineVertexInputStateCreateInfo vi_state_ci{};
-    vi_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    VkPipelineVertexInputStateCreateInfo vi_state_ci = vku::InitStructHelper();
     vi_state_ci.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
     vi_state_ci.pVertexBindingDescriptions = bindings.data();
     vi_state_ci.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
@@ -766,9 +752,9 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_command_buffer.EndRenderPass();
 
     // Try the same thing, but now with secondary command buffers.
-    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
+    VkCommandBufferInheritanceInfo inherit_info = vku::InitStructHelper();
     begin_info.pInheritanceInfo = &inherit_info;
     inherit_info.subpass = 0;
     inherit_info.renderPass = rp.Handle();
@@ -853,9 +839,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
-    VkSwapchainCreateInfoKHR swapchain_create_info = {};
-    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchain_create_info.pNext = 0;
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = 2;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
@@ -896,9 +880,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
-    VkSwapchainCreateInfoKHR swapchain_create_info = {};
-    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchain_create_info.pNext = 0;
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
     swapchain_create_info.surface = m_surface;
     swapchain_create_info.minImageCount = 3;
     swapchain_create_info.imageArrayLayers = 1;
@@ -970,7 +952,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
 
     queue_family_props2.resize(queue_count);
     for (uint32_t i = 0; i < queue_count; i++) {
-        queue_family_props2[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
+        queue_family_props2[i] = vku::InitStructHelper();
     }
     vk::GetPhysicalDeviceQueueFamilyProperties2(phys_device_obj.handle(), &queue_count, queue_family_props2.data());
 
@@ -1015,9 +997,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     }
 
     VkPhysicalDeviceFeatures all_features{};
-    VkDeviceCreateInfo device_ci = {};
-    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_ci.pNext = nullptr;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = create_queue_infos.size();
     device_ci.pQueueCreateInfos = create_queue_infos.data();
     device_ci.enabledLayerCount = 0;
@@ -1875,12 +1855,8 @@ TEST_F(VkBestPracticesLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     secondary.Begin();
     secondary.End();
 
-    VkCommandBufferBeginInfo cbbi = {
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        nullptr,
-        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
-        nullptr,
-    };
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
     m_command_buffer.Begin(&cbbi);
     m_errorMonitor->SetDesiredWarning("BestPractices-vkCmdExecuteCommands-CommandBufferSimultaneousUse");

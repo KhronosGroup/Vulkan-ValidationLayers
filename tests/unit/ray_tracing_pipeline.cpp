@@ -44,8 +44,11 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
-    VkPipelineLibraryCreateInfoKHR library_count_zero = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
-    VkPipelineLibraryCreateInfoKHR library_count_one = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 1};
+    VkPipelineLibraryCreateInfoKHR library_count_zero = vku::InitStructHelper();
+    library_count_zero.libraryCount = 0;
+    VkPipelineLibraryCreateInfoKHR library_count_one = vku::InitStructHelper();
+    library_count_one.libraryCount = 1;
+
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
         pipeline_ci.pLibraryInfo = &library_count_zero;
@@ -191,7 +194,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     VkShaderObj frag_shader(this, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLibraryCreateInfoKHR library_info = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
+    VkPipelineLibraryCreateInfoKHR library_info = vku::InitStructHelper();
+    library_info.libraryCount = 0;
 
     // No raygen stage
     {

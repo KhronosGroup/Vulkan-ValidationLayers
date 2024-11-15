@@ -337,8 +337,7 @@ vkt::FeatureAndName FeatureRequirements::SetFeature(APIVersion api_version, vkt:
 }
 
 VkPhysicalDeviceFeatures2* FeatureRequirements::GetFeatures2() {
-    phys_dev_features_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    phys_dev_features_.pNext = feature_chain_;
+    phys_dev_features_ = vku::InitStructHelper(feature_chain_);
     return &phys_dev_features_;
 }
 

@@ -11,6 +11,7 @@
  */
 
 #include "descriptor_helper.h"
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
@@ -20,14 +21,19 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bi
     std::vector<VkDescriptorPoolSize> sizes;
     for (const auto &b : bindings) sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
 
-    VkDescriptorPoolCreateInfo dspci = {
-        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, create_pool_pnext, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
+    VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper(create_pool_pnext);
+    dspci.flags = poolFlags;
+    dspci.maxSets = 1;
+    dspci.poolSizeCount = uint32_t(sizes.size());
+    dspci.pPoolSizes = sizes.data();
     err = vk::CreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
     if (err != VK_SUCCESS) return;
 
     if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) == 0) {
-        VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, allocate_pnext, pool_, 1,
-                                                  &layout_.handle()};
+        VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper(allocate_pnext);
+        alloc_info.descriptorPool = pool_;
+        alloc_info.descriptorSetCount = 1;
+        alloc_info.pSetLayouts = &layout_.handle();
         err = vk::AllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
     }
 }

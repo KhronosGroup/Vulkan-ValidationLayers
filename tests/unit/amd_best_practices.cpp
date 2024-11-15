@@ -245,8 +245,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
         dynamic_states_array[i] = (VkDynamicState)i;
     }
 
-    VkPipelineDynamicStateCreateInfo dynamic_state_info = {};
-    dynamic_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    VkPipelineDynamicStateCreateInfo dynamic_state_info = vku::InitStructHelper();
     dynamic_state_info.dynamicStateCount = 8;
     dynamic_state_info.pDynamicStates = dynamic_states_array;
 
@@ -281,15 +280,13 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorSetLayoutCreateInfo ds_layout_info = {};
-    ds_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    VkDescriptorSetLayoutCreateInfo ds_layout_info = vku::InitStructHelper();
     ds_layout_info.bindingCount = 1;
     ds_layout_info.pBindings = &binding;
 
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
 
-    VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-    pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.setLayoutCount = 1;
     pipeline_layout_info.pSetLayouts = &ds_layout.handle();
     pipeline_layout_info.pushConstantRangeCount = 1;
@@ -314,9 +311,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     ds_type_count.descriptorCount = 2;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -334,16 +329,14 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
 
     VkDescriptorSet descriptor_sets[2] = {};
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
 
-    VkCopyDescriptorSet copy_info = {};
-    copy_info.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+    VkCopyDescriptorSet copy_info = vku::InitStructHelper();
     copy_info.descriptorCount = 1;
     copy_info.srcSet = descriptor_sets[1];
     copy_info.srcBinding = 2;
@@ -524,14 +517,12 @@ TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
     features.robustBufferAccess = true;
 
     const float q_priority[] = {1.0f};
-    VkDeviceQueueCreateInfo queue_ci = {};
-    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
     queue_ci.pQueuePriorities = q_priority;
 
-    VkDeviceCreateInfo device_ci = {};
-    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
     device_ci.pEnabledFeatures = &features;
@@ -662,9 +653,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
 
     InitRenderTarget();
 
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
     pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     pipe_ms_state_ci.sampleShadingEnable = 0;
     pipe_ms_state_ci.minSampleShading = 1.0;

@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
@@ -1092,10 +1093,9 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
         VK_NULL_HANDLE,
     };
 
-    VkCommandBufferBeginInfo cmdbuff__bi_no_fsr = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                                                   nullptr,  // pNext
-                                                   VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii_no_fsr};
-    cmdbuff__bi_no_fsr.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    VkCommandBufferBeginInfo cmdbuff_bi_no_fsr = vku::InitStructHelper();
+    cmdbuff_bi_no_fsr.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cmdbuff_bi_no_fsr.pInheritanceInfo = &cmdbuff_ii_no_fsr;
 
     // Render pass begin info for no FSR attachment
     const auto rp_bi_no_fsr = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp_no_fsr.Handle(), framebuffer_no_fsr.handle(),
@@ -1110,10 +1110,9 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
         VK_NULL_HANDLE,
     };
 
-    VkCommandBufferBeginInfo cmdbuff__bi_fsr = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                                                nullptr,  // pNext
-                                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii_fsr};
-    cmdbuff__bi_fsr.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    VkCommandBufferBeginInfo cmdbuff_bi_fsr = vku::InitStructHelper();
+    cmdbuff_bi_no_fsr.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cmdbuff_bi_no_fsr.pInheritanceInfo = &cmdbuff_ii_fsr;
 
     // Render pass begin info with FSR attachment
     const auto rp_bi_fsr = vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp_fsr_1.Handle(), framebuffer_fsr.handle(),
@@ -1122,7 +1121,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     // Test case where primary command buffer does not have an FSR attachment but
     // secondary command buffer does.
     {
-        secondary.Begin(&cmdbuff__bi_fsr);
+        secondary.Begin(&cmdbuff_bi_fsr);
         secondary.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
@@ -1141,7 +1140,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     // Test case where primary command buffer has FSR attachment but secondary
     // command buffer does not.
     {
-        secondary.Begin(&cmdbuff__bi_no_fsr);
+        secondary.Begin(&cmdbuff_bi_no_fsr);
         secondary.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
@@ -1161,7 +1160,7 @@ TEST_F(NegativeFragmentShadingRate, IncompatibleFragmentRateShadingAttachmentInE
     // Test case where both command buffers have FSR attachments but they are
     // incompatible.
     {
-        secondary.Begin(&cmdbuff__bi_fsr);
+        secondary.Begin(&cmdbuff_bi_fsr);
         secondary.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pBeginInfo-06020");
@@ -1950,8 +1949,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     vkt::ImageView view(*m_device, ivci);
 
     // Test pipeline creation
-    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
-        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = vku::InitStructHelper();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkViewport viewports[20] = {viewport, viewport};
@@ -2075,8 +2073,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         VkCoarseSampleOrderCustomNV sampOrdGood = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1 * 2 * 2,
                                                    &locations[0]};
 
-        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = {
-            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV};
+        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = vku::InitStructHelper();
         csosci.sampleOrderType = VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV;
         csosci.customSampleOrderCount = 1;
 
@@ -2160,8 +2157,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView view = image.CreateView();
 
-    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
-        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = vku::InitStructHelper();
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkViewport viewports[20] = {viewport, viewport};

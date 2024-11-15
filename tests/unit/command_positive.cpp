@@ -132,22 +132,29 @@ TEST_F(PositiveCommand, CommandBufferSimultaneousUseSync) {
 
     // Record (empty!) command buffer that can be submitted multiple times
     // simultaneously.
-    VkCommandBufferBeginInfo cbbi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
-                                     VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
+    VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     m_command_buffer.Begin(&cbbi);
     m_command_buffer.End();
 
-    VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
+    VkFenceCreateInfo fci = vku::InitStructHelper();
     VkFence fence;
     vk::CreateFence(device(), &fci, nullptr, &fence);
 
-    VkSemaphoreCreateInfo sci = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
+    VkSemaphoreCreateInfo sci = vku::InitStructHelper();
     VkSemaphore s1, s2;
     vk::CreateSemaphore(device(), &sci, nullptr, &s1);
     vk::CreateSemaphore(device(), &sci, nullptr, &s2);
 
     // Submit CB once signaling s1, with fence so we can roll forward to its retirement.
-    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, &m_command_buffer.handle(), 1, &s1};
+    VkSubmitInfo si = vku::InitStructHelper();
+    si.waitSemaphoreCount = 0;
+    si.pWaitSemaphores = nullptr;
+    si.pWaitSemaphores = nullptr;
+    si.commandBufferCount = 1;
+    si.pCommandBuffers = &m_command_buffer.handle();
+    si.signalSemaphoreCount = 1;
+    si.pSignalSemaphores = &s1;
     vk::QueueSubmit(m_default_queue->handle(), 1, &si, fence);
 
     // Submit CB again, signaling s2.

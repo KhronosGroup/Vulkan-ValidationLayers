@@ -1176,8 +1176,8 @@ TEST_F(NegativeQuery, PreciseBit) {
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
     vk::CreateEvent(test_device.handle(), &event_create_info, nullptr, &event);
 
-    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
-                                           VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     vkt::QueryPool query_pool(test_device, VK_QUERY_TYPE_OCCLUSION, 2);
 

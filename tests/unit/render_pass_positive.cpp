@@ -375,8 +375,8 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     rp_begin_info.renderArea.extent.height = height;
     rp_begin_info.framebuffer = fb.handle();
 
-    VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
-                                               VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
+    VkCommandBufferBeginInfo cmd_begin_info = vku::InitStructHelper();
+    cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     m_command_buffer.Begin(&cmd_begin_info);
     vk::CmdBeginRenderPass(m_command_buffer.handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
@@ -458,8 +458,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     VkImageView baseViews[] = {color_view, depth_view};
 
-    VkImageViewCreateInfo vinfo = {};
-    vinfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    VkImageViewCreateInfo vinfo = vku::InitStructHelper();
     vinfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     vinfo.components.r = VK_COMPONENT_SWIZZLE_R;
     vinfo.components.g = VK_COMPONENT_SWIZZLE_G;
@@ -507,8 +506,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
                                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     descriptor_set.UpdateDescriptorSets();
 
-    VkPipelineDepthStencilStateCreateInfo ds_ci = {};
-    ds_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
     ds_ci.depthTestEnable = VK_TRUE;
     ds_ci.depthCompareOp = VK_COMPARE_OP_LESS;
 
