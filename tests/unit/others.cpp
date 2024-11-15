@@ -1485,6 +1485,30 @@ TEST_F(VkLayerTest, PhysicalDeviceLayeredApiVulkanPropertiesKHR) {
     m_errorMonitor->VerifyFound();
 }
 
+// stype-check off
+TEST_F(VkLayerTest, PhysicalDeviceLayeredApiVulkanPropertiesPNext) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_7_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance7);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceDriverProperties driver_props = vku::InitStructHelper();
+    VkPhysicalDeviceLayeredApiPropertiesKHR api_props = vku::InitStructHelper(&driver_props);
+
+    VkPhysicalDeviceLayeredApiPropertiesListKHR api_prop_lists = vku::InitStructHelper();
+    api_prop_lists.layeredApiCount = 1;
+    api_prop_lists.pLayeredApis = &api_props;
+
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&api_prop_lists);
+
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-pNext-pNext");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-sType");
+    api_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+    vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
+    m_errorMonitor->VerifyFound();
+}
+// stype-check on
+
 TEST_F(VkLayerTest, UnrecognizedEnumExtension) {
     RETURN_IF_SKIP(Init());
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-format-parameter");

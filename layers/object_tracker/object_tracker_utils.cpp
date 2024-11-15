@@ -1540,21 +1540,36 @@ bool ObjectLifetimes::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice devi
                                                                    VkIndirectExecutionSetEXT *pIndirectExecutionSet,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateIndirectExecutionSetEXT-device-parameter"
 
-    if (pCreateInfo && pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT &&
-        pCreateInfo->info.pShaderInfo) {
+    if (!pCreateInfo) {
+        return skip;
+    }
+
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    const Location info_loc = create_info_loc.dot(Field::info);
+    if (pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT && pCreateInfo->info.pPipelineInfo) {
+        [[maybe_unused]] const Location pipeline_info_loc = info_loc.dot(Field::pPipelineInfo);
+        skip |= ValidateObject(pCreateInfo->info.pPipelineInfo->initialPipeline, kVulkanObjectTypePipeline, false,
+                               "VUID-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-parameter", kVUIDUndefined,
+                               pipeline_info_loc.dot(Field::initialPipeline));
+    }
+
+    if (pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT && pCreateInfo->info.pShaderInfo) {
         const VkIndirectExecutionSetShaderInfoEXT &shader_info = *pCreateInfo->info.pShaderInfo;
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        const Location info_loc = create_info_loc.dot(Field::info);
         const Location shader_info_loc = info_loc.dot(Field::pShaderInfo);
-        if (shader_info.pSetLayoutInfos) {
+        if (shader_info.pSetLayoutInfos && shader_info.pInitialShaders) {
             for (uint32_t i = 0; i < shader_info.shaderCount; ++i) {
+                skip |= ValidateObject(shader_info.pInitialShaders[i], kVulkanObjectTypeShaderEXT, false,
+                                       "VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter", kVUIDUndefined,
+                                       shader_info_loc.dot(Field::pInitialShaders, i));
+
                 const Location set_layout_info_loc = shader_info_loc.dot(Field::pSetLayoutInfos, i);
                 const VkIndirectExecutionSetShaderLayoutInfoEXT &layout_info = shader_info.pSetLayoutInfos[i];
                 if ((layout_info.setLayoutCount > 0) && (layout_info.pSetLayouts)) {
                     for (uint32_t layout_index = 0; layout_index < layout_info.setLayoutCount; ++layout_index) {
                         skip |= ValidateObject(layout_info.pSetLayouts[layout_index], kVulkanObjectTypeDescriptorSetLayout, true,
-                                               kVUIDUndefined,
+                                               "VUID-VkIndirectExecutionSetShaderLayoutInfoEXT-pSetLayouts-parameter",
                                                "UNASSIGNED-VkIndirectExecutionSetShaderLayoutInfoEXT-pSetLayouts-parent",
                                                set_layout_info_loc.dot(Field::pSetLayouts, layout_index));
                     }

@@ -79,6 +79,17 @@ const char* unimplementable_validation[] = {
     "VUID-VkPipelineCacheHeaderVersionOne-headerSize-04967",
     "VUID-VkPipelineCacheHeaderVersionOne-headerVersion-04968",
     "VUID-VkPipelineCacheHeaderVersionOne-headerSize-08990",
+    "VUID-VkPipelineCacheHeaderVersionOne-headerVersion-parameter",
+    // Same as above, struct is returned by the driver
+    "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerSize-07340",
+    "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-07341",
+    "VUID-VkDeviceFaultVendorBinaryHeaderVersionOneEXT-headerVersion-parameter",
+
+    // Extension has redundant implicit VUs
+    "VUID-VkBufferConstraintsInfoFUCHSIA-createInfo-parameter",
+    "VUID-VkBufferConstraintsInfoFUCHSIA-bufferCollectionConstraints-parameter",
+    "VUID-VkImageConstraintsInfoFUCHSIA-bufferCollectionConstraints-parameter",
+    "VUID-VkImageFormatConstraintsInfoFUCHSIA-imageCreateInfo-parameter",
 
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6639#note_468463
     "VUID-VkIndirectCommandsVertexBufferTokenEXT-vertexBindingUnit-11134",
@@ -134,6 +145,13 @@ const char* unimplementable_validation[] = {
     // VkVideoPictureResourceInfoKHR
     "VUID-VkVideoDecodeInfoKHR-dstPictureResource-parameter",
     "VUID-VkVideoEncodeInfoKHR-srcPictureResource-parameter",
+    // VkPushConstantRange
+    "VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-parameter",
+
+    // These structs are never called anywhere explicitly
+    "VUID-VkAccelerationStructureInstanceKHR-flags-parameter",
+    "VUID-VkAccelerationStructureMatrixMotionInstanceNV-flags-parameter",
+    "VUID-VkAccelerationStructureSRTMotionInstanceNV-flags-parameter",
 
     // When:
     //   Struct A has a pointer field to Struct B
@@ -242,6 +260,10 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetFramebufferTilePropertiesQCOM-pProperties-parameter",
     "VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-pProperties-parameter",
     "VUID-VkAccelerationStructureBuildGeometryInfoKHR-ppGeometries-parameter",
+    "VUID-VkPipelineBinaryCreateInfoKHR-pKeysAndDataInfo-parameter",
+    "VUID-vkCmdSetDepthClampRangeEXT-pDepthClampRange-parameter",
+    "VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-parameter",
+    "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-pDepthClampRange-parameter",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
     "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-parameter",
@@ -260,6 +282,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkApplicationInfo-pEngineName-parameter",
     "VUID-VkDebugUtilsObjectNameInfoEXT-pObjectName-parameter",
     "VUID-VkDebugUtilsMessengerCallbackDataEXT-pMessageIdName-parameter",
+    "VUID-VkDebugUtilsMessengerCallbackDataEXT-pMessage-parameter",
     "VUID-VkPipelineShaderStageNodeCreateInfoAMDX-pName-parameter",
     "VUID-VkShaderCreateInfoEXT-pName-parameter",
     "VUID-vkGetDeviceProcAddr-pName-parameter",
@@ -383,6 +406,21 @@ const char* unimplementable_validation[] = {
     "VUID-vkRegisterDeviceEventEXT-pAllocator-parameter",
     "VUID-vkRegisterDisplayEventEXT-pAllocator-parameter",
     "VUID-vkAllocateMemory-pAllocator-parameter",
+};
+
+// VUs from deprecated extensions that would require complex codegen to get working
+const char* deprecated_validation[] = {
+    "VUID-VkAccelerationStructureCreateInfoNV-info-parameter",
+    "VUID-VkAccelerationStructureInfoNV-type-parameter",
+    "VUID-VkAccelerationStructureMotionInstanceNV-flags-zerobitmask",
+    "VUID-VkAccelerationStructureMotionInstanceNV-matrixMotionInstance-parameter",
+    "VUID-VkAccelerationStructureMotionInstanceNV-staticInstance-parameter",
+    "VUID-VkAccelerationStructureMotionInstanceNV-type-parameter",
+    "VUID-VkGeometryDataNV-aabbs-parameter",
+    "VUID-VkGeometryDataNV-triangles-parameter",
+    "VUID-VkGeometryNV-geometry-parameter",
+    "VUID-VkAccelerationStructureTrianglesDisplacementMicromapNV-micromap-parameter",
+    "VUID-VkBindIndexBufferIndirectCommandNV-indexType-parameter",
 };
 
 // clang-format on

@@ -2338,3 +2338,60 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteShaderObjectStages) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDeviceGeneratedCommands, InitialPipelineObject) {
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+
+    VkPipeline invalid_pipeline = CastToHandle<VkPipeline, uintptr_t>(0xbaadbeef);
+
+    VkIndirectExecutionSetPipelineInfoEXT exe_set_pipeline_info = vku::InitStructHelper();
+    exe_set_pipeline_info.initialPipeline = invalid_pipeline;
+    exe_set_pipeline_info.maxPipelineCount = 1;
+
+    VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
+    exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT;
+    exe_set_ci.info.pPipelineInfo = &exe_set_pipeline_info;
+
+    VkIndirectExecutionSetEXT exe_set = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-parameter");
+    vk::CreateIndirectExecutionSetEXT(device(), &exe_set_ci, nullptr, &exe_set);
+    m_errorMonitor->VerifyFound();
+
+    exe_set_pipeline_info.initialPipeline = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("pCreateInfo->info.pPipelineInfo->initialPipeline is VK_NULL_HANDLE");
+    vk::CreateIndirectExecutionSetEXT(device(), &exe_set_ci, nullptr, &exe_set);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceGeneratedCommands, InitialShaderObject) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    VkIndirectExecutionSetShaderLayoutInfoEXT exe_set_layouts = vku::InitStructHelper();
+    exe_set_layouts.setLayoutCount = 1;
+    exe_set_layouts.pSetLayouts = &descriptor_set.layout_.handle();
+
+    VkShaderEXT invalid_shader = CastToHandle<VkShaderEXT, uintptr_t>(0xbaadbeef);
+    VkIndirectExecutionSetShaderInfoEXT exe_set_shader_info = vku::InitStructHelper();
+    exe_set_shader_info.shaderCount = 1;
+    exe_set_shader_info.pInitialShaders = &invalid_shader;
+    exe_set_shader_info.pSetLayoutInfos = &exe_set_layouts;
+    exe_set_shader_info.maxShaderCount = 1;
+    exe_set_shader_info.pushConstantRangeCount = 0;
+
+    VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
+    exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
+    exe_set_ci.info.pShaderInfo = &exe_set_shader_info;
+
+    VkIndirectExecutionSetEXT exe_set = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter");
+    vk::CreateIndirectExecutionSetEXT(device(), &exe_set_ci, nullptr, &exe_set);
+    m_errorMonitor->VerifyFound();
+
+    invalid_shader = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter");
+    vk::CreateIndirectExecutionSetEXT(device(), &exe_set_ci, nullptr, &exe_set);
+    m_errorMonitor->VerifyFound();
+}

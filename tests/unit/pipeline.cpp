@@ -3665,6 +3665,32 @@ TEST_F(NegativePipeline, GetPipelinePropertiesEXT) {
     m_errorMonitor->VerifyFound();
 }
 
+// stype-check off
+TEST_F(NegativePipeline, PipelinePropertiesIdentifierEXT) {
+    AddRequiredExtensions(VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::pipelinePropertiesIdentifier);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.pipeline = pipe.Handle();
+    VkPipelinePropertiesIdentifierEXT pipeline_props = vku::InitStructHelper(&pipeline_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkPipelinePropertiesIdentifierEXT-pNext-pNext");
+    vk::GetPipelinePropertiesEXT(device(), &pipeline_info, (VkBaseOutStructure *)&pipeline_props);
+    m_errorMonitor->VerifyFound();
+
+    pipeline_props.pNext = nullptr;
+    pipeline_props.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkPipelinePropertiesIdentifierEXT-sType-sType");
+    vk::GetPipelinePropertiesEXT(device(), &pipeline_info, (VkBaseOutStructure *)&pipeline_props);
+    m_errorMonitor->VerifyFound();
+}
+// stype-check on
+
 TEST_F(NegativePipeline, NoRasterizationState) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8051");
     RETURN_IF_SKIP(Init());

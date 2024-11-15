@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/layer_chassis_dispatch.h"
@@ -1434,7 +1435,19 @@ bool StatelessValidation::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevic
                          "the pipelinePropertiesIdentifier feature was not enabled.");
     }
 
-    skip |= ValidateRequiredPointer(error_obj.location.dot(Field::pPipelineProperties), pPipelineProperties,
-                                    "VUID-vkGetPipelinePropertiesEXT-pPipelineProperties-06739");
+    const Location &pipeline_properties_loc = error_obj.location.dot(Field::pPipelineProperties);
+    if (pPipelineProperties) {
+        if (pPipelineProperties->sType != VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT) {
+            skip |=
+                LogError("VUID-VkPipelinePropertiesIdentifierEXT-sType-sType", device, pipeline_properties_loc.dot(Field::sType),
+                         "is not VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT.");
+        }
+        if (pPipelineProperties->pNext != nullptr) {
+            skip |= LogError("VUID-VkPipelinePropertiesIdentifierEXT-pNext-pNext", device,
+                             pipeline_properties_loc.dot(Field::sType), "is not NULL.");
+        }
+    } else {
+        skip |= LogError("VUID-vkGetPipelinePropertiesEXT-pPipelineProperties-06739", device, pipeline_properties_loc, "is NULL.");
+    }
     return skip;
 }

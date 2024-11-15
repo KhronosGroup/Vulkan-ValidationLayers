@@ -274,6 +274,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'VkAccelerationStructureGeometryTrianglesDataKHR',
             'VkAccelerationStructureGeometryInstancesDataKHR',
             'VkAccelerationStructureGeometryAabbsDataKHR',
+            'VkIndirectExecutionSetPipelineInfoEXT', # VkIndirectExecutionSetShaderInfoEXT is done manually
         ]
 
         # Map of structs type names to generated validation code for that struct type
@@ -721,10 +722,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def ScrubStructCode(self, code):
         scrubbed_lines = ''
         for line in code:
-            if 'ValidateStructPnext(' in line:
-                continue
-            if 'allowed_structs' in line:
-                continue
             if 'xml-driven validation' in line:
                 continue
             line = line.replace('{funcName}', '')
@@ -903,14 +900,17 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allowedTypes = 'nullptr'
                         pNextVuid = self.GetVuid(structTypeName, "pNext-pNext")
                         sTypeVuid = self.GetVuid(structTypeName, "sType-unique")
-                        struct = self.vk.structs[structTypeName]
-                        if struct.extendedBy:
-                            allowedStructName = f'allowed_structs_{structTypeName}'
-                            allowedTypeCount = f'{allowedStructName}.size()'
-                            allowedTypes = f'{allowedStructName}.data()'
-                            extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
-                            usedLines.append(f'constexpr std::array {allowedStructName} = {{ {extendedBy} }};\n')
-                        usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {allowedTypeCount}, {allowedTypes}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
+                        # If no VUIDs we will only be potentially giving false positives
+                        if pNextVuid != 'kVUIDUndefined' or sTypeVuid != 'kVUIDUndefined':
+                            struct = self.vk.structs[structTypeName]
+                            if struct.extendedBy:
+                                allowedStructName = f'allowed_structs_{structTypeName}'
+                                allowedTypeCount = f'{allowedStructName}.size()'
+                                allowedTypes = f'{allowedStructName}.data()'
+                                extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
+                                usedLines.append(f'constexpr std::array {allowedStructName} = {{ {extendedBy} }};\n')
+
+                            usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {allowedTypeCount}, {allowedTypes}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, arrayRequired, counValueRequired, counPtrRequired, funcName, structTypeName)
 
@@ -1112,7 +1112,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         if structValidationSource != '':
             # Only reasonable to validate content of structs if const as otherwise the date inside has not been writen to yet
             # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3122
-            pNextCheck += 'if (is_const_param) {\n'
+            if struct.name in ['VkPhysicalDeviceLayeredApiPropertiesListKHR']:
+                pNextCheck += 'if (true /* exception where we do not want to check for is_const_param */) {\n'
+            else:
+                pNextCheck += 'if (is_const_param) {\n'
+
             pNextCheck += f'[[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::{struct.name});\n'
 
             # Can have a struct from a device extension be extended by an instance extension struct

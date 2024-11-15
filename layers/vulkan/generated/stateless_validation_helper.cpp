@@ -4682,7 +4682,7 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
         // Validation code for VkPhysicalDeviceLayeredApiPropertiesListKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_PROPERTIES_LIST_KHR: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceLayeredApiPropertiesListKHR-sType-sType
-            if (is_const_param) {
+            if (true /* exception where we do not want to check for is_const_param */) {
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLayeredApiPropertiesListKHR);
                 if (!IsExtEnabled(device_extensions.vk_khr_maintenance7)) {
                     skip |=
@@ -4697,6 +4697,15 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
                 if (structure->pLayeredApis != nullptr) {
                     for (uint32_t layeredApiIndex = 0; layeredApiIndex < structure->layeredApiCount; ++layeredApiIndex) {
                         [[maybe_unused]] const Location pLayeredApis_loc = pNext_loc.dot(Field::pLayeredApis, layeredApiIndex);
+                        constexpr std::array allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR = {
+                            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR};
+
+                        skip |= ValidateStructPnext(
+                            pLayeredApis_loc, structure->pLayeredApis[layeredApiIndex].pNext,
+                            allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR.size(),
+                            allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR.data(), GeneratedVulkanHeaderVersion,
+                            "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-pNext-pNext",
+                            "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-unique", VK_NULL_HANDLE, false);
                     }
                 }
             }
@@ -5854,6 +5863,15 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 if (structure->pDepthStencilResolveAttachment != nullptr) {
                     [[maybe_unused]] const Location pDepthStencilResolveAttachment_loc =
                         pNext_loc.dot(Field::pDepthStencilResolveAttachment);
+                    constexpr std::array allowed_structs_VkAttachmentReference2 = {
+                        VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT};
+
+                    skip |= ValidateStructPnext(
+                        pDepthStencilResolveAttachment_loc, structure->pDepthStencilResolveAttachment->pNext,
+                        allowed_structs_VkAttachmentReference2.size(), allowed_structs_VkAttachmentReference2.data(),
+                        GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext",
+                        "VUID-VkAttachmentReference2-sType-unique", VK_NULL_HANDLE, true);
+
                     skip |= ValidateRangedEnum(pDepthStencilResolveAttachment_loc.dot(Field::layout), vvl::Enum::VkImageLayout,
                                                structure->pDepthStencilResolveAttachment->layout,
                                                "VUID-VkAttachmentReference2-layout-parameter", VK_NULL_HANDLE);
@@ -5937,6 +5955,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                          ++attachmentImageInfoIndex) {
                         [[maybe_unused]] const Location pAttachmentImageInfos_loc =
                             pNext_loc.dot(Field::pAttachmentImageInfos, attachmentImageInfoIndex);
+                        skip |= ValidateStructPnext(
+                            pAttachmentImageInfos_loc, structure->pAttachmentImageInfos[attachmentImageInfoIndex].pNext, 0, nullptr,
+                            GeneratedVulkanHeaderVersion, "VUID-VkFramebufferAttachmentImageInfo-pNext-pNext", kVUIDUndefined,
+                            VK_NULL_HANDLE, true);
+
                         skip |= ValidateFlags(pAttachmentImageInfos_loc.dot(Field::flags), vvl::FlagBitmask::VkImageCreateFlagBits,
                                               AllVkImageCreateFlagBits,
                                               structure->pAttachmentImageInfos[attachmentImageInfoIndex].flags, kOptionalFlags,
@@ -6478,10 +6501,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                            VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_KHR, false,
                                            "VUID-VkVideoEncodeH264SessionParametersCreateInfoKHR-pParametersAddInfo-parameter",
                                            "VUID-VkVideoEncodeH264SessionParametersAddInfoKHR-sType-sType");
-
-                if (structure->pParametersAddInfo != nullptr) {
-                    [[maybe_unused]] const Location pParametersAddInfo_loc = pNext_loc.dot(Field::pParametersAddInfo);
-                }
             }
         } break;
 
@@ -6517,6 +6536,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                          ++naluSliceEntryIndex) {
                         [[maybe_unused]] const Location pNaluSliceEntries_loc =
                             pNext_loc.dot(Field::pNaluSliceEntries, naluSliceEntryIndex);
+                        skip |= ValidateStructPnext(pNaluSliceEntries_loc, structure->pNaluSliceEntries[naluSliceEntryIndex].pNext,
+                                                    0, nullptr, GeneratedVulkanHeaderVersion,
+                                                    "VUID-VkVideoEncodeH264NaluSliceInfoKHR-pNext-pNext", kVUIDUndefined,
+                                                    VK_NULL_HANDLE, true);
+
                         skip |= ValidateRequiredPointer(pNaluSliceEntries_loc.dot(Field::pStdSliceHeader),
                                                         structure->pNaluSliceEntries[naluSliceEntryIndex].pStdSliceHeader,
                                                         "VUID-VkVideoEncodeH264NaluSliceInfoKHR-pStdSliceHeader-parameter");
@@ -6609,10 +6633,6 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                                            VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_KHR, false,
                                            "VUID-VkVideoEncodeH265SessionParametersCreateInfoKHR-pParametersAddInfo-parameter",
                                            "VUID-VkVideoEncodeH265SessionParametersAddInfoKHR-sType-sType");
-
-                if (structure->pParametersAddInfo != nullptr) {
-                    [[maybe_unused]] const Location pParametersAddInfo_loc = pNext_loc.dot(Field::pParametersAddInfo);
-                }
             }
         } break;
 
@@ -6651,6 +6671,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                          naluSliceSegmentEntryIndex < structure->naluSliceSegmentEntryCount; ++naluSliceSegmentEntryIndex) {
                         [[maybe_unused]] const Location pNaluSliceSegmentEntries_loc =
                             pNext_loc.dot(Field::pNaluSliceSegmentEntries, naluSliceSegmentEntryIndex);
+                        skip |= ValidateStructPnext(
+                            pNaluSliceSegmentEntries_loc, structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pNext, 0,
+                            nullptr, GeneratedVulkanHeaderVersion, "VUID-VkVideoEncodeH265NaluSliceSegmentInfoKHR-pNext-pNext",
+                            kVUIDUndefined, VK_NULL_HANDLE, true);
+
                         skip |= ValidateRequiredPointer(
                             pNaluSliceSegmentEntries_loc.dot(Field::pStdSliceSegmentHeader),
                             structure->pNaluSliceSegmentEntries[naluSliceSegmentEntryIndex].pStdSliceSegmentHeader,
@@ -7048,6 +7073,15 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 if (structure->pFragmentShadingRateAttachment != nullptr) {
                     [[maybe_unused]] const Location pFragmentShadingRateAttachment_loc =
                         pNext_loc.dot(Field::pFragmentShadingRateAttachment);
+                    constexpr std::array allowed_structs_VkAttachmentReference2 = {
+                        VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT};
+
+                    skip |= ValidateStructPnext(
+                        pFragmentShadingRateAttachment_loc, structure->pFragmentShadingRateAttachment->pNext,
+                        allowed_structs_VkAttachmentReference2.size(), allowed_structs_VkAttachmentReference2.data(),
+                        GeneratedVulkanHeaderVersion, "VUID-VkAttachmentReference2-pNext-pNext",
+                        "VUID-VkAttachmentReference2-sType-unique", VK_NULL_HANDLE, true);
+
                     skip |= ValidateRangedEnum(pFragmentShadingRateAttachment_loc.dot(Field::layout), vvl::Enum::VkImageLayout,
                                                structure->pFragmentShadingRateAttachment->layout,
                                                "VUID-VkAttachmentReference2-layout-parameter", VK_NULL_HANDLE);
@@ -7172,6 +7206,16 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 if (structure->pLayers != nullptr) {
                     for (uint32_t layerIndex = 0; layerIndex < structure->layerCount; ++layerIndex) {
                         [[maybe_unused]] const Location pLayers_loc = pNext_loc.dot(Field::pLayers, layerIndex);
+                        constexpr std::array allowed_structs_VkVideoEncodeRateControlLayerInfoKHR = {
+                            VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_RATE_CONTROL_LAYER_INFO_KHR,
+                            VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_RATE_CONTROL_LAYER_INFO_KHR};
+
+                        skip |= ValidateStructPnext(pLayers_loc, structure->pLayers[layerIndex].pNext,
+                                                    allowed_structs_VkVideoEncodeRateControlLayerInfoKHR.size(),
+                                                    allowed_structs_VkVideoEncodeRateControlLayerInfoKHR.data(),
+                                                    GeneratedVulkanHeaderVersion,
+                                                    "VUID-VkVideoEncodeRateControlLayerInfoKHR-pNext-pNext",
+                                                    "VUID-VkVideoEncodeRateControlLayerInfoKHR-sType-unique", VK_NULL_HANDLE, true);
                     }
                 }
             }
@@ -8584,6 +8628,10 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 if (structure->pGroups != nullptr) {
                     for (uint32_t groupIndex = 0; groupIndex < structure->groupCount; ++groupIndex) {
                         [[maybe_unused]] const Location pGroups_loc = pNext_loc.dot(Field::pGroups, groupIndex);
+                        skip |= ValidateStructPnext(
+                            pGroups_loc, structure->pGroups[groupIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                            "VUID-VkGraphicsShaderGroupCreateInfoNV-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
+
                         skip |= ValidateStructTypeArray(pGroups_loc.dot(Field::stageCount), pGroups_loc.dot(Field::pStages),
                                                         structure->pGroups[groupIndex].stageCount,
                                                         structure->pGroups[groupIndex].pStages,
@@ -8595,6 +8643,22 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                         if (structure->pGroups[groupIndex].pStages != nullptr) {
                             for (uint32_t stageIndex = 0; stageIndex < structure->pGroups[groupIndex].stageCount; ++stageIndex) {
                                 [[maybe_unused]] const Location pStages_loc = pGroups_loc.dot(Field::pStages, stageIndex);
+                                constexpr std::array allowed_structs_VkPipelineShaderStageCreateInfo = {
+                                    VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
+                                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
+                                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                                    VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
+
+                                skip |= ValidateStructPnext(
+                                    pStages_loc, structure->pGroups[groupIndex].pStages[stageIndex].pNext,
+                                    allowed_structs_VkPipelineShaderStageCreateInfo.size(),
+                                    allowed_structs_VkPipelineShaderStageCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                    "VUID-VkPipelineShaderStageCreateInfo-pNext-pNext",
+                                    "VUID-VkPipelineShaderStageCreateInfo-sType-unique", VK_NULL_HANDLE, true);
+
                                 skip |= ValidateFlags(pStages_loc.dot(Field::flags),
                                                       vvl::FlagBitmask::VkPipelineShaderStageCreateFlagBits,
                                                       AllVkPipelineShaderStageCreateFlagBits,
@@ -9291,6 +9355,9 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                 if (structure->pStripeInfos != nullptr) {
                     for (uint32_t stripeInfoIndex = 0; stripeInfoIndex < structure->stripeInfoCount; ++stripeInfoIndex) {
                         [[maybe_unused]] const Location pStripeInfos_loc = pNext_loc.dot(Field::pStripeInfos, stripeInfoIndex);
+                        skip |= ValidateStructPnext(pStripeInfos_loc, structure->pStripeInfos[stripeInfoIndex].pNext, 0, nullptr,
+                                                    GeneratedVulkanHeaderVersion, "VUID-VkRenderPassStripeInfoARM-pNext-pNext",
+                                                    kVUIDUndefined, VK_NULL_HANDLE, true);
                     }
                 }
             }
@@ -9317,6 +9384,11 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
                          ++stripeSemaphoreInfoIndex) {
                         [[maybe_unused]] const Location pStripeSemaphoreInfos_loc =
                             pNext_loc.dot(Field::pStripeSemaphoreInfos, stripeSemaphoreInfoIndex);
+                        skip |= ValidateStructPnext(pStripeSemaphoreInfos_loc,
+                                                    structure->pStripeSemaphoreInfos[stripeSemaphoreInfoIndex].pNext, 0, nullptr,
+                                                    GeneratedVulkanHeaderVersion, "VUID-VkSemaphoreSubmitInfo-pNext-pNext",
+                                                    kVUIDUndefined, VK_NULL_HANDLE, true);
+
                         skip |= ValidateRequiredHandle(pStripeSemaphoreInfos_loc.dot(Field::semaphore),
                                                        structure->pStripeSemaphoreInfos[stripeSemaphoreInfoIndex].semaphore);
 
@@ -11383,9 +11455,6 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(VkDevice device, c
                                "VUID-vkCreatePipelineLayout-pCreateInfo-parameter", "VUID-VkPipelineLayoutCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, kVUIDUndefined,
-                                    kVUIDUndefined, VK_NULL_HANDLE, true);
-
         skip |= ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkPipelineLayoutCreateFlagBits,
                               AllVkPipelineLayoutCreateFlagBits, pCreateInfo->flags, kOptionalFlags, VK_NULL_HANDLE,
                               "VUID-VkPipelineLayoutCreateInfo-flags-parameter");
@@ -14449,10 +14518,6 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
                 [[maybe_unused]] const Location pMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
                 skip |=
-                    ValidateStructPnext(pMemoryBarriers_loc, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].pNext, 0, nullptr,
-                                        GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
-                skip |=
                     ValidateFlags(pMemoryBarriers_loc.dot(Field::srcStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits2,
                                   AllVkPipelineStageFlagBits2, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].srcStageMask,
                                   kOptionalFlags, VK_NULL_HANDLE, "VUID-VkMemoryBarrier2-srcStageMask-parameter");
@@ -14622,10 +14687,6 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                      ++memoryBarrierIndex) {
                     [[maybe_unused]] const Location pMemoryBarriers_loc =
                         pDependencyInfos_loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
-                    skip |= ValidateStructPnext(pMemoryBarriers_loc,
-                                                pDependencyInfos[eventIndex].pMemoryBarriers[memoryBarrierIndex].pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
                     skip |= ValidateFlags(pMemoryBarriers_loc.dot(Field::srcStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits2,
                                           AllVkPipelineStageFlagBits2,
                                           pDependencyInfos[eventIndex].pMemoryBarriers[memoryBarrierIndex].srcStageMask,
@@ -14786,10 +14847,6 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer com
             for (uint32_t memoryBarrierIndex = 0; memoryBarrierIndex < pDependencyInfo->memoryBarrierCount; ++memoryBarrierIndex) {
                 [[maybe_unused]] const Location pMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pMemoryBarriers, memoryBarrierIndex);
-                skip |=
-                    ValidateStructPnext(pMemoryBarriers_loc, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].pNext, 0, nullptr,
-                                        GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
                 skip |=
                     ValidateFlags(pMemoryBarriers_loc.dot(Field::srcStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits2,
                                   AllVkPipelineStageFlagBits2, pDependencyInfo->pMemoryBarriers[memoryBarrierIndex].srcStageMask,
@@ -16656,16 +16713,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(V
                                "VUID-VkVideoProfileInfoKHR-sType-sType");
     if (pVideoProfile != nullptr) {
         [[maybe_unused]] const Location pVideoProfile_loc = loc.dot(Field::pVideoProfile);
-        constexpr std::array allowed_structs_VkVideoProfileInfoKHR = {
-            VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PROFILE_INFO_KHR,  VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_INFO_KHR,
-            VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR,
-            VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_INFO_KHR,
-            VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR};
-
-        skip |= ValidateStructPnext(pVideoProfile_loc, pVideoProfile->pNext, allowed_structs_VkVideoProfileInfoKHR.size(),
-                                    allowed_structs_VkVideoProfileInfoKHR.data(), GeneratedVulkanHeaderVersion, kVUIDUndefined,
-                                    kVUIDUndefined, physicalDevice, true);
-
         skip |= ValidateFlags(pVideoProfile_loc.dot(Field::videoCodecOperation), vvl::FlagBitmask::VkVideoCodecOperationFlagBitsKHR,
                               AllVkVideoCodecOperationFlagBitsKHR, pVideoProfile->videoCodecOperation, kRequiredSingleBit,
                               VK_NULL_HANDLE, "VUID-VkVideoProfileInfoKHR-videoCodecOperation-parameter",
@@ -16779,16 +16826,6 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(VkDevice device, 
 
         if (pCreateInfo->pVideoProfile != nullptr) {
             [[maybe_unused]] const Location pVideoProfile_loc = pCreateInfo_loc.dot(Field::pVideoProfile);
-            constexpr std::array allowed_structs_VkVideoProfileInfoKHR = {
-                VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PROFILE_INFO_KHR,  VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_INFO_KHR,
-                VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR,
-                VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_INFO_KHR,
-                VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR};
-
-            skip |= ValidateStructPnext(pVideoProfile_loc, pCreateInfo->pVideoProfile->pNext,
-                                        allowed_structs_VkVideoProfileInfoKHR.size(), allowed_structs_VkVideoProfileInfoKHR.data(),
-                                        GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
             skip |=
                 ValidateFlags(pVideoProfile_loc.dot(Field::videoCodecOperation), vvl::FlagBitmask::VkVideoCodecOperationFlagBitsKHR,
                               AllVkVideoCodecOperationFlagBitsKHR, pCreateInfo->pVideoProfile->videoCodecOperation,
@@ -17951,9 +17988,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyPerformance
                                "VUID-VkQueryPoolPerformanceCreateInfoKHR-sType-sType");
     if (pPerformanceQueryCreateInfo != nullptr) {
         [[maybe_unused]] const Location pPerformanceQueryCreateInfo_loc = loc.dot(Field::pPerformanceQueryCreateInfo);
-        skip |= ValidateStructPnext(pPerformanceQueryCreateInfo_loc, pPerformanceQueryCreateInfo->pNext, 0, nullptr,
-                                    GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, physicalDevice, true);
-
         skip |= ValidateArray(pPerformanceQueryCreateInfo_loc.dot(Field::counterIndexCount),
                               pPerformanceQueryCreateInfo_loc.dot(Field::pCounterIndices),
                               pPerformanceQueryCreateInfo->counterIndexCount, &pPerformanceQueryCreateInfo->pCounterIndices, true,
@@ -18383,11 +18417,6 @@ bool StatelessValidation::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(
         ValidateStructType(loc.dot(Field::pLocationInfo), pLocationInfo, VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO_KHR,
                            true, "VUID-vkCmdSetRenderingAttachmentLocationsKHR-pLocationInfo-parameter",
                            "VUID-VkRenderingAttachmentLocationInfoKHR-sType-sType");
-    if (pLocationInfo != nullptr) {
-        [[maybe_unused]] const Location pLocationInfo_loc = loc.dot(Field::pLocationInfo);
-        skip |= ValidateStructPnext(pLocationInfo_loc, pLocationInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                    kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-    }
     return skip;
 }
 
@@ -18402,11 +18431,6 @@ bool StatelessValidation::PreCallValidateCmdSetRenderingInputAttachmentIndicesKH
                                VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO_KHR, true,
                                "VUID-vkCmdSetRenderingInputAttachmentIndicesKHR-pInputAttachmentIndexInfo-parameter",
                                "VUID-VkRenderingInputAttachmentIndexInfoKHR-sType-sType");
-    if (pInputAttachmentIndexInfo != nullptr) {
-        [[maybe_unused]] const Location pInputAttachmentIndexInfo_loc = loc.dot(Field::pInputAttachmentIndexInfo);
-        skip |= ValidateStructPnext(pInputAttachmentIndexInfo_loc, pInputAttachmentIndexInfo->pNext, 0, nullptr,
-                                    GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-    }
     return skip;
 }
 
@@ -18684,16 +18708,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLeve
 
         if (pQualityLevelInfo->pVideoProfile != nullptr) {
             [[maybe_unused]] const Location pVideoProfile_loc = pQualityLevelInfo_loc.dot(Field::pVideoProfile);
-            constexpr std::array allowed_structs_VkVideoProfileInfoKHR = {
-                VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PROFILE_INFO_KHR,  VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_INFO_KHR,
-                VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR,
-                VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_INFO_KHR,
-                VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR};
-
-            skip |= ValidateStructPnext(pVideoProfile_loc, pQualityLevelInfo->pVideoProfile->pNext,
-                                        allowed_structs_VkVideoProfileInfoKHR.size(), allowed_structs_VkVideoProfileInfoKHR.data(),
-                                        GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, physicalDevice, true);
-
             skip |=
                 ValidateFlags(pVideoProfile_loc.dot(Field::videoCodecOperation), vvl::FlagBitmask::VkVideoCodecOperationFlagBitsKHR,
                               AllVkVideoCodecOperationFlagBitsKHR, pQualityLevelInfo->pVideoProfile->videoCodecOperation,
@@ -19768,9 +19782,6 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(VkInstance
                                "VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, kVUIDUndefined,
-                                    kVUIDUndefined, VK_NULL_HANDLE, true);
-
         skip |= ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkDebugReportFlagBitsEXT,
                               AllVkDebugReportFlagBitsEXT, pCreateInfo->flags, kOptionalFlags, VK_NULL_HANDLE,
                               "VUID-VkDebugReportCallbackCreateInfoEXT-flags-parameter");
@@ -20685,9 +20696,6 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice dev
                                "VUID-VkDebugUtilsObjectNameInfoEXT-sType-sType");
     if (pNameInfo != nullptr) {
         [[maybe_unused]] const Location pNameInfo_loc = loc.dot(Field::pNameInfo);
-        skip |= ValidateStructPnext(pNameInfo_loc, pNameInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, kVUIDUndefined,
-                                    kVUIDUndefined, VK_NULL_HANDLE, true);
-
         skip |= ValidateRangedEnum(pNameInfo_loc.dot(Field::objectType), vvl::Enum::VkObjectType, pNameInfo->objectType,
                                    "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter", VK_NULL_HANDLE);
     }
@@ -20832,9 +20840,6 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance
                                "VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, kVUIDUndefined,
-                                    kVUIDUndefined, VK_NULL_HANDLE, true);
-
         skip |= ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
                                       "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
 
@@ -20956,9 +20961,6 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance i
         if (pCallbackData->pObjects != nullptr) {
             for (uint32_t objectIndex = 0; objectIndex < pCallbackData->objectCount; ++objectIndex) {
                 [[maybe_unused]] const Location pObjects_loc = pCallbackData_loc.dot(Field::pObjects, objectIndex);
-                skip |= ValidateStructPnext(pObjects_loc, pCallbackData->pObjects[objectIndex].pNext, 0, nullptr,
-                                            GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
                 skip |= ValidateRangedEnum(pObjects_loc.dot(Field::objectType), vvl::Enum::VkObjectType,
                                            pCallbackData->pObjects[objectIndex].objectType,
                                            "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter", VK_NULL_HANDLE);
@@ -21122,9 +21124,6 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
 
             if (pCreateInfos[createInfoIndex].pLibraryInfo != nullptr) {
                 [[maybe_unused]] const Location pLibraryInfo_loc = pCreateInfos_loc.dot(Field::pLibraryInfo);
-                skip |= ValidateStructPnext(pLibraryInfo_loc, pCreateInfos[createInfoIndex].pLibraryInfo->pNext, 0, nullptr,
-                                            GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
                 skip |= ValidateArray(pLibraryInfo_loc.dot(Field::libraryCount), pLibraryInfo_loc.dot(Field::pLibraries),
                                       pCreateInfos[createInfoIndex].pLibraryInfo->libraryCount,
                                       &pCreateInfos[createInfoIndex].pLibraryInfo->pLibraries, false, true, kVUIDUndefined,
@@ -21169,11 +21168,6 @@ bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
     skip |= ValidateStructType(loc.dot(Field::pNodeInfo), pNodeInfo, VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NODE_CREATE_INFO_AMDX,
                                true, "VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-pNodeInfo-parameter",
                                "VUID-VkPipelineShaderStageNodeCreateInfoAMDX-sType-sType");
-    if (pNodeInfo != nullptr) {
-        [[maybe_unused]] const Location pNodeInfo_loc = loc.dot(Field::pNodeInfo);
-        skip |= ValidateStructPnext(pNodeInfo_loc, pNodeInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, kVUIDUndefined,
-                                    kVUIDUndefined, VK_NULL_HANDLE, true);
-    }
     skip |= ValidateRequiredPointer(loc.dot(Field::pNodeIndex), pNodeIndex,
                                     "VUID-vkGetExecutionGraphPipelineNodeIndexAMDX-pNodeIndex-parameter");
     return skip;
@@ -21240,9 +21234,6 @@ bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffe
         "VUID-vkCmdSetSampleLocationsEXT-pSampleLocationsInfo-parameter", "VUID-VkSampleLocationsInfoEXT-sType-sType");
     if (pSampleLocationsInfo != nullptr) {
         [[maybe_unused]] const Location pSampleLocationsInfo_loc = loc.dot(Field::pSampleLocationsInfo);
-        skip |= ValidateStructPnext(pSampleLocationsInfo_loc, pSampleLocationsInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                    kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
         // No xml-driven validation
 
         skip |= ValidateArray(pSampleLocationsInfo_loc.dot(Field::sampleLocationsCount),
@@ -25464,9 +25455,6 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceOpticalFlowImageFormat
                                "VUID-VkOpticalFlowImageFormatInfoNV-sType-sType");
     if (pOpticalFlowImageFormatInfo != nullptr) {
         [[maybe_unused]] const Location pOpticalFlowImageFormatInfo_loc = loc.dot(Field::pOpticalFlowImageFormatInfo);
-        skip |= ValidateStructPnext(pOpticalFlowImageFormatInfo_loc, pOpticalFlowImageFormatInfo->pNext, 0, nullptr,
-                                    GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, physicalDevice, true);
-
         skip |= ValidateFlags(pOpticalFlowImageFormatInfo_loc.dot(Field::usage), vvl::FlagBitmask::VkOpticalFlowUsageFlagBitsNV,
                               AllVkOpticalFlowUsageFlagBitsNV, pOpticalFlowImageFormatInfo->usage, kRequiredFlags, VK_NULL_HANDLE,
                               "VUID-VkOpticalFlowImageFormatInfoNV-usage-parameter",
@@ -27177,9 +27165,6 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
 
             if (pCreateInfos[createInfoIndex].pLibraryInfo != nullptr) {
                 [[maybe_unused]] const Location pLibraryInfo_loc = pCreateInfos_loc.dot(Field::pLibraryInfo);
-                skip |= ValidateStructPnext(pLibraryInfo_loc, pCreateInfos[createInfoIndex].pLibraryInfo->pNext, 0, nullptr,
-                                            GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, VK_NULL_HANDLE, true);
-
                 skip |= ValidateArray(pLibraryInfo_loc.dot(Field::libraryCount), pLibraryInfo_loc.dot(Field::pLibraries),
                                       pCreateInfos[createInfoIndex].pLibraryInfo->libraryCount,
                                       &pCreateInfos[createInfoIndex].pLibraryInfo->pLibraries, false, true, kVUIDUndefined,
@@ -27755,6 +27740,15 @@ bool StatelessValidation::ValidateAccelerationStructureGeometryAabbsDataKHR(cons
     skip |=
         ValidateStructPnext(loc, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
                             "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined, VK_NULL_HANDLE, true);
+    return skip;
+}
+bool StatelessValidation::ValidateIndirectExecutionSetPipelineInfoEXT(const VkIndirectExecutionSetPipelineInfoEXT& info,
+                                                                      const Location& loc) const {
+    bool skip = false;
+    skip |= ValidateStructType(loc, &info, VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_PIPELINE_INFO_EXT, false, kVUIDUndefined,
+                               "VUID-VkIndirectExecutionSetPipelineInfoEXT-sType-sType");
+
+    skip |= ValidateRequiredHandle(loc.dot(Field::initialPipeline), info.initialPipeline);
     return skip;
 }
 
