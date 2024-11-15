@@ -48,7 +48,7 @@ class CoreChecks : public ValidationStateTracker {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
     using MemoryBarrier = sync_utils::MemoryBarrier;
-    using QueueFamilyBarrier = sync_utils::QueueFamilyBarrier;
+    using OwnershipTransferBarrier = sync_utils::OwnershipTransferBarrier;
     using BufferBarrier = sync_utils::BufferBarrier;
     using ImageBarrier = sync_utils::ImageBarrier;
     using OwnershipTransferOp = sync_utils::OwnershipTransferOp;
@@ -217,7 +217,7 @@ class CoreChecks : public ValidationStateTracker {
                                 const VkDependencyInfoKHR& dep_info) const;
 
     bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const Location& field_loc,
-                                      const QueueFamilyBarrier& barrier, const VulkanTypedHandle& handle,
+                                      const OwnershipTransferBarrier& barrier, const VulkanTypedHandle& handle,
                                       VkSharingMode sharing_mode) const;
     bool ValidateSwapchainImageExtent(const VkSwapchainCreateInfoKHR& create_info, const VkSurfaceCapabilitiesKHR& surface_caps,
                                       const Location& create_info_loc, const vvl::Surface* surface_state) const;
@@ -492,9 +492,11 @@ class CoreChecks : public ValidationStateTracker {
     template <typename Barrier, typename Scoreboard>
     bool ValidateAndUpdateQFOScoreboard(const vvl::CommandBuffer& cb_state, const char* operation, const Barrier& barrier,
                                         Scoreboard* scoreboard, const Location& loc) const;
-    template <typename Barrier, typename TransferBarrier>
-    void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const Barrier& barrier,
-                                     QFOTransferBarrierSets<TransferBarrier>& barrier_sets);
+
+    void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const BufferBarrier& barrier,
+                                     QFOTransferBarrierSets<QFOBufferTransferBarrier>& barrier_sets);
+    void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
+                                     QFOTransferBarrierSets<QFOImageTransferBarrier>& barrier_sets);
 
     template <typename Barrier, typename TransferBarrier>
     bool ValidateQFOTransferBarrierUniqueness(const Location& barrier_loc, const vvl::CommandBuffer& cb_state,

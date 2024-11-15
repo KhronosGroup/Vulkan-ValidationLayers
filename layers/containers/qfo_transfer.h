@@ -23,8 +23,7 @@
 
 // Types to store queue family ownership (QFO) Transfers
 
-template <typename Barrier>
-inline bool IsTransferOp(const Barrier &barrier) {
+static inline bool IsOwnershipTransfer(const sync_utils::OwnershipTransferBarrier &barrier) {
     return barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex;
 }
 

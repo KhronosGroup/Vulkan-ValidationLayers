@@ -113,28 +113,26 @@ struct MemoryBarrier {
 
 enum class OwnershipTransferOp { none, release, acquire };
 
-// QueueFamilyBarrier is not a real barrier (there are no queue family barriers in vulkan),
-// but is part of a buffer/image barrier structure (still can be created separately if needed).
-// This type (and also MemoryBarrier) can be used by the functionality that does not need
-// buffer/image specific information.
-struct QueueFamilyBarrier : MemoryBarrier {
+// OwnershipTransferBarrier is not a standalone barrier type; it is part of a buffer/image barrier.
+// Similar to MemoryBarrier, it can be used when buffer/image specific information is not needed.
+struct OwnershipTransferBarrier : MemoryBarrier {
     uint32_t srcQueueFamilyIndex;
     uint32_t dstQueueFamilyIndex;
 
-    QueueFamilyBarrier(const VkBufferMemoryBarrier2& barrier)
+    OwnershipTransferBarrier(const VkBufferMemoryBarrier2& barrier)
         : MemoryBarrier(barrier),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    QueueFamilyBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
+    OwnershipTransferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
                        VkPipelineStageFlags dst_stage_mask)
         : MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    QueueFamilyBarrier(const VkImageMemoryBarrier2& barrier)
+    OwnershipTransferBarrier(const VkImageMemoryBarrier2& barrier)
         : MemoryBarrier(barrier),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    QueueFamilyBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
+    OwnershipTransferBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
                        VkPipelineStageFlags dst_stage_mask)
         : MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
@@ -152,44 +150,38 @@ struct QueueFamilyBarrier : MemoryBarrier {
     }
 };
 
-struct BufferBarrier : QueueFamilyBarrier {
+struct BufferBarrier : OwnershipTransferBarrier {
     VkBuffer buffer;
     VkDeviceSize offset;
     VkDeviceSize size;
 
     explicit BufferBarrier(const VkBufferMemoryBarrier2& barrier)
-        : QueueFamilyBarrier(barrier), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
+        : OwnershipTransferBarrier(barrier), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
     BufferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : QueueFamilyBarrier(barrier, src_stage_mask, dst_stage_mask),
+        : OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
           buffer(barrier.buffer),
           offset(barrier.offset),
           size(barrier.size) {}
-
-    VulkanTypedHandle GetTypedHandle() const { return VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer); }
-    const std::shared_ptr<const vvl::Buffer> GetResourceState(const ValidationStateTracker& state_tracker) const;
 };
 
-struct ImageBarrier : QueueFamilyBarrier {
+struct ImageBarrier : OwnershipTransferBarrier {
     VkImageLayout oldLayout;
     VkImageLayout newLayout;
     VkImage image;
     VkImageSubresourceRange subresourceRange;
 
     explicit ImageBarrier(const VkImageMemoryBarrier2& barrier)
-        : QueueFamilyBarrier(barrier),
+        : OwnershipTransferBarrier(barrier),
           oldLayout(barrier.oldLayout),
           newLayout(barrier.newLayout),
           image(barrier.image),
           subresourceRange(barrier.subresourceRange) {}
     ImageBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : QueueFamilyBarrier(barrier, src_stage_mask, dst_stage_mask),
+        : OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
           oldLayout(barrier.oldLayout),
           newLayout(barrier.newLayout),
           image(barrier.image),
           subresourceRange(barrier.subresourceRange) {}
-
-    VulkanTypedHandle GetTypedHandle() const { return VulkanTypedHandle(image, kVulkanObjectTypeImage); }
-    const std::shared_ptr<const vvl::Image> GetResourceState(const ValidationStateTracker& state_tracker) const;
 };
 
 }  // namespace sync_utils

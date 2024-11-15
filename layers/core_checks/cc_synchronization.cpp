@@ -41,7 +41,7 @@
 using sync_utils::BufferBarrier;
 using sync_utils::ImageBarrier;
 using sync_utils::MemoryBarrier;
-using sync_utils::QueueFamilyBarrier;
+using sync_utils::OwnershipTransferBarrier;
 
 ReadLockGuard CoreChecks::ReadLock() const {
     if (global_settings.fine_grained_locking) {
@@ -1944,33 +1944,46 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
     }
 }
 
-template <typename Barrier, typename TransferBarrier>
-void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const Barrier &barrier,
-                                             QFOTransferBarrierSets<TransferBarrier> &barrier_sets) {
-    if (IsTransferOp(barrier)) {
+void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const BufferBarrier &barrier,
+                                             QFOTransferBarrierSets<QFOBufferTransferBarrier> &barrier_sets) {
+    if (IsOwnershipTransfer(barrier)) {
         if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(barrier);
         } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
             barrier_sets.acquire.emplace(barrier);
         }
-    }
-
-    // 7.7.4: If the values of srcQueueFamilyIndex and dstQueueFamilyIndex are equal, no ownership transfer is performed, and the
-    // barrier operates as if they were both set to VK_QUEUE_FAMILY_IGNORED.
-    const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
-    const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
-    const bool is_ownership_transfer = src_queue_family != dst_queue_family;
-
-    if (is_ownership_transfer) {
-        // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
-        // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
-        auto handle_state = barrier.GetResourceState(*this);
-        const bool mode_concurrent = handle_state && handle_state->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
+        auto buffer = Get<vvl::Buffer>(barrier.buffer);
+        const bool mode_concurrent = buffer && buffer->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
         if (!mode_concurrent) {
-            const auto typed_handle = barrier.GetTypedHandle();
+            const auto typed_handle = buffer->Handle();
             vvl::LocationCapture loc_capture(loc);
             cb_state.queue_submit_functions.emplace_back(
-                [loc_capture, typed_handle, src_queue_family, dst_queue_family](
+                [loc_capture, typed_handle, src_queue_family = barrier.srcQueueFamilyIndex,
+                 dst_queue_family = barrier.dstQueueFamilyIndex](
+                    const ValidationStateTracker &device_data, const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) {
+                    return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
+                                                             src_queue_family, dst_queue_family);
+                });
+        }
+    }
+}
+
+void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
+                                             QFOTransferBarrierSets<QFOImageTransferBarrier> &barrier_sets) {
+    if (IsOwnershipTransfer(barrier)) {
+        if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
+            barrier_sets.release.emplace(barrier);
+        } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+            barrier_sets.acquire.emplace(barrier);
+        }
+        auto image = Get<vvl::Image>(barrier.image);
+        const bool mode_concurrent = image && image->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
+        if (!mode_concurrent) {
+            const auto typed_handle = image->Handle();
+            vvl::LocationCapture loc_capture(loc);
+            cb_state.queue_submit_functions.emplace_back(
+                [loc_capture, typed_handle, src_queue_family = barrier.srcQueueFamilyIndex,
+                 dst_queue_family = barrier.dstQueueFamilyIndex](
                     const ValidationStateTracker &device_data, const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) {
                     return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state, typed_handle,
                                                              src_queue_family, dst_queue_family);
@@ -2132,7 +2145,7 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &barrier_lo
     bool skip = false;
     const char *handle_name = TransferBarrier::HandleName();
     const char *transfer_type = nullptr;
-    if (!IsTransferOp(barrier)) {
+    if (!IsOwnershipTransfer(barrier)) {
         return skip;
     }
     const TransferBarrier *barrier_record = nullptr;
@@ -2311,7 +2324,7 @@ static bool Validate(const CoreChecks *device_data, const ValidatorState &val, c
 }
 
 static bool ValidateHostStage(const ValidationObject *validation_obj, const LogObjectList &objects, const Location &barrier_loc,
-                              const QueueFamilyBarrier &barrier) {
+                              const OwnershipTransferBarrier &barrier) {
     bool skip = false;
     // src/dst queue families should be equal if HOST_BIT is used
     if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) {
@@ -2347,7 +2360,7 @@ bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const Va
 }
 
 bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const Location &field_loc,
-                                              const QueueFamilyBarrier &barrier, const VulkanTypedHandle &handle,
+                                              const OwnershipTransferBarrier &barrier, const VulkanTypedHandle &handle,
                                               VkSharingMode sharing_mode) const {
     bool skip = false;
     barrier_queue_families::ValidatorState val(*this, objects, field_loc, handle, sharing_mode);
