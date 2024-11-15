@@ -1994,6 +1994,78 @@ TEST_F(PositiveSyncObject, IgnoreReleaseOpDstStage) {
     release_cb.End();
 }
 
+TEST_F(PositiveSyncObject, ImageOwnershipTransferNormalizeSubresourceRange) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8823
+    TEST_DESCRIPTION("Use different representations of image subresource range for release and acquire ownership operations");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
+    }
+    vkt::CommandPool release_pool(*m_device, transfer_queue->family_index);
+    vkt::CommandBuffer release_cb(*m_device, release_pool);
+    vkt::CommandBuffer acquire_cb(*m_device, m_command_pool);
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, usage);
+    image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    // Release image
+    VkImageMemoryBarrier2 release_barrier = vku::InitStructHelper();
+    release_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    release_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+    release_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    release_barrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+    release_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+    release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    release_barrier.image = image;
+    // Specify exact mip/layer count
+    release_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo release_dep_info = vku::InitStructHelper();
+    release_dep_info.imageMemoryBarrierCount = 1;
+    release_dep_info.pImageMemoryBarriers = &release_barrier;
+    release_cb.Begin();
+    vk::CmdPipelineBarrier2(release_cb, &release_dep_info);
+    release_cb.End();
+
+    // Acquire image
+    VkImageMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    acquire_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    acquire_barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    acquire_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    acquire_barrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+    acquire_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    acquire_barrier.image = image;
+    // Use VK_REMAINING shortcut to specify mip/layer count.
+    // Test for regression when VK_REMAINING is not compared correctly against specific mip/layer values for ownership transfer.
+    acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+
+    VkDependencyInfo acquire_dep_info = vku::InitStructHelper();
+    acquire_dep_info.imageMemoryBarrierCount = 1;
+    acquire_dep_info.pImageMemoryBarriers = &acquire_barrier;
+    acquire_cb.Begin();
+    vk::CmdPipelineBarrier2(acquire_cb, &acquire_dep_info);
+    acquire_cb.End();
+
+    // Submit release on the transfer queue and acquire on the main queue.
+    // There should be no errors about missing release operation for acquire operation.
+    vkt::Semaphore semaphore(*m_device);
+    transfer_queue->Submit2(release_cb, vkt::Signal(semaphore));
+    m_default_queue->Submit2(acquire_cb, vkt::Wait(semaphore));
+    m_device->Wait();
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 TEST_F(PositiveSyncObject, GetCounterValueOfExportedSemaphore) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8212
