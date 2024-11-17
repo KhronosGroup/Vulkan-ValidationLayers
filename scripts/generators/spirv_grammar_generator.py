@@ -46,6 +46,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
         self.cooperativeMatrixList = []
         self.hasType = []
         self.hasResult = []
+        self.provisionalList = []
         # Need range to be large as largest possible operand index
         # This is done to make it easier to group switch case of same value
         self.imageOperandsParamCount = [[] for i in range(3)]
@@ -108,9 +109,17 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 self.addToStringList(operandKind, 'Dim', self.dimList)
                 self.addToStringList(operandKind, 'CooperativeMatrixOperands', self.cooperativeMatrixList, ['NoneKHR'])
 
+                if 'enumerants' in operandKind:
+                    for enum in operandKind['enumerants']:
+                        if 'provisional' in enum:
+                            self.provisionalList.append(enum['enumerant'])
+
             for instruction in instructions:
                 opname = instruction['opname']
                 opcode = instruction['opcode']
+
+                if 'provisional' in instruction:
+                    self.provisionalList.append(opname)
 
                 if 'capabilities' in instruction:
                     notSupported = True
@@ -144,7 +153,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 if re.search("OpImageSample.*", opname) is not None:
                     self.imageSampleOps.append(opname)
                 if re.search("OpType.*", opname) is not None:
-                    self.typeOps.append(opname)
+                    # Currently this is for GPU-AV which doesn't supporrt provisional extensions
+                    if opname not in self.provisionalList:
+                        self.typeOps.append(opname)
                 if 'operands' in instruction:
                     for index, operand in enumerate(instruction['operands']):
                         kind = operand['kind']
@@ -280,12 +291,17 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             std::string string_SpvCooperativeMatrixOperands(uint32_t mask);
             ''')
 
-        hasTypeCase = "\n".join([f"        case spv::{f}:" for f in self.hasType])
-        hasResultCase = "\n".join([f"        case spv::{f}:" for f in self.hasResult])
+        hasTypeCase = "\n".join([f"        case spv::{f}:" for f in self.hasType if f not in self.provisionalList])
+        hasTypeCaseProvisional = "\n".join([f"        case spv::{f}:" for f in self.hasType if f in self.provisionalList])
+        hasResultCase = "\n".join([f"        case spv::{f}:" for f in self.hasResult if f not in self.provisionalList])
+        hasResultCaseProvisional = "\n".join([f"        case spv::{f}:" for f in self.hasResult if f in self.provisionalList])
         out.append(f'''
             static constexpr bool OpcodeHasType(uint32_t opcode) {{
                 switch (opcode) {{
             {hasTypeCase}
+            #ifdef VK_ENABLE_BETA_EXTENSIONS
+            {hasTypeCaseProvisional}
+            #endif
                         return true;
                     default:
                         return false;
@@ -295,6 +311,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
             static constexpr bool OpcodeHasResult(uint32_t opcode) {{
                 switch (opcode) {{
             {hasResultCase}
+            #ifdef VK_ENABLE_BETA_EXTENSIONS
+            {hasResultCaseProvisional}
+            #endif
                         return true;
                     default:
                         return false;
@@ -511,7 +530,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(opcode) {{
             {"".join([f"""        case spv::{x}:
                         return "{x}";
-            """ for x in self.opnames])}
+            """ for x in self.opnames if x not in self.provisionalList])}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {"".join([f"""        case spv::{x}:
+                        return "{x}";
+            """ for x in self.opnames if x in self.provisionalList])}#endif
                     default:
                         return "Unknown Opcode";
                 }}
@@ -521,7 +544,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(storage_class) {{
             {"".join([f"""        case spv::StorageClass{x}:
                         return "{x}";
-            """ for x in self.storageClassList])}
+            """ for x in self.storageClassList if x not in self.provisionalList])}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {"".join([f"""        case spv::StorageClass{x}:
+                        return "{x}";
+            """ for x in self.storageClassList if x in self.provisionalList])}#endif
                     default:
                         return "Unknown Storage Class";
                 }}
@@ -531,7 +558,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(execution_model) {{
             {"".join([f"""        case spv::ExecutionModel{x}:
                         return "{x}";
-            """ for x in self.executionModelList])}
+            """ for x in self.executionModelList if x not in self.provisionalList])}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {"".join([f"""        case spv::ExecutionModel{x}:
+                        return "{x}";
+            """ for x in self.executionModelList if x in self.provisionalList])}#endif
                     default:
                         return "Unknown Execution Model";
                 }}
@@ -541,7 +572,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(execution_mode) {{
             {"".join([f"""        case spv::ExecutionMode{x}:
                         return "{x}";
-            """ for x in self.executionModeList])}
+            """ for x in self.executionModeList if x not in self.provisionalList])}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {"".join([f"""        case spv::ExecutionMode{x}:
+                        return "{x}";
+            """ for x in self.executionModeList if x in self.provisionalList])}#endif
                     default:
                         return "Unknown Execution Mode";
                 }}
@@ -551,7 +586,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(decoration) {{
             {"".join([f"""        case spv::Decoration{x}:
                         return "{x}";
-            """ for x in self.decorationList])}
+            """ for x in self.decorationList if x not in self.provisionalList])}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {"".join([f"""        case spv::Decoration{x}:
+                        return "{x}";
+            """ for x in self.decorationList if x in self.provisionalList])}#endif
                     default:
                         return "Unknown Decoration";
                 }}
@@ -561,7 +600,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(built_in) {{
             {"".join([f"""        case spv::BuiltIn{x}:
                         return "{x}";
-            """ for x in self.builtInList])}
+            """ for x in self.builtInList if x not in self.provisionalList])}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {"".join([f"""        case spv::BuiltIn{x}:
+                        return "{x}";
+            """ for x in self.builtInList if x in self.provisionalList])}#endif
                     default:
                         return "Unknown BuiltIn";
                 }}
@@ -571,7 +614,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 switch(dim) {{
             {"".join([f"""        case spv::Dim{x}:
                         return "{x}";
-            """ for x in self.dimList])}
+            """ for x in self.dimList if x not in self.provisionalList])}
                     default:
                         return "Unknown Dim";
                 }}
@@ -583,7 +626,7 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         return "NoneKHR";
             {"".join([f"""        case spv::CooperativeMatrixOperands{x}Mask:
                         return "{x}";
-            """ for x in self.cooperativeMatrixList])}
+            """ for x in self.cooperativeMatrixList if x not in self.provisionalList])}
                     default:
                         return "Unknown CooperativeMatrixOperandsMask";
                 }}
@@ -610,6 +653,8 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                 // clang-format off\n''')
         for info in self.opcodes.values():
             opname = info['opname']
+            if opname in self.provisionalList:
+                continue # Currently this is for GPU-AV which doesn't supporrt provisional extensions
             kinds = ", ".join([f"OperandKind::{f}" for f in info['operands']])
             out.append(f'        {{spv::{opname}, {{{{{kinds}}}}}}},\n')
         out.append('''    }; // clang-format on
