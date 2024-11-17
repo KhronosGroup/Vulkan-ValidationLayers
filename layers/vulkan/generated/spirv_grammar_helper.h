@@ -263,14 +263,8 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpColorAttachmentReadEXT:
         case spv::OpDepthAttachmentReadEXT:
         case spv::OpStencilAttachmentReadEXT:
-        case spv::OpUntypedVariableKHR:
-        case spv::OpUntypedAccessChainKHR:
-        case spv::OpUntypedInBoundsAccessChainKHR:
         case spv::OpSubgroupBallotKHR:
         case spv::OpSubgroupFirstInvocationKHR:
-        case spv::OpUntypedPtrAccessChainKHR:
-        case spv::OpUntypedInBoundsPtrAccessChainKHR:
-        case spv::OpUntypedArrayLengthKHR:
         case spv::OpSubgroupAllKHR:
         case spv::OpSubgroupAnyKHR:
         case spv::OpSubgroupAllEqualKHR:
@@ -311,10 +305,6 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpFragmentMaskFetchAMD:
         case spv::OpFragmentFetchAMD:
         case spv::OpReadClockKHR:
-        case spv::OpAllocateNodePayloadsAMDX:
-        case spv::OpFinishWritingNodePayloadAMDX:
-        case spv::OpNodePayloadArrayLengthAMDX:
-        case spv::OpIsNodePayloadValidAMDX:
         case spv::OpGroupNonUniformQuadAllKHR:
         case spv::OpGroupNonUniformQuadAnyKHR:
         case spv::OpHitObjectGetWorldToObjectNV:
@@ -414,6 +404,18 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpGroupLogicalAndKHR:
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case spv::OpUntypedVariableKHR:
+        case spv::OpUntypedAccessChainKHR:
+        case spv::OpUntypedInBoundsAccessChainKHR:
+        case spv::OpUntypedPtrAccessChainKHR:
+        case spv::OpUntypedInBoundsPtrAccessChainKHR:
+        case spv::OpUntypedArrayLengthKHR:
+        case spv::OpAllocateNodePayloadsAMDX:
+        case spv::OpFinishWritingNodePayloadAMDX:
+        case spv::OpNodePayloadArrayLengthAMDX:
+        case spv::OpIsNodePayloadValidAMDX:
+#endif
             return true;
         default:
             return false;
@@ -662,15 +664,8 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpColorAttachmentReadEXT:
         case spv::OpDepthAttachmentReadEXT:
         case spv::OpStencilAttachmentReadEXT:
-        case spv::OpTypeUntypedPointerKHR:
-        case spv::OpUntypedVariableKHR:
-        case spv::OpUntypedAccessChainKHR:
-        case spv::OpUntypedInBoundsAccessChainKHR:
         case spv::OpSubgroupBallotKHR:
         case spv::OpSubgroupFirstInvocationKHR:
-        case spv::OpUntypedPtrAccessChainKHR:
-        case spv::OpUntypedInBoundsPtrAccessChainKHR:
-        case spv::OpUntypedArrayLengthKHR:
         case spv::OpSubgroupAllKHR:
         case spv::OpSubgroupAnyKHR:
         case spv::OpSubgroupAllEqualKHR:
@@ -713,13 +708,6 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpFragmentMaskFetchAMD:
         case spv::OpFragmentFetchAMD:
         case spv::OpReadClockKHR:
-        case spv::OpAllocateNodePayloadsAMDX:
-        case spv::OpTypeNodePayloadArrayAMDX:
-        case spv::OpFinishWritingNodePayloadAMDX:
-        case spv::OpNodePayloadArrayLengthAMDX:
-        case spv::OpIsNodePayloadValidAMDX:
-        case spv::OpConstantStringAMDX:
-        case spv::OpSpecConstantStringAMDX:
         case spv::OpGroupNonUniformQuadAllKHR:
         case spv::OpGroupNonUniformQuadAnyKHR:
         case spv::OpHitObjectGetWorldToObjectNV:
@@ -824,6 +812,22 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpGroupLogicalAndKHR:
         case spv::OpGroupLogicalOrKHR:
         case spv::OpGroupLogicalXorKHR:
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case spv::OpTypeUntypedPointerKHR:
+        case spv::OpUntypedVariableKHR:
+        case spv::OpUntypedAccessChainKHR:
+        case spv::OpUntypedInBoundsAccessChainKHR:
+        case spv::OpUntypedPtrAccessChainKHR:
+        case spv::OpUntypedInBoundsPtrAccessChainKHR:
+        case spv::OpUntypedArrayLengthKHR:
+        case spv::OpAllocateNodePayloadsAMDX:
+        case spv::OpTypeNodePayloadArrayAMDX:
+        case spv::OpFinishWritingNodePayloadAMDX:
+        case spv::OpNodePayloadArrayLengthAMDX:
+        case spv::OpIsNodePayloadValidAMDX:
+        case spv::OpConstantStringAMDX:
+        case spv::OpSpecConstantStringAMDX:
+#endif
             return true;
         default:
             return false;
@@ -1195,10 +1199,8 @@ enum class SpvType {
     kPointer,
     kFunction,
     kForwardPointer,
-    kUntypedPointerKHR,
     kCooperativeMatrixKHR,
     kRayQueryKHR,
-    kNodePayloadArrayAMDX,
     kHitObjectNV,
     kAccelerationStructureKHR,
     kCooperativeMatrixNV,
@@ -1238,14 +1240,10 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::kFunction;
         case spv::OpTypeForwardPointer:
             return SpvType::kForwardPointer;
-        case spv::OpTypeUntypedPointerKHR:
-            return SpvType::kUntypedPointerKHR;
         case spv::OpTypeCooperativeMatrixKHR:
             return SpvType::kCooperativeMatrixKHR;
         case spv::OpTypeRayQueryKHR:
             return SpvType::kRayQueryKHR;
-        case spv::OpTypeNodePayloadArrayAMDX:
-            return SpvType::kNodePayloadArrayAMDX;
         case spv::OpTypeHitObjectNV:
             return SpvType::kHitObjectNV;
         case spv::OpTypeAccelerationStructureKHR:

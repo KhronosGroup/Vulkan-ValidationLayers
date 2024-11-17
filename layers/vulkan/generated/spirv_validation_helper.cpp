@@ -245,7 +245,9 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites(
         {spv::CapabilityTileImageDepthReadAccessEXT, {0, &DeviceFeatures::shaderTileImageDepthReadAccess, nullptr, ""}},
         {spv::CapabilityTileImageStencilReadAccessEXT, {0, &DeviceFeatures::shaderTileImageStencilReadAccess, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixKHR, {0, &DeviceFeatures::cooperativeMatrix, nullptr, ""}},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         {spv::CapabilityShaderEnqueueAMDX, {0, &DeviceFeatures::shaderEnqueue, nullptr, ""}},
+#endif
         {spv::CapabilityGroupNonUniformRotateKHR, {0, &DeviceFeatures::shaderSubgroupRotate, nullptr, ""}},
         {spv::CapabilityExpectAssumeKHR, {0, &DeviceFeatures::shaderExpectAssume, nullptr, ""}},
         {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
@@ -558,8 +560,10 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "RayQueryProvisionalKHR";
         case spv::CapabilityRayQueryKHR:
             return "RayQueryKHR";
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::CapabilityUntypedPointersKHR:
             return "UntypedPointersKHR";
+#endif
         case spv::CapabilityRayTraversalPrimitiveCullingKHR:
             return "RayTraversalPrimitiveCullingKHR";
         case spv::CapabilityRayTracingKHR:
@@ -586,8 +590,10 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "Int64ImageEXT";
         case spv::CapabilityShaderClockKHR:
             return "ShaderClockKHR";
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::CapabilityShaderEnqueueAMDX:
             return "ShaderEnqueueAMDX";
+#endif
         case spv::CapabilityQuadControlKHR:
             return "QuadControlKHR";
         case spv::CapabilitySampleMaskOverrideCoverageNV:
@@ -991,7 +997,9 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityTileImageDepthReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageDepthReadAccess"},
     {spv::CapabilityTileImageStencilReadAccessEXT, "VkPhysicalDeviceShaderTileImageFeaturesEXT::shaderTileImageStencilReadAccess"},
     {spv::CapabilityCooperativeMatrixKHR, "VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrix"},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     {spv::CapabilityShaderEnqueueAMDX, "VkPhysicalDeviceShaderEnqueueFeaturesAMDX::shaderEnqueue"},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     {spv::CapabilityGroupNonUniformRotateKHR, "VkPhysicalDeviceShaderSubgroupRotateFeaturesKHR::shaderSubgroupRotate"},
     {spv::CapabilityExpectAssumeKHR, "VkPhysicalDeviceShaderExpectAssumeFeaturesKHR::shaderExpectAssume"},
     {spv::CapabilityFloatControls2, "VkPhysicalDeviceShaderFloatControls2FeaturesKHR::shaderFloatControls2"},
