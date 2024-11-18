@@ -335,9 +335,9 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         const bool use_stdout = gpuav.gpuav_settings.debug_printf_to_stdout;
         if (gpuav.gpuav_settings.debug_printf_verbose) {
             std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-                command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0, debug_record->stage_info_1,
-                debug_record->stage_info_2, debug_record->instruction_position, instrumented_shader, debug_record->shader_id,
-                buffer_info.pipeline_bind_point, buffer_info.action_command_index);
+                command_buffer, std::nullopt, instructions, debug_record->stage_id, debug_record->stage_info_0,
+                debug_record->stage_info_1, debug_record->stage_info_2, debug_record->instruction_position, instrumented_shader,
+                debug_record->shader_id, buffer_info.pipeline_bind_point, buffer_info.action_command_index);
             if (use_stdout) {
                 std::cout << "VVL-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {

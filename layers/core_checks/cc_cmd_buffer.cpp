@@ -1883,7 +1883,7 @@ bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer command
         return skip;
     }
 
-    if (cb_state->LabelStackDepth() < 1) {
+    if (cb_state->GetLabelStackDepth() < 1) {
         skip |= LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913", commandBuffer, error_obj.location,
                          "called without a corresponding vkCmdBeginDebugUtilsLabelEXT first");
     }
