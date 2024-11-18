@@ -340,6 +340,14 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
         return skip;
     }
 
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8875
+    // TODO - The logic to find the OpVariable is broken when two OpVariable are aliased, for now to prevent false positives here
+    // until we can get more info out of GPU-AV to know which OpVariable was actually used. (Skipping here because the alias doesn't
+    // effect the above checks if the descriptor is valid to access or not)
+    if (binding_info.second.size() > 1) {
+        return skip;
+    }
+
     // If there is an non-null imageView, the image inside should be valid
     const auto image_state = image_view_state->image_state.get();
     ASSERT_AND_RETURN_SKIP(image_state);
