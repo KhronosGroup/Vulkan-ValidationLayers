@@ -42,9 +42,6 @@ class DescriptorSet : public vvl::DescriptorSet {
 
     std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, uint32_t shader_set) const;
 
-  protected:
-    bool SkipBinding(const vvl::DescriptorBinding &binding, bool is_dynamic_accessed) const override { return true; }
-
   private:
     void BuildBindingLayouts();
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }

@@ -834,7 +834,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t
             return result;
         }
 
-        if (descriptor_set.SkipBinding(*binding, binding_pair.second.variable->is_dynamic_accessed)) {
+        if (descriptor_set.ValidateBindingOnGPU(*binding, binding_pair.second.variable->is_dynamic_accessed)) {
             continue;
         }
         vvl::DescriptorBindingInfo binding_info;
