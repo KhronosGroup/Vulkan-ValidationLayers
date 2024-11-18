@@ -1335,45 +1335,131 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily2) {
               other_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);
 }
 
-TEST_F(NegativeSyncObject, BarrierQueueFamily3) {
-    TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
-    SetTargetApiVersion(VK_API_VERSION_1_0);
+TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
+    TEST_DESCRIPTION("Neither src nor dst barrier queue family matches submit queue family");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    // Find queues of two families
-    const uint32_t submit_family = m_device->graphics_queue_node_index_;
-    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
-    const uint32_t other_family = submit_family != 0 ? 0 : 1;
-    const bool only_one_family = (queue_family_count == 1) ||
-                                 (m_device->Physical().queue_properties_[other_family].queueCount == 0) ||
-                                 ((m_device->Physical().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
-
-    if (only_one_family) {
-        GTEST_SKIP() << "Single queue family found";
-    }
-    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
-    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
-
-    BarrierQueueFamilyTestHelper excl_test(&test_context);
-    excl_test.Init(nullptr);
-
-    // Need a third queue family to test this.
-    uint32_t third_family = VK_QUEUE_FAMILY_IGNORED;
-    for (uint32_t candidate = 0; candidate < queue_family_count; ++candidate) {
-        if (candidate != submit_family && candidate != other_family &&
-            m_device->Physical().queue_properties_[candidate].queueCount != 0) {
-            third_family = candidate;
-            break;
-        }
+    vkt::Queue *transfer_only_queue = m_device->TransferOnlyQueue();
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!transfer_only_queue || !compute_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only and compute-only queue family is required";
     }
 
-    if (third_family == VK_QUEUE_FAMILY_IGNORED) {
-        GTEST_SKIP() << "No third queue family found";
-    }
-    excl_test("VUID-vkQueueSubmit-pSubmits-04626", "VUID-vkQueueSubmit-pSubmits-04626", other_family, third_family, submit_family);
+    vkt::CommandPool release_pool(*m_device, transfer_only_queue->family_index);
+    vkt::CommandBuffer release_cb(*m_device, release_pool);
+    vkt::CommandBuffer acquire_cb(*m_device, m_command_pool);
+
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, usage);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // Release image
+    VkImageMemoryBarrier2 release_barrier = vku::InitStructHelper();
+    release_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    release_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+    release_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    release_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    release_barrier.srcQueueFamilyIndex = compute_only_family.value();  // specify compute family instead of expected transfer
+    release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    release_barrier.image = image;
+    release_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo release_dep_info = vku::InitStructHelper();
+    release_dep_info.imageMemoryBarrierCount = 1;
+    release_dep_info.pImageMemoryBarriers = &release_barrier;
+    release_cb.Begin();
+    vk::CmdPipelineBarrier2(release_cb, &release_dep_info);
+    release_cb.End();
+
+    // Acquire image
+    VkImageMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    acquire_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+    acquire_barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+    acquire_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    acquire_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    acquire_barrier.srcQueueFamilyIndex = transfer_only_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = compute_only_family.value();  // specify compute family instead of expected graphics
+    acquire_barrier.image = image;
+    acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo acquire_dep_info = vku::InitStructHelper();
+    acquire_dep_info.imageMemoryBarrierCount = 1;
+    acquire_dep_info.pImageMemoryBarriers = &acquire_barrier;
+    acquire_cb.Begin();
+    vk::CmdPipelineBarrier2(acquire_cb, &acquire_dep_info);
+    acquire_cb.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkImageMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies");
+    transfer_only_queue->Submit2(release_cb);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkImageMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies");
+    m_default_queue->Submit2(acquire_cb);
+    m_errorMonitor->VerifyFound();
+
+    m_device->Wait();
 }
 
-TEST_F(NegativeSyncObject, ConcurrentBufferBarrierIgnoredQueue) {
+TEST_F(NegativeSyncObject, BufferOwnershipTransferQueueMismatch) {
+    TEST_DESCRIPTION("Neither src nor dst barrier queue family matches submit queue family");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Queue *transfer_only_queue = m_device->TransferOnlyQueue();
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!transfer_only_queue || !compute_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only and compute-only queue family is required";
+    }
+
+    vkt::CommandPool release_pool(*m_device, transfer_only_queue->family_index);
+    vkt::CommandBuffer release_cb(*m_device, release_pool);
+    vkt::CommandBuffer acquire_cb(*m_device, m_command_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Release buffer
+    VkBufferMemoryBarrier release_barrier = vku::InitStructHelper();
+    release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+    release_barrier.srcQueueFamilyIndex = compute_only_family.value();  // specify compute family instead of expected transfer
+    release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    release_barrier.buffer = buffer;
+    release_barrier.size = 256;
+    release_cb.Begin();
+    vk::CmdPipelineBarrier(release_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1,
+                           &release_barrier, 0, nullptr);
+    release_cb.End();
+
+    // Acquire image
+    VkBufferMemoryBarrier acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.srcAccessMask = 0;
+    acquire_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    acquire_barrier.srcQueueFamilyIndex = transfer_only_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = compute_only_family.value();  // specify compute family instead of expected graphics
+    acquire_barrier.buffer = buffer;
+    acquire_barrier.size = 256;
+    acquire_cb.Begin();
+    vk::CmdPipelineBarrier(acquire_cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1,
+                           &acquire_barrier, 0, nullptr);
+    acquire_cb.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies");
+    transfer_only_queue->Submit(release_cb);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies");
+    m_default_queue->Submit(acquire_cb);
+    m_errorMonitor->VerifyFound();
+
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncObject, ConcurrentBufferBarrierNeedsIgnoredQueue) {
     TEST_DESCRIPTION("Barrier for concurrent buffer resource must have VK_QUEUE_FAMILY_IGNORED at least for src or dst");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -1406,7 +1492,7 @@ TEST_F(NegativeSyncObject, ConcurrentBufferBarrierIgnoredQueue) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncObject, ConcurrentImageBarrierIgnoredQueue) {
+TEST_F(NegativeSyncObject, ConcurrentImageBarrierNeedsIgnoredQueue) {
     TEST_DESCRIPTION("Barrier for concurrent image resource must have VK_QUEUE_FAMILY_IGNORED at least for src or dst");
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
