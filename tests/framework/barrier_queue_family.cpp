@@ -52,8 +52,9 @@ void BarrierQueueFamilyBase::Context::Reset() {
 void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL, families);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
+        families ? vvl::make_span(families->data(), families->size()) : vvl::span<uint32_t>{});
     if (image_memory) {
         image_.init(*device_obj, image_ci, 0);
         image_.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);

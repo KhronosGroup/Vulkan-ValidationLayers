@@ -737,7 +737,7 @@ class Image : public internal::NonDispHandle<VkImage> {
     static VkImageCreateInfo ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
                                                uint32_t const layers, VkFormat const format, VkFlags const usage,
                                                VkImageTiling const requested_tiling = VK_IMAGE_TILING_OPTIMAL,
-                                               const std::vector<uint32_t> *queue_families = nullptr);
+                                               const vvl::span<uint32_t> &queue_families = {});
 
     static bool IsCompatible(const Device &dev, VkImageUsageFlags usages, VkFormatFeatureFlags2 features);
 
