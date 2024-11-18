@@ -1817,9 +1817,9 @@ TEST_F(NegativeSyncObject, Sync2BarrierQueueFamily) {
     excl_test(VK_QUEUE_FAMILY_EXTERNAL_KHR, submit_family);
 }
 
-TEST_F(NegativeSyncObject, BarrierQueues) {
-    TEST_DESCRIPTION("Test buffer memory with both src and dst queue VK_QUEUE_FAMILY_EXTERNAL.");
-
+TEST_F(NegativeSyncObject, BufferBarrierQueuesExternalAndForeign) {
+    TEST_DESCRIPTION("Test buffer barrier with one family EXTERNAL and another one FOREIGN_EXT");
+    AddRequiredExtensions(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
@@ -1829,7 +1829,7 @@ TEST_F(NegativeSyncObject, BarrierQueues) {
     bmb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     bmb.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     bmb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
-    bmb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    bmb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_FOREIGN_EXT;
     bmb.buffer = buffer.handle();
     bmb.offset = 0;
     bmb.size = VK_WHOLE_SIZE;
@@ -1838,6 +1838,37 @@ TEST_F(NegativeSyncObject, BarrierQueues) {
     m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-04087");
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &bmb, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, BufferBarrierQueuesExternalAndForeign2) {
+    TEST_DESCRIPTION("Test buffer barrier with one family EXTERNAL and another one FOREIGN_EXT");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkBufferMemoryBarrier2 bmb = vku::InitStructHelper();
+    bmb.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    bmb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    bmb.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    bmb.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    bmb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_FOREIGN_EXT;
+    bmb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    bmb.buffer = buffer.handle();
+    bmb.offset = 0;
+    bmb.size = VK_WHOLE_SIZE;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &bmb;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier2-srcQueueFamilyIndex-04087");
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

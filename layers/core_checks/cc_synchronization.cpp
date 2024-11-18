@@ -2413,7 +2413,8 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
         }
     }
 
-    if ((mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
+    if ((mem_barrier.srcQueueFamilyIndex != mem_barrier.dstQueueFamilyIndex) &&
+        (mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
          mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_FOREIGN_EXT) &&
         (mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
          mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_FOREIGN_EXT)) {
