@@ -1373,6 +1373,77 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily3) {
     excl_test("VUID-vkQueueSubmit-pSubmits-04626", "VUID-vkQueueSubmit-pSubmits-04626", other_family, third_family, submit_family);
 }
 
+TEST_F(NegativeSyncObject, ConcurrentBufferBarrierIgnoredQueue) {
+    TEST_DESCRIPTION("Barrier for concurrent buffer resource must have VK_QUEUE_FAMILY_IGNORED at least for src or dst");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+
+    // Create VK_SHARING_MODE_CONCURRENT buffer by specifying queue families
+    uint32_t queue_families[2] = {m_default_queue->family_index, transfer_only_family.value()};
+    vkt::Buffer buffer;
+    buffer.init(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0, nullptr, vvl::make_span(queue_families, 2));
+
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    // Specify EXTERNAL for both queue families to trigger VU
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    barrier.buffer = buffer.handle();
+    barrier.offset = 0;
+    barrier.size = 256;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier-None-09049");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                           1, &barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, ConcurrentImageBarrierIgnoredQueue) {
+    TEST_DESCRIPTION("Barrier for concurrent image resource must have VK_QUEUE_FAMILY_IGNORED at least for src or dst");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+
+    // Create VK_SHARING_MODE_CONCURRENT image by specifying queue families
+    uint32_t queue_families[2] = {m_default_queue->family_index, transfer_only_family.value()};
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, usage,
+                                                               VK_IMAGE_TILING_OPTIMAL, vvl::make_span(queue_families, 2));
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // Release image
+    VkImageMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // Specify EXTERNAL for both queue families to trigger VU
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+    barrier.image = image;
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-None-09052");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncObject, BufferBarrierWithHostStage) {
     TEST_DESCRIPTION("Buffer barrier includes VK_PIPELINE_STAGE_2_HOST_BIT as srcStageMask or dstStageMask");
     SetTargetApiVersion(VK_API_VERSION_1_3);

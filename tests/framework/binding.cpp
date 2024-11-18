@@ -1248,7 +1248,7 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
 
 VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
                                            uint32_t const layers, VkFormat const format, VkFlags const usage,
-                                           VkImageTiling const requested_tiling, const std::vector<uint32_t> *queue_families) {
+                                           VkImageTiling const requested_tiling, const vvl::span<uint32_t> &queue_families) {
     VkImageCreateInfo imageCreateInfo = CreateInfo();
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
@@ -1260,10 +1260,10 @@ VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const 
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Automatically set sharing mode etc. based on queue family information
-    if (queue_families && (queue_families->size() > 1)) {
+    if (queue_families.size() > 1) {
         imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
-        imageCreateInfo.pQueueFamilyIndices = queue_families->data();
+        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
+        imageCreateInfo.pQueueFamilyIndices = queue_families.data();
     }
     imageCreateInfo.usage = usage;
     return imageCreateInfo;
