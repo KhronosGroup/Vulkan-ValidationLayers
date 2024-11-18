@@ -701,7 +701,7 @@ void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, vv
         ASSERT_AND_CONTINUE(binding);
 
         // core validation doesn't handle descriptor indexing, that is only done by GPU-AV
-        if (SkipBinding(*binding, binding_req_pair.second.variable->is_dynamic_accessed)) {
+        if (ValidateBindingOnGPU(*binding, binding_req_pair.second.variable->is_dynamic_accessed)) {
             continue;
         }
         switch (binding->descriptor_class) {
