@@ -419,11 +419,11 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         std::stringstream ss;
         for (int i = 0; i < 32; i++) {
             if ((1 << i) & surface_caps.supportedTransforms) {
-                ss << "  " << string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1 << i)) << "%s\n";
+                ss << "  " << string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1 << i)) << "\n";
             }
         }
         return LogError("VUID-VkSwapchainCreateInfoKHR-preTransform-01279", device, create_info_loc.dot(Field::preTransform),
-                        "is not supported, support values are:\n%s.", ss.str().c_str());
+                        "is not supported, supported values are:\n%s", ss.str().c_str());
     }
 
     // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
@@ -433,11 +433,11 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         std::stringstream ss;
         for (int i = 0; i < 32; i++) {
             if ((1 << i) & surface_caps.supportedCompositeAlpha) {
-                ss << "  " << string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << i)) << "%s\n";
+                ss << "  " << string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << i)) << "\n";
             }
         }
         return LogError("VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", device, create_info_loc.dot(Field::compositeAlpha),
-                        "is not supported, support values are:\n%s.", ss.str().c_str());
+                        "is not supported, supported values are:\n%s", ss.str().c_str());
     }
     // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
     if (create_info.imageArrayLayers > surface_caps.maxImageArrayLayers) {
