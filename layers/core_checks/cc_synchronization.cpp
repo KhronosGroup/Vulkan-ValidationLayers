@@ -1944,7 +1944,76 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
     }
 }
 
-void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const BufferBarrier &barrier,
+static bool IsQueueFamilyValid(const ValidationStateTracker &device_data, uint32_t queue_family) {
+    return (queue_family < static_cast<uint32_t>(device_data.physical_device_state->queue_family_properties.size()));
+}
+
+static bool IsQueueFamilySpecial(uint32_t queue_family) {
+    return IsQueueFamilyExternal(queue_family) || (queue_family == VK_QUEUE_FAMILY_IGNORED);
+}
+
+static const char *GetFamilyAnnotation(const ValidationStateTracker &device_data, uint32_t family) {
+    switch (family) {
+        case VK_QUEUE_FAMILY_EXTERNAL:
+            return " (VK_QUEUE_FAMILY_EXTERNAL)";
+        case VK_QUEUE_FAMILY_FOREIGN_EXT:
+            return " (VK_QUEUE_FAMILY_FOREIGN_EXT)";
+        case VK_QUEUE_FAMILY_IGNORED:
+            return " (VK_QUEUE_FAMILY_IGNORED)";
+        default:
+            if (!IsQueueFamilyValid(device_data, family)) {
+                return " (invalid queue family index)";
+            }
+            return "";
+    }
+}
+
+bool CoreChecks::ValidateHostStage(const LogObjectList &objlist, const Location &barrier_loc,
+                                   const OwnershipTransferBarrier &barrier) const {
+    bool skip = false;
+    // src/dst queue families should be equal if HOST_BIT is used
+    if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) {
+        const bool is_sync2 = barrier_loc.structure == vvl::Struct::VkBufferMemoryBarrier2 ||
+                              barrier_loc.structure == vvl::Struct::VkImageMemoryBarrier2;
+        auto stage_field = vvl::Field::Empty;
+        if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+            stage_field = vvl::Field::srcStageMask;
+        } else if (barrier.dstStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
+            stage_field = vvl::Field::dstStageMask;
+        }
+        if (stage_field != vvl::Field::Empty) {
+            const auto &vuid = sync_vuid_maps::GetBarrierQueueVUID(barrier_loc, sync_vuid_maps::QueueError::kHostStage);
+            const Location stage_loc = is_sync2 ? barrier_loc.dot(stage_field) : Location(barrier_loc.function, stage_field);
+            skip |= LogError(vuid, objlist, stage_loc,
+                             "is %s but srcQueueFamilyIndex (%" PRIu32 ") != dstQueueFamilyIndex (%" PRIu32 ").",
+                             is_sync2 ? "VK_PIPELINE_STAGE_2_HOST_BIT" : "VK_PIPELINE_STAGE_HOST_BIT", barrier.srcQueueFamilyIndex,
+                             barrier.dstQueueFamilyIndex);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateOwnershipTransferQueueSubmit(const Location &barrier_loc, const vvl::Queue &queue_state,
+                                                      const VulkanTypedHandle &resource_typed_handle, uint32_t src_family,
+                                                      uint32_t dst_family) const {
+    bool skip = false;
+    uint32_t queue_family = queue_state.queue_family_index;
+    if (src_family != queue_family && dst_family != queue_family) {
+        const std::string vuid = GetBarrierQueueVUID(barrier_loc, sync_vuid_maps::QueueError::kSubmitQueueMustMatchSrcOrDst);
+        const char *src_annotation = GetFamilyAnnotation(*this, src_family);
+        const char *dst_annotation = GetFamilyAnnotation(*this, dst_family);
+        const LogObjectList objlist(queue_state.Handle(), resource_typed_handle);
+        skip |= LogError(vuid, objlist, barrier_loc,
+                         "submitted to queue with family index %" PRIu32 " has srcQueueFamilyIndex %" PRIu32
+                         "%s and dstQueueFamilyIndex %" PRIu32
+                         "%s. Source or destination queue family must match submit queue family, if not ignored.",
+                         queue_family, src_family, src_annotation, dst_family, dst_annotation);
+    }
+    return skip;
+}
+
+void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::CommandBuffer &cb_state,
+                                             const BufferBarrier &barrier,
                                              QFOTransferBarrierSets<QFOBufferTransferBarrier> &barrier_sets) {
     if (IsOwnershipTransfer(barrier)) {
         if (auto buffer = Get<vvl::Buffer>(barrier.buffer)) {
@@ -1953,22 +2022,21 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBu
             } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
                 barrier_sets.acquire.emplace(barrier);
             }
-            const bool mode_concurrent = buffer->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
-            if (!mode_concurrent) {
+            if (buffer->create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE) {
                 cb_state.queue_submit_functions.emplace_back(
-                    [loc_capture = vvl::LocationCapture(loc), typed_handle = buffer->Handle(),
+                    [this, barrier_loc_capture = vvl::LocationCapture(barrier_loc), typed_handle = buffer->Handle(),
                      src_queue_family = barrier.srcQueueFamilyIndex, dst_queue_family = barrier.dstQueueFamilyIndex](
-                        const ValidationStateTracker &device_data, const vvl::Queue &queue_state,
-                        const vvl::CommandBuffer &cb_state) {
-                        return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state,
-                                                                 typed_handle, src_queue_family, dst_queue_family);
+                        const ValidationStateTracker &, const vvl::Queue &queue_state, const vvl::CommandBuffer &) {
+                        return ValidateOwnershipTransferQueueSubmit(barrier_loc_capture.Get(), queue_state, typed_handle,
+                                                                    src_queue_family, dst_queue_family);
                     });
             }
         }
     }
 }
 
-void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBuffer &cb_state, const ImageBarrier &image_barrier,
+void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::CommandBuffer &cb_state,
+                                             const ImageBarrier &image_barrier,
                                              QFOTransferBarrierSets<QFOImageTransferBarrier> &barrier_sets) {
     if (IsOwnershipTransfer(image_barrier)) {
         if (auto image = Get<vvl::Image>(image_barrier.image)) {
@@ -1980,15 +2048,13 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, vvl::CommandBu
             } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
                 barrier_sets.acquire.emplace(barrier);
             }
-            const bool mode_concurrent = image->create_info.sharingMode == VK_SHARING_MODE_CONCURRENT;
-            if (!mode_concurrent) {
+            if (image->create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE) {
                 cb_state.queue_submit_functions.emplace_back(
-                    [loc_capture = vvl::LocationCapture(loc), typed_handle = image->Handle(),
+                    [this, barrier_loc_capture = vvl::LocationCapture(barrier_loc), typed_handle = image->Handle(),
                      src_queue_family = barrier.srcQueueFamilyIndex, dst_queue_family = barrier.dstQueueFamilyIndex](
-                        const ValidationStateTracker &device_data, const vvl::Queue &queue_state,
-                        const vvl::CommandBuffer &cb_state) {
-                        return ValidateConcurrentBarrierAtSubmit(loc_capture.Get(), device_data, queue_state, cb_state,
-                                                                 typed_handle, src_queue_family, dst_queue_family);
+                        const ValidationStateTracker &, const vvl::Queue &queue_state, const vvl::CommandBuffer &) {
+                        return ValidateOwnershipTransferQueueSubmit(barrier_loc_capture.Get(), queue_state, typed_handle,
+                                                                    src_queue_family, dst_queue_family);
                     });
             }
         }
@@ -2000,29 +2066,29 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, Vk
                                 const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                 const VkImageMemoryBarrier *pImageMemBarriers) {
     for (uint32_t i = 0; i < bufferBarrierCount; i++) {
-        Location loc(func_name, Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
+        Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(pBufferMemBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(loc, cb_state, barrier, cb_state.qfo_transfer_buffer_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_state.qfo_transfer_buffer_barriers);
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; i++) {
-        Location loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
+        Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(loc, cb_state, img_barrier, cb_state.qfo_transfer_image_barriers);
-        EnqueueSubmitTimeValidateImageBarrierAttachment(loc, cb_state, img_barrier);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_state.qfo_transfer_image_barriers);
+        EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
 
 void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, const VkDependencyInfoKHR &dep_info) {
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
-        Location loc(func_name, Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
+        Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
-        RecordBarrierValidationInfo(loc, cb_state, barrier, cb_state.qfo_transfer_buffer_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_state.qfo_transfer_buffer_barriers);
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
-        Location loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
+        Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
-        RecordBarrierValidationInfo(loc, cb_state, img_barrier, cb_state.qfo_transfer_image_barriers);
-        EnqueueSubmitTimeValidateImageBarrierAttachment(loc, cb_state, img_barrier);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_state.qfo_transfer_image_barriers);
+        EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
 
@@ -2175,200 +2241,78 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &barrier_lo
     return skip;
 }
 
-namespace barrier_queue_families {
-using sync_vuid_maps::GetBarrierQueueVUID;
-using sync_vuid_maps::GetQueueErrorSummaryMap;
-using sync_vuid_maps::QueueError;
-
-class ValidatorState {
-  public:
-    ValidatorState(const ValidationStateTracker &device_data, const LogObjectList &obj, const Location &location,
-                   const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
-        : device_data_(device_data),
-          objects_(std::move(obj)),
-          loc_(location),
-          barrier_handle_(barrier_handle),
-          sharing_mode_(sharing_mode),
-          limit_(static_cast<uint32_t>(device_data.physical_device_state->queue_family_properties.size())) {}
-
-    // Log the messages using boilerplate from object state, and Vu specific information from the template arg
-    // One and two family versions, in the single family version, Vu holds the name of the passed parameter
-    bool LogMsg(QueueError vu_index, uint32_t family, const char *param_name) const {
-        const std::string val_code = GetBarrierQueueVUID(loc_, vu_index);
-        const char *annotation = GetFamilyAnnotation(family);
-        return device_data_.LogError(val_code, objects_, loc_,
-                                     "barrier using %s %s created with sharingMode %s, has %s %" PRIu32 "%s. %s", GetTypeString(),
-                                     device_data_.FormatHandle(barrier_handle_).c_str(), GetModeString(), param_name, family,
-                                     annotation, GetQueueErrorSummaryMap().at(vu_index).c_str());
-    }
-
-    bool LogMsg(QueueError vu_index, uint32_t src_family, uint32_t dst_family) const {
-        const std::string val_code = GetBarrierQueueVUID(loc_, vu_index);
-        const char *src_annotation = GetFamilyAnnotation(src_family);
-        const char *dst_annotation = GetFamilyAnnotation(dst_family);
-        return device_data_.LogError(val_code, objects_, loc_,
-                                     "barrier using %s %s created with sharingMode %s, has srcQueueFamilyIndex %" PRIu32
-                                     "%s and dstQueueFamilyIndex %" PRIu32 "%s. %s",
-                                     GetTypeString(), device_data_.FormatHandle(barrier_handle_).c_str(), GetModeString(),
-                                     src_family, src_annotation, dst_family, dst_annotation,
-                                     GetQueueErrorSummaryMap().at(vu_index).c_str());
-    }
-
-    // This abstract Vu can only be tested at submit time, thus we need a callback from the closure containing the needed
-    // data. Note that the mem_barrier is copied to the closure as the lambda lifespan exceed the guarantees of validity for
-    // application input.
-    static bool ValidateAtQueueSubmit(const vvl::Queue *queue_state, const ValidationStateTracker &device_data, uint32_t src_family,
-                                      uint32_t dst_family, const ValidatorState &val) {
-        uint32_t queue_family = queue_state->queue_family_index;
-        if ((src_family != queue_family) && (dst_family != queue_family)) {
-            const char *src_annotation = val.GetFamilyAnnotation(src_family);
-            const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
-            return device_data.LogError("VUID-vkQueueSubmit-pSubmits-04626", queue_state->Handle(), val.loc_,
-                                        "barrier submitted to queue with family index %" PRIu32
-                                        ", using %s %s created with sharingMode %s, has "
-                                        "srcQueueFamilyIndex %" PRIu32 "%s and dstQueueFamilyIndex %" PRIu32
-                                        "%s. Source or destination queue family must match submit queue family, if not ignored.",
-                                        queue_family, val.GetTypeString(), device_data.FormatHandle(val.barrier_handle_).c_str(),
-                                        val.GetModeString(), src_family, src_annotation, dst_family, dst_annotation);
-        }
-        return false;
-    }
-    // Logical helpers for semantic clarity
-    inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
-    inline bool IsValidOrSpecial(uint32_t queue_family) const {
-        return IsValid(queue_family) || IsQueueFamilyExternal(queue_family) || (queue_family == VK_QUEUE_FAMILY_IGNORED);
-    }
-
-    // Helpers for LogMsg
-    const char *GetModeString() const { return string_VkSharingMode(sharing_mode_); }
-
-    // Descriptive text for the various types of queue family index
-    const char *GetFamilyAnnotation(uint32_t family) const {
-        const char *external = " (VK_QUEUE_FAMILY_EXTERNAL)";
-        const char *foreign = " (VK_QUEUE_FAMILY_FOREIGN_EXT)";
-        const char *ignored = " (VK_QUEUE_FAMILY_IGNORED)";
-        const char *valid = " (VALID)";
-        const char *invalid = " (INVALID)";
-        switch (family) {
-            case VK_QUEUE_FAMILY_EXTERNAL:
-                return external;
-            case VK_QUEUE_FAMILY_FOREIGN_EXT:
-                return foreign;
-            case VK_QUEUE_FAMILY_IGNORED:
-                return ignored;
-            default:
-                if (IsValid(family)) {
-                    return valid;
-                }
-                return invalid;
-        }
-    }
-    const char *GetTypeString() const { return string_VulkanObjectType(barrier_handle_.type); }
-    VkSharingMode GetSharingMode() const { return sharing_mode_; }
-
-  protected:
-    const ValidationStateTracker &device_data_;
-    const LogObjectList objects_;
-    const Location loc_;
-    const VulkanTypedHandle barrier_handle_;
-    const VkSharingMode sharing_mode_;
-    const uint32_t limit_;
-};
-
-static bool Validate(const CoreChecks *device_data, const ValidatorState &val, const uint32_t src_queue_family,
-                     const uint32_t dst_queue_family) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const Location &field_loc,
+                                              const OwnershipTransferBarrier &barrier, const VulkanTypedHandle &resource_handle,
+                                              VkSharingMode sharing_mode) const {
     bool skip = false;
+    using sync_vuid_maps::QueueError;
 
-    if (!IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {
+    auto log_queue_family_error = [sharing_mode, resource_handle, &barrier_loc, &field_loc, device_data_ = this,
+                                   objects_ = objects](QueueError vu_index, uint32_t family, const char *param_name) -> bool {
+        const std::string &vuid = GetBarrierQueueVUID(field_loc, vu_index);
+        const char *annotation = GetFamilyAnnotation(*device_data_, family);
+        return device_data_->LogError(
+            vuid, objects_, barrier_loc, "barrier using %s created with sharingMode %s, has %s %" PRIu32 "%s. %s",
+            device_data_->FormatHandle(resource_handle).c_str(), string_VkSharingMode(sharing_mode), param_name, family, annotation,
+            sync_vuid_maps::GetQueueErrorSummaryMap().at(vu_index).c_str());
+    };
+    const auto src_queue_family = barrier.srcQueueFamilyIndex;
+    const auto dst_queue_family = barrier.dstQueueFamilyIndex;
+
+    if (!IsExtEnabled(device_extensions.vk_khr_external_memory)) {
         if (src_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
-            skip |= val.LogMsg(QueueError::kSrcNoExternalExt, src_queue_family, "srcQueueFamilyIndex");
+            skip |= log_queue_family_error(QueueError::kSrcNoExternalExt, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
-            skip |= val.LogMsg(QueueError::kDstNoExternalExt, dst_queue_family, "dstQueueFamilyIndex");
+            skip |= log_queue_family_error(QueueError::kDstNoExternalExt, dst_queue_family, "dstQueueFamilyIndex");
         }
 
-        if (val.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
-            if (!val.IsValid(src_queue_family)) {
-                skip |= val.LogMsg(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
+        if (sharing_mode == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
+            if (!IsQueueFamilyValid(*this, src_queue_family)) {
+                skip |= log_queue_family_error(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-            if (!val.IsValid(dst_queue_family)) {
-                skip |= val.LogMsg(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
+            if (!IsQueueFamilyValid(*this, dst_queue_family)) {
+                skip |= log_queue_family_error(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
     } else {
-        if (val.GetSharingMode() == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
-            if (!val.IsValidOrSpecial(src_queue_family)) {
-                skip |= val.LogMsg(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
+        if (sharing_mode == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
+            if (!(IsQueueFamilyValid(*this, src_queue_family) || IsQueueFamilySpecial(src_queue_family))) {
+                skip |= log_queue_family_error(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-            if (!val.IsValidOrSpecial(dst_queue_family)) {
-                skip |= val.LogMsg(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
+            if (!(IsQueueFamilyValid(*this, dst_queue_family) || IsQueueFamilySpecial(dst_queue_family))) {
+                skip |= log_queue_family_error(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
     }
 
-    if (!IsExtEnabled(device_data->device_extensions.vk_ext_queue_family_foreign)) {
+    if (!IsExtEnabled(device_extensions.vk_ext_queue_family_foreign)) {
         if (src_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
-            skip |= val.LogMsg(QueueError::kSrcNoForeignExt, src_queue_family, "srcQueueFamilyIndex");
+            skip |= log_queue_family_error(QueueError::kSrcNoForeignExt, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
-            skip |= val.LogMsg(QueueError::kDstNoForeignExt, dst_queue_family, "dstQueueFamilyIndex");
+            skip |= log_queue_family_error(QueueError::kDstNoForeignExt, dst_queue_family, "dstQueueFamilyIndex");
         }
     }
 
-    if (!device_data->enabled_features.synchronization2 && val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT) {
+    if (!enabled_features.synchronization2 && sharing_mode == VK_SHARING_MODE_CONCURRENT) {
         if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && src_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
-            skip |= val.LogMsg(QueueError::kSync1ConcurrentSrc, src_queue_family, "srcQueueFamilyIndex");
+            skip |= log_queue_family_error(QueueError::kSync1ConcurrentSrc, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_EXTERNAL) {
-            skip |= val.LogMsg(QueueError::kSync1ConcurrentDst, dst_queue_family, "dstQueueFamilyIndex");
+            skip |= log_queue_family_error(QueueError::kSync1ConcurrentDst, dst_queue_family, "dstQueueFamilyIndex");
         } else if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_IGNORED) {
-            skip |= val.LogMsg(QueueError::kSync1ConcurrentNoIgnored, src_queue_family, dst_queue_family);
+            const std::string &vuid = GetBarrierQueueVUID(field_loc, QueueError::kSync1ConcurrentNoIgnored);
+            const char *src_annotation = GetFamilyAnnotation(*this, src_queue_family);
+            const char *dst_annotation = GetFamilyAnnotation(*this, dst_queue_family);
+            // Log both src and dst queue families
+            skip |= LogError(vuid, objects, barrier_loc,
+                             "barrier using %s created with sharingMode %s, has srcQueueFamilyIndex %" PRIu32
+                             "%s and dstQueueFamilyIndex %" PRIu32
+                             "%s. Source or destination queue family must be VK_QUEUE_FAMILY_IGNORED.",
+                             FormatHandle(resource_handle).c_str(), string_VkSharingMode(sharing_mode), src_queue_family,
+                             src_annotation, dst_queue_family, dst_annotation);
         }
     }
 
-    return skip;
-}
-
-static bool ValidateHostStage(const ValidationObject *validation_obj, const LogObjectList &objects, const Location &barrier_loc,
-                              const OwnershipTransferBarrier &barrier) {
-    bool skip = false;
-    // src/dst queue families should be equal if HOST_BIT is used
-    if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) {
-        const bool is_sync2 = barrier_loc.structure == vvl::Struct::VkBufferMemoryBarrier2 ||
-                              barrier_loc.structure == vvl::Struct::VkImageMemoryBarrier2;
-        auto stage_field = vvl::Field::Empty;
-        if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
-            stage_field = vvl::Field::srcStageMask;
-        } else if (barrier.dstStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
-            stage_field = vvl::Field::dstStageMask;
-        }
-        if (stage_field != vvl::Field::Empty) {
-            const auto &vuid = GetBarrierQueueVUID(barrier_loc, QueueError::kHostStage);
-            const Location stage_loc = is_sync2 ? barrier_loc.dot(stage_field) : Location(barrier_loc.function, stage_field);
-            skip |= validation_obj->LogError(vuid, objects, stage_loc,
-                                             "is %s but srcQueueFamilyIndex (%" PRIu32 ") != dstQueueFamilyIndex (%" PRIu32 ").",
-                                             is_sync2 ? "VK_PIPELINE_STAGE_2_HOST_BIT" : "VK_PIPELINE_STAGE_HOST_BIT",
-                                             barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
-        }
-    }
-    return skip;
-}
-
-}  // namespace barrier_queue_families
-
-bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const Location &loc, const ValidationStateTracker &state_data,
-                                                   const vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state,
-                                                   const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
-                                                   uint32_t dst_queue_family) {
-    using barrier_queue_families::ValidatorState;
-    ValidatorState val(state_data, LogObjectList(cb_state.Handle()), loc, typed_handle, VK_SHARING_MODE_CONCURRENT);
-    return ValidatorState::ValidateAtQueueSubmit(&queue_state, state_data, src_queue_family, dst_queue_family, val);
-}
-
-bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const Location &field_loc,
-                                              const OwnershipTransferBarrier &barrier, const VulkanTypedHandle &handle,
-                                              VkSharingMode sharing_mode) const {
-    bool skip = false;
-    barrier_queue_families::ValidatorState val(*this, objects, field_loc, handle, sharing_mode);
-    skip |= barrier_queue_families::Validate(this, val, barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex);
-    skip |= barrier_queue_families::ValidateHostStage(this, objects, barrier_loc, barrier);
+    skip |= ValidateHostStage(objects, barrier_loc, barrier);
     return skip;
 }
 

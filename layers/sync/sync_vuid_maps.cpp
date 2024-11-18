@@ -977,6 +977,13 @@ static const vvl::unordered_map<QueueError, std::vector<Entry>> &GetBarrierQueue
              {Key(Struct::VkBufferMemoryBarrier), "VUID-vkCmdPipelineBarrier-srcStageMask-09634"},
              {Key(Struct::VkImageMemoryBarrier), "VUID-vkCmdPipelineBarrier-srcStageMask-09633"},
          }},
+        {QueueError::kSubmitQueueMustMatchSrcOrDst,
+         {
+             {Key(Struct::VkBufferMemoryBarrier2), "UNASSIGNED-VkBufferMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies"},
+             {Key(Struct::VkBufferMemoryBarrier), "UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies"},
+             {Key(Struct::VkImageMemoryBarrier2), "UNASSIGNED-VkImageMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies"},
+             {Key(Struct::VkImageMemoryBarrier), "UNASSIGNED-VkImageMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies"},
+         }},
     };
     return kBarrierQueueErrors;
 }
@@ -987,7 +994,6 @@ const vvl::unordered_map<QueueError, std::string> &GetQueueErrorSummaryMap() {
         {QueueError::kDstNoExternalExt, "Destination queue family must not be VK_QUEUE_FAMILY_EXTERNAL."},
         {QueueError::kSrcNoForeignExt, "Source queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT."},
         {QueueError::kDstNoForeignExt, "Destination queue family must not be VK_QUEUE_FAMILY_FOREIGN_EXT."},
-        {QueueError::kSync1ConcurrentNoIgnored, "Source or destination queue family must be VK_QUEUE_FAMILY_IGNORED."},
         {QueueError::kSync1ConcurrentSrc, "Source queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL."},
         {QueueError::kSync1ConcurrentDst, "Destination queue family must be VK_QUEUE_FAMILY_IGNORED or VK_QUEUE_FAMILY_EXTERNAL."},
         {QueueError::kExclusiveSrc, "Source queue family must be valid when using VK_SHARING_MODE_EXCLUSIVE."},
