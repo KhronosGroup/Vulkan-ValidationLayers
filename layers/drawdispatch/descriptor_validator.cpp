@@ -27,6 +27,7 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_module.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "utils/vk_layer_utils.h"
 
 namespace vvl {
 
@@ -297,6 +298,7 @@ static const spirv::ResourceInterfaceVariable *FindMatchingImageVariable(const s
 bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
                                              VkDescriptorType descriptor_type, const ImageDescriptor &image_descriptor) const {
     // We skip various parts of checks for core check to prevent false positive when we don't know the index
+    bool skip = false;
     const bool is_gpu_av = dev_state.container_type == LayerObjectTypeGpuAssisted;
     std::vector<const Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
@@ -333,18 +335,24 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
                                   DescribeDescriptor(binding_info, index).c_str(), dev_state.FormatHandle(image_view).c_str());
     }
 
+    // ImageView could be null via nullDescriptor and accessing it is legal
     if (image_view == VK_NULL_HANDLE) {
-        return false;
+        return skip;
     }
+
+    // If there is an non-null imageView, the image inside should be valid
+    const auto image_state = image_view_state->image_state.get();
+    ASSERT_AND_RETURN_SKIP(image_state);
+
     const auto &image_view_ci = image_view_state->create_info;
     const auto *variable = FindMatchingImageVariable(binding_info.second, image_view_ci);
-    if (!variable || !variable->IsAccessed()) return false;
+    if (!variable || !variable->IsAccessed()) return skip;
 
     // If not an image array, the set of indexes will be empty and we guarantee this is the only element.
     // For GPU-AV image_access_chain_indexes will be filled with invalid values because it wasn't known when created.
     if (!is_gpu_av && !variable->image_access_chain_indexes.empty() &&
         variable->image_access_chain_indexes.find(index) == variable->image_access_chain_indexes.end()) {
-        return false;
+        return skip;
     }
 
     const spv::Dim dim = variable->info.image_dim;
@@ -421,10 +429,9 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
                                           "Sampled Type has a width of %" PRIu32 ".",
                                           DescribeDescriptor(binding_info, index).c_str(), string_VkFormat(image_view_ci.format),
                                           variable->image_sampled_type_width);
-            } else if (!dev_state.enabled_features.sparseImageInt64Atomics && image_view_state->image_state &&
-                       image_view_state->image_state->sparse_residency) {
+            } else if (!dev_state.enabled_features.sparseImageInt64Atomics && image_state->sparse_residency) {
                 auto set = descriptor_set.Handle();
-                const LogObjectList objlist(set, image_view, image_view_state->image_state->Handle());
+                const LogObjectList objlist(set, image_view, image_state->Handle());
                 return dev_state.LogError(
                     vuids.image_view_sparse_64_04474, objlist, loc,
                     "the descriptor %s has a OpTypeImage's Sampled Type has a width of 64 backed by a sparse Image, but "
@@ -466,24 +473,29 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     }
 
     // Verify Sample counts
-    if (variable->IsImage() && !variable->info.is_multisampled && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
-        auto set = descriptor_set.Handle();
-        return dev_state.LogError("VUID-RuntimeSpirv-samples-08725", set, loc, "the descriptor %s has image created with %s.",
-                                  DescribeDescriptor(binding_info, index).c_str(),
-                                  string_VkSampleCountFlagBits(image_view_state->samples));
-    }
-    if (variable->IsImage() && variable->info.is_multisampled && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
-        auto set = descriptor_set.Handle();
-        return dev_state.LogError("VUID-RuntimeSpirv-samples-08726", set, loc,
-                                  "the descriptor %s has image created with VK_SAMPLE_COUNT_1_BIT.",
-                                  DescribeDescriptor(binding_info, index).c_str());
+    if (variable->IsImage()) {
+        if (!variable->info.is_multisampled && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
+            auto set = descriptor_set.Handle();
+            const LogObjectList objlist(set, image_view);
+            return dev_state.LogError("VUID-RuntimeSpirv-samples-08725", objlist, loc, "the descriptor %s has %s created with %s.",
+                                      DescribeDescriptor(binding_info, index).c_str(),
+                                      dev_state.FormatHandle(image_state->Handle()).c_str(),
+                                      string_VkSampleCountFlagBits(image_view_state->samples));
+        }
+        if (variable->info.is_multisampled && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
+            auto set = descriptor_set.Handle();
+            const LogObjectList objlist(set, image_view);
+            return dev_state.LogError(
+                "VUID-RuntimeSpirv-samples-08726", objlist, loc, "the descriptor %s has %s created with VK_SAMPLE_COUNT_1_BIT.",
+                DescribeDescriptor(binding_info, index).c_str(), dev_state.FormatHandle(image_state->Handle()).c_str());
+        }
     }
 
     if (image_view_state->samplerConversion) {
         if (variable->info.is_not_sampler_sampled) {
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, image_view);
-            return dev_state.LogError(vuids.image_ycbcr_sampled_06550, set, loc,
+            return dev_state.LogError(vuids.image_ycbcr_sampled_06550, objlist, loc,
                                       "the image descriptor %s was created with a sampler Ycbcr conversion, but was accessed with "
                                       "a non OpImage*Sample* command.",
                                       DescribeDescriptor(binding_info, index).c_str());
@@ -491,7 +503,7 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
         if (variable->info.is_sampler_offset) {
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, image_view);
-            return dev_state.LogError(vuids.image_ycbcr_offset_06551, set, loc,
+            return dev_state.LogError(vuids.image_ycbcr_offset_06551, objlist, loc,
                                       "the image descriptor %s was created with a sampler Ycbcr conversion, but was accessed with "
                                       "ConstOffset/Offset image operands.",
                                       DescribeDescriptor(binding_info, index).c_str());
@@ -630,13 +642,13 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
         }
     }
 
-    if (dev_state.enabled_features.protectedMemory == VK_TRUE && image_view_state->image_state) {
-        if (dev_state.ValidateProtectedImage(cb_state, *image_view_state->image_state, loc, vuids.unprotected_command_buffer_02707,
+    if (dev_state.enabled_features.protectedMemory == VK_TRUE) {
+        if (dev_state.ValidateProtectedImage(cb_state, *image_state, loc, vuids.unprotected_command_buffer_02707,
                                              " (Image is in a descriptorSet)")) {
             return true;
         }
         if (variable->IsWrittenTo() &&
-            dev_state.ValidateUnprotectedImage(cb_state, *image_view_state->image_state, loc, vuids.protected_command_buffer_02712,
+            dev_state.ValidateUnprotectedImage(cb_state, *image_state, loc, vuids.protected_command_buffer_02712,
                                                " (Image is in a descriptorSet)")) {
             return true;
         }
@@ -788,8 +800,6 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
                 }
             }
         }
-        const auto image_state = image_view_state->image_state.get();
-        if (!image_state) continue;
         if ((image_state->create_info.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
             (sampler_state->create_info.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
              sampler_state->create_info.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
@@ -840,7 +850,7 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
                     "the descriptor %s Image View %s was created with levelCount of %s, but the sampler (%s) was created with "
                     "unnormalizedCoordinates.",
                     DescribeDescriptor(binding_info, index).c_str(), dev_state.FormatHandle(image_view).c_str(),
-                    string_LevelCount(image_view_state->image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    string_LevelCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
                     dev_state.FormatHandle(sampler_state->Handle()).c_str());
             }
 
@@ -852,7 +862,7 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
                     "the descriptor %s Image View %s was created with layerCount of %s, but the sampler (%s) was created with "
                     "unnormalizedCoordinates.",
                     DescribeDescriptor(binding_info, index).c_str(), dev_state.FormatHandle(image_view).c_str(),
-                    string_LayerCount(image_view_state->image_state->create_info, image_view_ci.subresourceRange).c_str(),
+                    string_LayerCount(image_state->create_info, image_view_ci.subresourceRange).c_str(),
                     dev_state.FormatHandle(sampler_state->Handle()).c_str());
             }
 
