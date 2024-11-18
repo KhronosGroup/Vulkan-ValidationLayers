@@ -46,6 +46,7 @@ enum class QueueError {
     kExclusiveSrc,
     kExclusiveDst,
     kHostStage,
+    kSubmitQueueMustMatchSrcOrDst,
 };
 
 const vvl::unordered_map<QueueError, std::string> &GetQueueErrorSummaryMap();

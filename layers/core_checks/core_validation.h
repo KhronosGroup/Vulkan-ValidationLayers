@@ -167,10 +167,6 @@ class CoreChecks : public ValidationStateTracker {
                                         const ImageBarrier& img_barrier,
                                         const vvl::CommandBuffer* primary_cb_state = nullptr) const;
 
-    static bool ValidateConcurrentBarrierAtSubmit(const Location& loc, const ValidationStateTracker& state_data,
-                                                  const vvl::Queue& queue_data, const vvl::CommandBuffer& cb_state,
-                                                  const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
-                                                  uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                     VkSubpassContents contents, const ErrorObject& error_obj) const;
     bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
@@ -215,6 +211,13 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& dep_info_loc, const vvl::CommandBuffer& cb_state,
                                 const VkDependencyInfoKHR& dep_info) const;
+
+    bool ValidateHostStage(const LogObjectList& objlist, const Location& barrier_loc,
+                           const OwnershipTransferBarrier& barrier) const;
+
+    bool ValidateOwnershipTransferQueueSubmit(const Location& barrier_loc, const vvl::Queue& queue_state,
+                                              const VulkanTypedHandle& resource_typed_handle, uint32_t src_family,
+                                              uint32_t dst_family) const;
 
     bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const Location& field_loc,
                                       const OwnershipTransferBarrier& barrier, const VulkanTypedHandle& handle,
