@@ -31,6 +31,10 @@
 // alias it with "Instruction" as that name shouldn't collide with anything.
 using Instruction = ::spirv::Instruction;
 
+namespace vvl {
+struct LabelCommand;
+}
+
 namespace chassis {
 struct ShaderInstrumentationMetadata;
 struct ShaderObjectInstrumentationData;
@@ -163,11 +167,11 @@ class GpuShaderInstrumentor : public ValidationStateTracker {
 
     bool IsSelectiveInstrumentationEnabled(const void *pNext);
 
-    std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::vector<Instruction> &instructions,
-                                         uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2,
-                                         uint32_t instruction_position, const InstrumentedShader *instrumented_shader,
-                                         uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
-                                         uint32_t operation_index) const;
+    std::string GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, const std::optional<vvl::LabelCommand> &label_cmd,
+                                         const std::vector<Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
+                                         uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position,
+                                         const InstrumentedShader *instrumented_shader, uint32_t shader_id,
+                                         VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const;
 
   protected:
     bool NeedPipelineCreationShaderInstrumentation(vvl::Pipeline &pipeline_state, const Location &loc);

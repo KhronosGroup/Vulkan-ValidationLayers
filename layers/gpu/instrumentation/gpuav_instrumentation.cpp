@@ -25,6 +25,7 @@
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/debug_printf/debug_printf.h"
 
+#include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
@@ -394,18 +395,42 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
     const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
                                   (last_bound.pipeline_state && last_bound.pipeline_state->uses_pipeline_robustness));
 
+    std::optional<vvl::LabelCommand> deepest_opened_label_region = std::nullopt;
+    {
+        int32_t ended_label_regions_count = 0;
+        if (auto deepest_opened_label_region_rit =
+                std::find_if(cb_state.GetLabelCommands().rbegin(), cb_state.GetLabelCommands().rend(),
+                             [&ended_label_regions_count](const vvl::LabelCommand &label_cmd) {
+                                 if (label_cmd.begin) {
+                                     if (ended_label_regions_count == 0) {
+                                         return true;
+                                     } else {
+                                         --ended_label_regions_count;
+                                         return false;
+                                     }
+                                 } else {
+                                     ++ended_label_regions_count;
+                                     return false;
+                                 }
+                             });
+            deepest_opened_label_region_rit != cb_state.GetLabelCommands().rend()) {
+            deepest_opened_label_region = *deepest_opened_label_region_rit;
+        }
+    }
+
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc, descriptor_binding_index, descriptor_binding_list = &cb_state.descriptor_command_bindings,
-         cb_state_handle = cb_state.VkHandle(), bind_point, operation_index, uses_shader_object,
+         cb_state_handle = cb_state.VkHandle(), bind_point, deepest_opened_label_region, operation_index, uses_shader_object,
          uses_robustness](Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist) {
             bool skip = false;
 
             const DescriptorCommandBinding *descriptor_command_binding =
                 descriptor_binding_index != vvl::kU32Max ? &(*descriptor_binding_list)[descriptor_binding_index] : nullptr;
-            skip |= LogInstrumentationError(gpuav, cb_state_handle, objlist, operation_index, error_record,
-                                            descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
-                                                                       : std::vector<DescriptorCommandBountSet>(),
-                                            bind_point, uses_shader_object, uses_robustness, loc);
+            skip |=
+                LogInstrumentationError(gpuav, cb_state_handle, objlist, deepest_opened_label_region, operation_index, error_record,
+                                        descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
+                                                                   : std::vector<DescriptorCommandBountSet>(),
+                                        bind_point, uses_shader_object, uses_robustness, loc);
             return skip;
         };
 
@@ -518,7 +543,7 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
             error_found = true;
         } break;
     }
-    out_error_msg = strm.str();
+    out_error_msg += strm.str();
     return error_found;
 }
 
@@ -588,7 +613,7 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
             assert(false);  // other OOB checks are not implemented yet
     }
 
-    out_error_msg = strm.str();
+    out_error_msg += strm.str();
     return error_found;
 }
 
@@ -618,7 +643,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
             error_found = false;
             break;
     }
-    out_error_msg = strm.str();
+    out_error_msg += strm.str();
     return error_found;
 }
 
@@ -683,7 +708,7 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
             error_found = false;
             break;
     }
-    out_error_msg = strm.str();
+    out_error_msg += strm.str();
     return error_found;
 }
 
@@ -694,7 +719,8 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist, uint32_t operation_index,
+bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist,
+                             const std::optional<vvl::LabelCommand> &label_cmd, uint32_t operation_index,
                              const uint32_t *error_record, const std::vector<DescriptorCommandBountSet> &descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location &loc) {
@@ -748,7 +774,7 @@ bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const
         }
 
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-            cmd_buffer, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
+            cmd_buffer, label_cmd, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
             instrumented_shader, shader_id, pipeline_bind_point, operation_index);

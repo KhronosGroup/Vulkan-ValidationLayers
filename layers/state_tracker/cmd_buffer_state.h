@@ -150,6 +150,11 @@ class CommandPool : public StateObject {
     void Destroy() override;
 };
 
+struct LabelCommand {
+    bool begin = false;      // vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT
+    std::string label_name;  // used when begin == true
+};
+
 class CommandBuffer : public RefcountedStateObject {
     using Func = vvl::Func;
   public:
@@ -695,12 +700,8 @@ class CommandBuffer : public RefcountedStateObject {
     bool IsSecondary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
     void BeginLabel(const char *label_name);
     void EndLabel();
-    int LabelStackDepth() const { return label_stack_depth_; }
+    int32_t GetLabelStackDepth() const { return label_stack_depth_; }
 
-    struct LabelCommand {
-        bool begin = false;      // vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT
-        std::string label_name;  // used when begin == true
-    };
     const std::vector<LabelCommand> &GetLabelCommands() const { return label_commands_; }
 
     // Applies label commands to the label_stack: for "begin label" command it pushes
@@ -716,7 +717,7 @@ class CommandBuffer : public RefcountedStateObject {
     // Keep track of how many CmdBeginDebugUtilsLabelEXT calls have been made without a matching CmdEndDebugUtilsLabelEXT.
     // Negative value for a secondary command buffer indicates invalid state.
     // Negative value for a primary command buffer is allowed. Validation is done at submit time accross all command buffers.
-    int label_stack_depth_ = 0;
+    int32_t label_stack_depth_ = 0;
     // Used during sumbit time validation.
     std::vector<LabelCommand> label_commands_;
 

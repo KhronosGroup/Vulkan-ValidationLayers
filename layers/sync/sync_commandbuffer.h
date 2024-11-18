@@ -340,7 +340,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // DebugNameProvider
     std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
 
-    std::vector<vvl::CommandBuffer::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
+    std::vector<vvl::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
 
   private:
     CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
@@ -389,7 +389,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // Secondary buffer validation uses proxy context and does local update (imitates Record).
     // Because in this case PreRecord is not called, the label state is not updated. We make
     // a copy of label state to update it locally together with proxy context.
-    std::vector<vvl::CommandBuffer::LabelCommand> proxy_label_commands_;
+    std::vector<vvl::LabelCommand> proxy_label_commands_;
 };
 
 namespace syncval_state {
