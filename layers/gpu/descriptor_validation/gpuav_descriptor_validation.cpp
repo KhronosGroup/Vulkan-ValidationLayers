@@ -118,7 +118,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         }
 
         if (need_post_processing) {
-            ssbo_block_ptr->desc_sets[i].descriptor_index_post_process = ds_state.GetPostProcessBuffer(gpuav, loc);
+            ssbo_block_ptr->descriptor_index_post_process_buffers[i] = ds_state.GetPostProcessBuffer(gpuav, loc);
         }
 
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
