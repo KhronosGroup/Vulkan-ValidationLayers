@@ -22,6 +22,7 @@
 
 #include "error_message/error_location.h"
 #include "generated/vk_extension_helper.h"
+#include "generated/dispatch_functions.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
@@ -656,7 +657,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
             UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
         }
 
-        if (wrap_handles) {
+        if (dispatch_->wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);
         }
 

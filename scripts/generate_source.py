@@ -66,7 +66,8 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.api_version_generator import ApiVersionOutputGenerator
     from generators.layer_dispatch_table_generator import LayerDispatchTableOutputGenerator
     from generators.layer_chassis_generator import LayerChassisOutputGenerator
-    from generators.layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator
+    from generators.dispatch_object_generator import DispatchObjectGenerator
+    from generators.dispatch_vector_generator import DispatchVectorGenerator
     from generators.function_pointers_generator import FunctionPointersOutputGenerator
     from generators.best_practices_generator import BestPracticesOutputGenerator
     from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
@@ -201,7 +202,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ApiVersionOutputGenerator,
             'genCombined': True,
         },
-        'chassis.h' : {
+        'validation_object_methods.h' : {
+            'generator' : LayerChassisOutputGenerator,
+            'genCombined': True,
+        },
+        'validation_object.cpp' : {
             'generator' : LayerChassisOutputGenerator,
             'genCombined': True,
         },
@@ -209,16 +214,24 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : LayerChassisOutputGenerator,
             'genCombined': True,
         },
-        'chassis_dispatch_helper.h' : {
-            'generator' : LayerChassisOutputGenerator,
+        'dispatch_object_methods.h' : {
+            'generator' : DispatchObjectGenerator,
             'genCombined': True,
         },
-        'layer_chassis_dispatch.h' : {
-            'generator' : LayerChassisDispatchOutputGenerator,
+        'dispatch_functions.h' : {
+            'generator' : DispatchObjectGenerator,
             'genCombined': True,
         },
-        'layer_chassis_dispatch.cpp' : {
-            'generator' : LayerChassisDispatchOutputGenerator,
+        'dispatch_object.cpp' : {
+            'generator' : DispatchObjectGenerator,
+            'genCombined': True,
+        },
+        'dispatch_vector.h' : {
+            'generator' : DispatchVectorGenerator,
+            'genCombined': True,
+        },
+        'dispatch_vector.cpp' : {
+            'generator' : DispatchVectorGenerator,
             'genCombined': True,
         },
         'best_practices.h' : {

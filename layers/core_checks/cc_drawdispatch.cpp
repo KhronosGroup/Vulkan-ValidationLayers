@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-#include "generated/chassis.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
 #include "state_tracker/buffer_state.h"

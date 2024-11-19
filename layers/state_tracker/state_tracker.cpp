@@ -27,7 +27,6 @@
 #include "containers/custom_containers.h"
 #include "utils/vk_layer_utils.h"
 
-#include "generated/chassis.h"
 #include "state_tracker/state_tracker.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/shader_stage_state.h"
@@ -734,9 +733,9 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     {
         uint32_t n_props = 0;
         std::vector<VkExtensionProperties> props;
-        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, NULL);
+        DispatchEnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, NULL);
         props.resize(n_props);
-        instance_dispatch_table.EnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, props.data());
+        DispatchEnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, props.data());
 
         vvl::unordered_set<vvl::Extension> phys_dev_extensions;
         for (const auto &ext_prop : props) {
@@ -790,7 +789,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
             VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
             VkPhysicalDeviceProtectedMemoryProperties protected_memory_prop = vku::InitStructHelper(&subgroup_prop);
             VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&protected_memory_prop);
-            instance_dispatch_table.GetPhysicalDeviceProperties2(physical_device, &prop2);
+            DispatchGetPhysicalDeviceProperties2(physical_device, &prop2);
 
             phys_dev_props_core11.subgroupSize = subgroup_prop.subgroupSize;
             phys_dev_props_core11.subgroupSupportedStages = subgroup_prop.supportedStages;
@@ -1045,16 +1044,16 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         // Get the needed cooperative_matrix properties
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_matrix_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
         uint32_t num_cooperative_matrix_properties_nv = 0;
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device,
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device,
                                                                                &num_cooperative_matrix_properties_nv, NULL);
         cooperative_matrix_properties_nv.resize(num_cooperative_matrix_properties_nv,
                                                 vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
 
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(
             physical_device, &num_cooperative_matrix_properties_nv, cooperative_matrix_properties_nv.data());
     }
 
@@ -1062,16 +1061,16 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         // Get the needed KHR cooperative_matrix properties
         VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperative_matrix_props_khr = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_matrix_props_khr);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props_khr = cooperative_matrix_props_khr;
 
         uint32_t num_cooperative_matrix_properties_khr = 0;
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(physical_device,
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physical_device,
                                                                                 &num_cooperative_matrix_properties_khr, NULL);
         cooperative_matrix_properties_khr.resize(num_cooperative_matrix_properties_khr,
                                                  vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
 
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(
             physical_device, &num_cooperative_matrix_properties_khr, cooperative_matrix_properties_khr.data());
     }
 
@@ -1079,17 +1078,17 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         // Get the needed NV cooperative_matrix2 properties
         VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperative_matrix_props2_nv = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_matrix_props2_nv);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physical_device, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(physical_device, &prop2);
         phys_dev_ext_props.cooperative_matrix_props2_nv = cooperative_matrix_props2_nv;
 
         uint32_t num_cooperative_matrix_flexible_dimensions_properties = 0;
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+        DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
             physical_device, &num_cooperative_matrix_flexible_dimensions_properties, NULL);
         cooperative_matrix_flexible_dimensions_properties.resize(
             num_cooperative_matrix_flexible_dimensions_properties,
             vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
 
-        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+        DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
             physical_device, &num_cooperative_matrix_flexible_dimensions_properties,
             cooperative_matrix_flexible_dimensions_properties.data());
     }
@@ -1097,9 +1096,9 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
         uint32_t num_queue_families = 0;
-        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
         std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
-        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
                                                                        queue_family_properties_list.data());
 
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
@@ -1588,9 +1587,9 @@ void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_ind
                                                        VkDeviceQueueCreateFlags flags, VkQueue queue) {
     if (Get<vvl::Queue>(queue) == nullptr) {
         uint32_t num_queue_families = 0;
-        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
         std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
-        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
+        DispatchGetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
                                                                        queue_family_properties_list.data());
 
         Add(CreateQueue(queue, queue_family_index, queue_index, flags, queue_family_properties_list[queue_family_index]));
@@ -2123,7 +2122,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
         // `deferred_operation_post_check`.
 
         auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-        if (wrap_handles) {
+        if (dispatch_->wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);
         }
         std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;

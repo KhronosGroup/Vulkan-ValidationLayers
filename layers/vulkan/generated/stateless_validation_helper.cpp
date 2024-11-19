@@ -22,11 +22,9 @@
 
 // NOLINTBEGIN
 
-#include "chassis.h"
-
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc, const VkBaseOutStructure* header,
                                                              const char* pnext_vuid, const VkPhysicalDevice physicalDevice,

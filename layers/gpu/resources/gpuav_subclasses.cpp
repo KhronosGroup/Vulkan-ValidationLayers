@@ -592,7 +592,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo barrier_cmd_buffer_begin_info = vku::InitStructHelper();
         barrier_cmd_buffer_begin_info.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-        result = DispatchBeginCommandBuffer(barrier_command_buffer_, &barrier_cmd_buffer_begin_info, false);
+        result = DispatchBeginCommandBuffer(barrier_command_buffer_, &barrier_cmd_buffer_begin_info);
         if (result == VK_SUCCESS) {
             VkMemoryBarrier memory_barrier = vku::InitStructHelper();
             memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;

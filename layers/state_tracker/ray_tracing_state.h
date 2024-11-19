@@ -19,7 +19,7 @@
 #pragma once
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/buffer_state.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 namespace vvl {
 

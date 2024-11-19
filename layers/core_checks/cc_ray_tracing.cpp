@@ -22,7 +22,6 @@
 #include <string>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "cc_buffer_address.h"
 #include "utils/ray_tracing_utils.h"

@@ -17,7 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>
@@ -245,9 +245,9 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
             uint32_t ext_count = 0;
             vvl::unordered_set<vvl::Extension> dev_exts_enumerated{};
             std::vector<VkExtensionProperties> ext_props{};
-            instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
+            DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
             ext_props.resize(ext_count);
-            instance_dispatch_table.EnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
+            DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
             for (uint32_t j = 0; j < ext_count; j++) {
                 vvl::Extension extension = GetExtension(ext_props[j].extensionName);
                 dev_exts_enumerated.insert(extension);
@@ -303,10 +303,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
                                                      const RecordObject &record_obj) {
     auto device_data = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     if (record_obj.result != VK_SUCCESS) return;
-    auto stateless_validation = device_data->GetValidationObject<StatelessValidation>();
-
-    // Parmeter validation also uses extension data
-    stateless_validation->device_extensions = this->device_extensions;
+    auto stateless_validation = static_cast<StatelessValidation*>(device_data->GetValidationObject(LayerObjectTypeParameterValidation));
 
     VkPhysicalDeviceProperties device_properties = {};
     // Need to get instance and do a getlayerdata call...

@@ -23,9 +23,9 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "utils/vk_struct_compare.h"
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "generated/dispatch_functions.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"

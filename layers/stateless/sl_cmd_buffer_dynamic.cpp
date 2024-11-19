@@ -17,7 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                         const VkViewport *pViewports,

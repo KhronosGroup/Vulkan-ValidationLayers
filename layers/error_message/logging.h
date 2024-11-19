@@ -28,6 +28,7 @@
 
 #include "containers/custom_containers.h"
 #include "generated/vk_object_types.h"
+#include "error_message/log_message_type.h"
 
 #if defined __ANDROID__
 #include <android/log.h>
@@ -176,6 +177,14 @@ struct MessageFormatSettings {
     std::string application_name;
 };
 
+#if defined(__clang__)
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(printf, _fmt_argnum, _first_param_num)))
+#elif defined(__GNUC__)
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(gnu_printf, _fmt_argnum, _first_param_num)))
+#else
+#define DECORATE_PRINTF(_fmt_num, _first_param_num)
+#endif
+
 class DebugReport {
   public:
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
@@ -242,8 +251,6 @@ class DebugReport {
     vvl::unordered_map<uint64_t, std::string> debug_utils_object_name_map;
 };
 
-template DebugReport *GetLayerDataPtr<DebugReport>(void *data_key, std::unordered_map<void *, DebugReport *> &data_map);
-
 VKAPI_ATTR VkResult LayerCreateMessengerCallback(DebugReport *debug_report, bool default_callback,
                                                  const VkDebugUtilsMessengerCreateInfoEXT *create_info,
                                                  VkDebugUtilsMessengerEXT *messenger);
@@ -261,8 +268,6 @@ static inline void LayerDestroyCallback(DebugReport *debug_report, T callback) {
 VKAPI_ATTR void ActivateInstanceDebugCallbacks(DebugReport *debug_report);
 
 VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport *debug_report);
-
-VKAPI_ATTR void LayerDebugUtilsDestroyInstance(DebugReport *debug_report);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                       VkDebugUtilsMessageTypeFlagsEXT message_type,

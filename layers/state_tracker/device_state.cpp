@@ -16,7 +16,7 @@
  */
 
 #include "state_tracker/device_state.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 namespace vvl {
 

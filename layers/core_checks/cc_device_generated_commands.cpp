@@ -18,9 +18,9 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
 #include <spirv/unified1/spirv.hpp>
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "error_message/error_strings.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/device_generated_commands_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/descriptor_sets.h"

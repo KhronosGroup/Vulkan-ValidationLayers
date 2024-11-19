@@ -23,7 +23,6 @@
 #include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "core_checks/cc_synchronization.h"
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"

@@ -15,11 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "generated/chassis.h"
-
 #include "object_lifetime_validation.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "chassis/dispatch_object.h"
 
 uint64_t object_track_index = 0;
 
@@ -59,7 +56,7 @@ bool ObjectLifetimes::CheckObjectValidity(uint64_t object_handle, VulkanObjectTy
     // Object not found, look for it in other device object maps
     const ObjectLifetimes *other_lifetimes = nullptr;
     for (const auto &other_device_data : layer_data_map) {
-        const auto lifetimes = other_device_data.second->GetValidationObject<ObjectLifetimes>();
+        const auto lifetimes = static_cast<ObjectLifetimes*>(other_device_data.second->GetValidationObject(LayerObjectTypeObjectTracker));
         if (lifetimes && lifetimes != this && lifetimes->TracksObject(object_handle, object_type)) {
             other_lifetimes = lifetimes;
 
@@ -470,7 +467,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
         auto device_layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-        auto obj_lifetimes_data = device_layer_data->GetValidationObject<ObjectLifetimes>();
+        auto obj_lifetimes_data = static_cast<ObjectLifetimes*>(device_layer_data->GetValidationObject(LayerObjectTypeObjectTracker));
         skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device, error_obj.location);
 
         skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
@@ -528,7 +525,7 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
 void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                                  const RecordObject &record_obj) {
     auto instance_data = GetLayerDataPtr(GetDispatchKey(physical_device), layer_data_map);
-    auto object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+    auto object_lifetimes = static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     // If ObjectTracker was removed (in an early teardown) this might be null, could search in aborted_object_dispatch but if it is
     // there, no need to record anything else
     if (object_lifetimes) {
@@ -737,7 +734,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
     CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator, record_obj.location);
 
     auto device_data = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
-    auto object_tracking = device_data->GetValidationObject<ObjectLifetimes>();
+    auto object_tracking = static_cast<ObjectLifetimes*>(device_data->GetValidationObject(LayerObjectTypeObjectTracker));
 
     const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
     object_tracking->null_descriptor_enabled = robustness2_features && robustness2_features->nullDescriptor;
@@ -1362,7 +1359,7 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(
             };
 
             auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-            if (wrap_handles) {
+            if (dispatch_->wrap_handles) {
                 deferredOperation = layer_data->Unwrap(deferredOperation);
             }
             std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;

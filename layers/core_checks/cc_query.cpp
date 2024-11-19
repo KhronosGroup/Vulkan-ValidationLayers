@@ -21,7 +21,6 @@
 #include <string>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "state_tracker/device_state.h"

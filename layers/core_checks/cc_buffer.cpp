@@ -21,7 +21,6 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "error_message/error_location.h"
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "state_tracker/buffer_state.h"
 

@@ -27,12 +27,12 @@
 #endif
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/render_pass_state.h"
 #include <spirv-tools/libspirv.h>
+#include "generated/dispatch_functions.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location &loc, const char *vuid,
                                            bool optional = false) const {

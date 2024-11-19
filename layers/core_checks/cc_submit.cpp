@@ -18,7 +18,7 @@
 #include "cc_submit.h"
 #include "state_tracker/queue_state.h"
 #include "sync/sync_vuid_maps.h"
-#include "generated/chassis.h"  // ValidationObject
+#include "chassis/validation_object.h"
 
 static Location GetSignaledSemaphoreLocation(const Location& submit_loc, uint32_t index) {
     vvl::Field field = vvl::Field::Empty;

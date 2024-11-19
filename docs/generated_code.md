@@ -49,8 +49,8 @@ NOTE: `VVL_CODEGEN` is `OFF` by default to allow users to build `VVL` via `add_s
 If only dealing with a single file,  run `scripts/generate_source.py` with `--target`
 
 ```bash
-# Example - only generates chassis.h
-scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ --target chassis.h
+# Example - only generates chassis.cpp
+scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ --target chassis.cpp
 ```
 
 # Adding and Editing code generation

@@ -24,7 +24,6 @@
 
 // NOLINTBEGIN
 // clang-format off
-#include "chassis.h"
 #include "object_tracker/object_lifetime_validation.h"
 ReadLockGuard ObjectLifetimes::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
@@ -2909,7 +2908,8 @@ bool ObjectLifetimes::PreCallValidateCreateSwapchainKHR(VkDevice device, const V
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
         auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
-        auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+        auto instance_object_lifetimes =
+            static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
         skip |= instance_object_lifetimes->ValidateObject(
             pCreateInfo->surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-VkSwapchainCreateInfoKHR-surface-parameter",
             "VUID-VkSwapchainCreateInfoKHR-commonparent", pCreateInfo_loc.dot(Field::surface), kVulkanObjectTypeInstance);
@@ -3036,7 +3036,8 @@ bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevi
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter"
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent"
     auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
-    auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+    auto instance_object_lifetimes =
+        static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     skip |= instance_object_lifetimes->ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false,
                                                       "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-parameter",
                                                       "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent",
@@ -3179,7 +3180,8 @@ bool ObjectLifetimes::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, 
         for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
             auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
-            auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+            auto instance_object_lifetimes =
+                static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
             skip |= instance_object_lifetimes->ValidateObject(
                 pCreateInfos[index0].surface, kVulkanObjectTypeSurfaceKHR, false, "VUID-VkSwapchainCreateInfoKHR-surface-parameter",
                 "VUID-VkSwapchainCreateInfoKHR-commonparent", index0_loc.dot(Field::surface), kVulkanObjectTypeInstance);
@@ -4992,7 +4994,8 @@ bool ObjectLifetimes::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkD
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-commonparent"
     auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
-    auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+    auto instance_object_lifetimes =
+        static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     skip |= instance_object_lifetimes->ValidateObject(
         display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkDisplayPowerControlEXT-display-parameter",
         "VUID-vkDisplayPowerControlEXT-commonparent", error_obj.location.dot(Field::display), kVulkanObjectTypePhysicalDevice);
@@ -5018,7 +5021,8 @@ bool ObjectLifetimes::PreCallValidateRegisterDisplayEventEXT(VkDevice device, Vk
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-commonparent"
     auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
-    auto instance_object_lifetimes = instance_data->GetValidationObject<ObjectLifetimes>();
+    auto instance_object_lifetimes =
+        static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     skip |= instance_object_lifetimes->ValidateObject(
         display, kVulkanObjectTypeDisplayKHR, false, "VUID-vkRegisterDisplayEventEXT-display-parameter",
         "VUID-vkRegisterDisplayEventEXT-commonparent", error_obj.location.dot(Field::display), kVulkanObjectTypePhysicalDevice);

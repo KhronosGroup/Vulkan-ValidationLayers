@@ -50,6 +50,32 @@ struct layer_data {
 
 static std::unordered_map<void *, layer_data *> device_profile_api_dev_data_map;
 
+// For the given data key, look up the layer_data instance from given layer_data_map
+template <typename DATA_T>
+DATA_T *GetLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &layer_data_map) {
+    DATA_T *debug_data;
+    /* TODO: We probably should lock here, or have caller lock */
+    auto got = layer_data_map.find(data_key);
+
+    if (got == layer_data_map.end()) {
+        debug_data = new DATA_T;
+        layer_data_map[(void *)data_key] = debug_data;
+    } else {
+        debug_data = got->second;
+    }
+
+    return debug_data;
+}
+
+template <typename DATA_T>
+void FreeLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &layer_data_map) {
+    auto got = layer_data_map.find(data_key);
+    assert(got != layer_data_map.end());
+
+    delete got->second;
+    layer_data_map.erase(got);
+}
+
 // device_profile_api Layer EXT APIs
 typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceLimitsEXT)(VkPhysicalDevice physicalDevice,
                                                                   const VkPhysicalDeviceLimits *limits);

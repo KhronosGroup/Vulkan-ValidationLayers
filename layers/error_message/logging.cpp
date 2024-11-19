@@ -428,8 +428,6 @@ void DebugReport::EraseCmdDebugUtilsLabel(VkCommandBuffer command_buffer) {
     debug_utils_cmd_buffer_labels.erase(command_buffer);
 }
 
-VKAPI_ATTR void LayerDebugUtilsDestroyInstance(DebugReport *debug_report) { delete debug_report; }
-
 template <typename TCreateInfo, typename TCallback>
 static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, DebugReport *debug_report, const TCreateInfo *create_info,
                                 TCallback *callback) {

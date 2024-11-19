@@ -415,11 +415,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         out = []
         out.append('''
-            #include "chassis.h"
-
             #include "stateless/stateless_validation.h"
             #include "generated/enum_flag_bits.h"
-            #include "generated/layer_chassis_dispatch.h"
+            #include "generated/dispatch_functions.h"
             ''')
 
         # The reason we split this up into Feature and Properties struct is before be had a 450 case, 10k line function that broke MSVC

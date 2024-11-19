@@ -22,7 +22,6 @@
 
 // NOLINTBEGIN
 
-#include "chassis.h"
 #include "best_practices/best_practices_validation.h"
 
 DeprecationData GetDeprecatedData(vvl::Extension extension_name) {

@@ -142,7 +142,8 @@ target_sources(vvl PRIVATE
     best_practices/bp_wsi.cpp
     best_practices/best_practices_validation.h
     chassis/chassis_modification_state.h
-    chassis/layer_chassis_dispatch_manual.cpp
+    chassis/chassis_manual.cpp
+    chassis/dispatch_object_manual.cpp
     containers/qfo_transfer.h
     containers/range_vector.h
     containers/subresource_adapter.cpp
@@ -202,7 +203,9 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/dynamic_state_helper.cpp
     ${API_TYPE}/generated/dynamic_state_helper.h
     ${API_TYPE}/generated/enum_flag_bits.h
-    ${API_TYPE}/generated/layer_chassis_dispatch.cpp
+    ${API_TYPE}/generated/dispatch_vector.cpp
+    ${API_TYPE}/generated/dispatch_object.cpp
+    ${API_TYPE}/generated/validation_object.cpp
     ${API_TYPE}/generated/object_tracker.cpp
     ${API_TYPE}/generated/object_tracker.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
