@@ -150,6 +150,7 @@ class CommandPool : public StateObject {
     void Destroy() override;
 };
 
+// This struct is not used to store label inserted with vkCmdInsertDebugUtilsLabelEXT
 struct LabelCommand {
     bool begin = false;      // vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT
     std::string label_name;  // used when begin == true
@@ -698,6 +699,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     bool IsPrimary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
     bool IsSecondary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
+
     void BeginLabel(const char *label_name);
     void EndLabel();
     int32_t GetLabelStackDepth() const { return label_stack_depth_; }

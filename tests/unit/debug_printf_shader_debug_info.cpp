@@ -525,3 +525,76 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, VertexFragmentMultiEntrypoint) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8924
+TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion1) {
+    TEST_DESCRIPTION("Print debug label regions in a Debug PrintF message");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            debugPrintfEXT("printf");
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    VkDebugUtilsLabelEXT region_0_label = vku::InitStructHelper();
+    region_0_label.pLabelName = "region_0";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer.handle(), &region_0_label);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("region_0");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8924
+TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion2) {
+    TEST_DESCRIPTION("Print debug label regions in a Debug PrintF message");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+        debugPrintfEXT("printf");
+        }
+        )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    VkDebugUtilsLabelEXT region_0_label = vku::InitStructHelper();
+    region_0_label.pLabelName = "region_0";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer.handle(), &region_0_label);
+    VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
+    region_1_label.pLabelName = "region_1";
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer.handle(), &region_1_label);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("region_0::region_1");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

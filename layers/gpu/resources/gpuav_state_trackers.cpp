@@ -449,7 +449,7 @@ bool CommandBuffer::PreProcess(const Location &loc) {
 bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsDestroyed(); }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
+void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
@@ -493,7 +493,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
                 assert(error_logger_i < per_command_error_loggers.size());
                 auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
-                skip |= error_logger(*gpuav, error_record_ptr, objlist);
+                skip |= error_logger(*gpuav, *this, error_record_ptr, objlist, initial_label_stack);
 
                 // Next record
                 error_record_ptr += record_size;
@@ -622,8 +622,8 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
 vvl::PreSubmitResult Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     for (const auto &submission : submissions) {
         auto loc = submission.loc.Get();
-        for (auto &cb : submission.cbs) {
-            auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);
+        for (auto &cb_submission : submission.cb_submissions) {
+            auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb_submission.cb);
             auto guard = gpu_cb->ReadLock();
             gpu_cb->PreProcess(loc);
             for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
@@ -652,7 +652,7 @@ void Queue::Retire(vvl::QueueSubmission &submission) {
         // that signals barrier_sem_. The following timeline wait must not be called.
         return;
     }
-    retiring_.emplace_back(submission.cbs);
+    retiring_.emplace_back(submission.cb_submissions);
     if (submission.end_batch) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
@@ -660,21 +660,21 @@ void Queue::Retire(vvl::QueueSubmission &submission) {
         wait_info.pValues = &submission.seq;
 
         if (timeline_khr_) {
-            DispatchWaitSemaphoresKHR(state_.device, &wait_info, 1000000000);
+            DispatchWaitSemaphoresKHR(state_.device, &wait_info, 1'000'000'000);
         } else {
-            DispatchWaitSemaphores(state_.device, &wait_info, 1000000000);
+            DispatchWaitSemaphores(state_.device, &wait_info, 1'000'000'000);
         }
 
-        for (auto &cbs : retiring_) {
-            for (auto &cb : cbs) {
-                auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb);
+        for (std::vector<vvl::CommandBufferSubmission> &cb_submissions : retiring_) {
+            for (vvl::CommandBufferSubmission &cb_submission : cb_submissions) {
+                auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb_submission.cb);
                 auto guard = gpu_cb->WriteLock();
                 auto loc = submission.loc.Get();
-                gpu_cb->PostProcess(VkHandle(), loc);
-                for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
-                    auto *secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
+                gpu_cb->PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
+                for (vvl::CommandBuffer *secondary_cb : gpu_cb->linkedCommandBuffers) {
+                    auto secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
                     auto secondary_guard = secondary_gpu_cb->WriteLock();
-                    secondary_gpu_cb->PostProcess(VkHandle(), loc);
+                    secondary_gpu_cb->PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
                 }
             }
         }

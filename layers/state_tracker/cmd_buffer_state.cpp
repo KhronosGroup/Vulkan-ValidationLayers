@@ -1842,10 +1842,11 @@ std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &l
         // It's a bug if this happens in a valid vulkan program.
         return {};
     }
-    auto commands_to_replay = vvl::make_span(label_commands.data(), label_command_index + 1);
+    auto label_commands_to_replay = vvl::make_span(label_commands.data(), label_command_index + 1);
     auto label_stack = initial_label_stack;
-    vvl::CommandBuffer::ReplayLabelCommands(commands_to_replay, label_stack);
+    vvl::CommandBuffer::ReplayLabelCommands(label_commands_to_replay, label_stack);
 
+    // Build up complete debug region name from all enclosing regions
     std::string debug_region;
     for (const std::string &label_name : label_stack) {
         if (!debug_region.empty()) {

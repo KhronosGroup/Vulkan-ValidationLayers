@@ -364,8 +364,9 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
     DispatchCmdDraw(cb_state.VkHandle(), 3, 1, 0, 0);  // TODO: this 3 assumes triangles I think, probably could be 1?
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, indirect_buffer, indirect_offset, stride, indirect_buffer_size,
-                                                   emit_task_error](Validator &gpuav, const uint32_t *error_record,
-                                                                    const LogObjectList &objlist) {
+                                                   emit_task_error](Validator &gpuav, const CommandBuffer &,
+                                                                    const uint32_t *error_record, const LogObjectList &objlist,
+                                                                    const std::vector<std::string> &) {
         bool skip = false;
 
         using namespace glsl;
