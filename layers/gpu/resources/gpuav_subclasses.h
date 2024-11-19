@@ -50,9 +50,18 @@ struct DebugPrintfBufferInfo {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    // per vkCmdBindDescriptorSet() state
+    // One item per vkCmdBindDescriptorSet() called
+    // We really need this information at the draw/dispatch/action, but assume most apps will either
+    //  1. Update once and only change pipelines, so this information doesn't change between draws
+    //  2. Change once per draw, then this would be the same length as doing this per-draw
+    //
+    // Note: If the app calls vkCmdBindDescriptorSet 10 times to set descriptor set [0, 9] one at a time instead of setting [0, 9]
+    // in a single vkCmdBindDescriptorSet call than this will allocate a lot of redundant memory
     std::vector<DescriptorCommandBinding> descriptor_command_bindings;
-    VkBuffer current_bindless_buffer = VK_NULL_HANDLE;
+    // Buffer to be bound every draw/dispatch/action
+    VkBuffer descriptor_indexing_in_out_buffer = VK_NULL_HANDLE;
+
+    // Used to track which spot in the command buffer the error came from
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;
     uint32_t trace_rays_index = 0;

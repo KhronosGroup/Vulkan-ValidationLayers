@@ -43,13 +43,9 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
     uint data[];
 };
 
-struct DescriptorSetRecord {
-    DescriptorSetType ds_type;
-};
-
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     InitializedStatus initialized_status;
-    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
+    DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
     uvec2 unused_descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
@@ -65,11 +61,11 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stag
             break;
         }
 
-        DescriptorSetType ds_type = gpuav.desc_sets[desc_set].ds_type;
+        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
 
         // check if the descriptor was ever initialized
         uint binding_layout_index = binding_layout_offset + desc_index;
-        uint desc_id = ds_type.data[binding_layout_index].x & kNullDescriptor;
+        uint desc_id = descriptor_set_type.data[binding_layout_index].x & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCodeDescriptorIndexingUninitialized;
             break;
@@ -87,10 +83,10 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stag
         }
 
         // If dealing with a combined image sampler, need to check the sampler as well
-        uint desc_type = (ds_type.data[binding_layout_index].x & ~kNullDescriptor) >> kDescBitShift;
+        uint desc_type = (descriptor_set_type.data[binding_layout_index].x & ~kNullDescriptor) >> kDescBitShift;
         if (desc_type == kImageSamplerDesc) {
             // check sampler
-            desc_id = ds_type.data[binding_layout_index].y;
+            desc_id = descriptor_set_type.data[binding_layout_index].y;
             if (desc_id == 0u) {
                 error = kErrorSubCodeDescriptorIndexingUninitialized;
                 break;

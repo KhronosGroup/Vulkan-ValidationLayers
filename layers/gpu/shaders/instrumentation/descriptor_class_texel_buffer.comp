@@ -40,13 +40,9 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
 
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
 
-struct DescriptorSetRecord {
-    DescriptorSetType ds_type;
-};
-
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
-    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
+    DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
     uvec2 unused_descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
@@ -57,12 +53,12 @@ bool inst_descriptor_class_texel_buffer(const uint inst_num, const uvec4 stage_i
     uint param_0 = byte_offset;
     uint param_1 = 0u;
     do {
-        DescriptorSetType ds_type = gpuav.desc_sets[desc_set].ds_type;
+        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
 
         uint binding_layout_index = binding_layout_offset + desc_index;
 
         // check that the offset is in bounds
-        uint resource_size = ds_type.data[binding_layout_index].y;
+        uint resource_size = descriptor_set_type.data[binding_layout_index].y;
         if (byte_offset >= resource_size) {
             error = kErrorSubCodeDescriptorClassTexelBufferBounds;
             param_1 = resource_size;

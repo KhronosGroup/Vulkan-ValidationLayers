@@ -211,11 +211,11 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
         desc_writes.emplace_back(wds);
     }
 
-    // Current bindless buffer
+    // Descriptor Indexing input/output buffer
     VkDescriptorBufferInfo di_input_desc_buffer_info = {};
-    if (cb_state.current_bindless_buffer != VK_NULL_HANDLE) {
+    if (cb_state.descriptor_indexing_in_out_buffer != VK_NULL_HANDLE) {
         di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-        di_input_desc_buffer_info.buffer = cb_state.current_bindless_buffer;
+        di_input_desc_buffer_info.buffer = cb_state.descriptor_indexing_in_out_buffer;
         di_input_desc_buffer_info.offset = 0;
 
         VkWriteDescriptorSet wds = vku::InitStructHelper();
