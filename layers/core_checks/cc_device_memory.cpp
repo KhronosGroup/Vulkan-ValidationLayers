@@ -20,7 +20,6 @@
 #include <assert.h>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
 #include "cc_buffer_address.h"

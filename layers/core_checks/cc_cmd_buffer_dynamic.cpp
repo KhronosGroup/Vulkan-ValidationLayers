@@ -18,10 +18,10 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "generated/vk_extension_helper.h"
+#include "generated/dispatch_functions.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_object_state.h"

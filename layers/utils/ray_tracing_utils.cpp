@@ -16,7 +16,7 @@
 
 #include "ray_tracing_utils.h"
 
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 #include "containers/custom_containers.h"
 
 #include <cassert>

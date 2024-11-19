@@ -17,16 +17,17 @@
  */
 
 #include "layer_options.h"
+#include "chassis/validation_object.h"
 #include "error_message/log_message_type.h"
+#include "error_message/logging.h"
+#include "error_message/error_location.h"
 #include "generated/error_location_helper.h"
 #include "utils/hash_util.h"
 #include <string>
 #include <vector>
 #include <vulkan/layer/vk_layer_settings.hpp>
 
-#include "generated/chassis.h"
 #include "gpu/core/gpuav_settings.h"
-#include "error_message/logging.h"
 
 #include "sync/sync_settings.h"
 #include "vk_layer_config.h"
@@ -741,6 +742,12 @@ static const char *GetDefaultPrefix() {
 #endif
 }
 #endif  // !defined(BUILD_SELF_VVL)
+
+// Global list of sType,size identifiers
+std::vector<std::pair<uint32_t, uint32_t>> &GetCustomStypeInfo() {
+    static std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+    return custom_stype_info;
+}
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {

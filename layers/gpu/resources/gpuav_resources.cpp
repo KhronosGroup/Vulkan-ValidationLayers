@@ -18,7 +18,7 @@
 #include "gpu/resources/gpuav_resources.h"
 
 #include "gpu/core/gpuav.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpuav {

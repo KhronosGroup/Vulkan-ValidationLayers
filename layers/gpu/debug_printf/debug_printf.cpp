@@ -17,7 +17,7 @@
 
 #include <vulkan/vulkan.h>
 #include "gpu/debug_printf/debug_printf.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "chassis/dispatch_object.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "gpu/resources/gpuav_subclasses.h"

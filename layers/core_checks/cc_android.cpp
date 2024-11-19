@@ -22,6 +22,7 @@
 #include "core_validation.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/sampler_state.h"
+#include "generated/dispatch_functions.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 // Android-specific validation that uses types defined only on Android and only for NDK versions

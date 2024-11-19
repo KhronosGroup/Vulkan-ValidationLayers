@@ -23,7 +23,6 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "core_validation.h"
 #include "sync/sync_utils.h"
 #include "utils/convert_utils.h"

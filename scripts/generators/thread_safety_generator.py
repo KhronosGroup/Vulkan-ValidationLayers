@@ -256,7 +256,6 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
     def generateSource(self):
         out = []
         out.append('''
-            #include "chassis.h"
             #include "thread_tracker/thread_safety_validation.h"
             ''')
         guard_helper = PlatformGuardHelper()

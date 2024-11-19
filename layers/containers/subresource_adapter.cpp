@@ -24,7 +24,7 @@
 #include "subresource_adapter.h"
 #include <cmath>
 #include "state_tracker/image_state.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 namespace subresource_adapter {
 Subresource::Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres)

@@ -18,8 +18,6 @@
 
 #include "stateless/stateless_validation.h"
 
-#include "generated/chassis.h"
-
 bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc,
                                                                const uint32_t promoted_version) const {
     bool skip = false;

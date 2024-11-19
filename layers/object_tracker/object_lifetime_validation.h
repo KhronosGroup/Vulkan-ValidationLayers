@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#include "chassis/validation_object.h"
+
 extern uint64_t object_track_index;
 
 // Object Status -- used to track state of individual objects

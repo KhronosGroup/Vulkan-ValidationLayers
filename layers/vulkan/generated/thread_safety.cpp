@@ -23,7 +23,6 @@
 
 // NOLINTBEGIN
 
-#include "chassis.h"
 #include "thread_tracker/thread_safety_validation.h"
 void ThreadSafety::PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                VkInstance* pInstance, const RecordObject& record_obj) {}

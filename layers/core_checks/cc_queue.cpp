@@ -21,7 +21,6 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "cc_synchronization.h"
 #include "core_validation.h"
 #include "state_tracker/queue_state.h"

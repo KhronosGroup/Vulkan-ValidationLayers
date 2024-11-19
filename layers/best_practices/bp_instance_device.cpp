@@ -18,7 +18,7 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
 

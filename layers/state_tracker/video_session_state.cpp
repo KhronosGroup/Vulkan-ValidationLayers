@@ -17,7 +17,7 @@
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/state_tracker.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 
 #include <sstream>
 

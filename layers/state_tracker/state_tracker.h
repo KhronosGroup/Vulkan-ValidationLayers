@@ -19,10 +19,10 @@
  */
 
 #pragma once
-#include "generated/chassis.h"
+#include "chassis/validation_object.h"
 #include "utils/hash_vk_types.h"
 #include "state_tracker/video_session_state.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "chassis/dispatch_object.h"
 #include "generated/device_features.h"
 #include "error_message/logging.h"
 #include "containers/custom_containers.h"

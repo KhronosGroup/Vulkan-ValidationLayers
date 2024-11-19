@@ -22,7 +22,6 @@
 #include <sstream>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"

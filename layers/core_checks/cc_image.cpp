@@ -24,8 +24,8 @@
 
 #include "core_validation.h"
 #include "cc_vuid_maps.h"
-#include "generated/chassis.h"
 #include "generated/pnext_chain_extraction.h"
+#include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/sampler_state.h"

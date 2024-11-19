@@ -25,10 +25,10 @@
 #include "cc_vuid_maps.h"
 #include "error_message/error_strings.h"
 #include <vulkan/vk_enum_string_helper.h>
-#include "generated/chassis.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
+#include "generated/dispatch_functions.h"
 
 struct ImageRegionIntersection {
     VkImageSubresourceLayers subresource = {};

@@ -19,7 +19,7 @@
 #include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "generated/dispatch_functions.h"
 #include "stateless/sl_vuid_maps.h"
 
 bool StatelessValidation::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,

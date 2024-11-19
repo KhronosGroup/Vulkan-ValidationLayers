@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "generated/chassis.h"
+#include "chassis/validation_object.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include <string>

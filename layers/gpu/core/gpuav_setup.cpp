@@ -24,10 +24,9 @@
 #include "gpu/core/gpuav_constants.h"
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
-#include "generated/layer_chassis_dispatch.h"
+#include "chassis/dispatch_object.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
-#include "generated/chassis.h"
 namespace gpuav {
 
 std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {

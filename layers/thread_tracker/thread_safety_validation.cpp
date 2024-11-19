@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "generated/chassis.h"
-#include "generated/layer_chassis_dispatch.h"  // wrap_handles declaration
+#include "generated/dispatch_functions.h"
 #include "thread_tracker/thread_safety_validation.h"
 
 ReadLockGuard ThreadSafety::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
@@ -720,7 +719,7 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
     const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
         auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
-        if (wrap_handles) {
+        if (dispatch_->wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);
         }
 
