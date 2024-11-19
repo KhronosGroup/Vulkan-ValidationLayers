@@ -201,8 +201,6 @@ class CoreChecks : public ValidationStateTracker {
                                                  VkPipelineStageFlags2KHR stage_mask, VkDependencyFlags dependency_flags) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
                             VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
-    bool ValidateAccessMaskForShaderTileImage(const LogObjectList& objlist, const Location& loc, VkAccessFlags2KHR access_mask,
-                                              const std::string& vuid) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
                                const MemoryBarrier& barrier,
                                OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none) const;
@@ -215,13 +213,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateHostStage(const LogObjectList& objlist, const Location& barrier_loc,
                            const OwnershipTransferBarrier& barrier) const;
 
-    bool ValidateOwnershipTransferQueueSubmit(const Location& barrier_loc, const vvl::Queue& queue_state,
-                                              const VulkanTypedHandle& resource_typed_handle, uint32_t src_family,
-                                              uint32_t dst_family) const;
-
     bool ValidateBarrierQueueFamilies(const LogObjectList& objects, const Location& barrier_loc, const Location& field_loc,
                                       const OwnershipTransferBarrier& barrier, const VulkanTypedHandle& handle,
-                                      VkSharingMode sharing_mode) const;
+                                      VkSharingMode sharing_mode, uint32_t command_pool_queue_family) const;
     bool ValidateSwapchainImageExtent(const VkSwapchainCreateInfoKHR& create_info, const VkSurfaceCapabilitiesKHR& surface_caps,
                                       const Location& create_info_loc, const vvl::Surface* surface_state) const;
     bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const Location& create_info_loc,
