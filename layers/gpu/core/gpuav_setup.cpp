@@ -400,7 +400,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         {glsl::kBindingInstDebugPrintf, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Error output buffer
         {glsl::kBindingInstErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        // Current bindless buffer
+        // Buffer holding input/output from CPU into the shader for descriptor indexing
         {glsl::kBindingInstDescriptorIndexingOOB, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding buffer device addresses
         {glsl::kBindingInstBufferDeviceAddress, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},

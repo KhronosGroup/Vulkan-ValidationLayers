@@ -381,7 +381,7 @@ void CommandBuffer::ResetCBState() {
         descriptor_command_binding.ssbo_block.DestroyBuffer();
     }
     descriptor_command_bindings.clear();
-    current_bindless_buffer = VK_NULL_HANDLE;
+    descriptor_indexing_in_out_buffer = VK_NULL_HANDLE;
 
     error_output_buffer_.DestroyBuffer();
     cmd_errors_counts_buffer_.DestroyBuffer();

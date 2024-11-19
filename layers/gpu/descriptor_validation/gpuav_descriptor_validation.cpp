@@ -78,8 +78,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         return;
     }
 
-    // Figure out how much memory we need for the input block based on how many sets and bindings there are
-    // and how big each of the bindings is
+    // Create a new buffer to hold our BDA pointers
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = sizeof(glsl::DescriptorStateSSBO);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -88,14 +87,12 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     alloc_info.pool = VK_NULL_HANDLE;
     DescriptorCommandBinding descriptor_command_binding(gpuav);
 
-    // Allocate buffer for device addresses of the input buffer for each descriptor set.  This is the buffer written to each
-    // draw's descriptor set.
     descriptor_command_binding.ssbo_block.CreateBuffer(loc, &buffer_info, &alloc_info);
 
     auto ssbo_block_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
 
     memset(ssbo_block_ptr, 0, static_cast<size_t>(buffer_info.size));
-    cb_state.current_bindless_buffer = descriptor_command_binding.ssbo_block.Buffer();
+    cb_state.descriptor_indexing_in_out_buffer = descriptor_command_binding.ssbo_block.Buffer();
 
     ssbo_block_ptr->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
     descriptor_command_binding.bound_descriptor_sets.reserve(descriptor_command_binding.bound_descriptor_sets.size() +
@@ -103,7 +100,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     for (uint32_t i = 0; i < last_bound.per_set.size(); i++) {
         const auto &last_bound_set = last_bound.per_set[i];
         if (!last_bound_set.bound_descriptor_set) {
-            continue;
+            continue;  // can have gaps in descriptor sets
         }
 
         DescriptorCommandBountSet bound_descriptor_set;
@@ -122,8 +119,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         }
 
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
-        if (!ds_state.IsUpdateAfterBind() && need_descriptor_checks) {
-            ssbo_block_ptr->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
+        if (need_descriptor_checks && !ds_state.IsUpdateAfterBind()) {
+            ssbo_block_ptr->descriptor_set_types[i] = ds_state.GetTypeAddress(gpuav, loc);
         }
         descriptor_command_binding.bound_descriptor_sets.emplace_back(std::move(bound_descriptor_set));
     }
@@ -141,7 +138,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         auto ssbo_block_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.ssbo_block.MapMemory(loc);
         for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
             DescriptorSet &ds_state = *descriptor_command_binding.bound_descriptor_sets[i].state;
-            ssbo_block_ptr->desc_sets[i].ds_type = ds_state.GetTypeAddress(gpuav, loc);
+            ssbo_block_ptr->descriptor_set_types[i] = ds_state.GetTypeAddress(gpuav, loc);
         }
         descriptor_command_binding.ssbo_block.UnmapMemory();
     }
