@@ -16,6 +16,7 @@
  */
 
 #include "gpu/descriptor_validation/gpuav_descriptor_validation.h"
+#include <cstdint>
 
 #include "drawdispatch/descriptor_validator.h"
 #include "gpu/core/gpuav.h"
@@ -188,11 +189,17 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 auto iter = bound_descriptor_set.binding_req_map.find(binding);
                 vvl::DescriptorBindingInfo binding_info;
                 binding_info.first = binding;
+                uint32_t descriptor_req_found = 0;
                 while (iter != bound_descriptor_set.binding_req_map.end() && iter->first == binding) {
-                    binding_info.second.emplace_back(iter->second);
+                    descriptor_req_found++;
+                    binding_info.second = iter->second;
                     ++iter;
                 }
-                context.ValidateBindingDynamic(binding_info, u.second);
+                // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8875
+                // Currently if we find multiple variables (aka aliased bindings) we will skip validating
+                if (descriptor_req_found == 1) {
+                    context.ValidateBindingDynamic(binding_info, u.second);
+                }
             }
         }
     }

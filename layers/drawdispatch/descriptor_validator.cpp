@@ -57,12 +57,9 @@ std::string DescriptorValidator::DescribeDescriptor(const DescriptorBindingInfo 
     ss << dev_state.FormatHandle(descriptor_set.Handle()) << " [Set " << set_index << ", Binding " << binding_info.first
        << ", Index " << index;
 
-    // If multiple variables tied to a binding, don't attempt to detect which one
-    if (binding_info.second.size() == 1) {
-        auto variable = binding_info.second[0].variable;
-        if (variable && !variable->debug_name.empty()) {
-            ss << ", variable \"" << variable->debug_name << "\"";
-        }
+    auto variable = binding_info.second.variable;
+    if (variable && !variable->debug_name.empty()) {
+        ss << ", variable \"" << variable->debug_name << "\"";
     }
     ss << "]";
     return ss.str();
@@ -152,6 +149,12 @@ bool DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &bi
     auto binding_ptr = descriptor_set.GetBinding(binding_info.first);
     ASSERT_AND_RETURN_SKIP(binding_ptr);
     auto &binding = *binding_ptr;
+
+    // If false, we have already validated (and updated the state) for this descriptor on the CPU
+    if (!descriptor_set.ValidateBindingOnGPU(binding, binding_info.second.variable->is_dynamic_accessed)) {
+        return skip;
+    }
+
     switch (binding.descriptor_class) {
         case DescriptorClass::GeneralBuffer:
             skip |= ValidateDescriptorsDynamic(binding_info, static_cast<const BufferBinding &>(binding), indices);
@@ -224,11 +227,9 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
             return true;
         }
         bool is_written_to = false;
-        for (const auto &req : binding_info.second) {
-            if (req.variable->IsWrittenTo()) {
-                is_written_to = true;
-                break;
-            }
+        const auto &descriptor_req = binding_info.second;
+        if (descriptor_req.variable->IsWrittenTo()) {
+            is_written_to = true;
         }
         if (is_written_to && dev_state.ValidateUnprotectedBuffer(cb_state, *buffer_node, loc, vuids.protected_command_buffer_02712,
                                                                  " (Buffer is in a descriptorSet)")) {
@@ -238,61 +239,57 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     return false;
 }
 
-static const spirv::ResourceInterfaceVariable *FindMatchingImageVariable(const std::vector<DescriptorRequirement> &reqs,
+static const spirv::ResourceInterfaceVariable *FindMatchingImageVariable(const DescriptorRequirement &descriptor_req,
                                                                          const VkImageViewCreateInfo &image_view_ci) {
-    if (reqs.empty()) {
-        return nullptr;
-    }
     // Attempt to find a variable associated with this binding that matches
     // the setup of the image view that is bound to it.
-    for (const auto &req : reqs) {
-        if (!req.variable || !req.variable->IsImage()) {
-            continue;
-        }
-        const auto dim = req.variable->info.image_dim;
-        const auto is_image_array = req.variable->info.is_image_array;
-        switch (image_view_ci.viewType) {
-            case VK_IMAGE_VIEW_TYPE_1D:
-                if ((dim == spv::Dim1D) && !is_image_array) {
-                    return req.variable;
-                }
-                break;
-            case VK_IMAGE_VIEW_TYPE_2D:
-                if ((dim == spv::Dim2D) && !is_image_array) {
-                    return req.variable;
-                }
-                break;
-            case VK_IMAGE_VIEW_TYPE_3D:
-                if ((dim == spv::Dim3D) && !is_image_array) {
-                    return req.variable;
-                }
-                break;
-            case VK_IMAGE_VIEW_TYPE_CUBE:
-                if ((dim == spv::DimCube) && !is_image_array) {
-                    return req.variable;
-                }
-                break;
-            case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
-                if ((dim == spv::Dim1D) && is_image_array) {
-                    return req.variable;
-                }
-                break;
-            case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
-                if ((dim == spv::Dim2D) && is_image_array) {
-                    return req.variable;
-                }
-                break;
-            case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
-                if ((dim == spv::DimCube) && is_image_array) {
-                    return req.variable;
-                }
-                break;
-            default:
-                break;
-        }
+    if (!descriptor_req.variable || !descriptor_req.variable->IsImage()) {
+        return nullptr;
     }
+    const auto dim = descriptor_req.variable->info.image_dim;
+    const auto is_image_array = descriptor_req.variable->info.is_image_array;
+    switch (image_view_ci.viewType) {
+        case VK_IMAGE_VIEW_TYPE_1D:
+            if ((dim == spv::Dim1D) && !is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        case VK_IMAGE_VIEW_TYPE_2D:
+            if ((dim == spv::Dim2D) && !is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        case VK_IMAGE_VIEW_TYPE_3D:
+            if ((dim == spv::Dim3D) && !is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        case VK_IMAGE_VIEW_TYPE_CUBE:
+            if ((dim == spv::DimCube) && !is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+            if ((dim == spv::Dim1D) && is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+            if ((dim == spv::Dim2D) && is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+            if ((dim == spv::DimCube) && is_image_array) {
+                return descriptor_req.variable;
+            }
+            break;
+        default:
+            break;
+    }
+
     // if nothing matches just use the first entry
-    return reqs.begin()->variable;
+    return descriptor_req.variable;
 }
 
 bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,
@@ -303,24 +300,22 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     std::vector<const Sampler *> sampler_states;
     const VkImageView image_view = image_descriptor.GetImageView();
     const ImageView *image_view_state = image_descriptor.GetImageViewState();
-    const auto binding = binding_info.first;
+    const uint32_t binding = binding_info.first;
+    const auto &descriptor_req = binding_info.second;
 
     if (image_descriptor.GetClass() == DescriptorClass::ImageSampler) {
         sampler_states.emplace_back(static_cast<const ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
     } else {
-        for (const auto &req : binding_info.second) {
-            if (!req.variable || req.variable->samplers_used_by_image.size() <= index) {
-                continue;
-            }
-            for (const auto &desc_index : req.variable->samplers_used_by_image[index]) {
-                const auto *desc =
-                    descriptor_set.GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
-                // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
-                //       shader_validation.cpp. However, without this check some traces still crash.
-                if (desc && (desc->GetClass() == DescriptorClass::PlainSampler)) {
-                    const auto *sampler_state = static_cast<const SamplerDescriptor *>(desc)->GetSamplerState();
-                    if (sampler_state) sampler_states.emplace_back(sampler_state);
-                }
+        if (!descriptor_req.variable || descriptor_req.variable->samplers_used_by_image.size() <= index) {
+            return skip;
+        }
+        for (const auto &desc_index : descriptor_req.variable->samplers_used_by_image[index]) {
+            const auto *desc = descriptor_set.GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
+            // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
+            //       shader_validation.cpp. However, without this check some traces still crash.
+            if (desc && (desc->GetClass() == DescriptorClass::PlainSampler)) {
+                const auto *sampler_state = static_cast<const SamplerDescriptor *>(desc)->GetSamplerState();
+                if (sampler_state) sampler_states.emplace_back(sampler_state);
             }
         }
     }
@@ -337,14 +332,6 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
 
     // ImageView could be null via nullDescriptor and accessing it is legal
     if (image_view == VK_NULL_HANDLE) {
-        return skip;
-    }
-
-    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8875
-    // TODO - The logic to find the OpVariable is broken when two OpVariable are aliased, for now to prevent false positives here
-    // until we can get more info out of GPU-AV to know which OpVariable was actually used. (Skipping here because the alias doesn't
-    // effect the above checks if the descriptor is valid to access or not)
-    if (binding_info.second.size() > 1) {
         return skip;
     }
 
@@ -957,22 +944,17 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
     return skip;
 }
 
-static const spirv::ResourceInterfaceVariable *FindMatchingTexelVariable(const std::vector<DescriptorRequirement> &reqs) {
-    if (reqs.empty()) {
-        return nullptr;
-    }
+static const spirv::ResourceInterfaceVariable *FindMatchingTexelVariable(const DescriptorRequirement &descriptor_req) {
     // Attempt to find a variable associated with this binding that matches
     // the setup of the image view that is bound to it.
-    for (const auto &req : reqs) {
-        if (!req.variable || req.variable->IsImage()) {
-            continue;
-        }
-        if (req.variable->info.image_dim == spv::DimBuffer) {
-            return req.variable;
-        }
+    if (!descriptor_req.variable || descriptor_req.variable->IsImage()) {
+        return nullptr;
+    }
+    if (descriptor_req.variable->info.image_dim == spv::DimBuffer) {
+        return descriptor_req.variable;
     }
     // if nothing matches just use the first entry
-    return reqs.begin()->variable;
+    return descriptor_req.variable;
 }
 
 bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &binding_info, uint32_t index,

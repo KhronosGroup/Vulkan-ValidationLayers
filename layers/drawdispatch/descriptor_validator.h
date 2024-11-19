@@ -34,11 +34,13 @@ class CommandBuffer;
 class Sampler;
 class DescriptorSet;
 
-// The reason there is a vector is because we can have a shader that looks like
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8875
+// We are allowed to have a binding alias like the following
 //   layout(set = 0, binding = 2) uniform sampler3D tex3d[];
 //   layout(set = 0, binding = 2) uniform sampler2D tex[];
-// And we need a DescriptorRequirement for each OpVariable
-using DescriptorBindingInfo = std::pair<uint32_t, std::vector<DescriptorRequirement>>;
+// This will require more tracking in the Post Processing of GPU-AV to determine which OpVariable actually accessed it
+// We used to have vector<DescriptorRequirement> but it was giving false positives
+using DescriptorBindingInfo = std::pair<uint32_t, DescriptorRequirement>;
 
 class DescriptorValidator {
  public:
