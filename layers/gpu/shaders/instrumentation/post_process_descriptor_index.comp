@@ -36,22 +36,18 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
     uint slot[]; // PostProcessDescriptorIndexSlot
 };
 
-struct DescriptorSetRecord {
-    uvec2 unused_ds_type;
-    DescriptorIndexPostProcess descriptor_index_post_process;
-};
-
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     uvec2 unused_initialized_status;
-    DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
-} bindless_state_buffer;
+    uvec2 unused_desc_sets[kDebugInputBindlessMaxDescSets];
+    DescriptorIndexPostProcess descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
+} gpuav;
 
 void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index, const uint binding_layout_offset) {
-    DescriptorIndexPostProcess descriptor_index_post_process = bindless_state_buffer.desc_sets[desc_set].descriptor_index_post_process;
+    DescriptorIndexPostProcess descriptor_index_post_process = gpuav.descriptor_index_post_process_buffers[desc_set];
     uint binding_layout_index = binding_layout_offset + desc_index;
     // The index has been accessed, write out for post processing
     //
     // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
-    // ex - desc_sets[0].descriptor_index_post_process == desc_sets[1].descriptor_index_post_process
+    // ex - descriptor_index_post_process_buffers[0] == descriptor_index_post_process_buffers[1]
     descriptor_index_post_process.slot[binding_layout_index] = kDescriptorSetAccessedMask | desc_set;
 }

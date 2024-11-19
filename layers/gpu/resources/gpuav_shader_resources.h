@@ -50,18 +50,18 @@ struct DescriptorCommandBinding {
 namespace glsl {
 
 // Every descriptor set has various BDA pointers to data from the CPU
-// Not all GPU-AV code uses each, but group together for ease of managing the memory
 struct DescriptorSetRecord {
     // The type information will change with UpdateAfterBind so will need to update this before submitting the to the queue
     VkDeviceAddress ds_type;  // input data
-
-    VkDeviceAddress descriptor_index_post_process;  // output data
 };
 
 // Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
 struct DescriptorStateSSBO {
+    // Inputs
     VkDeviceAddress initialized_status;  // Used to know if descriptors are initialized or not
     DescriptorSetRecord desc_sets[kDebugInputBindlessMaxDescSets];
+    // Outputs
+    VkDeviceAddress descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 };
 
 // Represented as a uvec2 in the shader
