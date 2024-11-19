@@ -32,10 +32,10 @@ struct LabelCommand;
 
 namespace gpuav {
 
-struct DescriptorCommandBountSet;
 class DescriptorSet;
 class Validator;
 class CommandBuffer;
+class Queue;
 
 void UpdateInstrumentationDescSet(Validator& gpuav, CommandBuffer& cb_state, VkDescriptorSet instrumentation_desc_set,
                                   const Location& loc);
@@ -47,9 +47,10 @@ void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBuffer
                                                  const Location& loc);
 
 // Return true iff an error has been found
-bool LogInstrumentationError(Validator& gpuav, VkCommandBuffer cmd_buffer, const LogObjectList& objlist,
-                             const std::optional<vvl::LabelCommand>& label_cmd, uint32_t operation_index,
-                             const uint32_t* error_record, const std::vector<std::shared_ptr<DescriptorSet>>& descriptor_sets,
+bool LogInstrumentationError(Validator& gpuav, const CommandBuffer& cb_state, const LogObjectList& objlist,
+                             const std::vector<std::string>& initial_label_stack, uint32_t label_command_i,
+                             uint32_t operation_index, const uint32_t* error_record,
+                             const std::vector<std::shared_ptr<DescriptorSet>>& descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location& loc);
 

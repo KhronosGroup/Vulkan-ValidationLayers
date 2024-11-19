@@ -248,8 +248,8 @@ void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, Co
     VkStridedDeviceAddressRegionKHR empty_sbt{};
     DispatchCmdTraceRaysKHR(cb_state.VkHandle(), &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
 
-    CommandBuffer::ErrorLoggerFunc error_logger = [loc](Validator &gpuav, const uint32_t *error_record,
-                                                        const LogObjectList &objlist) {
+    CommandBuffer::ErrorLoggerFunc error_logger = [loc](Validator &gpuav, const CommandBuffer &, const uint32_t *error_record,
+                                                        const LogObjectList &objlist, const std::vector<std::string> &) {
         bool skip = false;
 
         using namespace glsl;

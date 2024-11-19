@@ -311,8 +311,8 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
 
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                      Validator &gpuav, const uint32_t *error_record,
-                                                      const LogObjectList &objlist) {
+                                                      Validator &gpuav, const CommandBuffer &, const uint32_t *error_record,
+                                                      const LogObjectList &objlist, const std::vector<std::string> &) {
         bool skip = false;
 
         using namespace glsl;

@@ -950,3 +950,48 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncValReporting, DebugLabelRegionsFromSecondaryCommandBuffers) {
+    TEST_DESCRIPTION("Prior access debug region reporting: debug region is formed by two command buffers");
+
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, buffer_usage);
+    vkt::Buffer buffer_b(*m_device, 256, buffer_usage);
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    cb.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    label.pLabelName = "RegionB";
+    vk::CmdBeginDebugUtilsLabelEXT(cb, &label);
+    cb.Copy(buffer_a, buffer_b);
+    vk::CmdEndDebugUtilsLabelEXT(cb);
+    cb.End();
+
+    vkt::CommandBuffer primary_0(*m_device, m_command_pool);
+    primary_0.Begin();
+    label.pLabelName = "primary_0";
+    vk::CmdBeginDebugUtilsLabelEXT(primary_0, &label);
+    vk::CmdExecuteCommands(primary_0.handle(), 1, &cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(primary_0.handle());
+    primary_0.End();
+
+    vkt::CommandBuffer primary_1(*m_device, m_command_pool);
+    primary_1.Begin();
+    label.pLabelName = "primary_1";
+    vk::CmdBeginDebugUtilsLabelEXT(primary_1, &label);
+    vk::CmdExecuteCommands(primary_1.handle(), 1, &cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(primary_1.handle());
+    primary_1.End();
+
+    std::vector primaries = {&primary_0, &primary_1};
+
+    const char* region_patterns = "(?=.*primary_0::RegionB)(?=.*primary_1::RegionB)";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", region_patterns);
+    m_default_queue->Submit(vvl::make_span(primaries.data(), 2));
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}

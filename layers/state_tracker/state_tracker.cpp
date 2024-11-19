@@ -1185,6 +1185,22 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     queue_map_.clear();
 }
 
+static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
+    if (queue_state.found_unbalanced_cmdbuf_label) return;
+    for (const auto &command : cb_state.GetLabelCommands()) {
+        if (command.begin) {
+            queue_state.cmdbuf_label_stack.push_back(command.label_name);
+        } else {
+            if (queue_state.cmdbuf_label_stack.empty()) {
+                queue_state.found_unbalanced_cmdbuf_label = true;
+                return;
+            }
+            queue_state.last_closed_cmdbuf_label = queue_state.cmdbuf_label_stack.back();
+            queue_state.cmdbuf_label_stack.pop_back();
+        }
+    }
+}
+
 void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                       VkFence fence, const RecordObject &record_obj) {
     auto queue_state = Get<vvl::Queue>(queue);
@@ -1197,10 +1213,10 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
         submissions.emplace_back(std::move(submission));
     }
     // Now process each individual submit
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo, vvl::Field::pSubmits, submit_idx);
+    for (uint32_t submit_i = 0; submit_i < submitCount; submit_i++) {
+        Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo, vvl::Field::pSubmits, submit_i);
         vvl::QueueSubmission submission(submit_loc);
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        const VkSubmitInfo *submit = &pSubmits[submit_i];
         auto *timeline_semaphore_submit = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             uint64_t value{0};
@@ -1223,12 +1239,13 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
         const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            if (auto cb_state = Get<vvl::CommandBuffer>(submit->pCommandBuffers[i])) {
-                submission.AddCommandBuffer(std::move(cb_state));
+        for (const VkCommandBuffer &cb : vvl::make_span(submit->pCommandBuffers, submit->commandBufferCount)) {
+            if (auto cb_state = GetWrite<vvl::CommandBuffer>(cb)) {
+                submission.AddCommandBuffer(cb_state, queue_state->cmdbuf_label_stack);
+                UpdateCmdBufLabelStack(*cb_state, *queue_state);
             }
         }
-        if (submit_idx == (submitCount - 1) && fence != VK_NULL_HANDLE) {
+        if (submit_i == (submitCount - 1) && fence != VK_NULL_HANDLE) {
             submission.AddFence(Get<vvl::Fence>(fence));
         }
         submissions.emplace_back(std::move(submission));
@@ -1240,34 +1257,10 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
     }
 }
 
-static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
-    if (queue_state.found_unbalanced_cmdbuf_label) return;
-    for (const auto &command : cb_state.GetLabelCommands()) {
-        if (command.begin) {
-            queue_state.cmdbuf_label_stack.push_back(command.label_name);
-        } else {
-            if (queue_state.cmdbuf_label_stack.empty()) {
-                queue_state.found_unbalanced_cmdbuf_label = true;
-                return;
-            }
-            queue_state.last_closed_cmdbuf_label = queue_state.cmdbuf_label_stack.back();
-            queue_state.cmdbuf_label_stack.pop_back();
-        }
-    }
-}
-
 void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                        VkFence fence, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
     auto queue_state = Get<vvl::Queue>(queue);
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            if (auto cb_state = GetRead<vvl::CommandBuffer>(submit->pCommandBuffers[i])) {
-                UpdateCmdBufLabelStack(*cb_state, *queue_state);
-            }
-        }
-    }
     queue_state->PostSubmit();
 }
 
@@ -1287,28 +1280,31 @@ void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t s
         submissions.emplace_back(std::move(submission));
     }
 
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo2, vvl::Field::pSubmits, submit_idx);
+    for (uint32_t submit_i = 0; submit_i < submitCount; submit_i++) {
+        Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo2, vvl::Field::pSubmits, submit_i);
         vvl::QueueSubmission submission(submit_loc);
-        const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
-            const auto &sem_info = submit->pWaitSemaphoreInfos[i];
-            auto semaphore = Get<vvl::Semaphore>(sem_info.semaphore);
-            ASSERT_AND_CONTINUE(semaphore);
-            const uint64_t value = (semaphore->type == VK_SEMAPHORE_TYPE_BINARY) ? 0 : sem_info.value;
-            submission.AddWaitSemaphore(std::move(semaphore), value);
+        const VkSubmitInfo2KHR &submit = pSubmits[submit_i];
+        for (const VkSemaphoreSubmitInfo &wait_sem_info :
+             vvl::make_span(submit.pWaitSemaphoreInfos, submit.waitSemaphoreInfoCount)) {
+            auto wait_semaphore = Get<vvl::Semaphore>(wait_sem_info.semaphore);
+            ASSERT_AND_CONTINUE(wait_semaphore);
+            const uint64_t value = (wait_semaphore->type == VK_SEMAPHORE_TYPE_BINARY) ? 0 : wait_sem_info.value;
+            submission.AddWaitSemaphore(std::move(wait_semaphore), value);
         }
-        for (uint32_t i = 0; i < submit->signalSemaphoreInfoCount; ++i) {
-            const auto &sem_info = submit->pSignalSemaphoreInfos[i];
-            submission.AddSignalSemaphore(Get<vvl::Semaphore>(sem_info.semaphore), sem_info.value);
+        for (const VkSemaphoreSubmitInfo &sig_sem_info :
+             vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount)) {
+            submission.AddSignalSemaphore(Get<vvl::Semaphore>(sig_sem_info.semaphore), sig_sem_info.value);
         }
-        const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
+        const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
-        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            submission.AddCommandBuffer(GetWrite<vvl::CommandBuffer>(submit->pCommandBufferInfos[i].commandBuffer));
+        for (const VkCommandBufferSubmitInfo &cb_info : vvl::make_span(submit.pCommandBufferInfos, submit.commandBufferInfoCount)) {
+            if (auto cb_state = GetWrite<vvl::CommandBuffer>(cb_info.commandBuffer)) {
+                submission.AddCommandBuffer(cb_state, queue_state->cmdbuf_label_stack);
+                UpdateCmdBufLabelStack(*cb_state, *queue_state);
+            }
         }
-        if (submit_idx == (submitCount - 1)) {
+        if (submit_i == (submitCount - 1)) {
             submission.AddFence(Get<vvl::Fence>(fence));
         }
         submissions.emplace_back(std::move(submission));
@@ -1328,13 +1324,6 @@ void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t 
                                                         VkFence fence, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
     auto queue_state = Get<vvl::Queue>(queue);
-    for (const auto &submit : vvl::make_span(pSubmits, submitCount)) {
-        for (const auto &cmdbuf_info : vvl::make_span(submit.pCommandBufferInfos, submit.commandBufferInfoCount)) {
-            if (auto cb_state = GetRead<vvl::CommandBuffer>(cmdbuf_info.commandBuffer)) {
-                UpdateCmdBufLabelStack(*cb_state, *queue_state);
-            }
-        }
-    }
     queue_state->PostSubmit();
 }
 

@@ -77,7 +77,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     ~CommandBuffer();
 
     bool PreProcess(const Location &loc);
-    void PostProcess(VkQueue queue, const Location &loc);
+    void PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
     [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
@@ -121,7 +121,9 @@ class CommandBuffer : public vvl::CommandBuffer {
     vko::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
+        stdext::inplace_function<bool(Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+                                      const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack),
+                                 128>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
     std::vector<DebugPrintfBufferInfo> debug_printf_buffer_infos;
@@ -168,7 +170,7 @@ class Queue : public vvl::Queue {
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
-    std::deque<std::vector<std::shared_ptr<vvl::CommandBuffer>>> retiring_;
+    std::deque<std::vector<vvl::CommandBufferSubmission>> retiring_;
     const bool timeline_khr_;
 };
 
