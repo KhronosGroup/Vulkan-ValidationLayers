@@ -105,10 +105,12 @@ static inline uint64_t HandleToUint64(HANDLE_T h) {
 
 static inline uint64_t HandleToUint64(uint64_t h) { return h; }
 
+// #ARNO_TODO Move LabelCommand/DebugUtilsLabel here
+
 // Data we store per label for logging
 struct LoggingLabel {
-    std::string name;
-    std::array<float, 4> color;
+    std::string name{};
+    std::array<float, 4> color{};
 
     void Reset() { *this = LoggingLabel(); }
     bool Empty() const { return name.empty(); }
@@ -125,8 +127,6 @@ struct LoggingLabel {
         if (label_info && label_info->pLabelName) {
             name = label_info->pLabelName;
             std::copy_n(std::begin(label_info->color), 4, color.begin());
-        } else {
-            Reset();
         }
     }
 
@@ -144,20 +144,13 @@ struct LoggingLabelState {
     LoggingLabel insert_label;
 
     // Export the labels, but in reverse order since we want the most recent at the top.
-    std::vector<VkDebugUtilsLabelEXT> Export() const {
-        size_t count = labels.size() + (insert_label.Empty() ? 0 : 1);
-        std::vector<VkDebugUtilsLabelEXT> out(count);
-
-        if (!count) return out;
-
-        size_t index = count - 1;
+    void Export(std::vector<VkDebugUtilsLabelEXT> &exported_labels) const {
         if (!insert_label.Empty()) {
-            out[index--] = insert_label.Export();
+            exported_labels.emplace_back(insert_label.Export());
         }
-        for (const auto &label : labels) {
-            out[index--] = label.Export();
-        }
-        return out;
+        exported_labels.reserve(exported_labels.size() + labels.size());
+        std::for_each(labels.rbegin(), labels.rend(),
+                      [&exported_labels](const LoggingLabel &label) { exported_labels.emplace_back(label.Export()); });
     }
 };
 

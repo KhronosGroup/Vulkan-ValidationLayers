@@ -26,7 +26,7 @@ struct Location;
 struct LogObjectList;
 
 namespace vvl {
-struct LabelCommand;
+struct DebugUtilsLabel;
 }
 
 namespace gpuav {
@@ -46,7 +46,7 @@ void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBuffer
 
 // Return true iff an error has been found
 bool LogInstrumentationError(Validator& gpuav, VkCommandBuffer cmd_buffer, const LogObjectList& objlist,
-                             const std::optional<vvl::LabelCommand>& label_cmd, uint32_t operation_index,
+                             const std::optional<vvl::DebugUtilsLabel>& label_cmd, uint32_t operation_index,
                              const uint32_t* error_record, const std::vector<DescriptorCommandBountSet>& descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location& loc);

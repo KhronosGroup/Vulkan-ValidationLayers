@@ -198,7 +198,7 @@ class BatchAccessLog {
         AccessRecord GetAccessRecord(ResourceUsageTag tag) const;
 
         // DebugNameProvider
-        std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
+        std::string GetStackedDebugLabelRegionName(const ResourceUsageRecord &record) const override;
 
       private:
         BatchRecord batch_;

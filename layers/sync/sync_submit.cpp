@@ -630,8 +630,8 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
             ResolveSubmittedCommandBuffer(*access_context.GetCurrentAccessContext(), batch.base_tag);
             batch.base_tag += access_context.GetTagCount();
         }
-        // Apply debug label commands
-        vvl::CommandBuffer::ReplayLabelCommands(cb->GetLabelCommands(), current_label_stack);
+
+        vvl::CommandBuffer::ReplayDebugLabelRegions(cb->GetDebugLabelRegions(), current_label_stack);
         batch.cb_index++;
     }
     return skip;
@@ -835,9 +835,9 @@ BatchAccessLog::AccessRecord BatchAccessLog::GetAccessRecord(ResourceUsageTag ta
     return AccessRecord();
 }
 
-std::string BatchAccessLog::CBSubmitLog::GetDebugRegionName(const ResourceUsageRecord& record) const {
-    const auto& label_commands = (*cbs_)[0]->GetLabelCommands();
-    return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index, initial_label_stack_);
+std::string BatchAccessLog::CBSubmitLog::GetStackedDebugLabelRegionName(const ResourceUsageRecord& record) const {
+    const auto& label_regions = (*cbs_)[0]->GetDebugLabelRegions();
+    return vvl::CommandBuffer::GetStackedDebugLabelRegionName(label_regions, record.label_region_i, initial_label_stack_);
 }
 
 BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(ResourceUsageTag tag) const {
@@ -846,7 +846,7 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::GetAccessRecord(Resour
     assert(log_);
     assert(index < log_->size());
     const ResourceUsageRecord* record = &(*log_)[index];
-    const auto debug_name_provider = (record->label_command_index == vvl::kU32Max) ? nullptr : this;
+    const auto debug_name_provider = (record->label_region_i == vvl::kU32Max) ? nullptr : this;
     return AccessRecord{&batch_, record, debug_name_provider};
 }
 

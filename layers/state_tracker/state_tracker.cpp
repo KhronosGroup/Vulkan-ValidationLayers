@@ -1243,9 +1243,9 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
 
 static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {
     if (queue_state.found_unbalanced_cmdbuf_label) return;
-    for (const auto &command : cb_state.GetLabelCommands()) {
-        if (command.begin) {
-            queue_state.cmdbuf_label_stack.push_back(command.label_name);
+    for (const auto &label_region : cb_state.GetDebugLabelRegions()) {
+        if (label_region.begin) {
+            queue_state.cmdbuf_label_stack.push_back(label_region.label_name);
         } else {
             if (queue_state.cmdbuf_label_stack.empty()) {
                 queue_state.found_unbalanced_cmdbuf_label = true;
@@ -4305,13 +4305,13 @@ void ValidationStateTracker::PostCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandB
                                                                       const VkDebugUtilsLabelEXT *pLabelInfo,
                                                                       const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->BeginLabel((pLabelInfo && pLabelInfo->pLabelName) ? pLabelInfo->pLabelName : "");
+    cb_state->BeginDebugUtilsLabel((pLabelInfo && pLabelInfo->pLabelName) ? pLabelInfo->pLabelName : "");
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
-    cb_state->EndLabel();
+    cb_state->EndDebugUtilsLabel();
     debug_report->EndCmdDebugUtilsLabel(commandBuffer);
 }
 

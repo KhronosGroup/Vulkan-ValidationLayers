@@ -63,7 +63,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion2) {
 
     // Command buffer can start with end label command. It can close debug region
     // started in the previous command buffer (that's why primary command buffer labels
-    // are validated at sumbit time). Start command buffer with EndLabel command to
+    // are validated at sumbit time). Start command buffer with EndDebugUtilsLabel command to
     // check it is handled properly.
     //
     // NOTE: the following command crashes CI Linux-Mesa-6800 driver but works

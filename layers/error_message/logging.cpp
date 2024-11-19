@@ -159,15 +159,13 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
         if (VK_OBJECT_TYPE_QUEUE == object_name_info.objectType) {
             auto label_iter = debug_utils_queue_labels.find(reinterpret_cast<VkQueue>(object_name_info.objectHandle));
             if (label_iter != debug_utils_queue_labels.end()) {
-                auto found_queue_labels = label_iter->second->Export();
-                queue_labels.insert(queue_labels.end(), found_queue_labels.begin(), found_queue_labels.end());
+                label_iter->second->Export(queue_labels);
             }
             // If this is a command buffer, add any command buffer labels to the callback data.
         } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType) {
             auto label_iter = debug_utils_cmd_buffer_labels.find(reinterpret_cast<VkCommandBuffer>(object_name_info.objectHandle));
             if (label_iter != debug_utils_cmd_buffer_labels.end()) {
-                auto found_cmd_buf_labels = label_iter->second->Export();
-                cmd_buf_labels.insert(cmd_buf_labels.end(), found_cmd_buf_labels.begin(), found_cmd_buf_labels.end());
+                label_iter->second->Export(cmd_buf_labels);
             }
         }
 

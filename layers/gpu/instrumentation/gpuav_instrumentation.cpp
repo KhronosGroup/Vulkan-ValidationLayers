@@ -395,12 +395,12 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
     const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
                                   (last_bound.pipeline_state && last_bound.pipeline_state->uses_pipeline_robustness));
 
-    std::optional<vvl::LabelCommand> deepest_opened_label_region = std::nullopt;
+    std::optional<vvl::DebugUtilsLabel> deepest_opened_label_region = std::nullopt;
     {
         int32_t ended_label_regions_count = 0;
         if (auto deepest_opened_label_region_rit =
-                std::find_if(cb_state.GetLabelCommands().rbegin(), cb_state.GetLabelCommands().rend(),
-                             [&ended_label_regions_count](const vvl::LabelCommand &label_cmd) {
+                std::find_if(cb_state.GetDebugLabelRegions().rbegin(), cb_state.GetDebugLabelRegions().rend(),
+                             [&ended_label_regions_count](const vvl::DebugUtilsLabel &label_cmd) {
                                  if (label_cmd.begin) {
                                      if (ended_label_regions_count == 0) {
                                          return true;
@@ -413,7 +413,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
                                      return false;
                                  }
                              });
-            deepest_opened_label_region_rit != cb_state.GetLabelCommands().rend()) {
+            deepest_opened_label_region_rit != cb_state.GetDebugLabelRegions().rend()) {
             deepest_opened_label_region = *deepest_opened_label_region_rit;
         }
     }
@@ -720,7 +720,7 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
 bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist,
-                             const std::optional<vvl::LabelCommand> &label_cmd, uint32_t operation_index,
+                             const std::optional<vvl::DebugUtilsLabel> &label_cmd, uint32_t operation_index,
                              const uint32_t *error_record, const std::vector<DescriptorCommandBountSet> &descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location &loc) {

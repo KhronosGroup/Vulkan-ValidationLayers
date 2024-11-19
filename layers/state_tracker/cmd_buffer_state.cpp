@@ -299,7 +299,7 @@ void CommandBuffer::ResetCBState() {
     // Clean up the label data
     debug_label.Reset();
     label_stack_depth_ = 0;
-    label_commands_.clear();
+    debug_label_regions_.clear();
 
     nesting_level = 0;
 
@@ -1142,7 +1142,8 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         }
 
         label_stack_depth_ += sub_cb_state->label_stack_depth_;
-        label_commands_.insert(label_commands_.end(), sub_cb_state->label_commands_.begin(), sub_cb_state->label_commands_.end());
+        debug_label_regions_.insert(debug_label_regions_.end(), sub_cb_state->debug_label_regions_.begin(),
+                                    sub_cb_state->debug_label_regions_.end());
     }
 }
 
@@ -1810,21 +1811,21 @@ void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipel
     *rtn_sets = &(last_bound.per_set);
 }
 
-void CommandBuffer::BeginLabel(const char *label_name) {
+void CommandBuffer::BeginDebugUtilsLabel(const char *label_name) {
     ++label_stack_depth_;
-    label_commands_.emplace_back(LabelCommand{true, label_name});
+    debug_label_regions_.emplace_back(DebugUtilsLabel{true, label_name});
 }
 
-void CommandBuffer::EndLabel() {
+void CommandBuffer::EndDebugUtilsLabel() {
     --label_stack_depth_;
-    label_commands_.emplace_back(LabelCommand{false, std::string()});
+    debug_label_regions_.emplace_back(DebugUtilsLabel{false, std::string()});
 }
 
-void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands,
-                                        std::vector<std::string> &label_stack) {
-    for (const LabelCommand &command : label_commands) {
-        if (command.begin) {
-            label_stack.emplace_back(command.label_name.empty() ? "(empty label)" : command.label_name);
+void CommandBuffer::ReplayDebugLabelRegions(const vvl::span<const DebugUtilsLabel> &label_regions,
+                                            std::vector<std::string> &label_stack) {
+    for (const DebugUtilsLabel &label_region : label_regions) {
+        if (label_region.begin) {
+            label_stack.emplace_back(label_region.label_name.empty() ? "(empty label)" : label_region.label_name);
         } else if (!label_stack.empty()) {
             // The above condition is needed for several reasons. On the primary command buffer level
             // the labels are not necessary balanced. And if the empty stack is detected in the context
@@ -1835,25 +1836,26 @@ void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &lab
     }
 }
 
-std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
-                                              const std::vector<std::string> &initial_label_stack) {
-    if (label_command_index >= label_commands.size()) {
+std::string CommandBuffer::GetStackedDebugLabelRegionName(const std::vector<DebugUtilsLabel> &label_regions,
+                                                          uint32_t label_region_i,
+                                                          const std::vector<std::string> &initial_label_stack) {
+    if (label_region_i >= label_regions.size()) {
         // Can happen due to core validation error when in-use command buffer was re-recorded.
         // It's a bug if this happens in a valid vulkan program.
         return {};
     }
-    auto commands_to_replay = vvl::make_span(label_commands.data(), label_command_index + 1);
+    auto label_regions_to_replay = vvl::make_span(label_regions.data(), label_region_i + 1);
     auto label_stack = initial_label_stack;
-    vvl::CommandBuffer::ReplayLabelCommands(commands_to_replay, label_stack);
+    vvl::CommandBuffer::ReplayDebugLabelRegions(label_regions_to_replay, label_stack);
 
-    std::string debug_region;
-    for (const std::string &label_name : label_stack) {
-        if (!debug_region.empty()) {
-            debug_region += "::";
+    std::string stacked_regions_name;
+    for (const std::string &region_name : label_stack) {
+        if (!stacked_regions_name.empty()) {
+            stacked_regions_name += "::";
         }
-        debug_region += label_name;
+        stacked_regions_name += region_name;
     }
-    return debug_region;
+    return stacked_regions_name;
 }
 
 std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state) const {

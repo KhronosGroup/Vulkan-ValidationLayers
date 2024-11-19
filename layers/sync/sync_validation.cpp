@@ -2883,8 +2883,8 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     // Heavyweight, but we need a proxy copy of the active command buffer access context
     CommandBufferAccessContext proxy_cb_context(*cb_context, CommandBufferAccessContext::AsProxyContext());
 
-    auto &proxy_label_commands = proxy_cb_context.GetProxyLabelCommands();
-    proxy_label_commands = cb_state->GetLabelCommands();
+    auto &proxy_label_regions = proxy_cb_context.GetProxyLabelCommands();
+    proxy_label_regions = cb_state->GetDebugLabelRegions();
 
     // Make working copies of the access and events contexts
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
@@ -2903,14 +2903,14 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
         skip |= ReplayState(proxy_cb_context, *recorded_cb_context, error_obj, cb_index, base_tag).ValidateFirstUse();
 
         // Update proxy label commands so they can be used by ImportRecordedAccessLog
-        const auto &recorded_label_commands = recorded_cb->GetLabelCommands();
-        proxy_label_commands.insert(proxy_label_commands.end(), recorded_label_commands.begin(), recorded_label_commands.end());
+        const auto &recorded_label_regions = recorded_cb->GetDebugLabelRegions();
+        proxy_label_regions.insert(proxy_label_regions.end(), recorded_label_regions.begin(), recorded_label_regions.end());
 
         // The barriers have already been applied in ValidatFirstUse
         proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
         proxy_cb_context.ResolveExecutedCommandBuffer(*recorded_cb_context->GetCurrentAccessContext(), base_tag);
     }
-    proxy_label_commands.clear();
+    proxy_label_regions.clear();
 
     return skip;
 }

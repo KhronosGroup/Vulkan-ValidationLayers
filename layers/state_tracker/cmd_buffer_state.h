@@ -150,7 +150,7 @@ class CommandPool : public StateObject {
     void Destroy() override;
 };
 
-struct LabelCommand {
+struct DebugUtilsLabel {
     bool begin = false;      // vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT
     std::string label_name;  // used when begin == true
 };
@@ -698,18 +698,19 @@ class CommandBuffer : public RefcountedStateObject {
 
     bool IsPrimary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY; }
     bool IsSecondary() const { return allocate_info.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY; }
-    void BeginLabel(const char *label_name);
-    void EndLabel();
+    void BeginDebugUtilsLabel(const char *label_name);
+    void EndDebugUtilsLabel();
     int32_t GetLabelStackDepth() const { return label_stack_depth_; }
 
-    const std::vector<LabelCommand> &GetLabelCommands() const { return label_commands_; }
+    const std::vector<DebugUtilsLabel> &GetDebugLabelRegions() const { return debug_label_regions_; }
 
     // Applies label commands to the label_stack: for "begin label" command it pushes
     // a label on the stack, and for the "end label" command it removes the top label.
-    static void ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands, std::vector<std::string> &label_stack);
+    static void ReplayDebugLabelRegions(const vvl::span<const DebugUtilsLabel> &label_regions,
+                                        std::vector<std::string> &label_stack);
     // Computes debug region by replaying given commands on top initial label stack.
-    static std::string GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
-                                          const std::vector<std::string> &initial_label_stack = {});
+    static std::string GetStackedDebugLabelRegionName(const std::vector<DebugUtilsLabel> &label_regions, uint32_t label_region_i,
+                                                      const std::vector<std::string> &initial_label_stack = {});
 
   private:
     void ResetCBState();
@@ -719,7 +720,7 @@ class CommandBuffer : public RefcountedStateObject {
     // Negative value for a primary command buffer is allowed. Validation is done at submit time accross all command buffers.
     int32_t label_stack_depth_ = 0;
     // Used during sumbit time validation.
-    std::vector<LabelCommand> label_commands_;
+    std::vector<DebugUtilsLabel> debug_label_regions_;
 
     uint32_t active_subpass_;
     // Stores rasterization samples count obtained from the first pipeline with a pMultisampleState in the active subpass,

@@ -1450,10 +1450,10 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<In
 
 // Where we build up the error message with all the useful debug information about where the error occured
 std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
-    VkCommandBuffer commandBuffer, const std::optional<vvl::LabelCommand> &label_cmd, const std::vector<Instruction> &instructions,
-    uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position,
-    const InstrumentedShader *instrumented_shader, uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point,
-    uint32_t operation_index) const {
+    VkCommandBuffer commandBuffer, const std::optional<vvl::DebugUtilsLabel> &label_cmd,
+    const std::vector<Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1,
+    uint32_t stage_info_2, uint32_t instruction_position, const InstrumentedShader *instrumented_shader, uint32_t shader_id,
+    VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
     std::ostringstream ss;
     if (instructions.empty() || !instrumented_shader) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";

@@ -107,9 +107,9 @@ private:
             // The assumption that after label mismatch the label stack is corrupted and can't be reasoned about.
             return skip;
         }
-        for (const auto &command : cb_state.GetLabelCommands()) {
-            if (command.begin) {
-                cmdbuf_label_stack.emplace_back(command.label_name);
+        for (const auto &label_region : cb_state.GetDebugLabelRegions()) {
+            if (label_region.begin) {
+                cmdbuf_label_stack.emplace_back(label_region.label_name);
             } else {
                 if (cmdbuf_label_stack.empty()) {
                     found_unbalanced_cmdbuf_label = true;

@@ -131,7 +131,7 @@ struct ResourceCmdUsageRecord {
     uint32_t first_handle_index = vvl::kNoIndex32;
     uint32_t handle_count = 0;
 
-    uint32_t label_command_index = vvl::kNoIndex32;
+    uint32_t label_region_i = vvl::kNoIndex32;
 };
 
 struct DebugNameProvider;
@@ -171,7 +171,7 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
 // Provides debug region name for the specified access log command.
 // If empty name is returned it means the command is not inside debug region.
 struct DebugNameProvider {
-    virtual std::string GetDebugRegionName(const ResourceUsageRecord &record) const = 0;
+    virtual std::string GetStackedDebugLabelRegionName(const ResourceUsageRecord &record) const = 0;
 };
 
 // Command execution context is the base class for command buffer and queue contexts
@@ -338,9 +338,9 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     const std::vector<SyncOpEntry> &GetSyncOps() const { return sync_ops_; };
 
     // DebugNameProvider
-    std::string GetDebugRegionName(const ResourceUsageRecord &record) const override;
+    std::string GetStackedDebugLabelRegionName(const ResourceUsageRecord &record) const override;
 
-    std::vector<vvl::LabelCommand> &GetProxyLabelCommands() { return proxy_label_commands_; }
+    std::vector<vvl::DebugUtilsLabel> &GetProxyLabelCommands() { return proxy_label_regions_; }
 
   private:
     CommandBufferAccessContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
@@ -389,7 +389,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // Secondary buffer validation uses proxy context and does local update (imitates Record).
     // Because in this case PreRecord is not called, the label state is not updated. We make
     // a copy of label state to update it locally together with proxy context.
-    std::vector<vvl::LabelCommand> proxy_label_commands_;
+    std::vector<vvl::DebugUtilsLabel> proxy_label_regions_;
 };
 
 namespace syncval_state {

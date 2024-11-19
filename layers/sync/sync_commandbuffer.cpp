@@ -893,16 +893,16 @@ void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAcce
     access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
 
     // Adjust command indices for the log records added from recorded_context.
-    const auto &recorded_label_commands = recorded_context.cb_state_->GetLabelCommands();
-    const bool use_proxy = !proxy_label_commands_.empty();
-    const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
-    if (!label_commands.empty()) {
-        assert(label_commands.size() >= recorded_label_commands.size());
-        const uint32_t command_offset = static_cast<uint32_t>(label_commands.size() - recorded_label_commands.size());
+    const auto &recorded_label_regions = recorded_context.cb_state_->GetDebugLabelRegions();
+    const bool use_proxy = !proxy_label_regions_.empty();
+    const auto &label_regions = use_proxy ? proxy_label_regions_ : cb_state_->GetDebugLabelRegions();
+    if (!label_regions.empty()) {
+        assert(label_regions.size() >= recorded_label_regions.size());
+        const uint32_t command_offset = static_cast<uint32_t>(label_regions.size() - recorded_label_regions.size());
         for (size_t i = 0; i < recorded_context.access_log_->size(); i++) {
             size_t index = (access_log_->size() - 1) - i;
-            assert((*access_log_)[index].label_command_index != vvl::kU32Max);
-            (*access_log_)[index].label_command_index += command_offset;
+            assert((*access_log_)[index].label_region_i != vvl::kU32Max);
+            (*access_log_)[index].label_region_i += command_offset;
         }
     }
 }
@@ -914,8 +914,8 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, R
 
     auto &record = access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
 
-    if (!cb_state_->GetLabelCommands().empty()) {
-        record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
+    if (!cb_state_->GetDebugLabelRegions().empty()) {
+        record.label_region_i = static_cast<uint32_t>(cb_state_->GetDebugLabelRegions().size() - 1);
     }
     CheckCommandTagDebugCheckpoint();
     return current_command_tag_;
@@ -932,8 +932,8 @@ ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command
     record.first_handle_index = main_command_record.first_handle_index;
     record.handle_count = main_command_record.handle_count;
 
-    if (!cb_state_->GetLabelCommands().empty()) {
-        record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
+    if (!cb_state_->GetDebugLabelRegions().empty()) {
+        record.label_region_i = static_cast<uint32_t>(cb_state_->GetDebugLabelRegions().size() - 1);
     }
     return tag;
 }
@@ -983,10 +983,10 @@ void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const
     }
 }
 
-std::string CommandBufferAccessContext::GetDebugRegionName(const ResourceUsageRecord &record) const {
-    const bool use_proxy = !proxy_label_commands_.empty();
-    const auto &label_commands = use_proxy ? proxy_label_commands_ : cb_state_->GetLabelCommands();
-    return vvl::CommandBuffer::GetDebugRegionName(label_commands, record.label_command_index);
+std::string CommandBufferAccessContext::GetStackedDebugLabelRegionName(const ResourceUsageRecord &record) const {
+    const bool use_proxy = !proxy_label_regions_.empty();
+    const auto &label_regions = use_proxy ? proxy_label_regions_ : cb_state_->GetDebugLabelRegions();
+    return vvl::CommandBuffer::GetStackedDebugLabelRegionName(label_regions, record.label_region_i);
 }
 
 void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {

@@ -110,7 +110,7 @@ std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState 
         }
         // Report debug region name. Empty name means that we are not inside any debug region.
         if (formatter.debug_name_provider) {
-            const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
+            const std::string debug_region_name = formatter.debug_name_provider->GetStackedDebugLabelRegionName(record);
             if (!debug_region_name.empty()) {
                 out << ", debug_region: " << debug_region_name;
             }
@@ -252,7 +252,7 @@ std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) c
     std::stringstream out;
     assert(tag_ex.tag < access_log_->size());
     const auto &record = (*access_log_)[tag_ex.tag];
-    const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
+    const auto debug_name_provider = (record.label_region_i == vvl::kU32Max) ? nullptr : this;
     out << FormatResourceUsageRecord(record.Formatter(sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index));
     return out.str();
 }
