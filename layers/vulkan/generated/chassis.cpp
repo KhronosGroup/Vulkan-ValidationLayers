@@ -28673,7 +28673,7 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkCmdDrawMeshTasksIndirectCountEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectCountEXT}},
 };
  return name_to_func_ptr_map;
-};
+}
 } // namespace vulkan_layer_chassis
 // clang-format on
 
