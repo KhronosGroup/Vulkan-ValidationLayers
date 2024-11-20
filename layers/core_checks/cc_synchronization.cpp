@@ -638,7 +638,7 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
     bool skip = false;
     auto fence_state = Get<vvl::Fence>(fence);
     if (fence_state && fence_state->Scope() == vvl::Fence::kInternal && fence_state->State() == vvl::Fence::kInflight) {
-        skip |= ValidateObjectNotInUse(fence_state.get(), error_obj.location.dot(Field::fence), "VUID-vkDestroyFence-fence-01120");
+        skip |= ValidateObjectNotInUse(fence_state.get(), error_obj.location, "VUID-vkDestroyFence-fence-01120");
     }
     return skip;
 }
@@ -661,8 +661,7 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
                                                  const ErrorObject &error_obj) const {
     bool skip = false;
     if (auto sema_node = Get<vvl::Semaphore>(semaphore)) {
-        skip |= ValidateObjectNotInUse(sema_node.get(), error_obj.location.dot(Field::semaphore),
-                                       "VUID-vkDestroySemaphore-semaphore-05149");
+        skip |= ValidateObjectNotInUse(sema_node.get(), error_obj.location, "VUID-vkDestroySemaphore-semaphore-05149");
     }
     return skip;
 }

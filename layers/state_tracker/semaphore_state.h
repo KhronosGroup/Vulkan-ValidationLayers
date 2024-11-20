@@ -83,6 +83,7 @@ class Semaphore : public RefcountedStateObject {
     std::shared_ptr<const Semaphore> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Semaphore> shared_from_this() { return SharedFromThisImpl(this); }
 
+    const VulkanTypedHandle *InUse() const override;
     VkSemaphore VkHandle() const { return handle_.Cast<VkSemaphore>(); }
     enum Scope Scope() const;
 

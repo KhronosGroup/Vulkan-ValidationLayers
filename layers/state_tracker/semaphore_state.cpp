@@ -54,6 +54,46 @@ vvl::Semaphore::Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const
       dev_data_(dev) {
 }
 
+const VulkanTypedHandle *vvl::Semaphore::InUse() const {
+    auto guard = ReadLock();
+    // Semaphore does not have a parent (in the sense of a VVL state object), and the value returned
+    // by the base class InUse is not useful for reporting (it is the semaphore's own handle)
+    const bool in_use = RefcountedStateObject::InUse() != nullptr;
+    if (!in_use) {
+        return nullptr;
+    }
+    // Scan timeline to find the first queue that uses the semaphore
+    for (const auto &[_, timepoint] : timeline_) {
+        if (timepoint.signal_submit.has_value() && timepoint.signal_submit->queue) {
+            return &timepoint.signal_submit->queue->Handle();
+        } else {
+            for (const SubmissionReference &wait_submit : timepoint.wait_submits) {
+                if (wait_submit.queue) {
+                    return &wait_submit.queue->Handle();
+                }
+            }
+        }
+    }
+    // NOTE: In current implementation timepoints represent pending state. In-use tracking
+    // can retire timepoint even if submission is still pending, so timeline_ state it's
+    // always pending state but empty timeline does not mean there is no pending state.
+    // We don't make stronger guarantees because it's enough for in-use tracking.
+    // You can use NegativeSyncObject.TimelineSubmitSignalAndInUseTracking to check for
+    // a scenario when there is pending submission and timeline is empty.
+    //
+    // This should be taken into account when semaphore is used by functionality other than
+    // in-use tracking. In the following code we check completed_ state in case pending queue
+    // cannot be derived from timeline_. It's a bit unconventional. Maybe we need better
+    // separation between in-use tracking on other type of functionality. Or maybe it's about
+    // better definitions.
+    if (completed_.submit.queue) {
+        return &completed_.submit.queue->Handle();
+    }
+    assert(false && "Can't find queue that uses the semaphore");
+    static const VulkanTypedHandle empty{};
+    return &empty;
+}
+
 enum vvl::Semaphore::Scope vvl::Semaphore::Scope() const {
     auto guard = ReadLock();
     return scope_;
