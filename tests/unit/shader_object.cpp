@@ -6054,6 +6054,12 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props11);
+    if (props11.subgroupSize > 32) {
+        GTEST_SKIP() << "local_size_x (32) is not a multiple of subgroupSize";
+    }
+
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
     const vkt::PipelineLayout pl(*m_device, {&dsl});
