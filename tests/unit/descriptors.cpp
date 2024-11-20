@@ -4203,7 +4203,7 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         VkDescriptorPoolSize pool_size = {};
         pool_size.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        pool_size.descriptorCount = 4;
+        pool_size.descriptorCount = 8;
 
         VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
         ds_pool_ci.maxSets = 2;
