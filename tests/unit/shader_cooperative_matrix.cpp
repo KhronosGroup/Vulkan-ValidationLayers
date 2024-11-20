@@ -169,9 +169,13 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(props);
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper(&props);
+    GetPhysicalDeviceProperties2(props11);
     if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
         GTEST_SKIP() << "Compute stage is not supported";
+    }
+    if (props11.subgroupSize > 32) {
+        GTEST_SKIP() << "local_size_x (32) is not a multiple of subgroupSize";
     }
 
     // Tests are assume that Float16 3*5 is not available
