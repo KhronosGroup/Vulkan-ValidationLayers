@@ -52,7 +52,12 @@ std::string Location::Message() const {
     std::stringstream out;
     out << StringFunc() << "(): ";
     AppendFields(out);
-    return out.str();
+    std::string message = out.str();
+    // Remove space in the end when no fields are added
+    if (message.back() == ' ') {
+        message.pop_back();
+    }
+    return message;
 }
 
 namespace vvl {

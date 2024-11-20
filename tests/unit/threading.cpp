@@ -77,7 +77,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
 TEST_F(NegativeThreading, UpdateDescriptorCollision) {
     TEST_DESCRIPTION("Two threads updating the same descriptor set, expected to generate a threading error");
 
-    m_errorMonitor->SetDesiredError("vkUpdateDescriptorSets():  THREADING ERROR");
+    m_errorMonitor->SetDesiredError("vkUpdateDescriptorSets(): THREADING ERROR");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
 
     RETURN_IF_SKIP(Init());

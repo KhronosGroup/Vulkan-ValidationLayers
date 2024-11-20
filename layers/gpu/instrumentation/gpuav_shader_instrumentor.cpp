@@ -193,7 +193,7 @@ bool GpuShaderInstrumentor::ValidateCmdWaitEvents(VkCommandBuffer command_buffer
     if (src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) {
         std::ostringstream error_msg;
         error_msg << loc.Message()
-                  << ": recorded with VK_PIPELINE_STAGE_HOST_BIT set. GPU-Assisted validation waits on queue completion. This wait "
+                  << " recorded with VK_PIPELINE_STAGE_HOST_BIT set. GPU-Assisted validation waits on queue completion. This wait "
                      "could block the host's signaling of this event, resulting in deadlock.";
         InternalError(command_buffer, loc, error_msg.str().c_str());
     }
