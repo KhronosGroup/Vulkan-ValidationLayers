@@ -36,9 +36,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
     uint slot[]; // PostProcessDescriptorIndexSlot
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
-    uvec2 unused_initialized_status;
-    uvec2 unused_descriptor_set_types[kDebugInputBindlessMaxDescSets];
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, std430) buffer PostProcessSSBO {
     DescriptorIndexPostProcess descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 

@@ -211,11 +211,27 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
         desc_writes.emplace_back(wds);
     }
 
-    // Descriptor Indexing input/output buffer
+    // Post Processing Output buffer
+    VkDescriptorBufferInfo post_process_buffer_info = {};
+    if (cb_state.post_process_buffer != VK_NULL_HANDLE) {
+        post_process_buffer_info.range = VK_WHOLE_SIZE;
+        post_process_buffer_info.buffer = cb_state.post_process_buffer;
+        post_process_buffer_info.offset = 0;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstBinding = glsl::kBindingInstPostProcess;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &post_process_buffer_info;
+        wds.dstSet = instrumentation_desc_set;
+        desc_writes.emplace_back(wds);
+    }
+
+    // Descriptor Indexing input buffer
     VkDescriptorBufferInfo di_input_desc_buffer_info = {};
-    if (cb_state.descriptor_indexing_in_out_buffer != VK_NULL_HANDLE) {
+    if (cb_state.descriptor_indexing_buffer != VK_NULL_HANDLE) {
         di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-        di_input_desc_buffer_info.buffer = cb_state.descriptor_indexing_in_out_buffer;
+        di_input_desc_buffer_info.buffer = cb_state.descriptor_indexing_buffer;
         di_input_desc_buffer_info.offset = 0;
 
         VkWriteDescriptorSet wds = vku::InitStructHelper();
@@ -270,7 +286,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
     // Pathetic way of trying to make sure we take care of updating all
     // bindings of the instrumentation descriptor set
-    assert(gpuav.instrumentation_bindings_.size() == 7);
+    assert(gpuav.instrumentation_bindings_.size() == 8);
 
     if (gpuav.gpuav_settings.debug_printf_enabled) {
         if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {
@@ -429,7 +445,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
             skip |=
                 LogInstrumentationError(gpuav, cb_state_handle, objlist, deepest_opened_label_region, operation_index, error_record,
                                         descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
-                                                                   : std::vector<DescriptorCommandBountSet>(),
+                                                                   : std::vector<std::shared_ptr<DescriptorSet>>(),
                                         bind_point, uses_shader_object, uses_robustness, loc);
             return skip;
         };
@@ -489,8 +505,9 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
 }
 
 bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
-                                         std::string &out_vuid_msg, const std::vector<DescriptorCommandBountSet> &descriptor_sets,
-                                         const Location &loc, bool uses_shader_object, bool &out_oob_access) {
+                                         std::string &out_vuid_msg,
+                                         const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets, const Location &loc,
+                                         bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -509,7 +526,7 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
         } break;
 
         case kErrorSubCodeDescriptorIndexingUninitialized: {
-            const auto &dsl = descriptor_sets[set_num].state->Layout();
+            const auto &dsl = descriptor_sets[set_num]->Layout();
             strm << "(set = " << set_num << ", binding = " << binding_num << ") Descriptor index " << descriptor_index
                  << " is uninitialized.";
 
@@ -548,7 +565,7 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
 }
 
 bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
-                                   std::string &out_vuid_msg, const std::vector<DescriptorCommandBountSet> &descriptor_sets,
+                                   std::string &out_vuid_msg, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
                                    const Location &loc, bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
@@ -563,7 +580,7 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
     strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeDescriptorClassGeneralBufferBounds: {
-            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
             const vvl::Buffer *buffer_state =
                 static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
             if (buffer_state) {
@@ -587,7 +604,7 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
         } break;
 
         case kErrorSubCodeDescriptorClassTexelBufferBounds: {
-            const auto *binding_state = descriptor_sets[set_num].state->GetBinding(binding_num);
+            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
             const vvl::BufferView *buffer_view_state =
                 static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
             if (buffer_view_state) {
@@ -721,7 +738,7 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 //
 bool LogInstrumentationError(Validator &gpuav, VkCommandBuffer cmd_buffer, const LogObjectList &objlist,
                              const std::optional<vvl::LabelCommand> &label_cmd, uint32_t operation_index,
-                             const uint32_t *error_record, const std::vector<DescriptorCommandBountSet> &descriptor_sets,
+                             const uint32_t *error_record, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have

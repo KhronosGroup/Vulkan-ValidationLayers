@@ -46,7 +46,6 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     InitializedStatus initialized_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
-    uvec2 unused_descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
 // Unlike the non-bindless version, bindless needs to check for Uninitialized and Destroyed descriptors.

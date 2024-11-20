@@ -51,12 +51,14 @@ const int kInstDefaultDescriptorSet = 7;
 const int kBindingInstDebugPrintf = 0;
 // binding #1 is reserved for the output all non-DebugPrintf shaders write out too.
 const int kBindingInstErrorBuffer = 1;
-// Each check that requires additional input/output to be sent must reserve its own binding slot
-const int kBindingInstDescriptorIndexingOOB = 2;
-const int kBindingInstBufferDeviceAddress = 3;
-const int kBindingInstActionIndex = 4;
-const int kBindingInstCmdResourceIndex = 5;
-const int kBindingInstCmdErrorsCount = 6;
+// An output binding to get info off the GPU and run on the CPU
+const int kBindingInstPostProcess = 2;
+// Each check that requires additional input to be sent must reserve its own binding slot
+const int kBindingInstDescriptorIndexingOOB = 3;
+const int kBindingInstBufferDeviceAddress = 4;
+const int kBindingInstActionIndex = 5;
+const int kBindingInstCmdResourceIndex = 6;
+const int kBindingInstCmdErrorsCount = 7;
 
 // Diagnostic calls
 // ---

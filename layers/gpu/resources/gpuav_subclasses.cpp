@@ -378,10 +378,13 @@ void CommandBuffer::ResetCBState() {
     per_command_error_loggers.clear();
 
     for (auto &descriptor_command_binding : descriptor_command_bindings) {
-        descriptor_command_binding.ssbo_block.DestroyBuffer();
+        descriptor_command_binding.descritpor_state_ssbo_block.DestroyBuffer();
+        descriptor_command_binding.post_process_ssbo_block.DestroyBuffer();
     }
     descriptor_command_bindings.clear();
-    descriptor_indexing_in_out_buffer = VK_NULL_HANDLE;
+    action_command_snapshots.clear();
+    descriptor_indexing_buffer = VK_NULL_HANDLE;
+    post_process_buffer = VK_NULL_HANDLE;
 
     error_output_buffer_.DestroyBuffer();
     cmd_errors_counts_buffer_.DestroyBuffer();
