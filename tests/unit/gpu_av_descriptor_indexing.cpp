@@ -2334,14 +2334,14 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
         buffer0_cb_2.Memory().Unmap();
     }
 
-    m_errorMonitor->SetDesiredError("vkCmdDraw():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
+    m_errorMonitor->SetDesiredError("vkCmdDraw(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
                                     gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->Submit(cb_1);
 
     m_errorMonitor->SetDesiredError(
-        "vkCmdDispatch():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
+        "vkCmdDispatch(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
     m_errorMonitor->SetDesiredError(
-        "vkCmdDispatch():  (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
+        "vkCmdDispatch(): (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
     m_default_queue->Submit(cb_2);
 
     m_default_queue->Wait();
@@ -2536,13 +2536,13 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
         buffer0_cb_2.Memory().Unmap();
     }
 
-    m_errorMonitor->SetDesiredError("vkCmdDraw():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
+    m_errorMonitor->SetDesiredError("vkCmdDraw(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
                                     gpuav::glsl::kMaxErrorsPerCmd);
 
     m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
+        kErrorBit, "vkCmdDispatch(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
     m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "vkCmdDispatch():  (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
+        kErrorBit, "vkCmdDispatch(): (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
     m_default_queue->Submit(m_command_buffer);
 
     m_default_queue->Wait();
