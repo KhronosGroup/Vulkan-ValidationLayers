@@ -35,6 +35,7 @@
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
 #include "spirv-tools/optimizer.hpp"
+#include "utils/vk_layer_utils.h"
 
 // Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
@@ -1464,17 +1465,6 @@ bool CoreChecks::ValidateShaderExecutionModes(const spirv::Module &module_state,
     return skip;
 }
 
-// For given pipelineLayout verify that the set_layout_node at slot.first
-//  has the requested binding at slot.second and return ptr to that binding
-static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(vvl::PipelineLayout const *pipelineLayout, uint32_t set,
-                                                                uint32_t binding) {
-    if (!pipelineLayout) return nullptr;
-
-    if (set >= pipelineLayout->set_layouts.size()) return nullptr;
-
-    return pipelineLayout->set_layouts[set]->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
-}
-
 bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                               const vvl::Pipeline &pipeline, VkShaderStageFlagBits stage,
                                               const Location &loc) const {
@@ -1923,8 +1913,18 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     bool skip = false;
 
     const LogObjectList objlist(module_state.handle(), pipeline.PipelineLayoutState()->Handle());
-    const auto binding =
-        GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
+
+    const VkDescriptorSetLayoutBinding *binding = nullptr;
+    // For given pipelineLayout verify that the set_layout_node at slot.first has the requested binding at slot.second and return
+    // ptr to that binding
+    {
+        const vvl::PipelineLayout *pipeline_layout_state = pipeline.PipelineLayoutState().get();
+        const uint32_t set = variable.decorations.set;
+        if (pipeline_layout_state && set < pipeline_layout_state->set_layouts.size()) {
+            binding =
+                pipeline_layout_state->set_layouts[set]->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+        }
+    }
 
     if (!binding) {
         skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::ShaderStage_07988),
@@ -1952,13 +1952,64 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
         skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::DescriptorCount_07991),
                          objlist, loc,
-                         "SPIR-V (%s) uses descriptor %s with %" PRIu32 " descriptors, but requires at least %" PRIu32 ".",
+                         "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
+                         ", but requires at least %" PRIu32 " in the SPIR-V.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          binding->descriptorCount, variable.array_length);
     }
 
     if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
         skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderInterfaceVariableShaderObject(const VkShaderCreateInfoEXT &create_info,
+                                                             const spirv::ResourceInterfaceVariable &variable,
+                                                             vvl::unordered_set<uint32_t> &descriptor_type_set,
+                                                             const Location &loc) const {
+    bool skip = false;
+    const uint32_t set = variable.decorations.set;
+    const VkDescriptorSetLayoutBinding *binding = nullptr;
+    if (set < create_info.setLayoutCount) {
+        auto descriptor_set_layout_state = Get<vvl::DescriptorSetLayout>(create_info.pSetLayouts[set]);
+        if (descriptor_set_layout_state) {
+            binding = descriptor_set_layout_state->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+        }
+    }
+
+    // VUIDs being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7020
+
+    if (!binding) {
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
+                         "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in pSetLayouts[%" PRIu32 "].",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                         string_DescriptorTypeSet(descriptor_type_set).c_str(), set);
+    } else if (~binding->stageFlags & variable.stage) {
+        skip |=
+            LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
+                     "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
+                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                     string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
+    } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
+               (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-mutable", device, loc,
+                         "SPIR-V (%s) uses descriptor %s of type %s but expected %s.", string_VkShaderStageFlagBits(variable.stage),
+                         variable.DescribeDescriptor().c_str(), string_VkDescriptorType(binding->descriptorType),
+                         string_DescriptorTypeSet(descriptor_type_set).c_str());
+    } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
+        skip |=
+            LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-inline", device, loc,
+                     "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
+                     string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
+
+    } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount", device, loc,
+                         "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
+                         ", but requires at least %" PRIu32 " in the SPIR-V.",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
+                         binding->descriptorCount, variable.array_length);
     }
 
     return skip;
@@ -2550,6 +2601,9 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         skip |= ValidateShaderInterfaceVariable(module_state, variable, descriptor_type_set, loc);
         if (pipeline) {
             skip |= ValidateShaderInterfaceVariablePipeline(module_state, *pipeline, variable, descriptor_type_set, loc);
+        } else if (stage_state.shader_object_create_info) {
+            skip |= ValidateShaderInterfaceVariableShaderObject(*stage_state.shader_object_create_info->ptr(), variable,
+                                                                descriptor_type_set, loc);
         }
     }
 
