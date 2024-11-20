@@ -1222,3 +1222,27 @@ TEST_F(NegativeObjectLifetime, DescriptorBufferInfoUpdate) {
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeObjectLifetime, DestroyFenceInUseErrorMessage) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8745
+    TEST_DESCRIPTION("Test that error message identifies a queue where the fence is used");
+    RETURN_IF_SKIP(Init());
+    vkt::Fence fence(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, fence);
+    // The issue was that error message reported that fence was used not by the queue but by the fence itself
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkDestroyFence-fence-01120", "in use by VkQueue");
+    vk::DestroyFence(*m_device, fence, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeObjectLifetime, DestroySemaphoreInUseErrorMessage) {
+    TEST_DESCRIPTION("Test that error message identifies a queue where the semaphore is used");
+    RETURN_IF_SKIP(Init());
+    vkt::Semaphore semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkDestroySemaphore-semaphore-05149", "in use by VkQueue");
+    vk::DestroySemaphore(*m_device, semaphore, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
