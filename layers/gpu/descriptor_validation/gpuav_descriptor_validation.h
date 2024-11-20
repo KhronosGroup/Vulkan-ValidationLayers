@@ -20,14 +20,22 @@
 #include <vulkan/vulkan.h>
 
 struct Location;
+struct LastBound;
 
 namespace gpuav {
 class CommandBuffer;
 class Validator;
+struct DescriptorCommandBinding;
 
 namespace descriptor {
-void UpdateBoundPipeline(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point, VkPipeline pipeline,
-                         const Location& loc);
+
+void PreCallActionCommandPostProcess(Validator& gpuav, CommandBuffer& cb_state, const LastBound& last_bound, const Location& loc);
+void PreCallActionCommand(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point, const Location& loc);
+
+void UpdateBoundDescriptorsPostProcess(Validator& gpuav, CommandBuffer& cb_state, const LastBound& last_bound,
+                                       DescriptorCommandBinding& descriptor_command_binding, const Location& loc);
+void UpdateBoundDescriptorsDescriptorChecks(Validator& gpuav, CommandBuffer& cb_state, const LastBound& last_bound,
+                                            DescriptorCommandBinding& descriptor_command_binding, const Location& loc);
 void UpdateBoundDescriptors(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location& loc);
 [[nodiscard]] bool UpdateDescriptorStateSSBO(Validator& gpuav, CommandBuffer& cb_state, const Location& loc);

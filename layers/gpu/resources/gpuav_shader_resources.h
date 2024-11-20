@@ -27,23 +27,31 @@
 
 namespace gpuav {
 
-// for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
-struct DescriptorCommandBountSet {
-    std::shared_ptr<DescriptorSet> state = {};
-    // While the state object will be reused, but if the descriptor are aliased, we get the information from the last bound pipeline
-    // what type the descriptor is
-    BindingVariableMap binding_req_map = {};
-};
-
 // "binding" here refers to "binding in the command buffer" and not the "binding in a descriptor set"
 struct DescriptorCommandBinding {
+    // This is where we hold the list of BDA address for a given bound descriptor snapshot.
     // The size of the SSBO doesn't change on an UpdateAfterBind so we can allocate it once and update its internals later
-    DeviceMemoryBlock ssbo_block;  // type DescriptorStateSSBO
+    DeviceMemoryBlock descritpor_state_ssbo_block;  // type DescriptorStateSSBO
+    DeviceMemoryBlock post_process_ssbo_block;      // type PostProcessSSBO
 
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
-    std::vector<DescriptorCommandBountSet> bound_descriptor_sets;
+    // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
+    std::vector<std::shared_ptr<DescriptorSet>> bound_descriptor_sets;
 
-    DescriptorCommandBinding(Validator &gpuav) : ssbo_block(gpuav) {}
+    DescriptorCommandBinding(Validator &gpuav) : descritpor_state_ssbo_block(gpuav), post_process_ssbo_block(gpuav) {}
+};
+
+// This holds inforamtion for a given action command (draw/dispatch/trace rays)
+// It needs the DescriptorCommandBinding, but to save memory, will just reference the last instance used at the time this is created
+struct ActionCommandSnapshot {
+    // This is a reference to the last DescriptorCommandBinding at a given action command time.
+    // We use an int here because the list for DescriptorCommandBinding is a vector and reference/pointer will change on us.
+    const uint32_t descriptor_command_binding_index;
+
+    // This is information from the pipeline/shaderObject we want to save
+    std::vector<const BindingVariableMap *> binding_req_maps;
+
+    ActionCommandSnapshot(const uint32_t index) : descriptor_command_binding_index(index) {}
 };
 
 // These match the Structures found in the instrumentation GLSL logic
@@ -52,15 +60,14 @@ namespace glsl {
 // Every descriptor set has various BDA pointers to data from the CPU
 // Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
 struct DescriptorStateSSBO {
-    // Inputs
-    // ---
     // Used to know if descriptors are initialized or not
     VkDeviceAddress initialized_status;
     // The type information will change with UpdateAfterBind so will need to update this before submitting the to the queue
     VkDeviceAddress descriptor_set_types[kDebugInputBindlessMaxDescSets];
+};
 
-    // Outputs
-    // ---
+// Outputs
+struct PostProcessSSBO {
     VkDeviceAddress descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 };
 

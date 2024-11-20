@@ -43,7 +43,6 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitia
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
-    uvec2 unused_descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
 // Matches the vvl::DescriptorClass::TexelBuffer

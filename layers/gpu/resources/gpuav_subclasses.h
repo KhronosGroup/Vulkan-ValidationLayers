@@ -36,6 +36,7 @@ namespace gpuav {
 
 class Validator;
 struct DescriptorCommandBinding;
+struct ActionCommandSnapshot;
 
 struct DebugPrintfBufferInfo {
     DeviceMemoryBlock output_mem_block;
@@ -56,10 +57,15 @@ class CommandBuffer : public vvl::CommandBuffer {
     //  2. Change once per draw, then this would be the same length as doing this per-draw
     //
     // Note: If the app calls vkCmdBindDescriptorSet 10 times to set descriptor set [0, 9] one at a time instead of setting [0, 9]
-    // in a single vkCmdBindDescriptorSet call than this will allocate a lot of redundant memory
+    // in a single vkCmdBindDescriptorSet call then this will allocate a lot of redundant memory
     std::vector<DescriptorCommandBinding> descriptor_command_bindings;
+    // Information that requires information about the SPIR-V requires pipeline/shaderObject info. This means we need to track
+    // things at an action level (draw call) granularity
+    std::vector<ActionCommandSnapshot> action_command_snapshots;
+
     // Buffer to be bound every draw/dispatch/action
-    VkBuffer descriptor_indexing_in_out_buffer = VK_NULL_HANDLE;
+    VkBuffer descriptor_indexing_buffer = VK_NULL_HANDLE;
+    VkBuffer post_process_buffer = VK_NULL_HANDLE;
 
     // Used to track which spot in the command buffer the error came from
     uint32_t draw_index = 0;
