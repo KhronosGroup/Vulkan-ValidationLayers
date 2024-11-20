@@ -4461,8 +4461,10 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
 	   }
     )glsl";
 
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     VkShaderEXT shader;
     vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
@@ -4669,8 +4671,9 @@ TEST_F(NegativeShaderObject, Atomics) {
         }
     )glsl";
 
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_src.c_str());
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
@@ -4783,9 +4786,10 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
                OpFunctionEnd
         )";
 
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
     std::vector<uint32_t> spv;
     ASMtoSPV(SPV_ENV_VULKAN_1_3, 0, cs_src, spv);
-    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle());
     VkShaderEXT shader;
     vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
 
@@ -7007,4 +7011,162 @@ TEST_F(NegativeShaderObject, SetPrimitiveTopologyNonPatch) {
 
     m_command_buffer.EndRendering();
     m_command_buffer.end();
+}
+
+TEST_F(NegativeShaderObject, DescriptorWrongStage) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    // wrong stage
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        layout(local_size_x=16, local_size_x=1, local_size_x=1) in;
+        layout(binding = 0) buffer Output {
+            uint values[16];
+        } buffer_out;
+
+        void main() {
+            buffer_out.values[gl_LocalInvocationID.x] = gl_LocalInvocationID.x;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleBindings) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        layout(local_size_x=1, local_size_x=1, local_size_x=1) in;
+        layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
+        layout(set = 0, binding = 1) buffer SSBO_1 { uint b; };
+        layout(set = 0, binding = 2) buffer SSBO_2 { uint c; };
+        void main() {
+            a = b + c;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleSets) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    OneOffDescriptorSet descriptor_set0(m_device,
+                                        {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+    OneOffDescriptorSet descriptor_set1(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+    OneOffDescriptorSet descriptor_set2(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        layout(local_size_x=1, local_size_x=1, local_size_x=1) in;
+        layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
+        layout(set = 1, binding = 0) buffer SSBO_1 { uint b; };
+        layout(set = 2, binding = 0) buffer SSBO_2 { uint c; };
+        void main() {
+            a = b + c;
+        }
+    )glsl";
+
+    const auto comp_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
+    VkDescriptorSetLayout dsl[3] = {descriptor_set0.layout_.handle(), descriptor_set1.layout_.handle(),
+                                    descriptor_set2.layout_.handle()};
+    VkShaderCreateInfoEXT create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT, 3, dsl);
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    const vkt::Shader comp_shader(*m_device, create_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, DescriptorNotProvided) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src));
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, DescriptorTypeMismatch) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO_0 { uint a; };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-mutable");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, DescriptorCount) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO_0 { uint a; } x[3];
+        void main() {
+            x[2].a = 0;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, InlineUniformBlockArray) {
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::inlineUniformBlock);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    static const char comp_src[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };
+        layout(set = 0, binding = 1) uniform InlineUBO { uint x; } inlineArray[4];
+        void main() {
+            ssbo = inlineArray[0].x;
+        }
+    )glsl";
+
+    VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
+    pool_inline_info.maxInlineUniformBlockBindings = 1;
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, nullptr, 0, nullptr, &pool_inline_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-inline");
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
+                                  &descriptor_set.layout_.handle());
+    m_errorMonitor->VerifyFound();
 }
