@@ -489,6 +489,7 @@ PFN_vkDestroyCuModuleNVX DestroyCuModuleNVX;
 PFN_vkDestroyCuFunctionNVX DestroyCuFunctionNVX;
 PFN_vkCmdCuLaunchKernelNVX CmdCuLaunchKernelNVX;
 PFN_vkGetImageViewHandleNVX GetImageViewHandleNVX;
+PFN_vkGetImageViewHandle64NVX GetImageViewHandle64NVX;
 PFN_vkGetImageViewAddressNVX GetImageViewAddressNVX;
 PFN_vkCmdDrawIndirectCountAMD CmdDrawIndirectCountAMD;
 PFN_vkCmdDrawIndexedIndirectCountAMD CmdDrawIndexedIndirectCountAMD;
@@ -1828,6 +1829,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         {
             "VK_NVX_image_view_handle", [](VkInstance , VkDevice device) {
                 GetImageViewHandleNVX = reinterpret_cast<PFN_vkGetImageViewHandleNVX>(GetDeviceProcAddr(device, "vkGetImageViewHandleNVX"));
+                GetImageViewHandle64NVX = reinterpret_cast<PFN_vkGetImageViewHandle64NVX>(GetDeviceProcAddr(device, "vkGetImageViewHandle64NVX"));
                 GetImageViewAddressNVX = reinterpret_cast<PFN_vkGetImageViewAddressNVX>(GetDeviceProcAddr(device, "vkGetImageViewAddressNVX"));
             }
         },
@@ -2681,6 +2683,7 @@ void ResetAllExtensions() {
     DestroyCuFunctionNVX = nullptr;
     CmdCuLaunchKernelNVX = nullptr;
     GetImageViewHandleNVX = nullptr;
+    GetImageViewHandle64NVX = nullptr;
     GetImageViewAddressNVX = nullptr;
     CmdDrawIndirectCountAMD = nullptr;
     CmdDrawIndexedIndirectCountAMD = nullptr;

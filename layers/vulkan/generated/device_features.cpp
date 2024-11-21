@@ -605,6 +605,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->computeDerivativeGroupLinear |= enabled->computeDerivativeGroupLinear == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_AV1_FEATURES_KHR: {
+                const VkPhysicalDeviceVideoEncodeAV1FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeAV1FeaturesKHR *>(pNext);
+                features->videoEncodeAV1 |= enabled->videoEncodeAV1 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {
                 const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(pNext);
@@ -651,6 +657,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceMaintenance6FeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance6FeaturesKHR *>(pNext);
                 features->maintenance6 |= enabled->maintenance6 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR: {
+                const VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR *>(pNext);
+                features->videoEncodeQuantizationMap |= enabled->videoEncodeQuantizationMap == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR: {
@@ -1595,6 +1607,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->cooperativeMatrixPerElementOperations |= enabled->cooperativeMatrixPerElementOperations == VK_TRUE;
                 features->cooperativeMatrixTensorAddressing |= enabled->cooperativeMatrixTensorAddressing == VK_TRUE;
                 features->cooperativeMatrixBlockLoads |= enabled->cooperativeMatrixBlockLoads == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT: {
+                const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *>(pNext);
+                features->vertexAttributeRobustness |= enabled->vertexAttributeRobustness == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {

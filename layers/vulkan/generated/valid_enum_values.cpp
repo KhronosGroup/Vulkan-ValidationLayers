@@ -96,6 +96,9 @@ ValidValue StatelessValidation::IsValidEnumValue(VkImageLayout value) const {
         case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
             return IsExtEnabled(device_extensions.vk_ext_attachment_feedback_loop_layout) ? ValidValue::Valid
                                                                                           : ValidValue::NoExtension;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
+            return IsExtEnabled(device_extensions.vk_khr_video_encode_quantization_map) ? ValidValue::Valid
+                                                                                        : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -1232,6 +1235,31 @@ ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeTuningModeKHR valu
 }
 
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const {
+    switch (value) {
+        case VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_INTRA_ONLY_KHR:
+        case VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR:
+        case VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_UNIDIRECTIONAL_COMPOUND_KHR:
+        case VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_BIDIRECTIONAL_COMPOUND_KHR:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1RateControlGroupKHR value) const {
+    switch (value) {
+        case VK_VIDEO_ENCODE_AV1_RATE_CONTROL_GROUP_INTRA_KHR:
+        case VK_VIDEO_ENCODE_AV1_RATE_CONTROL_GROUP_PREDICTIVE_KHR:
+        case VK_VIDEO_ENCODE_AV1_RATE_CONTROL_GROUP_BIPREDICTIVE_KHR:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkLineRasterizationModeKHR value) const {
     switch (value) {
         case VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR:
@@ -2023,6 +2051,19 @@ ValidValue StatelessValidation::IsValidEnumValue(VkCubicFilterWeightsQCOM value)
 }
 
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkDisplaySurfaceStereoTypeNV value) const {
+    switch (value) {
+        case VK_DISPLAY_SURFACE_STEREO_TYPE_NONE_NV:
+        case VK_DISPLAY_SURFACE_STEREO_TYPE_ONBOARD_DIN_NV:
+        case VK_DISPLAY_SURFACE_STEREO_TYPE_HDMI_3D_NV:
+        case VK_DISPLAY_SURFACE_STEREO_TYPE_INBAND_DISPLAYPORT_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const {
     switch (value) {
         case VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT:
@@ -2127,6 +2168,8 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkImageLayout value) cons
             return {vvl::Extension::_VK_KHR_video_encode_queue};
         case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
             return {vvl::Extension::_VK_EXT_attachment_feedback_loop_layout};
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
+            return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
         default:
             return {};
     };
@@ -2905,6 +2948,24 @@ const char* StatelessValidation::DescribeEnum(VkVideoEncodeTuningModeKHR value) 
 }
 
 template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkVideoEncodeAV1PredictionModeKHR value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkVideoEncodeAV1PredictionModeKHR value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkVideoEncodeAV1RateControlGroupKHR value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkVideoEncodeAV1RateControlGroupKHR value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkLineRasterizationModeKHR value) const {
     return {};
 }
@@ -3457,6 +3518,15 @@ vvl::Extensions StatelessValidation::GetEnumExtensions(VkCubicFilterWeightsQCOM 
 }
 template <>
 const char* StatelessValidation::DescribeEnum(VkCubicFilterWeightsQCOM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions StatelessValidation::GetEnumExtensions(VkDisplaySurfaceStereoTypeNV value) const {
+    return {};
+}
+template <>
+const char* StatelessValidation::DescribeEnum(VkDisplaySurfaceStereoTypeNV value) const {
     return nullptr;
 }
 

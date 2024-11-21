@@ -617,6 +617,7 @@ static VKAPI_ATTR void VKAPI_CALL StubDestroyCuModuleNVX(VkDevice, VkCuModuleNVX
 static VKAPI_ATTR void VKAPI_CALL StubDestroyCuFunctionNVX(VkDevice, VkCuFunctionNVX, const VkAllocationCallbacks*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCuLaunchKernelNVX(VkCommandBuffer, const VkCuLaunchInfoNVX*) {}
 static VKAPI_ATTR uint32_t VKAPI_CALL StubGetImageViewHandleNVX(VkDevice, const VkImageViewHandleInfoNVX*) { return 0; }
+static VKAPI_ATTR uint64_t VKAPI_CALL StubGetImageViewHandle64NVX(VkDevice, const VkImageViewHandleInfoNVX*) { return 0; }
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetImageViewAddressNVX(VkDevice, VkImageView, VkImageViewAddressPropertiesNVX*) {
     return VK_SUCCESS;
 }
@@ -1572,6 +1573,7 @@ const auto& GetApiExtensionMap() {
         {"vkDestroyCuFunctionNVX", {vvl::Extension::_VK_NVX_binary_import}},
         {"vkCmdCuLaunchKernelNVX", {vvl::Extension::_VK_NVX_binary_import}},
         {"vkGetImageViewHandleNVX", {vvl::Extension::_VK_NVX_image_view_handle}},
+        {"vkGetImageViewHandle64NVX", {vvl::Extension::_VK_NVX_image_view_handle}},
         {"vkGetImageViewAddressNVX", {vvl::Extension::_VK_NVX_image_view_handle}},
         {"vkCmdDrawIndirectCountAMD", {vvl::Extension::_VK_AMD_draw_indirect_count}},
         {"vkCmdDrawIndexedIndirectCountAMD", {vvl::Extension::_VK_AMD_draw_indirect_count}},
@@ -2895,6 +2897,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)gpa(device, "vkGetImageViewHandleNVX");
     if (table->GetImageViewHandleNVX == nullptr) {
         table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)StubGetImageViewHandleNVX;
+    }
+    table->GetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)gpa(device, "vkGetImageViewHandle64NVX");
+    if (table->GetImageViewHandle64NVX == nullptr) {
+        table->GetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)StubGetImageViewHandle64NVX;
     }
     table->GetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)gpa(device, "vkGetImageViewAddressNVX");
     if (table->GetImageViewAddressNVX == nullptr) {

@@ -866,8 +866,14 @@ enum class Feature {
     vertexAttributeInstanceRateDivisor,
     // VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR
     vertexAttributeInstanceRateZeroDivisor,
+    // VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT
+    vertexAttributeRobustness,
     // VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
     vertexInputDynamicState,
+    // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
+    videoEncodeAV1,
+    // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR
+    videoEncodeQuantizationMap,
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
     videoMaintenance1,
     // VkPhysicalDeviceVulkan12Features

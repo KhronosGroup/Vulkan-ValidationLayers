@@ -876,8 +876,14 @@ struct DeviceFeatures {
     bool vertexAttributeInstanceRateDivisor;
     // VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR
     bool vertexAttributeInstanceRateZeroDivisor;
+    // VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT
+    bool vertexAttributeRobustness;
     // VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
     bool vertexInputDynamicState;
+    // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
+    bool videoEncodeAV1;
+    // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR
+    bool videoEncodeQuantizationMap;
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
     bool videoMaintenance1;
     // VkPhysicalDeviceVulkan12Features

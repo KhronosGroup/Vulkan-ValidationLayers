@@ -1263,6 +1263,8 @@ VKAPI_ATTR void VKAPI_CALL CmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, c
 
 VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo);
 
+VKAPI_ATTR uint64_t VKAPI_CALL GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo);
+
 VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageView imageView,
                                                       VkImageViewAddressPropertiesNVX* pProperties);
 
@@ -3797,6 +3799,9 @@ class ValidationObject {
         virtual bool PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo, const ErrorObject& error_obj) const { return false; }
         virtual void PreCallRecordGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo, const RecordObject& record_obj) {}
         virtual void PostCallRecordGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo, const RecordObject& record_obj) {}
+        virtual bool PreCallValidateGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo, const ErrorObject& error_obj) const { return false; }
+        virtual void PreCallRecordGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo, const RecordObject& record_obj) {}
+        virtual void PostCallRecordGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo, const RecordObject& record_obj) {}
         virtual bool PreCallValidateGetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties, const ErrorObject& error_obj) const { return false; }
         virtual void PreCallRecordGetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties, const RecordObject& record_obj) {}
         virtual void PostCallRecordGetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties, const RecordObject& record_obj) {}

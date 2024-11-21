@@ -476,7 +476,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadMask) {
     // Expected to trigger an error with StatelessValidation::ValidateFlags
     VkImageFormatProperties image_format_properties;
     vk::GetPhysicalDeviceImageFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                               static_cast<VkImageUsageFlags>(1 << 25), 0, &image_format_properties);
+                                               static_cast<VkImageUsageFlags>(1 << 31), 0, &image_format_properties);
     m_errorMonitor->VerifyFound();
 }
 

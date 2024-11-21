@@ -2297,6 +2297,12 @@ void PreCallRecordGetImageViewHandleNVX(VkDevice device, const VkImageViewHandle
 void PostCallRecordGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
                                          const RecordObject& record_obj) override;
 
+void PreCallRecordGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                          const RecordObject& record_obj) override;
+
+void PostCallRecordGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                           const RecordObject& record_obj) override;
+
 void PreCallRecordGetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties,
                                          const RecordObject& record_obj) override;
 
