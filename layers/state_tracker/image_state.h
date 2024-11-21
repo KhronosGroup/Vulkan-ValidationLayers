@@ -22,6 +22,7 @@
 #include <variant>
 
 #include "state_tracker/device_memory_state.h"
+#include "state_tracker/fence_state.h"
 #include "state_tracker/image_layout_map.h"
 #include "utils/vk_layer_utils.h"
 
@@ -313,6 +314,11 @@ struct SwapchainImage {
     bool acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
     std::shared_ptr<vvl::Fence> acquire_fence;
+
+    // Each swapchain image keeps information about submissions associated with current present.
+    // When the image is re-acquired later this information can be used to synchronize with
+    // these submissions by using acquire fence.
+    AcquireFenceSync acquire_fence_sync;
 };
 
 // State for VkSwapchainKHR objects.
@@ -346,7 +352,7 @@ class Swapchain : public StateObject {
 
     VkSwapchainKHR VkHandle() const { return handle_.Cast<VkSwapchainKHR>(); }
 
-    void PresentImage(uint32_t image_index, uint64_t present_id);
+    void PresentImage(uint32_t image_index, uint64_t present_id, const AcquireFenceSync &acquire_fence_sync);
 
     void ReleaseImage(uint32_t image_index);
 

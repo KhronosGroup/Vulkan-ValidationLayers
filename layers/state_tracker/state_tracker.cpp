@@ -3865,12 +3865,8 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI
         if (auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i])) {
-            if (const auto &acquire_fence = swapchain_data->images[pPresentInfo->pImageIndices[i]].acquire_fence) {
-                acquire_fence_sync.swapchain = swapchain_data;
-                acquire_fence->SetAcquireFenceSync(acquire_fence_sync);
-            }
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
-            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id);
+            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, acquire_fence_sync);
         }
     }
 
@@ -3926,10 +3922,6 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     // Mark the image as acquired.
     auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     if (swapchain_data) {
-        // Invalidate present sync if different swapchain is used
-        if (fence_state && fence_state->IsAcquireFenceSyncSwapchainChanged(swapchain_data)) {
-            fence_state->SetAcquireFenceSync(vvl::AcquireFenceSync{});
-        }
         swapchain_data->AcquireImage(*pImageIndex, semaphore_state, fence_state);
     }
 }

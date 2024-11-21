@@ -173,8 +173,3 @@ void vvl::Fence::SetAcquireFenceSync(const AcquireFenceSync &acquire_fence_sync)
 
     acquire_fence_sync_ = acquire_fence_sync;
 }
-
-bool vvl::Fence::IsAcquireFenceSyncSwapchainChanged(const std::shared_ptr<vvl::Swapchain> &current_swapchain) const {
-    auto guard = ReadLock();
-    return acquire_fence_sync_.swapchain != current_swapchain;
-}
