@@ -463,7 +463,7 @@ Note that not all legacy code, such as `ForbidInheritedViewportScissor()` has be
 
 ##### Queries
 
-During queue submission, query validation is performed via lambda functions added to `vvl::CommandBuffer::queryUpdates` by various CoreChecks methods. During the Validate phase, these are executed with the do_validate parameter set to true. And they are executed again during PostRecord with do_validate set to false. During submission, the final state of each `QueryObject` is updated into the corresponding `vvl::QueryPool` object, which has a thread safe interface. When the command buffer is retired, all used `QueryObject` states are reset to `AVAILABLE`.
+During queue submission, query validation is performed via lambda functions added to `vvl::CommandBuffer::query_updates` by various CoreChecks methods. During the Validate phase, these are executed with the do_validate parameter set to true. And they are executed again during PostRecord with do_validate set to false. During submission, the final state of each `QueryObject` is updated into the corresponding `vvl::QueryPool` object, which has a thread safe interface. When the command buffer is retired, all used `QueryObject` states are reset to `AVAILABLE`.
 
 
 ##### Events

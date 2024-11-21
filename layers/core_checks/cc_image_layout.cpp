@@ -148,15 +148,15 @@ void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
     const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->create_info.ptr();
     for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
         auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
-        if (view_state) {
-            VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_description_stencil_layout =
-                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
-            if (attachment_description_stencil_layout) {
-                stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
-            }
-            cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
+        if (!view_state) continue;
+
+        VkImageLayout stencil_layout = kInvalidLayout;
+        const auto *attachment_description_stencil_layout =
+            vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(render_pass_info->pAttachments[i].pNext);
+        if (attachment_description_stencil_layout) {
+            stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
         }
+        cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
     }
 }
 
@@ -196,7 +196,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
     // Iterate over the layout maps for each referenced image
     GlobalImageLayoutRangeMap empty_map(1);
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const auto image = layout_map_entry.first;
+        const VkImage image = layout_map_entry.first;
         const auto image_state = Get<vvl::Image>(image);
         if (!image_state) continue;
 
@@ -269,7 +269,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 
 void CoreChecks::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const auto image = layout_map_entry.first;
+        const VkImage image = layout_map_entry.first;
         const auto image_state = Get<vvl::Image>(image);
         if (image_state && image_state->GetId() == layout_map_entry.second.id && layout_map_entry.second.map) {
             auto guard = image_state->layout_range_map->WriteLock();
@@ -451,8 +451,8 @@ bool CoreChecks::ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(VkI
         return skip;  // validated at VUID-VkRenderPassBeginInfo-framebuffer-parameter
     }
     auto image_usage = image_state->create_info.usage;
-    const auto stencil_usage_info = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->create_info.pNext);
-    if (stencil_usage_info) {
+    if (const auto stencil_usage_info =
+            vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state->create_info.pNext)) {
         image_usage |= stencil_usage_info->stencilUsage;
     }
 
@@ -624,22 +624,20 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
             vku::FindStructInPNextChain<VkMultisampledRenderToSingleSampledInfoEXT>(render_pass_info->pSubpasses[j].pNext);
         for (uint32_t k = 0; k < render_pass_info->pSubpasses[j].inputAttachmentCount; ++k) {
             auto &attachment_ref = subpass.pInputAttachments[k];
-            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                const Location input_loc = subpass_loc.dot(Field::pInputAttachments, k);
-                auto image_view = attachments[attachment_ref.attachment];
+            if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) continue;
+            const Location input_loc = subpass_loc.dot(Field::pInputAttachments, k);
+            auto image_view = attachments[attachment_ref.attachment];
 
-                if (auto view_state = Get<vvl::ImageView>(image_view)) {
-                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
-                                                                                 render_pass, attachment_ref.attachment, rp_loc,
-                                                                                 input_loc.dot(Field::layout));
+            if (auto view_state = Get<vvl::ImageView>(image_view)) {
+                skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
+                                                                             render_pass, attachment_ref.attachment, rp_loc,
+                                                                             input_loc.dot(Field::layout));
 
-                    if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
-                        if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-                            skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                                framebuffer, render_pass, *view_state->image_state,
-                                ms_rendered_to_single_sampled->rasterizationSamples,
-                                subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
-                        }
+                if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                    if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
+                            framebuffer, render_pass, *view_state->image_state, ms_rendered_to_single_sampled->rasterizationSamples,
+                            subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
                     }
                 }
             }
@@ -647,27 +645,25 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
 
         for (uint32_t k = 0; k < render_pass_info->pSubpasses[j].colorAttachmentCount; ++k) {
             auto &attachment_ref = subpass.pColorAttachments[k];
-            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                const Location color_loc = subpass_loc.dot(Field::pColorAttachments, k);
-                auto image_view = attachments[attachment_ref.attachment];
+            if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) continue;
+            const Location color_loc = subpass_loc.dot(Field::pColorAttachments, k);
+            auto image_view = attachments[attachment_ref.attachment];
 
-                if (auto view_state = Get<vvl::ImageView>(image_view)) {
-                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
-                                                                                 render_pass, attachment_ref.attachment, rp_loc,
-                                                                                 color_loc.dot(Field::layout));
-                    if (subpass.pResolveAttachments) {
-                        skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
-                            attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment, rp_loc,
-                            subpass_loc.dot(Field::pResolveAttachments, k).dot(Field::layout));
-                    }
+            if (auto view_state = Get<vvl::ImageView>(image_view)) {
+                skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
+                                                                             render_pass, attachment_ref.attachment, rp_loc,
+                                                                             color_loc.dot(Field::layout));
+                if (subpass.pResolveAttachments) {
+                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
+                        attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment, rp_loc,
+                        subpass_loc.dot(Field::pResolveAttachments, k).dot(Field::layout));
+                }
 
-                    if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
-                        if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-                            skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                                framebuffer, render_pass, *view_state->image_state,
-                                ms_rendered_to_single_sampled->rasterizationSamples,
-                                subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
-                        }
+                if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                    if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
+                            framebuffer, render_pass, *view_state->image_state, ms_rendered_to_single_sampled->rasterizationSamples,
+                            subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
                     }
                 }
             }
@@ -675,29 +671,28 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
 
         if (render_pass_info->pSubpasses[j].pDepthStencilAttachment) {
             auto &attachment_ref = *subpass.pDepthStencilAttachment;
-            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                const Location ds_loc = subpass_loc.dot(Field::pDepthStencilAttachment);
-                auto image_view = attachments[attachment_ref.attachment];
+            if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) continue;
+            const Location ds_loc = subpass_loc.dot(Field::pDepthStencilAttachment);
+            auto image_view = attachments[attachment_ref.attachment];
 
-                if (auto view_state = Get<vvl::ImageView>(image_view)) {
-                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
-                                                                                 render_pass, attachment_ref.attachment, rp_loc,
-                                                                                 ds_loc.dot(Field::layout));
+            if (auto view_state = Get<vvl::ImageView>(image_view)) {
+                skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
+                                                                             render_pass, attachment_ref.attachment, rp_loc,
+                                                                             ds_loc.dot(Field::layout));
 
-                    if (const auto *stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(attachment_ref.pNext);
-                        stencil_layout != nullptr) {
-                        skip |= ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
-                            stencil_layout->stencilLayout, *view_state, framebuffer, render_pass,
-                            ds_loc.pNext(Struct::VkAttachmentReferenceStencilLayout, Field::stencilLayout));
-                    }
+                if (const auto *stencil_layout =
+                        vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(attachment_ref.pNext);
+                    stencil_layout != nullptr) {
+                    skip |= ValidateRenderPassStencilLayoutAgainstFramebufferImageUsage(
+                        stencil_layout->stencilLayout, *view_state, framebuffer, render_pass,
+                        ds_loc.pNext(Struct::VkAttachmentReferenceStencilLayout, Field::stencilLayout));
+                }
 
-                    if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
-                        if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-                            skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                                framebuffer, render_pass, *view_state->image_state,
-                                ms_rendered_to_single_sampled->rasterizationSamples,
-                                subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
-                        }
+                if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                    if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
+                            framebuffer, render_pass, *view_state->image_state, ms_rendered_to_single_sampled->rasterizationSamples,
+                            subpass_loc.pNext(Struct::VkMultisampledRenderToSingleSampledInfoEXT, Field::rasterizationSamples));
                     }
                 }
             }
@@ -707,17 +702,17 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
 }
 
 void CoreChecks::TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const vku::safe_VkAttachmentReference2 &ref) {
-    if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
-        if (image_view) {
-            VkImageLayout stencil_layout = kInvalidLayout;
-            const auto *attachment_reference_stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
-            if (attachment_reference_stencil_layout) {
-                stencil_layout = attachment_reference_stencil_layout->stencilLayout;
-            }
-
-            cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
+    if (ref.attachment == VK_ATTACHMENT_UNUSED) return;
+    vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
+    if (image_view) {
+        VkImageLayout stencil_layout = kInvalidLayout;
+        const auto *attachment_reference_stencil_layout =
+            vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ref.pNext);
+        if (attachment_reference_stencil_layout) {
+            stencil_layout = attachment_reference_stencil_layout->stencilLayout;
         }
+
+        cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
     }
 }
 
@@ -743,30 +738,32 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, 
     auto const rpci = render_pass_state.create_info.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
-        if (view_state) {
-            vvl::Image *image_state = view_state->image_state.get();
-            const auto initial_layout = rpci->pAttachments[i].initialLayout;
-            const auto *attachment_description_stencil_layout =
-                vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
-            if (attachment_description_stencil_layout) {
-                const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
-                VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
-                sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
-                sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
-            } else {
-                // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
-                // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
-                // also be transitioned and thus must be included explicitly
-                auto subresource_range = view_state->normalized_subresource_range;
-                if (const VkFormat format = view_state->create_info.format; vkuFormatIsDepthAndStencil(format)) {
-                    if (subresource_range.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
-                        subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-                    }
+        if (!view_state) continue;
+
+        vvl::Image *image_state = view_state->image_state.get();
+        ASSERT_AND_CONTINUE(image_state);
+
+        const auto initial_layout = rpci->pAttachments[i].initialLayout;
+        const auto *attachment_description_stencil_layout =
+            vku::FindStructInPNextChain<VkAttachmentDescriptionStencilLayout>(rpci->pAttachments[i].pNext);
+        if (attachment_description_stencil_layout) {
+            const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
+            VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
+            sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
+            sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+        } else {
+            // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
+            // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
+            // also be transitioned and thus must be included explicitly
+            auto subresource_range = view_state->normalized_subresource_range;
+            if (const VkFormat format = view_state->create_info.format; vkuFormatIsDepthAndStencil(format)) {
+                if (subresource_range.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
+                    subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 }
-                cb_state.SetImageInitialLayout(*image_state, subresource_range, initial_layout);
             }
+            cb_state.SetImageInitialLayout(*image_state, subresource_range, initial_layout);
         }
     }
     // Now transition for first subpass (index 0)

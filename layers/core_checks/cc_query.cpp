@@ -857,9 +857,9 @@ void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const Q
     auto cb_state = GetWrite<vvl::CommandBuffer>(command_buffer);
 
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state->queryUpdates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                             VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                             QueryMap *localQueryToStateMap) {
+    cb_state->query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                              QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
         skip |= ValidatePerformanceQuery(cb_state_arg, query_obj, command, firstPerfQueryPool, perfPass, localQueryToStateMap);
@@ -878,9 +878,9 @@ void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQue
 
 void CoreChecks::EnqueueVerifyEndQuery(vvl::CommandBuffer &cb_state, const QueryObject &query_obj, Func command) {
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state.queryUpdates.emplace_back([this, query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                                  VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                                  QueryMap *localQueryToStateMap) {
+    cb_state.query_updates.emplace_back([this, query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                                   QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
         // NOTE: dev_data == this, but the compiler "Visual Studio 16" complains Get is ambiguous if dev_data isn't used
@@ -1060,9 +1060,10 @@ void CoreChecks::PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, V
     ASSERT_AND_RETURN(query_pool_state);
 
     if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
-        cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount, record_obj](
-                                                vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                                uint32_t perfPass, QueryMap *localQueryToStateMap) {
+        cb_state->query_updates.emplace_back([queryPool, firstQuery, queryCount, record_obj](
+                                                 vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                 VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                 QueryMap *localQueryToStateMap) {
             if (!do_validate) return false;
             const auto &state_data = cb_state_arg.dev_data;
             bool skip = false;
@@ -1200,9 +1201,9 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
                                                       const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount, flags, record_obj, this](
-                                            vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                            uint32_t perfPass, QueryMap *localQueryToStateMap) {
+    cb_state->query_updates.emplace_back([queryPool, firstQuery, queryCount, flags, record_obj, this](
+                                             vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                             uint32_t perfPass, QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         const auto &state_data = cb_state_arg.dev_data;
         bool skip = false;
@@ -1318,9 +1319,9 @@ void CoreChecks::RecordCmdWriteTimestamp2(vvl::CommandBuffer &cb_state, VkQueryP
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     QueryObject query_obj = {queryPool, slot};
-    cb_state.queryUpdates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                            VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                            QueryMap *localQueryToStateMap) {
+    cb_state.query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                             VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                             QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         return VerifyQueryIsReset(cb_state_arg, query_obj, command, firstPerfQueryPool, perfPass, localQueryToStateMap);
     });

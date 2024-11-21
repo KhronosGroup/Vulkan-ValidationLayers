@@ -105,9 +105,9 @@ void CoreChecks::EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer &cb_sta
 void CoreChecks::EnqueueVerifyVideoInlineQueryUnavailable(vvl::CommandBuffer &cb_state, const VkVideoInlineQueryInfoKHR &query_info,
                                                           Func command) {
     if (disabled[query_validation]) return;
-    cb_state.queryUpdates.emplace_back([query_info, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                             VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                             QueryMap *localQueryToStateMap) {
+    cb_state.query_updates.emplace_back([query_info, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
+                                                              QueryMap *localQueryToStateMap) {
         if (!do_validate) return false;
         bool skip = false;
         for (uint32_t i = 0; i < query_info.queryCount; i++) {
