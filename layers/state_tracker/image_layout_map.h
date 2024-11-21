@@ -25,7 +25,6 @@
 #include "containers/range_vector.h"
 #include "containers/subresource_adapter.h"
 #include "utils/vk_layer_utils.h"
-#ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
 #include "error_message/logging.h"
 
@@ -34,7 +33,6 @@ class Image;
 class ImageView;
 class CommandBuffer;
 }  // namespace vvl
-#endif
 
 namespace image_layout_map {
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;

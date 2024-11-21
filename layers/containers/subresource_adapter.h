@@ -23,11 +23,7 @@
 #include <vector>
 #include "range_vector.h"
 #include "custom_containers.h"
-#ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
-#else
-#include "vk_snippets.h"
-#endif
 
 namespace vvl {
 class Image;
