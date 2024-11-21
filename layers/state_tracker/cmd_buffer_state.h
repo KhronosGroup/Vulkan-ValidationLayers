@@ -502,11 +502,11 @@ class CommandBuffer : public RefcountedStateObject {
 
     using EventCallback = std::function<bool(CommandBuffer &cb_state, bool do_validate, EventMap &local_event_signal_info,
                                              VkQueue waiting_queue, const Location &loc)>;
-    std::vector<EventCallback> eventUpdates;
+    std::vector<EventCallback> event_updates;
 
     std::vector<std::function<bool(CommandBuffer &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                    uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
-        queryUpdates;
+        query_updates;
     bool performance_lock_acquired = false;
     bool performance_lock_released = false;
 

@@ -45,7 +45,7 @@ void core::CommandBuffer::RecordWaitEvents(vvl::Func command, uint32_t eventCoun
     auto first_event_index = events.size();
     vvl::CommandBuffer::RecordWaitEvents(command, eventCount, pEvents, srcStageMask);
     auto event_added_count = events.size() - first_event_index;
-    eventUpdates.emplace_back(
+    event_updates.emplace_back(
         [command, event_added_count, first_event_index, srcStageMask](
             vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
             if (!do_validate) return false;
