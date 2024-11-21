@@ -611,6 +611,44 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence3) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8880
+    TEST_DESCRIPTION("Test that retiring submission using acquire fence works correctly when using differnt fences.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    std::vector<vkt::Fence> acquire_fences;
+    vkt::Fence acquire_fence(*m_device);  // extra acquire fence
+
+    std::vector<vkt::CommandBuffer> command_buffers;
+    std::vector<vkt::Semaphore> submit_semaphores;
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        acquire_fences.emplace_back(*m_device);
+        command_buffers.emplace_back(*m_device, m_command_pool);
+        command_buffers[i].Begin();
+        command_buffers[i].End();
+        submit_semaphores.emplace_back(*m_device);
+    }
+
+    const int frame_count = 10;
+    for (int i = 0; i < frame_count; i++) {
+        uint32_t image_index = 0;
+        vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, acquire_fence, &image_index);
+        acquire_fence.Wait(kWaitTimeout);
+        acquire_fence.Reset();
+
+        m_default_queue->Submit(command_buffers[image_index], vkt::Signal(submit_semaphores[image_index]));
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphores[image_index]);
+        std::swap(acquire_fences[image_index], acquire_fence);
+    }
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveWsi, SwapchainImageLayout) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
