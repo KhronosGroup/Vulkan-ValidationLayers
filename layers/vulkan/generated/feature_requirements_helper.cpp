@@ -6307,6 +6307,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->vertexAttributeInstanceRateZeroDivisor,
                     "VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR::vertexAttributeInstanceRateZeroDivisor"};
         }
+        case Feature::vertexAttributeRobustness: {
+            auto vk_struct = const_cast<VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->vertexAttributeRobustness,
+                    "VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT::vertexAttributeRobustness"};
+        }
         case Feature::vertexInputDynamicState: {
             auto vk_struct = const_cast<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(*inout_pnext_chain));
@@ -6321,6 +6336,35 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->vertexInputDynamicState,
                     "VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT::vertexInputDynamicState"};
+        }
+        case Feature::videoEncodeAV1: {
+            auto vk_struct = const_cast<VkPhysicalDeviceVideoEncodeAV1FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVideoEncodeAV1FeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceVideoEncodeAV1FeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->videoEncodeAV1, "VkPhysicalDeviceVideoEncodeAV1FeaturesKHR::videoEncodeAV1"};
+        }
+        case Feature::videoEncodeQuantizationMap: {
+            auto vk_struct = const_cast<VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->videoEncodeQuantizationMap,
+                    "VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR::videoEncodeQuantizationMap"};
         }
         case Feature::videoMaintenance1: {
             auto vk_struct = const_cast<VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(

@@ -356,6 +356,13 @@ void UnwrapPnextChainHandles(DispatchObject* layer_data, const void* pNext) {
                     safe_struct->queryPool = layer_data->Unwrap(safe_struct->queryPool);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_VIDEO_ENCODE_QUANTIZATION_MAP_INFO_KHR: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkVideoEncodeQuantizationMapInfoKHR*>(cur_pnext);
+
+                if (safe_struct->quantizationMap) {
+                    safe_struct->quantizationMap = layer_data->Unwrap(safe_struct->quantizationMap);
+                }
+            } break;
             case VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkPipelineLayoutCreateInfo*>(cur_pnext);
                 if (safe_struct->pSetLayouts) {
@@ -5765,6 +5772,30 @@ uint32_t DispatchGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleI
         }
     }
     uint32_t result = layer_data->device_dispatch_table.GetImageViewHandleNVX(device, (const VkImageViewHandleInfoNVX*)local_pInfo);
+
+    return result;
+}
+
+uint64_t DispatchGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetImageViewHandle64NVX(device, pInfo);
+    vku::safe_VkImageViewHandleInfoNVX var_local_pInfo;
+    vku::safe_VkImageViewHandleInfoNVX* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->imageView) {
+                local_pInfo->imageView = layer_data->Unwrap(pInfo->imageView);
+            }
+            if (pInfo->sampler) {
+                local_pInfo->sampler = layer_data->Unwrap(pInfo->sampler);
+            }
+        }
+    }
+    uint64_t result =
+        layer_data->device_dispatch_table.GetImageViewHandle64NVX(device, (const VkImageViewHandleInfoNVX*)local_pInfo);
 
     return result;
 }

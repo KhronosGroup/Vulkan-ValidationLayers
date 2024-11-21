@@ -122,6 +122,7 @@ struct InstanceExtensions {
     ExtEnabled vk_google_surfaceless_query{kNotEnabled};
     ExtEnabled vk_lunarg_direct_driver_loading{kNotEnabled};
     ExtEnabled vk_ext_layer_settings{kNotEnabled};
+    ExtEnabled vk_nv_display_stereo{kNotEnabled};
 
     struct Requirement {
         const ExtEnabled InstanceExtensions::*enabled;
@@ -260,6 +261,10 @@ struct InstanceExtensions {
                   {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_LUNARG_direct_driver_loading, Info(&InstanceExtensions::vk_lunarg_direct_driver_loading, {})},
             {vvl::Extension::_VK_EXT_layer_settings, Info(&InstanceExtensions::vk_ext_layer_settings, {})},
+            {vvl::Extension::_VK_NV_display_stereo,
+             Info(&InstanceExtensions::vk_nv_display_stereo,
+                  {{{&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME},
+                    {&InstanceExtensions::vk_khr_get_display_properties2, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME}}})},
 
         };
         return info_map;
@@ -369,6 +374,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_khr_compute_shader_derivatives{kNotEnabled};
     ExtEnabled vk_khr_video_decode_av1{kNotEnabled};
+    ExtEnabled vk_khr_video_encode_av1{kNotEnabled};
     ExtEnabled vk_khr_video_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_vertex_attribute_divisor{kNotEnabled};
     ExtEnabled vk_khr_load_store_op_none{kNotEnabled};
@@ -378,6 +384,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_khr_shader_expect_assume{kNotEnabled};
     ExtEnabled vk_khr_maintenance6{kNotEnabled};
+    ExtEnabled vk_khr_video_encode_quantization_map{kNotEnabled};
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
     ExtEnabled vk_khr_maintenance7{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
@@ -620,6 +627,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_depth_clamp_control{kNotEnabled};
     ExtEnabled vk_huawei_hdr_vivid{kNotEnabled};
     ExtEnabled vk_nv_cooperative_matrix2{kNotEnabled};
+    ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -934,6 +942,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_KHR_video_decode_av1,
              Info(&DeviceExtensions::vk_khr_video_decode_av1,
                   {{{&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_KHR_video_encode_av1,
+             Info(&DeviceExtensions::vk_khr_video_encode_av1,
+                  {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_video_maintenance1,
              Info(&DeviceExtensions::vk_khr_video_maintenance1,
                   {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}}})},
@@ -959,6 +970,10 @@ struct DeviceExtensions : public InstanceExtensions {
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_maintenance6,
              Info(&DeviceExtensions::vk_khr_maintenance6, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {vvl::Extension::_VK_KHR_video_encode_quantization_map,
+             Info(&DeviceExtensions::vk_khr_video_encode_quantization_map,
+                  {{{&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction,
              Info(&DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, {})},
             {vvl::Extension::_VK_KHR_maintenance7,
@@ -1693,6 +1708,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_NV_cooperative_matrix2,
              Info(&DeviceExtensions::vk_nv_cooperative_matrix2,
                   {{{&DeviceExtensions::vk_khr_cooperative_matrix, VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_EXT_vertex_attribute_robustness, Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness, {})},
             {vvl::Extension::_VK_KHR_acceleration_structure,
              Info(&DeviceExtensions::vk_khr_acceleration_structure,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -1773,6 +1789,7 @@ constexpr bool IsInstanceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_GOOGLE_surfaceless_query:
         case vvl::Extension::_VK_LUNARG_direct_driver_loading:
         case vvl::Extension::_VK_EXT_layer_settings:
+        case vvl::Extension::_VK_NV_display_stereo:
             return true;
         default:
             return false;
@@ -1871,6 +1888,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_cooperative_matrix:
         case vvl::Extension::_VK_KHR_compute_shader_derivatives:
         case vvl::Extension::_VK_KHR_video_decode_av1:
+        case vvl::Extension::_VK_KHR_video_encode_av1:
         case vvl::Extension::_VK_KHR_video_maintenance1:
         case vvl::Extension::_VK_KHR_vertex_attribute_divisor:
         case vvl::Extension::_VK_KHR_load_store_op_none:
@@ -1880,6 +1898,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_calibrated_timestamps:
         case vvl::Extension::_VK_KHR_shader_expect_assume:
         case vvl::Extension::_VK_KHR_maintenance6:
+        case vvl::Extension::_VK_KHR_video_encode_quantization_map:
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
         case vvl::Extension::_VK_NV_glsl_shader:
@@ -2122,6 +2141,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_depth_clamp_control:
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
         case vvl::Extension::_VK_NV_cooperative_matrix2:
+        case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

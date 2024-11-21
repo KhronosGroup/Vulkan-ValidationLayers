@@ -968,6 +968,9 @@ typedef enum InterceptId {
     InterceptIdPreCallValidateGetImageViewHandleNVX,
     InterceptIdPreCallRecordGetImageViewHandleNVX,
     InterceptIdPostCallRecordGetImageViewHandleNVX,
+    InterceptIdPreCallValidateGetImageViewHandle64NVX,
+    InterceptIdPreCallRecordGetImageViewHandle64NVX,
+    InterceptIdPostCallRecordGetImageViewHandle64NVX,
     InterceptIdPreCallValidateGetImageViewAddressNVX,
     InterceptIdPreCallRecordGetImageViewAddressNVX,
     InterceptIdPostCallRecordGetImageViewAddressNVX,
@@ -2754,6 +2757,9 @@ void DispatchObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetImageViewHandleNVX);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetImageViewHandleNVX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetImageViewHandleNVX);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetImageViewHandle64NVX);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetImageViewHandle64NVX);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetImageViewHandle64NVX);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetImageViewAddressNVX);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetImageViewAddressNVX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetImageViewAddressNVX);

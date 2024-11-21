@@ -3014,7 +3014,7 @@ bool ObjectLifetimes::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPres
 
             if ((pNext->swapchainCount > 0) && (pNext->pFences)) {
                 for (uint32_t index2 = 0; index2 < pNext->swapchainCount; ++index2) {
-                    skip |= ValidateObject(pNext->pFences[index2], kVulkanObjectTypeFence, false,
+                    skip |= ValidateObject(pNext->pFences[index2], kVulkanObjectTypeFence, true,
                                            "VUID-VkSwapchainPresentFenceInfoEXT-pFences-parameter",
                                            "UNASSIGNED-VkSwapchainPresentFenceInfoEXT-pFences-parent",
                                            pNext_loc.dot(Field::pFences, index2));
@@ -4226,6 +4226,13 @@ bool ObjectLifetimes::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBu
                 }
             }
         }
+        if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo->pNext)) {
+            [[maybe_unused]] const Location pNext_loc = pEncodeInfo_loc.pNext(Struct::VkVideoEncodeQuantizationMapInfoKHR);
+            skip |= ValidateObject(pNext->quantizationMap, kVulkanObjectTypeImageView, true,
+                                   "VUID-VkVideoEncodeQuantizationMapInfoKHR-quantizationMap-parameter",
+                                   "UNASSIGNED-VkVideoEncodeQuantizationMapInfoKHR-quantizationMap-parent",
+                                   pNext_loc.dot(Field::quantizationMap));
+        }
         if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkVideoInlineQueryInfoKHR>(pEncodeInfo->pNext)) {
             [[maybe_unused]] const Location pNext_loc = pEncodeInfo_loc.pNext(Struct::VkVideoInlineQueryInfoKHR);
             skip |= ValidateObject(pNext->queryPool, kVulkanObjectTypeQueryPool, true,
@@ -4801,6 +4808,22 @@ bool ObjectLifetimes::PreCallValidateGetImageViewHandleNVX(VkDevice device, cons
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkGetImageViewHandleNVX-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |=
+            ValidateObject(pInfo->imageView, kVulkanObjectTypeImageView, false, "VUID-VkImageViewHandleInfoNVX-imageView-parameter",
+                           "VUID-VkImageViewHandleInfoNVX-commonparent", pInfo_loc.dot(Field::imageView));
+        skip |= ValidateObject(pInfo->sampler, kVulkanObjectTypeSampler, true, "VUID-VkImageViewHandleInfoNVX-sampler-parameter",
+                               "VUID-VkImageViewHandleInfoNVX-commonparent", pInfo_loc.dot(Field::sampler));
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetImageViewHandle64NVX-device-parameter"
     if (pInfo) {
         [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
         skip |=

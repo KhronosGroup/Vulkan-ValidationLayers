@@ -16223,6 +16223,43 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(VkDevice device, const VkIm
     return result;
 }
 
+VKAPI_ATTR uint64_t VKAPI_CALL GetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo) {
+    VVL_ZoneScoped;
+
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetImageViewHandle64NVX, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageViewHandle64NVX]) {
+            auto lock = intercept->ReadLock();
+            skip |= intercept->PreCallValidateGetImageViewHandle64NVX(device, pInfo, error_obj);
+            if (skip) return 0;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetImageViewHandle64NVX);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageViewHandle64NVX]) {
+            auto lock = intercept->WriteLock();
+            intercept->PreCallRecordGetImageViewHandle64NVX(device, pInfo, record_obj);
+        }
+    }
+    uint64_t result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = DispatchGetImageViewHandle64NVX(device, pInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageViewHandle64NVX]) {
+            auto lock = intercept->WriteLock();
+            intercept->PostCallRecordGetImageViewHandle64NVX(device, pInfo, record_obj);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(VkDevice device, VkImageView imageView,
                                                       VkImageViewAddressPropertiesNVX* pProperties) {
     VVL_ZoneScoped;
@@ -28370,6 +28407,7 @@ const vvl::unordered_map<std::string, function_data> &GetNameToFuncPtrMap() {
     {"vkDestroyCuFunctionNVX", {kFuncTypeDev, (void*)DestroyCuFunctionNVX}},
     {"vkCmdCuLaunchKernelNVX", {kFuncTypeDev, (void*)CmdCuLaunchKernelNVX}},
     {"vkGetImageViewHandleNVX", {kFuncTypeDev, (void*)GetImageViewHandleNVX}},
+    {"vkGetImageViewHandle64NVX", {kFuncTypeDev, (void*)GetImageViewHandle64NVX}},
     {"vkGetImageViewAddressNVX", {kFuncTypeDev, (void*)GetImageViewAddressNVX}},
     {"vkCmdDrawIndirectCountAMD", {kFuncTypeDev, (void*)CmdDrawIndirectCountAMD}},
     {"vkCmdDrawIndexedIndirectCountAMD", {kFuncTypeDev, (void*)CmdDrawIndexedIndirectCountAMD}},

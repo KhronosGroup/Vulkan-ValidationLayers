@@ -4449,6 +4449,16 @@ void ThreadSafety::PostCallRecordGetImageViewHandleNVX(VkDevice device, const Vk
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
+void ThreadSafety::PreCallRecordGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                                        const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void ThreadSafety::PostCallRecordGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                                         const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
 void ThreadSafety::PreCallRecordGetImageViewAddressNVX(VkDevice device, VkImageView imageView,
                                                        VkImageViewAddressPropertiesNVX* pProperties,
                                                        const RecordObject& record_obj) {

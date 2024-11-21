@@ -885,6 +885,8 @@ bool PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const Vk
                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
                                           const ErrorObject& error_obj) const override;
+bool PreCallValidateGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
+                                            const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageViewAddressNVX(VkDevice device, VkImageView imageView, VkImageViewAddressPropertiesNVX* pProperties,
                                            const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,

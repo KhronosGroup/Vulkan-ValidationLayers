@@ -261,6 +261,12 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_QCOM_image_processing};
                 }
             }
+            if (value &
+                (VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_video_encode_quantization_map)) {
+                    return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkPipelineStageFlagBits:
             if (value & (VK_PIPELINE_STAGE_NONE)) {
@@ -829,6 +835,19 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_KHR_video_maintenance1};
                 }
             }
+            if (value & (VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR |
+                         VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_video_encode_quantization_map)) {
+                    return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
+                }
+            }
+            return {};
+        case vvl::FlagBitmask::VkVideoSessionParametersCreateFlagBitsKHR:
+            if (value & (VK_VIDEO_SESSION_PARAMETERS_CREATE_QUANTIZATION_MAP_COMPATIBLE_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_video_encode_quantization_map)) {
+                    return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkVideoCodingControlFlagBitsKHR:
             if (value &
@@ -842,6 +861,13 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
             if (value & (VK_MEMORY_UNMAP_RESERVE_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_map_memory_placed)) {
                     return {vvl::Extension::_VK_EXT_map_memory_placed};
+                }
+            }
+            return {};
+        case vvl::FlagBitmask::VkVideoEncodeFlagBitsKHR:
+            if (value & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_video_encode_quantization_map)) {
+                    return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
                 }
             }
             return {};
@@ -1151,6 +1177,8 @@ std::string StatelessValidation::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_
             return string_VkVideoComponentBitDepthFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoSessionCreateFlagBitsKHR:
             return string_VkVideoSessionCreateFlagsKHR(value);
+        case vvl::FlagBitmask::VkVideoSessionParametersCreateFlagBitsKHR:
+            return string_VkVideoSessionParametersCreateFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoCodingControlFlagBitsKHR:
             return string_VkVideoCodingControlFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoDecodeUsageFlagBitsKHR:
@@ -1163,6 +1191,8 @@ std::string StatelessValidation::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_
             return string_VkVideoDecodeH264PictureLayoutFlagsKHR(value);
         case vvl::FlagBitmask::VkMemoryUnmapFlagBitsKHR:
             return string_VkMemoryUnmapFlagsKHR(value);
+        case vvl::FlagBitmask::VkVideoEncodeFlagBitsKHR:
+            return string_VkVideoEncodeFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeRateControlModeFlagBitsKHR:
             return string_VkVideoEncodeRateControlModeFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeFeedbackFlagBitsKHR:
@@ -1171,6 +1201,8 @@ std::string StatelessValidation::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_
             return string_VkVideoEncodeUsageFlagsKHR(value);
         case vvl::FlagBitmask::VkVideoEncodeContentFlagBitsKHR:
             return string_VkVideoEncodeContentFlagsKHR(value);
+        case vvl::FlagBitmask::VkVideoEncodeAV1RateControlFlagBitsKHR:
+            return string_VkVideoEncodeAV1RateControlFlagsKHR(value);
         case vvl::FlagBitmask::VkDebugReportFlagBitsEXT:
             return string_VkDebugReportFlagsEXT(value);
         case vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBitsNV:

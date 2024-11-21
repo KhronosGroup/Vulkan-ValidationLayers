@@ -108,6 +108,10 @@ ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateCombinerOp
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const;
 template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const;
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1RateControlGroupKHR value) const;
+template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkLineRasterizationModeKHR value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkTimeDomainKHR value) const;
@@ -225,6 +229,8 @@ template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const;
+template <>
+ValidValue StatelessValidation::IsValidEnumValue(VkDisplaySurfaceStereoTypeNV value) const;
 template <>
 ValidValue StatelessValidation::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const;
 template <>
