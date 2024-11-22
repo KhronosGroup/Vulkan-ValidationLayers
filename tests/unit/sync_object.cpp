@@ -1324,8 +1324,7 @@ TEST_F(NegativeSyncObject, BarrierQueueFamily2) {
     excl_test("WARNING-VkImageMemoryBarrier-image-00001", "WARNING-VkBufferMemoryBarrier-buffer-00001", submit_family, other_family,
               other_family, BarrierQueueFamilyTestHelper::DOUBLE_RECORD);
     // No pending release
-    excl_test("UNASSIGNED-VkImageMemoryBarrier-image-00004", "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004", submit_family,
-              other_family, other_family);
+    excl_test("VUID-vkQueueSubmit-pSubmits-02207", "VUID-vkQueueSubmit-pSubmits-02207", submit_family, other_family, other_family);
     // Duplicate release in two CB
     excl_test("WARNING-VkImageMemoryBarrier-image-00002", "WARNING-VkBufferMemoryBarrier-buffer-00002", submit_family, other_family,
               submit_family, BarrierQueueFamilyTestHelper::DOUBLE_COMMAND_BUFFER);

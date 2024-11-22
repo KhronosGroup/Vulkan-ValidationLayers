@@ -2109,7 +2109,9 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
             matching_release_found = set_for_handle.find(acquire) != set_for_handle.cend();
         }
         if (!matching_release_found) {
-            skip |= LogError(TransferBarrier::MissingQFOReleaseInSubmit(), cb_state.Handle(), loc,
+            const char *vuid = (loc.function == vvl::Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pSubmits-02207"
+                                                                          : "VUID-vkQueueSubmit2-commandBuffer-03879";
+            skip |= LogError(vuid, cb_state.Handle(), loc,
                              "in submitted command buffer %s acquiring ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                              " to dstQueueFamilyIndex %" PRIu32 " has no matching release barrier queued for execution.",
                              barrier_name, handle_name, FormatHandle(acquire.handle).c_str(), acquire.srcQueueFamilyIndex,
