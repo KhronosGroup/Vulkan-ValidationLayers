@@ -7011,7 +7011,7 @@ TEST_F(NegativeShaderObject, SetPrimitiveTopologyNonPatch) {
                                    fragShader.handle()};
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdDraw-None-topology");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitiveTopology-10286");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -7037,7 +7037,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStage) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
@@ -7061,7 +7061,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleBindings) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
@@ -7090,7 +7090,7 @@ TEST_F(NegativeShaderObject, DescriptorWrongStageMultipleSets) {
     VkDescriptorSetLayout dsl[3] = {descriptor_set0.layout_.handle(), descriptor_set1.layout_.handle(),
                                     descriptor_set2.layout_.handle()};
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT, 3, dsl);
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage");
     const vkt::Shader comp_shader(*m_device, create_info);
     m_errorMonitor->VerifyFound();
 }
@@ -7106,7 +7106,7 @@ TEST_F(NegativeShaderObject, DescriptorNotProvided) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src));
     m_errorMonitor->VerifyFound();
 }
@@ -7123,7 +7123,7 @@ TEST_F(NegativeShaderObject, DescriptorTypeMismatch) {
     )glsl";
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-mutable");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-mutable");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
@@ -7141,7 +7141,7 @@ TEST_F(NegativeShaderObject, DescriptorCount) {
     )glsl";
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
@@ -7171,7 +7171,7 @@ TEST_F(NegativeShaderObject, InlineUniformBlockArray) {
                                        },
                                        0, nullptr, 0, nullptr, &pool_inline_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pSetLayouts-inline");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-inline");
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src),
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();

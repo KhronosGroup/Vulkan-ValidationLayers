@@ -1982,30 +1982,30 @@ bool CoreChecks::ValidateShaderInterfaceVariableShaderObject(const VkShaderCreat
     // VUIDs being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7020
 
     if (!binding) {
-        skip |= LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
+        skip |= LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
                          "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in pSetLayouts[%" PRIu32 "].",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_DescriptorTypeSet(descriptor_type_set).c_str(), set);
     } else if (~binding->stageFlags & variable.stage) {
         skip |=
-            LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
+            LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
                      "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                      string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
     } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-        skip |= LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-mutable", device, loc,
+        skip |= LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-mutable", device, loc,
                          "SPIR-V (%s) uses descriptor %s of type %s but expected %s.", string_VkShaderStageFlagBits(variable.stage),
                          variable.DescribeDescriptor().c_str(), string_VkDescriptorType(binding->descriptorType),
                          string_DescriptorTypeSet(descriptor_type_set).c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
         skip |=
-            LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-inline", device, loc,
+            LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-inline", device, loc,
                      "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
 
     } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
-        skip |= LogError("VUID-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount", device, loc,
+        skip |= LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount", device, loc,
                          "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
                          ", but requires at least %" PRIu32 " in the SPIR-V.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),

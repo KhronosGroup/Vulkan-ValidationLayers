@@ -799,10 +799,6 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location &loc) const {
             vuid = "VUID-vkCreateEvent-device-09672";
             flags = VK_QUEUE_VIDEO_ENCODE_BIT_KHR | VK_QUEUE_VIDEO_DECODE_BIT_KHR | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
             break;
-        case Func::vkCreateShadersEXT:
-            vuid = "VUID-vkCreateShadersEXT-device-09669";
-            flags = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
-            break;
         case Func::vkCreateRenderPass:
             vuid = "VUID-vkCreateRenderPass-device-10000";
             flags = VK_QUEUE_GRAPHICS_BIT;
