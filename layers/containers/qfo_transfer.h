@@ -88,8 +88,6 @@ struct QFOImageTransferBarrier : public QFOTransferBarrierBase<VkImage> {
     static const char *DuplicateQFOInSubmit() { return "WARNING-VkImageMemoryBarrier-image-00002"; }
     // QFO transfer image barrier must not duplicate QFO submitted previously
     static const char *DuplicateQFOSubmitted() { return "WARNING-VkImageMemoryBarrier-image-00003"; }
-    // QFO acquire image barrier must have matching QFO release submitted previously
-    static const char *MissingQFOReleaseInSubmit() { return "UNASSIGNED-VkImageMemoryBarrier-image-00004"; }
 };
 
 // Buffer barrier specific implementation
@@ -118,8 +116,6 @@ struct QFOBufferTransferBarrier : public QFOTransferBarrierBase<VkBuffer> {
     static const char *DuplicateQFOInSubmit() { return "WARNING-VkBufferMemoryBarrier-buffer-00002"; }
     // QFO transfer buffer barrier must not duplicate QFO submitted previously
     static const char *DuplicateQFOSubmitted() { return "WARNING-VkBufferMemoryBarrier-buffer-00003"; }
-    // QFO acquire buffer barrier must have matching QFO release submitted previously
-    static const char *MissingQFOReleaseInSubmit() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004"; }
 };
 
 template <typename TransferBarrier>
