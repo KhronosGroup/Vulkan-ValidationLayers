@@ -104,6 +104,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
             # Build up list of expressions so case statements with same expression can have fallthrough
             expressionMap = defaultdict(list)
+            protectedMap = dict()
             for field in [x for x in enum.fields if len(x.extensions) > 0]:
                 expression = []
                 # Ignore the base extensions needed to use the enum, only focus on the field specific extensions
@@ -113,11 +114,16 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                     continue
                 expression = " || ".join(expression)
                 expressionMap[expression].append(field.name)
+                if field.protect:
+                    protectedMap[field.name] = field.protect
 
             for expression, names in expressionMap.items():
                 for name in names:
+                    if name in protectedMap:
+                        out.extend(guard_helper.add_guard(protectedMap[name]))
                     out.append(f'    case {name}:\n')
                 out.append(f'return {expression} ? ValidValue::Valid : ValidValue::NoExtension;\n')
+                out.extend(guard_helper.add_guard(None))
 
             out.append('''default:
                             return ValidValue::NotFound;
@@ -141,6 +147,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             out.append('    switch (value) {\n')
 
             expressionMap = defaultdict(list)
+            protectedMap = dict()
             for field in [x for x in enum.fields if len(x.extensions) > 0]:
                 expression = []
                 for extension in [x for x in field.extensions if x not in enum.extensions]:
@@ -149,11 +156,16 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                     continue
                 expression = ", ".join(expression)
                 expressionMap[expression].append(field.name)
+                if field.protect:
+                    protectedMap[field.name] = field.protect
 
             for expression, names in expressionMap.items():
                 for name in names:
+                    if name in protectedMap:
+                        out.extend(guard_helper.add_guard(protectedMap[name]))
                     out.append(f'    case {name}:\n')
                 out.append(f'return {{{expression}}};\n')
+                out.extend(guard_helper.add_guard(None))
 
             out.append('''default:
                             return {};

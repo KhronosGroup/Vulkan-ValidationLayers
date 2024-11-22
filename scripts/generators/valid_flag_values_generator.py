@@ -110,11 +110,16 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                     resultExpression.append(f'vvl::Extension::_{extension}')
                 resultExpression = ", ".join(resultExpression)
 
+                protect = self.vk.extensions[extensions[0]].protect
+                if protect:
+                    out.append(f'#ifdef {protect}\n\n') # Clang-format gets messed up with single new-line
                 out.append(f'if (value & ({" | ".join(names)})) {{\n')
                 out.append(f'   if ({checkExpression}) {{\n')
                 out.append(f'       return {{{resultExpression}}};\n')
                 out.append('    }')
                 out.append('}')
+                if protect:
+                    out.append('\n#endif\n')
 
             out.append('   return {};\n')
             # out.append('\n')
@@ -158,11 +163,16 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                     resultExpression.append(f'vvl::Extension::_{extension}')
                 resultExpression = ", ".join(resultExpression)
 
+                protect = self.vk.extensions[extensions[0]].protect
+                if protect:
+                    out.append(f'#ifdef {protect}\n\n') # Clang-format gets messed up with single new-line
                 out.append(f'if (value & ({" | ".join(names)})) {{\n')
                 out.append(f'   if ({checkExpression}) {{\n')
                 out.append(f'       return {{{resultExpression}}};\n')
                 out.append('    }')
                 out.append('}')
+                if protect:
+                    out.append('\n#endif\n')
 
             out.append('   return {};\n')
         out.extend(guard_helper.add_guard(None))

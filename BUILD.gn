@@ -36,8 +36,6 @@ config("generated_layers_config") {
 }
 
 config("vulkan_internal_config") {
-  defines = [ "VK_ENABLE_BETA_EXTENSIONS" ]
-
   cflags = []
   if (is_clang || !is_win) {
     cflags += [ "-Wno-unused-function" ]

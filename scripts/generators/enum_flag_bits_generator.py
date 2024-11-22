@@ -104,7 +104,18 @@ class EnumFlagBitsOutputGenerator(BaseGenerator):
                 continue # some bitmask are empty and used for reserve in the future
 
             out.extend(guard_helper.add_guard(bitmask.protect))
-            out.append(f'const {bitmask.flagName} All{bitmask.name} = {"|".join([flag.name for flag in bitmask.flags])}')
+            flags = (
+                [flag.name for flag in bitmask.flags]
+                if bitmask.protect
+                else [flag.name for flag in bitmask.flags if not flag.protect]
+            )
+            out.append(f'const {bitmask.flagName} All{bitmask.name} = {"|".join(flags)}')
+            if not bitmask.protect:
+                out.extend(
+                    f'\n#ifdef {flag.protect}\n|{flag.name}\n#endif\n'
+                    for flag in bitmask.flags
+                    if flag.protect
+                )
             out.append(';\n')
         out.extend(guard_helper.add_guard(None))
 

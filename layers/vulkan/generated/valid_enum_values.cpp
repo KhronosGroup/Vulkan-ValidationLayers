@@ -1002,8 +1002,10 @@ ValidValue StatelessValidation::IsValidEnumValue(VkPipelineBindPoint value) cons
         case VK_PIPELINE_BIND_POINT_GRAPHICS:
         case VK_PIPELINE_BIND_POINT_COMPUTE:
             return ValidValue::Valid;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
             return IsExtEnabled(device_extensions.vk_amdx_shader_enqueue) ? ValidValue::Valid : ValidValue::NoExtension;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
             return IsExtEnabled(device_extensions.vk_nv_ray_tracing) || IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)
                        ? ValidValue::Valid
@@ -1837,8 +1839,10 @@ ValidValue StatelessValidation::IsValidEnumValue(VkMicromapTypeEXT value) const 
     switch (value) {
         case VK_MICROMAP_TYPE_OPACITY_MICROMAP_EXT:
             return ValidValue::Valid;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_MICROMAP_TYPE_DISPLACEMENT_MICROMAP_NV:
             return IsExtEnabled(device_extensions.vk_nv_displacement_micromap) ? ValidValue::Valid : ValidValue::NoExtension;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         default:
             return ValidValue::NotFound;
     };
@@ -2747,8 +2751,10 @@ const char* StatelessValidation::DescribeEnum(VkAttachmentStoreOp value) const {
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkPipelineBindPoint value) const {
     switch (value) {
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_PIPELINE_BIND_POINT_EXECUTION_GRAPH_AMDX:
             return {vvl::Extension::_VK_AMDX_shader_enqueue};
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
             return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_ray_tracing_pipeline};
         case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
@@ -3366,8 +3372,10 @@ const char* StatelessValidation::DescribeEnum(VkDeviceAddressBindingTypeEXT valu
 template <>
 vvl::Extensions StatelessValidation::GetEnumExtensions(VkMicromapTypeEXT value) const {
     switch (value) {
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_MICROMAP_TYPE_DISPLACEMENT_MICROMAP_NV:
             return {vvl::Extension::_VK_NV_displacement_micromap};
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         default:
             return {};
     };

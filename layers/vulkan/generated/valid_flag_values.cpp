@@ -394,11 +394,14 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_EXT_conditional_rendering};
                 }
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
             if (value & (VK_BUFFER_USAGE_EXECUTION_GRAPH_SCRATCH_BIT_AMDX)) {
                 if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue)) {
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
+#endif
             if (value & (VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                          VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR)) {
                 if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
@@ -532,11 +535,14 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_EXT_opacity_micromap};
                 }
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
             if (value & (VK_PIPELINE_CREATE_RAY_TRACING_DISPLACEMENT_MICROMAP_BIT_NV)) {
                 if (!IsExtEnabled(device_extensions.vk_nv_displacement_micromap)) {
                     return {vvl::Extension::_VK_NV_displacement_micromap};
                 }
             }
+#endif
             if (value & (VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_pipeline_protected_access)) {
                     return {vvl::Extension::_VK_EXT_pipeline_protected_access};
@@ -753,46 +759,61 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_EXT_external_memory_dma_buf};
                 }
             }
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
                 if (!IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                     return {vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer};
                 }
             }
+#endif
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT |
                          VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_external_memory_host)) {
                     return {vvl::Extension::_VK_EXT_external_memory_host};
                 }
             }
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ZIRCON_VMO_BIT_FUCHSIA)) {
                 if (!IsExtEnabled(device_extensions.vk_fuchsia_external_memory)) {
                     return {vvl::Extension::_VK_FUCHSIA_external_memory};
                 }
             }
+#endif
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_RDMA_ADDRESS_BIT_NV)) {
                 if (!IsExtEnabled(device_extensions.vk_nv_external_memory_rdma)) {
                     return {vvl::Extension::_VK_NV_external_memory_rdma};
                 }
             }
+#ifdef VK_USE_PLATFORM_SCREEN_QNX
+
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCREEN_BUFFER_BIT_QNX)) {
                 if (!IsExtEnabled(device_extensions.vk_qnx_external_memory_screen_buffer)) {
                     return {vvl::Extension::_VK_QNX_external_memory_screen_buffer};
                 }
             }
+#endif
             return {};
         case vvl::FlagBitmask::VkExternalSemaphoreHandleTypeFlagBits:
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
             if (value & (VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_ZIRCON_EVENT_BIT_FUCHSIA)) {
                 if (!IsExtEnabled(device_extensions.vk_fuchsia_external_semaphore)) {
                     return {vvl::Extension::_VK_FUCHSIA_external_semaphore};
                 }
             }
+#endif
             return {};
         case vvl::FlagBitmask::VkResolveModeFlagBits:
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
             if (value & (VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID)) {
                 if (!IsExtEnabled(device_extensions.vk_android_external_format_resolve)) {
                     return {vvl::Extension::_VK_ANDROID_external_format_resolve};
                 }
             }
+#endif
             return {};
         case vvl::FlagBitmask::VkRenderingFlagBits:
             if (value & (VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
@@ -899,11 +920,14 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_EXT_opacity_micromap};
                 }
             }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
             if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DISPLACEMENT_MICROMAP_UPDATE_NV)) {
                 if (!IsExtEnabled(device_extensions.vk_nv_displacement_micromap)) {
                     return {vvl::Extension::_VK_NV_displacement_micromap};
                 }
             }
+#endif
             if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR)) {
                 if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_position_fetch)) {
                     return {vvl::Extension::_VK_KHR_ray_tracing_position_fetch};
@@ -1017,11 +1041,14 @@ vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bi
             }
             return {};
         case vvl::FlagBitmask::VkPipelineCreateFlagBits2KHR:
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
             if (value & (VK_PIPELINE_CREATE_2_EXECUTION_GRAPH_BIT_AMDX)) {
                 if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue)) {
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
+#endif
             if (value & (VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_legacy_dithering)) {
                     return {vvl::Extension::_VK_EXT_legacy_dithering};
@@ -1039,11 +1066,14 @@ vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bi
             }
             return {};
         case vvl::FlagBitmask::VkBufferUsageFlagBits2KHR:
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
             if (value & (VK_BUFFER_USAGE_2_EXECUTION_GRAPH_SCRATCH_BIT_AMDX)) {
                 if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue)) {
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
+#endif
             if (value & (VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands)) {
                     return {vvl::Extension::_VK_EXT_device_generated_commands};

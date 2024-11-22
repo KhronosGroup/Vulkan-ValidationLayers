@@ -35,7 +35,11 @@ include(GNUInstallDirs)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) # Remove when min is 3.26, see CMP0143
 
-add_compile_definitions(VK_ENABLE_BETA_EXTENSIONS)
+# This is turned off by default as it can break backward compatibility
+if (VK_ENABLE_BETA_EXTENSIONS)
+    add_compile_definitions(VK_ENABLE_BETA_EXTENSIONS)
+endif()
+
 if(WIN32)
     add_compile_definitions(VK_USE_PLATFORM_WIN32_KHR)
 
@@ -85,7 +89,7 @@ if (VVL_ENABLE_TRACY)
         message(FATAL_ERROR "Tracy cannot be used with mimalloc")
     endif()
 
-    if (VVL_TRACY_CALLSTACK STREQUAL "OFF") 
+    if (VVL_TRACY_CALLSTACK STREQUAL "OFF")
         set(VVL_TRACY_CALLSTACK 48)
     endif()
 
