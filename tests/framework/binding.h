@@ -907,6 +907,7 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
 
 class Shader : public internal::NonDispHandle<VkShaderEXT> {
   public:
+    Shader() = default;
     Shader(const Device &dev, const VkShaderCreateInfoEXT &info) { init(dev, info); }
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);

@@ -63,26 +63,31 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
         }
     }
 
-    // Validate Push Constant ranges
-    for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
-        const Location pc_loc = create_info_loc.dot(Field::pPushConstantRanges, i);
-        const uint32_t offset = pCreateInfo->pPushConstantRanges[i].offset;
-        const uint32_t size = pCreateInfo->pPushConstantRanges[i].size;
+    skip |= ValidatePushConstantRange(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges, create_info_loc);
+
+    return skip;
+}
+
+bool StatelessValidation::ValidatePushConstantRange(uint32_t push_constant_range_count,
+                                                    const VkPushConstantRange *push_constant_ranges, const Location &loc) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < push_constant_range_count; ++i) {
+        const Location pc_loc = loc.dot(Field::pPushConstantRanges, i);
+        const uint32_t offset = push_constant_ranges[i].offset;
+        const uint32_t size = push_constant_ranges[i].size;
         const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
         // Check that offset + size don't exceed the max.
         // Prevent arithetic overflow here by avoiding addition and testing in this order.
         if (offset >= max_push_constants_size) {
             skip |= LogError("VUID-VkPushConstantRange-offset-00294", device, pc_loc.dot(Field::offset),
-                             "(%" PRIu32
-                             ") that exceeds this "
-                             "device's maxPushConstantSize of %" PRIu32 ".",
-                             offset, max_push_constants_size);
+                             "(%" PRIu32 ") is greater than maxPushConstantSize (%" PRIu32 ").", offset, max_push_constants_size);
         }
         if (size > max_push_constants_size - offset) {
             skip |= LogError("VUID-VkPushConstantRange-size-00298", device, pc_loc.dot(Field::offset),
                              "(%" PRIu32 ") and size (%" PRIu32
                              ") "
-                             "together exceeds this device's maxPushConstantSize of %" PRIu32 ".",
+                             "together are greater than maxPushConstantSize (%" PRIu32 ").",
                              offset, size, max_push_constants_size);
         }
 
@@ -104,18 +109,22 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     }
 
     // As of 1.0.28, there is a VU that states that a stage flag cannot appear more than once in the list of push constant ranges.
-    for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
-        for (uint32_t j = i + 1; j < pCreateInfo->pushConstantRangeCount; ++j) {
-            if (0 != (pCreateInfo->pPushConstantRanges[i].stageFlags & pCreateInfo->pPushConstantRanges[j].stageFlags)) {
-                skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292", device, create_info_loc,
+    for (uint32_t i = 0; i < push_constant_range_count; ++i) {
+        for (uint32_t j = i + 1; j < push_constant_range_count; ++j) {
+            if (0 != (push_constant_ranges[i].stageFlags & push_constant_ranges[j].stageFlags)) {
+                const char *vuid = loc.function == Func::vkCreatePipelineLayout
+                                       ? "VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292"
+                                       : "VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063";
+                skip |= LogError(vuid, device, loc,
                                  "pPushConstantRanges[%" PRIu32 "].stageFlags is %s and pPushConstantRanges[%" PRIu32
                                  "].stageFlags is %s.",
-                                 i, string_VkShaderStageFlags(pCreateInfo->pPushConstantRanges[i].stageFlags).c_str(), j,
-                                 string_VkShaderStageFlags(pCreateInfo->pPushConstantRanges[j].stageFlags).c_str());
+                                 i, string_VkShaderStageFlags(push_constant_ranges[i].stageFlags).c_str(), j,
+                                 string_VkShaderStageFlags(push_constant_ranges[j].stageFlags).c_str());
                 break;  // Only need to report the first range mismatch
             }
         }
     }
+
     return skip;
 }
 

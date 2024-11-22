@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Nintendo
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2023-2024 Nintendo
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,6 +143,8 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
                              "is %s, but stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
                              string_VkShaderStageFlagBits(createInfo.stage));
         }
+
+        skip |= ValidatePushConstantRange(createInfo.pushConstantRangeCount, createInfo.pPushConstantRanges, create_info_loc);
     }
 
     return skip;
