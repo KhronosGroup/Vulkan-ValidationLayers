@@ -1500,9 +1500,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     if (tessev_shader_bound) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
             cb_state.dynamic_state_value.primitive_topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-            // VUID - https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6981
             skip |= LogError(
-                "UNASSIGNED-vkCmdDraw-None-topology", cb_state.Handle(), loc,
+                vuid.primitive_topology_patch_list_10286, cb_state.Handle(), loc,
                 "Tessellation shaders were bound, but the last call to vkCmdSetPrimitiveTopology set primitiveTopology to %s.",
                 string_VkPrimitiveTopology(cb_state.dynamic_state_value.primitive_topology));
         }

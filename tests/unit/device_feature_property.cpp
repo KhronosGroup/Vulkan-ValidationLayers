@@ -546,3 +546,55 @@ TEST_F(NegativeDeviceFeatureProperty, PrimitiveFragmentShadingRateMeshShader) {
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceFeatureProperty, RobustBufferAccessUpdateAfterBind) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDeviceFeatureProperty());
+
+    VkPhysicalDeviceDescriptorIndexingProperties di_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(di_props);
+    if (di_props.robustBufferAccessUpdateAfterBind) {
+        GTEST_SKIP() << "robustBufferAccessUpdateAfterBind is VK_TRUE";
+    }
+
+    VkPhysicalDeviceDescriptorIndexingFeatures di_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(di_features);
+    if (!di_features.descriptorBindingUniformBufferUpdateAfterBind) {
+        GTEST_SKIP() << "Features not supported";
+    }
+
+    auto features = vkt::PhysicalDevice(Gpu()).Features();
+    if (!features.robustBufferAccess) {
+        GTEST_SKIP() << "robustBufferAccess not supported";
+    }
+
+    m_second_device_ci.pEnabledFeatures = &features;
+    m_second_device_ci.pNext = &di_features;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-robustBufferAccess-10247");
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceFeatureProperty, RobustBufferAccessUpdateAfterBind12) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitDeviceFeatureProperty());
+
+    VkPhysicalDeviceVulkan12Properties props_12 = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props_12);
+    if (props_12.robustBufferAccessUpdateAfterBind) {
+        GTEST_SKIP() << "robustBufferAccessUpdateAfterBind is VK_TRUE";
+    }
+
+    VkPhysicalDeviceVulkan12Features features_12 = vku::InitStructHelper();
+    auto features = GetPhysicalDeviceFeatures2(features_12);
+    if (!features_12.descriptorBindingUniformBufferUpdateAfterBind) {
+        GTEST_SKIP() << "Features not supported";
+    }
+    features.features.robustBufferAccess = VK_TRUE;
+    m_second_device_ci.pNext = &features;
+    m_second_device_ci.pEnabledFeatures = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-robustBufferAccess-10247");
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
+}

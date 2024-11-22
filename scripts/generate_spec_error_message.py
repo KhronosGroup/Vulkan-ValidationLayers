@@ -67,6 +67,7 @@ class ValidationJSON:
             '\u230b' : ')', # RIGHT FLOOR (⌋)
             '\u00d7' : 'x', # MULTIPLICATION SIGN (×)
             '\u2264' : '<=', # LESS-THAN OR EQUAL TO (≤)
+            '\u2208' : 'E', # ELEMENT OF (∈)
         }
 
     def sanitize(self, text, location):

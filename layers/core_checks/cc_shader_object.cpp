@@ -396,9 +396,9 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
                          string_SpvExecutionMode(tesc_linked_spacing), string_SpvExecutionMode(tese_linked_spacing));
     }
 
-    skip |= ValidateDeviceQueueSupport(error_obj.location);  // check if compute or graphics
     const VkQueueFlags queue_flag = has_compute ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT;
     if ((physical_device_state->supported_queues & queue_flag) == 0) {
+        // Used instead of calling ValidateDeviceQueueSupport()
         const char* vuid = has_compute ? "VUID-vkCreateShadersEXT-stage-09670" : "VUID-vkCreateShadersEXT-stage-09671";
         skip |=
             LogError(vuid, device, error_obj.location, "device only supports (%s) but require %s.",

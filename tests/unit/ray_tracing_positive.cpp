@@ -1276,10 +1276,11 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     AddRequiredFeature(vkt::Feature::micromap);
+    AddRequiredFeature(vkt::Feature::micromapHostCommands);
 
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
-    
+
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -1410,7 +1411,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     vkt::Buffer vertexBuffer(*m_device, sizeof(vertexData) + sizeof(indexData),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
 
-    VkDeviceAddress vertexAddress = vertexBuffer.Address(); 
+    VkDeviceAddress vertexAddress = vertexBuffer.Address();
 
     // Upload data to the vertex buffer.
     {
@@ -1487,7 +1488,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     vkt::Buffer instanceBuffer(*m_device, 2 * sizeof(VkAccelerationStructureInstanceKHR),
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
 
-    VkDeviceAddress instanceAddress = instanceBuffer.Address(); 
+    VkDeviceAddress instanceAddress = instanceBuffer.Address();
 
     {
         VkAccelerationStructureInstanceKHR* instance = (VkAccelerationStructureInstanceKHR*)instanceBuffer.Memory().Map();
@@ -1554,7 +1555,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     asCreateInfo.createFlags = 0;
     asCreateInfo.buffer = topASBuffer;
     asCreateInfo.offset = 0;
-    asCreateInfo.size = topASBuildSizesInfo.accelerationStructureSize; 
+    asCreateInfo.size = topASBuildSizesInfo.accelerationStructureSize;
     asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     asCreateInfo.deviceAddress = 0;
 

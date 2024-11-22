@@ -43,6 +43,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDraw-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDraw-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDraw-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDraw-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDraw-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDraw-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDraw-None-07888";
@@ -310,6 +311,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawMultiEXT-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawMultiEXT-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawMultiEXT-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawMultiEXT-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawMultiEXT-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawMultiEXT-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMultiEXT-None-07888";
@@ -578,6 +580,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawIndexed-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndexed-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndexed-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndexed-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndexed-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndexed-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexed-None-07888";
@@ -846,6 +849,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawMultiIndexedEXT-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawMultiIndexedEXT-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawMultiIndexedEXT-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawMultiIndexedEXT-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawMultiIndexedEXT-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMultiIndexedEXT-None-07888";
@@ -1116,6 +1120,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawIndirect-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndirect-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndirect-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndirect-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndirect-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndirect-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirect-None-07888";
@@ -1383,6 +1388,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawIndexedIndirect-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndexedIndirect-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndexedIndirect-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndexedIndirect-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndexedIndirect-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexedIndirect-None-07888";
@@ -1749,6 +1755,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawIndirectCount-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndirectCount-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndirectCount-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndirectCount-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndirectCount-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndirectCount-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirectCount-None-07888";
@@ -2019,6 +2026,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawIndexedIndirectCount-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndexedIndirectCount-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndexedIndirectCount-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndexedIndirectCount-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexedIndirectCount-None-07888";
@@ -3999,6 +4007,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         scissor_count_03418                      = "VUID-vkCmdDrawIndirectByteCountEXT-scissorCount-03418";
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndirectByteCountEXT-dynamicPrimitiveTopologyUnrestricted-07500";
+        primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-10286";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndirectByteCountEXT-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-07888";

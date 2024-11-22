@@ -509,10 +509,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                          "pCreateInfo->pEnabledFeatures is non-NULL.");
     }
 
-    {
-        const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
-        const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
-        if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
+    const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
+
+    if (const auto *robustness2_features =
+            vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext)) {
+        if (features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
             skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000", physicalDevice,
                              error_obj.location, "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
         }
@@ -529,6 +530,15 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 "rayTracingPipelineShaderGroupHandleCaptureReplay "
                 "must also be VK_TRUE.");
         }
+    }
+
+    // might be set in Feature12 struct
+    bool any_update_after_bind_feature = false;
+    if (const auto *di_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingFeatures>(pCreateInfo->pNext)) {
+        any_update_after_bind_feature = di_features->descriptorBindingUniformBufferUpdateAfterBind ||
+                                        di_features->descriptorBindingStorageBufferUpdateAfterBind ||
+                                        di_features->descriptorBindingUniformTexelBufferUpdateAfterBind ||
+                                        di_features->descriptorBindingStorageTexelBufferUpdateAfterBind;
     }
 
     const auto *vulkan_11_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
@@ -626,6 +636,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                  "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");
             }
         }
+
+        any_update_after_bind_feature = vulkan_12_features->descriptorBindingUniformBufferUpdateAfterBind ||
+                                        vulkan_12_features->descriptorBindingStorageBufferUpdateAfterBind ||
+                                        vulkan_12_features->descriptorBindingUniformTexelBufferUpdateAfterBind ||
+                                        vulkan_12_features->descriptorBindingStorageTexelBufferUpdateAfterBind;
     }
 
     const auto *vulkan_13_features = vku::FindStructInPNextChain<VkPhysicalDeviceVulkan13Features>(pCreateInfo->pNext);
@@ -760,6 +775,17 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
+    if (features && features->robustBufferAccess && any_update_after_bind_feature) {
+        VkPhysicalDeviceDescriptorIndexingProperties di_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&di_props);
+        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &props2);
+        if (!di_props.robustBufferAccessUpdateAfterBind) {
+            skip |= LogError("VUID-VkDeviceCreateInfo-robustBufferAccess-10247", physicalDevice, error_obj.location,
+                             "robustBufferAccessUpdateAfterBind is false, but both robustBufferAccess and a "
+                             "descriptorBinding*UpdateAfterBind feature are enabled.");
+        }
+    }
+
     if (const auto *fragment_shading_rate_features =
             vku::FindStructInPNextChain<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>(pCreateInfo->pNext)) {
         const VkPhysicalDeviceShadingRateImageFeaturesNV *shading_rate_image_features =
@@ -864,7 +890,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                              "If disableInternalCache is VK_TRUE then pipelineBinaryInternalCacheControl must also be VK_TRUE");
         }
     }
-
     return skip;
 }
 

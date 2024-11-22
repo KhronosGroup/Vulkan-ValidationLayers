@@ -1874,13 +1874,11 @@ bool StatelessValidation::manual_PreCallValidateDestroyMicromapEXT(
     const VkAllocationCallbacks*                pAllocator, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    // XXX Spec doesn't actually require the feature right now (oversight)
-
-    //if (!enabled_features.micromap) {
-    //    skip |= LogError("VUID-vkCreateMicromapEXT-micromap-NNNN", device,
-    //        error_obj.location, "micromap feature was not enabled.");
-    //}
-
+    if (!enabled_features.micromapHostCommands) {
+        // Adding in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7023
+        skip |= LogError("UNASSIGNED-vkDestroyMicromapEXT-micromapHostCommands-feature", device, error_obj.location,
+                         "micromapHostCommands feature was not enabled.");
+    }
 
     return skip;
 }
@@ -1945,8 +1943,8 @@ bool StatelessValidation::manual_PreCallValidateCopyMicromapEXT(
     bool skip = false;
 
     if (!enabled_features.micromapHostCommands) {
-        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07560", device,
-            error_obj.location, "micromapHostCommands feature was not enabled.");
+        skip |= LogError("VUID-vkCopyMicromapEXT-micromapHostCommands-07560", device, error_obj.location,
+                         "micromapHostCommands feature was not enabled.");
     }
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
@@ -1966,8 +1964,8 @@ bool StatelessValidation::manual_PreCallValidateCopyMicromapToMemoryEXT(
     bool skip = false;
 
     if (!enabled_features.micromapHostCommands) {
-        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07571", device,
-            error_obj.location, "micromapHostCommands feature was not enabled.");
+        skip |= LogError("VUID-vkCopyMicromapToMemoryEXT-micromapHostCommands-07571", device, error_obj.location,
+                         "micromapHostCommands feature was not enabled.");
     }
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
@@ -1986,14 +1984,14 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToMicromapEXT(
     bool skip = false;
 
     if (!enabled_features.micromapHostCommands) {
-        skip |= LogError("VUID-vkBuildMicromapsEXT-micromapHostCommands-07560", device,
-            error_obj.location, "micromapHostCommands feature was not enabled.");
+        skip |= LogError("VUID-vkCopyMemoryToMicromapEXT-micromapHostCommands-07566", device, error_obj.location,
+                         "micromapHostCommands feature was not enabled.");
     }
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     if (pInfo->mode != VK_COPY_MICROMAP_MODE_DESERIALIZE_EXT) {
-        skip |= LogError("UID-VkCopyMemoryToMicromapInfoEXT-mode-07548", device, info_loc.dot(Field::mode), "is %s.",
-            string_VkCopyMicromapModeEXT(pInfo->mode));
+        skip |= LogError("VUID-VkCopyMemoryToMicromapInfoEXT-mode-07548", device, info_loc.dot(Field::mode), "is %s.",
+                         string_VkCopyMicromapModeEXT(pInfo->mode));
     }
 
     return skip;
@@ -2104,11 +2102,11 @@ bool StatelessValidation::manual_PreCallValidateGetMicromapBuildSizesEXT(
         skip |= LogError("VUID-vkGetMicromapBuildSizesEXT-micromap-07439", device,
             error_obj.location, "micromap feature was not enabled.");
     }
-    
+
     if (pBuildInfo->pUsageCounts && pBuildInfo->ppUsageCounts) {
         skip |= LogError("VUID-VkMicromapBuildInfoEXT-pUsageCounts-07516", device, error_obj.location,
             "both pUsageCounts and ppUsageCounts are not NULL.");
     }
-    
+
     return skip;
 }
