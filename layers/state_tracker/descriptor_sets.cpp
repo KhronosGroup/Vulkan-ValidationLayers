@@ -1151,7 +1151,7 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
 
 void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                     const Descriptor &src, bool is_bindless, VkDescriptorType src_type) {
-    VkDeviceSize src_size = 0;
+    VkDeviceSize buffer_size = 0;
     switch (src.GetClass()) {
         case DescriptorClass::PlainSampler: {
             auto &sampler_src = static_cast<const SamplerDescriptor &>(src);
@@ -1180,7 +1180,7 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
         case DescriptorClass::TexelBuffer: {
             ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const TexelDescriptor &>(src).GetSharedBufferViewState(),
                             is_bindless);
-            src_size = buffer_view_state_ ? buffer_view_state_->Size() : vvl::kU32Max;
+            buffer_size = buffer_view_state_ ? buffer_view_state_->Size() : vvl::kU32Max;
             break;
         }
         case DescriptorClass::GeneralBuffer: {
@@ -1188,7 +1188,7 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
             offset_ = buff_desc.GetOffset();
             range_ = buff_desc.GetRange();
             ReplaceStatePtr(set_state, buffer_state_, buff_desc.GetSharedBufferState(), is_bindless);
-            src_size = range_;
+            buffer_size = range_;
             break;
         }
         case DescriptorClass::AccelerationStructure: {
@@ -1250,44 +1250,19 @@ void vvl::MutableDescriptor::CopyUpdate(DescriptorSet &set_state, const Validati
                 case DescriptorClass::Invalid:
                     break;
             }
-            src_size = mutable_src.GetBufferSize();
+            buffer_size = mutable_src.GetBufferSize();
             break;
         }
         case vvl::DescriptorClass::InlineUniform:
         case vvl::DescriptorClass::Invalid:
             break;
     }
-    SetDescriptorType(src_type, src_size);
+    SetDescriptorType(src_type, buffer_size);
 }
 
 void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size) {
     active_descriptor_type_ = type;
     buffer_size_ = buffer_size;
-}
-void vvl::MutableDescriptor::SetDescriptorType(VkDescriptorType src_type, const Descriptor *src) {
-    active_descriptor_type_ = src_type;
-    if (src->GetClass() == vvl::DescriptorClass::GeneralBuffer) {
-        auto buffer = static_cast<const vvl::BufferDescriptor *>(src)->GetBuffer();
-        if (buffer == VK_NULL_HANDLE) {
-            buffer_size_ = vvl::kU32Max;
-        } else {
-            auto buffer_state = static_cast<const vvl::BufferDescriptor *>(src)->GetBufferState();
-            buffer_size_ = static_cast<uint32_t>(buffer_state->create_info.size);
-        }
-    } else if (src->GetClass() == vvl::DescriptorClass::TexelBuffer) {
-        auto buffer_view = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferView();
-        if (buffer_view == VK_NULL_HANDLE) {
-            buffer_size_ = vvl::kU32Max;
-        } else {
-            auto buffer_view_state = static_cast<const vvl::TexelDescriptor *>(src)->GetBufferViewState();
-            buffer_size_ = static_cast<uint32_t>(buffer_view_state->buffer_state->create_info.size);
-        }
-    } else if (src->GetClass() == vvl::DescriptorClass::Mutable) {
-        auto descriptor = static_cast<const vvl::MutableDescriptor *>(src);
-        buffer_size_ = descriptor->GetBufferSize();
-    } else {
-        buffer_size_ = 0;
-    }
 }
 
 VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
@@ -1302,7 +1277,7 @@ VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
 }
 
 void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer &cb_state) {
-    auto active_class = DescriptorTypeToClass(active_descriptor_type_);
+    const vvl::DescriptorClass active_class = ActiveClass();
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {
             cb_state.SetImageViewInitialLayout(*image_view_state_, image_layout_);
@@ -1312,7 +1287,7 @@ void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, v
 
 bool vvl::MutableDescriptor::AddParent(StateObject *state_object) {
     bool result = false;
-    auto active_class = DescriptorTypeToClass(active_descriptor_type_);
+    const vvl::DescriptorClass active_class = ActiveClass();
     switch (active_class) {
         case DescriptorClass::PlainSampler:
             if (sampler_state_) {
