@@ -687,8 +687,8 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
 //   to be used in a draw by the given cb_state
-void vvl::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, vvl::CommandBuffer *cb_state, vvl::Func command,
-                                         const vvl::Pipeline *pipe, const BindingVariableMap &binding_req_map) {
+void vvl::DescriptorSet::UpdateDrawStates(ValidationStateTracker *device_data, vvl::CommandBuffer *cb_state,
+                                          const BindingVariableMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
     if (device_data->disabled[image_layout_validation]) {
         return;
