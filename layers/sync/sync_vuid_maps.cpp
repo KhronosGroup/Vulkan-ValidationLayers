@@ -2,6 +2,7 @@
  * Copyright (c) 2021-2024 Valve Corporation
  * Copyright (c) 2021-2024 LunarG, Inc.
  * Copyright (C) 2021-2024 Google Inc.
+ * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1099,6 +1100,11 @@ const vvl::unordered_map<VkImageLayout, std::array<Entry, 2>> &GetImageLayoutErr
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
+         }}},
+        {VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,
+         ValueType{{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"},
          }}},
     };
     return kImageLayoutErrors;

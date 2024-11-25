@@ -1,5 +1,6 @@
 /* Copyright (c) 2022-2024 The Khronos Group Inc.
  * Copyright (c) 2022-2024 RasterGrid Kft.
+ * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +31,7 @@ VideoProfileDesc::VideoProfileDesc(VkPhysicalDevice physical_device, VkVideoProf
       cache_(nullptr) {
     if (InitProfile(profile)) {
         InitCapabilities(physical_device);
+        InitQuantizationMapFormats(physical_device);
     }
 }
 
@@ -120,6 +122,20 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
                 profile_.base.pNext = &profile_.encode_h265;
                 break;
             }
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+                auto encode_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1ProfileInfoKHR>(profile->pNext);
+                if (encode_av1) {
+                    profile_.valid = true;
+                    profile_.encode_av1 = *encode_av1;
+                    profile_.encode_av1.pNext = nullptr;
+                } else {
+                    profile_.valid = false;
+                    profile_.encode_av1 = vku::InitStructHelper();
+                }
+                profile_.is_encode = true;
+                profile_.base.pNext = &profile_.encode_av1;
+                break;
+            }
             default:
                 profile_.valid = false;
                 break;
@@ -182,6 +198,8 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
             capabilities_.encode = vku::InitStructHelper();
             capabilities_.encode.pNext = &capabilities_.encode_h264;
             capabilities_.encode_h264 = vku::InitStructHelper();
+            capabilities_.encode_h264.pNext = &capabilities_.encode_ext.quantization_map;
+            capabilities_.encode_ext.quantization_map = vku::InitStructHelper();
             break;
 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
@@ -189,6 +207,17 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
             capabilities_.encode = vku::InitStructHelper();
             capabilities_.encode.pNext = &capabilities_.encode_h265;
             capabilities_.encode_h265 = vku::InitStructHelper();
+            capabilities_.encode_h265.pNext = &capabilities_.encode_ext.quantization_map;
+            capabilities_.encode_ext.quantization_map = vku::InitStructHelper();
+            break;
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+            capabilities_.base.pNext = &capabilities_.encode;
+            capabilities_.encode = vku::InitStructHelper();
+            capabilities_.encode.pNext = &capabilities_.encode_av1;
+            capabilities_.encode_av1 = vku::InitStructHelper();
+            capabilities_.encode_av1.pNext = &capabilities_.encode_ext.quantization_map;
+            capabilities_.encode_ext.quantization_map = vku::InitStructHelper();
             break;
 
         default:
@@ -198,6 +227,57 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
     VkResult result = DispatchGetPhysicalDeviceVideoCapabilitiesKHR(physical_device, &profile_.base, &capabilities_.base);
     if (result == VK_SUCCESS) {
         capabilities_.supported = true;
+    }
+}
+
+void VideoProfileDesc::InitQuantizationMapFormats(VkPhysicalDevice physical_device) {
+    VkVideoProfileListInfoKHR list = vku::InitStructHelper();
+    list.pProfiles = &profile_.base;
+    list.profileCount = 1;
+
+    struct QuantMapTypeInfo {
+        VkImageUsageFlagBits usage;
+        VkVideoEncodeCapabilityFlagBitsKHR cap;
+        SupportedQuantizationMapTexelSizes *supported_texel_sizes;
+    };
+
+    const std::vector<QuantMapTypeInfo> map_types{
+        {VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR, VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR,
+         &quant_delta_map_texel_sizes_},
+        {VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR, VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR,
+         &emphasis_map_texel_sizes_},
+    };
+
+    for (const auto &map_type : map_types) {
+        if ((capabilities_.encode.flags & map_type.cap) == 0) continue;
+
+        VkPhysicalDeviceVideoFormatInfoKHR info = vku::InitStructHelper();
+        info.imageUsage = map_type.usage;
+        info.pNext = &list;
+
+        uint32_t count;
+        VkResult result = DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(physical_device, &info, &count, nullptr);
+        if (result != VK_SUCCESS) {
+            continue;
+        }
+
+        std::vector<VkVideoFormatPropertiesKHR> formats(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
+        std::vector<VkVideoFormatQuantizationMapPropertiesKHR> map_props(
+            count, vku::InitStruct<VkVideoFormatQuantizationMapPropertiesKHR>());
+
+        for (uint32_t i = 0; i < count; i++) {
+            formats[i].pNext = &map_props[i];
+        }
+
+        result = DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(physical_device, &info, &count, formats.data());
+        if (result != VK_SUCCESS) {
+            formats.resize(0);
+            continue;
+        }
+
+        for (const auto &props : map_props) {
+            map_type.supported_texel_sizes->insert(props.quantizationMapTexelSize);
+        }
     }
 }
 
@@ -318,6 +398,7 @@ VideoPictureID::VideoPictureID(VideoProfileDesc const &profile, VkVideoReference
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
             break;
 
         default:
@@ -519,6 +600,17 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
                 break;
             }
 
+            case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+                auto rc_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1RateControlInfoKHR>(begin_info.pNext);
+                const auto &ref_av1 = encode_.rate_control_state.av1;
+                CHECK_RC_INFO(av1, VkVideoEncodeAV1RateControlInfoKHR, flags, string_VkVideoEncodeAV1RateControlFlagsKHR);
+                CHECK_RC_INFO(av1, VkVideoEncodeAV1RateControlInfoKHR, gopFrameCount, uint32_t);
+                CHECK_RC_INFO(av1, VkVideoEncodeAV1RateControlInfoKHR, keyFramePeriod, uint32_t);
+                CHECK_RC_INFO(av1, VkVideoEncodeAV1RateControlInfoKHR, consecutiveBipredictiveFrameCount, uint32_t);
+                CHECK_RC_INFO(av1, VkVideoEncodeAV1RateControlInfoKHR, temporalLayerCount, uint32_t);
+                break;
+            }
+
             default:
                 assert(false);
                 break;
@@ -569,6 +661,24 @@ bool VideoSessionDeviceState::ValidateRateControlState(const ValidationStateTrac
                     CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameISize, uint32_t);
                     CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.framePSize, uint32_t);
                     CHECK_RC_LAYER_INFO(h265, VkVideoEncodeH265RateControlLayerInfoKHR, maxFrameSize.frameBSize, uint32_t);
+                    break;
+                }
+
+                case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+                    auto rc_layer_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1RateControlLayerInfoKHR>(rc_layer_base->pNext);
+                    const auto &ref_layer_av1 = encode_.rate_control_state.layers[layer_idx].av1;
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, useMinQIndex, string_bool);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, minQIndex.intraQIndex, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, minQIndex.predictiveQIndex, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, minQIndex.bipredictiveQIndex, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, useMaxQIndex, string_bool);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, maxQIndex.intraQIndex, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, maxQIndex.predictiveQIndex, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, maxQIndex.bipredictiveQIndex, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, useMaxFrameSize, string_bool);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, maxFrameSize.intraFrameSize, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, maxFrameSize.predictiveFrameSize, uint32_t);
+                    CHECK_RC_LAYER_INFO(av1, VkVideoEncodeAV1RateControlLayerInfoKHR, maxFrameSize.bipredictiveFrameSize, uint32_t);
                     break;
                 }
 
@@ -663,6 +773,12 @@ bool VideoSession::ReferenceSetupRequested(VkVideoEncodeInfoKHR const &encode_in
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
             auto pic_info = vku::FindStructInPNextChain<VkVideoEncodeH265PictureInfoKHR>(encode_info.pNext);
             return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr && pic_info->pStdPictureInfo->flags.is_reference;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+            auto pic_info = vku::FindStructInPNextChain<VkVideoEncodeAV1PictureInfoKHR>(encode_info.pNext);
+            return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr &&
+                   pic_info->pStdPictureInfo->refresh_frame_flags != 0;
         }
 
         default:
@@ -760,6 +876,14 @@ VideoSessionParameters::VideoSessionParameters(VkVideoSessionParametersKHR handl
             break;
         }
 
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+            const auto encode_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1SessionParametersCreateInfoKHR>(create_info.pNext);
+            if (encode_av1->pStdSequenceHeader) {
+                data_.av1.seq_header = std::make_unique<StdVideoAV1SequenceHeader>(*encode_av1->pStdSequenceHeader);
+            }
+            break;
+        }
+
         default:
             break;
     }
@@ -772,6 +896,12 @@ VideoSessionParameters::Config VideoSessionParameters::InitConfig(VkVideoSession
         auto quality_level_info = vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(pCreateInfo->pNext);
         if (quality_level_info != nullptr) {
             config.encode.quality_level = quality_level_info->qualityLevel;
+        }
+
+        auto quantization_map_info =
+            vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapSessionParametersCreateInfoKHR>(pCreateInfo->pNext);
+        if (quantization_map_info != nullptr) {
+            config.encode.quantization_map_texel_size = quantization_map_info->quantizationMapTexelSize;
         }
     }
 
@@ -819,6 +949,12 @@ void VideoSessionParameters::Update(VkVideoSessionParametersUpdateInfoKHR const 
             if (add_info) {
                 AddEncodeH265(add_info);
             }
+            break;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+            // AV1 encode session parameters cannot be updated
+            assert(false);
             break;
         }
 

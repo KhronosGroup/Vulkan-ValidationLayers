@@ -2,8 +2,8 @@
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
- * Modifications Copyright (C) 2022 RasterGrid Kft.
+ * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -726,6 +726,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     const bool has_encode_usage =
         pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
                               VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
+    const bool has_quantization_map_usage = pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR |
+                                                                  VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR);
     const bool video_profile_independent = pCreateInfo->flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
 
     if (video_profile_independent && !enabled_features.videoMaintenance1) {
@@ -750,31 +752,136 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          string_VkImageUsageFlags(pCreateInfo->usage).c_str());
     }
 
-    if (has_decode_usage || has_encode_usage) {
+    // There are stronger VUs for the format properties of quantization maps (i.e. no INDEPENDENT, must be 2D, etc.).
+    // If any of these are triggered, then the video profile compatibility check can be skipped.
+    bool valid_quantization_map_format = has_quantization_map_usage;
+    if (has_quantization_map_usage) {
+        if (!enabled_features.videoEncodeQuantizationMap) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10251", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the "
+                             "videoEncodeQuantizationMap device feature is not enabled.");
+            valid_quantization_map_format = false;
+        }
+
+        if (video_profile_independent) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
+                             "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR.",
+                             string_VkImageUsageFlags(pCreateInfo->usage).c_str());
+            valid_quantization_map_format = false;
+        }
+
+        if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10252", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but imageType (%s) "
+                             "is not VK_IMAGE_TYPE_2D.",
+                             string_VkImageType(pCreateInfo->imageType));
+            valid_quantization_map_format = false;
+        }
+
+        if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10253", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but samples (%s) "
+                             "is not VK_SAMPLE_COUNT_1_BIT_KHR.",
+                             string_VkSampleCountFlagBits(pCreateInfo->samples));
+            valid_quantization_map_format = false;
+        }
+
+        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
+        if (video_profiles == nullptr) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the pNext chain does not "
+                             "contain a VkVideoProfileListInfoKHR structure.");
+            valid_quantization_map_format = false;
+        } else if (video_profiles->profileCount != 1) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s (%u) does not equal 1.",
+                             create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::profileCount).Fields().c_str(),
+                             video_profiles->profileCount);
+            valid_quantization_map_format = false;
+        } else {
+            const Location profile_info_loc = create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::pProfiles, 0);
+            skip |= ValidateVideoProfileInfo(&video_profiles->pProfiles[0], device, create_info_loc.dot(Field::pProfiles, 0));
+
+            vvl::VideoProfileDesc profile_desc(physical_device, &video_profiles->pProfiles[0]);
+            const auto &profile_caps = profile_desc.GetCapabilities();
+
+            if (profile_desc.IsEncode()) {
+                if (pCreateInfo->usage == VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR &&
+                    (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR) == 0) {
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10255", device, create_info_loc.dot(Field::usage),
+                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR set but "
+                                     "the encode profile specified in %s does not support "
+                                     "VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR.",
+                                     profile_info_loc.Fields().c_str());
+                    valid_quantization_map_format = false;
+                }
+
+                if (pCreateInfo->usage == VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR &&
+                    (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR) == 0) {
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10256", device, create_info_loc.dot(Field::usage),
+                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but "
+                                     "the encode profile specified in %s does not support "
+                                     "VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR.",
+                                     profile_info_loc.Fields().c_str());
+                    valid_quantization_map_format = false;
+                }
+
+                if (valid_quantization_map_format &&
+                    pCreateInfo->extent.width > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width) {
+                    skip |=
+                        LogError("VUID-VkImageCreateInfo-usage-10257", device, create_info_loc.dot(Field::usage),
+                                 "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.width (%u) "
+                                 "larger than the maxQuantizationMapExtent.width (%u) supported by the "
+                                 "encode profile specified in %s.",
+                                 pCreateInfo->extent.width, profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width,
+                                 profile_info_loc.Fields().c_str());
+                }
+
+                if (valid_quantization_map_format &&
+                    pCreateInfo->extent.height > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height) {
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10258", device, create_info_loc.dot(Field::usage),
+                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                                     "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.height (%u) "
+                                     "larger than the maxQuantizationMapExtent.height (%u) supported by the "
+                                     "encode profile specified in %s.",
+                                     pCreateInfo->extent.height,
+                                     profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height,
+                                     profile_info_loc.Fields().c_str());
+                }
+            } else {
+                skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                                 "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s does not specify a "
+                                 "video encode operation (videoCodecOperation is %s).",
+                                 profile_info_loc.Fields().c_str(),
+                                 string_VkVideoCodecOperationFlagBitsKHR(video_profiles->pProfiles[0].videoCodecOperation));
+                valid_quantization_map_format = false;
+            }
+        }
+    }
+
+    if (has_decode_usage || has_encode_usage || valid_quantization_map_format) {
         const bool expect_decode_profile = has_decode_usage && !video_profile_independent;
         const bool expect_encode_profile = has_encode_usage && !video_profile_independent;
 
         const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        skip |= ValidateVideoProfileListInfo(video_profiles, device, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR),
-                                             expect_decode_profile, "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile,
-                                             "VUID-VkImageCreateInfo-usage-04816");
+        // Quantization map video profile list info validation happens in the previous block
+        if (!has_quantization_map_usage) {
+            skip |= ValidateVideoProfileListInfo(video_profiles, device, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR),
+                                                 expect_decode_profile, "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile,
+                                                 "VUID-VkImageCreateInfo-usage-04816");
+        }
 
         if (video_profiles && video_profiles->profileCount > 0) {
-            auto format_props_list = GetVideoFormatProperties(pCreateInfo->usage, video_profiles);
-
-            bool supported_video_format = false;
-            for (auto &format_props : format_props_list) {
-                const bool compatible_usage = (pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) ||
-                                              ((pCreateInfo->usage & format_props.imageUsageFlags) == pCreateInfo->usage);
-                if (pCreateInfo->format == format_props.format &&
-                    (pCreateInfo->flags & format_props.imageCreateFlags) == pCreateInfo->flags &&
-                    pCreateInfo->imageType == format_props.imageType && pCreateInfo->tiling == format_props.imageTiling &&
-                    compatible_usage) {
-                    supported_video_format = true;
-                }
-            }
-
-            if (!supported_video_format) {
+            if (!IsSupportedVideoFormat(*pCreateInfo, video_profiles)) {
                 skip |= LogError("VUID-VkImageCreateInfo-pNext-06811", device, create_info_loc,
                                  "specifies flags (%s), format (%s), imageType (%s), and tiling (%s) which are not "
                                  "supported by any of the supported video format properties for the video profiles "
@@ -1745,6 +1852,20 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling),
                              string_VkFormatFeatureFlags2(tiling_features).c_str());
         }
+    } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) &&
+               !(tiling_features & VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR)) {
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-10259", image_state.Handle(), create_info_loc.dot(Field::usage),
+                         "%s and tiling %s doesn't support VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR.\n"
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
+    } else if ((image_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR) &&
+               !(tiling_features & VK_FORMAT_FEATURE_2_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR)) {
+        skip |= LogError("VUID-VkImageViewCreateInfo-usage-10260", image_state.Handle(), create_info_loc.dot(Field::usage),
+                         "%s and tiling %s doesn't support VK_FORMAT_FEATURE_2_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR.\n"
+                         "(supported features: %s)",
+                         string_VkFormat(view_format), string_VkImageTiling(image_tiling),
+                         string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
     if (image_state.create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
@@ -1829,14 +1950,15 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     const auto &image_state = *image_state_ptr;
 
-    const VkImageUsageFlags valid_usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                                VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
-                                                VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR |
-                                                VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT |
-                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
-                                                VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR |
-                                                VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM | VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM;
+    const VkImageUsageFlags valid_usage_flags =
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+        VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR |
+        VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR |
+        VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+        VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR | VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM |
+        VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM | VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR |
+        VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
     skip |= ValidateImageUsageFlags(VK_NULL_HANDLE, image_state, valid_usage_flags, false, "VUID-VkImageViewCreateInfo-image-04441",
                                     create_info_loc.dot(Field::image));
     // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
@@ -2346,6 +2468,14 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         if (image_usage & encode_usage) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-04818", pCreateInfo->image, create_info_loc.dot(Field::viewType),
                              "%s is incompatible with video encode usage.", string_VkImageViewType(pCreateInfo->viewType));
+        }
+
+        VkImageUsageFlags quantization_map_usage =
+            VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+        if (image_usage & quantization_map_usage) {
+            skip |= LogError("VUID-VkImageViewCreateInfo-usage-10261", pCreateInfo->image, create_info_loc.dot(Field::viewType),
+                             "%s is incompatible with video encode quantization map usage.",
+                             string_VkImageViewType(pCreateInfo->viewType));
         }
     }
 

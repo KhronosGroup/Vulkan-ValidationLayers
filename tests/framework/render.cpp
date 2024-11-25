@@ -354,6 +354,10 @@ void VkRenderFramework::AddRequiredFeature(vkt::Feature feature) {
     features_to_enable_.AddRequiredFeature(m_target_api_version, feature);
 }
 
+void VkRenderFramework::AddOptionalFeature(vkt::Feature feature) {
+    features_to_enable_.AddOptionalFeature(m_target_api_version, feature);
+}
+
 bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     if (CanEnableInstanceExtension(ext_name)) {
         return true;

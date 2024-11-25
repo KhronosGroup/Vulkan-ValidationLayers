@@ -23,6 +23,8 @@ class FeatureRequirements {
     ~FeatureRequirements();
     // Add a feature required for the test to be executed
     void AddRequiredFeature(APIVersion api_version, vkt::Feature feature);
+    // Add an optional feature that will be enabled when available for the test to be executed
+    void AddOptionalFeature(APIVersion api_version, vkt::Feature feature);
 
     bool HasFeatures2() const { return feature_chain_ != nullptr; }
     VkPhysicalDeviceFeatures* GetFeatures() { return &phys_dev_features_.features; };

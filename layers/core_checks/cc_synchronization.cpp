@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1610,6 +1610,10 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &layout_loc, V
             break;
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
             is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
+            is_error = ((usage_flags & (VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR |
+                                        VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR)) == 0);
             break;
         default:
             // Other VkImageLayout values do not have VUs defined in this context.

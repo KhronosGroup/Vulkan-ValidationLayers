@@ -2574,6 +2574,26 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
+    if (pEncodeInfo->flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
+        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo);
+        if (quantization_map_info) {
+            auto image_view_state = Get<ImageViewState>(quantization_map_info->quantizationMap);
+            if (image_view_state) {
+                VkOffset3D offset = {0, 0, 0};
+                VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
+                                     quantization_map_info->quantizationMapExtent.height, 1};
+                auto hazard = context->DetectHazard(*image_view_state, offset, extent, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ,
+                                                    SyncOrdering::kOrderingNone);
+                if (hazard.IsHazard()) {
+                    skip |= LogError(string_SyncHazardVUID(hazard.Hazard()), image_view_state->Handle(),
+                                     encode_info_loc.pNext(Struct::VkVideoEncodeQuantizationMapInfoKHR, Field::quantizationMap),
+                                     "Hazard %s for quantization map. Access info %s.", string_SyncHazard(hazard.Hazard()),
+                                     cb_access_context->FormatHazard(hazard).c_str());
+                }
+            }
+        }
+    }
+
     return skip;
 }
 
@@ -2616,6 +2636,20 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
             auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
+            }
+        }
+    }
+
+    if (pEncodeInfo->flags & (VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR)) {
+        auto quantization_map_info = vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapInfoKHR>(pEncodeInfo);
+        if (quantization_map_info) {
+            auto image_view_state = Get<ImageViewState>(quantization_map_info->quantizationMap);
+            if (image_view_state) {
+                VkOffset3D offset = {0, 0, 0};
+                VkExtent3D extent = {quantization_map_info->quantizationMapExtent.width,
+                                     quantization_map_info->quantizationMapExtent.height, 1};
+                context->UpdateAccessState(*image_view_state, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, SyncOrdering::kOrderingNone,
+                                           offset, extent, ResourceUsageTagEx{tag});
             }
         }
     }
