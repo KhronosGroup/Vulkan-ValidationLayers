@@ -22,6 +22,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 #include "containers/custom_containers.h"
