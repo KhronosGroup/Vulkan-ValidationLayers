@@ -815,8 +815,8 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t set_index, const BindingVariableMap &bindings,
-                                   const std::vector<uint32_t> &dynamic_offsets, const vvl::CommandBuffer &cb_state,
-                                   const Location &loc, const vvl::DrawDispatchVuid &vuids) const {
+                                   const vvl::CommandBuffer &cb_state, const Location &loc,
+                                   const vvl::DrawDispatchVuid &vuids) const {
     bool result = false;
     VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
     // NOTE: GPU-AV needs non-const state objects to do lazy updates of descriptor state of only the dynamically used
