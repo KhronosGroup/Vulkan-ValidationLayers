@@ -828,8 +828,7 @@ class DescriptorSet : public StateObject {
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state, vvl::Func command, const vvl::Pipeline *,
-                         const BindingVariableMap &);
+    void UpdateDrawStates(ValidationStateTracker *, vvl::CommandBuffer *cb_state, const BindingVariableMap &);
 
     // For a particular binding, get the global index
     const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
