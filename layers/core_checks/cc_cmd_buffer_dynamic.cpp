@@ -1139,10 +1139,11 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
                     }
                 }
             }
-            if (!location_provided) {
+            if (!location_provided && !enabled_features.vertexAttributeRobustness) {
                 skip |= LogError(vuid.vertex_input_format_07939, vert_spirv_state->handle(), vuid.loc(),
                                  "Vertex shader uses input at location %" PRIu32
-                                 ", but it was not provided with vkCmdSetVertexInputEXT().",
+                                 ", but it was not provided with vkCmdSetVertexInputEXT(). (This can be valid if "
+                                 "vertexAttributeRobustness feature is enabled)",
                                  variable_ptr->decorations.location);
             }
         }
