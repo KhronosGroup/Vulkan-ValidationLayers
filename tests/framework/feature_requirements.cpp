@@ -28,6 +28,13 @@ void FeatureRequirements::AddRequiredFeature(APIVersion api_version, vkt::Featur
     required_features_.emplace_back(f);
 }
 
+void FeatureRequirements::AddOptionalFeature(APIVersion api_version, vkt::Feature feature) {
+    // By setting the feature here it will be queried and passed pack to device creation
+    // with the resulting values, so this in effect allows enabling the feature when available
+    FeatureAndName f = SetFeature(api_version, feature, VK_TRUE);
+    *f.feature = VK_TRUE;
+}
+
 vkt::FeatureAndName FeatureRequirements::SetFeature(APIVersion api_version, vkt::Feature feature, VkBool32 value) {
     switch (feature) {
         case vkt::Feature::robustBufferAccess: {

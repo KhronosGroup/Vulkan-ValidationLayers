@@ -2,8 +2,8 @@
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
- * Modifications Copyright (C) 2022 RasterGrid Kft.
+ * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022-2024 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -345,11 +345,11 @@ class CoreChecks : public ValidationStateTracker {
                                                                      const VkVideoProfileListInfoKHR* profile_list) const;
     std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
                                                                      const VkVideoProfileInfoKHR* profile) const;
+    bool IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileListInfoKHR* profile_list) const;
+    bool IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileInfoKHR* profile) const;
     bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage, const VkVideoProfileInfoKHR* profile) const;
-    bool IsBufferCompatibleWithVideoProfile(const vvl::Buffer& buffer_state,
-                                            const std::shared_ptr<const vvl::VideoProfileDesc>& video_profile) const;
-    bool IsImageCompatibleWithVideoProfile(const vvl::Image& image_state,
-                                           const std::shared_ptr<const vvl::VideoProfileDesc>& video_profile) const;
+    bool IsBufferCompatibleWithVideoSession(const vvl::Buffer& buffer_state, const vvl::VideoSession& vs_state) const;
+    bool IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state) const;
     void EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer& cb_state, vvl::VideoSession& vs_state, const Location& loc,
                                               const char* vuid);
     void EnqueueVerifyVideoInlineQueryUnavailable(vvl::CommandBuffer& cb_state, const VkVideoInlineQueryInfoKHR& query_info,
@@ -364,6 +364,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVideoEncodeRateControlInfoH265(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,
                                                 VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
                                                 const Location& loc) const;
+    bool ValidateVideoEncodeRateControlInfoAV1(const VkVideoEncodeRateControlInfoKHR& rc_info, const void* pNext,
+                                               VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                               const Location& loc) const;
     bool ValidateVideoEncodeRateControlLayerInfo(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
                                                  const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
                                                  const Location& rc_info_loc) const;
@@ -374,12 +377,22 @@ class CoreChecks : public ValidationStateTracker {
                                               const char* min_qp_per_pic_type_vuid, const char* max_qp_per_pic_type_vuid,
                                               bool qp_per_picture_type, const char* min_max_qp_compare_vuid,
                                               const Location& loc) const;
+    bool ValidateVideoEncodeRateControlAV1QIndex(VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                 const VkVideoEncodeAV1RateControlLayerInfoKHR& rc_layer_info,
+                                                 const char* min_q_index_range_vuid, const char* max_q_index_range_vuid,
+                                                 uint32_t min_q_index, uint32_t max_q_index,
+                                                 const char* min_q_index_per_rc_group_vuid,
+                                                 const char* max_q_index_per_rc_group_vuid, bool q_index_per_rc_group,
+                                                 const char* min_max_q_index_compare_vuid, const Location& loc) const;
     bool ValidateVideoEncodeRateControlLayerInfoH264(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
                                                      const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
                                                      const Location& rc_layer_info_loc) const;
     bool ValidateVideoEncodeRateControlLayerInfoH265(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
                                                      const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
                                                      const Location& rc_layer_info_loc) const;
+    bool ValidateVideoEncodeRateControlLayerInfoAV1(uint32_t layer_index, const VkVideoEncodeRateControlInfoKHR& rc_info,
+                                                    const void* pNext, VkCommandBuffer cmdbuf, const vvl::VideoSession& vs_state,
+                                                    const Location& rc_layer_info_loc) const;
     bool ValidateVideoPictureResource(const vvl::VideoPictureResource& picture_resource, VkCommandBuffer cmdbuf,
                                       const vvl::VideoSession& vs_state, const Location& loc,
                                       const char* coded_offset_vuid = nullptr, const char* coded_extent_vuid = nullptr) const;
@@ -409,6 +422,9 @@ class CoreChecks : public ValidationStateTracker {
                                              const Location& loc,
                                              const VkVideoEncodeH265SessionParametersCreateInfoKHR* create_info = nullptr,
                                              const vvl::VideoSessionParameters* template_state = nullptr) const;
+    bool ValidateEncodeQuantizationMapParametersCreateInfo(
+        const vvl::VideoSession& vs_state, const VkVideoEncodeQuantizationMapSessionParametersCreateInfoKHR& quantization_map_info,
+        VkDevice device, const Location& loc, const vvl::VideoSessionParameters* template_state = nullptr) const;
     bool ValidateDecodeDistinctOutput(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
                                       const Location& loc) const;
     bool ValidateVideoDecodeInfoH264(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
@@ -425,6 +441,11 @@ class CoreChecks : public ValidationStateTracker {
                                         const char* where) const;
     bool ValidateVideoEncodeInfoH265(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
                                      const Location& loc) const;
+    bool ValidateVideoEncodeInfoAV1(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,
+                                    const Location& loc) const;
+    bool ValidateVideoEncodeQuantizationMapInfo(const vvl::CommandBuffer& cb_state, const VkExtent2D& coded_extent,
+                                                const VkVideoEncodeQuantizationMapInfoKHR& quantization_map_info,
+                                                const Location& loc) const;
     bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
                                              const Location& loc) const;
     bool ValidateActiveReferencePictureCount(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,

@@ -1,5 +1,6 @@
 /*
 ** Copyright (c) 2015-2018, 2023 The Khronos Group Inc.
+** Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -1073,8 +1074,17 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
     auto caps_decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265CapabilitiesKHR>(pCapabilities->pNext);
     auto caps_decode_av1 = vku::FindStructInPNextChain<VkVideoDecodeAV1CapabilitiesKHR>(pCapabilities->pNext);
     auto caps_encode = vku::FindStructInPNextChain<VkVideoEncodeCapabilitiesKHR>(pCapabilities->pNext);
+    auto caps_encode_quantization_map =
+        vku::FindStructInPNextChain<VkVideoEncodeQuantizationMapCapabilitiesKHR>(pCapabilities->pNext);
+    auto caps_encode_h264_quantization_map =
+        vku::FindStructInPNextChain<VkVideoEncodeH264QuantizationMapCapabilitiesKHR>(pCapabilities->pNext);
+    auto caps_encode_h265_quantization_map =
+        vku::FindStructInPNextChain<VkVideoEncodeH265QuantizationMapCapabilitiesKHR>(pCapabilities->pNext);
+    auto caps_encode_av1_quantization_map =
+        vku::FindStructInPNextChain<VkVideoEncodeAV1QuantizationMapCapabilitiesKHR>(pCapabilities->pNext);
     auto caps_encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264CapabilitiesKHR>(pCapabilities->pNext);
     auto caps_encode_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265CapabilitiesKHR>(pCapabilities->pNext);
+    auto caps_encode_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1CapabilitiesKHR>(pCapabilities->pNext);
 
     switch (pVideoProfile->videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
@@ -1226,7 +1236,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
 
             switch (pVideoProfile->chromaSubsampling) {
                 case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
-                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_PRECEDING_EXTERNALLY_ENCODED_BYTES_BIT_KHR;
+                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_PRECEDING_EXTERNALLY_ENCODED_BYTES_BIT_KHR |
+                                         VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR |
+                                         VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR;
                     caps_encode->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR |
                                                     VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR |
                                                     VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR;
@@ -1254,9 +1266,20 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
                     caps_encode_h264->maxQp = 51;
                     caps_encode_h264->prefersGopRemainingFrames = VK_FALSE;
                     caps_encode_h264->requiresGopRemainingFrames = VK_FALSE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 15) / 16,
+                                                                                  (caps->maxCodedExtent.height + 15) / 16};
+                    }
+
+                    if (caps_encode_h264_quantization_map) {
+                        caps_encode_h264_quantization_map->minQpDelta = -26;
+                        caps_encode_h264_quantization_map->maxQpDelta = +25;
+                    }
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
-                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_PRECEDING_EXTERNALLY_ENCODED_BYTES_BIT_KHR;
+                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_PRECEDING_EXTERNALLY_ENCODED_BYTES_BIT_KHR |
+                                         VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR;
                     caps_encode->rateControlModes =
                         VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR | VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR;
                     caps_encode->maxRateControlLayers = 1;
@@ -1279,6 +1302,16 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
                     caps_encode_h264->maxQp = 30;
                     caps_encode_h264->prefersGopRemainingFrames = VK_TRUE;
                     caps_encode_h264->requiresGopRemainingFrames = VK_FALSE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 15) / 16,
+                                                                                  (caps->maxCodedExtent.height + 15) / 16};
+                    }
+
+                    if (caps_encode_h264_quantization_map) {
+                        caps_encode_h264_quantization_map->minQpDelta = 0;
+                        caps_encode_h264_quantization_map->maxQpDelta = 0;
+                    }
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
                     caps_encode->flags = 0;
@@ -1303,6 +1336,15 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
                     caps_encode_h264->maxQp = 40;
                     caps_encode_h264->prefersGopRemainingFrames = VK_TRUE;
                     caps_encode_h264->requiresGopRemainingFrames = VK_TRUE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {0, 0};
+                    }
+
+                    if (caps_encode_h264_quantization_map) {
+                        caps_encode_h264_quantization_map->minQpDelta = 0;
+                        caps_encode_h264_quantization_map->maxQpDelta = 0;
+                    }
                     break;
                 default:
                     return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
@@ -1329,7 +1371,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
 
             switch (pVideoProfile->chromaSubsampling) {
                 case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
-                    caps_encode->flags = 0;
+                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR;
                     caps_encode->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR;
                     caps_encode->maxRateControlLayers = 1;
                     caps_encode->maxBitrate = 800000000;
@@ -1360,9 +1402,19 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
                     caps_encode_h265->maxQp = 32;
                     caps_encode_h265->prefersGopRemainingFrames = VK_FALSE;
                     caps_encode_h265->requiresGopRemainingFrames = VK_FALSE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 3) / 4,
+                                                                                  (caps->maxCodedExtent.height + 3) / 4};
+                    }
+
+                    if (caps_encode_h265_quantization_map) {
+                        caps_encode_h265_quantization_map->minQpDelta = -16;
+                        caps_encode_h265_quantization_map->maxQpDelta = +15;
+                    }
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
-                    caps_encode->flags = 0;
+                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR;
                     caps_encode->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR;
                     caps_encode->maxRateControlLayers = 0;
                     caps_encode->maxBitrate = 480000000;
@@ -1388,6 +1440,16 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
                     caps_encode_h265->maxQp = 51;
                     caps_encode_h265->prefersGopRemainingFrames = VK_TRUE;
                     caps_encode_h265->requiresGopRemainingFrames = VK_FALSE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 31) / 32,
+                                                                                  (caps->maxCodedExtent.height + 31) / 32};
+                    }
+
+                    if (caps_encode_h265_quantization_map) {
+                        caps_encode_h265_quantization_map->minQpDelta = 0;
+                        caps_encode_h265_quantization_map->maxQpDelta = 0;
+                    }
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
                     caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_PRECEDING_EXTERNALLY_ENCODED_BYTES_BIT_KHR;
@@ -1418,13 +1480,181 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPh
                     caps_encode_h265->maxQp = 51;
                     caps_encode_h265->prefersGopRemainingFrames = VK_TRUE;
                     caps_encode_h265->requiresGopRemainingFrames = VK_TRUE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {0, 0};
+                    }
+
+                    if (caps_encode_h265_quantization_map) {
+                        caps_encode_h265_quantization_map->minQpDelta = 0;
+                        caps_encode_h265_quantization_map->maxQpDelta = 0;
+                    }
                     break;
                 default:
                     return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
             }
             break;
         }
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+            auto profile = vku::FindStructInPNextChain<VkVideoEncodeAV1ProfileInfoKHR>(pVideoProfile->pNext);
+            if (profile->stdProfile != STD_VIDEO_AV1_PROFILE_MAIN) {
+                return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+            }
 
+            caps->flags = VK_VIDEO_CAPABILITY_PROTECTED_CONTENT_BIT_KHR;
+            caps->minBitstreamBufferOffsetAlignment = 1;
+            caps->minBitstreamBufferSizeAlignment = 1;
+            caps->pictureAccessGranularity = {8, 8};
+            caps->minCodedExtent = {192, 128};
+            caps->maxCodedExtent = {4096, 2560};
+            caps->maxDpbSlots = 8;
+            caps->maxActiveReferencePictures = 2;
+            std::strncpy(caps->stdHeaderVersion.extensionName, VK_STD_VULKAN_VIDEO_CODEC_AV1_ENCODE_EXTENSION_NAME,
+                         sizeof(caps->stdHeaderVersion.extensionName));
+            caps->stdHeaderVersion.specVersion = VK_STD_VULKAN_VIDEO_CODEC_AV1_ENCODE_SPEC_VERSION;
+
+            switch (pVideoProfile->chromaSubsampling) {
+                case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
+                    caps_encode->flags =
+                        VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR;
+                    caps_encode->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR;
+                    caps_encode->maxRateControlLayers = 1;
+                    caps_encode->maxBitrate = 800000000;
+                    caps_encode->maxQualityLevels = 1;
+                    caps_encode->encodeInputPictureGranularity = {64, 64};
+                    caps_encode->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
+                                                                VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
+                    caps_encode_av1->flags = VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR;
+                    caps_encode_av1->maxLevel = STD_VIDEO_AV1_LEVEL_6_2;
+                    caps_encode_av1->maxTiles = {1, 1};
+                    caps_encode_av1->minTileSize = {64, 64};
+                    caps_encode_av1->maxTileSize = {4096, 2560};
+                    caps_encode_av1->superblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+                    caps_encode_av1->maxSingleReferenceCount = 1;
+                    caps_encode_av1->singleReferenceNameMask = 0x7B;
+                    caps_encode_av1->maxUnidirectionalCompoundReferenceCount = 0;
+                    caps_encode_av1->maxUnidirectionalCompoundGroup1ReferenceCount = 0;
+                    caps_encode_av1->unidirectionalCompoundReferenceNameMask = 0x00;
+                    caps_encode_av1->maxBidirectionalCompoundReferenceCount = 0;
+                    caps_encode_av1->maxBidirectionalCompoundGroup1ReferenceCount = 0;
+                    caps_encode_av1->maxBidirectionalCompoundGroup2ReferenceCount = 0;
+                    caps_encode_av1->bidirectionalCompoundReferenceNameMask = 0x00;
+                    caps_encode_av1->maxTemporalLayerCount = 1;
+                    caps_encode_av1->maxSpatialLayerCount = 1;
+                    caps_encode_av1->maxOperatingPoints = 1;
+                    caps_encode_av1->minQIndex = 32;
+                    caps_encode_av1->maxQIndex = 128;
+                    caps_encode_av1->prefersGopRemainingFrames = VK_FALSE;
+                    caps_encode_av1->requiresGopRemainingFrames = VK_FALSE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 7) / 8,
+                                                                                  (caps->maxCodedExtent.height + 7) / 8};
+                    }
+
+                    if (caps_encode_av1_quantization_map) {
+                        caps_encode_av1_quantization_map->minQIndexDelta = -64;
+                        caps_encode_av1_quantization_map->maxQIndexDelta = +64;
+                    }
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
+                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                    caps_encode->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR;
+                    caps_encode->maxRateControlLayers = 0;
+                    caps_encode->maxBitrate = 480000000;
+                    caps_encode->maxQualityLevels = 2;
+                    caps_encode->encodeInputPictureGranularity = {32, 32};
+                    caps_encode->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
+                                                                VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
+                    caps_encode_av1->flags = VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR |
+                                             VK_VIDEO_ENCODE_AV1_CAPABILITY_GENERATE_OBU_EXTENSION_HEADER_BIT_KHR |
+                                             VK_VIDEO_ENCODE_AV1_CAPABILITY_FRAME_SIZE_OVERRIDE_BIT_KHR;
+                    caps_encode_av1->maxLevel = STD_VIDEO_AV1_LEVEL_6_1;
+                    caps_encode_av1->maxTiles = {2, 2};
+                    caps_encode_av1->minTileSize = {128, 128};
+                    caps_encode_av1->maxTileSize = {4096, 2048};
+                    caps_encode_av1->superblockSizes =
+                        VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR | VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_128_BIT_KHR;
+                    caps_encode_av1->maxSingleReferenceCount = 0;
+                    caps_encode_av1->singleReferenceNameMask = 0x00;
+                    caps_encode_av1->maxUnidirectionalCompoundReferenceCount = 2;
+                    caps_encode_av1->maxUnidirectionalCompoundGroup1ReferenceCount = 2;
+                    caps_encode_av1->unidirectionalCompoundReferenceNameMask = 0x5F;
+                    caps_encode_av1->maxBidirectionalCompoundReferenceCount = 2;
+                    caps_encode_av1->maxBidirectionalCompoundGroup1ReferenceCount = 2;
+                    caps_encode_av1->maxBidirectionalCompoundGroup2ReferenceCount = 2;
+                    caps_encode_av1->bidirectionalCompoundReferenceNameMask = 0x5F;
+                    caps_encode_av1->maxTemporalLayerCount = 4;
+                    caps_encode_av1->maxSpatialLayerCount = 1;
+                    caps_encode_av1->maxOperatingPoints = 4;
+                    caps_encode_av1->minQIndex = 0;
+                    caps_encode_av1->maxQIndex = 255;
+                    caps_encode_av1->prefersGopRemainingFrames = VK_TRUE;
+                    caps_encode_av1->requiresGopRemainingFrames = VK_FALSE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 63) / 64,
+                                                                                  (caps->maxCodedExtent.height + 63) / 64};
+                    }
+
+                    if (caps_encode_av1_quantization_map) {
+                        caps_encode_av1_quantization_map->minQIndexDelta = -255;
+                        caps_encode_av1_quantization_map->maxQIndexDelta = +255;
+                    }
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
+                    caps_encode->flags = VK_VIDEO_ENCODE_CAPABILITY_PRECEDING_EXTERNALLY_ENCODED_BYTES_BIT_KHR |
+                                         VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR;
+                    caps_encode->rateControlModes = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR |
+                                                    VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR |
+                                                    VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR;
+                    caps_encode->maxRateControlLayers = 2;
+                    caps_encode->maxBitrate = 240000000;
+                    caps_encode->maxQualityLevels = 3;
+                    caps_encode->encodeInputPictureGranularity = {16, 16};
+                    caps_encode->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
+                                                                VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR |
+                                                                VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_HAS_OVERRIDES_BIT_KHR;
+                    caps_encode_av1->flags = VK_VIDEO_ENCODE_AV1_CAPABILITY_PER_RATE_CONTROL_GROUP_MIN_MAX_Q_INDEX_BIT_KHR |
+                                             VK_VIDEO_ENCODE_AV1_CAPABILITY_FRAME_SIZE_OVERRIDE_BIT_KHR |
+                                             VK_VIDEO_ENCODE_AV1_CAPABILITY_MOTION_VECTOR_SCALING_BIT_KHR;
+                    caps_encode_av1->maxLevel = STD_VIDEO_AV1_LEVEL_5_1;
+                    caps_encode_av1->maxTiles = {4, 4};
+                    caps_encode_av1->minTileSize = {128, 128};
+                    caps_encode_av1->maxTileSize = {2048, 2048};
+                    caps_encode_av1->superblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_128_BIT_KHR;
+                    caps_encode_av1->maxSingleReferenceCount = 1;
+                    caps_encode_av1->singleReferenceNameMask = 0x5F;
+                    caps_encode_av1->maxUnidirectionalCompoundReferenceCount = 4;
+                    caps_encode_av1->maxUnidirectionalCompoundGroup1ReferenceCount = 4;
+                    caps_encode_av1->unidirectionalCompoundReferenceNameMask = 0x5B;
+                    caps_encode_av1->maxBidirectionalCompoundReferenceCount = 0;
+                    caps_encode_av1->maxBidirectionalCompoundGroup1ReferenceCount = 0;
+                    caps_encode_av1->maxBidirectionalCompoundGroup2ReferenceCount = 0;
+                    caps_encode_av1->bidirectionalCompoundReferenceNameMask = 0x00;
+                    caps_encode_av1->maxTemporalLayerCount = 4;
+                    caps_encode_av1->maxSpatialLayerCount = 2;
+                    caps_encode_av1->maxOperatingPoints = 2;
+                    caps_encode_av1->minQIndex = 16;
+                    caps_encode_av1->maxQIndex = 96;
+                    caps_encode_av1->prefersGopRemainingFrames = VK_TRUE;
+                    caps_encode_av1->requiresGopRemainingFrames = VK_TRUE;
+
+                    if (caps_encode_quantization_map) {
+                        caps_encode_quantization_map->maxQuantizationMapExtent = {(caps->maxCodedExtent.width + 127) / 128,
+                                                                                  (caps->maxCodedExtent.height + 127) / 128};
+                    }
+
+                    if (caps_encode_av1_quantization_map) {
+                        caps_encode_av1_quantization_map->minQIndexDelta = -64;
+                        caps_encode_av1_quantization_map->maxQIndexDelta = +63;
+                    }
+                    break;
+                default:
+                    return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+            }
+            break;
+        }
         default:
             break;
     }
@@ -1440,54 +1670,65 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(
         return VK_ERROR_VIDEO_PROFILE_FORMAT_NOT_SUPPORTED_KHR;
     }
 
-    std::vector<VkVideoFormatPropertiesKHR> format_props{};
+    struct VideoFormatProperties {
+        VkVideoFormatPropertiesKHR props;
+        VkVideoFormatQuantizationMapPropertiesKHR props_quantization_map;
+        VkVideoFormatH265QuantizationMapPropertiesKHR props_h265_quantization_map;
+        VkVideoFormatAV1QuantizationMapPropertiesKHR props_av1_quantization_map;
+    };
 
-    VkVideoFormatPropertiesKHR props = {};
-    props.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR;
-    props.imageCreateFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT |
-                             VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_DISJOINT_BIT;
-    props.imageType = VK_IMAGE_TYPE_2D;
-    props.imageTiling = VK_IMAGE_TILING_OPTIMAL;
+    std::vector<VideoFormatProperties> format_props{};
 
+    VideoFormatProperties fmt = {};
+    fmt.props.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR;
+    fmt.props.imageCreateFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
+                                 VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_DISJOINT_BIT;
+    fmt.props.imageType = VK_IMAGE_TYPE_2D;
+    fmt.props.imageTiling = VK_IMAGE_TILING_OPTIMAL;
+    fmt.props_quantization_map.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_QUANTIZATION_MAP_PROPERTIES_KHR;
+    fmt.props_h265_quantization_map.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_H265_QUANTIZATION_MAP_PROPERTIES_KHR;
+    fmt.props_av1_quantization_map.sType = VK_STRUCTURE_TYPE_VIDEO_FORMAT_AV1_QUANTIZATION_MAP_PROPERTIES_KHR;
+
+    // Populate DPB and input/output formats
     switch (profile_list->pProfiles[0].videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
             switch (profile_list->pProfiles[0].chromaSubsampling) {
                 case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
-                    props.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-                    props.imageUsageFlags =
+                    fmt.props.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+                    fmt.props.imageUsageFlags =
                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
-                    format_props.push_back(props);
-                    props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                            VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
-                                            VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
-                    format_props.push_back(props);
-                    props.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-                    format_props.push_back(props);
+                    format_props.push_back(fmt);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+                    format_props.push_back(fmt);
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
-                    props.imageUsageFlags = VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
-                    props.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
-                    format_props.push_back(props);
-                    props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                            VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
-                    format_props.push_back(props);
-                    props.format = VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16;
-                    format_props.push_back(props);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+                    fmt.props.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
+                    format_props.push_back(fmt);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props.format = VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16;
+                    format_props.push_back(fmt);
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
-                    props.format = VK_FORMAT_G8_B8R8_2PLANE_444_UNORM;
-                    props.imageUsageFlags =
+                    fmt.props.format = VK_FORMAT_G8_B8R8_2PLANE_444_UNORM;
+                    fmt.props.imageUsageFlags =
                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
-                    format_props.push_back(props);
-                    props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                            VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
-                                            VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
-                    format_props.push_back(props);
+                    format_props.push_back(fmt);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+                    format_props.push_back(fmt);
                     break;
                 default:
                     return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
@@ -1495,39 +1736,40 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(
             break;
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
             switch (profile_list->pProfiles[0].chromaSubsampling) {
                 case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
-                    props.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-                    props.imageUsageFlags =
+                    fmt.props.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+                    fmt.props.imageUsageFlags =
                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
-                    format_props.push_back(props);
-                    props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                            VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
-                    format_props.push_back(props);
-                    props.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-                    format_props.push_back(props);
+                    format_props.push_back(fmt);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+                    format_props.push_back(fmt);
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
-                    props.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
-                    props.imageUsageFlags = VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
-                    format_props.push_back(props);
-                    props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                            VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
-                    format_props.push_back(props);
-                    props.format = VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16;
-                    format_props.push_back(props);
+                    fmt.props.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props.format = VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16;
+                    format_props.push_back(fmt);
                     break;
                 case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
-                    props.format = VK_FORMAT_G8_B8R8_2PLANE_444_UNORM;
-                    props.imageUsageFlags =
+                    fmt.props.format = VK_FORMAT_G8_B8R8_2PLANE_444_UNORM;
+                    fmt.props.imageUsageFlags =
                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
-                    format_props.push_back(props);
-                    props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                            VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
-                    format_props.push_back(props);
+                    format_props.push_back(fmt);
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+                    format_props.push_back(fmt);
                     break;
                 default:
                     return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
@@ -1538,19 +1780,155 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(
             break;
     }
 
-    std::vector<VkVideoFormatPropertiesKHR> filtered_props;
-    for (const auto& fmt_props : format_props) {
-        if ((pVideoFormatInfo->imageUsage & fmt_props.imageUsageFlags) == pVideoFormatInfo->imageUsage) {
-            filtered_props.push_back(fmt_props);
+    // Populate quantization map formats
+    fmt.props.imageCreateFlags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    fmt.props.imageTiling = VK_IMAGE_TILING_LINEAR;
+    switch (profile_list->pProfiles[0].videoCodecOperation) {
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+            switch (profile_list->pProfiles[0].chromaSubsampling) {
+                case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R32_SINT;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {16, 16};
+                    format_props.push_back(fmt);
+                    fmt.props.format = VK_FORMAT_R8_UNORM;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                    format_props.push_back(fmt);
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R8_UNORM;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {16, 16};
+                    format_props.push_back(fmt);
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+            switch (profile_list->pProfiles[0].chromaSubsampling) {
+                case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R8_UNORM;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {4, 4};
+                    fmt.props_h265_quantization_map.compatibleCtbSizes =
+                        VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_KHR | VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props_quantization_map.quantizationMapTexelSize = {8, 8};
+                    format_props.push_back(fmt);
+                    fmt.props_quantization_map.quantizationMapTexelSize = {32, 32};
+                    format_props.push_back(fmt);
+                    fmt.props_quantization_map.quantizationMapTexelSize = {64, 64};
+                    fmt.props_h265_quantization_map.compatibleCtbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R32_SINT;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {32, 32};
+                    fmt.props_h265_quantization_map.compatibleCtbSizes =
+                        VK_VIDEO_ENCODE_H265_CTB_SIZE_32_BIT_KHR | VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props_quantization_map.quantizationMapTexelSize = {64, 64};
+                    fmt.props_h265_quantization_map.compatibleCtbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+            switch (profile_list->pProfiles[0].chromaSubsampling) {
+                case VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R32_SINT;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {8, 8};
+                    fmt.props_av1_quantization_map.compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props.format = VK_FORMAT_R8_UNORM;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {64, 64};
+                    fmt.props_av1_quantization_map.compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R32_SINT;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {64, 64};
+                    fmt.props_av1_quantization_map.compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+                    format_props.push_back(fmt);
+                    fmt.props_quantization_map.quantizationMapTexelSize = {128, 128};
+                    fmt.props_av1_quantization_map.compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_128_BIT_KHR;
+                    format_props.push_back(fmt);
+                    break;
+                case VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR:
+                    fmt.props.format = VK_FORMAT_R8_UNORM;
+                    fmt.props.imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                    fmt.props_quantization_map.quantizationMapTexelSize = {128, 128};
+                    fmt.props_av1_quantization_map.compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_128_BIT_KHR;
+                    format_props.push_back(fmt);
+                    break;
+                default:
+                    break;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    std::vector<VideoFormatProperties> filtered;
+    for (const auto& format : format_props) {
+        if ((pVideoFormatInfo->imageUsage & format.props.imageUsageFlags) == pVideoFormatInfo->imageUsage) {
+            filtered.push_back(format);
         }
     }
 
     if (pVideoFormatProperties != nullptr) {
-        for (uint32_t i = 0; i < (std::min)(*pVideoFormatPropertyCount, (uint32_t)filtered_props.size()); ++i) {
-            pVideoFormatProperties[i] = filtered_props[i];
+        for (uint32_t i = 0; i < (std::min)(*pVideoFormatPropertyCount, (uint32_t)filtered.size()); ++i) {
+            void* saved_pNext = pVideoFormatProperties[i].pNext;
+            pVideoFormatProperties[i] = filtered[i].props;
+            pVideoFormatProperties[i].pNext = saved_pNext;
+
+            auto* props_quantization_map = vku::FindStructInPNextChain<VkVideoFormatQuantizationMapPropertiesKHR>(saved_pNext);
+            auto* props_h265_quantization_map =
+                vku::FindStructInPNextChain<VkVideoFormatH265QuantizationMapPropertiesKHR>(saved_pNext);
+            auto* props_av1_quantization_map =
+                vku::FindStructInPNextChain<VkVideoFormatAV1QuantizationMapPropertiesKHR>(saved_pNext);
+
+            if (props_quantization_map != nullptr) {
+                saved_pNext = props_quantization_map->pNext;
+                *props_quantization_map = filtered[i].props_quantization_map;
+                props_quantization_map->pNext = saved_pNext;
+            }
+
+            if (props_h265_quantization_map != nullptr) {
+                saved_pNext = props_h265_quantization_map->pNext;
+                *props_h265_quantization_map = filtered[i].props_h265_quantization_map;
+                props_h265_quantization_map->pNext = saved_pNext;
+            }
+
+            if (props_av1_quantization_map != nullptr) {
+                saved_pNext = props_av1_quantization_map->pNext;
+                *props_av1_quantization_map = filtered[i].props_av1_quantization_map;
+                props_av1_quantization_map->pNext = saved_pNext;
+            }
         }
     }
-    *pVideoFormatPropertyCount = (uint32_t)filtered_props.size();
+    *pVideoFormatPropertyCount = (uint32_t)filtered.size();
     return VK_SUCCESS;
 }
 
@@ -1785,6 +2163,19 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalD
         props_3->optimalTilingFeatures = pFormatProperties->formatProperties.optimalTilingFeatures;
         props_3->bufferFeatures = pFormatProperties->formatProperties.bufferFeatures;
         props_3->optimalTilingFeatures |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
+
+        switch (format) {
+            case VK_FORMAT_R32_SINT:
+                props_3->linearTilingFeatures |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                props_3->optimalTilingFeatures |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+                break;
+            case VK_FORMAT_R8_UNORM:
+                props_3->linearTilingFeatures |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                props_3->optimalTilingFeatures |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -1850,8 +2241,9 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhys
             }
             auto video_props = vku::FindStructInPNextChain<VkQueueFamilyVideoPropertiesKHR>(pQueueFamilyProperties[2].pNext);
             if (video_props) {
-                video_props->videoCodecOperations =
-                    VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR | VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR;
+                video_props->videoCodecOperations = VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR |
+                                                    VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR |
+                                                    VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR;
             }
         }
         if (*pQueueFamilyPropertyCount > 3) {

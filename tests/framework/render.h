@@ -164,8 +164,12 @@ class VkRenderFramework : public VkTestFramework {
 
     // Add a feature required for the test to be executed. The currently targeted API version is used to add the correct struct, so
     // be sure to call SetTargetApiVersion before.
-    // Only features added with this method will be enabled.
+    // Only features added with this or the AddOptionalFeature method will be enabled.
     void AddRequiredFeature(vkt::Feature feature);
+    // Add an optional feature for the test to be executed. The currently targeted API version is used to add the correct struct, so
+    // be sure to call SetTargetApiVersion before
+    // Only features added with this or the AddRequiredFeature method will be enabled.
+    void AddOptionalFeature(vkt::Feature feature);
 
     std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const char *code, const spv_target_env env = SPV_ENV_VULKAN_1_0);
 

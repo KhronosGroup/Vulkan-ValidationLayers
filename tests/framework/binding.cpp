@@ -1804,7 +1804,17 @@ void CommandBuffer::Begin(VkCommandBufferUsageFlags flags) {
     begin(&info);
 }
 
-void CommandBuffer::End() { ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(handle())); }
+void CommandBuffer::End() {
+    VkResult result = vk::EndCommandBuffer(handle());
+    if (result == VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR) {
+        GTEST_MESSAGE_AT_(__FILE__, __LINE__, "", ::testing::TestPartResult::kSkip)
+            << "This test cannot be executed on an implementation that reports VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR in "
+               "vkEndCommandBuffer()";
+        throw testing::AssertionException(testing::TestPartResult(testing::TestPartResult::kSkip, __FILE__, __LINE__, ""));
+    } else {
+        ASSERT_EQ(VK_SUCCESS, result);
+    }
+}
 
 void CommandBuffer::Reset(VkCommandBufferResetFlags flags) { ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags)); }
 
@@ -1880,44 +1890,18 @@ void CommandBuffer::BindCompShader(const vkt::Shader &comp_shader) {
 }
 
 void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
-    PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR =
-        (PFN_vkCmdBeginVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdBeginVideoCodingKHR");
-    assert(vkCmdBeginVideoCodingKHR);
-
-    vkCmdBeginVideoCodingKHR(handle(), &beginInfo);
+    vk::CmdBeginVideoCodingKHR(handle(), &beginInfo);
 }
 
 void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo) {
-    PFN_vkCmdControlVideoCodingKHR vkCmdControlVideoCodingKHR =
-        (PFN_vkCmdControlVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdControlVideoCodingKHR");
-    assert(vkCmdControlVideoCodingKHR);
-
-    vkCmdControlVideoCodingKHR(handle(), &controlInfo);
+    vk::CmdControlVideoCodingKHR(handle(), &controlInfo);
 }
 
-void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) {
-    PFN_vkCmdDecodeVideoKHR vkCmdDecodeVideoKHR =
-        (PFN_vkCmdDecodeVideoKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdDecodeVideoKHR");
-    assert(vkCmdDecodeVideoKHR);
+void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) { vk::CmdDecodeVideoKHR(handle(), &decodeInfo); }
 
-    vkCmdDecodeVideoKHR(handle(), &decodeInfo);
-}
+void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo) { vk::CmdEncodeVideoKHR(handle(), &encodeInfo); }
 
-void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo) {
-    PFN_vkCmdEncodeVideoKHR vkCmdEncodeVideoKHR =
-        (PFN_vkCmdEncodeVideoKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdEncodeVideoKHR");
-    assert(vkCmdEncodeVideoKHR);
-
-    vkCmdEncodeVideoKHR(handle(), &encodeInfo);
-}
-
-void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
-    PFN_vkCmdEndVideoCodingKHR vkCmdEndVideoCodingKHR =
-        (PFN_vkCmdEndVideoCodingKHR)vk::GetDeviceProcAddr(dev_handle_, "vkCmdEndVideoCodingKHR");
-    assert(vkCmdEndVideoCodingKHR);
-
-    vkCmdEndVideoCodingKHR(handle(), &endInfo);
-}
+void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) { vk::CmdEndVideoCodingKHR(handle(), &endInfo); }
 
 void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
     assert(src.CreateInfo().size == dst.CreateInfo().size);

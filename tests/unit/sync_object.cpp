@@ -3,7 +3,7 @@
  * Copyright (c) 2015-2024 Valve Corporation
  * Copyright (c) 2015-2024 LunarG, Inc.
  * Copyright (c) 2015-2024 Google, Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,6 +227,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework());
     const bool mp_extensions = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -235,6 +236,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     const bool video_decode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
     const bool video_encode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    const bool video_encode_quantization_map = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
 
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
@@ -644,6 +646,15 @@ TEST_F(NegativeSyncObject, Barriers) {
             bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
             bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
         }
+        if (video_encode_quantization_map) {
+            // images _without_ VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,"VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-10287"});
+        }
         // clang-format on
 
         for (const auto &test : bad_buffer_layouts) {
@@ -743,12 +754,14 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitFramework());
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     const bool video_decode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
     const bool video_encode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    const bool video_encode_quantization_map = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
 
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(sync2_features);
@@ -1071,6 +1084,15 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
             bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
             bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
             bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+        }
+        if (video_encode_quantization_map) {
+            // images _without_ VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-10287"});
         }
         // clang-format on
 
