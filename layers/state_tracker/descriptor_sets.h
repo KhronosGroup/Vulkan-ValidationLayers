@@ -589,7 +589,6 @@ class MutableDescriptor : public Descriptor {
                     VkDescriptorType type) override;
 
     void SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size);
-    void SetDescriptorType(VkDescriptorType src_type, const Descriptor *src);
     VkDeviceSize GetBufferSize() const { return buffer_size_; }
 
     std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }

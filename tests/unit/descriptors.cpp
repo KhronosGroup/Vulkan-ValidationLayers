@@ -1488,6 +1488,54 @@ TEST_F(NegativeDescriptors, DISABLED_ConstantArrayElementNotBound) {
     m_command_buffer.End();
 }
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8918
+TEST_F(NegativeDescriptors, DISABLED_MutableBufferUpdate) {
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorType desc_types[2] = {
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    };
+
+    VkMutableDescriptorTypeListEXT type_list = {};
+    type_list.descriptorTypeCount = 2;
+    type_list.pDescriptorTypes = desc_types;
+
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
+    mdtci.mutableDescriptorTypeListCount = 1;
+    mdtci.pMutableDescriptorTypeLists = &type_list;
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}}, 0,
+                                       &mdtci);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer SSBO { uint x; };
+        void main() {
+            x = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, NULL);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDescriptors, UpdateDescriptorSetMismatchType) {
     RETURN_IF_SKIP(Init());
 
@@ -3579,11 +3627,7 @@ TEST_F(NegativeDescriptors, MutableDescriptorSetLayoutMissingFeature) {
     TEST_DESCRIPTION("Create mutable descriptor set layout without mutableDescriptorType feature enabled.");
 
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT mutable_descriptor_type_features = vku::InitStructHelper();
-    mutable_descriptor_type_features.mutableDescriptorType = VK_FALSE;
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&mutable_descriptor_type_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
