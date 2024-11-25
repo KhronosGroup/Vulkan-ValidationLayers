@@ -160,7 +160,7 @@ bool DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &bi
             auto &imgs_binding = static_cast<ImageSamplerBinding &>(binding);
             for (auto index : indices) {
                 auto &descriptor = imgs_binding.descriptors[index];
-                descriptor.UpdateDrawState(&dev_state, &cb_state);
+                descriptor.UpdateDrawState(&dev_state, cb_state);
             }
             skip |= ValidateDescriptorsDynamic(binding_info, imgs_binding, indices);
             break;
@@ -169,7 +169,7 @@ bool DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &bi
             auto &img_binding = static_cast<ImageBinding &>(binding);
             for (auto index : indices) {
                 auto &descriptor = img_binding.descriptors[index];
-                descriptor.UpdateDrawState(&dev_state, &cb_state);
+                descriptor.UpdateDrawState(&dev_state, cb_state);
             }
             skip |= ValidateDescriptorsDynamic(binding_info, img_binding, indices);
             break;

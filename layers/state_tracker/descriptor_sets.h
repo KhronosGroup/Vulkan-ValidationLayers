@@ -449,7 +449,7 @@ class ImageDescriptor : public Descriptor {
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
-    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state);
+    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer &cb_state);
     VkImageView GetImageView() const;
     const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
     vvl::ImageView *GetImageViewState() { return image_view_state_.get(); }
@@ -614,7 +614,7 @@ class MutableDescriptor : public Descriptor {
         return acc_khr != VK_NULL_HANDLE;
     }
 
-    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer *cb_state);
+    void UpdateDrawState(ValidationStateTracker *, vvl::CommandBuffer &cb_state);
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
@@ -828,7 +828,7 @@ class DescriptorSet : public StateObject {
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawStates(ValidationStateTracker *, vvl::CommandBuffer *cb_state, const BindingVariableMap &);
+    void UpdateDrawStates(ValidationStateTracker *, vvl::CommandBuffer &cb_state, const BindingVariableMap &);
 
     // For a particular binding, get the global index
     const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {

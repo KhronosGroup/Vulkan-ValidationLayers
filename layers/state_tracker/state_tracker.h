@@ -437,18 +437,6 @@ class ValidationStateTracker : public ValidationObject {
         return {written_count, buffer_address_map_.size()};
     }
 
-    using SetImageViewInitialLayoutCallback = std::function<void(vvl::CommandBuffer*, const vvl::ImageView&, VkImageLayout)>;
-    template <typename Fn>
-    void SetSetImageViewInitialLayoutCallback(Fn&& fn) {
-        set_image_view_initial_layout_callback.reset(new SetImageViewInitialLayoutCallback(std::forward<Fn>(fn)));
-    }
-
-    void CallSetImageViewInitialLayoutCallback(vvl::CommandBuffer* cb_state, const vvl::ImageView& iv_state, VkImageLayout layout) {
-        if (set_image_view_initial_layout_callback) {
-            (*set_image_view_initial_layout_callback)(cb_state, iv_state, layout);
-        }
-    }
-
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }
     void FreeFakeMemory(VkDeviceSize address) { fake_memory.Free(address); }
 
@@ -1787,8 +1775,6 @@ class ValidationStateTracker : public ValidationObject {
 
     // Link for derived device objects back to their parent instance object
     ValidationStateTracker* instance_state;
-
-    std::unique_ptr<SetImageViewInitialLayoutCallback> set_image_view_initial_layout_callback;
 
     DeviceFeatures enabled_features = {};
     // Device specific data

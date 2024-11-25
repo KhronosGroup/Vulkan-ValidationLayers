@@ -687,7 +687,7 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
 //   to be used in a draw by the given cb_state
-void vvl::DescriptorSet::UpdateDrawStates(ValidationStateTracker *device_data, vvl::CommandBuffer *cb_state,
+void vvl::DescriptorSet::UpdateDrawStates(ValidationStateTracker *device_data, vvl::CommandBuffer &cb_state,
                                           const BindingVariableMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
     if (device_data->disabled[image_layout_validation]) {
@@ -873,11 +873,11 @@ void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const Validation
     UpdateKnownValidView(is_bindless);
 }
 
-void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer *cb_state) {
+void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer &cb_state) {
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
-        dev_data->CallSetImageViewInitialLayoutCallback(cb_state, *iv_state, image_layout_);
+        cb_state.SetImageViewInitialLayout(*iv_state, image_layout_);
     }
 }
 
@@ -1301,11 +1301,11 @@ VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
     }
 }
 
-void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer *cb_state) {
+void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer &cb_state) {
     auto active_class = DescriptorTypeToClass(active_descriptor_type_);
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {
-            dev_data->CallSetImageViewInitialLayoutCallback(cb_state, *image_view_state_, image_layout_);
+            cb_state.SetImageViewInitialLayout(*image_view_state_, image_layout_);
         }
     }
 }

@@ -384,14 +384,6 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         return;
     }
 
-    // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
-    // would be messier without.
-    // TODO: Find a good way to do this hooklessly.
-    SetSetImageViewInitialLayoutCallback(
-        [](vvl::CommandBuffer *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
-            cb_state->SetImageViewInitialLayout(iv_state, layout);
-        });
-
     // Set up a stub implementation of the descriptor heap in case we abort.
     desc_heap_.emplace(*this, 0, loc);
 
