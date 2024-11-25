@@ -343,14 +343,6 @@ void CoreChecks::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const L
     // The state tracker sets up the device state (also if extension and/or features are enabled)
     StateTracker::PostCreateDevice(pCreateInfo, loc);
 
-    // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
-    // would be messier without.
-    // TODO: Find a good way to do this hooklessly.
-    SetSetImageViewInitialLayoutCallback(
-        [](vvl::CommandBuffer *cb_state, const vvl::ImageView &iv_state, VkImageLayout layout) -> void {
-            cb_state->SetImageViewInitialLayout(iv_state, layout);
-        });
-
     AdjustValidatorOptions(device_extensions, enabled_features, spirv_val_options, &spirv_val_option_hash);
 
     // Allocate shader validation cache
