@@ -1300,6 +1300,21 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
     return skip;
 }
 
+// Validate the draw-time state for this descriptor set
+// We can skip validating the descriptor set if "nothing" has changed since the last validation.
+// Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
+// any dynamic descriptors, always revalidate rather than caching the values. We currently only
+// apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
+// binding_req_map which could potentially be expensive.
+static bool NeedDrawStateValidated(const vvl::CommandBuffer &cb_state, const vvl::DescriptorSet *descriptor_set,
+                                   const LastBound::DescriptorSetSlot &ds_slot, bool disabled_image_layout_validation) {
+    return ds_slot.dynamic_offsets.size() > 0 ||
+           // Revalidate if descriptor set (or contents) has changed
+           ds_slot.validated_set != descriptor_set || ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
+           (!disabled_image_layout_validation &&
+            ds_slot.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
+}
+
 bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
                                                         const vvl::Pipeline &pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
@@ -1383,24 +1398,11 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                 // Pull the set node
                 const auto *descriptor_set = ds_slot.ds_state.get();
                 ASSERT_AND_CONTINUE(descriptor_set);
-                // Validate the draw-time state for this descriptor set
-                // We can skip validating the descriptor set if "nothing" has changed since the last validation.
-                // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
-                // any dynamic descriptors, always revalidate rather than caching the values. We currently only
-                // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
-                // binding_req_map which could potentially be expensive.
-                bool need_validate =
-                    // Revalidate each time if the set has dynamic offsets
-                    ds_slot.dynamic_offsets.size() > 0 ||
-                    // Revalidate if descriptor set (or contents) has changed
-                    ds_slot.validated_set != descriptor_set ||
-                    ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                    (!disabled[image_layout_validation] &&
-                     ds_slot.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
+                const bool need_validate =
+                    NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                 if (need_validate) {
-                    skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, ds_slot.dynamic_offsets,
-                                              cb_state, vuid.loc(), vuid);
+                    skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, cb_state, vuid.loc(), vuid);
                 }
             }
         }
@@ -1449,22 +1451,11 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                     // Pull the set node
                     const auto *descriptor_set = ds_slot.ds_state.get();
                     ASSERT_AND_CONTINUE(descriptor_set);
-                    // Validate the draw-time state for this descriptor set
-                    // We can skip validating the descriptor set if "nothing" has changed since the last validation.
-                    // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
-                    // any dynamic descriptors, always revalidate rather than caching the values.
-                    bool need_validate =
-                        // Revalidate each time if the set has dynamic offsets
-                        ds_slot.dynamic_offsets.size() > 0 ||
-                        // Revalidate if descriptor set (or contents) has changed
-                        ds_slot.validated_set != descriptor_set ||
-                        ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                        (!disabled[image_layout_validation] &&
-                         ds_slot.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
+                    const bool need_validate =
+                        NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                     if (need_validate) {
-                        skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, ds_slot.dynamic_offsets,
-                                                  cb_state, vuid.loc(), vuid);
+                        skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, cb_state, vuid.loc(), vuid);
                     }
                 }
             }
