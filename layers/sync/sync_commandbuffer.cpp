@@ -295,9 +295,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         return skip;
     }
     const vvl::Pipeline *pipe = nullptr;
-    const std::vector<LastBound::PER_SET> *per_sets = nullptr;
-    cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &per_sets);
-    if (!pipe || !per_sets) {
+    const std::vector<LastBound::DescriptorSetSlot> *ds_slots = nullptr;
+    cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &ds_slots);
+    if (!pipe || !ds_slots) {
         return skip;
     }
 
@@ -313,12 +313,12 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
-            if (variable.decorations.set >= per_sets->size()) {
+            if (variable.decorations.set >= ds_slots->size()) {
                 // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
                 continue;
             }
-            const auto &per_set = (*per_sets)[variable.decorations.set];
-            const auto *descriptor_set = per_set.bound_descriptor_set.get();
+            const auto &ds_slot = (*ds_slots)[variable.decorations.set];
+            const auto *descriptor_set = ds_slot.ds_state.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
@@ -414,10 +414,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (vvl::IsDynamicDescriptor(descriptor_type)) {
                             const uint32_t dynamic_offset_index =
                                 descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
-                            if (dynamic_offset_index >= per_set.dynamicOffsets.size()) {
+                            if (dynamic_offset_index >= ds_slot.dynamic_offsets.size()) {
                                 continue;  // core validation error
                             }
-                            offset += per_set.dynamicOffsets[dynamic_offset_index];
+                            offset += ds_slot.dynamic_offsets[dynamic_offset_index];
                         }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range =
@@ -453,9 +453,9 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         return;
     }
     const vvl::Pipeline *pipe = nullptr;
-    const std::vector<LastBound::PER_SET> *per_sets = nullptr;
-    cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &per_sets);
-    if (!pipe || !per_sets) {
+    const std::vector<LastBound::DescriptorSetSlot> *ds_slots = nullptr;
+    cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &ds_slots);
+    if (!pipe || !ds_slots) {
         return;
     }
 
@@ -471,12 +471,12 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
-            if (variable.decorations.set >= per_sets->size()) {
+            if (variable.decorations.set >= ds_slots->size()) {
                 // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
                 continue;
             }
-            const auto &per_set = (*per_sets)[variable.decorations.set];
-            const auto *descriptor_set = per_set.bound_descriptor_set.get();
+            const auto &ds_slot = (*ds_slots)[variable.decorations.set];
+            const auto *descriptor_set = ds_slot.ds_state.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
@@ -538,10 +538,10 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                         if (vvl::IsDynamicDescriptor(descriptor_type)) {
                             const uint32_t dynamic_offset_index =
                                 descriptor_set->GetDynamicOffsetIndexFromBinding(binding->binding);
-                            if (dynamic_offset_index >= per_set.dynamicOffsets.size()) {
+                            if (dynamic_offset_index >= ds_slot.dynamic_offsets.size()) {
                                 continue;  // core validation error
                             }
-                            offset += per_set.dynamicOffsets[dynamic_offset_index];
+                            offset += ds_slot.dynamic_offsets[dynamic_offset_index];
                         }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
                         const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());

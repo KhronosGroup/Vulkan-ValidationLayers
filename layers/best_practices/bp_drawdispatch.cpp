@@ -594,9 +594,9 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
     auto lvl_bind_point = ConvertToLvlBindPoint(bind_point);
     auto& last_bound = cb_state.lastBound[lvl_bind_point];
 
-    for (const auto& descriptor_set : last_bound.per_set) {
-        if (!descriptor_set.bound_descriptor_set) continue;
-        for (const auto& binding : *descriptor_set.bound_descriptor_set) {
+    for (const auto& ds_slot : last_bound.ds_slots) {
+        if (!ds_slot.ds_state) continue;
+        for (const auto& binding : *ds_slot.ds_state) {
             // For bindless scenarios, we should not attempt to track descriptor set state.
             // It is highly uncertain which resources are actually bound.
             // Resources which are written to such a descriptor should be marked as indeterminate w.r.t. state.

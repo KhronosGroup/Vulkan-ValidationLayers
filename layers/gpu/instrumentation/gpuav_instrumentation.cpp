@@ -487,13 +487,13 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
 
                 for (uint32_t set_i = 0; set_i < disturbed_bindings_count; ++set_i) {
                     const uint32_t last_bound_set_i = set_i + first_disturbed_set;
-                    const auto &last_bound_set_state = last_bound.per_set[last_bound_set_i].bound_descriptor_set;
-                    // last_bound.per_set is a LUT, and descriptor sets before the last one could be unbound.
+                    const auto &last_bound_set_state = last_bound.ds_slots[last_bound_set_i].ds_state;
+                    // last_bound.ds_slot is a LUT, and descriptor sets before the last one could be unbound.
                     if (!last_bound_set_state) {
                         continue;
                     }
                     VkDescriptorSet last_bound_set = last_bound_set_state->VkHandle();
-                    const std::vector<uint32_t> &dynamic_offset = last_bound.per_set[last_bound_set_i].dynamicOffsets;
+                    const std::vector<uint32_t> &dynamic_offset = last_bound.ds_slots[last_bound_set_i].dynamic_offsets;
                     const uint32_t dynamic_offset_count = static_cast<uint32_t>(dynamic_offset.size());
                     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point,
                                                   last_bound_desc_set_pipe_layout_state->VkHandle(), last_bound_set_i, 1,

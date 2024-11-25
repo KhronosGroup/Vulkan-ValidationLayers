@@ -822,10 +822,10 @@ Pipeline::Pipeline(const ValidationStateTracker &state_data, const VkRayTracingP
 
 void LastBound::UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorSet> &&ds) {
     if (push_descriptor_set) {
-        for (auto &ps : per_set) {
-            if (ps.bound_descriptor_set == push_descriptor_set) {
-                cb_state.RemoveChild(ps.bound_descriptor_set);
-                ps.bound_descriptor_set.reset();
+        for (auto &ds_slot : ds_slots) {
+            if (ds_slot.ds_state == push_descriptor_set) {
+                cb_state.RemoveChild(ds_slot.ds_state);
+                ds_slot.ds_state.reset();
             }
         }
     }
@@ -841,7 +841,7 @@ void LastBound::Reset() {
         push_descriptor_set->Destroy();
     }
     push_descriptor_set.reset();
-    per_set.clear();
+    ds_slots.clear();
 }
 
 bool LastBound::IsDepthTestEnable() const {
@@ -1345,41 +1345,41 @@ VkShaderStageFlags LastBound::GetAllActiveBoundStages() const {
 }
 
 bool LastBound::IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const {
-    if ((set >= per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
+    if ((set >= ds_slots.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
         return false;
     }
-    return (*(per_set[set].compat_id_for_set) == *(pipeline_layout.set_compat_ids[set]));
+    return (*(ds_slots[set].compat_id_for_set) == *(pipeline_layout.set_compat_ids[set]));
 }
 
 bool LastBound::IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const {
-    if ((set >= per_set.size()) || (set >= shader_object_state.set_compat_ids.size())) {
+    if ((set >= ds_slots.size()) || (set >= shader_object_state.set_compat_ids.size())) {
         return false;
     }
-    return (*(per_set[set].compat_id_for_set) == *(shader_object_state.set_compat_ids[set]));
+    return (*(ds_slots[set].compat_id_for_set) == *(shader_object_state.set_compat_ids[set]));
 };
 
 std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const {
     std::ostringstream ss;
-    if (set >= per_set.size()) {
-        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << per_set.size() << ")\n";
+    if (set >= ds_slots.size()) {
+        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << ds_slots.size() << ")\n";
     } else if (set >= pipeline_layout.set_compat_ids.size()) {
         ss << "The set (" << set << ") is out of bounds for the number of sets in the non-compatible VkPipelineLayout ("
            << pipeline_layout.set_compat_ids.size() << ")\n";
     } else {
-        return per_set[set].compat_id_for_set->DescribeDifference(*(pipeline_layout.set_compat_ids[set]));
+        return ds_slots[set].compat_id_for_set->DescribeDifference(*(pipeline_layout.set_compat_ids[set]));
     }
     return ss.str();
 }
 
 std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const {
     std::ostringstream ss;
-    if (set >= per_set.size()) {
-        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << per_set.size() << ")\n";
+    if (set >= ds_slots.size()) {
+        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << ds_slots.size() << ")\n";
     } else if (set >= shader_object_state.set_compat_ids.size()) {
         ss << "The set (" << set << ") is out of bounds for the number of sets in the non-compatible VkDescriptorSetLayout ("
            << shader_object_state.set_compat_ids.size() << ")\n";
     } else {
-        return per_set[set].compat_id_for_set->DescribeDifference(*(shader_object_state.set_compat_ids[set]));
+        return ds_slots[set].compat_id_for_set->DescribeDifference(*(shader_object_state.set_compat_ids[set]));
     }
     return ss.str();
 }
