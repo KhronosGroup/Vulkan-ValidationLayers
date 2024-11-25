@@ -966,3 +966,74 @@ TEST_F(PositiveVertexInput, ResetCmdSetVertexInput) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveVertexInput, VertexAttributeRobustness) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeRobustness);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x; /* not provided */
+        void main(){
+           gl_Position = x;
+        }
+    )glsl";
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveVertexInput, VertexAttributeRobustnessDynamic) {
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::vertexAttributeRobustness);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in vec4 x;
+        layout(location = 1) in vec4 y;
+        layout(location = 0) out vec4 c;
+        void main() {
+           c = x * y;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &buffer.handle(), &offset);
+
+    VkVertexInputBindingDescription2EXT vi_binding_description = vku::InitStructHelper();
+    vi_binding_description.binding = 0u;
+    vi_binding_description.stride = sizeof(float) * 4;
+    vi_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vi_binding_description.divisor = 1u;
+    VkVertexInputAttributeDescription2EXT vi_attribute_description = vku::InitStructHelper();
+    vi_attribute_description.location = 0u;
+    vi_attribute_description.binding = 0u;
+    vi_attribute_description.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vi_attribute_description.offset = 0u;
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1u, &vi_binding_description, 1u, &vi_attribute_description);
+
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
