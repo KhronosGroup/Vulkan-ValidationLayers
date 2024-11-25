@@ -46,11 +46,11 @@ void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, 
     const uint32_t descriptor_command_binding_index = (uint32_t)cb_state.descriptor_command_bindings.size() - 1;
     auto &action_command_snapshot = cb_state.action_command_snapshots.emplace_back(descriptor_command_binding_index);
 
-    const size_t number_of_sets = last_bound.per_set.size();
+    const size_t number_of_sets = last_bound.ds_slots.size();
     action_command_snapshot.binding_req_maps.reserve(number_of_sets);
 
     for (uint32_t i = 0; i < number_of_sets; i++) {
-        if (!last_bound.per_set[i].bound_descriptor_set) {
+        if (!last_bound.ds_slots[i].ds_state) {
             continue;  // can have gaps in descriptor sets
         }
 
@@ -89,14 +89,14 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state
 
     cb_state.post_process_buffer = descriptor_command_binding.post_process_ssbo_block.Buffer();
 
-    const size_t number_of_sets = last_bound.per_set.size();
+    const size_t number_of_sets = last_bound.ds_slots.size();
     for (uint32_t i = 0; i < number_of_sets; i++) {
-        const auto &last_bound_set = last_bound.per_set[i];
-        if (!last_bound_set.bound_descriptor_set) {
+        const auto &ds_slot = last_bound.ds_slots[i];
+        if (!ds_slot.ds_state) {
             continue;  // can have gaps in descriptor sets
         }
 
-        auto bound_descriptor_set = static_cast<DescriptorSet *>(last_bound_set.bound_descriptor_set.get());
+        auto bound_descriptor_set = static_cast<DescriptorSet *>(ds_slot.ds_state.get());
         ssbo_block_ptr->descriptor_index_post_process_buffers[i] = bound_descriptor_set->GetPostProcessBuffer(gpuav, loc);
     }
 
@@ -123,14 +123,14 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBuffer &cb_
 
     ssbo_block_ptr->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
 
-    const size_t number_of_sets = last_bound.per_set.size();
+    const size_t number_of_sets = last_bound.ds_slots.size();
     for (uint32_t i = 0; i < number_of_sets; i++) {
-        const auto &last_bound_set = last_bound.per_set[i];
-        if (!last_bound_set.bound_descriptor_set) {
+        const auto &ds_slot = last_bound.ds_slots[i];
+        if (!ds_slot.ds_state) {
             continue;  // can have gaps in descriptor sets
         }
 
-        auto bound_descriptor_set = static_cast<DescriptorSet *>(last_bound_set.bound_descriptor_set.get());
+        auto bound_descriptor_set = static_cast<DescriptorSet *>(ds_slot.ds_state.get());
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
         if (!bound_descriptor_set->IsUpdateAfterBind()) {
             ssbo_block_ptr->descriptor_set_types[i] = bound_descriptor_set->GetTypeAddress(gpuav, loc);
@@ -150,7 +150,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];
 
-    const size_t number_of_sets = last_bound.per_set.size();
+    const size_t number_of_sets = last_bound.ds_slots.size();
     if (number_of_sets == 0) {
         return;  // empty bind
     } else if (number_of_sets > glsl::kDebugInputBindlessMaxDescSets) {
@@ -163,12 +163,11 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     // Currently we loop through the sets multiple times to reduce complexity and seperate the various parts, can revisit if we find
     // this is actually a perf bottleneck (assume number of sets are low as people we will then to have a single large set)
     for (uint32_t i = 0; i < number_of_sets; i++) {
-        const auto &last_bound_set = last_bound.per_set[i];
-        if (!last_bound_set.bound_descriptor_set) {
+        const auto &ds_slot = last_bound.ds_slots[i];
+        if (!ds_slot.ds_state) {
             continue;  // can have gaps in descriptor sets
         }
-        std::shared_ptr<DescriptorSet> bound_descriptor_set =
-            std::static_pointer_cast<DescriptorSet>(last_bound_set.bound_descriptor_set);
+        std::shared_ptr<DescriptorSet> bound_descriptor_set = std::static_pointer_cast<DescriptorSet>(ds_slot.ds_state);
         descriptor_command_binding.bound_descriptor_sets.emplace_back(std::move(bound_descriptor_set));
     }
 

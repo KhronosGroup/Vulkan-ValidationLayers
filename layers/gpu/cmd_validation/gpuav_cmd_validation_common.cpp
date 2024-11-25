@@ -63,15 +63,15 @@ void RestorablePipelineState::Create(vvl::CommandBuffer &cb_state, VkPipelineBin
 
     push_constants_data_ = cb_state.push_constant_data_chunks;
 
-    descriptor_sets_.reserve(last_bound.per_set.size());
-    for (std::size_t set_i = 0; set_i < last_bound.per_set.size(); set_i++) {
-        const auto &bound_descriptor_set = last_bound.per_set[set_i].bound_descriptor_set;
+    descriptor_sets_.reserve(last_bound.ds_slots.size());
+    for (std::size_t set_i = 0; set_i < last_bound.ds_slots.size(); set_i++) {
+        const auto &bound_descriptor_set = last_bound.ds_slots[set_i].ds_state;
         if (bound_descriptor_set) {
             descriptor_sets_.emplace_back(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(set_i));
             if (bound_descriptor_set->IsPushDescriptor()) {
                 push_descriptor_set_index_ = static_cast<uint32_t>(set_i);
             }
-            dynamic_offsets_.push_back(last_bound.per_set[set_i].dynamicOffsets);
+            dynamic_offsets_.push_back(last_bound.ds_slots[set_i].dynamic_offsets);
         }
     }
 

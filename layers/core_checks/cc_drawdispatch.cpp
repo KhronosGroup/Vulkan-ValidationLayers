@@ -1305,26 +1305,26 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
-    for (const auto &ds : last_bound_state.per_set) {
+    for (const auto &ds_slot : last_bound_state.ds_slots) {
         // TODO - This currently implicitly is checking for VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT being set
         if (pipeline.descriptor_buffer_mode) {
-            if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
+            if (ds_slot.ds_state && !ds_slot.ds_state->IsPushDescriptor()) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds_slot.ds_state->Handle());
                 skip |= LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, vuid.loc(),
                                  "pipeline bound to %s requires a descriptor buffer (because it was created with "
                                  "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound VkDescriptorSet (%s)",
-                                 string_VkPipelineBindPoint(bind_point), FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
+                                 string_VkPipelineBindPoint(bind_point), FormatHandle(ds_slot.ds_state->Handle()).c_str());
                 break;
             }
 
-        } else if (ds.bound_descriptor_buffer.has_value()) {
+        } else if (ds_slot.descriptor_buffer_binding.has_value()) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, vuid.loc(),
                              "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
                              "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound descriptor buffer"
                              " (index=%" PRIu32 " offset=%" PRIu64 ")",
-                             string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
-                             ds.bound_descriptor_buffer->offset);
+                             string_VkPipelineBindPoint(bind_point), ds_slot.descriptor_buffer_binding->index,
+                             ds_slot.descriptor_buffer_binding->offset);
             break;
         }
     }
@@ -1362,16 +1362,16 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
         for (const auto &set_binding_pair : pipeline.active_slots) {
             std::string error_string;
             uint32_t set_index = set_binding_pair.first;
-            const auto set_info = last_bound_state.per_set[set_index];
-            if (!set_info.bound_descriptor_set) {
+            const auto ds_slot = last_bound_state.ds_slots[set_index];
+            if (!ds_slot.ds_state) {
                 skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
                                  "%s uses set #%" PRIu32
                                  " but that set is not bound. (Need to use a command like vkCmdBindDescriptorSets to bind the set)",
                                  FormatHandle(pipeline).c_str(), set_index);
-            } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, pipeline_layout->set_layouts,
-                                                     pipeline_layout->Handle(), set_index, error_string)) {
+            } else if (!VerifySetLayoutCompatibility(*ds_slot.ds_state, pipeline_layout->set_layouts, pipeline_layout->Handle(),
+                                                     set_index, error_string)) {
                 // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-                VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
+                VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
                 LogObjectList objlist = cb_state.GetObjectList(bind_point);
                 objlist.add(set_handle);
                 objlist.add(pipeline_layout->Handle());
@@ -1381,7 +1381,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                                  error_string.c_str());
             } else {  // Valid set is bound and layout compatible, validate that it's updated
                 // Pull the set node
-                const auto *descriptor_set = set_info.bound_descriptor_set.get();
+                const auto *descriptor_set = ds_slot.ds_state.get();
                 ASSERT_AND_CONTINUE(descriptor_set);
                 // Validate the draw-time state for this descriptor set
                 // We can skip validating the descriptor set if "nothing" has changed since the last validation.
@@ -1391,15 +1391,15 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                 // binding_req_map which could potentially be expensive.
                 bool need_validate =
                     // Revalidate each time if the set has dynamic offsets
-                    set_info.dynamicOffsets.size() > 0 ||
+                    ds_slot.dynamic_offsets.size() > 0 ||
                     // Revalidate if descriptor set (or contents) has changed
-                    set_info.validated_set != descriptor_set ||
-                    set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                    ds_slot.validated_set != descriptor_set ||
+                    ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
                     (!disabled[image_layout_validation] &&
-                     set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
+                     ds_slot.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                 if (need_validate) {
-                    skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets,
+                    skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, ds_slot.dynamic_offsets,
                                               cb_state, vuid.loc(), vuid);
                 }
             }
@@ -1430,16 +1430,16 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
             for (const auto &set_binding_pair : shader_state->active_slots) {
                 std::string error_string;
                 uint32_t set_index = set_binding_pair.first;
-                const auto set_info = last_bound_state.per_set[set_index];
-                if (!set_info.bound_descriptor_set) {
+                const auto ds_slot = last_bound_state.ds_slots[set_index];
+                if (!ds_slot.ds_state) {
                     const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                      "%s uses set #%" PRIu32 " but that set is not bound.",
                                      FormatHandle(shader_state->Handle()).c_str(), set_index);
-                } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, shader_state->set_layouts,
-                                                         shader_state->Handle(), set_index, error_string)) {
+                } else if (!VerifySetLayoutCompatibility(*ds_slot.ds_state, shader_state->set_layouts, shader_state->Handle(),
+                                                         set_index, error_string)) {
                     // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-                    VkDescriptorSet set_handle = set_info.bound_descriptor_set->VkHandle();
+                    VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
                     const LogObjectList objlist(cb_state.Handle(), set_handle, shader_state->Handle());
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                      "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
@@ -1447,7 +1447,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                                      error_string.c_str());
                 } else {  // Valid set is bound and layout compatible, validate that it's updated
                     // Pull the set node
-                    const auto *descriptor_set = set_info.bound_descriptor_set.get();
+                    const auto *descriptor_set = ds_slot.ds_state.get();
                     ASSERT_AND_CONTINUE(descriptor_set);
                     // Validate the draw-time state for this descriptor set
                     // We can skip validating the descriptor set if "nothing" has changed since the last validation.
@@ -1455,15 +1455,15 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                     // any dynamic descriptors, always revalidate rather than caching the values.
                     bool need_validate =
                         // Revalidate each time if the set has dynamic offsets
-                        set_info.dynamicOffsets.size() > 0 ||
+                        ds_slot.dynamic_offsets.size() > 0 ||
                         // Revalidate if descriptor set (or contents) has changed
-                        set_info.validated_set != descriptor_set ||
-                        set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                        ds_slot.validated_set != descriptor_set ||
+                        ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
                         (!disabled[image_layout_validation] &&
-                         set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
+                         ds_slot.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
 
                     if (need_validate) {
-                        skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, set_info.dynamicOffsets,
+                        skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, ds_slot.dynamic_offsets,
                                                   cb_state, vuid.loc(), vuid);
                     }
                 }

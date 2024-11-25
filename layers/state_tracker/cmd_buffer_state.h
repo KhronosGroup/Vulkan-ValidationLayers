@@ -596,7 +596,7 @@ class CommandBuffer : public RefcountedStateObject {
 
     vvl::Pipeline *GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const;
     void GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const vvl::Pipeline **rtn_pipe,
-                                            const std::vector<LastBound::PER_SET> **rtn_sets) const;
+                                            const std::vector<LastBound::DescriptorSetSlot> **rtn_sets) const;
 
     VkQueueFlags GetQueueFlags() const { return command_pool->queue_flags; }
 
