@@ -539,11 +539,11 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
 
-    SurfaceInformation info = GetSwapchainInfo(m_surface);
+    SurfaceInformation info = GetSwapchainInfo(m_surface.Handle());
     InitSwapchainInfo();
 
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
-    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.surface = m_surface.Handle();
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;

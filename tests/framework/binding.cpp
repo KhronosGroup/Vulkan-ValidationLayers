@@ -49,6 +49,15 @@
 
 namespace vkt {
 
+void Instance::Init(const VkInstanceCreateInfo &info) { ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&info, NULL, &handle_)); }
+
+void Instance::Destroy() noexcept {
+    if (handle_ != VK_NULL_HANDLE) {
+        vk::DestroyInstance(handle_, nullptr);
+        handle_ = VK_NULL_HANDLE;
+    }
+}
+
 VkPhysicalDeviceProperties PhysicalDevice::Properties() const {
     VkPhysicalDeviceProperties info;
     vk::GetPhysicalDeviceProperties(handle(), &info);
@@ -2049,4 +2058,39 @@ IndirectExecutionSet::IndirectExecutionSet(const Device &dev, const VkIndirectEx
     Init(dev, exe_set_ci);
 }
 
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+VkResult Surface::Init(VkInstance instance, const VkWin32SurfaceCreateInfoKHR &info) {
+    VkResult result = vk::CreateWin32SurfaceKHR(instance, &info, nullptr, &handle_);
+    instance_ = instance;
+    return result;
+}
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+VkResult Surface::Init(VkInstance instance, const VkMetalSurfaceCreateInfoEXT &info) {
+    VkResult result = vk::CreateMetalSurfaceEXT(instance, &info, nullptr, &handle_);
+    instance_ = instance;
+    return result;
+}
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+VkResult Surface::Init(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR &info) {
+    VkResult result = vk::CreateAndroidSurfaceKHR(instance, &info, nullptr, &handle_);
+    instance_ = instance;
+    return result;
+}
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+VkResult Surface::Init(VkInstance instance, const VkXlibSurfaceCreateInfoKHR &info) {
+    VkResult result = vk::CreateXlibSurfaceKHR(instance, &info, nullptr, &handle_);
+    instance_ = instance;
+    return result;
+}
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+VkResult Surface::Init(VkInstance instance, const VkXcbSurfaceCreateInfoKHR &info) {
+    VkResult result = vk::CreateXcbSurfaceKHR(instance, &info, nullptr, &handle_);
+    instance_ = instance;
+    return result;
+}
+#endif
 }  // namespace vkt

@@ -72,7 +72,7 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     // Force a non-success success code by only asking for a subset of query results
     uint32_t format_count;
     std::vector<VkSurfaceFormatKHR> formats;
-    result = vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface, &format_count, NULL);
+    result = vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface.Handle(), &format_count, NULL);
     if (result != VK_SUCCESS || format_count <= 1) {
         GTEST_SKIP() << "test requires 2 or more extensions available";
     }
@@ -80,7 +80,7 @@ TEST_F(VkBestPracticesLayerTest, ReturnCodes) {
     formats.resize(format_count);
 
     m_errorMonitor->SetDesiredFailureMsg(kVerboseBit, "BestPractices-Verbose-Success-Logging");
-    result = vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface, &format_count, formats.data());
+    result = vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface.Handle(), &format_count, formats.data());
     ASSERT_TRUE(result > VK_SUCCESS);
     m_errorMonitor->VerifyFound();
 }
@@ -834,7 +834,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     InitSwapchainInfo();
 
     VkBool32 supported;
-    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, m_surface.Handle(), &supported);
     if (!supported) {
         GTEST_SKIP() << "Graphics queue does not support present";
     }
@@ -856,7 +856,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchain_create_info.pNext = 0;
-    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.surface = m_surface.Handle();
     swapchain_create_info.minImageCount = 2;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
@@ -899,7 +899,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     VkSwapchainCreateInfoKHR swapchain_create_info = {};
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchain_create_info.pNext = 0;
-    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.surface = m_surface.Handle();
     swapchain_create_info.minImageCount = 3;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
@@ -913,13 +913,13 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     // Test for successful swapchain creation when GetPhysicalDeviceSurfaceCapabilitiesKHR() and
     // GetPhysicalDeviceSurfaceFormatsKHR() are queried as expected and GetPhysicalDeviceSurfacePresentModesKHR() is not called but
     // the present mode is VK_PRESENT_MODE_FIFO_KHR
-    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface, &m_surface_capabilities);
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface.Handle(), &m_surface_capabilities);
 
     uint32_t format_count;
-    vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface, &format_count, nullptr);
+    vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface.Handle(), &format_count, nullptr);
     if (format_count != 0) {
         m_surface_formats.resize(format_count);
-        vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface, &format_count, m_surface_formats.data());
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(Gpu(), m_surface.Handle(), &format_count, m_surface_formats.data());
     }
 
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
@@ -1901,7 +1901,7 @@ TEST_F(VkBestPracticesLayerTest, NoCreateSwapchainPresentModes) {
     RETURN_IF_SKIP(InitSurface());
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentMode-02839");
     m_errorMonitor->SetDesiredWarning("BestPractices-vkCreateSwapchainKHR-no-VkSwapchainPresentModesCreateInfoEXT-provided");
-    m_swapchain = CreateSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+    m_swapchain = CreateSwapchain(m_surface.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     m_errorMonitor->VerifyFound();
 }
 

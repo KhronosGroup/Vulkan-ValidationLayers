@@ -51,7 +51,7 @@ struct SurfaceContext {
     xcb_connection_t *m_surface_xcb_conn{};
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-    void *caMetalLayer;
+    void *caMetalLayer{};
 #endif
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -61,6 +61,8 @@ struct SurfaceContext {
     static bool CanResize() { return false; }
     void Resize(uint32_t width, uint32_t height) {}
 #endif
+    void Destroy();
+    ~SurfaceContext() { Destroy(); }
 };
 
 struct SurfaceInformation {
@@ -99,17 +101,14 @@ class VkRenderFramework : public VkTestFramework {
 
     // Functions to modify the VkRenderFramework surface & swapchain variables
     void InitSurface();
-    void DestroySurface();
     void InitSwapchainInfo();
     void InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     void DestroySwapchain();
     // Functions to create surfaces and swapchains that *aren't* member variables of VkRenderFramework
-    VkResult CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance = VK_NULL_HANDLE);
-    void DestroySurface(VkSurfaceKHR &surface);
-    void DestroySurfaceContext(SurfaceContext &surface_context);
+    VkResult CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance = VK_NULL_HANDLE);
     SurfaceInformation GetSwapchainInfo(const VkSurfaceKHR surface);
-    vkt::Swapchain CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
+    vkt::Swapchain CreateSwapchain(VkSurfaceKHR surface, VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform,
                                    VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
 
     // Swapchain capabilities declaration to be used with RETURN_IF_SKIP
@@ -224,7 +223,7 @@ class VkRenderFramework : public VkTestFramework {
 
     // WSI items
     SurfaceContext m_surface_context{};
-    VkSurfaceKHR m_surface{};
+    vkt::Surface m_surface{};
     vkt::Swapchain m_swapchain;
     VkSurfaceCapabilitiesKHR m_surface_capabilities{};
     std::vector<VkSurfaceFormatKHR> m_surface_formats;

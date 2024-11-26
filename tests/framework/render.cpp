@@ -516,8 +516,8 @@ void VkRenderFramework::ShutdownFramework() {
 
     m_errorMonitor->DestroyCallback(instance_);
 
-    DestroySurface(m_surface);
-    DestroySurfaceContext(m_surface_context);
+    m_surface.Destroy();
+    m_surface_context.Destroy();
 
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
@@ -689,13 +689,14 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 }
 
 void VkRenderFramework::InitSurface() {
-    // NOTE: Currently InitSurface can leak the WIN32 handle if called multiple times without first calling DestroySurfaceContext.
+    // NOTE: Currently InitSurface can leak the WIN32 handle if called multiple times without first calling Destroy() on
+    // m_surface_context.
     // This is intentional. Each swapchain/surface combo needs a unique HWND.
     VkResult result = CreateSurface(m_surface_context, m_surface);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Failed to create surface.";
     }
-    ASSERT_TRUE(m_surface != VK_NULL_HANDLE);
+    ASSERT_TRUE(m_surface.Handle() != VK_NULL_HANDLE);
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -708,7 +709,7 @@ void SurfaceContext::Resize(uint32_t width, uint32_t height) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSurfaceKHR &surface, VkInstance custom_instance) {
+VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance) {
     const VkInstance surface_instance = (custom_instance != VK_NULL_HANDLE) ? custom_instance : instance();
     (void)surface_instance;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -727,7 +728,7 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
         VkWin32SurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
         surface_create_info.hinstance = window_instance;
         surface_create_info.hwnd = window;
-        return vk::CreateWin32SurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+        return surface.Init(surface_instance, surface_create_info);
     }
 #endif
 
@@ -735,7 +736,7 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
     if (IsExtensionsEnabled(VK_EXT_METAL_SURFACE_EXTENSION_NAME)) {
         const VkMetalSurfaceCreateInfoEXT surface_create_info = vkt::CreateMetalSurfaceInfoEXT();
         assert(surface_create_info.pLayer != nullptr);
-        return vk::CreateMetalSurfaceEXT(surface_instance, &surface_create_info, nullptr, &surface);
+        return surface.Init(surface_instance, surface_create_info);
     }
 #endif
 
@@ -743,7 +744,7 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
     if (IsExtensionsEnabled(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
         VkAndroidSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
         surface_create_info.window = VkTestFramework::window;
-        return vk::CreateAndroidSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+        return surface.Init(surface_instance, surface_create_info);
     }
 #endif
 
@@ -758,7 +759,7 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
             VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.dpy = surface_context.m_surface_dpy;
             surface_create_info.window = surface_context.m_surface_window;
-            return vk::CreateXlibSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+            return surface.Init(surface_instance, surface_create_info);
         }
     }
 #endif
@@ -772,7 +773,7 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
             VkXcbSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.connection = surface_context.m_surface_xcb_conn;
             surface_create_info.window = window;
-            return vk::CreateXcbSurfaceKHR(surface_instance, &surface_create_info, nullptr, &surface);
+            return surface.Init(surface_instance, surface_create_info);
         }
     }
 #endif
@@ -780,52 +781,41 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, VkSur
     return VK_ERROR_UNKNOWN;
 }
 
-void VkRenderFramework::DestroySurface() {
-    DestroySurface(m_surface);
-    m_surface = VK_NULL_HANDLE;
-    DestroySurfaceContext(m_surface_context);
-    m_surface_context = {};
-}
-
-void VkRenderFramework::DestroySurface(VkSurfaceKHR &surface) {
-    if (surface != VK_NULL_HANDLE) {
-        vk::DestroySurfaceKHR(instance(), surface, nullptr);
-    }
-}
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
 #endif
 
-void VkRenderFramework::DestroySurfaceContext(SurfaceContext &surface_context) {
+void SurfaceContext::Destroy() {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    if (surface_context.m_win32Window != nullptr) {
-        DestroyWindow(surface_context.m_win32Window);
+    if (m_win32Window != nullptr) {
+        DestroyWindow(m_win32Window);
+        m_win32Window = nullptr;
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    if (surface_context.m_surface_dpy != nullptr) {
+    if (m_surface_dpy != nullptr) {
         // Ignore BadDrawable errors we seem to get during shutdown.
         // The default error handler will exit() and end the test suite.
         XSetErrorHandler(IgnoreXErrors);
-        XDestroyWindow(surface_context.m_surface_dpy, surface_context.m_surface_window);
-        surface_context.m_surface_window = None;
-        XCloseDisplay(surface_context.m_surface_dpy);
-        surface_context.m_surface_dpy = nullptr;
+        XDestroyWindow(m_surface_dpy, m_surface_window);
+        m_surface_window = None;
+        XCloseDisplay(m_surface_dpy);
+        m_surface_dpy = nullptr;
         XSetErrorHandler(nullptr);
     }
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (surface_context.m_surface_xcb_conn != nullptr) {
-        xcb_disconnect(surface_context.m_surface_xcb_conn);
-        surface_context.m_surface_xcb_conn = nullptr;
+    if (m_surface_xcb_conn != nullptr) {
+        xcb_disconnect(m_surface_xcb_conn);
+        m_surface_xcb_conn = nullptr;
     }
 #endif
 }
 
 // Queries the info needed to create a swapchain and assigns it to the member variables of VkRenderFramework
 void VkRenderFramework::InitSwapchainInfo() {
-    auto info = GetSwapchainInfo(m_surface);
+    auto info = GetSwapchainInfo(m_surface.Handle());
     m_surface_capabilities = info.surface_capabilities;
     m_surface_formats = info.surface_formats;
     m_surface_present_modes = info.surface_present_modes;
@@ -881,11 +871,11 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
 
 void VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTransformFlagBitsKHR preTransform) {
     RETURN_IF_SKIP(InitSurface());
-    m_swapchain = CreateSwapchain(m_surface, imageUsage, preTransform);
+    m_swapchain = CreateSwapchain(m_surface.Handle(), imageUsage, preTransform);
     ASSERT_TRUE(m_swapchain.initialized());
 }
 
-vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
+vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR surface, VkImageUsageFlags imageUsage,
                                                   VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR oldSwapchain) {
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, surface, &supported);
@@ -899,7 +889,7 @@ vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR &surface, VkImage
     // If this is being called from InitSwapchain, we need to also initialize all the VkRenderFramework
     // data associated with the swapchain since many tests use those variables. We can do this by checking
     // if the surface parameters address is the same as VkRenderFramework::m_surface
-    if (&surface == &m_surface) {
+    if (surface == m_surface.Handle()) {
         InitSwapchainInfo();
     }
 

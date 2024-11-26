@@ -171,6 +171,27 @@ class NonDispHandle : public Handle<T> {
 };
 
 }  // namespace internal
+   //
+class Instance {
+  public:
+    Instance(const VkInstanceCreateInfo &info) { Init(info); }
+    void Init(const VkInstanceCreateInfo &info);
+
+    ~Instance() noexcept { Destroy(); }
+    void Destroy() noexcept;
+
+    VkInstance Handle() const { return handle_; }
+
+    Instance(Instance &&src) noexcept : handle_{src.handle_} { src.handle_ = {}; }
+    Instance &operator=(Instance &&src) noexcept {
+        handle_ = src.handle_;
+        src.handle_ = {};
+        return *this;
+    }
+
+  private:
+    VkInstance handle_{};
+};
 
 class PhysicalDevice : public internal::Handle<VkPhysicalDevice> {
   public:
@@ -1466,4 +1487,48 @@ class IndirectExecutionSet : public internal::NonDispHandle<VkIndirectExecutionS
     void Init(const Device &dev, const VkIndirectExecutionSetCreateInfoEXT &info);
 };
 
+class Surface {
+  public:
+    Surface() : instance_(VK_NULL_HANDLE), handle_(VK_NULL_HANDLE) {}
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    VkResult Init(VkInstance, const VkWin32SurfaceCreateInfoKHR &);
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    VkResult Init(VkInstance, const VkMetalSurfaceCreateInfoEXT &);
+#endif
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    VkResult Init(VkInstance, const VkAndroidSurfaceCreateInfoKHR &);
+#endif
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    VkResult Init(VkInstance, const VkXlibSurfaceCreateInfoKHR &);
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    VkResult Init(VkInstance, const VkXcbSurfaceCreateInfoKHR &);
+#endif
+
+    ~Surface() noexcept { Destroy(); }
+    void Destroy() noexcept {
+        if (handle_ != VK_NULL_HANDLE) {
+            vk::DestroySurfaceKHR(instance_, handle_, nullptr);
+            handle_ = VK_NULL_HANDLE;
+        }
+    }
+    VkSurfaceKHR Handle() const { return handle_; }
+
+    Surface(Surface &&src) noexcept : instance_{src.instance_}, handle_{src.handle_} {
+        src.instance_ = {};
+        src.handle_ = {};
+    }
+    Surface &operator=(Surface &&src) noexcept {
+        instance_ = src.instance_;
+        src.instance_ = {};
+        handle_ = src.handle_;
+        src.handle_ = {};
+        return *this;
+    }
+
+  private:
+    VkInstance instance_ = VK_NULL_HANDLE;
+    VkSurfaceKHR handle_ = VK_NULL_HANDLE;
+};
 }  // namespace vkt
