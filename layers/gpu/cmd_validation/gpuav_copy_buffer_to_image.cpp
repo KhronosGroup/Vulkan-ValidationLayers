@@ -158,7 +158,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     }
 
     auto &shared_copy_validation_resources = gpuav.shared_resources_manager.Get<SharedCopyBufferToImageValidationResources>(
-        gpuav, cb_state.GetValidationCmdCommonDescriptorSetLayout(), loc);
+        gpuav, cb_state.GetErrorLoggingDescSetLayout(), loc);
 
     assert(shared_copy_validation_resources.IsValid());
     if (!shared_copy_validation_resources.IsValid()) {
@@ -169,7 +169,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     uint32_t max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.height *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
-    DeviceMemoryBlock copy_src_regions_mem_block(gpuav);
+    vko::Buffer copy_src_regions_mem_block(gpuav);
     {
         // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {
@@ -200,9 +200,9 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
 
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
-        copy_src_regions_mem_block.CreateBuffer(loc, &buffer_info, &alloc_info);
+        copy_src_regions_mem_block.Create(loc, &buffer_info, &alloc_info);
 
-        cb_state.gpu_resources_manager.ManageDeviceMemoryBlock(copy_src_regions_mem_block);
+        cb_state.gpu_resources_manager.ManageBuffer(copy_src_regions_mem_block);
 
         auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_block.MapMemory(loc);
 
@@ -280,7 +280,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         descriptor_buffer_infos[0].offset = 0;
         descriptor_buffer_infos[0].range = VK_WHOLE_SIZE;
         // Copy regions buffer
-        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_block.Buffer();
+        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_block.VkHandle();
         descriptor_buffer_infos[1].offset = 0;
         descriptor_buffer_infos[1].range = VK_WHOLE_SIZE;
 
@@ -301,9 +301,8 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     // Insert diagnostic dispatch
     DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline);
 
-    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    shared_copy_validation_resources.pipeline_layout, 0,
-                                    static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_copy_validation_resources.pipeline_layout, 0,
+                            static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
                                   shared_copy_validation_resources.pipeline_layout, glsl::kDiagPerCmdDescriptorSet, 1,
                                   &validation_desc_set, 0, nullptr);

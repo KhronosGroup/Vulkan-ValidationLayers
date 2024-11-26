@@ -420,7 +420,8 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         return;
     }
 
-    desc_set_manager_ = std::make_unique<DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
+    desc_set_manager_ =
+        std::make_unique<vko::DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
 
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
     {
@@ -476,7 +477,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         assert(output_buffer_pool_);
         alloc_info.pool = output_buffer_pool_;
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        indices_buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
+        indices_buffer_.Create(loc, &buffer_info, &alloc_info);
 
         auto indices_ptr = (uint32_t *)indices_buffer_.MapMemory(loc);
 

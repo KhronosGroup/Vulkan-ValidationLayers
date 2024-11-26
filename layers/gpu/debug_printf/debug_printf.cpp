@@ -377,7 +377,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 
 bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
                                   VkPipelineBindPoint bind_point, const Location &loc) {
-    gpuav::DeviceMemoryBlock debug_printf_output_buffer(gpuav);
+    gpuav::vko::Buffer debug_printf_output_buffer(gpuav);
 
     // Allocate memory for the output block that the gpu will use to return values for printf
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -386,7 +386,7 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = gpuav.output_buffer_pool_;
-    debug_printf_output_buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
+    debug_printf_output_buffer.Create(loc, &buffer_info, &alloc_info);
 
     // Clear the output block to zeros so that only printf values from the gpu will be present
     auto printf_output_ptr = (uint32_t *)debug_printf_output_buffer.MapMemory(loc);
@@ -395,7 +395,7 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
 
     VkDescriptorBufferInfo debug_printf_desc_buffer_info = {};
     debug_printf_desc_buffer_info.range = gpuav.gpuav_settings.debug_printf_buffer_size;
-    debug_printf_desc_buffer_info.buffer = debug_printf_output_buffer.Buffer();
+    debug_printf_desc_buffer_info.buffer = debug_printf_output_buffer.VkHandle();
     debug_printf_desc_buffer_info.offset = 0;
 
     VkWriteDescriptorSet wds = vku::InitStructHelper();

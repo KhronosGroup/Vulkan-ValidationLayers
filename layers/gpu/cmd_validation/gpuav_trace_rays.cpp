@@ -17,7 +17,7 @@
 
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpuav_vulkan_objects.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "generated/cmd_validation_trace_rays_rgen.h"
@@ -206,8 +206,8 @@ void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, Co
         return;
     }
 
-    auto &shared_trace_rays_resources = gpuav.shared_resources_manager.Get<SharedTraceRaysValidationResources>(
-        gpuav, cb_state.GetValidationCmdCommonDescriptorSetLayout(), loc);
+    auto &shared_trace_rays_resources =
+        gpuav.shared_resources_manager.Get<SharedTraceRaysValidationResources>(gpuav, cb_state.GetErrorLoggingDescSetLayout(), loc);
 
     assert(shared_trace_rays_resources.IsValid());
     if (!shared_trace_rays_resources.IsValid()) {
@@ -235,9 +235,8 @@ void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, Co
     push_constants[4] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
 
     DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_trace_rays_resources.pipeline);
-    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                    shared_trace_rays_resources.pipeline_layout, cb_state.trace_rays_index,
-                                    static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_trace_rays_resources.pipeline_layout,
+                            cb_state.trace_rays_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_trace_rays_resources.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0,
                              sizeof(push_constants), push_constants);
     VkStridedDeviceAddressRegionKHR ray_gen_sbt{};

@@ -27,6 +27,8 @@ struct Location;
 namespace gpuav {
 class Validator;
 
+namespace vko {
+
 class DescriptorSetManager {
   public:
     DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
@@ -50,10 +52,9 @@ class DescriptorSetManager {
     mutable std::mutex lock_;
 };
 
-// Wrapper around device memory and its corresponding allocation
-class DeviceMemoryBlock {
+class Buffer {
   public:
-    explicit DeviceMemoryBlock(Validator &gpuav) : gpuav(gpuav) {}
+    explicit Buffer(Validator &gpuav) : gpuav(gpuav) {}
 
     // Warps VMA calls to simplify error reporting.
     // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
@@ -63,12 +64,12 @@ class DeviceMemoryBlock {
     void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
     void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    void CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                      const VmaAllocationCreateInfo *allocation_create_info);
-    void DestroyBuffer();
+    void Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                const VmaAllocationCreateInfo *allocation_create_info);
+    void Destroy();
 
-    bool Destroyed() const { return buffer == VK_NULL_HANDLE; }
-    const VkBuffer &Buffer() const { return buffer; }
+    bool IsDestroyed() const { return buffer == VK_NULL_HANDLE; }
+    const VkBuffer &VkHandle() const { return buffer; }
     const VmaAllocation &Allocation() const { return allocation; }
     VkDeviceAddress Address() const { return device_address; };
 
@@ -85,14 +86,14 @@ class GpuResourcesManager {
     explicit GpuResourcesManager(DescriptorSetManager &descriptor_set_manager) : descriptor_set_manager_(descriptor_set_manager) {}
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
-    void ManageDeviceMemoryBlock(DeviceMemoryBlock mem_block);
+    void ManageBuffer(Buffer mem_block);
 
     void DestroyResources();
 
   private:
     DescriptorSetManager &descriptor_set_manager_;
     std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
-    std::vector<DeviceMemoryBlock> mem_blocks_;
+    std::vector<vko::Buffer> mem_blocks_;
 };
 
 class SharedResourcesManager {
@@ -135,5 +136,7 @@ class SharedResourcesManager {
     std::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
 };
+
+}  // namespace vko
 
 }  // namespace gpuav

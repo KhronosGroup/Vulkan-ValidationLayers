@@ -18,7 +18,7 @@
 #pragma once
 
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpuav_vulkan_objects.h"
 #include "gpu/instrumentation/gpuav_shader_instrumentor.h"
 
 #include <memory>
@@ -412,15 +412,15 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
-    SharedResourcesManager shared_resources_manager;
+    vko::SharedResourcesManager shared_resources_manager;
 
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
 
     VmaAllocator vma_allocator_ = {};
     VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
-    std::unique_ptr<DescriptorSetManager> desc_set_manager_;
+    std::unique_ptr<vko::DescriptorSetManager> desc_set_manager_;
 
-    DeviceMemoryBlock indices_buffer_;
+    vko::Buffer indices_buffer_;
     unsigned int indices_buffer_alignment_ = 0;
 
   private:

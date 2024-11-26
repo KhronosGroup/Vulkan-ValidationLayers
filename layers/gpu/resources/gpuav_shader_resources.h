@@ -23,7 +23,7 @@
 
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpuav_vulkan_objects.h"
 
 namespace gpuav {
 
@@ -31,8 +31,8 @@ namespace gpuav {
 struct DescriptorCommandBinding {
     // This is where we hold the list of BDA address for a given bound descriptor snapshot.
     // The size of the SSBO doesn't change on an UpdateAfterBind so we can allocate it once and update its internals later
-    DeviceMemoryBlock descritpor_state_ssbo_block;  // type DescriptorStateSSBO
-    DeviceMemoryBlock post_process_ssbo_block;      // type PostProcessSSBO
+    vko::Buffer descritpor_state_ssbo_block;  // type DescriptorStateSSBO
+    vko::Buffer post_process_ssbo_block;      // type PostProcessSSBO
 
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
