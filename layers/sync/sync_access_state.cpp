@@ -1037,46 +1037,6 @@ SyncBarrier::SyncBarrier(const std::vector<SyncBarrier> &barriers) : SyncBarrier
         Merge(barrier);
     }
 }
-const char *string_SyncHazard(SyncHazard hazard) {
-    switch (hazard) {
-        case SyncHazard::NONE:
-            return "NONE";
-            break;
-        case SyncHazard::READ_AFTER_WRITE:
-            return "READ_AFTER_WRITE";
-            break;
-        case SyncHazard::WRITE_AFTER_READ:
-            return "WRITE_AFTER_READ";
-            break;
-        case SyncHazard::WRITE_AFTER_WRITE:
-            return "WRITE_AFTER_WRITE";
-            break;
-        case SyncHazard::READ_RACING_WRITE:
-            return "READ_RACING_WRITE";
-            break;
-        case SyncHazard::WRITE_RACING_WRITE:
-            return "WRITE_RACING_WRITE";
-            break;
-        case SyncHazard::WRITE_RACING_READ:
-            return "WRITE_RACING_READ";
-            break;
-        case SyncHazard::READ_AFTER_PRESENT:
-            return "READ_AFTER_PRESENT";
-            break;
-        case SyncHazard::WRITE_AFTER_PRESENT:
-            return "WRITE_AFTER_PRESENT";
-            break;
-        case SyncHazard::PRESENT_AFTER_WRITE:
-            return "PRESENT_AFTER_WRITE";
-            break;
-        case SyncHazard::PRESENT_AFTER_READ:
-            return "PRESENT_AFTER_READ";
-            break;
-        default:
-            assert(0);
-    }
-    return "INVALID HAZARD";
-}
 
 const char *string_SyncHazardVUID(SyncHazard hazard) {
     switch (hazard) {

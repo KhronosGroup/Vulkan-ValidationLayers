@@ -40,11 +40,9 @@ class ValidateResolveAction {
         hazard = context_.DetectHazard(view_gen, gen_type, current_usage, ordering_rule);
         if (hazard.IsHazard()) {
             const Location loc(command_);
-            skip_ |= cb_context_.GetSyncState().LogError(string_SyncHazardVUID(hazard.Hazard()), render_pass_, loc,
-                                                         "Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32
-                                                         " to resolve attachment %" PRIu32 ". Access info %s.",
-                                                         string_SyncHazard(hazard.Hazard()), subpass_, aspect_name, attachment_name,
-                                                         src_at, dst_at, cb_context_.FormatHazard(hazard).c_str());
+            const auto error = cb_context_.GetSyncState().error_messages_.RenderPassResolveError(
+                hazard, cb_context_, subpass_, aspect_name, attachment_name, src_at, dst_at);
+            skip_ |= cb_context_.GetSyncState().SyncError(hazard.Hazard(), render_pass_, loc, error);
         }
     }
     // Providing a mechanism for the constructing caller to get the result of the validation
@@ -161,19 +159,16 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
         if (hazard.IsHazard()) {
             const Location loc(command);
             if (hazard.Tag() == kInvalidTag) {
-                skip |= cb_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
-                    "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                    " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32,
-                    string_SyncHazard(hazard.Hazard()), subpass, transition.attachment, string_VkImageLayout(transition.old_layout),
-                    string_VkImageLayout(transition.new_layout), transition.prev_pass);
+                // TODO: there are no tests for this error
+                // TODO: investigate when we can get invalid tag
+                // Initially introduced: ee98402 - syncval: Cleanup of invalid tagging
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionVsStoreResolveError(
+                    hazard, subpass, transition.attachment, transition.old_layout, transition.new_layout, transition.prev_pass);
+                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             } else {
-                skip |= cb_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
-                    "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                    " image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
-                    string_SyncHazard(hazard.Hazard()), subpass, transition.attachment, string_VkImageLayout(transition.old_layout),
-                    string_VkImageLayout(transition.new_layout), cb_context.FormatHazard(hazard).c_str());
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionError(
+                    hazard, cb_context, subpass, transition.attachment, transition.old_layout, transition.new_layout);
+                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             }
         }
     }
@@ -234,16 +229,13 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
                 const Location loc(command);
                 if (hazard.Tag() == kInvalidTag) {
                     // Hazard vs. ILT
-                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
-                                                "Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
-                                                " aspect %s during load with loadOp %s.",
-                                                string_SyncHazard(hazard.Hazard()), subpass, i, aspect, load_op_string);
+                    const auto error = sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(hazard, subpass, i,
+                                                                                                          aspect, load_op_string);
+                    skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 } else {
-                    skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), rp_state.Handle(), loc,
-                                                "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                                                " aspect %s during load with loadOp %s. Access info %s.",
-                                                string_SyncHazard(hazard.Hazard()), subpass, i, aspect, load_op_string,
-                                                cb_context.FormatHazard(hazard).c_str());
+                    const auto error =
+                        sync_state.error_messages_.RenderPassLoadOpError(hazard, cb_context, subpass, i, aspect, load_op_string);
+                    skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 }
             }
         }
@@ -302,11 +294,9 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
                 const Location loc(command);
-                skip |= cb_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
-                    "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " %s aspect during store with %s %s. Access info %s",
-                    string_SyncHazard(hazard.Hazard()), current_subpass_, i, aspect, op_type_string, store_op_string,
-                    cb_context.FormatHazard(hazard).c_str());
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassStoreOpError(
+                    hazard, cb_context, current_subpass_, i, aspect, op_type_string, store_op_string);
+                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }
     }
@@ -486,11 +476,12 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
     }
 }
 
-bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context,
-                                                            const vvl::CommandBuffer &cmd_buffer, vvl::Func command) const {
+// TODO: SyncError reporting places in this function are not covered by the tests.
+bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
     const auto &sync_state = cb_context.GetSyncState();
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const vvl::CommandBuffer &cmd_buffer = cb_context.GetCBState();
     const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return skip;
@@ -514,11 +505,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
             if (hazard.IsHazard()) {
                 const VkImageView view_handle = view_gen.GetViewState()->VkHandle();
                 const Location loc(command);
-                skip |= sync_state.LogError(string_SyncHazardVUID(hazard.Hazard()), view_handle, loc,
-                                            "Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.",
-                                            string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_handle).c_str(),
-                                            sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(), location,
-                                            cb_context.FormatHazard(hazard).c_str());
+                const auto error = sync_state.error_messages_.RenderPassColorAttachmentError(hazard, cb_context,
+                                                                                             *view_gen.GetViewState(), location);
+                skip |= sync_state.SyncError(hazard.Hazard(), view_handle, loc, error);
             }
         }
     }
@@ -547,12 +536,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
                 const Location loc(command);
-                skip |= sync_state.LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), view_state.Handle(), loc,
-                    "Hazard %s for %s in %s, Subpass #%d, and depth part of pDepthStencilAttachment. Access info %s.",
-                    string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_state).c_str(),
-                    sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
-                    cb_context.FormatHazard(hazard).c_str());
+                const auto error =
+                    sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state, true);
+                skip |= sync_state.SyncError(hazard.Hazard(), view_state.Handle(), loc, error);
             }
         }
         if (stencil_write) {
@@ -561,12 +547,9 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
                 const Location loc(command);
-                skip |= sync_state.LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), view_state.Handle(), loc,
-                    "Hazard %s for %s in %s, Subpass #%d, and stencil part of pDepthStencilAttachment. Access info %s.",
-                    string_SyncHazard(hazard.Hazard()), sync_state.FormatHandle(view_state).c_str(),
-                    sync_state.FormatHandle(cmd_buffer).c_str(), cmd_buffer.GetActiveSubpass(),
-                    cb_context.FormatHazard(hazard).c_str());
+                const auto error =
+                    sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state, false);
+                skip |= sync_state.SyncError(hazard.Hazard(), view_state.Handle(), loc, error);
             }
         }
     }
@@ -801,21 +784,15 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
         if (hazard.IsHazard()) {
             const Location loc(command);
             if (hazard.Tag() == kInvalidTag) {
-                // Hazard vs. ILT
-                skip |= cb_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
-                    "Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
-                    " final image layout transition (old_layout: %s, new_layout: %s).",
-                    string_SyncHazard(hazard.Hazard()), transition.prev_pass, transition.attachment,
-                    string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout));
+                // Hazard vs. store/resolve
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionVsStoreResolveError(
+                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout);
+                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             } else {
-                skip |= cb_context.GetSyncState().LogError(
-                    string_SyncHazardVUID(hazard.Hazard()), rp_state_->Handle(), loc,
-                    "Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
-                    " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.",
-                    string_SyncHazard(hazard.Hazard()), transition.prev_pass, transition.attachment,
-                    string_VkImageLayout(transition.old_layout), string_VkImageLayout(transition.new_layout),
-                    cb_context.FormatHazard(hazard).c_str());
+                // TODO: this error is not covered by the test
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionError(
+                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout);
+                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }
     }

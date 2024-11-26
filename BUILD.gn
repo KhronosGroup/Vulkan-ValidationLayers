@@ -306,6 +306,8 @@ vvl_sources = [
   "layers/sync/sync_commandbuffer.h",
   "layers/sync/sync_common.cpp",
   "layers/sync/sync_common.h",
+  "layers/sync/sync_error_messages.cpp",
+  "layers/sync/sync_error_messages.h",
   "layers/sync/sync_image.h",
   "layers/sync/sync_op.cpp",
   "layers/sync/sync_op.h",

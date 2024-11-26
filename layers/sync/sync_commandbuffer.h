@@ -21,6 +21,10 @@
 
 class SyncValidator;
 
+namespace syncval {
+class ErrorMessages;
+}  // namespace syncval
+
 class AlternateResourceUsage {
   public:
     struct RecordBase;
@@ -179,8 +183,7 @@ class CommandExecutionContext {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
     using CommandBufferSet = std::vector<std::shared_ptr<const vvl::CommandBuffer>>;
-    CommandExecutionContext(const SyncValidator& sync_validator, VkQueueFlags queue_flags)
-        : sync_state_(sync_validator), queue_flags_(queue_flags) {}
+    CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags);
     virtual ~CommandExecutionContext() = default;
 
     // Are imported command buffers Submitted (QueueBatchContext), or Executed (CommandBufferAccessContext)
@@ -191,11 +194,11 @@ class CommandExecutionContext {
 
     virtual ExecutionType Type() const = 0;
 
-    const char *ExecutionTypeString() {
+    const char *ExecutionTypeString() const {
         const char *type_string[] = {"Executed", "Submitted"};
         return type_string[Type()];
     }
-    const char *ExecutionUsageString() {
+    const char *ExecutionUsageString() const {
         const char *usage_string[] = {"executed_usage", "submitted_usage"};
         return usage_string[Type()];
     }
@@ -214,6 +217,7 @@ class CommandExecutionContext {
 
   protected:
     const SyncValidator &sync_state_;
+    const syncval::ErrorMessages &error_messages_;
     const VkQueueFlags queue_flags_;
 };
 
