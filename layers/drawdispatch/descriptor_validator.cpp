@@ -152,6 +152,15 @@ bool DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &bi
     auto binding_ptr = descriptor_set.GetBinding(binding_info.first);
     ASSERT_AND_RETURN_SKIP(binding_ptr);
     auto &binding = *binding_ptr;
+
+    // If we already validated/updated the descriptor on the CPU, no reason to redo on the Post Processing of GPU-AV.
+    // There is no descriptor aliasing on the CPU, so we automatically know it needs Post Processing
+    if (binding_info.second.size() == 1) {
+        if (!descriptor_set.ValidateBindingOnGPU(binding, binding_info.second[0].variable->is_dynamic_accessed)) {
+            return skip;
+        }
+    }
+
     switch (binding.descriptor_class) {
         case DescriptorClass::GeneralBuffer:
             skip |= ValidateDescriptorsDynamic(binding_info, static_cast<const BufferBinding &>(binding), indices);
@@ -160,7 +169,7 @@ bool DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &bi
             auto &imgs_binding = static_cast<ImageSamplerBinding &>(binding);
             for (auto index : indices) {
                 auto &descriptor = imgs_binding.descriptors[index];
-                descriptor.UpdateDrawState(&dev_state, cb_state);
+                descriptor.UpdateDrawState(cb_state);
             }
             skip |= ValidateDescriptorsDynamic(binding_info, imgs_binding, indices);
             break;
@@ -169,7 +178,7 @@ bool DescriptorValidator::ValidateBindingDynamic(const DescriptorBindingInfo &bi
             auto &img_binding = static_cast<ImageBinding &>(binding);
             for (auto index : indices) {
                 auto &descriptor = img_binding.descriptors[index];
-                descriptor.UpdateDrawState(&dev_state, cb_state);
+                descriptor.UpdateDrawState(cb_state);
             }
             skip |= ValidateDescriptorsDynamic(binding_info, img_binding, indices);
             break;
@@ -307,6 +316,10 @@ bool DescriptorValidator::ValidateDescriptor(const DescriptorBindingInfo &bindin
 
     if (image_descriptor.GetClass() == DescriptorClass::ImageSampler) {
         sampler_states.emplace_back(static_cast<const ImageSamplerDescriptor &>(image_descriptor).GetSamplerState());
+    } else if (is_gpu_av) {
+        // TODO - This will skip for GPU-AV because we don't currently capture array of samplers with array of sampled images
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8922
+        // To not give false positve, we will skip all Sampler related checks since sampler_states will be empty
     } else {
         for (const auto &req : binding_info.second) {
             if (!req.variable || req.variable->samplers_used_by_image.size() <= index) {

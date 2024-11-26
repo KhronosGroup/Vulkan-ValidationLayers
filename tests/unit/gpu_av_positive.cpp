@@ -1383,11 +1383,9 @@ TEST_F(PositiveGpuAV, AliasImageMultisampleDescriptorSets) {
     char const *cs_source = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
-
         layout(set = 0, binding = 0) uniform texture2D BaseTexture;
         layout(set = 0, binding = 1) uniform sampler BaseTextureSampler;
         layout(set = 0, binding = 2) buffer SSBO { vec4 dummy; };
-
         void main() {
             dummy = texture(sampler2D(BaseTexture, BaseTextureSampler), vec2(0));
         }
@@ -1396,10 +1394,8 @@ TEST_F(PositiveGpuAV, AliasImageMultisampleDescriptorSets) {
     char const *cs_source_ms = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
-
         layout(set = 0, binding = 0) uniform texture2DMS BaseTextureMS;
         layout(set = 0, binding = 2) buffer SSBO { vec4 dummy; };
-
         void main() {
             dummy = texelFetch(BaseTextureMS, ivec2(0), 0);
         }
@@ -1466,32 +1462,25 @@ TEST_F(PositiveGpuAV, AliasImageMultisampleDescriptorSetsPartiallyBound) {
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
-
     char const *cs_source = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
-
         layout(set = 0, binding = 0) uniform texture2D BaseTexture;
         layout(set = 0, binding = 1) uniform sampler BaseTextureSampler;
         layout(set = 0, binding = 2) buffer SSBO { vec4 dummy; };
-
         void main() {
             dummy = texture(sampler2D(BaseTexture, BaseTextureSampler), vec2(0));
         }
     )glsl";
-
     char const *cs_source_ms = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
-
         layout(set = 0, binding = 0) uniform texture2DMS BaseTextureMS;
         layout(set = 0, binding = 2) buffer SSBO { vec4 dummy; };
-
         void main() {
             dummy = texelFetch(BaseTextureMS, ivec2(0), 0);
         }
     )glsl";
-
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -1500,12 +1489,10 @@ TEST_F(PositiveGpuAV, AliasImageMultisampleDescriptorSetsPartiallyBound) {
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView ms_image_view = ms_image.CreateView();
-
     VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0, 0};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
-
     OneOffDescriptorSet descriptor_set0(m_device,
                                         {
                                             {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},

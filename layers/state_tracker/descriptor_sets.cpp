@@ -708,21 +708,21 @@ void vvl::DescriptorSet::UpdateDrawStates(ValidationStateTracker *device_data, v
             case DescriptorClass::Image: {
                 auto *image_binding = static_cast<ImageBinding *>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateDrawState(device_data, cb_state);
+                    image_binding->descriptors[i].UpdateDrawState(cb_state);
                 }
                 break;
             }
             case DescriptorClass::ImageSampler: {
                 auto *image_binding = static_cast<ImageSamplerBinding *>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateDrawState(device_data, cb_state);
+                    image_binding->descriptors[i].UpdateDrawState(cb_state);
                 }
                 break;
             }
             case DescriptorClass::Mutable: {
                 auto *mutable_binding = static_cast<MutableBinding *>(binding);
                 for (uint32_t i = 0; i < mutable_binding->count; ++i) {
-                    mutable_binding->descriptors[i].UpdateDrawState(device_data, cb_state);
+                    mutable_binding->descriptors[i].UpdateDrawState(cb_state);
                 }
                 break;
             }
@@ -873,7 +873,7 @@ void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const Validation
     UpdateKnownValidView(is_bindless);
 }
 
-void vvl::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer &cb_state) {
+void vvl::ImageDescriptor::UpdateDrawState(vvl::CommandBuffer &cb_state) {
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
@@ -1276,7 +1276,7 @@ VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
     }
 }
 
-void vvl::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, vvl::CommandBuffer &cb_state) {
+void vvl::MutableDescriptor::UpdateDrawState(vvl::CommandBuffer &cb_state) {
     const vvl::DescriptorClass active_class = ActiveClass();
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {
