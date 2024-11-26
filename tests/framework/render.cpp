@@ -665,6 +665,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         }
     }
     m_default_queue = queues[0];
+    m_default_queue_caps = m_device->Physical().queue_properties_[m_default_queue->family_index].queueFlags;
     if (queues.size() > 1) {
         m_second_queue = queues[1];
         m_second_queue_caps = m_device->Physical().queue_properties_[m_second_queue->family_index].queueFlags;

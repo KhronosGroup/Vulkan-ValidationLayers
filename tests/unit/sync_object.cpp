@@ -4203,3 +4203,71 @@ TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait3) {
     m_second_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
     m_device->Wait();
 }
+
+TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait4) {
+    TEST_DESCRIPTION("Binary semaphore signal-wait depends on timeline wait-before-signal. Use sparse binding operation");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    if (!(m_default_queue_caps & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1));
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(binary_semaphore));
+
+    VkBindSparseInfo bind_info = vku::InitStructHelper();
+    bind_info.waitSemaphoreCount = 1;
+    bind_info.pWaitSemaphores = &binary_semaphore.handle();
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueBindSparse-pWaitSemaphores-03245");
+    vk::QueueBindSparse(*m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_device->Wait();
+}
+
+TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait5) {
+    TEST_DESCRIPTION("Binary semaphore signal-wait depends on timeline wait-before-signal. Use sparse binding operation");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    if (!(m_default_queue_caps & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        GTEST_SKIP() << "Graphics queue does not have sparse binding bit";
+    }
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    // Submit timeline signal using sparse submit
+    const uint64_t timeline_value = 1;
+    VkTimelineSemaphoreSubmitInfo timeline_submit_info = vku::InitStructHelper();
+    timeline_submit_info.waitSemaphoreValueCount = 1;
+    timeline_submit_info.pWaitSemaphoreValues = &timeline_value;
+    VkBindSparseInfo bind_info = vku::InitStructHelper(&timeline_submit_info);
+    bind_info.waitSemaphoreCount = 1;
+    bind_info.pWaitSemaphores = &timeline_semaphore.handle();
+    vk::QueueBindSparse(*m_default_queue, 1, &bind_info, VK_NULL_HANDLE);
+
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Signal(binary_semaphore));
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-semaphore-03873");
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_errorMonitor->VerifyFound();
+
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+    m_device->Wait();
+}

@@ -242,6 +242,7 @@ class VkRenderFramework : public VkTestFramework {
     vkt::Image *m_depthStencil;
     // first graphics queue, used must often, don't overwrite, use Device class
     vkt::Queue *m_default_queue = nullptr;
+    VkQueueFlags m_default_queue_caps = 0;
 
     // A queue different from the default one (can be null).
     // The queue with the most capabilities is selected (graphics > compute > transfer).
