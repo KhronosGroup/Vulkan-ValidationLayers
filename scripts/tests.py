@@ -219,6 +219,9 @@ def RunVVLTests(args):
         # a manual vkCreateDevice call and need to investigate more why
         common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
         return
+    if args.skipVideo:
+        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=-*Video.*", env=lvt_env)
+        return
 
     common_ci.RunShellCmd(lvt_cmd, env=lvt_env)
 
@@ -266,6 +269,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--mockAndroid', dest='mockAndroid',
         action='store_true', help='Use Mock Android')
+    parser.add_argument(
+        '--skipVideo', dest='skipVideo',
+        action='store_true', help='Filter out video tests')
 
     args = parser.parse_args()
 

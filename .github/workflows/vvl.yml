@@ -112,7 +112,15 @@ jobs:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
+        if: ${{ matrix.sanitize != 'thread' }}
         run: python scripts/tests.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+      - name: Test Max Profile - Skip Video
+        # Currently Thread Sanitizer causes each video framework tests to slowly increase the time each test runs
+        # This then persists for the following tests as well, really slowing down runs by factor of an hour or more
+        if: ${{ matrix.sanitize == 'thread' }}
+        run: python scripts/tests.py --test --skipVideo
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
       - name: Test Max Core
