@@ -1337,8 +1337,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8875
-TEST_F(NegativeGpuAV, DISABLED_AliasImageMultisample) {
+TEST_F(NegativeGpuAV, AliasImageMultisample) {
     TEST_DESCRIPTION("Same binding used for Multisampling and non-Multisampling");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);

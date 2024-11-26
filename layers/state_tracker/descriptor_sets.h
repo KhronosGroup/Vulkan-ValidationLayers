@@ -398,6 +398,8 @@ class Descriptor {
     virtual bool AddParent(StateObject *state_object) { return false; }
     virtual void RemoveParent(StateObject *state_object) {}
 
+    virtual void UpdateDrawState(vvl::CommandBuffer &cb_state) {}
+
     // return true if resources used by this descriptor are destroyed or otherwise missing
     virtual bool Invalid() const { return false; }
 };
@@ -449,7 +451,7 @@ class ImageDescriptor : public Descriptor {
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
-    void UpdateDrawState(vvl::CommandBuffer &cb_state);
+    void UpdateDrawState(vvl::CommandBuffer &cb_state) override;
     VkImageView GetImageView() const;
     const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
     vvl::ImageView *GetImageViewState() { return image_view_state_.get(); }
@@ -613,7 +615,7 @@ class MutableDescriptor : public Descriptor {
         return acc_khr != VK_NULL_HANDLE;
     }
 
-    void UpdateDrawState(vvl::CommandBuffer &cb_state);
+    void UpdateDrawState(vvl::CommandBuffer &cb_state) override;
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
@@ -981,10 +983,10 @@ class DescriptorSet : public StateObject {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
-    inline bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_dynamic_accessed) const {
+    inline bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_dynamically_accessed) const {
         // core validation case: We check if all parts of the descriptor are statically known, from here spirv-val should have
         // caught any OOB values.
-        return IsBindless(binding.binding_flags) || is_dynamic_accessed;
+        return IsBindless(binding.binding_flags) || is_dynamically_accessed;
     }
 
   protected:

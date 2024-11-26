@@ -1974,8 +1974,8 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
 }
 
 // Determines if the Resource variable itself is dynamic
-bool ResourceInterfaceVariable::IsDynamicAccessed(ResourceInterfaceVariable& variable, const Module& module_state,
-                                                  const AccessChainVariableMap& access_chain_map) {
+bool ResourceInterfaceVariable::IsDynamicallyAccessed(ResourceInterfaceVariable& variable, const Module& module_state,
+                                                      const AccessChainVariableMap& access_chain_map) {
     // The 4 array edge cases to catch
     //
     // [Dynamic] true
@@ -2053,7 +2053,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
       array_length(0),
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
-      is_dynamic_accessed(IsDynamicAccessed(*this, module_state, access_chain_map)),
+      is_dynamically_accessed(IsDynamicallyAccessed(*this, module_state, access_chain_map)),
       image_sampled_type_width(FindImageSampledTypeWidth(module_state, base_type)),
       is_storage_buffer(IsStorageBuffer(*this)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash

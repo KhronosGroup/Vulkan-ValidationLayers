@@ -26,6 +26,13 @@
 namespace gpuav {
 class Validator;
 
+// Information about how each descriptor was accessed
+struct DescriptorAccess {
+    uint32_t binding;      // binding number in the descriptor set
+    uint32_t index;        // index into descriptor array
+    uint32_t variable_id;  // OpVariable of descriptor accessed;
+};
+
 class DescriptorSet : public vvl::DescriptorSet {
   public:
     DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
@@ -40,7 +47,7 @@ class DescriptorSet : public vvl::DescriptorSet {
     VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
     bool HasPostProcessBuffer() const { return !post_process_block_.Destroyed(); }
 
-    std::map<uint32_t, std::vector<uint32_t>> UsedDescriptors(const Location &loc, uint32_t shader_set) const;
+    std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const;
 
   private:
     void BuildBindingLayouts();

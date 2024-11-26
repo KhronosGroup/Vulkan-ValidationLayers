@@ -292,11 +292,10 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 
 // cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
 // where accessed
-std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const Location &loc, uint32_t shader_set) const {
-    // < binding , [indexes that were accessed] >
-    std::map<uint32_t, std::vector<uint32_t>> used_descriptors;
+std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const {
+    std::vector<DescriptorAccess> descriptor_accesses;
     if (post_process_block_.Destroyed()) {
-        return used_descriptors;
+        return descriptor_accesses;
     }
 
     auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_block_.MapMemory(loc);
@@ -306,17 +305,16 @@ std::map<uint32_t, std::vector<uint32_t>> DescriptorSet::UsedDescriptors(const L
         const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
         for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
             const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
-            if (slot & glsl::kDescriptorSetAccessedMask) {
-                if ((slot & glsl::kDescriptorSetSelectionMask) == shader_set) {
-                    auto map_result = used_descriptors.emplace(binding, std::vector<uint32_t>());
-                    map_result.first->second.emplace_back(descriptor_i);
+            if (slot.descriptor_set & glsl::kDescriptorSetAccessedMask) {
+                if ((slot.descriptor_set & glsl::kDescriptorSetSelectionMask) == shader_set) {
+                    descriptor_accesses.emplace_back(DescriptorAccess{binding, descriptor_i, slot.variable_id});
                 }
             }
         }
     }
 
     post_process_block_.UnmapMemory();
-    return used_descriptors;
+    return descriptor_accesses;
 }
 
 void DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {

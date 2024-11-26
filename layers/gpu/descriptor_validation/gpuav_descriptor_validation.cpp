@@ -21,6 +21,7 @@
 #include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/resources/gpuav_shader_resources.h"
+#include "state_tracker/shader_module.h"
 
 namespace gpuav {
 namespace descriptor {
@@ -237,18 +238,32 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
             vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
                                              draw_loc);
-            auto used_descs = bound_descriptor_set->UsedDescriptors(loc, set_index);
-            // For each used binding ...
-            for (const auto &u : used_descs) {
-                const uint32_t binding = u.first;
-                auto iter = binding_req_map->find(binding);
-                vvl::DescriptorBindingInfo binding_info;
-                binding_info.first = binding;
-                while (iter != binding_req_map->end() && iter->first == binding) {
-                    binding_info.second.emplace_back(iter->second);
-                    ++iter;
+
+            auto descriptor_accesses = bound_descriptor_set->GetDescriptorAccesses(loc, set_index);
+            for (const auto &descriptor_access : descriptor_accesses) {
+                auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
+                ASSERT_AND_CONTINUE(descriptor_binding);
+
+                // There is a chance two descriptor bindings are aliased to each other.
+                //   layout(set = 0, binding = 2) uniform sampler3D tex3d[];
+                //   layout(set = 0, binding = 2) uniform sampler2D tex[];
+                // This is where we can use the OpVariable ID provided to map which aliased variable is being used
+                const ::spirv::ResourceInterfaceVariable *resource_variable = nullptr;
+                for (auto iter = binding_req_map->find(descriptor_access.binding);
+                     iter != binding_req_map->end() && iter->first == descriptor_access.binding; ++iter) {
+                    if (iter->second.variable->id == descriptor_access.variable_id) {
+                        resource_variable = iter->second.variable;
+                        break;
+                    }
                 }
-                context.ValidateBindingDynamic(binding_info, u.second);
+                ASSERT_AND_CONTINUE(resource_variable);
+
+                // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
+                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, resource_variable->is_dynamically_accessed)) {
+                    continue;
+                }
+
+                context.ValidateBindingDynamic(*resource_variable, *descriptor_binding, descriptor_access.index);
             }
         }
     }
