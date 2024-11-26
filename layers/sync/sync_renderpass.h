@@ -129,8 +129,7 @@ class RenderPassAccessContext {
                                         const AttachmentViewGenVector &attachment_views, const ResourceUsageTag tag,
                                         AccessContext &access_context);
 
-    bool ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, const vvl::CommandBuffer &cmd_buffer,
-                                       vvl::Func command) const;
+    bool ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const;
     void RecordDrawSubpassAttachment(const vvl::CommandBuffer &cmd_buffer, ResourceUsageTag tag);
 
     uint32_t GetAttachmentIndex(const VkClearAttachment &clear_attachment) const;

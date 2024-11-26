@@ -60,6 +60,9 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     }
 }
 
+CommandExecutionContext::CommandExecutionContext(const SyncValidator &sync_validator, VkQueueFlags queue_flags)
+    : sync_state_(sync_validator), error_messages_(sync_validator.error_messages_), queue_flags_(queue_flags) {}
+
 bool CommandExecutionContext::ValidForSyncOps() const {
     const bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
     assert(valid);
@@ -169,12 +172,10 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
 
         hazard = GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering());
         if (hazard.IsHazard()) {
-            LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
+            LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(error_obj.location, i);
-            skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                         "(%s), with loadOp %s. Access info %s.",
-                                         sync_state_.FormatHandle(attachment.view->Handle()).c_str(),
-                                         string_VkAttachmentLoadOp(attachment.info.loadOp), FormatHazard(hazard).c_str());
+            const auto error = sync_state_.error_messages_.BeginRenderingError(hazard, attachment, *this);
+            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             if (skip) break;
         }
     }
@@ -213,11 +214,9 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
         assert(access_context);
         auto report_resolve_hazard = [this](const HazardResult &hazard, const Location &loc, const VulkanTypedHandle image_handle,
                                             const VkResolveModeFlagBits resolve_mode) {
-            LogObjectList obj_list(cb_state_->Handle(), image_handle);
-            return sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc,
-                                        "(%s), during resolve with resolveMode %s. Access info %s.",
-                                        sync_state_.FormatHandle(image_handle).c_str(), string_VkResolveModeFlagBits(resolve_mode),
-                                        FormatHazard(hazard).c_str());
+            LogObjectList objlist(cb_state_->Handle(), image_handle);
+            const auto error = sync_state_.error_messages_.EndRenderingResolveError(hazard, image_handle, resolve_mode, *this);
+            return sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         };
 
         for (uint32_t i = 0; i < attachment_count && !skip; i++) {
@@ -249,12 +248,11 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
                 HazardResult hazard = access_context->DetectHazard(attachment.view_gen, store_usage, kStoreOrder);
                 if (hazard.IsHazard()) {
                     const VulkanTypedHandle image_handle = attachment.view->Handle();
-                    LogObjectList obj_list(cb_state_->Handle(), image_handle);
+                    LogObjectList objlist(cb_state_->Handle(), image_handle);
                     Location loc = attachment.GetLocation(error_obj.location, i);
-                    skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                                 "(%s), during store with storeOp %s. Access info %s.",
-                                                 sync_state_.FormatHandle(image_handle).c_str(),
-                                                 string_VkAttachmentStoreOp(attachment.info.storeOp), FormatHazard(hazard).c_str());
+                    const auto error =
+                        sync_state_.error_messages_.EndRenderingStoreError(hazard, image_handle, attachment.info.storeOp, *this);
+                    skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
                 }
             }
         }
@@ -370,16 +368,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         }
 
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
-                            skip |= sync_state_.LogError(
-                                string_SyncHazardVUID(hazard.Hazard()), img_view_state->Handle(), loc,
-                                "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32
-                                ", index %" PRIu32 ". Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_.FormatHandle(img_view_state->Handle()).c_str(),
-                                sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_.FormatHandle(pipe->Handle()).c_str(),
-                                sync_state_.FormatHandle(descriptor_set->Handle()).c_str(),
-                                string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
-                                variable.decorations.binding, index, FormatHazard(hazard).c_str());
+                            const auto error = error_messages_.DrawDispatchImageError(
+                                hazard, *this, *img_view_state, *pipe, *descriptor_set, descriptor_type, image_layout,
+                                variable.decorations.binding, index);
+                            skip |= sync_state_.SyncError(hazard.Hazard(), img_view_state->Handle(), loc, error);
                         }
                         break;
                     }
@@ -393,15 +385,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
-                            skip |= sync_state_.LogError(
-                                string_SyncHazardVUID(hazard.Hazard()), buf_view_state->Handle(), loc,
-                                "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_.FormatHandle(buf_view_state->Handle()).c_str(),
-                                sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_.FormatHandle(pipe->Handle()).c_str(),
-                                sync_state_.FormatHandle(descriptor_set->Handle()).c_str(),
-                                string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
-                                FormatHazard(hazard).c_str());
+                            const auto error =
+                                error_messages_.DrawDispatchTexelBufferError(hazard, *this, *buf_view_state, *pipe, *descriptor_set,
+                                                                             descriptor_type, variable.decorations.binding, index);
+                            skip |= sync_state_.SyncError(hazard.Hazard(), buf_view_state->Handle(), loc, error);
                         }
                         break;
                     }
@@ -420,19 +407,13 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                             offset += ds_slot.dynamic_offsets[dynamic_offset_index];
                         }
                         const auto *buf_state = buffer_descriptor->GetBufferState();
-                        const ResourceAccessRange range =
-                            MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
+                        const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
-                            skip |= sync_state_.LogError(
-                                string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
-                                "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%d index %d. Access info %s.",
-                                string_SyncHazard(hazard.Hazard()), sync_state_.FormatHandle(buf_state->Handle()).c_str(),
-                                sync_state_.FormatHandle(cb_state_->Handle()).c_str(),
-                                sync_state_.FormatHandle(pipe->Handle()).c_str(),
-                                sync_state_.FormatHandle(descriptor_set->Handle()).c_str(),
-                                string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
-                                FormatHazard(hazard).c_str());
+                            const auto error =
+                                error_messages_.DrawDispatchBufferError(hazard, *this, *buf_state, *pipe, *descriptor_set,
+                                                                        descriptor_type, variable.decorations.binding, index);
+                            skip |= sync_state_.SyncError(hazard.Hazard(), buf_state->Handle(), loc, error);
                         }
                         break;
                     }
@@ -590,10 +571,8 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
 
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
-                skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), buf_state->Handle(), loc,
-                                             "Hazard %s for vertex %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
-                                             sync_state_.FormatHandle(buf_state->Handle()).c_str(),
-                                             sync_state_.FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
+                const auto error = error_messages_.DrawVertexBufferError(hazard, *this, *buf_state);
+                skip |= sync_state_.SyncError(hazard.Hazard(), buf_state->Handle(), loc, error);
             }
         }
     }
@@ -646,10 +625,8 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
-        skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), index_buf_state->Handle(), loc,
-                                      "Hazard %s for index %s in %s. Access info %s.", string_SyncHazard(hazard.Hazard()),
-                                      sync_state_.FormatHandle(index_buf_state->Handle()).c_str(),
-                                      sync_state_.FormatHandle(cb_state_->Handle()).c_str(), FormatHazard(hazard).c_str());
+        const auto error = error_messages_.DrawIndexBufferError(hazard, *this, *index_buf_state);
+        skip |= sync_state_.SyncError(hazard.Hazard(), index_buf_state->Handle(), loc, error);
     }
 
     // TODO: Shader instrumentation support is needed to read index buffer content and determine more accurate range
@@ -678,7 +655,7 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
 bool CommandBufferAccessContext::ValidateDrawAttachment(const Location &loc) const {
     bool skip = false;
     if (current_renderpass_context_) {
-        skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(*this, *cb_state_, loc.function);
+        skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(*this, loc.function);
     } else if (dynamic_rendering_info_) {
         skip |= ValidateDrawDynamicRenderingAttachment(loc);
     }
@@ -706,9 +683,8 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
-            skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                         "(%s). Access info %s.", sync_state_.FormatHandle(attachment.view->Handle()).c_str(),
-                                         FormatHazard(hazard).c_str());
+            const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view);
+            skip |= sync_state_.SyncError(hazard.Hazard(), obj_list, loc.dot(vvl::Field::imageView), error);
         }
     }
 
@@ -728,11 +704,10 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
                                             SyncOrdering::kDepthStencilAttachment);
             // Depth stencil Hazard check
             if (hazard.IsHazard()) {
-                LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
+                LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
-                skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), obj_list, loc.dot(vvl::Field::imageView),
-                                             "(%s). Access info %s.", sync_state_.FormatHandle(attachment.view->Handle()).c_str(),
-                                             FormatHazard(hazard).c_str());
+                const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view);
+                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             }
         }
     }
@@ -1010,10 +985,8 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cb_state_->Handle(), info.view->Handle());
-            skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
-                                         "Hazard %s while clearing color attachment%s. Access info %s.",
-                                         string_SyncHazard(hazard.Hazard()), info.GetSubpassAttachmentText().c_str(),
-                                         FormatHazard(hazard).c_str());
+            const auto error = error_messages_.ClearColorAttachmentError(hazard, *this, info.GetSubpassAttachmentText());
+            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
 
@@ -1031,10 +1004,9 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
 
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state_->Handle(), info.view->Handle());
-                skip |= sync_state_.LogError(string_SyncHazardVUID(hazard.Hazard()), objlist, loc,
-                                             "Hazard %s when clearing %s aspect of depth-stencil attachment%s. Access info %s.",
-                                             string_SyncHazard(hazard.Hazard()), string_VkImageAspectFlagBits(aspect),
-                                             info.GetSubpassAttachmentText().c_str(), FormatHazard(hazard).c_str());
+                const auto error =
+                    error_messages_.ClearDepthStencilAttachmentError(hazard, *this, info.GetSubpassAttachmentText(), aspect);
+                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
             }
         }
     }

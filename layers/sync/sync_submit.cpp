@@ -447,11 +447,9 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
             const auto queue_handle = queue_state_->Handle();
             const auto swap_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
             const auto image_handle = vvl::StateObject::Handle(presented.image);
-            skip |= sync_state_.LogError(
-                string_SyncHazardVUID(hazard.Hazard()), queue_handle, loc,
-                "Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32 " %s, Access info %s.",
-                string_SyncHazard(hazard.Hazard()), presented.present_index, sync_state_.FormatHandle(swap_handle).c_str(),
-                presented.image_index, sync_state_.FormatHandle(image_handle).c_str(), FormatHazard(hazard).c_str());
+            const auto error = sync_state_.error_messages_.PresentError(hazard, *this, presented.present_index, swap_handle,
+                                                                        presented.image_index, image_handle);
+            skip |= sync_state_.SyncError(hazard.Hazard(), queue_handle, loc, error);
             if (skip) break;
         }
     }

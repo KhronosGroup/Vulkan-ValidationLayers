@@ -62,7 +62,6 @@ enum class SyncOrdering : uint8_t {
     kRaster = 3,
     kNumOrderings = 4,
 };
-const char *string_SyncHazard(SyncHazard hazard);
 const char *string_SyncHazardVUID(SyncHazard hazard);
 
 class HazardResult {

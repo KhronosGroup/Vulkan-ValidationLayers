@@ -23,6 +23,7 @@
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_commandbuffer.h"
+#include "sync/sync_error_messages.h"
 #include "sync/sync_stats.h"
 #include "sync/sync_submit.h"
 
@@ -40,8 +41,10 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
+    SyncValidator() : error_messages_(*this) { container_type = LayerObjectTypeSyncValidation; }
     ~SyncValidator();
+
+    syncval::ErrorMessages error_messages_;
 
     // Stats object must be the first member of this class:
     // - it is the first to be constructed: can observe all subsequent syncval stats events
@@ -69,6 +72,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     uint32_t debug_command_number = vvl::kU32Max;
     uint32_t debug_reset_count = 1;
     std::string debug_cmdbuf_pattern;
+
+    bool SyncError(SyncHazard hazard, const LogObjectList &objlist, const Location &loc, const std::string &error_message) const;
 
     // Ensures that the number of signals per timeline per queue does not exceed the specified limit.
     // If `queue` parameter is specified, then only that queue is checked (used by vkQueueWaitIdle).
@@ -347,14 +352,13 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                     const RecordObject &record_obj) override;
 
     bool ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
-                                VkCommandBuffer commandBuffer, const VkDeviceSize struct_size, const VkBuffer buffer,
-                                const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
-                                const Location &loc) const;
+                                const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
+                                const uint32_t drawCount, const uint32_t stride, const Location &loc) const;
     void RecordIndirectBuffer(CommandBufferAccessContext &cb_context, ResourceUsageTag tag, const VkDeviceSize struct_size,
                               const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
 
-    bool ValidateCountBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
-                             VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, const Location &loc) const;
+    bool ValidateCountBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context, VkBuffer buffer,
+                             VkDeviceSize offset, const Location &loc) const;
     void RecordCountBuffer(CommandBufferAccessContext &cb_context, ResourceUsageTag tag, VkBuffer buffer, VkDeviceSize offset);
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
