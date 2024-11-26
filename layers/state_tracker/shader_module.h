@@ -409,7 +409,7 @@ struct ResourceInterfaceVariable : public VariableBase {
     // This is true if either:
     // - The descriptor is made up of an OpRuntimeArray
     // - Not all OpAccessChains pointing to this descriptor or easily determined constant
-    bool is_dynamic_accessed;
+    bool is_dynamically_accessed;
 
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
     const uint32_t image_sampled_type_width;
@@ -460,8 +460,8 @@ struct ResourceInterfaceVariable : public VariableBase {
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
-    static bool IsDynamicAccessed(ResourceInterfaceVariable &variable, const Module &module_state,
-                                  const AccessChainVariableMap &access_chain_map);
+    static bool IsDynamicallyAccessed(ResourceInterfaceVariable &variable, const Module &module_state,
+                                      const AccessChainVariableMap &access_chain_map);
     static uint32_t FindImageSampledTypeWidth(const Module &module_state, const Instruction &base_type);
     static NumericType FindImageFormatType(const Module &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);

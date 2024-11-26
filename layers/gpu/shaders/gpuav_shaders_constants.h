@@ -124,6 +124,10 @@ const int kDebugInputBuffAddrPtrOffset = 1;
 // not a valid buffer, the length associated with the 0x0 address is zero.
 const int kDebugInputBuffAddrLengthOffset = 0;
 
+// Current layout
+// 31       30...    ...4...          ...0
+// [accessed | reserved | Descriptor Set ]
+//
 // We store which set in last 5-bits because it can only be 0 to 31 (since devices don't support more than 32 sets and we have
 // warnings/assert if they start)
 const uint kDescriptorSetSelectionMask = 0x1F;

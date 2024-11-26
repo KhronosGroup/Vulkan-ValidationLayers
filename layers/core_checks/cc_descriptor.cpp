@@ -814,34 +814,34 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device
 //  This includes validating that all descriptors in the given bindings are updated,
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
-bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t set_index, const BindingVariableMap &bindings,
-                                   const vvl::CommandBuffer &cb_state, const Location &loc,
-                                   const vvl::DrawDispatchVuid &vuids) const {
+bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t set_index,
+                                   const BindingVariableMap &binding_req_map, const vvl::CommandBuffer &cb_state,
+                                   const Location &loc, const vvl::DrawDispatchVuid &vuids) const {
     bool result = false;
-    VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
+    const VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
     // NOTE: GPU-AV needs non-const state objects to do lazy updates of descriptor state of only the dynamically used
     // descriptors, via the non-const version of ValidateBindingDynamic(), this code uses the const path only even it gives up
     // non-const versions of its state objects here.
     const vvl::DescriptorValidator desc_val(const_cast<CoreChecks &>(*this), const_cast<vvl::CommandBuffer &>(cb_state),
                                             const_cast<DescriptorSet &>(descriptor_set), set_index, framebuffer, loc);
 
-    for (const auto &binding_pair : bindings) {
-        const auto *binding = descriptor_set.GetBinding(binding_pair.first);
+    for (const auto &[binding_index, desc_set_reqs] : binding_req_map) {
+        ASSERT_AND_CONTINUE(desc_set_reqs.variable);
+        const auto &resource_variable = *desc_set_reqs.variable;
+
+        const vvl::DescriptorBinding *binding = descriptor_set.GetBinding(binding_index);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
             auto set = descriptor_set.Handle();
             result |= LogError(vuids.descriptor_buffer_bit_set_08114, set, loc, "%s %s is invalid.", FormatHandle(set).c_str(),
-                               binding_pair.second.variable->DescribeDescriptor().c_str());
+                               resource_variable.DescribeDescriptor().c_str());
             return result;
         }
 
-        if (descriptor_set.ValidateBindingOnGPU(*binding, binding_pair.second.variable->is_dynamic_accessed)) {
+        if (descriptor_set.ValidateBindingOnGPU(*binding, resource_variable.is_dynamically_accessed)) {
             continue;
         }
-        vvl::DescriptorBindingInfo binding_info;
-        binding_info.first = binding_pair.first;
-        binding_info.second.emplace_back(binding_pair.second);
 
-        result |= desc_val.ValidateBindingStatic(binding_info, *binding);
+        result |= desc_val.ValidateBindingStatic(resource_variable, *binding);
     }
     return result;
 }

@@ -48,6 +48,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
+    const Constant& variable_id_constant = module_.type_manager_.GetConstantUInt32(variable_id_);
 
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
@@ -55,7 +56,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(),
-                             descriptor_index_id, binding_layout_offset.Id()},
+                             descriptor_index_id, binding_layout_offset.Id(), variable_id_constant.Id()},
                             inst_it);
 }
 
@@ -142,9 +143,9 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
     }
 
     assert(var_inst);
-    uint32_t variable_id = var_inst->ResultId();
+    variable_id_ = var_inst->ResultId();
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id_) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
                 descriptor_set_ = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {
@@ -168,6 +169,7 @@ void PostProcessDescriptorIndexingPass::Reset() {
     descriptor_set_ = 0;
     descriptor_binding_ = 0;
     descriptor_index_id_ = 0;
+    variable_id_ = 0;
 }
 
 bool PostProcessDescriptorIndexingPass::Run() {
