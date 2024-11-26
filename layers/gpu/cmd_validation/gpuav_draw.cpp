@@ -203,7 +203,7 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
     const bool use_shader_objects = pipeline_state == nullptr;
 
     auto &shared_draw_resources = gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(
-        gpuav, cb_state.GetValidationCmdCommonDescriptorSetLayout(), use_shader_objects, loc);
+        gpuav, cb_state.GetErrorLoggingDescSetLayout(), use_shader_objects, loc);
 
     assert(shared_draw_resources.IsValid());
     if (!shared_draw_resources.IsValid()) {
@@ -357,8 +357,8 @@ void InsertIndirectDrawValidation(Validator &gpuav, const Location &loc, Command
     static_assert(sizeof(push_constants) <= 128, "push_constants buffer size >128, need to consider maxPushConstantsSize.");
     DispatchCmdPushConstants(cb_state.VkHandle(), shared_draw_resources.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0,
                              static_cast<uint32_t>(sizeof(push_constants)), push_constants);
-    BindValidationCmdsCommonDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
-                                    cb_state.draw_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
+                            cb_state.draw_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, shared_draw_resources.pipeline_layout,
                                   glsl::kDiagPerCmdDescriptorSet, 1, &draw_validation_desc_set, 0, nullptr);
     DispatchCmdDraw(cb_state.VkHandle(), 3, 1, 0, 0);  // TODO: this 3 assumes triangles I think, probably could be 1?

@@ -21,7 +21,7 @@
 
 #include "external/inplace_function.h"
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpuav_vulkan_objects.h"
 
 // We pull in most the core state tracking files
 // gpuav_subclasses.h should NOT be included by any other header file
@@ -39,11 +39,10 @@ struct DescriptorCommandBinding;
 struct ActionCommandSnapshot;
 
 struct DebugPrintfBufferInfo {
-    DeviceMemoryBlock output_mem_block;
+    vko::Buffer output_mem_block;
     VkPipelineBindPoint pipeline_bind_point;
     uint32_t action_command_index;
-    DebugPrintfBufferInfo(DeviceMemoryBlock output_mem_block, VkPipelineBindPoint pipeline_bind_point,
-                          uint32_t action_command_index)
+    DebugPrintfBufferInfo(vko::Buffer output_mem_block, VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
         : output_mem_block(output_mem_block),
           pipeline_bind_point(pipeline_bind_point),
           action_command_index(action_command_index){};
@@ -87,31 +86,31 @@ class CommandBuffer : public vvl::CommandBuffer {
     }
 
     // Bindings: {error output buffer}
-    const VkDescriptorSet &GetValidationCmdCommonDescriptorSet() const {
-        assert(validation_cmd_desc_set_ != VK_NULL_HANDLE);
-        return validation_cmd_desc_set_;
+    const VkDescriptorSet &GetErrorLoggingDescriptorSet() const {
+        assert(error_logging_desc_set_ != VK_NULL_HANDLE);
+        return error_logging_desc_set_;
     }
 
-    const VkDescriptorSetLayout &GetValidationCmdCommonDescriptorSetLayout() const {
-        assert(validation_cmd_desc_set_layout_ != VK_NULL_HANDLE);
-        return validation_cmd_desc_set_layout_;
+    const VkDescriptorSetLayout &GetErrorLoggingDescSetLayout() const {
+        assert(error_logging_desc_set_layout_ != VK_NULL_HANDLE);
+        return error_logging_desc_set_layout_;
     }
 
     uint32_t GetValidationErrorBufferDescSetIndex() const { return 0; }
 
     const VkBuffer &GetErrorOutputBuffer() const {
-        assert(error_output_buffer_.Buffer() != VK_NULL_HANDLE);
-        return error_output_buffer_.Buffer();
+        assert(error_output_buffer_.VkHandle() != VK_NULL_HANDLE);
+        return error_output_buffer_.VkHandle();
     }
 
     VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(uint32_t); }
 
     const VkBuffer &GetCmdErrorsCountsBuffer() const {
-        assert(cmd_errors_counts_buffer_.Buffer() != VK_NULL_HANDLE);
-        return cmd_errors_counts_buffer_.Buffer();
+        assert(cmd_errors_counts_buffer_.VkHandle() != VK_NULL_HANDLE);
+        return cmd_errors_counts_buffer_.VkHandle();
     }
 
-    const DeviceMemoryBlock &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
+    const vko::Buffer &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
     void ClearCmdErrorsCountsBuffer(const Location &loc) const;
     void UpdateCommandCount(VkPipelineBindPoint bind_point);
@@ -119,7 +118,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     void Destroy() final;
     void Reset(const Location &loc) final;
 
-    GpuResourcesManager gpu_resources_manager;
+    vko::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(Validator &gpuav, const uint32_t *error_record, const LogObjectList &objlist), 128>;
@@ -139,17 +138,17 @@ class CommandBuffer : public vvl::CommandBuffer {
 
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
 
-    VkDescriptorSetLayout validation_cmd_desc_set_layout_ = VK_NULL_HANDLE;
-    VkDescriptorSet validation_cmd_desc_set_ = VK_NULL_HANDLE;
+    VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
+    VkDescriptorSet error_logging_desc_set_ = VK_NULL_HANDLE;
     VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
     // Buffer storing GPU-AV errors
-    DeviceMemoryBlock error_output_buffer_;
+    vko::Buffer error_output_buffer_;
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
-    DeviceMemoryBlock cmd_errors_counts_buffer_;
+    vko::Buffer cmd_errors_counts_buffer_;
     // Buffer storing a snapshot of buffer device address ranges
-    DeviceMemoryBlock bda_ranges_snapshot_;
+    vko::Buffer bda_ranges_snapshot_;
     uint32_t bda_ranges_snapshot_version_ = 0;
 };
 

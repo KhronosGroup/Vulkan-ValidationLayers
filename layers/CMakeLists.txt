@@ -258,8 +258,8 @@ target_sources(vvl PRIVATE
     gpu/resources/gpuav_subclasses.cpp
     gpu/resources/gpuav_subclasses.h
     gpu/resources/gpuav_shader_resources.h
-    gpu/resources/gpuav_resources.h
-    gpu/resources/gpuav_resources.cpp
+    gpu/resources/gpuav_vulkan_objects.h
+    gpu/resources/gpuav_vulkan_objects.cpp
     gpu/shaders/gpuav_error_codes.h
     gpu/shaders/gpuav_error_header.h
     gpu/shaders/gpuav_shaders_constants.h

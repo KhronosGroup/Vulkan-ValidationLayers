@@ -83,12 +83,12 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    descriptor_command_binding.post_process_ssbo_block.CreateBuffer(loc, &buffer_info, &alloc_info);
+    descriptor_command_binding.post_process_ssbo_block.Create(loc, &buffer_info, &alloc_info);
 
     auto ssbo_block_ptr = (glsl::PostProcessSSBO *)descriptor_command_binding.post_process_ssbo_block.MapMemory(loc);
     memset(ssbo_block_ptr, 0, sizeof(glsl::PostProcessSSBO));
 
-    cb_state.post_process_buffer = descriptor_command_binding.post_process_ssbo_block.Buffer();
+    cb_state.post_process_buffer = descriptor_command_binding.post_process_ssbo_block.VkHandle();
 
     const size_t number_of_sets = last_bound.ds_slots.size();
     for (uint32_t i = 0; i < number_of_sets; i++) {
@@ -115,12 +115,12 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBuffer &cb_
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    descriptor_command_binding.descritpor_state_ssbo_block.CreateBuffer(loc, &buffer_info, &alloc_info);
+    descriptor_command_binding.descritpor_state_ssbo_block.Create(loc, &buffer_info, &alloc_info);
 
     auto ssbo_block_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.descritpor_state_ssbo_block.MapMemory(loc);
     memset(ssbo_block_ptr, 0, sizeof(glsl::DescriptorStateSSBO));
 
-    cb_state.descriptor_indexing_buffer = descriptor_command_binding.descritpor_state_ssbo_block.Buffer();
+    cb_state.descriptor_indexing_buffer = descriptor_command_binding.descritpor_state_ssbo_block.VkHandle();
 
     ssbo_block_ptr->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
 

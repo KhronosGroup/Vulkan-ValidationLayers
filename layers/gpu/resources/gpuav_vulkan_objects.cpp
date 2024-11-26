@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-#include "gpu/resources/gpuav_resources.h"
+#include "gpu/resources/gpuav_vulkan_objects.h"
 
 #include "gpu/core/gpuav.h"
 #include "generated/dispatch_functions.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpuav {
+namespace vko {
 
 // Implementation for Descriptor Set Manager class
 DescriptorSetManager::DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)
@@ -144,7 +145,7 @@ void SharedResourcesManager::Clear() {
     shared_validation_resources_map_.clear();
 }
 
-void *DeviceMemoryBlock::MapMemory(const Location &loc) const {
+void *Buffer::MapMemory(const Location &loc) const {
     void *buffer_ptr = nullptr;
     VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, &buffer_ptr);
     if (result != VK_SUCCESS) {
@@ -154,24 +155,24 @@ void *DeviceMemoryBlock::MapMemory(const Location &loc) const {
     return buffer_ptr;
 }
 
-void DeviceMemoryBlock::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }
+void Buffer::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }
 
-void DeviceMemoryBlock::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+void Buffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to flush device memory.");
     }
 }
 
-void DeviceMemoryBlock::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+void Buffer::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to invalidate device memory.");
     }
 }
 
-void DeviceMemoryBlock::CreateBuffer(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                                     const VmaAllocationCreateInfo *allocation_create_info) {
+void Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                    const VmaAllocationCreateInfo *allocation_create_info) {
     VkResult result =
         vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
     if (result != VK_SUCCESS) {
@@ -187,7 +188,7 @@ void DeviceMemoryBlock::CreateBuffer(const Location &loc, const VkBufferCreateIn
     }
 }
 
-void DeviceMemoryBlock::DestroyBuffer() {
+void Buffer::Destroy() {
     if (buffer != VK_NULL_HANDLE) {
         vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation);
         buffer = VK_NULL_HANDLE;
@@ -203,7 +204,7 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return descriptor.second;
 }
 
-void GpuResourcesManager::ManageDeviceMemoryBlock(DeviceMemoryBlock mem_block) { mem_blocks_.emplace_back(mem_block); }
+void GpuResourcesManager::ManageBuffer(Buffer mem_block) { mem_blocks_.emplace_back(mem_block); }
 
 void GpuResourcesManager::DestroyResources() {
     for (auto &[desc_pool, desc_set] : descriptors_) {
@@ -212,9 +213,9 @@ void GpuResourcesManager::DestroyResources() {
     descriptors_.clear();
 
     for (auto &mem_block : mem_blocks_) {
-        mem_block.DestroyBuffer();
+        mem_block.Destroy();
     }
     mem_blocks_.clear();
 }
-
+}  // namespace vko
 }  // namespace gpuav

@@ -132,7 +132,7 @@ CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkC
     AllocateResources(loc);
 }
 
-static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_buffer, DeviceMemoryBlock &error_output_buffer,
+static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_buffer, vko::Buffer &error_output_buffer,
                                     const Location &loc) {
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
     buffer_info.size = glsl::kErrorBufferByteSize;
@@ -140,7 +140,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = gpuav.output_buffer_pool_;
-    error_output_buffer.CreateBuffer(loc, &buffer_info, &alloc_info);
+    error_output_buffer.Create(loc, &buffer_info, &alloc_info);
 
     auto output_buffer_ptr = (uint32_t *)error_output_buffer.MapMemory(loc);
 
@@ -185,7 +185,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.pool = gpuav->output_buffer_pool_;
-        cmd_errors_counts_buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
+        cmd_errors_counts_buffer_.Create(loc, &buffer_info, &alloc_info);
 
         ClearCmdErrorsCountsBuffer(loc);
         if (gpuav->aborted_) return;
@@ -200,7 +200,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
         // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-        bda_ranges_snapshot_.CreateBuffer(loc, &buffer_info, &alloc_info);
+        bda_ranges_snapshot_.Create(loc, &buffer_info, &alloc_info);
     }
 
     // Update validation commands common descriptor set
@@ -216,12 +216,12 @@ void CommandBuffer::AllocateResources(const Location &loc) {
             {glsl::kBindingDiagCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         };
 
-        if (validation_cmd_desc_set_layout_ == VK_NULL_HANDLE) {
+        if (error_logging_desc_set_layout_ == VK_NULL_HANDLE) {
             VkDescriptorSetLayoutCreateInfo validation_cmd_desc_set_layout_ci = vku::InitStructHelper();
             validation_cmd_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(validation_cmd_bindings.size());
             validation_cmd_desc_set_layout_ci.pBindings = validation_cmd_bindings.data();
             result = DispatchCreateDescriptorSetLayout(gpuav->device, &validation_cmd_desc_set_layout_ci, nullptr,
-                                                       &validation_cmd_desc_set_layout_);
+                                                       &error_logging_desc_set_layout_);
             if (result != VK_SUCCESS) {
                 gpuav->InternalError(gpuav->device, loc, "Unable to create descriptor set layout used for validation commands.");
                 return;
@@ -229,9 +229,9 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         }
 
         assert(validation_cmd_desc_pool_ == VK_NULL_HANDLE);
-        assert(validation_cmd_desc_set_ == VK_NULL_HANDLE);
-        result = gpuav->desc_set_manager_->GetDescriptorSet(&validation_cmd_desc_pool_, validation_cmd_desc_set_layout_,
-                                                            &validation_cmd_desc_set_);
+        assert(error_logging_desc_set_ == VK_NULL_HANDLE);
+        result = gpuav->desc_set_manager_->GetDescriptorSet(&validation_cmd_desc_pool_, error_logging_desc_set_layout_,
+                                                            &error_logging_desc_set_);
         if (result != VK_SUCCESS) {
             gpuav->InternalError(gpuav->device, loc, "Unable to create descriptor set used for validation commands.");
             return;
@@ -242,8 +242,8 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 
         VkDescriptorBufferInfo error_output_buffer_desc_info = {};
 
-        assert(!error_output_buffer_.Destroyed());
-        error_output_buffer_desc_info.buffer = error_output_buffer_.Buffer();
+        assert(!error_output_buffer_.IsDestroyed());
+        error_output_buffer_desc_info.buffer = error_output_buffer_.VkHandle();
         error_output_buffer_desc_info.offset = 0;
         error_output_buffer_desc_info.range = VK_WHOLE_SIZE;
 
@@ -252,12 +252,12 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[0].descriptorCount = 1;
         validation_cmd_descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         validation_cmd_descriptor_writes[0].pBufferInfo = &error_output_buffer_desc_info;
-        validation_cmd_descriptor_writes[0].dstSet = GetValidationCmdCommonDescriptorSet();
+        validation_cmd_descriptor_writes[0].dstSet = GetErrorLoggingDescriptorSet();
 
         VkDescriptorBufferInfo cmd_indices_buffer_desc_info = {};
 
-        assert(!gpuav->indices_buffer_.Destroyed());
-        cmd_indices_buffer_desc_info.buffer = gpuav->indices_buffer_.Buffer();
+        assert(!gpuav->indices_buffer_.IsDestroyed());
+        cmd_indices_buffer_desc_info.buffer = gpuav->indices_buffer_.VkHandle();
         cmd_indices_buffer_desc_info.offset = 0;
         cmd_indices_buffer_desc_info.range = sizeof(uint32_t);
 
@@ -266,7 +266,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[1].descriptorCount = 1;
         validation_cmd_descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
         validation_cmd_descriptor_writes[1].pBufferInfo = &cmd_indices_buffer_desc_info;
-        validation_cmd_descriptor_writes[1].dstSet = GetValidationCmdCommonDescriptorSet();
+        validation_cmd_descriptor_writes[1].dstSet = GetErrorLoggingDescriptorSet();
 
         validation_cmd_descriptor_writes[2] = validation_cmd_descriptor_writes[1];
         validation_cmd_descriptor_writes[2].dstBinding = glsl::kBindingDiagCmdResourceIndex;
@@ -281,7 +281,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[3].descriptorCount = 1;
         validation_cmd_descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         validation_cmd_descriptor_writes[3].pBufferInfo = &cmd_errors_count_buffer_desc_info;
-        validation_cmd_descriptor_writes[3].dstSet = GetValidationCmdCommonDescriptorSet();
+        validation_cmd_descriptor_writes[3].dstSet = GetErrorLoggingDescriptorSet();
 
         DispatchUpdateDescriptorSets(gpuav->device, static_cast<uint32_t>(validation_cmd_descriptor_writes.size()),
                                      validation_cmd_descriptor_writes.data(), 0, NULL);
@@ -369,7 +369,7 @@ void CommandBuffer::ResetCBState() {
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &buffer_info : debug_printf_buffer_infos) {
-        buffer_info.output_mem_block.DestroyBuffer();
+        buffer_info.output_mem_block.Destroy();
     }
     debug_printf_buffer_infos.clear();
 
@@ -378,23 +378,23 @@ void CommandBuffer::ResetCBState() {
     per_command_error_loggers.clear();
 
     for (auto &descriptor_command_binding : descriptor_command_bindings) {
-        descriptor_command_binding.descritpor_state_ssbo_block.DestroyBuffer();
-        descriptor_command_binding.post_process_ssbo_block.DestroyBuffer();
+        descriptor_command_binding.descritpor_state_ssbo_block.Destroy();
+        descriptor_command_binding.post_process_ssbo_block.Destroy();
     }
     descriptor_command_bindings.clear();
     action_command_snapshots.clear();
     descriptor_indexing_buffer = VK_NULL_HANDLE;
     post_process_buffer = VK_NULL_HANDLE;
 
-    error_output_buffer_.DestroyBuffer();
-    cmd_errors_counts_buffer_.DestroyBuffer();
-    bda_ranges_snapshot_.DestroyBuffer();
+    error_output_buffer_.Destroy();
+    cmd_errors_counts_buffer_.Destroy();
+    bda_ranges_snapshot_.Destroy();
     bda_ranges_snapshot_version_ = 0;
 
-    if (validation_cmd_desc_pool_ != VK_NULL_HANDLE && validation_cmd_desc_set_ != VK_NULL_HANDLE) {
-        gpuav->desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, validation_cmd_desc_set_);
+    if (validation_cmd_desc_pool_ != VK_NULL_HANDLE && error_logging_desc_set_ != VK_NULL_HANDLE) {
+        gpuav->desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, error_logging_desc_set_);
         validation_cmd_desc_pool_ = VK_NULL_HANDLE;
-        validation_cmd_desc_set_ = VK_NULL_HANDLE;
+        error_logging_desc_set_ = VK_NULL_HANDLE;
     }
 
     if (instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
@@ -402,9 +402,9 @@ void CommandBuffer::ResetCBState() {
         instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     }
 
-    if (validation_cmd_desc_set_layout_ != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(gpuav->device, validation_cmd_desc_set_layout_, nullptr);
-        validation_cmd_desc_set_layout_ = VK_NULL_HANDLE;
+    if (error_logging_desc_set_layout_ != VK_NULL_HANDLE) {
+        DispatchDestroyDescriptorSetLayout(gpuav->device, error_logging_desc_set_layout_, nullptr);
+        error_logging_desc_set_layout_ = VK_NULL_HANDLE;
     }
 
     draw_index = 0;
@@ -446,7 +446,7 @@ bool CommandBuffer::PreProcess(const Location &loc) {
     return !per_command_error_loggers.empty() || has_build_as_cmd;
 }
 
-bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.Destroyed(); }
+bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsDestroyed(); }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {

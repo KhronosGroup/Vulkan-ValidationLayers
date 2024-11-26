@@ -43,8 +43,8 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *
 }
 
 DescriptorSet::~DescriptorSet() {
-    post_process_block_.DestroyBuffer();
-    input_block_.DestroyBuffer();
+    post_process_block_.Destroy();
+    input_block_.Destroy();
 }
 
 void DescriptorSet::BuildBindingLayouts() {
@@ -194,7 +194,7 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
             return input_block_.Address();  // nothing has changed
         } else {
             // will replace (descriptor array size might have change, so need to resize buffer)
-            input_block_.DestroyBuffer();
+            input_block_.Destroy();
         }
     }
 
@@ -213,7 +213,7 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    input_block_.CreateBuffer(loc, &buffer_info, &alloc_info);
+    input_block_.Create(loc, &buffer_info, &alloc_info);
 
     auto data = (glsl::DescriptorState *)input_block_.MapMemory(loc);
 
@@ -278,7 +278,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    post_process_block_.CreateBuffer(loc, &buffer_info, &alloc_info);
+    post_process_block_.Create(loc, &buffer_info, &alloc_info);
 
     void *data = post_process_block_.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
@@ -294,7 +294,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 // where accessed
 std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const {
     std::vector<DescriptorAccess> descriptor_accesses;
-    if (post_process_block_.Destroyed()) {
+    if (post_process_block_.IsDestroyed()) {
         return descriptor_accesses;
     }
 
@@ -346,7 +346,7 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
 
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer_.CreateBuffer(loc, &buffer_info, &alloc_info);
+    buffer_.Create(loc, &buffer_info, &alloc_info);
 
     gpu_heap_state_ = (uint32_t *)buffer_.MapMemory(loc);
     memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
@@ -355,7 +355,7 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
 DescriptorHeap::~DescriptorHeap() {
     if (max_descriptors_ > 0) {
         buffer_.UnmapMemory();
-        buffer_.DestroyBuffer();
+        buffer_.Destroy();
         gpu_heap_state_ = nullptr;
     }
 }
