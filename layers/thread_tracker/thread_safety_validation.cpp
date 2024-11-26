@@ -718,7 +718,7 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
     const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
-        auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+        auto layer_data = GetLayerData(device);
         if (dispatch_->wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);
         }

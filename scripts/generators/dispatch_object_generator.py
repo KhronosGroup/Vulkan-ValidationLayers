@@ -173,6 +173,7 @@ class DispatchObjectGenerator(BaseGenerator):
         # Dispatch functions that need special state tracking variables passed in
         self.custom_definition = {}
 
+
     def isNonDispatchable(self, name: str) -> bool:
         return name in self.vk.handles and not self.vk.handles[name].dispatchable
 
@@ -251,8 +252,13 @@ class DispatchObjectGenerator(BaseGenerator):
             #include "chassis/dispatch_object.h"
 
             ''')
+        dispatchable_handles = [handle.name for handle in self.vk.handles.values() if handle.dispatchable]
         guard_helper = PlatformGuardHelper()
         for command in self.vk.commands.values():
+            # Weed out weird commands like vkCreateInstance()
+            if command.params[0].type not in dispatchable_handles:
+                continue
+
             prototype = command.cPrototype
             prototype = prototype.replace('VKAPI_ATTR ', 'static inline ')
             prototype = prototype.replace('VKAPI_CALL vk', 'Dispatch')
@@ -264,7 +270,7 @@ class DispatchObjectGenerator(BaseGenerator):
             prototype = prototype.replace(');', f'{proto_extra}) {{')
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'\n{prototype}\n')
-            out.append(f'auto dispatch = GetLayerDataPtr(GetDispatchKey({command.params[0].name}), layer_data_map);\n')
+            out.append(f'auto dispatch = GetLayerData({command.params[0].name});\n')
             returnResult = f'return ' if (command.returnType != 'void') else ''
             paramsList = ', '.join([param.name for param in command.params])
             out.append(f'{returnResult}{command.name.replace("vk", "dispatch->")}({paramsList}{call_extra});\n')
