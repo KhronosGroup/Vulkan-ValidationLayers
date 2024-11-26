@@ -65,8 +65,18 @@ struct HashedUint64 {
 };
 
 class DispatchObject;
+void SetLayerData(VkInstance instance, std::unique_ptr<DispatchObject>&&);
+DispatchObject* GetLayerData(VkInstance);
+DispatchObject* GetLayerData(VkPhysicalDevice);
+void FreeLayerData(void* key, VkInstance instance);
 
-extern small_unordered_map<void*, DispatchObject*, 2> layer_data_map;
+void SetLayerData(VkDevice dev, std::unique_ptr<DispatchObject>&&);
+DispatchObject* GetLayerData(VkDevice);
+DispatchObject* GetLayerData(VkQueue);
+DispatchObject* GetLayerData(VkCommandBuffer);
+void FreeLayerData(void* key, VkDevice device);
+
+void FreeAllLayerData();
 
 struct TemplateState {
     VkDescriptorUpdateTemplate desc_update_template;
@@ -76,13 +86,6 @@ struct TemplateState {
     TemplateState(VkDescriptorUpdateTemplate update_template, vku::safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
         : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
 };
-
-// For the given data key, look up the layer_data instance from given layer_data_map
-template <typename DATA_T>
-DATA_T* GetLayerDataPtr(void* data_key, small_unordered_map<void*, DATA_T*, 2>& ldm) {
-    /* TODO: We probably should lock here, or have caller lock */
-    return ldm[data_key];
-}
 
 class DispatchObject {
   public:
@@ -113,9 +116,9 @@ class DispatchObject {
     CHECK_DISABLED disabled = {};
     CHECK_ENABLED enabled = {};
 
+    mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
+    mutable std::vector<std::unique_ptr<ValidationObject>> aborted_object_dispatch;
     mutable std::vector<std::vector<ValidationObject*>> intercept_vectors;
-    mutable std::vector<ValidationObject*> object_dispatch;
-    mutable std::vector<ValidationObject*> aborted_object_dispatch;
 
     // Handle Wrapping Data
     // Reverse map display handles

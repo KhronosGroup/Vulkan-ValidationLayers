@@ -691,7 +691,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (VK_SUCCESS != record_obj.result) return;
 
     // The current object represents the VkInstance, look up / create the object for the device.
-    DispatchObject *device_object = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
+    DispatchObject *device_object = GetLayerData(*pDevice);
     ValidationObject *validation_data = device_object->GetValidationObject(this->container_type);
     ValidationStateTracker *device_state = static_cast<ValidationStateTracker *>(validation_data);
 
@@ -2184,7 +2184,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
         // vkGetDeferredOperationResultKHR => Store the deferred logic to do that in
         // `deferred_operation_post_check`.
 
-        auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
+        auto layer_data = GetLayerData(device);
         if (dispatch_->wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);
         }

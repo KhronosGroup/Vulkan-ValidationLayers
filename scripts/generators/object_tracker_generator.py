@@ -943,7 +943,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     location = f'{errorLoc}.dot(Field::{member.name})'
                     if self.vk.commands[topCommand].device and self.vk.handles[member.type].instance:
                         # Use case when for device-level API call we should use instance-level validation object
-                        pre_call_validate += 'auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);\n'
+                        pre_call_validate += 'auto instance_data = GetLayerData(instance);\n'
                         pre_call_validate += 'auto instance_object_lifetimes = static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));\n'
                         pre_call_validate += f'skip |= instance_object_lifetimes->ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
                     else:
