@@ -1521,3 +1521,94 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveShaderInterface, LargeBindingLocations) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8921");
+    RETURN_IF_SKIP(Init());
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpCapability SampledBuffer
+               OpCapability ImageBuffer
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %AddScannedCountInCellBufSums "AddScannedCountInCellBufSums" %gl_GlobalInvocationID %gl_WorkGroupID
+               OpExecutionMode %AddScannedCountInCellBufSums LocalSize 32 1 1
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
+               OpDecorate %MinIndexInCellBufW DescriptorSet 0
+               OpDecorate %MinIndexInCellBufW Binding 181
+               OpDecorate %ScannedSumsSortBufR DescriptorSet 0
+               OpDecorate %ScannedSumsSortBufR Binding 192
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpMemberDecorate %type_RWStructuredBuffer_uint 0 Offset 0
+               OpDecorate %type_RWStructuredBuffer_uint BufferBlock
+               OpMemberDecorate %type_StructuredBuffer_uint 0 Offset 0
+               OpMemberDecorate %type_StructuredBuffer_uint 0 NonWritable
+               OpDecorate %type_StructuredBuffer_uint BufferBlock
+       %uint = OpTypeInt 32 0
+  %uint_9504 = OpConstant %uint 9504
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+     %v3uint = OpTypeVector %uint 3
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+%type_RWStructuredBuffer_uint = OpTypeStruct %_runtimearr_uint
+%_ptr_Uniform_type_RWStructuredBuffer_uint = OpTypePointer Uniform %type_RWStructuredBuffer_uint
+%type_StructuredBuffer_uint = OpTypeStruct %_runtimearr_uint
+%_ptr_Uniform_type_StructuredBuffer_uint = OpTypePointer Uniform %type_StructuredBuffer_uint
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+       %void = OpTypeVoid
+        %580 = OpTypeFunction %void
+       %bool = OpTypeBool
+%_ptr_Uniform_uint = OpTypePointer Uniform %uint
+%MinIndexInCellBufW = OpVariable %_ptr_Uniform_type_RWStructuredBuffer_uint Uniform
+%ScannedSumsSortBufR = OpVariable %_ptr_Uniform_type_StructuredBuffer_uint Uniform
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+%gl_WorkGroupID = OpVariable %_ptr_Input_v3uint Input
+     %uint_0 = OpConstant %uint 0
+%AddScannedCountInCellBufSums = OpFunction %void None %580
+        %581 = OpLabel
+        %585 = OpLoad %v3uint %gl_GlobalInvocationID
+        %586 = OpCompositeExtract %uint %585 0
+        %587 = OpLoad %v3uint %gl_WorkGroupID
+        %588 = OpCompositeExtract %uint %587 0
+               OpSelectionMerge %629 None
+               OpSwitch %uint_0 %617
+        %617 = OpLabel
+        %619 = OpUGreaterThanEqual %bool %586 %uint_9504
+               OpSelectionMerge %621 None
+               OpBranchConditional %619 %620 %621
+        %620 = OpLabel
+               OpBranch %629
+        %621 = OpLabel
+        %623 = OpAccessChain %_ptr_Uniform_uint %ScannedSumsSortBufR %int_0 %588
+        %624 = OpLoad %uint %623
+        %626 = OpAccessChain %_ptr_Uniform_uint %MinIndexInCellBufW %int_0 %586
+        %627 = OpLoad %uint %626
+        %628 = OpIAdd %uint %627 %624
+               OpStore %626 %628
+               OpBranch %629
+        %629 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkDescriptorSetLayoutBinding ds_bindings[2] = {
+        {181, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {192, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+
+    VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
+    dsl_ci.bindingCount = 2;
+    dsl_ci.pBindings = ds_bindings;
+    vkt::DescriptorSetLayout ds_layout(*m_device, dsl_ci);
+
+    VkPipelineLayoutCreateInfo pl_ci = vku::InitStructHelper();
+    pl_ci.setLayoutCount = 1;
+    pl_ci.pSetLayouts = &ds_layout.handle();
+    vkt::PipelineLayout pipeline_layout(*m_device, pl_ci);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                                             nullptr, "AddScannedCountInCellBufSums");
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+}
