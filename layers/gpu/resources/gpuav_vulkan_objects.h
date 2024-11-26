@@ -86,14 +86,14 @@ class GpuResourcesManager {
     explicit GpuResourcesManager(DescriptorSetManager &descriptor_set_manager) : descriptor_set_manager_(descriptor_set_manager) {}
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
-    void ManageBuffer(Buffer mem_block);
+    void ManageBuffer(Buffer mem_buffer);
 
     void DestroyResources();
 
   private:
     DescriptorSetManager &descriptor_set_manager_;
     std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
-    std::vector<vko::Buffer> mem_blocks_;
+    std::vector<vko::Buffer> buffers_;
 };
 
 class SharedResourcesManager {

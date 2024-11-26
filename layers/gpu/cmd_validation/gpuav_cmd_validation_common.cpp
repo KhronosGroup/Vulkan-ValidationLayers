@@ -19,7 +19,7 @@
 
 #include "gpu/core/gpuav.h"
 #include "gpu/core/gpuav_constants.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpuav_state_trackers.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 
 #include "state_tracker/shader_object_state.h"

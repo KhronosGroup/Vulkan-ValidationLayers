@@ -45,7 +45,7 @@ class DescriptorSet : public vvl::DescriptorSet {
 
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
-    bool HasPostProcessBuffer() const { return !post_process_block_.IsDestroyed(); }
+    bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
 
     std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const;
 
@@ -53,7 +53,7 @@ class DescriptorSet : public vvl::DescriptorSet {
     void BuildBindingLayouts();
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
-    vko::Buffer post_process_block_;
+    vko::Buffer post_process_buffer_;
 
     std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
     // Can't use GetTotalDescriptorCount() because it handles Inline Uniforms as more than one count
@@ -65,7 +65,7 @@ class DescriptorSet : public vvl::DescriptorSet {
     std::atomic<uint32_t> current_version_{0};
     // Set when created the last used state
     uint32_t last_used_version_{0};
-    vko::Buffer input_block_;
+    vko::Buffer input_buffer_;
 
     mutable std::mutex state_lock_;
 };

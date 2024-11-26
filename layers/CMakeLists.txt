@@ -255,8 +255,8 @@ target_sources(vvl PRIVATE
     gpu/instrumentation/gpuav_shader_instrumentor.h
     gpu/instrumentation/gpuav_instrumentation.h
     gpu/instrumentation/gpuav_instrumentation.cpp
-    gpu/resources/gpuav_subclasses.cpp
-    gpu/resources/gpuav_subclasses.h
+    gpu/resources/gpuav_state_trackers.cpp
+    gpu/resources/gpuav_state_trackers.h
     gpu/resources/gpuav_shader_resources.h
     gpu/resources/gpuav_vulkan_objects.h
     gpu/resources/gpuav_vulkan_objects.cpp

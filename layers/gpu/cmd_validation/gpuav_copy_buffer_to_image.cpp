@@ -17,7 +17,7 @@
 
 #include "gpu/core/gpuav.h"
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpuav_state_trackers.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "generated/cmd_validation_copy_buffer_to_image_comp.h"
@@ -169,7 +169,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     uint32_t max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.height *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
-    vko::Buffer copy_src_regions_mem_block(gpuav);
+    vko::Buffer copy_src_regions_mem_buffer(gpuav);
     {
         // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {
@@ -185,13 +185,13 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         };
 
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        const VkDeviceSize uniform_block_constants_byte_size = (4 +  // image extent
-                                                                1 +  // block size
-                                                                1 +  // gpu copy regions count
-                                                                2    // pad
-                                                                ) *
-                                                               sizeof(uint32_t);
-        buffer_info.size = uniform_block_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
+        const VkDeviceSize uniform_buffer_constants_byte_size = (4 +  // image extent
+                                                                 1 +  // block size
+                                                                 1 +  // gpu copy regions count
+                                                                 2    // pad
+                                                                 ) *
+                                                                sizeof(uint32_t);
+        buffer_info.size = uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
         buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -200,16 +200,16 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
 
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
-        copy_src_regions_mem_block.Create(loc, &buffer_info, &alloc_info);
+        copy_src_regions_mem_buffer.Create(loc, &buffer_info, &alloc_info);
 
-        cb_state.gpu_resources_manager.ManageBuffer(copy_src_regions_mem_block);
+        cb_state.gpu_resources_manager.ManageBuffer(copy_src_regions_mem_buffer);
 
-        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_block.MapMemory(loc);
+        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer.MapMemory(loc);
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;
         BufferImageCopy *gpu_regions_ptr =
-            reinterpret_cast<BufferImageCopy *>(&gpu_regions_u32_ptr[uniform_block_constants_byte_size / sizeof(uint32_t)]);
+            reinterpret_cast<BufferImageCopy *>(&gpu_regions_u32_ptr[uniform_buffer_constants_byte_size / sizeof(uint32_t)]);
         for (const auto &cpu_region : vvl::make_span(copy_buffer_to_img_info->pRegions, copy_buffer_to_img_info->regionCount)) {
             if (cpu_region.imageSubresource.aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT) {
                 continue;
@@ -249,7 +249,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
 
         if (gpu_regions_count == 0) {
             // Nothing to validate
-            copy_src_regions_mem_block.UnmapMemory();
+            copy_src_regions_mem_buffer.UnmapMemory();
             return;
         }
 
@@ -262,7 +262,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         gpu_regions_u32_ptr[6] = 0;
         gpu_regions_u32_ptr[7] = 0;
 
-        copy_src_regions_mem_block.UnmapMemory();
+        copy_src_regions_mem_buffer.UnmapMemory();
     }
 
     // Update descriptor set
@@ -280,7 +280,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         descriptor_buffer_infos[0].offset = 0;
         descriptor_buffer_infos[0].range = VK_WHOLE_SIZE;
         // Copy regions buffer
-        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_block.VkHandle();
+        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_buffer.VkHandle();
         descriptor_buffer_infos[1].offset = 0;
         descriptor_buffer_infos[1].range = VK_WHOLE_SIZE;
 
