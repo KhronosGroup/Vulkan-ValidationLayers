@@ -19,7 +19,7 @@
 #include "gpu/descriptor_validation/gpuav_image_layout.h"
 
 #include "gpu/core/gpuav.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpuav_state_trackers.h"
 #include "gpu/cmd_validation/gpuav_copy_buffer_to_image.h"
 #include "utils/image_layout_utils.h"
 #include "drawdispatch/drawdispatch_vuids.h"

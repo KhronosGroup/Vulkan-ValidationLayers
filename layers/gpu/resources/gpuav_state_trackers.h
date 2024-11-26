@@ -24,7 +24,7 @@
 #include "gpu/resources/gpuav_vulkan_objects.h"
 
 // We pull in most the core state tracking files
-// gpuav_subclasses.h should NOT be included by any other header file
+// gpuav_state_trackers.h should NOT be included by any other header file
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -39,11 +39,11 @@ struct DescriptorCommandBinding;
 struct ActionCommandSnapshot;
 
 struct DebugPrintfBufferInfo {
-    vko::Buffer output_mem_block;
+    vko::Buffer output_mem_buffer;
     VkPipelineBindPoint pipeline_bind_point;
     uint32_t action_command_index;
-    DebugPrintfBufferInfo(vko::Buffer output_mem_block, VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
-        : output_mem_block(output_mem_block),
+    DebugPrintfBufferInfo(vko::Buffer output_mem_buffer, VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
+        : output_mem_buffer(output_mem_buffer),
           pipeline_bind_point(pipeline_bind_point),
           action_command_index(action_command_index){};
 };

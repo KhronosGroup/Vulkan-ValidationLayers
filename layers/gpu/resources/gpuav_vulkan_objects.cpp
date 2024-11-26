@@ -204,7 +204,7 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return descriptor.second;
 }
 
-void GpuResourcesManager::ManageBuffer(Buffer mem_block) { mem_blocks_.emplace_back(mem_block); }
+void GpuResourcesManager::ManageBuffer(Buffer mem_buffer) { buffers_.emplace_back(mem_buffer); }
 
 void GpuResourcesManager::DestroyResources() {
     for (auto &[desc_pool, desc_set] : descriptors_) {
@@ -212,10 +212,10 @@ void GpuResourcesManager::DestroyResources() {
     }
     descriptors_.clear();
 
-    for (auto &mem_block : mem_blocks_) {
-        mem_block.Destroy();
+    for (auto &buffer : buffers_) {
+        buffer.Destroy();
     }
-    mem_blocks_.clear();
+    buffers_.clear();
 }
 }  // namespace vko
 }  // namespace gpuav

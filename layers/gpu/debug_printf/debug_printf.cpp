@@ -20,7 +20,7 @@
 #include "chassis/dispatch_object.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpuav_state_trackers.h"
 #include "gpu/core/gpuav.h"
 #include "state_tracker/shader_instruction.h"
 

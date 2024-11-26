@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpuav_state_trackers.h"
 
 #include "gpu/resources/gpuav_shader_resources.h"
 #include "gpu/core/gpuav.h"
@@ -369,7 +369,7 @@ void CommandBuffer::ResetCBState() {
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &buffer_info : debug_printf_buffer_infos) {
-        buffer_info.output_mem_block.Destroy();
+        buffer_info.output_mem_buffer.Destroy();
     }
     debug_printf_buffer_infos.clear();
 
@@ -378,8 +378,8 @@ void CommandBuffer::ResetCBState() {
     per_command_error_loggers.clear();
 
     for (auto &descriptor_command_binding : descriptor_command_bindings) {
-        descriptor_command_binding.descritpor_state_ssbo_block.Destroy();
-        descriptor_command_binding.post_process_ssbo_block.Destroy();
+        descriptor_command_binding.descritpor_state_ssbo_buffer.Destroy();
+        descriptor_command_binding.post_process_ssbo_buffer.Destroy();
     }
     descriptor_command_bindings.clear();
     action_command_snapshots.clear();
@@ -454,9 +454,9 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (auto &buffer_info : debug_printf_buffer_infos) {
-        auto printf_output_ptr = (char *)buffer_info.output_mem_block.MapMemory(loc);
+        auto printf_output_ptr = (char *)buffer_info.output_mem_buffer.MapMemory(loc);
         debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, buffer_info, (uint32_t *)printf_output_ptr, loc);
-        buffer_info.output_mem_block.UnmapMemory();
+        buffer_info.output_mem_buffer.UnmapMemory();
     }
 
     // CommandBuffer::Destroy can happen on an other thread,

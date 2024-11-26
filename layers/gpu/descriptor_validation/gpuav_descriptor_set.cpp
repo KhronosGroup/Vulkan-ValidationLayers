@@ -18,7 +18,7 @@
 #include "gpu/descriptor_validation/gpuav_descriptor_set.h"
 
 #include "gpu/core/gpuav.h"
-#include "gpu/resources/gpuav_subclasses.h"
+#include "gpu/resources/gpuav_state_trackers.h"
 #include "gpu/resources/gpuav_shader_resources.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
 #include "state_tracker/descriptor_sets.h"
@@ -37,14 +37,14 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *
                              const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                              ValidationStateTracker *state_data)
     : vvl::DescriptorSet(handle, pool, layout, variable_count, state_data),
-      post_process_block_(*static_cast<Validator *>(state_data)),
-      input_block_(*static_cast<Validator *>(state_data)) {
+      post_process_buffer_(*static_cast<Validator *>(state_data)),
+      input_buffer_(*static_cast<Validator *>(state_data)) {
     BuildBindingLayouts();
 }
 
 DescriptorSet::~DescriptorSet() {
-    post_process_block_.Destroy();
-    input_block_.Destroy();
+    post_process_buffer_.Destroy();
+    input_buffer_.Destroy();
 }
 
 void DescriptorSet::BuildBindingLayouts() {
@@ -189,12 +189,12 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     const uint32_t current_version = current_version_.load();
 
     // Will be empty on first time getting the state
-    if (input_block_.Address() != 0) {
+    if (input_buffer_.Address() != 0) {
         if (last_used_version_ == current_version) {
-            return input_block_.Address();  // nothing has changed
+            return input_buffer_.Address();  // nothing has changed
         } else {
             // will replace (descriptor array size might have change, so need to resize buffer)
-            input_block_.Destroy();
+            input_buffer_.Destroy();
         }
     }
 
@@ -202,7 +202,7 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
 
     if (total_descriptor_count_ == 0) {
         // no descriptors case, return a dummy state object
-        return input_block_.Address();
+        return input_buffer_.Address();
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
@@ -213,9 +213,9 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    input_block_.Create(loc, &buffer_info, &alloc_info);
+    input_buffer_.Create(loc, &buffer_info, &alloc_info);
 
-    auto data = (glsl::DescriptorState *)input_block_.MapMemory(loc);
+    auto data = (glsl::DescriptorState *)input_buffer_.MapMemory(loc);
 
     uint32_t index = 0;
     for (uint32_t i = 0; i < bindings_.size(); i++) {
@@ -251,23 +251,23 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     }
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
-    input_block_.FlushAllocation(loc);
-    input_block_.UnmapMemory();
+    input_buffer_.FlushAllocation(loc);
+    input_buffer_.UnmapMemory();
 
-    return input_block_.Address();
+    return input_buffer_.Address();
 }
 
 VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
     // Each set only needs to create its post process buffer once. It is based on total descriptor count, and even with things like
     // VARIABLE_DESCRIPTOR_COUNT_BIT, the size will only get smaller afterwards.
-    if (post_process_block_.Address() != 0) {
-        return post_process_block_.Address();
+    if (post_process_buffer_.Address() != 0) {
+        return post_process_buffer_.Address();
     }
 
     if (total_descriptor_count_ == 0) {
         // no descriptors case, return a dummy state object
-        return post_process_block_.Address();
+        return post_process_buffer_.Address();
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -278,28 +278,28 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    post_process_block_.Create(loc, &buffer_info, &alloc_info);
+    post_process_buffer_.Create(loc, &buffer_info, &alloc_info);
 
-    void *data = post_process_block_.MapMemory(loc);
+    void *data = post_process_buffer_.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
-    post_process_block_.FlushAllocation(loc);
-    post_process_block_.UnmapMemory();
+    post_process_buffer_.FlushAllocation(loc);
+    post_process_buffer_.UnmapMemory();
 
-    return post_process_block_.Address();
+    return post_process_buffer_.Address();
 }
 
 // cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
 // where accessed
 std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const {
     std::vector<DescriptorAccess> descriptor_accesses;
-    if (post_process_block_.IsDestroyed()) {
+    if (post_process_buffer_.IsDestroyed()) {
         return descriptor_accesses;
     }
 
-    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_block_.MapMemory(loc);
-    post_process_block_.InvalidateAllocation(loc);
+    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.MapMemory(loc);
+    post_process_buffer_.InvalidateAllocation(loc);
 
     for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
         const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
@@ -313,7 +313,7 @@ std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Locatio
         }
     }
 
-    post_process_block_.UnmapMemory();
+    post_process_buffer_.UnmapMemory();
     return descriptor_accesses;
 }
 
