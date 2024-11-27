@@ -535,7 +535,7 @@ TEST_F(NegativeImage, BlitLayout) {
     m_command_buffer.Begin();
 
     // Source image in invalid layout at start of the CB
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
     vk::CmdBlitImage(m_command_buffer.handle(), img_src_transfer.handle(), img_src_transfer.Layout(), img_color.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_LINEAR);
 
@@ -548,7 +548,7 @@ TEST_F(NegativeImage, BlitLayout) {
     m_command_buffer.Begin();
 
     // Destination image in invalid layout at start of the CB
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
     vk::CmdBlitImage(m_command_buffer.handle(), img_color.handle(), VK_IMAGE_LAYOUT_GENERAL, img_dst_transfer.handle(),
                      img_dst_transfer.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
 
@@ -5206,7 +5206,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         vk::CmdDispatch(cmd.handle(), 1, 1, 1);
         cmd.End();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
         m_default_queue->Submit(cmd);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
@@ -5221,7 +5221,7 @@ TEST_F(NegativeImage, ComputeImageLayout) {
         vk::CmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
         cmd.End();
 
-        m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
         m_default_queue->Submit(cmd);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
@@ -5265,7 +5265,7 @@ TEST_F(NegativeImage, ComputeImageLayout11) {
     vk::CmdDispatchBase(m_command_buffer.handle(), 0, 0, 0, 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -5326,7 +5326,7 @@ TEST_F(NegativeImage, DISABLED_ImageLayoutMutable) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

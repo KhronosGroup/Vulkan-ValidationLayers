@@ -870,7 +870,7 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     };
     constexpr std::array test_list = {kInternal, kExternal};
     constexpr std::array internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344", "VUID-vkCmdDraw-None-08114"};
-    constexpr std::array external_errors = {"UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout"};
+    constexpr std::array external_errors = {"VUID-vkCmdDraw-None-09600"};
 
     // Common steps to create the two classes of errors (or two classes of positives)
     auto do_test = [&](vkt::Image *image, vkt::ImageView *view, VkImageAspectFlags aspect_mask, VkImageLayout image_layout,

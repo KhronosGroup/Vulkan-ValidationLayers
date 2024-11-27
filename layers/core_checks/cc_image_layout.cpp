@@ -22,10 +22,12 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
+#include "generated/error_location_helper.h"
 #include "sync/sync_vuid_maps.h"
 #include "utils/image_layout_utils.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format);
 
@@ -240,7 +242,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
-                        skip |= LogError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
+                        // TODO - We need a way to map the action command to which caused this error
+                        const vvl::DrawDispatchVuid &vuid = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
+                        skip |= LogError(vuid.image_layout_09600, objlist, loc,
                                          "command buffer %s expects %s (subresource: aspectMask %s array layer %" PRIu32
                                          ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
                                          FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
