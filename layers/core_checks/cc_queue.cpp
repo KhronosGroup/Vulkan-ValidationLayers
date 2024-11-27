@@ -36,7 +36,7 @@ struct CommandBufferSubmitState {
     QFOTransferCBScoreboards<QFOImageTransferBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
     std::vector<VkCommandBuffer> current_cmds;
-    GlobalImageLayoutMap overlay_image_layout_map;
+    GlobalImageLayoutMap global_image_layout_map;
     std::vector<std::string> cmdbuf_label_stack;
     std::string last_closed_cmdbuf_label;
     bool found_unbalanced_cmdbuf_label;
@@ -58,7 +58,7 @@ struct CommandBufferSubmitState {
 
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
-        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
+        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, global_image_layout_map);
         const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
         skip |= core.ValidatePrimaryCommandBufferState(

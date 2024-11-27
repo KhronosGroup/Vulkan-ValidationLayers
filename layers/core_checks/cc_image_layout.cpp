@@ -161,9 +161,9 @@ void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
     }
 }
 
-static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const vvl::Image &image_state) {
+static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &global_image_layout_map, const vvl::Image &image_state) {
     // This approach allows for a single hash lookup or/create new
-    auto &layout_map = map[&image_state];
+    auto &layout_map = global_image_layout_map[&image_state];
     if (!layout_map) {
         layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
     }
@@ -191,7 +191,7 @@ struct GlobalLayoutUpdater {
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::CommandBuffer &cb_state,
-                                            GlobalImageLayoutMap &overlayLayoutMap) const {
+                                            GlobalImageLayoutMap &global_image_layout_map) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
     // Iterate over the layout maps for each referenced image
@@ -205,17 +205,17 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
         // Validate the initial_uses for each subresource referenced
         if (layout_map.empty()) continue;
 
-        auto *overlay_map = GetLayoutRangeMap(overlayLayoutMap, *image_state);
-        const auto *global_map = image_state->layout_range_map.get();
-        ASSERT_AND_CONTINUE(global_map);
-        auto global_map_guard = global_map->ReadLock();
+        auto *overlay_map = GetLayoutRangeMap(global_image_layout_map, *image_state);
+        const auto *global_range_map = image_state->layout_range_map.get();
+        ASSERT_AND_CONTINUE(global_range_map);
+        auto global_range_map_guard = global_range_map->ReadLock();
 
         // Note: don't know if it would matter
-        // if (global_map->empty() && overlay_map->empty()) // skip this next loop...;
+        // if (global_range_map->empty() && overlay_map->empty()) // skip this next loop...;
 
         auto pos = layout_map.begin();
         const auto end = layout_map.end();
-        sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(*overlay_map, *global_map,
+        sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(*overlay_map, *global_range_map,
                                                                                             pos->first.begin);
         while (pos != end) {
             VkImageLayout initial_layout = pos->second.initial_layout;
@@ -963,8 +963,9 @@ bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subr
     }
     if (!VerifyAspectsPresent(subres_range.aspectMask, image_state.create_info.format)) return false;
     if (((vkuFormatPlaneCount(image_state.create_info.format) < 3) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_2_BIT)) ||
-        ((vkuFormatPlaneCount(image_state.create_info.format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT)))
+        ((vkuFormatPlaneCount(image_state.create_info.format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT))) {
         return false;
+    }
     if (subres_range.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT ||
         subres_range.aspectMask & VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT ||
         subres_range.aspectMask & VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT ||
