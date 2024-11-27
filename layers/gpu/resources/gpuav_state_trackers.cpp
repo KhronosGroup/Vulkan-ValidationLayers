@@ -368,8 +368,8 @@ void CommandBuffer::ResetCBState() {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
-    for (auto &buffer_info : debug_printf_buffer_infos) {
-        buffer_info.output_mem_buffer.Destroy();
+    for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
+        printf_buffer_info.output_mem_buffer.Destroy();
     }
     debug_printf_buffer_infos.clear();
 
@@ -377,7 +377,7 @@ void CommandBuffer::ResetCBState() {
     gpu_resources_manager.DestroyResources();
     per_command_error_loggers.clear();
 
-    for (auto &descriptor_command_binding : descriptor_command_bindings) {
+    for (DescriptorCommandBinding &descriptor_command_binding : descriptor_command_bindings) {
         descriptor_command_binding.descritpor_state_ssbo_buffer.Destroy();
         descriptor_command_binding.post_process_ssbo_buffer.Destroy();
     }
@@ -453,10 +453,10 @@ void CommandBuffer::PostProcess(VkQueue queue, const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
-    for (auto &buffer_info : debug_printf_buffer_infos) {
-        auto printf_output_ptr = (char *)buffer_info.output_mem_buffer.MapMemory(loc);
-        debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, buffer_info, (uint32_t *)printf_output_ptr, loc);
-        buffer_info.output_mem_buffer.UnmapMemory();
+    for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
+        auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.MapMemory(loc);
+        debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, printf_buffer_info, (uint32_t *)printf_output_ptr, loc);
+        printf_buffer_info.output_mem_buffer.UnmapMemory();
     }
 
     // CommandBuffer::Destroy can happen on an other thread,
