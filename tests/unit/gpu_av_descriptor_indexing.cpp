@@ -1334,7 +1334,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ImageArrayDynamicIndexing) {
     buffer_ptr[0] = 35;
     buffer0.Memory().Unmap();
 
-    // UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout
+    // VUID-vkCmdDraw-None-09600
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL--instead, current layout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL.");
 
@@ -1410,7 +1410,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_ImageLayoutMutable) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

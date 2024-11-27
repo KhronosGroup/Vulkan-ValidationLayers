@@ -316,7 +316,7 @@ TEST_F(NegativePushDescriptor, ImageLayout) {
             m_errorMonitor->VerifyFound();
             break;
         }
-        m_errorMonitor->SetDesiredError("UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
         vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();

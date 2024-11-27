@@ -22,6 +22,7 @@
 #include "gpu/resources/gpuav_subclasses.h"
 #include "gpu/cmd_validation/gpuav_copy_buffer_to_image.h"
 #include "utils/image_layout_utils.h"
+#include "drawdispatch/drawdispatch_vuids.h"
 
 #include "state_tracker/render_pass_state.h"
 
@@ -195,8 +196,10 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
                 for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                     const auto subresource = image_state.subresource_encoder.Decode(index);
                     const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+                    // TODO - We need a way to map the action command to which caused this error
+                    const vvl::DrawDispatchVuid &vuid = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
                     skip |= gpuav.LogError(
-                        "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout", objlist, loc,
+                        vuid.image_layout_09600, objlist, loc,
                         "command buffer %s expects %s (subresource: aspectMask %s array layer %" PRIu32 ", mip level %" PRIu32
                         ") "
                         "to be in layout %s--instead, current layout is %s.",
