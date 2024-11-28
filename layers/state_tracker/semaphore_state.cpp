@@ -288,6 +288,12 @@ void vvl::Semaphore::GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquir
 bool vvl::Semaphore::HasResolvingTimelineSignal(uint64_t wait_payload) const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
+
+    // Check if completed payload value (which includes initial value) resolves the wait.
+    if (wait_payload <= completed_.payload) {
+        return true;
+    }
+
     auto it = timeline_.find(wait_payload);
     assert(it != timeline_.end());  // for each registered wait there is a timepoint
     while (it != timeline_.end()) {
