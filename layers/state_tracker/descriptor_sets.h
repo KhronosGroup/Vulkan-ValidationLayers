@@ -983,10 +983,10 @@ class DescriptorSet : public StateObject {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
-    inline bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_dynamically_accessed) const {
+    inline bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const {
         // core validation case: We check if all parts of the descriptor are statically known, from here spirv-val should have
         // caught any OOB values.
-        return IsBindless(binding.binding_flags) || is_dynamically_accessed;
+        return IsBindless(binding.binding_flags) || is_runtime_descriptor_array;
     }
 
   protected:

@@ -1973,57 +1973,6 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
-// Determines if the Resource variable itself is dynamic
-bool ResourceInterfaceVariable::IsDynamicallyAccessed(ResourceInterfaceVariable& variable, const Module& module_state,
-                                                      const AccessChainVariableMap& access_chain_map) {
-    // The 4 array edge cases to catch
-    //
-    // [Dynamic] true
-    // layout(set=0, binding=0) buffer storage_buffer_a {
-    //     int x[2];
-    // } a[];
-    //
-    // [Static] false
-    // layout(set=0, binding=1) buffer storage_buffer_b {
-    //     int x[2];
-    // } b[3];
-    //
-    // [Dynamic] true
-    // layout(set=0, binding=2) buffer storage_buffer_c {
-    //     int x[]; // only allowed in buffers (not images)
-    // } c;
-    //
-    // [Static] false
-    // layout(set=0, binding=3) buffer storage_buffer_d {
-    //     int x[2];
-    // } d;
-
-    if (module_state.HasRuntimeArray(variable.type_id)) {
-        return true;  // catches case A
-    }
-    // runtime array can only be found on last element of the struct
-    if (variable.type_struct_info &&
-        variable.type_struct_info->members[variable.type_struct_info->length - 1].insn->Opcode() == spv::OpTypeRuntimeArray) {
-        return true;  // catches case C
-    }
-
-    const auto it = access_chain_map.find(variable.id);
-    if (it == access_chain_map.end()) {
-        return false;  // nothing is accessing this in any known way
-    }
-
-    const uint32_t start = 4;  // first word of the Indexes operand
-    for (const auto access_chain_inst : it->second) {
-        for (uint32_t i = start; i < access_chain_inst->Length(); i++) {
-            const uint32_t index = access_chain_inst->Word(i);
-            if (module_state.FindDef(index)->Opcode() != spv::OpConstant) {
-                return true;  // access is dynamic
-            }
-        }
-    }
-    return false;
-}
-
 uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const Module& module_state, const Instruction& base_type) {
     return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetTypeBitsSize(&base_type) : 0;
 }
@@ -2053,7 +2002,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
       array_length(0),
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
-      is_dynamically_accessed(IsDynamicallyAccessed(*this, module_state, access_chain_map)),
+      is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
       image_sampled_type_width(FindImageSampledTypeWidth(module_state, base_type)),
       is_storage_buffer(IsStorageBuffer(*this)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash
@@ -2094,10 +2043,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 info.is_sign_extended |= image_access.is_sign_extended;
                 info.is_zero_extended |= image_access.is_zero_extended;
                 access_mask |= image_access.access_mask;
-
-                if (array_length > 1 && array_length != spirv::kRuntimeArray) {
-                    image_access_chain_indexes.insert(image_access.image_access_chain_index);
-                }
 
                 const bool is_image_without_format =
                     ((is_sampled_without_sampler) && (base_type.Word(8) == spv::ImageFormatUnknown));

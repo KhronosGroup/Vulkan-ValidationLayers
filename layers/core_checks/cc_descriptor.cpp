@@ -837,7 +837,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, uint32_t
             return result;
         }
 
-        if (descriptor_set.ValidateBindingOnGPU(*binding, resource_variable.is_dynamically_accessed)) {
+        if (descriptor_set.ValidateBindingOnGPU(*binding, resource_variable.is_runtime_descriptor_array)) {
             continue;
         }
 

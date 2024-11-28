@@ -776,91 +776,6 @@ TEST_F(NegativeGpuAV, DISABLED_UnnormalizedCoordinatesSeparateSamplerSharedSampl
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAV, YcbcrDrawFetchIndexed) {
-    TEST_DESCRIPTION("Do OpImageFetch on a Ycbcr COMBINED_IMAGE_SAMPLER.");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-    const VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-
-    auto ci = vku::InitStruct<VkImageCreateInfo>();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = format;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {256, 256, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        // Assume there's low ROI on searching for different mp formats
-        GTEST_SKIP() << "Multiplane image format not supported";
-    }
-
-    vkt::Image image(*m_device, ci, vkt::set_layout);
-    vkt::SamplerYcbcrConversion conversion(*m_device, format);
-    auto conversion_info = conversion.ConversionInfo();
-    vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT, &conversion_info);
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_ci.pNext = &conversion_info;
-    vkt::Sampler sampler(*m_device, sampler_ci);
-    VkSampler immutable_samplers[2] = {sampler.handle(), sampler.handle()};
-
-    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
-    buffer_ptr[0] = 1;
-    buffer.Memory().Unmap();
-
-    OneOffDescriptorSet descriptor_set(
-        m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_VERTEX_BIT, immutable_samplers},
-                      {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-                  });
-    if (!descriptor_set.set_) {
-        GTEST_SKIP() << "Can't allocate descriptor with immutable sampler";
-    }
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-    descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE);
-    descriptor_set.UpdateDescriptorSets();
-
-    const char vsSource[] = R"glsl(
-        #version 450
-        layout (set = 0, binding = 0) uniform sampler2D ycbcr[2];
-        layout (set = 0, binding = 1) uniform UBO { uint index; }; // makes dynamic and not caught in core check
-        void main() {
-            gl_Position = texelFetch(ycbcr[index], ivec2(0), 0);
-        }
-    )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-
-    CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.CreateGraphicsPipeline();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06550");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeGpuAV, YcbcrDrawFetchNonArrayPartiallyBound) {
     TEST_DESCRIPTION("Do OpImageFetch on a Ycbcr COMBINED_IMAGE_SAMPLER.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -948,8 +863,10 @@ TEST_F(NegativeGpuAV, YcbcrDrawFetchNonArrayPartiallyBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAV, NonMultisampleMismatchWithPipeline) {
+TEST_F(NegativeGpuAV, NonMultisampleMismatchWithPipelinePartiallyBound) {
     TEST_DESCRIPTION("Shader uses non-Multisample, but image view is Multisample.");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -968,11 +885,17 @@ TEST_F(NegativeGpuAV, NonMultisampleMismatchWithPipeline) {
     buffer_ptr[0] = 1;
     buffer.Memory().Unmap();
 
+    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    ds_layout_binding_flags.bindingCount = 2;
+    ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
+
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                            {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
+                                       },
+                                       0, &ds_layout_binding_flags);
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorImageInfo(0, good_image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);

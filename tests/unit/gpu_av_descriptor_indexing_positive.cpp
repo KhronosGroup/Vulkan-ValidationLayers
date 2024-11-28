@@ -110,11 +110,18 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     buffer_ptr[0] = 1;
     buffer.Memory().Unmap();
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {0, 0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    ds_layout_binding_flags.bindingCount = 3;
+    ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, &ds_layout_binding_flags);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
