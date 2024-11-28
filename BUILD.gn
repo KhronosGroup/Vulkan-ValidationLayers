@@ -364,6 +364,7 @@ vvl_sources = [
   "layers/vulkan/generated/command_validation.cpp",
   "layers/vulkan/generated/device_features.cpp",
   "layers/vulkan/generated/device_features.h",
+  "layers/vulkan/generated/dispatch_functions.h",
   "layers/vulkan/generated/dispatch_object.cpp",
   "layers/vulkan/generated/dispatch_object_methods.h",
   "layers/vulkan/generated/dispatch_vector.cpp",
