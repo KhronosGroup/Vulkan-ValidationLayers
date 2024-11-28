@@ -2346,3 +2346,29 @@ TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
         t1.join();
     }
 }
+
+TEST_F(PositiveSyncObject, BinarySyncAfterResolvedTimelineWait) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8900
+    TEST_DESCRIPTION("Test binary wait followed by the previous resolved timeline wait");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
+
+    // This removes signal's timepoint from timeline (not pending anymore)
+    timeline_semaphore.Wait(1, kWaitTimeout);
+
+    // Wait one more time (should just check completed state).
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(timeline_semaphore, 1));
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(binary_semaphore));
+
+    // Waiting on binary semaphore initiates check of unresolved timeline wait dependency.
+    // This check did not work properly when resolving timeline signal was already retired.
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_default_queue->Wait();
+}
