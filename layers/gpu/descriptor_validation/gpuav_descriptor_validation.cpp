@@ -259,7 +259,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 ASSERT_AND_CONTINUE(resource_variable);
 
                 // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
-                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, resource_variable->is_dynamically_accessed)) {
+                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding,
+                                                                resource_variable->is_runtime_descriptor_array)) {
                     continue;
                 }
 

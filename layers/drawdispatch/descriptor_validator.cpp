@@ -280,13 +280,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     const auto &image_view_ci = image_view_state->create_info;
 
-    // If not an image array, the set of indexes will be empty and we guarantee this is the only element.
-    // For GPU-AV image_access_chain_indexes will be filled with invalid values because it wasn't known when created.
-    if (!is_gpu_av && !resource_variable.image_access_chain_indexes.empty() &&
-        resource_variable.image_access_chain_indexes.find(index) == resource_variable.image_access_chain_indexes.end()) {
-        return skip;
-    }
-
     const spv::Dim dim = resource_variable.info.image_dim;
     const bool is_image_array = resource_variable.info.is_image_array;
 

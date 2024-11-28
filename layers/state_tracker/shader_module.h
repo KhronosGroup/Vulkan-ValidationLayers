@@ -406,10 +406,9 @@ struct ResourceInterfaceVariable : public VariableBase {
     // most likly will be OpTypeImage, OpTypeStruct, OpTypeSampler, or OpTypeAccelerationStructureKHR
     const Instruction &base_type;
 
-    // This is true if either:
-    // - The descriptor is made up of an OpRuntimeArray
-    // - Not all OpAccessChains pointing to this descriptor or easily determined constant
-    bool is_dynamically_accessed;
+    // True if the Resource variable itself is runtime descriptor array
+    // Online example to showcase various arrays we do/don't care about here https://godbolt.org/z/h9jhsKaPn
+    bool is_runtime_descriptor_array;
 
     // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
     const uint32_t image_sampled_type_width;
@@ -445,9 +444,6 @@ struct ResourceInterfaceVariable : public VariableBase {
     uint64_t descriptor_hash = 0;
     bool IsImage() const { return info.image_format_type != NumericTypeUnknown; }
 
-    // If dealing with an image array, only check the indexes accesses
-    vvl::unordered_set<uint32_t> image_access_chain_indexes;
-
     // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
     bool is_storage_image{false};
     bool is_storage_texel_buffer{false};
@@ -460,8 +456,6 @@ struct ResourceInterfaceVariable : public VariableBase {
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
-    static bool IsDynamicallyAccessed(ResourceInterfaceVariable &variable, const Module &module_state,
-                                      const AccessChainVariableMap &access_chain_map);
     static uint32_t FindImageSampledTypeWidth(const Module &module_state, const Instruction &base_type);
     static NumericType FindImageFormatType(const Module &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
