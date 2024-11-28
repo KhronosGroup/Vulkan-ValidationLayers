@@ -141,19 +141,38 @@ std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSi
     // binary semaphores are used this will return immediately.
     uint32_t processed_waits = 0;
 
-    auto guard = Lock();
-    for (auto it = submissions_.rbegin(); it != submissions_.rend() && processed_waits < timeline_wait_count_; ++it) {
-        const vvl::QueueSubmission &submission = *it;
-        if (submission.seq > until_seq) {
-            continue;
-        }
-        for (const auto &wait_info : submission.wait_semaphores) {
-            if (wait_info.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) {
-                if (!wait_info.semaphore->HasResolvingTimelineSignal(wait_info.payload)) {
-                    return wait_info;
+    // Run algorithm in two separate steps to avoid lock-inversion with Semaphore::RetireWait:
+    // Semaphore::RetireWait()
+    //     Semaphore::WriteLock()
+    //         Semaphore::CanRetireTimelineWait
+    //             TimePoint::Notify
+    //                  Queue::Lock() <-- semaphore lock is still held here
+    //
+    // Current function:
+    //     Queue::Lock()
+    //     queue lock is released here, can't lock-inverse now
+    //     Semaphore::ReadLock()
+
+    // Step 1. Get list of timeline waits (write-locks Queue)
+    small_vector<SemaphoreInfo, 8> timeline_waits;
+    {
+        auto guard = Lock();
+        for (auto it = submissions_.rbegin(); it != submissions_.rend() && processed_waits < timeline_wait_count_; ++it) {
+            const vvl::QueueSubmission &submission = *it;
+            if (submission.seq <= until_seq) {
+                for (const auto &wait_info : submission.wait_semaphores) {
+                    if (wait_info.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+                        timeline_waits.emplace_back(wait_info);
+                        processed_waits++;
+                    }
                 }
-                processed_waits++;
             }
+        }
+    }
+    // Step 2. Query each timeline wait (read-locks Semaphore)
+    for (const SemaphoreInfo &wait_info : timeline_waits) {
+        if (!wait_info.semaphore->HasResolvingTimelineSignal(wait_info.payload)) {
+            return wait_info;
         }
     }
     return {};
