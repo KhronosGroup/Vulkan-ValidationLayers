@@ -314,6 +314,12 @@ void QueueBatchContext::ApplyAcquireWait(const AcquiredImage& acquired) {
     ApplyPredicatedWait(predicate);
 }
 
+void QueueBatchContext::OnResourceDestroyed(const ResourceAccessRange& resource_range) {
+    // Remove all accesses associated with the resource being destroyed
+    access_context_.EraseIf(
+        [&resource_range](ResourceAccessRangeMap::value_type& access) { return resource_range.includes(access.first); });
+}
+
 void QueueBatchContext::BeginRenderPassReplaySetup(ReplayState& replay, const SyncOpBeginRenderPass& begin_op) {
     current_access_context_ = replay.ReplayStateRenderPassBegin(queue_state_->GetQueueFlags(), begin_op, access_context_);
 }

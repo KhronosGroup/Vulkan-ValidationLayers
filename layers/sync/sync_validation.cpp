@@ -308,6 +308,36 @@ std::shared_ptr<vvl::ImageView> SyncValidator::CreateImageViewState(
     return std::make_shared<ImageViewState>(image_state, handle, create_info, format_features, cubic_props);
 }
 
+void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
+                                               const RecordObject &record_obj) {
+    if (const auto buffer_state = Get<vvl::Buffer>(buffer)) {
+        const VkDeviceSize base_address = ResourceBaseAddress(*buffer_state);
+        const ResourceAccessRange buffer_range(base_address, base_address + buffer_state->create_info.size);
+        auto batch_op = [&buffer_range](const QueueBatchContext::Ptr &batch) {
+            batch->OnResourceDestroyed(buffer_range);
+            batch->Trim();
+        };
+        ForAllQueueBatchContexts(batch_op);
+    }
+    StateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator, record_obj);
+}
+
+void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
+                                              const RecordObject &record_obj) {
+    if (const auto image_state = Get<syncval_state::ImageState>(image)) {
+        auto batch_op = [&image_state](const QueueBatchContext::Ptr &batch) {
+            ImageRangeGen range_gen = image_state->MakeImageRangeGen(image_state->full_range, false);
+            for (; range_gen->non_empty(); ++range_gen) {
+                const ResourceAccessRange subresource_range = *range_gen;
+                batch->OnResourceDestroyed(subresource_range);
+            }
+            batch->Trim();
+        };
+        ForAllQueueBatchContexts(batch_op);
+    }
+    StateTracker::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
+}
+
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                                  uint32_t regionCount, const VkBufferCopy *pRegions,
                                                  const ErrorObject &error_obj) const {
