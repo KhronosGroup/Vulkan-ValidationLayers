@@ -333,6 +333,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void ApplyPredicatedWait(Predicate &predicate);
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyAcquireWait(const AcquiredImage &acquired);
+    void OnResourceDestroyed(const ResourceAccessRange &resource_range);
 
     void BeginRenderPassReplaySetup(ReplayState &replay, const SyncOpBeginRenderPass &begin_op);
     void NextSubpassReplaySetup(ReplayState &replay);
