@@ -1874,10 +1874,10 @@ bool StatelessValidation::manual_PreCallValidateDestroyMicromapEXT(
     const VkAllocationCallbacks*                pAllocator, const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (!enabled_features.micromapHostCommands) {
+    if (!enabled_features.micromap) {
         // Adding in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7023
         skip |= LogError("UNASSIGNED-vkDestroyMicromapEXT-micromapHostCommands-feature", device, error_obj.location,
-                         "micromapHostCommands feature was not enabled.");
+                         "micromap feature was not enabled.");
     }
 
     return skip;
