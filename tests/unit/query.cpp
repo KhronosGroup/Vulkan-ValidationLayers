@@ -20,7 +20,6 @@ class NegativeQuery : public QueryTest {};
 
 TEST_F(NegativeQuery, PerformanceCreation) {
     TEST_DESCRIPTION("Create performance query without support");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
@@ -95,7 +94,6 @@ TEST_F(NegativeQuery, PerformanceCreation) {
 TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     TEST_DESCRIPTION("Insert a performance query begin/end with respect to the command buffer counter scope");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
@@ -209,7 +207,6 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
 TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     TEST_DESCRIPTION("Insert a performance query begin/end with respect to the render pass counter scope");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
@@ -301,7 +298,6 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
 TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     TEST_DESCRIPTION("Verify that we get an error if we release the profiling lock during the recording of performance queries");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::performanceCounterQueryPools);
     RETURN_IF_SKIP(Init());
@@ -423,7 +419,6 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
 
 TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     TEST_DESCRIPTION("Verify that we get an error if we don't submit a command buffer for each passes before getting the results.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
@@ -660,7 +655,6 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
 TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     TEST_DESCRIPTION("Verify that we get an error if we reset & begin a performance query within the same primary command buffer.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::hostQueryReset);
@@ -1307,7 +1301,6 @@ TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
 TEST_F(NegativeQuery, WriteTimeStamp) {
     TEST_DESCRIPTION("Test for invalid query slot in query pool.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -1407,7 +1400,6 @@ TEST_F(NegativeQuery, TransformFeedbackStream) {
         "Call CmdBeginQuery with query type transform feedback stream when transformFeedbackQueries is not supported.");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();

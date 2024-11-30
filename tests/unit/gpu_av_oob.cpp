@@ -27,7 +27,6 @@ class NegativeGpuAVOOB : public GpuAVTest {
 TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
@@ -100,7 +99,6 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
 }
 
 TEST_F(NegativeGpuAVOOB, Basic) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitGpuAvFramework());

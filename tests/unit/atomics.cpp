@@ -330,17 +330,9 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 64 bit image view.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
-    if (features2.features.shaderInt64 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
-        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
+    RETURN_IF_SKIP(Init());
 
     std::string cs_source = R"glsl(
         #version 450
@@ -381,17 +373,9 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 draw time with 32 bit image view.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
-    if (features2.features.shaderInt64 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
-        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
+    RETURN_IF_SKIP(Init());
 
     std::string cs_source = R"glsl(
         #version 450
@@ -430,21 +414,12 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
 TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64 at draw time with Sparse image.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
-    if (!features2.features.shaderInt64) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    } else if (!features2.features.sparseBinding) {
-        GTEST_SKIP() << "sparseBinding feature not supported";
-    } else if (!image_atomic_int64_features.shaderImageInt64Atomics) {
-        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
-    }
-    image_atomic_int64_features.sparseImageInt64Atomics = VK_FALSE;  // turn off
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
+    AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
+    RETURN_IF_SKIP(Init());
 
     const char *cs_source = R"glsl(
         #version 450
@@ -500,21 +475,10 @@ TEST_F(NegativeAtomic, ImageInt64Mesh32) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features = vku::InitStructHelper();
-    VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT image_atomic_int64_features = vku::InitStructHelper(&mesh_shader_features);
-    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
-    if (features2.features.shaderInt64 == VK_FALSE) {
-        GTEST_SKIP() << "shaderInt64 feature not supported";
-    } else if (image_atomic_int64_features.shaderImageInt64Atomics == VK_FALSE) {
-        GTEST_SKIP() << "shaderImageInt64Atomics feature not supported";
-    } else if (mesh_shader_features.meshShader == VK_FALSE) {
-        GTEST_SKIP() << "Mesh shader feature not supported";
-    }
-    mesh_shader_features.multiviewMeshShader = VK_FALSE;
-    mesh_shader_features.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::shaderImageInt64Atomics);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const char *mesh_source = R"glsl(
@@ -1188,20 +1152,13 @@ TEST_F(NegativeAtomic, Float2WidthMismatch) {
     TEST_DESCRIPTION("VK_EXT_shader_atomic_float2 but enable wrong bitwidth.");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();  // need maintenance4
-    VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT atomic_float2_features = vku::InitStructHelper(&features13);
-    VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper(&atomic_float2_features);
-    VkPhysicalDevice16BitStorageFeatures storage_16_bit_features = vku::InitStructHelper(&float16int8_features);
-    GetPhysicalDeviceFeatures2(storage_16_bit_features);
-    if (!float16int8_features.shaderFloat16 || !storage_16_bit_features.storageBuffer16BitAccess ||
-        !atomic_float2_features.shaderBufferFloat16AtomicMinMax) {
-        GTEST_SKIP() << "Required float 16 atomic features not supported";
-    }
-    // turn off 32-bit support
-    atomic_float2_features.shaderBufferFloat32AtomicMinMax = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &storage_16_bit_features));
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::shaderBufferFloat16AtomicMinMax);
+    AddRequiredFeature(vkt::Feature::shaderSharedFloat32AtomicMinMax);
+    // shaderBufferFloat32AtomicMinMax not enabled
+    RETURN_IF_SKIP(Init());
 
     // clang-format off
     std::string cs_buffer_float_16_min = R"glsl(

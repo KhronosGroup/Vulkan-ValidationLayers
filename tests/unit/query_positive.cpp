@@ -500,7 +500,6 @@ TEST_F(PositiveQuery, PerformanceQueries) {
 TEST_F(PositiveQuery, HostQueryResetSuccess) {
     TEST_DESCRIPTION("Use vkResetQueryPoolEXT normally");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::hostQueryReset);
     RETURN_IF_SKIP(Init());

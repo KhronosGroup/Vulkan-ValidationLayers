@@ -59,7 +59,6 @@ TEST_F(PositiveMesh, BasicUsage) {
 TEST_F(PositiveMesh, MeshShaderOnly) {
     TEST_DESCRIPTION("Test using a mesh shader without a vertex shader.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
@@ -107,7 +106,6 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
 TEST_F(PositiveMesh, PointSize) {
     TEST_DESCRIPTION("Test writing point size in a mesh shader.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());

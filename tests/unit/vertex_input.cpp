@@ -48,16 +48,10 @@ TEST_F(NegativeVertexInput, AttributeFormat) {
 TEST_F(NegativeVertexInput, DivisorExtension) {
     TEST_DESCRIPTION("Test VUIDs added with VK_EXT_vertex_attribute_divisor extension.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
-    vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
-    vadf.vertexAttributeInstanceRateZeroDivisor = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&vadf);
-    RETURN_IF_SKIP(InitState(nullptr, &pd_features2));
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
@@ -130,15 +124,8 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
 TEST_F(NegativeVertexInput, DivisorDisabled) {
     TEST_DESCRIPTION("Test instance divisor feature disabled for VK_EXT_vertex_attribute_divisor extension.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
-    vadf.vertexAttributeInstanceRateDivisor = VK_FALSE;
-    vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
-    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&vadf);
-    RETURN_IF_SKIP(InitState(nullptr, &pd_features2));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
@@ -171,15 +158,9 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
 TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
     TEST_DESCRIPTION("Test instanceRateZero feature of VK_EXT_vertex_attribute_divisor extension.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
-    vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
-    vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
-    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&vadf);
-    RETURN_IF_SKIP(InitState(nullptr, &pd_features2));
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
@@ -206,7 +187,6 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
 TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
     TEST_DESCRIPTION("Test VUIDs added with VK_KHR_vertex_attribute_divisor extension.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
     AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateZeroDivisor);
@@ -283,7 +263,6 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
 TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
     TEST_DESCRIPTION("Test instance divisor feature disabled for VK_KHR_vertex_attribute_divisor extension.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
 
     RETURN_IF_SKIP(Init());
@@ -319,7 +298,6 @@ TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
 TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
     TEST_DESCRIPTION("Test instanceRateZero feature of VK_KHR_vertex_attribute_divisor extension.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
 
@@ -561,20 +539,15 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::provokingVertexLast);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(provoking_vertex_properties);
     if (provoking_vertex_properties.provokingVertexModePerPipeline == VK_TRUE) {
         GTEST_SKIP() << "provokingVertexModePerPipeline is VK_TRUE";
     }
-
-    VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_features = vku::InitStructHelper();
-    provoking_vertex_features.provokingVertexLast = VK_TRUE;
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&provoking_vertex_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-    InitRenderTarget();
 
     CreatePipelineHelper pipe1(*this);
     VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex_state_ci = vku::InitStructHelper();

@@ -115,7 +115,6 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
     InitBasicShaderObject();
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -258,7 +257,6 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
         "Test that user supplied push constants are correctly restored. One graphics pipeline, one compute pipeline, indirect draw "
         "and dispatch.");
     InitBasicShaderObject();
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());

@@ -121,7 +121,6 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
 TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed per-stage limits");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -418,7 +417,6 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed limits");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -957,7 +955,6 @@ TEST_F(NegativePipelineLayout, MissingDescriptor) {
 TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     TEST_DESCRIPTION("Verify an error message for multiple push descriptor sets.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkDescriptorSetLayoutBinding dsl_binding = {};

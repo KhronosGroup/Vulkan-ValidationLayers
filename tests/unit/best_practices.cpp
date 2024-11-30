@@ -2048,7 +2048,6 @@ TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEnd) {
 
 TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetMiddle) {
     TEST_DESCRIPTION("Set only a part of push constants in middle of as struct");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();

@@ -429,7 +429,6 @@ TEST_F(NegativePipeline, DepthClipControlFeatureDisable) {
 
 TEST_F(NegativePipeline, SamplePNextUnknown) {
     TEST_DESCRIPTION("Pass unknown pNext into VkPipelineMultisampleStateCreateInfo");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -773,12 +772,7 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
     TEST_DESCRIPTION("Test VK_EXT_pipeline_creation_cache_control");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = vku::InitStructHelper();
-    cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
-    RETURN_IF_SKIP(InitState(nullptr, &cache_control_features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const auto set_graphics_flags = [&](CreatePipelineHelper &helper) {
@@ -1585,21 +1579,8 @@ TEST_F(NegativePipeline, CreationFeedbackCountCompute) {
 TEST_F(NegativePipeline, LineRasterization) {
     TEST_DESCRIPTION("Test VK_EXT_line_rasterization state against feature enables.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceLineRasterizationFeaturesEXT line_rasterization_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(line_rasterization_features);
-
-    line_rasterization_features.rectangularLines = VK_FALSE;
-    line_rasterization_features.bresenhamLines = VK_FALSE;
-    line_rasterization_features.smoothLines = VK_FALSE;
-    line_rasterization_features.stippledRectangularLines = VK_FALSE;
-    line_rasterization_features.stippledBresenhamLines = VK_FALSE;
-    line_rasterization_features.stippledSmoothLines = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     {
@@ -1813,7 +1794,6 @@ TEST_F(NegativePipeline, MaxPerStageResources) {
 TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
     TEST_DESCRIPTION("Try making calls without pipelineExecutableInfo.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
 
     RETURN_IF_SKIP(Init());
@@ -2353,7 +2333,6 @@ TEST_F(NegativePipeline, GraphicsPipelineWithBadBasePointer) {
 TEST_F(NegativePipeline, DiscardRectangle) {
     TEST_DESCRIPTION("Create a graphics pipeline invalid VkPipelineDiscardRectangleStateCreateInfoEXT");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2428,7 +2407,6 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     TEST_DESCRIPTION("Validate using VkPhysicalDeviceSampleLocationsPropertiesEXT");
 
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations = vku::InitStructHelper();
@@ -3123,7 +3101,6 @@ TEST_F(NegativePipeline, RasterStateWithDepthBiasRepresentationInfo) {
         "VkPhysicalDeviceDepthBiasControlFeaturesEXT features disabled");
 
     AddRequiredExtensions(VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::depthBiasControl);
 
     // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
@@ -3540,7 +3517,6 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
 

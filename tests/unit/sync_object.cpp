@@ -2392,12 +2392,9 @@ TEST_F(NegativeSyncObject, QueueSubmitWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
     all_queue_count_ = true;
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceSynchronization2FeaturesKHR sync2_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(sync2_features);
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(Init());
 
     if ((m_second_queue_caps & VK_QUEUE_GRAPHICS_BIT) == 0) {
         GTEST_SKIP() << "2 graphics queues are needed";

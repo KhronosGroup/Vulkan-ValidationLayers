@@ -23,13 +23,8 @@ TEST_F(NegativeFragmentShadingRate, Values) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    fsr_features.pipelineFragmentShadingRate = true;
-
-    VkPhysicalDeviceFeatures2 device_features = vku::InitStructHelper(&fsr_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &device_features));
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     VkExtent2D fragmentSize = {1, 1};
     VkFragmentShadingRateCombinerOpKHR combinerOps[2] = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
@@ -696,19 +691,13 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferenceAttachment) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Test requires Vulkan version 1.0";
     }
-
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&fdm_features);
-    fdm_features.fragmentDensityMap = true;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2, 0));
-    InitRenderTarget();
 
     VkAttachmentReference ref;
     ref.attachment = 0;
@@ -1251,13 +1240,8 @@ TEST_F(NegativeFragmentShadingRate, Pipeline) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    fsr_features.pipelineFragmentShadingRate = true;
-
-    VkPhysicalDeviceFeatures2 device_features = vku::InitStructHelper(&fsr_features);
-    RETURN_IF_SKIP(InitState(nullptr, &device_features));
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkPipelineFragmentShadingRateStateCreateInfoKHR fsr_ci = vku::InitStructHelper();
@@ -1866,20 +1850,9 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
 TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
     TEST_DESCRIPTION("Test VK_NV_shading_rate_image.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Create a device that enables shading_rate_image but disables multiViewport
-    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
-    if (!shading_rate_image_features.shadingRateImage) {
-        GTEST_SKIP() << "shadingRateImage not supported";
-    }
-
-    features2.features.multiViewport = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shadingRateImage);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Test shading rate image creation
@@ -2130,18 +2103,10 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
 
 TEST_F(NegativeFragmentShadingRate, ShadingRateImageNVViewportCount) {
     TEST_DESCRIPTION("Test VK_NV_shading_rate_image viewportCount.");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    // Create a device that enables shading_rate_image but disables multiViewport
-    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
-    if (!shading_rate_image_features.shadingRateImage) {
-        GTEST_SKIP() << "shadingRateImage not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::shadingRateImage);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Test shading rate image creation
@@ -2773,17 +2738,9 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapNonSubsampledImages) {
 }
 
 TEST_F(NegativeFragmentShadingRate, AttachmentFragmentDensityFlags) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = vku::InitStructHelper();
-    fdm_features.fragmentDensityMap = true;
-
-    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&fdm_features);
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFragmentDensityMapPropertiesEXT fdm_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fdm_properties);
@@ -2892,13 +2849,11 @@ TEST_F(NegativeFragmentShadingRate, AttachmentFragmentDensityFlags) {
 }
 
 TEST_F(NegativeFragmentShadingRate, ImagelessAttachmentFragmentDensity) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     AddRequiredFeature(vkt::Feature::fragmentDensityMap);
-    RETURN_IF_SKIP(InitFramework());
-    RETURN_IF_SKIP(InitState(nullptr, nullptr));
+    RETURN_IF_SKIP(Init());
 
     VkPhysicalDeviceFragmentDensityMapPropertiesEXT fdm_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fdm_properties);

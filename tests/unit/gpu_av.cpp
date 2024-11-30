@@ -512,8 +512,6 @@ TEST_F(NegativeGpuAV, UnnormalizedCoordinatesInBoundsAccess) {
 
 TEST_F(NegativeGpuAV, UnnormalizedCoordinatesCopyObject) {
     TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, but using OpCopyObject");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();

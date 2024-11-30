@@ -412,15 +412,8 @@ TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(fsr_features);
-    if (!fsr_features.pipelineFragmentShadingRate) {
-        GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::pipelineFragmentShadingRate not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &fsr_features));
+    AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    RETURN_IF_SKIP(Init());
 
     VkExtent2D fragment_size = {1, 1};
     std::array combiner_ops = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR, VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};

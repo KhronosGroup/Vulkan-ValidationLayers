@@ -116,10 +116,9 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     TEST_DESCRIPTION("Test that QueueSubmit's signal semaphore behaves the same way as QueueSubmit2 with ALL_COMMANDS signal.");
     AddSurfaceExtension();
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    VkPhysicalDeviceSynchronization2Features sync2_features = vku::InitStructHelper();
-    sync2_features.synchronization2 = VK_TRUE;
+    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState(nullptr, &sync2_features));
+    RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSwapchain());
     vkt::Semaphore acquire_semaphore(*m_device);
     vkt::Semaphore submit_semaphore(*m_device);

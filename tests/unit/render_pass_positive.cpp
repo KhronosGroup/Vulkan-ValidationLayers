@@ -309,7 +309,6 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
 TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     TEST_DESCRIPTION("Use a 1D image view for an imageless framebuffer with base mip level > 0.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());
