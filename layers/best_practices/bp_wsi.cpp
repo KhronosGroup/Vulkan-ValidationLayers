@@ -141,12 +141,12 @@ bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
 
     for (uint32_t i = 0; i < swapchainCount; i++) {
         if ((pCreateInfos[i].queueFamilyIndexCount > 1) && (pCreateInfos[i].imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-            skip |= LogWarning(
-                "BestPractices-vkCreateSharedSwapchainsKHR-sharing-mode-exclusive", device, error_obj.location,
-                "A shared swapchain (index %" PRIu32
-                ") is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple "
-                "queues (queueFamilyIndexCount of %" PRIu32 ").",
-                i, pCreateInfos[i].queueFamilyIndexCount);
+            skip |= LogWarning("BestPractices-vkCreateSharedSwapchainsKHR-sharing-mode-exclusive", device,
+                               error_obj.location.dot(Field::pCreateInfos, i),
+                               "A shared swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE "
+                               "while specifying multiple "
+                               "queues (queueFamilyIndexCount of %" PRIu32 ").",
+                               pCreateInfos[i].queueFamilyIndexCount);
         }
     }
 
@@ -159,7 +159,8 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
         auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : record_obj.result;
         if (swapchains_result == VK_SUBOPTIMAL_KHR) {
             LogPerformanceWarning(
-                "BestPractices-vkCreateSharedSwapchainsKHR-SuboptimalSwapchain", pPresentInfo->pSwapchains[i], record_obj.location,
+                "BestPractices-vkCreateSharedSwapchainsKHR-SuboptimalSwapchain", pPresentInfo->pSwapchains[i],
+                record_obj.location.dot(Field::pPresentInfo, i),
                 "VK_SUBOPTIMAL_KHR was returned. VK_SUBOPTIMAL_KHR - Presentation will still succeed, "
                 "subject to the window resize behavior, but the swapchain (%s) is no longer configured optimally for the surface "
                 "it "

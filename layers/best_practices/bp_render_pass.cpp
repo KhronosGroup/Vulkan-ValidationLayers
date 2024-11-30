@@ -129,23 +129,22 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
 
     if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
         for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-            if (pCreateInfo->pSubpasses[i].pResolveAttachments) {
-                for (uint32_t j = 0; j < pCreateInfo->pSubpasses[i].colorAttachmentCount; ++j) {
-                    const uint32_t attachment = pCreateInfo->pSubpasses[i].pResolveAttachments[j].attachment;
-                    if (attachment != VK_ATTACHMENT_UNUSED) {
-                        const VkFormat format = pCreateInfo->pAttachments[attachment].format;
-                        VkSubpassResolvePerformanceQueryEXT performance_query = vku::InitStructHelper();
-                        VkFormatProperties2 format_properties2 = vku::InitStructHelper(&performance_query);
-                        DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &format_properties2);
-                        if (performance_query.optimal == VK_FALSE) {
-                            skip |= LogPerformanceWarning(
-                                "BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat", device,
-                                create_info_loc.dot(Field::pSubpasses, i).dot(Field::pResolveAttachments, j).dot(Field::attachment),
-                                "(%" PRIu32
-                                ") in the VkRenderPass has the format %s and is used as a resolve attachment, "
-                                "but VkSubpassResolvePerformanceQueryEXT::optimal is VK_FALSE.",
-                                attachment, string_VkFormat(format));
-                        }
+            if (!pCreateInfo->pSubpasses[i].pResolveAttachments) continue;
+            for (uint32_t j = 0; j < pCreateInfo->pSubpasses[i].colorAttachmentCount; ++j) {
+                const uint32_t attachment = pCreateInfo->pSubpasses[i].pResolveAttachments[j].attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    const VkFormat format = pCreateInfo->pAttachments[attachment].format;
+                    VkSubpassResolvePerformanceQueryEXT performance_query = vku::InitStructHelper();
+                    VkFormatProperties2 format_properties2 = vku::InitStructHelper(&performance_query);
+                    DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &format_properties2);
+                    if (performance_query.optimal == VK_FALSE) {
+                        skip |= LogPerformanceWarning(
+                            "BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat", device,
+                            create_info_loc.dot(Field::pSubpasses, i).dot(Field::pResolveAttachments, j).dot(Field::attachment),
+                            "(%" PRIu32
+                            ") in the VkRenderPass has the format %s and is used as a resolve attachment, "
+                            "but VkSubpassResolvePerformanceQueryEXT::optimal is VK_FALSE.",
+                            attachment, string_VkFormat(format));
                     }
                 }
             }
