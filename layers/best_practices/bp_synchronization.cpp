@@ -390,7 +390,8 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
                 auto image_state = Get<vvl::Image>(pImageMemoryBarriers[i].image);
                 if (image_state && !(image_state->create_info.usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                     const LogObjectList objlist(commandBuffer, pImageMemoryBarriers[i].image);
-                    skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidGeneral", objlist, error_obj.location,
+                    skip |= LogPerformanceWarning("BestPractices-AMD-vkImage-AvoidGeneral", objlist,
+                                                  error_obj.location.dot(Field::pImageMemoryBarriers, i).dot(Field::image),
                                                   "%s VK_IMAGE_LAYOUT_GENERAL should only be used with "
                                                   "VK_IMAGE_USAGE_STORAGE_BIT images.",
                                                   VendorSpecificTag(kBPVendorAMD));

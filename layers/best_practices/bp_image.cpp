@@ -45,7 +45,7 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
         if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
             skip |= LogPerformanceWarning(
-                "BestPractices-Arm-vkCreateImage-non-transient-ms-image", device, error_obj.location,
+                "BestPractices-vkCreateImage-non-transient-ms-image", device, error_obj.location,
                 "%s %s Trying to create a multisampled image, but pCreateInfo->usage did not have "
                 "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. Multisampled images may be resolved on-chip, "
                 "and do not need to be backed by physical storage. "
