@@ -996,7 +996,6 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
 
 TEST_F(PositiveGpuAV, FirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1670,7 +1669,6 @@ class PositiveGpuAVParameterized : public GpuAVTest,
 
 TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
 
@@ -1800,7 +1798,6 @@ INSTANTIATE_TEST_SUITE_P(GpuAvBufferContentValidationSettings, PositiveGpuAVPara
 
 TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1937,7 +1934,6 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     TEST_DESCRIPTION(
         "Test that user supplied push constants are correctly restored. One graphics pipeline, one compute pipeline, indirect draw "
         "and dispatch.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -2130,7 +2126,6 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
 }
 
 TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());

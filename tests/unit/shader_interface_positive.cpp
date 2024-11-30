@@ -214,7 +214,6 @@ TEST_F(PositiveShaderInterface, UboStd430Layout) {
     // This is a positive test, no errors expected
     // Verifies the ability to scalar block layout rules with a shader that requires them to be relaxed
     TEST_DESCRIPTION("Create a shader that requires UBO std430 layout.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::uniformBufferStandardLayout);
     RETURN_IF_SKIP(Init());
@@ -258,7 +257,6 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
     // This is a positive test, no errors expected
     // Verifies the ability to scalar block layout rules with a shader that requires them to be relaxed
     TEST_DESCRIPTION("Create a shader that requires scalar block layout.");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::scalarBlockLayout);
 

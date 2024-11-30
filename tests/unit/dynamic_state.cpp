@@ -74,15 +74,9 @@ TEST_F(NegativeDynamicState, LineStippleNotBound) {
         "Run a simple draw calls to validate failure when Line Stipple dynamic state is required but not correctly bound.");
 
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceLineRasterizationFeaturesEXT line_rasterization_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(line_rasterization_features);
-    if (!line_rasterization_features.stippledBresenhamLines || !line_rasterization_features.bresenhamLines) {
-        GTEST_SKIP() << "Stipple Bresenham lines not supported";
-    }
-
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    AddRequiredFeature(vkt::Feature::stippledBresenhamLines);
+    AddRequiredFeature(vkt::Feature::bresenhamLines);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -2677,7 +2671,6 @@ TEST_F(NegativeDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
 TEST_F(NegativeDynamicState, ColorWriteDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -2762,17 +2755,9 @@ TEST_F(NegativeDynamicState, ColorWriteInvalidateStaticPipeline) {
 
 TEST_F(NegativeDynamicState, ColorWriteEnableAttachmentCount) {
     TEST_DESCRIPTION("Invalid usage of attachmentCount for vkCmdSetColorWriteEnableEXT");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    // Feature required to be supported for extension
-    VkPhysicalDeviceColorWriteEnableFeaturesEXT color_write_features = vku::InitStructHelper();
-    color_write_features.colorWriteEnable = VK_TRUE;
-    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper(&color_write_features);
-    RETURN_IF_SKIP(InitState(nullptr, &pd_features2));
+    AddRequiredFeature(vkt::Feature::colorWriteEnable);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // need a valid array to index into
@@ -2804,8 +2789,6 @@ TEST_F(NegativeDynamicState, ColorWriteEnableAttachmentCount) {
 
 TEST_F(NegativeDynamicState, ColorWriteEnableFeature) {
     TEST_DESCRIPTION("Invalid usage of vkCmdSetColorWriteEnableEXT with feature not enabled");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -3455,7 +3438,6 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTOffsets) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(discard_rectangle_properties);
@@ -3511,7 +3493,6 @@ TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
 TEST_F(NegativeDynamicState, CmdSetDiscardRectangleEXTRectangleCount) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
 
     RETURN_IF_SKIP(Init());
@@ -4877,7 +4858,6 @@ TEST_F(NegativeDynamicState, VertexInputLocationMissing) {
 TEST_F(NegativeDynamicState, MissingCmdSetVertexInput) {
     TEST_DESCRIPTION("Validate VK_EXT_color_write_enable VUs when disabled");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);

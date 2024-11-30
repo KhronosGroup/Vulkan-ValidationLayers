@@ -627,16 +627,11 @@ TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-    // Explictly not enable Ycbcr Conversion Features
-    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = vku::InitStructHelper();
-    ycbcr_features.samplerYcbcrConversion = VK_FALSE;
-    RETURN_IF_SKIP(InitState(nullptr, &ycbcr_features));
+    RETURN_IF_SKIP(Init());
 
-    // Create Ycbcr conversion
     VkSamplerYcbcrConversion conversions;
     VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
-                                                            NULL,
+                                                            nullptr,
                                                             VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
                                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
                                                             VK_SAMPLER_YCBCR_RANGE_ITU_FULL,

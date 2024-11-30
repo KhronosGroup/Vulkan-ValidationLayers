@@ -354,19 +354,12 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
 TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     TEST_DESCRIPTION("Create an imageless framebuffer in various invalid ways");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceMultiviewFeaturesKHR mv_features = vku::InitStructHelper();
-    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features = vku::InitStructHelper();
-    if (IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
-        imageless_features.pNext = &mv_features;
-    }
-    GetPhysicalDeviceFeatures2(imageless_features);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_features));
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    AddRequiredFeature(vkt::Feature::multiview);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     uint32_t attachmentWidth = 512;
@@ -457,7 +450,6 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     TEST_DESCRIPTION("Create an imageless framebuffer with mismatched attachment image usage");
 
     AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

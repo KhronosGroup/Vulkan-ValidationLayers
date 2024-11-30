@@ -46,7 +46,6 @@ TEST_F(PositiveRobustness, WriteDescriptorSetAccelerationStructureNVNullDescript
 TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     TEST_DESCRIPTION("Test nullDescriptor works wih CmdBindVertexBuffers variants");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);

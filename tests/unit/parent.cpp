@@ -634,7 +634,6 @@ TEST_F(NegativeParent, PhysicalDevice_DisplayMode) {
 TEST_F(NegativeParent, PipelineExecutableInfo) {
     TEST_DESCRIPTION("Try making calls without pipelineExecutableInfo.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 

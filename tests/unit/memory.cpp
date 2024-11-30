@@ -1423,7 +1423,6 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
 }
 
 TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dedicatedAllocationImageAliasing);
@@ -1562,13 +1561,8 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(buffer_device_address_features);
-    buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &buffer_device_address_features));
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -1636,13 +1630,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = vku::InitStructHelper();
-    buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
-    buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &buffer_device_address_features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
@@ -1729,18 +1717,12 @@ TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
 
 TEST_F(NegativeMemory, DeviceCoherentMemoryDisabledAMD) {
     // Attempts to allocate device coherent memory without enabling the extension/feature
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(Init());
 
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
-
-    VkPhysicalDeviceCoherentMemoryFeaturesAMD coherent_memory_features_amd = vku::InitStructHelper();
-    coherent_memory_features_amd.deviceCoherentMemory = VK_FALSE;
-
-    RETURN_IF_SKIP(InitState(nullptr, &coherent_memory_features_amd));
 
     // Find a memory type that includes the device coherent memory property
     VkPhysicalDeviceMemoryProperties memory_info;

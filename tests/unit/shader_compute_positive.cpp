@@ -113,13 +113,9 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeSpecConstantUnder) {
 
 TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeId) {
     TEST_DESCRIPTION("Validate LocalSizeId doesn't triggers maxComputeWorkGroupSize limit");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     std::stringstream spv_source;
     spv_source << R"(
@@ -149,13 +145,9 @@ TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeId) {
 
 TEST_F(PositiveShaderCompute, WorkGroupSizeLocalSizeIdSpecConstant) {
     TEST_DESCRIPTION("Validate LocalSizeId doesn't triggers maxComputeWorkGroupSize limit with spec constants");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
@@ -209,11 +201,8 @@ TEST_F(PositiveShaderCompute, WorkGroupSizePrecedenceOverLocalSizeId) {
     TEST_DESCRIPTION("Make sure work WorkgroupSize decoration is used over LocalSizeId");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 

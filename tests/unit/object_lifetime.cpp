@@ -745,7 +745,6 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
 TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     TEST_DESCRIPTION("Destroy a uniform buffer in use by a push descriptor set");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();

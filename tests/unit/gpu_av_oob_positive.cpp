@@ -18,7 +18,6 @@
 class PositiveGpuAVOOB : public GpuAVTest {};
 
 TEST_F(PositiveGpuAVOOB, Basic) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
 
@@ -205,7 +204,6 @@ TEST_F(PositiveGpuAVOOB, AtomicImageLoadStore) {
 }
 
 TEST_F(PositiveGpuAVOOB, GPL) {
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);

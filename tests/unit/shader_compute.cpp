@@ -312,13 +312,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeSpecConstantDefault) {
 
 TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
@@ -353,13 +349,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeId) {
 
 TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants default");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
@@ -399,13 +391,9 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantDefault) {
 
 TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
     TEST_DESCRIPTION("Validate LocalSizeId also triggers maxComputeWorkGroupSize limit with spec constants");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan13Features features13 = vku::InitStructHelper();
-    features13.maintenance4 = VK_TRUE;  // required to be supported in 1.3
-    RETURN_IF_SKIP(InitState(nullptr, &features13));
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    RETURN_IF_SKIP(Init());
 
     uint32_t x_size_limit = m_device->Physical().limits_.maxComputeWorkGroupSize[0];
 
@@ -457,15 +445,10 @@ TEST_F(NegativeShaderCompute, WorkGroupSizeLocalSizeIdSpecConstantSet) {
 TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION("Test VK_KHR_workgroup_memory_explicit_layout");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceShaderFloat16Int8Features float16int8_features = vku::InitStructHelper();
-    auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    const bool support_8_bit = (float16int8_features.shaderInt8 == VK_TRUE);
-    const bool support_16_bit = (float16int8_features.shaderFloat16 == VK_TRUE) && (features2.features.shaderInt16 == VK_TRUE);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    RETURN_IF_SKIP(Init());
 
     // WorkgroupMemoryExplicitLayoutKHR
     {
@@ -501,8 +484,8 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
         m_errorMonitor->VerifyFound();
     }
 
-    // WorkgroupMemoryExplicitLayout8BitAccessKHR
-    if (support_8_bit) {
+    // WorkgroupMemoryExplicitLayout8BitAccessKHR (shaderInt8)
+    {
         const char *spv_source = R"(
                OpCapability Shader
                OpCapability Int8
@@ -537,8 +520,8 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
         m_errorMonitor->VerifyFound();
     }
 
-    // WorkgroupMemoryExplicitLayout16BitAccessKHR
-    if (support_16_bit) {
+    // WorkgroupMemoryExplicitLayout16BitAccessKHR (shaderInt16)
+    {
         const char *spv_source = R"(
                OpCapability Shader
                OpCapability Float16
@@ -618,13 +601,7 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
 
 TEST_F(NegativeShaderCompute, ZeroInitializeWorkgroupMemory) {
     TEST_DESCRIPTION("Test initializing workgroup memory in compute shader");
-
-    AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features = vku::InitStructHelper();
-    VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&zero_initialize_work_group_memory_features);
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
+    RETURN_IF_SKIP(Init());
 
     const char *spv_source = R"(
                OpCapability Shader

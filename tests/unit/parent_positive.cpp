@@ -23,10 +23,8 @@ class PositiveParent : public ParentTest {};
 TEST_F(PositiveParent, ImagelessFramebuffer) {
     TEST_DESCRIPTION("pAttachments is ignored even for common parent");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-    VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(imageless_framebuffer);
-    RETURN_IF_SKIP(InitState(nullptr, &imageless_framebuffer));
+    AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Renderpass created on first device
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);

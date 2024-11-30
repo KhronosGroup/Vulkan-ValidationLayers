@@ -316,7 +316,6 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags10) {
     TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.0");
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::uniformBufferStandardLayout);
@@ -369,14 +368,9 @@ TEST_F(PositiveShaderSpirv, Std430SpirvOptFlags12) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    GetPhysicalDeviceFeatures2(features12);
-    if (features12.scalarBlockLayout == VK_FALSE || features12.uniformBufferStandardLayout == VK_FALSE) {
-        GTEST_SKIP() << "scalarBlockLayout and uniformBufferStandardLayout are not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features12));
+    AddRequiredFeature(vkt::Feature::scalarBlockLayout);
+    AddRequiredFeature(vkt::Feature::uniformBufferStandardLayout);
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     const VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
@@ -423,7 +417,6 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
 
     // require to make enable logic simpler
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -882,7 +875,6 @@ TEST_F(PositiveShaderSpirv, GeometryShaderPassthroughNV) {
 TEST_F(PositiveShaderSpirv, SpecializeInt8) {
     TEST_DESCRIPTION("Test int8 specialization.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt8);
     RETURN_IF_SKIP(Init());
@@ -934,7 +926,6 @@ TEST_F(PositiveShaderSpirv, SpecializeInt8) {
 TEST_F(PositiveShaderSpirv, SpecializeInt16) {
     TEST_DESCRIPTION("Test int16 specialization.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt16);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1033,7 +1024,6 @@ TEST_F(PositiveShaderSpirv, SpecializeInt32) {
 TEST_F(PositiveShaderSpirv, SpecializeInt64) {
     TEST_DESCRIPTION("Test int64 specialization.");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1140,7 +1130,6 @@ TEST_F(PositiveShaderSpirv, ShaderFloatControl) {
 
     // Need 1.1 to get SPIR-V 1.3 since OpExecutionModeId was added in SPIR-V 1.2
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -1592,7 +1581,6 @@ TEST_F(PositiveShaderSpirv, SubgroupRotateClustered) {
 TEST_F(PositiveShaderSpirv, ReadShaderClockDevice) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderDeviceClock);
     RETURN_IF_SKIP(Init());
@@ -1618,7 +1606,6 @@ TEST_F(PositiveShaderSpirv, ReadShaderClockDevice) {
 TEST_F(PositiveShaderSpirv, ReadShaderClockSubgroup) {
     TEST_DESCRIPTION("Test VK_KHR_shader_clock");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_CLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderSubgroupClock);
     RETURN_IF_SKIP(Init());
@@ -2029,7 +2016,6 @@ TEST_F(PositiveShaderSpirv, ExtendedTypesEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
