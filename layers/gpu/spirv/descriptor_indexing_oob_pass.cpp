@@ -160,7 +160,8 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
 
     } else {
-        if (opcode == spv::OpImageFetch || opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
+        // ImageRead/ImageWrite are for storage images
+        if (opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
             return false;
         }
 
