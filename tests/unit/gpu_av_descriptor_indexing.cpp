@@ -3951,7 +3951,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetchTexelBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorIndexing, AtomicPartiallyBound) {
+TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImagePartiallyBound) {
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -3999,7 +3999,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicPartiallyBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorIndexing, RuntimeArrayAtomics) {
+TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImageRuntimeArray) {
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -4037,7 +4037,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, RuntimeArrayAtomics) {
                                        0, &layout_createinfo_binding_flags, 0);
     vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
+    descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout.handle();
@@ -4053,6 +4054,94 @@ TEST_F(NegativeGpuAVDescriptorIndexing, RuntimeArrayAtomics) {
 
     // One for the store, load, and exchange
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114", 3);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, AtomicBufferPartiallyBound) {
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer ssbo { uint z; };
+        void main() {
+            atomicAdd(z, 1);
+        }
+    )glsl";
+
+    VkDescriptorBindingFlags ds_binding_flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
+    layout_createinfo_binding_flags.bindingCount = 1;
+    layout_createinfo_binding_flags.pBindingFlags = &ds_binding_flag;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, &layout_createinfo_binding_flags, 0);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, AtomicBufferRuntimeArray) {
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    InitRenderTarget();
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer ssbo { uint x; } atomic_buffers[];
+        void main() {
+            atomicAdd(atomic_buffers[1].x, 1);
+        }
+    )glsl";
+
+    VkDescriptorBindingFlags ds_binding_flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
+    layout_createinfo_binding_flags.bindingCount = 1;
+    layout_createinfo_binding_flags.pBindingFlags = &ds_binding_flag;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       0, &layout_createinfo_binding_flags, 0);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
