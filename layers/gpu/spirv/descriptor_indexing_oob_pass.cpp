@@ -108,43 +108,9 @@ void DescriptorIndexingOOBPass::Reset() {
 bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
-    if (opcode == spv::OpLoad || opcode == spv::OpStore) {
-        // TODO - Should have loop to walk Load/Store to the Pointer,
-        // this case will not cover things such as OpCopyObject or double OpAccessChains
-        const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
-        if (!access_chain_inst || access_chain_inst->Opcode() != spv::OpAccessChain) {
-            return false;
-        }
-
-        const Variable* variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
-        if (!variable) {
-            return false;
-        }
-        var_inst_ = &variable->inst_;
-
-        uint32_t storage_class = variable->StorageClass();
-        if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
-            return false;
-        }
-
-        const Type* pointer_type = variable->PointerType(module_.type_manager_);
-        if (!pointer_type) {
-            module_.InternalError(Name(), "Pointer type not found");
-            return false;
-        }
-
-        // A load through a descriptor array will have at least 3 operands. We
-        // do not want to instrument loads of descriptors here which are part of
-        // an image-based reference.
-        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 6) {
-            descriptor_index_id_ = access_chain_inst->Operand(1);
-        } else {
-            if (!module_.has_bindless_descriptors_) {
-                return false;  // guaranteed to be valid already
-            }
-            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
-        }
-    } else if (opcode == spv::OpAtomicLoad || opcode == spv::OpAtomicStore || opcode == spv::OpAtomicExchange) {
+    bool array_found = false;
+    if (opcode == spv::OpAtomicLoad || opcode == spv::OpAtomicStore || opcode == spv::OpAtomicExchange) {
+        // Image Atomics
         const Instruction* image_texel_ptr_inst = function.FindInstruction(inst.Operand(0));
         if (!image_texel_ptr_inst || image_texel_ptr_inst->Opcode() != spv::OpImageTexelPointer) {
             return false;
@@ -171,17 +137,54 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
 
         if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 5) {
+            array_found = true;
             descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
-            if (!module_.has_bindless_descriptors_) {
-                return false;  // guaranteed to be valid already
-            }
+            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+        }
+    } else if (opcode == spv::OpLoad || opcode == spv::OpStore || AtomicOperation(opcode)) {
+        // Buffer and Buffer Atomics
+
+        // TODO - Should have loop to walk Load/Store to the Pointer,
+        // this case will not cover things such as OpCopyObject or double OpAccessChains
+        const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
+        if (!access_chain_inst || access_chain_inst->Opcode() != spv::OpAccessChain) {
+            return false;
+        }
+
+        const Variable* variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
+        if (!variable) {
+            return false;
+        }
+        var_inst_ = &variable->inst_;
+
+        uint32_t storage_class = variable->StorageClass();
+        if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
+            return false;  // Prevents things like Push Constants
+        }
+
+        const Type* pointer_type = variable->PointerType(module_.type_manager_);
+        if (!pointer_type) {
+            module_.InternalError(Name(), "Pointer type not found");
+            return false;
+        }
+
+        // TODO - This assumes the access is going through the descriptor array into the buffer.
+        // Need to add support for chaining access chains together
+        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 6) {
+            array_found = true;
+            descriptor_index_id_ = access_chain_inst->Operand(1);
+        } else {
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else {
+        // Non-Atomic Image accesses
+
         // ImageRead/ImageWrite are for storage images
         if (opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
             return false;
+        } else if (opcode == spv::OpImageTexelPointer) {
+            // atomics are handled separately
         }
 
         // Reference is not load or store, so ifi it isn't a image-based reference, move on
@@ -189,7 +192,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         if (image_word == 0) {
             return false;
         }
-        if (opcode == spv::OpImageTexelPointer || opcode == spv::OpImage) {
+        if (opcode == spv::OpImage) {
             return false;  // need to test if we can support these
         }
 
@@ -214,6 +217,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
 
         if (var_inst_->Opcode() == spv::OpAccessChain) {
+            array_found = true;
             descriptor_index_id_ = var_inst_->Operand(1);
 
             if (var_inst_->Length() > 5) {
@@ -230,6 +234,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         } else {
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
+    }
+
+    // guaranteed to be valid already, save compiler time optimizing the check out
+    if (!array_found && !module_.has_bindless_descriptors_) {
+        return false;
     }
 
     assert(var_inst_);
