@@ -136,14 +136,15 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;
         }
 
-        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 5) {
+        const bool non_empty_access_chain = access_chain_inst && access_chain_inst->Length() >= 5;
+        if (pointer_type->inst_.IsArray() && non_empty_access_chain) {
             array_found = true;
             descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else if (opcode == spv::OpLoad || opcode == spv::OpStore || AtomicOperation(opcode)) {
-        // Buffer and Buffer Atomics
+        // Buffer and Buffer Atomics and Storage Images
 
         // TODO - Should have loop to walk Load/Store to the Pointer,
         // this case will not cover things such as OpCopyObject or double OpAccessChains
@@ -158,7 +159,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
         var_inst_ = &variable->inst_;
 
-        uint32_t storage_class = variable->StorageClass();
+        const uint32_t storage_class = variable->StorageClass();
+        if (storage_class == spv::StorageClassUniformConstant) {
+            // TODO - Need to add Storage Image support
+            return false;
+        }
         if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
             return false;  // Prevents things like Push Constants
         }
@@ -169,31 +174,35 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;
         }
 
-        // TODO - This assumes the access is going through the descriptor array into the buffer.
-        // Need to add support for chaining access chains together
-        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 6) {
+        const bool non_empty_access_chain = access_chain_inst->Length() >= 5;
+        if (pointer_type->inst_.IsArray() && non_empty_access_chain) {
+            if (access_chain_inst->Length() == 5) {
+                // TODO - This assumes the access is going through the descriptor array into the buffer.
+                // Need to add support for chaining access chains together
+                return false;
+            }
+
             array_found = true;
             descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else {
-        // Non-Atomic Image accesses
+        // sampled image (non-atomic)
 
-        // ImageRead/ImageWrite are for storage images
-        if (opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
-            return false;
-        } else if (opcode == spv::OpImageTexelPointer) {
-            // atomics are handled separately
-        }
-
-        // Reference is not load or store, so ifi it isn't a image-based reference, move on
+        // Reference is not load or store, so if it isn't a image-based reference, move on
         const uint32_t image_word = OpcodeImageAccessPosition(opcode);
         if (image_word == 0) {
             return false;
         }
-        if (opcode == spv::OpImage) {
-            return false;  // need to test if we can support these
+
+        // Things that have an OpImage (in OpcodeImageAccessPosition) but we don't want to handle
+        if (opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
+            return false;  // Storage Images are handled at OpLoad
+        } else if (opcode == spv::OpImageTexelPointer) {
+            return false;  // atomics are handled separately
+        } else if (opcode == spv::OpImage) {
+            return false;  // Don't deal with the access directly
         }
 
         image_inst_ = function.FindInstruction(inst.Word(image_word));
