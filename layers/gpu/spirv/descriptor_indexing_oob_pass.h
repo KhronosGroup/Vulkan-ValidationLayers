@@ -36,7 +36,6 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 
-    const Instruction* access_chain_inst_ = nullptr;
     const Instruction* var_inst_ = nullptr;
     const Instruction* image_inst_ = nullptr;
 
