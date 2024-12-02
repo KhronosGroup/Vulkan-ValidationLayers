@@ -323,3 +323,139 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     }
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncValWsi, RecreateBuffer) {
+    TEST_DESCRIPTION("Recreate buffer on each simulation iteration. Use acquire fence synchronization approach.");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    std::vector<vkt::Fence> acquire_fences;
+    vkt::Fence current_fence(*m_device);
+    std::vector<vkt::CommandBuffer> command_buffers;
+    std::vector<vkt::Semaphore> submit_semaphores;
+
+    std::vector<vkt::Buffer> src_buffers(swapchain_images.size());
+    std::vector<vkt::Buffer> dst_buffers(swapchain_images.size());
+
+    for (VkImage image : swapchain_images) {
+        SetImageLayoutPresentSrc(*m_default_queue, *m_device, image);
+    }
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        acquire_fences.emplace_back(*m_device);
+        command_buffers.emplace_back(*m_device, m_command_pool);
+        submit_semaphores.emplace_back(*m_device);
+    }
+
+    // NOTE: This test can be used for manual inspection of memory usage.
+    // Increase frame count and observe that the test does not continuously allocate memory.
+    // Syncval should not track ranges of deleted resources.
+    const int frame_count = 100;
+
+    for (int i = 0; i < frame_count; i++) {
+        const uint32_t image_index = m_swapchain.AcquireNextImage(current_fence, kWaitTimeout);
+        current_fence.Wait(kWaitTimeout);
+        current_fence.Reset();
+
+        auto &src_buffer = src_buffers[image_index];
+        src_buffer.destroy();
+        src_buffer = vkt::Buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+        auto &dst_buffer = dst_buffers[image_index];
+        dst_buffer.destroy();
+        dst_buffer = vkt::Buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+        auto &command_buffer = command_buffers[image_index];
+        command_buffer.Begin();
+        command_buffer.Copy(src_buffer, dst_buffer);
+        command_buffer.End();
+
+        auto &submit_semaphore = submit_semaphores[image_index];
+        m_default_queue->Submit(command_buffer, vkt::Signal(submit_semaphore));
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+        std::swap(acquire_fences[image_index], current_fence);
+    }
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncValWsi, RecreateImage) {
+    TEST_DESCRIPTION("Recreate image on each simulation iteration. Use acquire fence synchronization approach.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    constexpr uint32_t width = 256;
+    constexpr uint32_t height = 128;
+    constexpr VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
+
+    const auto swapchain_images = m_swapchain.GetImages();
+
+    std::vector<vkt::Fence> acquire_fences;
+    vkt::Fence current_fence(*m_device);
+    std::vector<vkt::CommandBuffer> command_buffers;
+    std::vector<vkt::Semaphore> submit_semaphores;
+
+    const vkt::Buffer src_buffer(*m_device, width * height * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    std::vector<vkt::Image> dst_images(swapchain_images.size());
+
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(*m_default_queue, *m_device, image);
+    }
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        acquire_fences.emplace_back(*m_device);
+        command_buffers.emplace_back(*m_device, m_command_pool);
+        submit_semaphores.emplace_back(*m_device);
+    }
+
+    // NOTE: This test can be used for manual inspection of memory usage.
+    // Increase frame count and observe that the test does not continuously allocate memory.
+    // Syncval should not track ranges of deleted resources.
+    const int frame_count = 100;
+
+    for (int i = 0; i < frame_count; i++) {
+        const uint32_t image_index = m_swapchain.AcquireNextImage(current_fence, kWaitTimeout);
+        current_fence.Wait(kWaitTimeout);
+        current_fence.Reset();
+
+        auto &dst_image = dst_images[image_index];
+        dst_image.destroy();
+        dst_image = vkt::Image(*m_device, width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+        VkBufferImageCopy region = {};
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent.width = width;
+        region.imageExtent.height = height;
+        region.imageExtent.depth = 1;
+
+        VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+        layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+        layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
+        layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+        layout_transition.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        layout_transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        layout_transition.image = dst_image;
+        layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+        VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+        dep_info.imageMemoryBarrierCount = 1;
+        dep_info.pImageMemoryBarriers = &layout_transition;
+
+        auto &command_buffer = command_buffers[image_index];
+        command_buffer.Begin();
+        vk::CmdPipelineBarrier2(command_buffer, &dep_info);
+        vk::CmdCopyBufferToImage(command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        command_buffer.End();
+
+        auto &submit_semaphore = submit_semaphores[image_index];
+        m_default_queue->Submit(command_buffer, vkt::Signal(submit_semaphore));
+        m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+        std::swap(acquire_fences[image_index], current_fence);
+    }
+    m_default_queue->Wait();
+}

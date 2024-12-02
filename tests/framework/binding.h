@@ -613,21 +613,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         InitHostVisibleWithData(dev, usage, data, data_size, queue_families);
     }
 
-    Buffer(Buffer &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
-        create_info_ = std::move(rhs.create_info_);
-        internal_mem_ = std::move(rhs.internal_mem_);
-    }
-    Buffer &operator=(Buffer &&rhs) noexcept {
-        if (&rhs == this) {
-            return *this;
-        }
-        destroy();
-        internal_mem_.destroy();
-        NonDispHandle::operator=(std::move(rhs));
-        create_info_ = std::move(rhs.create_info_);
-        internal_mem_ = std::move(rhs.internal_mem_);
-        return *this;
-    }
+    Buffer(Buffer &&rhs) noexcept;
+    Buffer &operator=(Buffer &&rhs) noexcept;
     ~Buffer() noexcept;
     void destroy() noexcept;
 
@@ -745,6 +732,8 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT);
+    Image(Image &&rhs) noexcept;
+    Image &operator=(Image &&rhs) noexcept;
 
     ~Image() noexcept;
     void destroy() noexcept;

@@ -1075,6 +1075,23 @@ VkResult QueryPool::Results(uint32_t first, uint32_t count, size_t size, void *d
 
 NON_DISPATCHABLE_HANDLE_DTOR(Buffer, vk::DestroyBuffer)
 
+Buffer::Buffer(Buffer &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
+    create_info_ = std::move(rhs.create_info_);
+    internal_mem_ = std::move(rhs.internal_mem_);
+}
+
+Buffer &Buffer::operator=(Buffer &&rhs) noexcept {
+    if (&rhs == this) {
+        return *this;
+    }
+    destroy();
+    internal_mem_.destroy();
+    NonDispHandle::operator=(std::move(rhs));
+    create_info_ = std::move(rhs.create_info_);
+    internal_mem_ = std::move(rhs.internal_mem_);
+    return *this;
+}
+
 void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     InitNoMemory(dev, info);
 
@@ -1181,6 +1198,40 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : dev
 
     VkImageAspectFlags image_aspect = AspectMask(info.format);
     SetLayout(image_aspect, newLayout);
+}
+
+Image::Image(Image &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
+    device_ = std::move(rhs.device_);
+    rhs.device_ = nullptr;
+
+    create_info_ = std::move(rhs.create_info_);
+    rhs.create_info_ = vku::InitStructHelper();
+
+    internal_mem_ = std::move(rhs.internal_mem_);
+
+    image_layout_ = std::move(rhs.image_layout_);
+    rhs.image_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+}
+
+Image &Image::operator=(Image &&rhs) noexcept {
+    if (&rhs == this) {
+        return *this;
+    }
+    destroy();
+    internal_mem_.destroy();
+    NonDispHandle::operator=(std::move(rhs));
+
+    device_ = std::move(rhs.device_);
+    rhs.device_ = nullptr;
+
+    create_info_ = std::move(rhs.create_info_);
+    rhs.create_info_ = vku::InitStructHelper();
+
+    internal_mem_ = std::move(rhs.internal_mem_);
+
+    image_layout_ = std::move(rhs.image_layout_);
+    rhs.image_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
+    return *this;
 }
 
 void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
