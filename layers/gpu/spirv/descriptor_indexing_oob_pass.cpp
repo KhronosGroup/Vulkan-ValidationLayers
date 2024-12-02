@@ -97,7 +97,6 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
 }
 
 void DescriptorIndexingOOBPass::Reset() {
-    access_chain_inst_ = nullptr;
     var_inst_ = nullptr;
     image_inst_ = nullptr;
     target_instruction_ = nullptr;
@@ -112,12 +111,12 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
         // TODO - Should have loop to walk Load/Store to the Pointer,
         // this case will not cover things such as OpCopyObject or double OpAccessChains
-        access_chain_inst_ = function.FindInstruction(inst.Operand(0));
-        if (!access_chain_inst_ || access_chain_inst_->Opcode() != spv::OpAccessChain) {
+        const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
+        if (!access_chain_inst || access_chain_inst->Opcode() != spv::OpAccessChain) {
             return false;
         }
 
-        const Variable* variable = module_.type_manager_.FindVariableById(access_chain_inst_->Operand(0));
+        const Variable* variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
         if (!variable) {
             return false;
         }
@@ -129,36 +128,56 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
 
         const Type* pointer_type = variable->PointerType(module_.type_manager_);
-
-        // Check for deprecated storage block form
-        if (storage_class == spv::StorageClassUniform) {
-            const uint32_t block_type_id = (pointer_type->inst_.IsArray()) ? pointer_type->inst_.Operand(0) : pointer_type->Id();
-            if (module_.type_manager_.FindTypeById(block_type_id)->spv_type_ != SpvType::kStruct) {
-                module_.InternalError(Name(), "Uniform variable block type is not OpTypeStruct");
-                return false;
-            }
-
-            const bool block_found = GetDecoration(block_type_id, spv::DecorationBlock) != nullptr;
-
-            // If block decoration not found, verify deprecated form of SSBO
-            if (!block_found) {
-                if (GetDecoration(block_type_id, spv::DecorationBufferBlock) == nullptr) {
-                    module_.InternalError(Name(), "Uniform variable block decoration not found");
-                    return false;
-                }
-                storage_class = spv::StorageClassStorageBuffer;
-            }
+        if (!pointer_type) {
+            module_.InternalError(Name(), "Pointer type not found");
+            return false;
         }
 
         // A load through a descriptor array will have at least 3 operands. We
         // do not want to instrument loads of descriptors here which are part of
         // an image-based reference.
-        if (pointer_type->inst_.IsArray() && access_chain_inst_->Length() >= 6) {
-            descriptor_index_id_ = access_chain_inst_->Operand(1);
+        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 6) {
+            descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
+            if (!module_.has_bindless_descriptors_) {
+                return false;  // guaranteed to be valid already
+            }
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
+    } else if (opcode == spv::OpAtomicLoad || opcode == spv::OpAtomicStore || opcode == spv::OpAtomicExchange) {
+        const Instruction* image_texel_ptr_inst = function.FindInstruction(inst.Operand(0));
+        if (!image_texel_ptr_inst || image_texel_ptr_inst->Opcode() != spv::OpImageTexelPointer) {
+            return false;
+        }
 
+        const Variable* variable = nullptr;
+        const Instruction* access_chain_inst = function.FindInstruction(image_texel_ptr_inst->Operand(0));
+        if (access_chain_inst) {
+            variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
+        } else {
+            // if no array, will point right to a variable
+            variable = module_.type_manager_.FindVariableById(image_texel_ptr_inst->Operand(0));
+        }
+
+        if (!variable) {
+            return false;
+        }
+        var_inst_ = &variable->inst_;
+
+        const Type* pointer_type = variable->PointerType(module_.type_manager_);
+        if (!pointer_type) {
+            module_.InternalError(Name(), "Pointer type not found");
+            return false;
+        }
+
+        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 5) {
+            descriptor_index_id_ = access_chain_inst->Operand(1);
+        } else {
+            if (!module_.has_bindless_descriptors_) {
+                return false;  // guaranteed to be valid already
+            }
+            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+        }
     } else {
         // ImageRead/ImageWrite are for storage images
         if (opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
@@ -193,8 +212,6 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         if (!var_inst_ || (var_inst_->Opcode() != spv::OpAccessChain && var_inst_->Opcode() != spv::OpVariable)) {
             return false;
         }
-        // If OpVariable, access_chain_inst_ is never checked because it should be a direct image access
-        access_chain_inst_ = var_inst_;
 
         if (var_inst_->Opcode() == spv::OpAccessChain) {
             descriptor_index_id_ = var_inst_->Operand(1);
