@@ -191,7 +191,7 @@ static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(1
             sys.exit(1)
 
         out.append(f'''
-struct SyncStageAccessInfoType {{
+struct SyncAccessInfo {{
     const char *name;
     VkPipelineStageFlagBits2 stage_mask;
     VkAccessFlagBits2 access_mask;
@@ -200,7 +200,7 @@ struct SyncStageAccessInfoType {{
 }};
 
 // Array of text names and component masks for each stage/access index
-const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex();
+const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex();
 
 ''')
 
@@ -249,8 +249,8 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
 
         # syncStageAccessInfoByStageAccessIndex
         out.append('// clang-format off\n')
-        out.append(f'const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex() {{\n')
-        out.append(f'static const std::array<SyncStageAccessInfoType, {len(self.stageAccessCombo)}> variable = {{ {{\n')
+        out.append(f'const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}>& syncStageAccessInfoByStageAccessIndex() {{\n')
+        out.append(f'static const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}> variable = {{ {{\n')
         for stageAccess in self.stageAccessCombo:
             out.append(f'''    {{
         {stageAccess["stage_access_string"]},

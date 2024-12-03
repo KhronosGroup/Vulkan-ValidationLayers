@@ -400,7 +400,7 @@ class AccessContext {
                                        ResourceUsageTagEx tag_ex)
             : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex) {}
         const AccessContext &context;
-        const SyncStageAccessInfoType &usage_info;
+        const SyncAccessInfo &usage_info;
         const SyncOrdering ordering_rule;
         const ResourceUsageTagEx tag_ex;
     };

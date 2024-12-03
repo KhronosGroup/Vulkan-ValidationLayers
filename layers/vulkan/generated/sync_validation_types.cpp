@@ -23,8 +23,8 @@
 
 #include "sync_validation_types.h"
 // clang-format off
-const std::array<SyncStageAccessInfoType, 137>& syncStageAccessInfoByStageAccessIndex() {
-static const std::array<SyncStageAccessInfoType, 137> variable = { {
+const std::array<SyncAccessInfo, 137>& syncStageAccessInfoByStageAccessIndex() {
+static const std::array<SyncAccessInfo, 137> variable = { {
     {
         "SYNC_ACCESS_INDEX_NONE",
         VK_PIPELINE_STAGE_2_NONE,
