@@ -69,19 +69,19 @@ class HazardResult {
     struct HazardState {
         std::unique_ptr<const ResourceAccessState> access_state;
         std::unique_ptr<const ResourceFirstAccess> recorded_access;
-        SyncStageAccessIndex usage_index = std::numeric_limits<SyncStageAccessIndex>::max();
-        SyncStageAccessIndex prior_access_index;
+        SyncAccessIndex usage_index = std::numeric_limits<SyncAccessIndex>::max();
+        SyncAccessIndex prior_access_index;
         ResourceUsageTag tag = ResourceUsageTag();
         uint32_t handle_index = vvl::kNoIndex32;
         SyncHazard hazard = NONE;
         HazardState(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
-                    SyncStageAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
+                    SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
     };
 
     void Set(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
              const ResourceAccessWriteState &prior_write);
     void Set(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
-             SyncStageAccessIndex prior_read_access_index, ResourceUsageTagEx tag);
+             SyncAccessIndex prior_read_access_index, ResourceUsageTagEx tag);
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
 
     bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
@@ -220,8 +220,8 @@ class ResourceAccessWriteState {
     ResourceAccessWriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
     ResourceAccessWriteState() = default;
 
-    SyncStageAccessIndex Index() const { return access_->stage_access_index; }
-    bool IsIndex(SyncStageAccessIndex usage_index) const { return Index() == usage_index; }
+    SyncAccessIndex Index() const { return access_->access_index; }
+    bool IsIndex(SyncAccessIndex usage_index) const { return Index() == usage_index; }
     bool IsQueue(QueueId other_queue) const { return queue_ == other_queue; }
     const SyncAccessInfo &Access() const { return *access_; }
     const SyncStageAccessFlags &Barriers() const { return barriers_; }
@@ -273,7 +273,7 @@ class ResourceAccessState : public SyncStageAccess {
     // and applicable one for hazard detection
     struct ReadState {
         VkPipelineStageFlags2 stage;        // The stage of this read
-        SyncStageAccessIndex access_index;  // TODO: Revisit whether this needs to support multiple reads per stage
+        SyncAccessIndex access_index;       // TODO: Revisit whether this needs to support multiple reads per stage
         VkPipelineStageFlags2 barriers;     // all applicable barriered stages
         VkPipelineStageFlags2 sync_stages;  // reads known to have happened after this
         ResourceUsageTag tag;
@@ -282,7 +282,7 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags2 pending_dep_chain;  // Should be zero except during barrier application
                                                   // Excluded from comparison
         ReadState() = default;
-        explicit ReadState(VkPipelineStageFlags2 stage_, SyncStageAccessIndex access_index, VkPipelineStageFlags2 barriers_,
+        explicit ReadState(VkPipelineStageFlags2 stage_, SyncAccessIndex access_index, VkPipelineStageFlags2 barriers_,
                            ResourceUsageTagEx tag_ex);
         ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
         bool operator==(const ReadState &rhs) const {
@@ -321,7 +321,7 @@ class ResourceAccessState : public SyncStageAccess {
         }
 
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
-        void Set(VkPipelineStageFlags2 stage_, SyncStageAccessIndex access_index, VkPipelineStageFlags2 barriers_,
+        void Set(VkPipelineStageFlags2 stage_, SyncAccessIndex access_index, VkPipelineStageFlags2 barriers_,
                  ResourceUsageTagEx tag_ex);
         bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
         bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
@@ -399,8 +399,8 @@ class ResourceAccessState : public SyncStageAccess {
 
     bool HasPendingState() const { return (0 != pending_layout_transition) || (last_write && last_write->HasPendingState()); }
     bool HasWriteOp() const { return last_write.has_value(); }
-    SyncStageAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
-    bool IsLastWriteOp(SyncStageAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
+    SyncAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
+    bool IsLastWriteOp(SyncAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
     ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->Tag() : ResourceUsageTag(0); }
     bool operator==(const ResourceAccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
@@ -415,7 +415,7 @@ class ResourceAccessState : public SyncStageAccess {
         return same;
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
-    VkPipelineStageFlags2 GetReadBarriers(SyncStageAccessIndex access_index) const;
+    VkPipelineStageFlags2 GetReadBarriers(SyncAccessIndex access_index) const;
     SyncStageAccessFlags GetWriteBarriers() const {
         return last_write.has_value() ? last_write->Barriers() : SyncStageAccessFlags();
     }

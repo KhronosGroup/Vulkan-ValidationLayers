@@ -257,20 +257,20 @@ class AccessContext {
 
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
 
-    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
-    HazardResult DetectHazard(const ImageState &image, SyncStageAccessIndex current_usage,
+    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex usage_index, const ResourceAccessRange &range) const;
+    HazardResult DetectHazard(const ImageState &image, SyncAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    HazardResult DetectHazard(const ImageViewState &image_view, SyncStageAccessIndex current_usage) const;
-    HazardResult DetectHazard(const ImageRangeGen &ref_range_gen, SyncStageAccessIndex current_usage,
+    HazardResult DetectHazard(const ImageViewState &image_view, SyncAccessIndex current_usage) const;
+    HazardResult DetectHazard(const ImageRangeGen &ref_range_gen, SyncAccessIndex current_usage,
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
     HazardResult DetectHazard(const ImageViewState &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
-                              SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
-    HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                              SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
+                              SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
+    HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
+                              SyncOrdering ordering_rule) const;
     HazardResult DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
-                              SyncStageAccessIndex current_usage) const;
+                              SyncAccessIndex current_usage) const;
     HazardResult DetectHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                              const VkExtent3D &extent, bool is_depth_sliced, SyncStageAccessIndex current_usage,
+                              const VkExtent3D &extent, bool is_depth_sliced, SyncAccessIndex current_usage,
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
 
     HazardResult DetectImageBarrierHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
@@ -308,25 +308,25 @@ class AccessContext {
     void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context, RangeGenerator range_gen,
                             const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
 
-    void UpdateAccessState(const vvl::Buffer &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const ImageState &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
-    void UpdateAccessState(const ImageState &image, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const ImageState &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
                            ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
+    void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                            SyncOrdering ordering_rule, ResourceUsageTag tag);
-    void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const ImageViewState &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const ImageViewState &image_view, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const ImageViewState &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(ImageRangeGen &range_gen, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
-                           SyncStageAccessIndex current_usage, ResourceUsageTag tag);
+                           SyncAccessIndex current_usage, ResourceUsageTag tag);
     void ResolveChildContexts(const std::vector<AccessContext> &contexts);
 
     void ImportAsyncContexts(const AccessContext &from);
@@ -396,7 +396,7 @@ class AccessContext {
         using Iterator = ResourceAccessRangeMap::iterator;
         Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const;
         void operator()(const Iterator &pos) const;
-        UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncStageAccessIndex usage_, SyncOrdering ordering_rule_,
+        UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncAccessIndex usage_, SyncOrdering ordering_rule_,
                                        ResourceUsageTagEx tag_ex)
             : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex) {}
         const AccessContext &context;

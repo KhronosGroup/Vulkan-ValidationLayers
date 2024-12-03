@@ -154,7 +154,7 @@ struct PresentedImage : public PresentedImageRecord {
     subresource_adapter::ImageRangeGenerator range_gen;
 
     PresentedImage() = default;
-    void UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
+    void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
     PresentedImage(const SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..

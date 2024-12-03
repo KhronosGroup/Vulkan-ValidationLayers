@@ -75,20 +75,20 @@ constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | 
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
-    static inline const SyncAccessInfo &UsageInfo(SyncStageAccessIndex stage_access_index) {
-        return syncStageAccessInfoByStageAccessIndex()[stage_access_index];
+    static inline const SyncAccessInfo &UsageInfo(SyncAccessIndex access_index) {
+        return syncStageAccessInfoByStageAccessIndex()[access_index];
     }
-    static inline SyncStageAccessFlags FlagBit(SyncStageAccessIndex stage_access) {
+    static inline SyncStageAccessFlags FlagBit(SyncAccessIndex stage_access) {
         return syncStageAccessInfoByStageAccessIndex()[stage_access].stage_access_bit;
     }
 
-    static bool IsRead(SyncStageAccessIndex stage_access_index) { return syncStageAccessReadMask[stage_access_index]; }
-    static bool IsRead(const SyncAccessInfo &info) { return IsRead(info.stage_access_index); }
-    static bool IsWrite(SyncStageAccessIndex stage_access_index) { return syncStageAccessWriteMask[stage_access_index]; }
-    static bool IsWrite(const SyncAccessInfo &info) { return IsWrite(info.stage_access_index); }
+    static bool IsRead(SyncAccessIndex access_index) { return syncStageAccessReadMask[access_index]; }
+    static bool IsRead(const SyncAccessInfo &info) { return IsRead(info.access_index); }
+    static bool IsWrite(SyncAccessIndex access_index) { return syncStageAccessWriteMask[access_index]; }
+    static bool IsWrite(const SyncAccessInfo &info) { return IsWrite(info.access_index); }
 
-    static VkPipelineStageFlags2 PipelineStageBit(SyncStageAccessIndex stage_access_index) {
-        return syncStageAccessInfoByStageAccessIndex()[stage_access_index].stage_mask;
+    static VkPipelineStageFlags2 PipelineStageBit(SyncAccessIndex access_index) {
+        return syncStageAccessInfoByStageAccessIndex()[access_index].stage_mask;
     }
     static SyncStageAccessFlags AccessScopeByStage(VkPipelineStageFlags2 stages);
     static SyncStageAccessFlags AccessScopeByAccess(VkAccessFlags2 access);
