@@ -822,15 +822,15 @@ class CoreChecks : public ValidationStateTracker {
                                           const Location& loc) const;
     bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const vvl::Image& image_state) const;
     template <typename HandleT, typename RegionType>
-    bool ValidateHeterogeneousCopyData(const HandleT handle, uint32_t regionCount, const RegionType* pRegions,
-                                       const vvl::Image& image_state, const Location& loc) const;
+    bool ValidateHeterogeneousCopyData(const HandleT handle, const RegionType& region, const vvl::Image& image_state,
+                                       const Location& region_loc) const;
     bool UsageHostTransferCheck(const vvl::Image& image_state, bool has_stencil, bool has_non_stencil, const char* vuid_09111,
                                 const char* vuid_09112, const char* vuid_09113, const Location& loc) const;
     template <typename InfoPointer>
     bool ValidateMemoryImageCopyCommon(InfoPointer iPointer, const Location& loc) const;
     template <typename RegionType>
-    bool ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state, uint32_t regionCount, const RegionType* pRegions,
-                                     const vvl::Image& image_state, const Location& loc) const;
+    bool ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state, const RegionType& region, const vvl::Image& image_state,
+                                     const Location& region_loc) const;
     bool ValidateHostCopyImageLayout(const VkImage image, const uint32_t layout_count, const VkImageLayout* supported_image_layouts,
                                      const VkImageLayout image_layout, const Location& loc, vvl::Field supported_name,
                                      const char* vuid) const;
@@ -873,9 +873,8 @@ class CoreChecks : public ValidationStateTracker {
                                        const Location& loc) const;
 
     template <typename HandleT, typename RegionType>
-    bool ValidateImageCopyData(const HandleT handle, const uint32_t regionCount, const RegionType* pRegions,
-                               const vvl::Image& src_image_state, const vvl::Image& dst_image_state, bool is_host,
-                               const Location& loc) const;
+    bool ValidateImageCopyData(const HandleT handle, const RegionType& region, const vvl::Image& src_image_state,
+                               const vvl::Image& dst_image_state, bool is_host, const Location& region_loc) const;
 
     bool VerifyClearImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
@@ -1100,12 +1099,12 @@ class CoreChecks : public ValidationStateTracker {
                                      uint32_t regionCount, const RegionType* pRegions, const Location& loc) const;
 
     template <typename HandleT, typename RegionType>
-    bool ValidateImageBounds(const HandleT handle, const vvl::Image& image_state, const uint32_t regionCount,
-                             const RegionType* pRegions, const Location& loc, const char* vuid, bool is_src) const;
+    bool ValidateImageBounds(const HandleT handle, const vvl::Image& image_state, const RegionType& region,
+                             const Location& region_loc, const char* vuid, bool is_src) const;
 
     template <typename RegionType>
-    bool ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image& image_state, const vvl::Buffer& buff_state,
-                              uint32_t regionCount, const RegionType* pRegions, const Location& loc, const char* vuid) const;
+    bool ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image& image_state, const vvl::Buffer& buffer_state,
+                              const RegionType& region, const Location& region_loc, const char* vuid) const;
 
     template <typename RegionType>
     bool ValidateCopyBufferImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
