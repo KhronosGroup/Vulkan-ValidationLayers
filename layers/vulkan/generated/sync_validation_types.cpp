@@ -23,14 +23,14 @@
 
 #include "sync_validation_types.h"
 // clang-format off
-const std::array<SyncAccessInfo, 137>& syncStageAccessInfoByStageAccessIndex() {
+const std::array<SyncAccessInfo, 137>& syncAccessInfoByAccessIndex() {
 static const std::array<SyncAccessInfo, 137> variable = { {
     {
         "SYNC_ACCESS_INDEX_NONE",
         VK_PIPELINE_STAGE_2_NONE,
         VK_ACCESS_2_NONE,
         SYNC_ACCESS_INDEX_NONE,
-        SyncStageAccessFlags(0)
+        SyncAccessFlags(0)
     },
     {
         "SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ",
@@ -987,8 +987,8 @@ static const std::array<SyncAccessInfo, 137> variable = { {
 }};
 return variable;
 }
-const std::map<VkPipelineStageFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit() {
-    static const std::map<VkPipelineStageFlagBits2, SyncStageAccessFlags> variable = {
+const std::map<VkPipelineStageFlagBits2, SyncAccessFlags>& syncAccessMaskByStageBit() {
+    static const std::map<VkPipelineStageFlagBits2, SyncAccessFlags> variable = {
     { VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, (
         SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT |
         SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT
@@ -1197,8 +1197,8 @@ const std::map<VkPipelineStageFlagBits2, SyncStageAccessFlags>& syncStageAccessM
     return variable;
 }
 
-const std::map<VkAccessFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit() {
-    static const std::map<VkAccessFlagBits2, SyncStageAccessFlags> variable = {
+const std::map<VkAccessFlagBits2, SyncAccessFlags>& syncAccessMaskByAccessBit() {
+    static const std::map<VkAccessFlagBits2, SyncAccessFlags> variable = {
     { VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, (
         SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ_BIT |
         SYNC_ACCELERATION_STRUCTURE_BUILD_INDIRECT_COMMAND_READ_BIT
@@ -1414,10 +1414,10 @@ const std::map<VkAccessFlagBits2, SyncStageAccessFlags>& syncStageAccessMaskByAc
         SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL
     )},
     { VK_ACCESS_2_MEMORY_READ_BIT, (
-        syncStageAccessReadMask
+        syncAccessReadMask
     )},
     { VK_ACCESS_2_MEMORY_WRITE_BIT, (
-        syncStageAccessWriteMask
+        syncAccessWriteMask
     )},
     };
     return variable;

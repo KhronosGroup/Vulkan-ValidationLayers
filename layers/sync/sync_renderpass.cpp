@@ -84,29 +84,29 @@ void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_sta
 }
 
 static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
-    SyncAccessIndex usage_index;
+    SyncAccessIndex access_index;
     if (load_op == VK_ATTACHMENT_LOAD_OP_NONE_KHR) {
-        usage_index = SYNC_ACCESS_INDEX_NONE;
+        access_index = SYNC_ACCESS_INDEX_NONE;
     } else if (type == syncval_state::AttachmentType::kColor) {
-        usage_index = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
-                                                              : SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+        access_index = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
+                                                               : SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
     } else {  // depth and stencil ops are the same
-        usage_index = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
-                                                              : SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
+        access_index = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
+                                                               : SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
     }
-    return usage_index;
+    return access_index;
 }
 
 static SyncAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, syncval_state::AttachmentType type) {
-    SyncAccessIndex usage_index;
+    SyncAccessIndex access_index;
     if (store_op == VK_ATTACHMENT_STORE_OP_NONE) {
-        usage_index = SYNC_ACCESS_INDEX_NONE;
+        access_index = SYNC_ACCESS_INDEX_NONE;
     } else if (type == syncval_state::AttachmentType::kColor) {
-        usage_index = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+        access_index = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
     } else {  // depth and stencil ops are the same
-        usage_index = SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
+        access_index = SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
     }
-    return usage_index;
+    return access_index;
 }
 
 static SyncAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {

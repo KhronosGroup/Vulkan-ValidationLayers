@@ -205,7 +205,7 @@ class ApplySemaphoreBarrierAction {
 class ApplyAcquireNextSemaphoreAction {
   public:
     ApplyAcquireNextSemaphoreAction(const SyncExecScope& wait_scope, ResourceUsageTag acquire_tag)
-        : barrier_(1, SyncBarrier(getPresentSrcScope(), getPresentValidAccesses(), wait_scope, SyncStageAccessFlags())),
+        : barrier_(1, SyncBarrier(getPresentSrcScope(), getPresentValidAccesses(), wait_scope, SyncAccessFlags())),
           acq_tag_(acquire_tag) {}
     void operator()(ResourceAccessState* access) const {
         // Note that the present operations may or may not be present, given that the fence wait may have cleared them out.
@@ -228,9 +228,9 @@ class ApplyAcquireNextSemaphoreAction {
                           getPresentValidAccesses());                      // valid_accesses
         return kPresentSrcScope;
     }
-    const SyncStageAccessFlags& getPresentValidAccesses() const {
-        static const SyncStageAccessFlags kPresentValidAccesses =
-            SyncStageAccessFlags(SyncStageAccess::AccessScopeByStage(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL));
+    const SyncAccessFlags& getPresentValidAccesses() const {
+        static const SyncAccessFlags kPresentValidAccesses =
+            SyncAccessFlags(SyncStageAccess::AccessScopeByStage(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL));
         return kPresentValidAccesses;
     }
 

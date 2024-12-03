@@ -137,8 +137,7 @@ static bool IsHazardVsRead(SyncHazard hazard) {
     return vs_read;
 }
 
-static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncStageAccessFlags &accesses,
-                                                              VkQueueFlags allowed_queue_flags) {
+static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
     assert(accesses.any());  // otherwise can report 0 as one of compact forms
     VkPipelineStageFlags2 allowed_stages = 0;
     for (const auto &[queue_flag, stages] : syncAllCommandStagesByQueueFlags()) {
@@ -147,11 +146,11 @@ static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncStageAcc
         }
     }
     // Accesses filtered by allowed queue flags
-    SyncStageAccessFlags all_read_accesses = syncStageAccessReadMask;
-    SyncStageAccessFlags all_shader_read_accesses = syncStageAccessReadMask;
-    SyncStageAccessFlags all_shader_write_accesses = syncStageAccessWriteMask;
+    SyncAccessFlags all_read_accesses = syncAccessReadMask;
+    SyncAccessFlags all_shader_read_accesses = syncAccessReadMask;
+    SyncAccessFlags all_shader_write_accesses = syncAccessWriteMask;
 
-    const auto &access_infos = syncStageAccessInfoByStageAccessIndex();
+    const auto &access_infos = syncAccessInfoByAccessIndex();
     for (size_t i = 0; i < access_infos.size(); i++) {
         const SyncAccessInfo &access_info = access_infos[i];
         const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
@@ -184,7 +183,7 @@ static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncStageAcc
     return {};
 }
 
-static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
+static std::string string_SyncStageAccessFlags(const SyncAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
     if (accesses.none()) {
         return "0";
     }
@@ -193,8 +192,8 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &acces
         return *compact_form;
     }
     std::string accesses_str;
-    for (const SyncAccessInfo &info : syncStageAccessInfoByStageAccessIndex()) {
-        if ((accesses & info.stage_access_bit).any()) {
+    for (const SyncAccessInfo &info : syncAccessInfoByAccessIndex()) {
+        if ((accesses & info.access_bit).any()) {
             if (!accesses_str.empty()) {
                 accesses_str.append("|");
             }
@@ -206,10 +205,10 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &acces
 
 static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags) {
     std::stringstream out;
-    assert(hazard.usage_index < static_cast<SyncAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
-    assert(hazard.prior_access_index < static_cast<SyncAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
-    const auto &usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.usage_index];
-    const auto &prior_usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.prior_access_index];
+    assert(hazard.access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
+    assert(hazard.prior_access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
+    const auto &usage_info = syncAccessInfoByAccessIndex()[hazard.access_index];
+    const auto &prior_usage_info = syncAccessInfoByAccessIndex()[hazard.prior_access_index];
     out << "(";
     if (!hazard.recorded_access.get()) {
         // if we have a recorded usage the usage is reported from the recorded contexts point of view
@@ -220,7 +219,7 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
         const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         out << ", read_barriers: " << string_VkPipelineStageFlags2(barriers);
     } else {
-        SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
+        SyncAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
         out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier, queue_flags);
     }
     return out.str();

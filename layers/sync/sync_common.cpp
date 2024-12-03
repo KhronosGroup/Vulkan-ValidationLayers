@@ -22,8 +22,8 @@
 extern const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
 template <typename Flags, typename Map>
-SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map& map) {
-    SyncStageAccessFlags scope;
+SyncAccessFlags AccessScopeImpl(Flags flag_mask, const Map& map) {
+    SyncAccessFlags scope;
     for (const auto& bit_scope : map) {
         if (flag_mask < bit_scope.first) break;
 
@@ -34,16 +34,16 @@ SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map& map) {
     return scope;
 }
 
-SyncStageAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags2 stages) {
-    return AccessScopeImpl(stages, syncStageAccessMaskByStageBit());
+SyncAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags2 stages) {
+    return AccessScopeImpl(stages, syncAccessMaskByStageBit());
 }
 
-SyncStageAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags2 accesses) {
-    return AccessScopeImpl(sync_utils::ExpandAccessFlags(accesses), syncStageAccessMaskByAccessBit());
+SyncAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags2 accesses) {
+    return AccessScopeImpl(sync_utils::ExpandAccessFlags(accesses), syncAccessMaskByAccessBit());
 }
 
 // Getting from stage mask and access mask to stage/access masks is something we need to be good at...
-SyncStageAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2 stages, VkAccessFlags2 accesses) {
+SyncAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2 stages, VkAccessFlags2 accesses) {
     // The access scope is the intersection of all stage/access types possible for the enabled stages and the enables
     // accesses (after doing a couple factoring of common terms the union of stage/access intersections is the intersections
     // of the union of all stage/access types for all the stages and the same unions for the access mask...
