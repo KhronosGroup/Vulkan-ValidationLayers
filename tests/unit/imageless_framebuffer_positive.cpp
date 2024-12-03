@@ -82,9 +82,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = format;
-    image_ci.extent.width = 32;
-    image_ci.extent.height = 32;
-    image_ci.extent.depth = 4;
+    image_ci.extent = {32, 32, 4};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;

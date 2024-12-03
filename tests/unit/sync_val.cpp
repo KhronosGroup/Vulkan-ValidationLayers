@@ -4100,9 +4100,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_D32_SFLOAT;
-    image_ci.extent.width = 32;
-    image_ci.extent.height = 32;
-    image_ci.extent.depth = 1;
+    image_ci.extent = {32, 32, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;

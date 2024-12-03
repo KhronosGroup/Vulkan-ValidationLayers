@@ -719,9 +719,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_ci.extent.width = 32;
-    image_ci.extent.height = 32;
-    image_ci.extent.depth = 1;
+    image_ci.extent = {32, 32, 1};
     image_ci.arrayLayers = 3;
     image_ci.mipLevels = 2;
     image_ci.imageType = VK_IMAGE_TYPE_2D;

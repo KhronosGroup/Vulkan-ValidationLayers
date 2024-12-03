@@ -1347,12 +1347,8 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     VkBufferImageCopy region = {};
     region.bufferRowLength = 16;
     region.bufferImageHeight = 16;
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    region.imageSubresource.layerCount = 1;
-    region.imageExtent.height = 4;
-    region.imageExtent.width = 4;
-    region.imageExtent.depth = 1;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {4, 4, 1};
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

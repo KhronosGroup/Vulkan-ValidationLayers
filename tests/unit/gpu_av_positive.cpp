@@ -1167,8 +1167,7 @@ TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.layerCount = 1;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {32, 32, 1};
     region.bufferOffset = 0;
