@@ -119,18 +119,6 @@ std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState 
     return out.str();
 }
 
-static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAccessFlags flags) {
-    // Return the info for the first bit found
-    const SyncStageAccessInfoType *info = nullptr;
-    for (size_t i = 0; i < flags.size(); i++) {
-        if (flags.test(i)) {
-            info = &syncStageAccessInfoByStageAccessIndex()[i];
-            break;
-        }
-    }
-    return info;
-}
-
 static bool IsHazardVsRead(SyncHazard hazard) {
     bool vs_read = false;
     switch (hazard) {
@@ -219,17 +207,17 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &acces
 static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags) {
     std::stringstream out;
     assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
+    assert(hazard.prior_access_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
     const auto &usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.usage_index];
-    const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
-    const char *stage_access_name = info ? info->name : "INVALID_STAGE_ACCESS";
+    const auto &prior_usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.prior_access_index];
     out << "(";
     if (!hazard.recorded_access.get()) {
         // if we have a recorded usage the usage is reported from the recorded contexts point of view
         out << "usage: " << usage_info.name << ", ";
     }
-    out << "prior_usage: " << stage_access_name;
+    out << "prior_usage: " << prior_usage_info.name;
     if (IsHazardVsRead(hazard.hazard)) {
-        const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access);
+        const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         out << ", read_barriers: " << string_VkPipelineStageFlags2(barriers);
     } else {
         SyncStageAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
