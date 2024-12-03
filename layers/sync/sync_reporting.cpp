@@ -153,7 +153,7 @@ static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncStageAcc
 
     const auto &access_infos = syncStageAccessInfoByStageAccessIndex();
     for (size_t i = 0; i < access_infos.size(); i++) {
-        const SyncStageAccessInfoType &access_info = access_infos[i];
+        const SyncAccessInfo &access_info = access_infos[i];
         const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
         if (!is_stage_allowed) {
             all_read_accesses.reset(i);
@@ -193,7 +193,7 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &acces
         return *compact_form;
     }
     std::string accesses_str;
-    for (const SyncStageAccessInfoType &info : syncStageAccessInfoByStageAccessIndex()) {
+    for (const SyncAccessInfo &info : syncStageAccessInfoByStageAccessIndex()) {
         if ((accesses & info.stage_access_bit).any()) {
             if (!accesses_str.empty()) {
                 accesses_str.append("|");

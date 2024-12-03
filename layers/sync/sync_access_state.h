@@ -74,13 +74,13 @@ class HazardResult {
         ResourceUsageTag tag = ResourceUsageTag();
         uint32_t handle_index = vvl::kNoIndex32;
         SyncHazard hazard = NONE;
-        HazardState(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
+        HazardState(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
                     SyncStageAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
     };
 
-    void Set(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
+    void Set(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
              const ResourceAccessWriteState &prior_write);
-    void Set(const ResourceAccessState *access_state, const SyncStageAccessInfoType &usage_info, SyncHazard hazard,
+    void Set(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
              SyncStageAccessIndex prior_read_access_index, ResourceUsageTagEx tag);
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
 
@@ -169,12 +169,12 @@ struct SyncBarrier {
 };
 
 struct ResourceFirstAccess {
-    const SyncStageAccessInfoType *usage_info;
+    const SyncAccessInfo *usage_info;
     ResourceUsageTag tag;
     uint32_t handle_index;
     SyncOrdering ordering_rule;
 
-    ResourceFirstAccess(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule)
+    ResourceFirstAccess(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncOrdering ordering_rule)
         : usage_info(&usage_info), tag(tag_ex.tag), handle_index(tag_ex.handle_index), ordering_rule(ordering_rule) {}
     bool operator==(const ResourceFirstAccess &rhs) const {
         return (tag == rhs.tag) && (usage_info == rhs.usage_info) && (ordering_rule == rhs.ordering_rule);
@@ -217,24 +217,24 @@ class ResourceAccessWriteState {
     bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncStageAccessFlags &src_access_scope, QueueId scope_queue,
                            ResourceUsageTag scope_tag) const;
 
-    ResourceAccessWriteState(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
+    ResourceAccessWriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
     ResourceAccessWriteState() = default;
 
     SyncStageAccessIndex Index() const { return access_->stage_access_index; }
     bool IsIndex(SyncStageAccessIndex usage_index) const { return Index() == usage_index; }
     bool IsQueue(QueueId other_queue) const { return queue_ == other_queue; }
-    const SyncStageAccessInfoType &Access() const { return *access_; }
+    const SyncAccessInfo &Access() const { return *access_; }
     const SyncStageAccessFlags &Barriers() const { return barriers_; }
     ResourceUsageTag Tag() const { return tag_; }
     ResourceUsageTagEx TagEx() const { return {tag_, handle_index_}; }
-    bool IsWriteHazard(const SyncStageAccessInfoType &usage_info) const;
+    bool IsWriteHazard(const SyncAccessInfo &usage_info) const;
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
                               const SyncStageAccessFlags &src_access_scope) const;
 
     void SetQueueId(QueueId id);
-    void Set(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
+    void Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
     void MergeBarriers(const ResourceAccessWriteState &other);
     void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
 
@@ -245,7 +245,7 @@ class ResourceAccessWriteState {
     const OrderingBarrier &GetPendingLayoutOrdering() const { return pending_layout_ordering_; }
 
   private:
-    const SyncStageAccessInfoType *access_;
+    const SyncAccessInfo *access_;
     SyncStageAccessFlags barriers_;  // union of applicable barrier masks since last write
     ResourceUsageTag tag_;
     uint32_t handle_index_;
@@ -338,24 +338,23 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlags2 ApplyPendingBarriers();
     };
 
-    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info) const;
-    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, QueueId queue_id) const;
-    HazardResult DetectHazard(const SyncStageAccessInfoType &usage_info, const OrderingBarrier &ordering, QueueId queue_id) const;
+    HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
+    HazardResult DetectHazard(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, QueueId queue_id) const;
+    HazardResult DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, QueueId queue_id) const;
     HazardResult DetectHazard(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range) const;
 
-    HazardResult DetectAsyncHazard(const SyncStageAccessInfoType &usage_info, ResourceUsageTag start_tag, QueueId queue_id) const;
+    HazardResult DetectAsyncHazard(const SyncAccessInfo &usage_info, ResourceUsageTag start_tag, QueueId queue_id) const;
     HazardResult DetectAsyncHazard(const ResourceAccessState &recorded_use, const ResourceUsageRange &tag_range,
                                    ResourceUsageTag start_tag, QueueId queue_id) const;
 
-    HazardResult DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, QueueId queue_id,
-                                     VkPipelineStageFlags2 source_exec_scope,
+    HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, QueueId queue_id, VkPipelineStageFlags2 source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
-    HazardResult DetectBarrierHazard(const SyncStageAccessInfoType &usage_info, const ResourceAccessState &scope_state,
+    HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, const ResourceAccessState &scope_state,
                                      VkPipelineStageFlags2 source_exec_scope, const SyncStageAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
-    void Update(const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex);
-    void SetWrite(const SyncStageAccessInfoType &usage_info, ResourceUsageTagEx tag_ex);
+    void Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex);
+    void SetWrite(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
     void ClearWrite();
     void ClearRead();
     void ClearFirstUse();
@@ -467,7 +466,7 @@ class ResourceAccessState : public SyncStageAccess {
 
   private:
     static constexpr VkPipelineStageFlags2 kInvalidAttachmentStage = ~VkPipelineStageFlags2(0);
-    bool IsRAWHazard(const SyncStageAccessInfoType &usage_info) const;
+    bool IsRAWHazard(const SyncAccessInfo &usage_info) const;
 
     bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
     // Apply ordering scope to write hazard detection
@@ -485,7 +484,7 @@ class ResourceAccessState : public SyncStageAccess {
     }
     VkPipelineStageFlags2 GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering) const;
 
-    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncStageAccessInfoType &usage_info, SyncOrdering ordering_rule);
+    void UpdateFirst(ResourceUsageTagEx tag_ex, const SyncAccessInfo &usage_info, SyncOrdering ordering_rule);
     void TouchupFirstForLayoutTransition(ResourceUsageTag tag, const OrderingBarrier &layout_ordering);
     void MergePending(const ResourceAccessState &other);
     void MergeReads(const ResourceAccessState &other);

@@ -75,7 +75,7 @@ constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | 
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
-    static inline const SyncStageAccessInfoType &UsageInfo(SyncStageAccessIndex stage_access_index) {
+    static inline const SyncAccessInfo &UsageInfo(SyncStageAccessIndex stage_access_index) {
         return syncStageAccessInfoByStageAccessIndex()[stage_access_index];
     }
     static inline SyncStageAccessFlags FlagBit(SyncStageAccessIndex stage_access) {
@@ -83,9 +83,9 @@ struct SyncStageAccess {
     }
 
     static bool IsRead(SyncStageAccessIndex stage_access_index) { return syncStageAccessReadMask[stage_access_index]; }
-    static bool IsRead(const SyncStageAccessInfoType &info) { return IsRead(info.stage_access_index); }
+    static bool IsRead(const SyncAccessInfo &info) { return IsRead(info.stage_access_index); }
     static bool IsWrite(SyncStageAccessIndex stage_access_index) { return syncStageAccessWriteMask[stage_access_index]; }
-    static bool IsWrite(const SyncStageAccessInfoType &info) { return IsWrite(info.stage_access_index); }
+    static bool IsWrite(const SyncAccessInfo &info) { return IsWrite(info.stage_access_index); }
 
     static VkPipelineStageFlags2 PipelineStageBit(SyncStageAccessIndex stage_access_index) {
         return syncStageAccessInfoByStageAccessIndex()[stage_access_index].stage_mask;

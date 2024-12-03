@@ -317,7 +317,7 @@ static const SyncStageAccessFlags SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESEN
 static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageAccessFlags(1) << SYNC_IMAGE_LAYOUT_TRANSITION);
 static const SyncStageAccessFlags SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT = (SyncStageAccessFlags(1) << SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER);
 
-struct SyncStageAccessInfoType {
+struct SyncAccessInfo {
     const char *name;
     VkPipelineStageFlagBits2 stage_mask;
     VkAccessFlagBits2 access_mask;
@@ -326,7 +326,7 @@ struct SyncStageAccessInfoType {
 };
 
 // Array of text names and component masks for each stage/access index
-const std::array<SyncStageAccessInfoType, 137>& syncStageAccessInfoByStageAccessIndex();
+const std::array<SyncAccessInfo, 137>& syncStageAccessInfoByStageAccessIndex();
 
 // Constants defining the mask of all read and write stage_access states
 static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits

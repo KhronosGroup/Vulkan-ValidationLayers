@@ -25,7 +25,7 @@ bool SimpleBinding(const vvl::Bindable &bindable) { return !bindable.sparse && b
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer) { return buffer.GetFakeBaseAddress(); }
 
 class HazardDetector {
-    const SyncStageAccessInfoType &usage_info_;
+    const SyncAccessInfo &usage_info_;
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const { return pos->second.DetectHazard(usage_info_); }
@@ -37,7 +37,7 @@ class HazardDetector {
 };
 
 class HazardDetectorWithOrdering {
-    const SyncStageAccessInfoType &usage_info_;
+    const SyncAccessInfo &usage_info_;
     const SyncOrdering ordering_rule_;
 
   public:
@@ -404,7 +404,7 @@ class BarrierHazardDetector {
     }
 
   private:
-    const SyncStageAccessInfoType &usage_info_;
+    const SyncAccessInfo &usage_info_;
     VkPipelineStageFlags2 src_exec_scope_;
     SyncStageAccessFlags src_access_scope_;
 };
@@ -485,7 +485,7 @@ class EventBarrierHazardDetector {
         return ScopeValid() && ScopeRange().intersects(range);
     }
 
-    const SyncStageAccessInfoType usage_info_;
+    const SyncAccessInfo usage_info_;
     VkPipelineStageFlags2 src_exec_scope_;
     SyncStageAccessFlags src_access_scope_;
     const AccessContext::ScopeMap &event_scope_;
