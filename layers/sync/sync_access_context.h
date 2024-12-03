@@ -257,7 +257,7 @@ class AccessContext {
 
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
 
-    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex usage_index, const ResourceAccessRange &range) const;
+    HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const ResourceAccessRange &range) const;
     HazardResult DetectHazard(const ImageState &image, SyncAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
     HazardResult DetectHazard(const ImageViewState &image_view, SyncAccessIndex current_usage) const;
@@ -274,14 +274,14 @@ class AccessContext {
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
 
     HazardResult DetectImageBarrierHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
-                                          VkPipelineStageFlags2 src_exec_scope, const SyncStageAccessFlags &src_access_scope,
+                                          VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope,
                                           QueueId queue_id, const ScopeMap &scope_map, ResourceUsageTag scope_tag,
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const ImageState &image, VkPipelineStageFlags2 src_exec_scope,
-                                          const SyncStageAccessFlags &src_access_scope,
-                                          const VkImageSubresourceRange &subresource_range, DetectOptions options) const;
+                                          const SyncAccessFlags &src_access_scope, const VkImageSubresourceRange &subresource_range,
+                                          DetectOptions options) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
@@ -398,7 +398,7 @@ class AccessContext {
         void operator()(const Iterator &pos) const;
         UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncAccessIndex usage_, SyncOrdering ordering_rule_,
                                        ResourceUsageTagEx tag_ex)
-            : context(context_), usage_info(SyncStageAccess::UsageInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex) {}
+            : context(context_), usage_info(SyncStageAccess::AccessInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex) {}
         const AccessContext &context;
         const SyncAccessInfo &usage_info;
         const SyncOrdering ordering_rule;

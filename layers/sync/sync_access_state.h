@@ -26,19 +26,19 @@ struct ResourceFirstAccess;
 //       rules apply only to this specific access for this stage, and not the stage as a whole. The ordering detection
 //       also reflects this special case for read hazard detection (using access instead of exec scope)
 constexpr VkPipelineStageFlags2 kColorAttachmentExecScope = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-const SyncStageAccessFlags kColorAttachmentAccessScope =
+const SyncAccessFlags kColorAttachmentAccessScope =
     SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_BIT |
     SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
     SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE_BIT |
     SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;  // Note: this is intentionally not in the exec scope
 constexpr VkPipelineStageFlags2 kDepthStencilAttachmentExecScope =
     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-const SyncStageAccessFlags kDepthStencilAttachmentAccessScope =
+const SyncAccessFlags kDepthStencilAttachmentAccessScope =
     SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
     SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
     SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ_BIT;  // Note: this is intentionally not in the exec scope
 constexpr VkPipelineStageFlags2 kRasterAttachmentExecScope = kDepthStencilAttachmentExecScope | kColorAttachmentExecScope;
-const SyncStageAccessFlags kRasterAttachmentAccessScope = kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope;
+const SyncAccessFlags kRasterAttachmentAccessScope = kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope;
 
 enum SyncHazard {
     NONE = 0,
@@ -69,7 +69,7 @@ class HazardResult {
     struct HazardState {
         std::unique_ptr<const ResourceAccessState> access_state;
         std::unique_ptr<const ResourceFirstAccess> recorded_access;
-        SyncAccessIndex usage_index = std::numeric_limits<SyncAccessIndex>::max();
+        SyncAccessIndex access_index = std::numeric_limits<SyncAccessIndex>::max();
         SyncAccessIndex prior_access_index;
         ResourceUsageTag tag = ResourceUsageTag();
         uint32_t handle_index = vvl::kNoIndex32;
@@ -115,11 +115,11 @@ struct SyncExecScope {
     VkPipelineStageFlags2 mask_param;     // the xxxStageMask parameter passed by the caller
     VkPipelineStageFlags2 expanded_mask;  // all stage bits covered by any 'catch all bits' in the parameter (eg. ALL_GRAPHICS_BIT).
     VkPipelineStageFlags2 exec_scope;     // all earlier or later stages that would be affected by a barrier using this scope.
-    SyncStageAccessFlags valid_accesses;  // all valid accesses that can be used with this scope.
+    SyncAccessFlags valid_accesses;       // all valid accesses that can be used with this scope.
 
     SyncExecScope() : mask_param(0), expanded_mask(0), exec_scope(0), valid_accesses(0) {}
     SyncExecScope(VkPipelineStageFlags2 mask_param_, VkPipelineStageFlags2 expanded_mask_, VkPipelineStageFlags2 exec_scope_,
-                  const SyncStageAccessFlags &valid_accesses_)
+                  const SyncAccessFlags &valid_accesses_)
         : mask_param(mask_param_), expanded_mask(expanded_mask_), exec_scope(exec_scope_), valid_accesses(valid_accesses_) {}
 
     static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 src_stage_mask,
@@ -136,17 +136,17 @@ struct SemaphoreScope : SyncExecScope {
 struct SyncBarrier {
     struct AllAccess {};
     SyncExecScope src_exec_scope;
-    SyncStageAccessFlags src_access_scope;
+    SyncAccessFlags src_access_scope;
     SyncExecScope dst_exec_scope;
-    SyncStageAccessFlags dst_access_scope;
+    SyncAccessFlags dst_access_scope;
     SyncBarrier() = default;
     SyncBarrier(const SyncBarrier &other) = default;
     SyncBarrier &operator=(const SyncBarrier &) = default;
 
     SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst);
     SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const AllAccess &);
-    SyncBarrier(const SyncExecScope &src_exec, const SyncStageAccessFlags &src_access, const SyncExecScope &dst_exec,
-                const SyncStageAccessFlags &dst_access)
+    SyncBarrier(const SyncExecScope &src_exec, const SyncAccessFlags &src_access, const SyncExecScope &dst_exec,
+                const SyncAccessFlags &dst_access)
         : src_exec_scope(src_exec), src_access_scope(src_access), dst_exec_scope(dst_exec), dst_access_scope(dst_access) {}
 
     template <typename Barrier>
@@ -185,10 +185,10 @@ struct ResourceFirstAccess {
 using QueueId = uint32_t;
 struct OrderingBarrier {
     VkPipelineStageFlags2 exec_scope;
-    SyncStageAccessFlags access_scope;
+    SyncAccessFlags access_scope;
     OrderingBarrier() = default;
     OrderingBarrier(const OrderingBarrier &) = default;
-    OrderingBarrier(VkPipelineStageFlags2 es, SyncStageAccessFlags as) : exec_scope(es), access_scope(as) {}
+    OrderingBarrier(VkPipelineStageFlags2 es, SyncAccessFlags as) : exec_scope(es), access_scope(as) {}
     OrderingBarrier &operator=(const OrderingBarrier &) = default;
     OrderingBarrier &operator|=(const OrderingBarrier &rhs) {
         exec_scope |= rhs.exec_scope;
@@ -209,29 +209,29 @@ class ResourceAccessWriteState {
                (dependency_chain_ == rhs.dependency_chain_);
     }
     bool WriteInChain(VkPipelineStageFlags2 src_exec_scope) const;
-    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncStageAccessFlags src_access_scope) const;
+    bool WriteInScope(const SyncAccessFlags &src_access_scope) const;
+    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope) const;
     bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
-                                        const SyncStageAccessFlags &src_access_scope) const;
+                                        const SyncAccessFlags &src_access_scope) const;
 
-    bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncStageAccessFlags &src_access_scope, QueueId scope_queue,
+    bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope, QueueId scope_queue,
                            ResourceUsageTag scope_tag) const;
 
     ResourceAccessWriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
     ResourceAccessWriteState() = default;
 
     SyncAccessIndex Index() const { return access_->access_index; }
-    bool IsIndex(SyncAccessIndex usage_index) const { return Index() == usage_index; }
+    bool IsIndex(SyncAccessIndex access_index) const { return Index() == access_index; }
     bool IsQueue(QueueId other_queue) const { return queue_ == other_queue; }
     const SyncAccessInfo &Access() const { return *access_; }
-    const SyncStageAccessFlags &Barriers() const { return barriers_; }
+    const SyncAccessFlags &Barriers() const { return barriers_; }
     ResourceUsageTag Tag() const { return tag_; }
     ResourceUsageTagEx TagEx() const { return {tag_, handle_index_}; }
     bool IsWriteHazard(const SyncAccessInfo &usage_info) const;
     bool IsOrdered(const OrderingBarrier &ordering, QueueId queue_id) const;
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
-                              const SyncStageAccessFlags &src_access_scope) const;
+                              const SyncAccessFlags &src_access_scope) const;
 
     void SetQueueId(QueueId id);
     void Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
@@ -246,7 +246,7 @@ class ResourceAccessWriteState {
 
   private:
     const SyncAccessInfo *access_;
-    SyncStageAccessFlags barriers_;  // union of applicable barrier masks since last write
+    SyncAccessFlags barriers_;  // union of applicable barrier masks since last write
     ResourceUsageTag tag_;
     uint32_t handle_index_;
     QueueId queue_;
@@ -256,7 +256,7 @@ class ResourceAccessWriteState {
     // Write specific layout state
     OrderingBarrier pending_layout_ordering_;
     VkPipelineStageFlags2 pending_dep_chain_;
-    SyncStageAccessFlags pending_barriers_;
+    SyncAccessFlags pending_barriers_;
 
     friend ResourceAccessState;
 };
@@ -298,7 +298,7 @@ class ResourceAccessState : public SyncStageAccess {
             return (src_exec_scope & (stage | barriers)) == 0;
         }
         bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2 src_exec_scope,
-                                 const SyncStageAccessFlags &src_access_scope) const {
+                                 const SyncAccessFlags &src_access_scope) const {
             // If the read stage is not in the src sync scope
             // *AND* not execution chained with an existing sync barrier (that's the or)
             // then the barrier access is unsafe (R/W after R)
@@ -348,9 +348,9 @@ class ResourceAccessState : public SyncStageAccess {
                                    ResourceUsageTag start_tag, QueueId queue_id) const;
 
     HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, QueueId queue_id, VkPipelineStageFlags2 source_exec_scope,
-                                     const SyncStageAccessFlags &source_access_scope) const;
+                                     const SyncAccessFlags &source_access_scope) const;
     HazardResult DetectBarrierHazard(const SyncAccessInfo &usage_info, const ResourceAccessState &scope_state,
-                                     VkPipelineStageFlags2 source_exec_scope, const SyncStageAccessFlags &source_access_scope,
+                                     VkPipelineStageFlags2 source_exec_scope, const SyncAccessFlags &source_access_scope,
                                      QueueId event_queue, ResourceUsageTag event_tag) const;
 
     void Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex);
@@ -400,7 +400,7 @@ class ResourceAccessState : public SyncStageAccess {
     bool HasPendingState() const { return (0 != pending_layout_transition) || (last_write && last_write->HasPendingState()); }
     bool HasWriteOp() const { return last_write.has_value(); }
     SyncAccessIndex LastWriteOp() const { return last_write.has_value() ? last_write->Index() : SYNC_ACCESS_INDEX_NONE; }
-    bool IsLastWriteOp(SyncAccessIndex usage_index) const { return LastWriteOp() == usage_index; }
+    bool IsLastWriteOp(SyncAccessIndex access_index) const { return LastWriteOp() == access_index; }
     ResourceUsageTag LastWriteTag() const { return last_write.has_value() ? last_write->Tag() : ResourceUsageTag(0); }
     bool operator==(const ResourceAccessState &rhs) const {
         const bool write_same = (read_execution_barriers == rhs.read_execution_barriers) &&
@@ -416,17 +416,15 @@ class ResourceAccessState : public SyncStageAccess {
     }
     bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
     VkPipelineStageFlags2 GetReadBarriers(SyncAccessIndex access_index) const;
-    SyncStageAccessFlags GetWriteBarriers() const {
-        return last_write.has_value() ? last_write->Barriers() : SyncStageAccessFlags();
-    }
+    SyncAccessFlags GetWriteBarriers() const { return last_write.has_value() ? last_write->Barriers() : SyncAccessFlags(); }
     void SetQueueId(QueueId id);
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 src_exec_scope,
-                              const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncStageAccessFlags src_access_scope) const;
+                              const SyncAccessFlags &src_access_scope) const;
+    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope) const;
     bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2 src_exec_scope,
-                                        const SyncStageAccessFlags &src_access_scope) const;
-    bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncStageAccessFlags &src_access_scope, QueueId scope_queue,
+                                        const SyncAccessFlags &src_access_scope) const;
+    bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope, QueueId scope_queue,
                            ResourceUsageTag scope_tag) const;
 
     struct UntaggedScopeOps {
@@ -468,7 +466,7 @@ class ResourceAccessState : public SyncStageAccess {
     static constexpr VkPipelineStageFlags2 kInvalidAttachmentStage = ~VkPipelineStageFlags2(0);
     bool IsRAWHazard(const SyncAccessInfo &usage_info) const;
 
-    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
+    bool WriteInScope(const SyncAccessFlags &src_access_scope) const;
     // Apply ordering scope to write hazard detection
 
     bool ReadInSourceScopeOrChain(VkPipelineStageFlags2 src_exec_scope) const {
@@ -541,7 +539,7 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
     if (layout_transition) {
         if (!last_write.has_value()) {
-            last_write.emplace(UsageInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
+            last_write.emplace(AccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
         }
         last_write->UpdatePendingBarriers(barrier);
         last_write->UpdatePendingLayoutOrdering(barrier);
