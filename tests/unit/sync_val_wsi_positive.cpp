@@ -426,11 +426,8 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
         dst_image = vkt::Image(*m_device, width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         VkBufferImageCopy region = {};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.layerCount = 1;
-        region.imageExtent.width = width;
-        region.imageExtent.height = height;
-        region.imageExtent.depth = 1;
+        region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        region.imageExtent = {width, height, 1};
 
         VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
         layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_NONE;

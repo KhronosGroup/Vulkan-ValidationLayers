@@ -30,11 +30,8 @@ TEST_F(NegativeHostImageCopy, ImageLayout) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -44,11 +41,8 @@ TEST_F(NegativeHostImageCopy, ImageLayout) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -80,11 +74,8 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -94,11 +85,8 @@ TEST_F(NegativeHostImageCopy, ImageOffset) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -158,11 +146,8 @@ TEST_F(NegativeHostImageCopy, AspectMask) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -172,11 +157,8 @@ TEST_F(NegativeHostImageCopy, AspectMask) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -209,11 +191,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemoryNoMemory) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -223,11 +202,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemoryNoMemory) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -261,11 +237,8 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -275,11 +248,8 @@ TEST_F(NegativeHostImageCopy, ImageSubresource) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -365,11 +335,8 @@ TEST_F(NegativeHostImageCopy, ImageExtent) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -379,11 +346,8 @@ TEST_F(NegativeHostImageCopy, ImageExtent) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -452,11 +416,8 @@ TEST_F(NegativeHostImageCopy, Image1D) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -466,11 +427,8 @@ TEST_F(NegativeHostImageCopy, Image1D) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -568,11 +526,8 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -582,11 +537,8 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -706,11 +658,8 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -720,11 +669,8 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -810,11 +756,8 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -824,11 +767,8 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -897,11 +837,8 @@ TEST_F(NegativeHostImageCopy, NonSupportedLayout) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -911,11 +848,8 @@ TEST_F(NegativeHostImageCopy, NonSupportedLayout) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -952,11 +886,8 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -966,11 +897,8 @@ TEST_F(NegativeHostImageCopy, ImageExtent2) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -1538,11 +1466,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemorySubsampled) {
 
     VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
     region_to_image.pHostPointer = pixels.data();
-    region_to_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_to_image.imageSubresource.layerCount = 1;
-    region_to_image.imageExtent.width = width;
-    region_to_image.imageExtent.height = height;
-    region_to_image.imageExtent.depth = 1;
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
     copy_to_image.dstImage = image;
@@ -1552,11 +1477,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToFromMemorySubsampled) {
 
     VkImageToMemoryCopyEXT region_from_image = vku::InitStructHelper();
     region_from_image.pHostPointer = pixels.data();
-    region_from_image.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region_from_image.imageSubresource.layerCount = 1;
-    region_from_image.imageExtent.width = width;
-    region_from_image.imageExtent.height = height;
-    region_from_image.imageExtent.depth = 1;
+    region_from_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_from_image.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfoEXT copy_from_image = vku::InitStructHelper();
     copy_from_image.srcImage = image;
@@ -1913,15 +1835,11 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
 
     VkDeviceAddress *data = (VkDeviceAddress *)image.Memory().Map();
 
-    VkImageSubresourceLayers imageSubresource = {};
-    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageSubresource.layerCount = 1;
-
     VkImageToMemoryCopyEXT region = vku::InitStructHelper();
     region.pHostPointer = data;
     region.memoryRowLength = 0;
     region.memoryImageHeight = 0;
-    region.imageSubresource = imageSubresource;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {32, 32, 1};
     const uint32_t copy_size = (32 * 32 * 4) / 8;  // 64 bit pointer
@@ -1954,7 +1872,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     region2.pHostPointer = data;
     region2.memoryRowLength = 0;
     region2.memoryImageHeight = 0;
-    region2.imageSubresource = imageSubresource;
+    region2.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region2.imageOffset = {0, 0, 0};
     region2.imageExtent = {32, 32, 1};
 
@@ -1988,15 +1906,11 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     const uint32_t bufferSize = width * height * 4;
     std::vector<uint8_t> data(bufferSize);
 
-    VkImageSubresourceLayers imageSubresource = {};
-    imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageSubresource.layerCount = 1;
-
     VkImageToMemoryCopyEXT region = vku::InitStructHelper();
     region.pHostPointer = data.data();
     region.memoryRowLength = 0;
     region.memoryImageHeight = 0;
-    region.imageSubresource = imageSubresource;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {width, height, 1};
 
@@ -2016,7 +1930,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     region2.pHostPointer = data.data();
     region2.memoryRowLength = 0;
     region2.memoryImageHeight = 0;
-    region2.imageSubresource = imageSubresource;
+    region2.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region2.imageOffset = {0, 0, 0};
     region2.imageExtent = {width, height, 1};
 
