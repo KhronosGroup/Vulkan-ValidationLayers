@@ -38,7 +38,7 @@ static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYN
 static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = 0x0000400000000000ULL;
 static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x0000800000000000ULL;
 // Unique number for each  stage/access combination
-enum SyncStageAccessIndex {
+enum SyncAccessIndex {
     SYNC_ACCESS_INDEX_NONE = 0,
     SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ = 1,
     SYNC_DRAW_INDIRECT_TRANSFORM_FEEDBACK_COUNTER_READ_EXT = 2,
@@ -321,7 +321,7 @@ struct SyncAccessInfo {
     const char *name;
     VkPipelineStageFlagBits2 stage_mask;
     VkAccessFlagBits2 access_mask;
-    SyncStageAccessIndex stage_access_index;
+    SyncAccessIndex access_index;
     SyncStageAccessFlags stage_access_bit;
 };
 

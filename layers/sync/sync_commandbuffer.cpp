@@ -26,9 +26,9 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_module.h"
 
-SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
-                                                             const spirv::ResourceInterfaceVariable &variable,
-                                                             VkShaderStageFlagBits stage_flag) {
+SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
+                                                        const spirv::ResourceInterfaceVariable &variable,
+                                                        VkShaderStageFlagBits stage_flag) {
     if (!variable.IsAccessed()) {
         return SYNC_ACCESS_INDEX_NONE;
     }
@@ -167,7 +167,7 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
     for (uint32_t i = 0; i < attachment_count; i++) {
         const auto &attachment = info.attachments[i];
-        const SyncStageAccessIndex load_index = attachment.GetLoadUsage();
+        const SyncAccessIndex load_index = attachment.GetLoadUsage();
         if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
 
         hazard = GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering());
@@ -193,7 +193,7 @@ void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRender
         const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
         for (uint32_t i = 0; i < attachment_count; i++) {
             const Attachment &attachment = info.attachments[i];
-            const SyncStageAccessIndex load_index = attachment.GetLoadUsage();
+            const SyncAccessIndex load_index = attachment.GetLoadUsage();
             if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
 
             GetCurrentAccessContext()->UpdateAccessState(attachment.view_gen, load_index, attachment.GetOrdering(),
@@ -277,7 +277,7 @@ void CommandBufferAccessContext::RecordEndRendering(const RecordObject &record_o
                                                   ResourceUsageTagEx{store_tag});
             }
 
-            const SyncStageAccessIndex store_index = attachment.GetStoreUsage();
+            const SyncAccessIndex store_index = attachment.GetStoreUsage();
             if (store_index == SYNC_ACCESS_INDEX_NONE) continue;
             access_context->UpdateAccessState(attachment.view_gen, store_index, kStoreOrder, ResourceUsageTagEx{store_tag});
         }
@@ -320,8 +320,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
-            SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
+            SyncAccessIndex sync_index = GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
 
             // Currently, validation of memory accesses based on declared descriptors can produce false-positives.
             // The shader can decide not to do such accesses, it can perform accesses with more narrow scope
@@ -461,8 +460,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
-            SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
+            SyncAccessIndex sync_index = GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.GetStage());
 
             // Do not update state for descriptor array (the same as in Validate function).
             if (binding->count > 1) {

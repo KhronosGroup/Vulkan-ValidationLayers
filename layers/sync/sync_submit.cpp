@@ -901,7 +901,7 @@ void PresentedImage::SetImage(uint32_t at_index) {
     }
 }
 
-void PresentedImage::UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context) const {
+void PresentedImage::UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext& access_context) const {
     // Intentional copy. The range_gen argument is not copied by the Update... call below
     access_context.UpdateAccessState(range_gen, usage, SyncOrdering::kNonAttachment, ResourceUsageTagEx{tag});
 }

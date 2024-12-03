@@ -66,10 +66,10 @@ struct ExecScopes {
 ExecScopes GetGlobalStageMasks(const VkDependencyInfo& dep_info);
 
 struct ShaderStageAccesses {
-    SyncStageAccessIndex sampled_read;
-    SyncStageAccessIndex storage_read;
-    SyncStageAccessIndex storage_write;
-    SyncStageAccessIndex uniform_read;
+    SyncAccessIndex sampled_read;
+    SyncAccessIndex storage_read;
+    SyncAccessIndex storage_write;
+    SyncAccessIndex uniform_read;
 };
 ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage);
 

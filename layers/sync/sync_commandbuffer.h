@@ -224,8 +224,8 @@ class CommandExecutionContext {
 class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProvider {
   public:
     using SyncOpPointer = std::shared_ptr<SyncOpBase>;
-    constexpr static SyncStageAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
-    constexpr static SyncStageAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+    constexpr static SyncAccessIndex kResolveRead = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ;
+    constexpr static SyncAccessIndex kResolveWrite = SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
     constexpr static SyncOrdering kColorResolveOrder = SyncOrdering::kColorAttachment;
     // Although depth resolve runs on the color attachment output stage and uses color accesses, depth accesses
     // still participate in the ordering. That's why using raster and not only color attachment ordering

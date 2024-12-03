@@ -173,7 +173,7 @@ static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(1
 ''')
 
         out.append('// Unique number for each  stage/access combination\n')
-        out.append('enum SyncStageAccessIndex {\n')
+        out.append('enum SyncAccessIndex {\n')
         for access in self.stageAccessCombo:
             out.append(f'    {access["stage_access"]} = {access["index"]},\n')
         out.append('};\n')
@@ -195,7 +195,7 @@ struct SyncAccessInfo {{
     const char *name;
     VkPipelineStageFlagBits2 stage_mask;
     VkAccessFlagBits2 access_mask;
-    SyncStageAccessIndex stage_access_index;
+    SyncAccessIndex access_index;
     SyncStageAccessFlags stage_access_bit;
 }};
 

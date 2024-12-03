@@ -34,7 +34,7 @@ class ValidateResolveAction {
           skip_(false) {}
 
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
-                    const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage,
+                    const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                     SyncOrdering ordering_rule) {
         HazardResult hazard;
         hazard = context_.DetectHazard(view_gen, gen_type, current_usage, ordering_rule);
@@ -62,7 +62,7 @@ class UpdateStateResolveAction {
   public:
     UpdateStateResolveAction(AccessContext &context, ResourceUsageTag tag) : context_(context), tag_(tag) {}
     void operator()(const char *, const char *, uint32_t, uint32_t, const AttachmentViewGen &view_gen,
-                    AttachmentViewGen::Gen gen_type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) {
+                    AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage, SyncOrdering ordering_rule) {
         // Ignores validation only arguments...
         context_.UpdateAccessState(view_gen, gen_type, current_usage, ordering_rule, tag_);
     }
@@ -83,8 +83,8 @@ void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_sta
     }
 }
 
-static SyncStageAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
-    SyncStageAccessIndex usage_index;
+static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
+    SyncAccessIndex usage_index;
     if (load_op == VK_ATTACHMENT_LOAD_OP_NONE_KHR) {
         usage_index = SYNC_ACCESS_INDEX_NONE;
     } else if (type == syncval_state::AttachmentType::kColor) {
@@ -97,8 +97,8 @@ static SyncStageAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, sync
     return usage_index;
 }
 
-static SyncStageAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, syncval_state::AttachmentType type) {
-    SyncStageAccessIndex usage_index;
+static SyncAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, syncval_state::AttachmentType type) {
+    SyncAccessIndex usage_index;
     if (store_op == VK_ATTACHMENT_STORE_OP_NONE) {
         usage_index = SYNC_ACCESS_INDEX_NONE;
     } else if (type == syncval_state::AttachmentType::kColor) {
@@ -109,10 +109,10 @@ static SyncStageAccessIndex GetStoreOpUsageIndex(VkAttachmentStoreOp store_op, s
     return usage_index;
 }
 
-static SyncStageAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
+static SyncAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
     return GetLoadOpUsageIndex(load_op, syncval_state::AttachmentType::kColor);
 }
-static SyncStageAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
+static SyncAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
     return GetLoadOpUsageIndex(load_op, syncval_state::AttachmentType::kDepth);
 }
 
@@ -198,8 +198,8 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
             const bool has_stencil = vkuFormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
 
-            const SyncStageAccessIndex load_index = has_depth ? DepthStencilLoadUsage(ci.loadOp) : ColorLoadUsage(ci.loadOp);
-            const SyncStageAccessIndex stencil_load_index = has_stencil ? DepthStencilLoadUsage(ci.stencilLoadOp) : load_index;
+            const SyncAccessIndex load_index = has_depth ? DepthStencilLoadUsage(ci.loadOp) : ColorLoadUsage(ci.loadOp);
+            const SyncAccessIndex stencil_load_index = has_stencil ? DepthStencilLoadUsage(ci.stencilLoadOp) : load_index;
 
             HazardResult hazard;
             const char *aspect = nullptr;
@@ -819,21 +819,21 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
             const bool is_color = !(has_depth || has_stencil);
 
             if (is_color) {
-                const SyncStageAccessIndex load_op = ColorLoadUsage(ci.loadOp);
+                const SyncAccessIndex load_op = ColorLoadUsage(ci.loadOp);
                 if (load_op != SYNC_ACCESS_INDEX_NONE) {
                     subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kRenderArea, load_op,
                                                       SyncOrdering::kColorAttachment, tag);
                 }
             } else {
                 if (has_depth) {
-                    const SyncStageAccessIndex load_op = DepthStencilLoadUsage(ci.loadOp);
+                    const SyncAccessIndex load_op = DepthStencilLoadUsage(ci.loadOp);
                     if (load_op != SYNC_ACCESS_INDEX_NONE) {
                         subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kDepthOnlyRenderArea, load_op,
                                                           SyncOrdering::kDepthStencilAttachment, tag);
                     }
                 }
                 if (has_stencil) {
-                    const SyncStageAccessIndex load_op = DepthStencilLoadUsage(ci.stencilLoadOp);
+                    const SyncAccessIndex load_op = DepthStencilLoadUsage(ci.stencilLoadOp);
                     if (load_op != SYNC_ACCESS_INDEX_NONE) {
                         subpass_context.UpdateAccessState(view_gen, AttachmentViewGen::Gen::kStencilOnlyRenderArea, load_op,
                                                           SyncOrdering::kDepthStencilAttachment, tag);
@@ -999,11 +999,11 @@ syncval_state::DynamicRenderingInfo::Attachment::Attachment(const SyncValidator 
     }
 }
 
-SyncStageAccessIndex syncval_state::DynamicRenderingInfo::Attachment::GetLoadUsage() const {
+SyncAccessIndex syncval_state::DynamicRenderingInfo::Attachment::GetLoadUsage() const {
     return GetLoadOpUsageIndex(info.loadOp, type);
 }
 
-SyncStageAccessIndex syncval_state::DynamicRenderingInfo::Attachment::GetStoreUsage() const {
+SyncAccessIndex syncval_state::DynamicRenderingInfo::Attachment::GetStoreUsage() const {
     return GetStoreOpUsageIndex(info.storeOp, type);
 }
 

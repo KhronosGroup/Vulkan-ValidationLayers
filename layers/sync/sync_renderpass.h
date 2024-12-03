@@ -43,8 +43,8 @@ struct DynamicRenderingInfo {
         Attachment(const SyncValidator &state, const vku::safe_VkRenderingAttachmentInfo &info, const AttachmentType type_,
                    const VkOffset3D &offset, const VkExtent3D &extent);
 
-        SyncStageAccessIndex GetLoadUsage() const;
-        SyncStageAccessIndex GetStoreUsage() const;
+        SyncAccessIndex GetLoadUsage() const;
+        SyncAccessIndex GetStoreUsage() const;
         SyncOrdering GetOrdering() const;
         Location GetLocation(const Location &loc, uint32_t index = 0) const;
         bool IsWriteable(const LastBound &last_bound_state) const;

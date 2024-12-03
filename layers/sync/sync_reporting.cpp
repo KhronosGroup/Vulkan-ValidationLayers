@@ -206,8 +206,8 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &acces
 
 static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags) {
     std::stringstream out;
-    assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
-    assert(hazard.prior_access_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
+    assert(hazard.usage_index < static_cast<SyncAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
+    assert(hazard.prior_access_index < static_cast<SyncAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
     const auto &usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.usage_index];
     const auto &prior_usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.prior_access_index];
     out << "(";
