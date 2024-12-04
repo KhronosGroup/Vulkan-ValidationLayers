@@ -9332,6 +9332,9 @@ TEST_F(NegativeVideo, DecodeInvalidOutputAndSetupCoincide) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
 
+    // It is possible that the DPB uses a different format, so ignore format mismatch errors
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07143");
+
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07146");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07140");
     cb.DecodeVideo(context.DecodeFrame(0).SetDecodeOutput(context.Dpb()->Picture(0)));
@@ -15504,6 +15507,7 @@ TEST_F(NegativeVideo, CreateImageIncompatibleProfile) {
 
     VkImage image = VK_NULL_HANDLE;
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-06811");
     image_ci.format = VK_FORMAT_D16_UNORM;
     vk::CreateImage(device(), &image_ci, nullptr, &image);
@@ -15604,6 +15608,7 @@ TEST_F(NegativeVideo, CreateImageQuantDeltaMapUnsupportedProfile) {
 
     VkImage image = VK_NULL_HANDLE;
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-usage-10255");
     vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();
@@ -15648,6 +15653,7 @@ TEST_F(NegativeVideo, CreateImageEmphasisMapUnsupportedProfile) {
 
     VkImage image = VK_NULL_HANDLE;
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-usage-10256");
     vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();
