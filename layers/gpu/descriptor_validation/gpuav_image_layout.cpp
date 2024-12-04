@@ -161,6 +161,13 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
     if (!subresource_map) {
         return skip;
     }
+
+    // TODO - things like ANGLE might have external images which have their layouts transitioned implicitly
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8940
+    if (image_state.external_memory_handle_types != 0) {
+        return skip;
+    }
+
     const auto &layout_map = subresource_map->GetLayoutMap();
     const auto *global_range_map = image_state.layout_range_map.get();
     GlobalImageLayoutRangeMap empty_map(1);
