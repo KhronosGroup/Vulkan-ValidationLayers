@@ -267,7 +267,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR) ||
         !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
-        GTEST_SKIP() << "Required formats/features not supported - UncompressedToCompressedImageCopy";
+        GTEST_SKIP() << "Required formats/features not supported";
     }
 
     // Size = 10 * 10 * 64 = 6400
@@ -278,7 +278,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     if (!uncomp_10x10t_image.initialized() || !comp_10x10b_40x40t_image.initialized()) {
-        GTEST_SKIP() << "Unable to initialize surfaces - UncompressedToCompressedImageCopy";
+        GTEST_SKIP() << "Unable to initialize surfaces";
     }
 
     // Both copies represent the same number of bytes. Bytes Per Texel = 1 for bc6, 16 for uncompressed
@@ -312,6 +312,74 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     vk::CmdCopyImage(m_command_buffer.handle(), comp_10x10b_40x40t_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
                      uncomp_10x10t_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/593");
+    RETURN_IF_SKIP(Init());
+
+    // Size-compatible (64-bit) formats. Uncompressed is 64 bits per texel, compressed is 64 bits per 4x4 block (or 4bpt).
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    // Size = 3 * 3 * 64 = 576
+    vkt::Image uncomp_image(*m_device, 3, 3, 1, VK_FORMAT_R16G16B16A16_UINT,
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    // Size = 12 * 12 * 4  = 576
+    vkt::Image comp_image(*m_device, 12, 12, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    if (!uncomp_image.initialized() || !comp_image.initialized()) {
+        GTEST_SKIP() << "Unable to initialize surfaces";
+    }
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {3, 3, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer.handle(), uncomp_image.handle(), VK_IMAGE_LAYOUT_GENERAL, comp_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, Compressed) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image image_bc2(*m_device, 60, 60, 1, VK_FORMAT_BC2_UNORM_BLOCK,
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_bc3(*m_device, 60, 60, 1, VK_FORMAT_BC3_UNORM_BLOCK,
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    if (!image_bc2.initialized() || !image_bc3.initialized()) {
+        GTEST_SKIP() << "Unable to initialize surfaces";
+    }
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {16, 16, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer.handle(), image_bc2.handle(), VK_IMAGE_LAYOUT_GENERAL, image_bc3.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_command_buffer.End();
 }
 

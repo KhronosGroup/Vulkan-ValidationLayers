@@ -1362,21 +1362,21 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
         if (extent_check & kXBit) {
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_00144), src_objlist,
                              region_loc.dot(Field::srcOffset).dot(Field::x),
-                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource width (%" PRIu32 ").", region.srcOffset.x,
-                             src_copy_extent.width, subresource_extent.width);
+                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds miplevel %" PRIu32 " width (%" PRIu32 ").",
+                             region.srcOffset.x, src_copy_extent.width, region.srcSubresource.mipLevel, subresource_extent.width);
         }
 
         if (extent_check & kYBit) {
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_00145), src_objlist,
                              region_loc.dot(Field::srcOffset).dot(Field::y),
-                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource height (%" PRIu32 ").", region.srcOffset.y,
-                             src_copy_extent.height, subresource_extent.height);
+                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds miplevel %" PRIu32 " height (%" PRIu32 ").",
+                             region.srcOffset.y, src_copy_extent.height, region.srcSubresource.mipLevel, subresource_extent.height);
         }
         if (extent_check & kZBit) {
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcOffset_00147), src_objlist,
                              region_loc.dot(Field::srcOffset).dot(Field::z),
-                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource depth (%" PRIu32 ").", region.srcOffset.z,
-                             src_copy_extent.depth, subresource_extent.depth);
+                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds miplevel %" PRIu32 " depth (%" PRIu32 ").",
+                             region.srcOffset.z, src_copy_extent.depth, region.srcSubresource.mipLevel, subresource_extent.depth);
         }
 
         // Adjust dest extent if necessary
@@ -1387,20 +1387,20 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
         if (extent_check & kXBit) {
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_00150), dst_objlist,
                              region_loc.dot(Field::dstOffset).dot(Field::x),
-                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource width (%" PRIu32 ").", region.dstOffset.x,
-                             dst_copy_extent.width, subresource_extent.width);
+                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds miplevel %" PRIu32 " width (%" PRIu32 ").",
+                             region.dstOffset.x, dst_copy_extent.width, region.dstSubresource.mipLevel, subresource_extent.width);
         }
         if (extent_check & kYBit) {
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_00151), dst_objlist,
                              region_loc.dot(Field::dstOffset).dot(Field::y),
-                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource height (%" PRIu32 ").", region.dstOffset.y,
-                             dst_copy_extent.height, subresource_extent.height);
+                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds miplevel %" PRIu32 " height (%" PRIu32 ").",
+                             region.dstOffset.y, dst_copy_extent.height, region.dstSubresource.mipLevel, subresource_extent.height);
         }
         if (extent_check & kZBit) {
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstOffset_00153), dst_objlist,
                              region_loc.dot(Field::dstOffset).dot(Field::z),
-                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds subResource depth (%" PRIu32 ").", region.dstOffset.z,
-                             dst_copy_extent.depth, subresource_extent.depth);
+                             "(%" PRId32 ") + extent (%" PRIu32 ") exceeds miplevel %" PRIu32 " depth (%" PRIu32 ").",
+                             region.dstOffset.z, dst_copy_extent.depth, region.dstSubresource.mipLevel, subresource_extent.depth);
         }
     }
 
