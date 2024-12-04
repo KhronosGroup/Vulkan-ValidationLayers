@@ -201,6 +201,12 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
         const auto image_state = Get<vvl::Image>(image);
         if (!image_state) continue;
 
+        // TODO - things like ANGLE might have external images which have their layouts transitioned implicitly
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8940
+        if (image_state->external_memory_handle_types != 0) {
+            continue;
+        }
+
         const auto &layout_map = layout_map_entry.second.map->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
         if (layout_map.empty()) continue;
