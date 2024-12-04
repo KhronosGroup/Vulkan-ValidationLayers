@@ -134,15 +134,15 @@ struct TraitsBase {
 static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
     VkExtent3D adjusted_extent = extent;
     if (vkuFormatIsBlockedImage(src_format) && !vkuFormatIsBlockedImage(dst_format)) {
-        VkExtent3D block_size = vkuFormatTexelBlockExtent(src_format);
-        adjusted_extent.width /= block_size.width;
-        adjusted_extent.height /= block_size.height;
-        adjusted_extent.depth /= block_size.depth;
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(src_format);
+        adjusted_extent.width /= block_extent.width;
+        adjusted_extent.height /= block_extent.height;
+        adjusted_extent.depth /= block_extent.depth;
     } else if (!vkuFormatIsBlockedImage(src_format) && vkuFormatIsBlockedImage(dst_format)) {
-        VkExtent3D block_size = vkuFormatTexelBlockExtent(dst_format);
-        adjusted_extent.width *= block_size.width;
-        adjusted_extent.height *= block_size.height;
-        adjusted_extent.depth *= block_size.depth;
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(dst_format);
+        adjusted_extent.width *= block_extent.width;
+        adjusted_extent.height *= block_extent.height;
+        adjusted_extent.depth *= block_extent.depth;
     }
     return adjusted_extent;
 }
@@ -200,13 +200,13 @@ static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, 
 
     if (vkuFormatIsBlockedImage(image_format)) {
         // Switch to texel block units, rounding up for any partially-used blocks
-        auto block_dim = vkuFormatTexelBlockExtent(image_format);
-        buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
-        buffer_height = (buffer_height + block_dim.height - 1) / block_dim.height;
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(image_format);
+        buffer_width = (buffer_width + block_extent.width - 1) / block_extent.width;
+        buffer_height = (buffer_height + block_extent.height - 1) / block_extent.height;
 
-        copy_extent.width = (copy_extent.width + block_dim.width - 1) / block_dim.width;
-        copy_extent.height = (copy_extent.height + block_dim.height - 1) / block_dim.height;
-        copy_extent.depth = (copy_extent.depth + block_dim.depth - 1) / block_dim.depth;
+        copy_extent.width = (copy_extent.width + block_extent.width - 1) / block_extent.width;
+        copy_extent.height = (copy_extent.height + block_extent.height - 1) / block_extent.height;
+        copy_extent.depth = (copy_extent.depth + block_extent.depth - 1) / block_extent.depth;
     }
 
     // Calculate buffer offset of final copied byte, + 1.
