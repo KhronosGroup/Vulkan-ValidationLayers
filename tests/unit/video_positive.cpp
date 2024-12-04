@@ -1221,12 +1221,13 @@ TEST_F(PositiveVideoSyncVal, ImageRangeGenYcbcrSubsampling) {
     const VkExtent2D coded_extent = {256, 256};
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsDecode(), [&](const VideoConfig& config) {
-        return config.PictureFormatProps()->format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM &&
+        return (config.PictureFormatProps()->format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM ||
+                config.PictureFormatProps()->format == VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM) &&
                config.Caps()->maxCodedExtent.width >= max_coded_extent.width &&
                config.Caps()->maxCodedExtent.height >= max_coded_extent.height;
     }));
     if (!config) {
-        GTEST_SKIP() << "Test requires decode with NV12 decode picture format support";
+        GTEST_SKIP() << "Test requires decode with 4:2:0 decode picture format support";
     }
 
     config.UpdateMaxCodedExtent(config.Caps()->maxCodedExtent);
