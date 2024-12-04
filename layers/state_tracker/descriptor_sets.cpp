@@ -288,7 +288,11 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
 // Construct DescriptorSetLayout instance from given create info
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
 vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)
-    : flags_(p_create_info->flags), binding_count_(0), descriptor_count_(0), dynamic_descriptor_count_(0) {
+    : flags_(p_create_info->flags),
+      binding_count_(0),
+      descriptor_count_(0),
+      non_inline_descriptor_count_(0),
+      dynamic_descriptor_count_(0) {
     const auto *flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
     binding_type_stats_ = {0, 0};
@@ -334,6 +338,9 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
         if (binding_info.descriptorCount > 0) {
             non_empty_bindings_.insert(binding_num);
         }
+
+        non_inline_descriptor_count_ +=
+            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) ? 1 : binding_info.descriptorCount;
 
         if (IsDynamicDescriptor(binding_info.descriptorType)) {
             dynamic_descriptor_count_ += binding_info.descriptorCount;
@@ -730,6 +737,16 @@ void vvl::DescriptorSet::UpdateDrawStates(ValidationStateTracker *device_data, v
                 break;
         }
     }
+}
+
+// This is used to decide if we should validate the Descirptors on the CPU or GPU-AV
+bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const {
+    // Some applications (notably Doom Eternal) might have large non-bindless descriptors attached (basically doing Descriptor
+    // Indexing without the extension). Trying to loop through these on the CPU will bring FPS down by over 50% so we make use of
+    // the post processing to detect which descriptors were actually accessed
+    static constexpr uint32_t max_descriptor_on_cpu = 1024;
+    return GetNonInlineDescriptorCount() > max_descriptor_on_cpu || IsBindless(binding.binding_flags) ||
+           is_runtime_descriptor_array;
 }
 
 // Helper template to change shared pointer members of a Descriptor, while

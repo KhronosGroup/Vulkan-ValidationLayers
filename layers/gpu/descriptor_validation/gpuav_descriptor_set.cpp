@@ -61,7 +61,6 @@ void DescriptorSet::BuildBindingLayouts() {
             start += binding->count;
         }
     }
-    total_descriptor_count_ = start;
 }
 
 static glsl::DescriptorState GetInData(const vvl::BufferDescriptor &desc) {
@@ -200,13 +199,13 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
 
     last_used_version_ = current_version;
 
-    if (total_descriptor_count_ == 0) {
+    if (GetNonInlineDescriptorCount() == 0) {
         // no descriptors case, return a dummy state object
         return input_buffer_.Address();
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_info.size = total_descriptor_count_ * sizeof(glsl::DescriptorState);
+    buffer_info.size = GetNonInlineDescriptorCount() * sizeof(glsl::DescriptorState);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
@@ -265,13 +264,13 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
         return post_process_buffer_.Address();
     }
 
-    if (total_descriptor_count_ == 0) {
+    if (GetNonInlineDescriptorCount() == 0) {
         // no descriptors case, return a dummy state object
         return post_process_buffer_.Address();
     }
 
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = total_descriptor_count_ * sizeof(glsl::PostProcessDescriptorIndexSlot);
+    buffer_info.size = GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
