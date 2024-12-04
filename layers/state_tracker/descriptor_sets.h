@@ -166,6 +166,7 @@ class DescriptorSetLayoutDef {
     size_t hash() const;
 
     uint32_t GetTotalDescriptorCount() const { return descriptor_count_; };
+    uint32_t GetNonInlineDescriptorCount() const { return non_inline_descriptor_count_; };
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return flags_; }
     // For a given binding, return the number of descriptors in that binding and all successive bindings
@@ -238,7 +239,11 @@ class DescriptorSetLayoutDef {
     std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
 
     uint32_t binding_count_;     // # of bindings in this layout
-    uint32_t descriptor_count_;  // total # descriptors in this layout
+    // total # descriptors in this layout (used to check if two layouts are the same or not)
+    uint32_t descriptor_count_;
+    // only counts INLINE_UNIFORM_BLOCK descriptors as one.
+    // When using Inline Uniform Block, each descriptor is the number of bytes, which can skew descriptor_count_
+    uint32_t non_inline_descriptor_count_;
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
 };
@@ -301,6 +306,7 @@ class DescriptorSetLayout : public StateObject {
     const DescriptorSetLayoutDef *GetLayoutDef() const { return layout_id_.get(); }
     DescriptorSetLayoutId GetLayoutId() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
+    uint32_t GetNonInlineDescriptorCount() const { return layout_id_->GetNonInlineDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return layout_id_->GetCreateFlags(); }
@@ -807,6 +813,7 @@ class DescriptorSet : public StateObject {
 
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return layout_->GetTotalDescriptorCount(); };
+    uint32_t GetNonInlineDescriptorCount() const { return layout_->GetNonInlineDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_->GetBindingCount(); };
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
@@ -983,11 +990,7 @@ class DescriptorSet : public StateObject {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
-    inline bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const {
-        // core validation case: We check if all parts of the descriptor are statically known, from here spirv-val should have
-        // caught any OOB values.
-        return IsBindless(binding.binding_flags) || is_runtime_descriptor_array;
-    }
+    bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const;
 
   protected:
     union AnyBinding {
