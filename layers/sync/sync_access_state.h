@@ -19,7 +19,8 @@
 #include "sync/sync_common.h"
 
 class ResourceAccessState;
-class ResourceAccessWriteState;
+class WriteState;
+struct ReadState;
 struct ResourceFirstAccess;
 
 // NOTE: the attachement read flag is put *only* in the access scope and not in the exect scope, since the ordering
@@ -78,10 +79,11 @@ class HazardResult {
                     SyncAccessIndex prior_access_index, ResourceUsageTagEx tag_ex);
     };
 
-    void Set(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
-             const ResourceAccessWriteState &prior_write);
-    void Set(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info, SyncHazard hazard,
-             SyncAccessIndex prior_read_access_index, ResourceUsageTagEx tag);
+    static HazardResult HazardVsPriorWrite(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info,
+                                           SyncHazard hazard, const WriteState &prior_write);
+    static HazardResult HazardVsPriorRead(const ResourceAccessState *access_state, const SyncAccessInfo &usage_info,
+                                          SyncHazard hazard, const ReadState &prior_read);
+
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
 
     bool IsHazard() const { return state_.has_value() && NONE != state_->hazard; }
@@ -202,9 +204,80 @@ struct OrderingBarrier {
 
 using ResourceUsageTagSet = CachedInsertSet<ResourceUsageTag, 4>;
 
-class ResourceAccessWriteState {
+// Mutliple read operations can be simlutaneously (and independently) synchronized,
+// given the only the second execution scope creates a dependency chain, we have to track each,
+// but only up to one per pipeline stage (as another read from the *same* stage become more recent,
+// and applicable one for hazard detection
+struct ReadState {
+    VkPipelineStageFlags2 stage;        // The stage of this read
+    SyncAccessIndex access_index;       // TODO: Revisit whether this needs to support multiple reads per stage
+    VkPipelineStageFlags2 barriers;     // all applicable barriered stages
+    VkPipelineStageFlags2 sync_stages;  // reads known to have happened after this
+    ResourceUsageTag tag;
+    uint32_t handle_index;
+    QueueId queue;
+    VkPipelineStageFlags2 pending_dep_chain;  // Should be zero except during barrier application
+                                              // Excluded from comparison
+    ReadState() = default;
+    ReadState(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
+    void Set(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, ResourceUsageTagEx tag_ex);
+
+    ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
+    bool operator==(const ReadState &rhs) const {
+        return (stage == rhs.stage) && (access_index == rhs.access_index) && (barriers == rhs.barriers) &&
+               (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
+               (pending_dep_chain == rhs.pending_dep_chain);
+    }
+    void Normalize() { pending_dep_chain = VK_PIPELINE_STAGE_2_NONE; }
+    bool IsReadBarrierHazard(VkPipelineStageFlags2 src_exec_scope) const {
+        // If the read stage is not in the src sync scope
+        // *AND* not execution chained with an existing sync barrier (that's the or)
+        // then the barrier access is unsafe (R/W after R)
+        return (src_exec_scope & (stage | barriers)) == 0;
+    }
+    bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2 src_exec_scope,
+                             const SyncAccessFlags &src_access_scope) const {
+        // If the read stage is not in the src sync scope
+        // *AND* not execution chained with an existing sync barrier (that's the or)
+        // then the barrier access is unsafe (R/W after R)
+        VkPipelineStageFlags2 queue_ordered_stage = (queue == barrier_queue) ? stage : VK_PIPELINE_STAGE_2_NONE;
+
+        // Current implementation relies on TOP_OF_PIPE constant due to the fact that it's non-zero value
+        // and AND-ing with it can create execution dependency when it's necessary. When NONE constant is
+        // used, which equals to zero, then AND-ing with it always results in 0 which means "no barrier",
+        // so it's not possible to use NONE internally in equivalent way to TOP_OF_PIPE.
+        // Replace NONE with TOP_OF_PIPE in the scenarios where they are equivalent.
+        //
+        // If we update implementation to get rid of deprecated TOP_OF_PIPE/BOTTOM_OF_PIPE then we must
+        // invert the condition below and exchange TOP_OF_PIPE and NONE roles, so deprecated stages would
+        // not propagate into implementation internals.
+        if (src_exec_scope == VK_PIPELINE_STAGE_2_NONE && src_access_scope.none()) {
+            src_exec_scope = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+        }
+
+        return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
+    }
+    bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
+    bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
+    bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, QueueId scope_queue, ResourceUsageTag scope_tag) const {
+        // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
+        // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
+        // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
+        // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
+        // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
+        // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
+        return (tag < scope_tag) && ReadInQueueScopeOrChain(scope_queue, exec_scope);
+    }
+    void ApplyReadBarrier(VkPipelineStageFlags2 dst_scope) { pending_dep_chain |= dst_scope; }
+    VkPipelineStageFlags2 ApplyPendingBarriers();
+};
+
+class WriteState {
   public:
-    bool operator==(const ResourceAccessWriteState &rhs) const {
+    WriteState() = default;
+    WriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
+
+    bool operator==(const WriteState &rhs) const {
         return (access_ == rhs.access_) && (barriers_ == rhs.barriers_) && (tag_ == rhs.tag_) && (queue_ == rhs.queue_) &&
                (dependency_chain_ == rhs.dependency_chain_);
     }
@@ -216,9 +289,6 @@ class ResourceAccessWriteState {
 
     bool WriteInEventScope(VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope, QueueId scope_queue,
                            ResourceUsageTag scope_tag) const;
-
-    ResourceAccessWriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
-    ResourceAccessWriteState() = default;
 
     SyncAccessIndex Index() const { return access_->access_index; }
     bool IsIndex(SyncAccessIndex access_index) const { return Index() == access_index; }
@@ -235,7 +305,7 @@ class ResourceAccessWriteState {
 
     void SetQueueId(QueueId id);
     void Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex);
-    void MergeBarriers(const ResourceAccessWriteState &other);
+    void MergeBarriers(const WriteState &other);
     void OffsetTag(ResourceUsageTag offset) { tag_ += offset; }
 
     bool HasPendingState() const { return pending_barriers_.any() || (0 != pending_dep_chain_); }
@@ -267,77 +337,6 @@ class ResourceAccessState : public SyncStageAccess {
     using FirstAccesses = small_vector<ResourceFirstAccess, 3>;
 
   public:
-    // Mutliple read operations can be simlutaneously (and independently) synchronized,
-    // given the only the second execution scope creates a dependency chain, we have to track each,
-    // but only up to one per pipeline stage (as another read from the *same* stage become more recent,
-    // and applicable one for hazard detection
-    struct ReadState {
-        VkPipelineStageFlags2 stage;        // The stage of this read
-        SyncAccessIndex access_index;       // TODO: Revisit whether this needs to support multiple reads per stage
-        VkPipelineStageFlags2 barriers;     // all applicable barriered stages
-        VkPipelineStageFlags2 sync_stages;  // reads known to have happened after this
-        ResourceUsageTag tag;
-        uint32_t handle_index;
-        QueueId queue;
-        VkPipelineStageFlags2 pending_dep_chain;  // Should be zero except during barrier application
-                                                  // Excluded from comparison
-        ReadState() = default;
-        explicit ReadState(VkPipelineStageFlags2 stage_, SyncAccessIndex access_index, VkPipelineStageFlags2 barriers_,
-                           ResourceUsageTagEx tag_ex);
-        ResourceUsageTagEx TagEx() const { return {tag, handle_index}; }
-        bool operator==(const ReadState &rhs) const {
-            return (stage == rhs.stage) && (access_index == rhs.access_index) && (barriers == rhs.barriers) &&
-                   (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
-                   (pending_dep_chain == rhs.pending_dep_chain);
-        }
-        void Normalize() { pending_dep_chain = VK_PIPELINE_STAGE_2_NONE; }
-        bool IsReadBarrierHazard(VkPipelineStageFlags2 src_exec_scope) const {
-            // If the read stage is not in the src sync scope
-            // *AND* not execution chained with an existing sync barrier (that's the or)
-            // then the barrier access is unsafe (R/W after R)
-            return (src_exec_scope & (stage | barriers)) == 0;
-        }
-        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2 src_exec_scope,
-                                 const SyncAccessFlags &src_access_scope) const {
-            // If the read stage is not in the src sync scope
-            // *AND* not execution chained with an existing sync barrier (that's the or)
-            // then the barrier access is unsafe (R/W after R)
-            VkPipelineStageFlags2 queue_ordered_stage = (queue == barrier_queue) ? stage : VK_PIPELINE_STAGE_2_NONE;
-
-            // Current implementation relies on TOP_OF_PIPE constant due to the fact that it's non-zero value
-            // and AND-ing with it can create execution dependency when it's necessary. When NONE constant is
-            // used, which equals to zero, then AND-ing with it always results in 0 which means "no barrier",
-            // so it's not possible to use NONE internally in equivalent way to TOP_OF_PIPE.
-            // Replace NONE with TOP_OF_PIPE in the scenarios where they are equivalent.
-            //
-            // If we update implementation to get rid of deprecated TOP_OF_PIPE/BOTTOM_OF_PIPE then we must
-            // invert the condition below and exchange TOP_OF_PIPE and NONE roles, so deprecated stages would
-            // not propagate into implementation internals.
-            if (src_exec_scope == VK_PIPELINE_STAGE_2_NONE && src_access_scope.none()) {
-                src_exec_scope = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-            }
-
-            return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
-        }
-
-        bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
-        void Set(VkPipelineStageFlags2 stage_, SyncAccessIndex access_index, VkPipelineStageFlags2 barriers_,
-                 ResourceUsageTagEx tag_ex);
-        bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
-        bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
-        bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, QueueId scope_queue, ResourceUsageTag scope_tag) const {
-            // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
-            // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
-            // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
-            // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
-            // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
-            // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
-            return (tag < scope_tag) && ReadInQueueScopeOrChain(scope_queue, exec_scope);
-        }
-        void ApplyReadBarrier(VkPipelineStageFlags2 dst_scope) { pending_dep_chain |= dst_scope; }
-        VkPipelineStageFlags2 ApplyPendingBarriers();
-    };
-
     HazardResult DetectHazard(const SyncAccessInfo &usage_info) const;
     HazardResult DetectHazard(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, QueueId queue_id) const;
     HazardResult DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, QueueId queue_id) const;
@@ -499,7 +498,7 @@ class ResourceAccessState : public SyncStageAccess {
     // SyncStageAccessFlags write_barriers;              // union of applicable barrier masks since last write
     // VkPipelineStageFlags2 write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they
     // chain. ResourceUsageTag write_tag; QueueId write_queue;
-    std::optional<ResourceAccessWriteState> last_write;  // only the most recent write
+    std::optional<WriteState> last_write;  // only the most recent write
 
     VkPipelineStageFlags2 last_read_stages;
     VkPipelineStageFlags2 read_execution_barriers;

@@ -533,16 +533,16 @@ void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAcc
 // hazards will be detected
 HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                                  const AccessContext &access_context) const {
-    HazardResult hazard;
     for (const auto &recorded_access : access_state_map_) {
         // Cull any entries not in the current tag range
         if (!recorded_access.second.FirstAccessInTagRange(tag_range)) continue;
         HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range);
-        hazard = access_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
-        if (hazard.IsHazard()) break;
+        HazardResult hazard = access_context.DetectHazardRange(detector, recorded_access.first, DetectOptions::kDetectAll);
+        if (hazard.IsHazard()) {
+            return hazard;
+        }
     }
-
-    return hazard;
+    return {};
 }
 
 // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest

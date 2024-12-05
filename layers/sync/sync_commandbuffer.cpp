@@ -161,8 +161,6 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     // Load operations do not happen when resuming
     if (info.info.flags & VK_RENDERING_RESUMING_BIT) return skip;
 
-    HazardResult hazard;
-
     // Need to hazard detect load operations vs. the attachment views
     const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
     for (uint32_t i = 0; i < attachment_count; i++) {
@@ -170,7 +168,8 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
         const SyncAccessIndex load_index = attachment.GetLoadUsage();
         if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
 
-        hazard = GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering());
+        const HazardResult hazard =
+            GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering());
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(error_obj.location, i);
