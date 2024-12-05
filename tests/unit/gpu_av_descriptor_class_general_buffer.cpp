@@ -16,7 +16,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../layers/gpu/shaders/gpuav_shaders_constants.h"
 
-class NegativeGpuAVOOB : public GpuAVTest {
+class NegativeGpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
   public:
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                               VkDescriptorType descriptor_type, const char *fragment_shader,
@@ -24,7 +24,7 @@ class NegativeGpuAVOOB : public GpuAVTest {
     void ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size);
 };
 
-TEST_F(NegativeGpuAVOOB, RobustBuffer) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
     TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
@@ -98,7 +98,7 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, Basic) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Basic) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -150,9 +150,11 @@ TEST_F(NegativeGpuAVOOB, Basic) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
-                                            VkDescriptorType descriptor_type, const char *fragment_shader,
-                                            std::vector<const char *> expected_errors, bool shader_objects) {
+void NegativeGpuAVDescriptorClassGeneralBuffer::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset,
+                                                                     VkDeviceSize binding_range, VkDescriptorType descriptor_type,
+                                                                     const char *fragment_shader,
+                                                                     std::vector<const char *> expected_errors,
+                                                                     bool shader_objects) {
     if (shader_objects) {
         AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
@@ -250,7 +252,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     }
 }
 
-TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
     char const *fsSource = R"glsl(
         #version 450
@@ -268,7 +270,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors);
 }
 
-TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall2) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmall2) {
     TEST_DESCRIPTION("Buffer is correct size, but only updating half of it.");
     char const *fsSource = R"glsl(
         #version 450
@@ -289,7 +291,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmall2) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors);
 }
 
-TEST_F(NegativeGpuAVOOB, StorageBufferTooSmall) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
 
     char const *fsSource = R"glsl(
@@ -309,7 +311,7 @@ TEST_F(NegativeGpuAVOOB, StorageBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource, expected_errors);
 }
 
-TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallArray) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmallArray) {
     TEST_DESCRIPTION(
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses array in block "
         "definition.");
@@ -334,7 +336,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallArray) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors);
 }
 
-TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallNestedStruct) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, UniformBufferTooSmallNestedStruct) {
     TEST_DESCRIPTION(
         "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
         "definition.");
@@ -360,7 +362,7 @@ TEST_F(NegativeGpuAVOOB, UniformBufferTooSmallNestedStruct) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expected_errors);
 }
 
-TEST_F(NegativeGpuAVOOB, ObjectUniformBufferTooSmall) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ObjectUniformBufferTooSmall) {
     TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
     char const *fsSource = R"glsl(
         #version 450
@@ -379,7 +381,7 @@ TEST_F(NegativeGpuAVOOB, ObjectUniformBufferTooSmall) {
                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource, expecetd_errors, true);
 }
 
-TEST_F(NegativeGpuAVOOB, GPLWrite) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWrite) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
 
@@ -428,7 +430,7 @@ TEST_F(NegativeGpuAVOOB, GPLWrite) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, GPLRead) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLRead) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
 
@@ -474,155 +476,7 @@ TEST_F(NegativeGpuAVOOB, GPLRead) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, GPLTexelFetch) {
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = uniform_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView uniform_buffer_view(*m_device, bvci);
-
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferView(0, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.UpdateDescriptorSets();
-
-    static const char vertshader[] = R"glsl(
-        #version 450
-        layout(set = 0, binding = 0) uniform samplerBuffer u_buffer;  // texel_buffer[4]
-        layout(set = 0, binding = 1) buffer StorageBuffer { vec4 data; };
-        void main() {
-            data = texelFetch(u_buffer, 4);
-        }
-    )glsl";
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vertshader);
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, GPLImageLoad) {
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = storage_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView storage_buffer_view(*m_device, bvci);
-
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferView(0, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.UpdateDescriptorSets();
-
-    static const char vertshader[] = R"glsl(
-        #version 450
-        layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer; // texel_buffer[4]
-        layout(set = 0, binding = 1) buffer StorageBuffer { vec4 data; };
-        void main() {
-            data = imageLoad(s_buffer, 4);
-        }
-    )glsl";
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vertshader);
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, GPLImageStore) {
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = storage_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView storage_buffer_view(*m_device, bvci);
-
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferView(0, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.UpdateDescriptorSets();
-
-    static const char vertshader[] = R"glsl(
-        #version 450
-        layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer; // texel_buffer[4]
-        layout(set = 0, binding = 1) buffer StorageBuffer { vec4 data; };
-        void main() {
-            imageStore(s_buffer, 4, data);
-        }
-    )glsl";
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vertshader);
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadWriteIndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
 
@@ -708,170 +562,7 @@ TEST_F(NegativeGpuAVOOB, GPLReadWriteIndependentSets) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, GPLTexelFetchIndependentSets) {
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = uniform_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView uniform_buffer_view(*m_device, bvci);
-
-    OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
-    OneOffDescriptorSet common_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    OneOffDescriptorSet fragment_set(m_device,
-                                     {{1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
-
-    const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, &common_set.layout_, nullptr}, {},
-                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const vkt::PipelineLayout pipeline_layout_fs(*m_device, {nullptr, &common_set.layout_, &fragment_set.layout_}, {},
-                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &common_set.layout_, &fragment_set.layout_}, {},
-                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    vertex_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    vertex_set.UpdateDescriptorSets();
-    common_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, VK_WHOLE_SIZE);
-    common_set.UpdateDescriptorSets();
-    fragment_set.WriteDescriptorBufferView(1, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-    fragment_set.UpdateDescriptorSets();
-
-    const std::array<VkDescriptorSet, 3> desc_sets = {vertex_set.set_, common_set.set_, fragment_set.set_};
-
-    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
-    *data = 8;
-    offset_buffer.Memory().Unmap();
-
-    static const char vert_shader[] = R"glsl(
-        #version 450
-        layout(set = 1, binding = 0) uniform ufoo { uint index[]; };        // index[1]
-        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; }; // data[4]
-        const vec2 vertices[3] = vec2[](
-            vec2(-1.0, -1.0),
-            vec2(1.0, -1.0),
-            vec2(0.0, 1.0)
-        );
-        void main() {
-            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
-
-    static const char frag_shader[] = R"glsl(
-        #version 450
-        layout(set = 1, binding = 0) uniform ufoo { uint index[]; };      // index[1]
-        layout(set = 2, binding = 1) uniform samplerBuffer u_buffer;      // texel_buffer[4]
-        layout(set = 2, binding = 2, r32f) uniform imageBuffer s_buffer;  // texel_buffer[4]
-        layout(location = 0) out vec4 c_out;
-        void main() {
-            c_out = texelFetch(u_buffer, 4);
-        }
-    )glsl";
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vert_shader, frag_shader);
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, GPLImageLoadStoreIndependentSets) {
-    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = storage_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView storage_buffer_view(*m_device, bvci);
-
-    OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
-    OneOffDescriptorSet common_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    OneOffDescriptorSet fragment_set(m_device,
-                                     {{2, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
-
-    const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, &common_set.layout_, nullptr}, {},
-                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const vkt::PipelineLayout pipeline_layout_fs(*m_device, {nullptr, &common_set.layout_, &fragment_set.layout_}, {},
-                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &common_set.layout_, &fragment_set.layout_}, {},
-                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    vertex_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    vertex_set.UpdateDescriptorSets();
-    common_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, VK_WHOLE_SIZE);
-    common_set.UpdateDescriptorSets();
-    fragment_set.WriteDescriptorBufferView(2, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    fragment_set.UpdateDescriptorSets();
-
-    const std::array<VkDescriptorSet, 3> desc_sets = {vertex_set.set_, common_set.set_, fragment_set.set_};
-
-    static const char vert_shader[] = R"glsl(
-        #version 450
-        layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
-        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;  // data[4]
-        const vec2 vertices[3] = vec2[](
-            vec2(-1.0, -1.0),
-            vec2(1.0, -1.0),
-            vec2(0.0, 1.0)
-        );
-        void main() {
-            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
-        }
-    )glsl";
-
-    static const char frag_shader[] = R"glsl(
-        #version 450
-        layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
-        layout(set = 2, binding = 2, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
-        layout(location = 0) out vec4 c_out;
-        void main() {
-            vec4 x = imageLoad(s_buffer, 5);
-            imageStore(s_buffer, 5, x);
-            c_out = x;
-        }
-    )glsl";
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vert_shader, frag_shader);
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    // one for Load and one for Store
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 2);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, GPLNonInlined) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     TEST_DESCRIPTION("Make sure GPL works when shader modules are not inlined at pipeline creation time");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
@@ -965,7 +656,7 @@ TEST_F(NegativeGpuAVOOB, GPLNonInlined) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, StorageBuffer) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBuffer) {
     TEST_DESCRIPTION("Make sure OOB is still checked when result is from a BufferDeviceAddress");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1034,7 +725,8 @@ TEST_F(NegativeGpuAVOOB, StorageBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeGpuAVOOB::ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size) {
+void NegativeGpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *expected_error, const char *shader,
+                                                                         VkDeviceSize buffer_size) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1064,7 +756,7 @@ void NegativeGpuAVOOB::ComputeStorageBufferTest(const char *expected_error, cons
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, Vector) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Vector) {
     TEST_DESCRIPTION("index into a vector OOB");
 
     char const *cs_source = R"glsl(
@@ -1083,7 +775,7 @@ TEST_F(NegativeGpuAVOOB, Vector) {
     ComputeStorageBufferTest("VUID-vkCmdDispatch-storageBuffers-06936", cs_source, 20);
 }
 
-TEST_F(NegativeGpuAVOOB, Matrix) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Matrix) {
     TEST_DESCRIPTION("index into a matrix OOB");
 
     char const *cs_source = R"glsl(
@@ -1102,216 +794,7 @@ TEST_F(NegativeGpuAVOOB, Matrix) {
     ComputeStorageBufferTest("VUID-vkCmdDispatch-storageBuffers-06936", cs_source, 30);
 }
 
-TEST_F(NegativeGpuAVOOB, TexelFetch) {
-    TEST_DESCRIPTION("index into a texelFetch OOB");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-
-        layout(set = 0, binding = 0, std430) buffer foo {
-            vec4 a;
-        } out_buffer;
-
-        layout(set = 0, binding = 1) uniform samplerBuffer u_buffer; // texel_buffer[4]
-
-        void main() {
-            out_buffer.a = texelFetch(u_buffer, 4);
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    // 16 bytes only holds 4 indexes
-    vkt::Buffer uniform_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = uniform_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView uniform_buffer_view(*m_device, bvci);
-
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, out_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, TexelFetchArray) {
-    TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-
-        layout(set = 0, binding = 0, std430) buffer foo {
-            vec4 a;
-        } out_buffer;
-
-        layout(set = 0, binding = 1) uniform samplerBuffer u_buffer[2];
-
-        void main() {
-            out_buffer.a = texelFetch(u_buffer[1], 4);
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    vkt::Buffer uniform_texel_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = uniform_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView full_buffer_view(*m_device, bvci);
-    bvci.range = 16;  // only fills 4, but are accessing index[4]
-    vkt::BufferView partial_buffer_view(*m_device, bvci);
-
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, out_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, full_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 0);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, partial_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, ImageLoad) {
-    TEST_DESCRIPTION("index into a imageLoad OOB");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-        layout(set = 0, binding = 0, std430) buffer foo {
-            vec4 a;
-        } out_buffer;
-
-        layout(set = 0, binding = 1, r32f) uniform imageBuffer s_buffer;  // texel_buffer[4]
-
-        void main() {
-            out_buffer.a = imageLoad(s_buffer, 4);
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    // 16 bytes only holds 4 indexes
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = storage_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView storage_buffer_view(*m_device, bvci);
-
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, out_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, ImageStore) {
-    TEST_DESCRIPTION("index into a imageStore OOB");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-        layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer;  // texel_buffer[4]
-
-        void main() {
-            vec4 x = imageLoad(s_buffer, 4); // invalid load
-            imageStore(s_buffer, 5, x); // invalid store
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    // 16 bytes only holds 4 indexes
-    vkt::Buffer storage_texel_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = storage_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView storage_buffer_view(*m_device, bvci);
-
-    pipe.descriptor_set_->WriteDescriptorBufferView(0, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 2);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, Geometry) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Geometry) {
     TEST_DESCRIPTION("Basic Geometry shader test");
     AddRequiredFeature(vkt::Feature::geometryShader);
 
@@ -1367,7 +850,7 @@ TEST_F(NegativeGpuAVOOB, Geometry) {
 }
 
 // TODO - Not being triggered, shader is instrumented, but doesn't seem tessellation shader is executed
-TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationControl) {
     TEST_DESCRIPTION("Basic TessellationControl shader test");
     AddRequiredFeature(vkt::Feature::tessellationShader);
 
@@ -1426,7 +909,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationControl) {
 }
 
 // TODO - Not being triggered, shader is instrumented, but doesn't seem tessellation shader is executed
-TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationEvaluation) {
     TEST_DESCRIPTION("Basic TessellationEvaluation shader test");
     AddRequiredFeature(vkt::Feature::tessellationShader);
 
@@ -1482,7 +965,7 @@ TEST_F(NegativeGpuAVOOB, DISABLED_TessellationEvaluation) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, VertexFragmentMultiEntrypoint) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, VertexFragmentMultiEntrypoint) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -1623,7 +1106,7 @@ TEST_F(NegativeGpuAVOOB, VertexFragmentMultiEntrypoint) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, PartialBoundDescriptorCopy) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
     TEST_DESCRIPTION("Copy the partial bound buffer the descriptor that is used");
 
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1676,121 +1159,7 @@ TEST_F(NegativeGpuAVOOB, PartialBoundDescriptorCopy) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, ConstantArrayOOBBuffer) {
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    vkt::Buffer offset_buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::Buffer write_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, VK_WHOLE_SIZE);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-    descriptor_set.UpdateDescriptorSets();
-
-    const char vs_source[] = R"glsl(
-        #version 450
-        #extension GL_EXT_nonuniform_qualifier : enable
-        layout(set = 0, binding = 0) uniform ufoo { uint index; };
-        layout(set = 0, binding = 1) buffer StorageBuffer { uint data; } Data[2];
-        void main() {
-            Data[index].data = 0xdeadca71;
-        }
-    )glsl";
-
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_[0] = vs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.CreateGraphicsPipeline();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
-    *data = 8;
-    offset_buffer.Memory().Unmap();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-// This will hang a GPU
-// Texel Buffers might not properly under robustBufferAccess like we think, need to investigate
-TEST_F(NegativeGpuAVOOB, DISABLED_ConstantArrayOOBTexture) {
-    TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-
-        layout(set = 0, binding = 0, std430) buffer foo {
-            int index;
-            vec4 a;
-        };
-
-        layout(set = 0, binding = 1) uniform samplerBuffer u_buffer[2];
-
-        void main() {
-            a = texelFetch(u_buffer[index], 0);
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    vkt::Buffer uniform_texel_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = uniform_texel_buffer.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, bvci);
-
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE,
-                                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 0);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    uint32_t *data = (uint32_t *)storage_buffer.Memory().Map();
-    *data = 8;
-    storage_buffer.Memory().Unmap();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-uniformBuffers-06935");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeGpuAVOOB, DeviceGeneratedCommandsCompute) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1891,7 +1260,7 @@ TEST_F(NegativeGpuAVOOB, DeviceGeneratedCommandsCompute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVOOB, SpecConstant) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, SpecConstant) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -1931,6 +1300,58 @@ TEST_F(NegativeGpuAVOOB, SpecConstant) {
                               &pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
+    TEST_DESCRIPTION("Only bound part of a SSBO (with update after bind), and use the part that is not valid");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer foo {
+            vec4 a; // offset 0
+            vec4 b; // offset 16
+            vec4 c; // offset 32 - not bound, can't use
+            vec4 d; // offset 48 - not bound, can't use
+        };
+        void main() {
+            a = c;
+        }
+    )glsl";
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1;
+    flags_create_info.pBindingFlags = &binding_flags;
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}},
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
     m_default_queue->Submit(m_command_buffer);
