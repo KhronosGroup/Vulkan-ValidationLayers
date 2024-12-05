@@ -86,7 +86,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // TODO - Should have loop to walk Load/Store to the Pointer,
     // this case will not cover things such as OpCopyObject or double OpAccessChains
     const Instruction* pointer_inst = function.FindInstruction(inst.Operand(0));
-    if (!pointer_inst || pointer_inst->Opcode() != spv::OpAccessChain) {
+    if (!pointer_inst || !pointer_inst->IsAccessChain()) {
         return false;
     }
 
