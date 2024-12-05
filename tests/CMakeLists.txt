@@ -107,11 +107,16 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_buffer_device_address_positive.cpp
     unit/gpu_av_debug_printf.cpp
     unit/gpu_av_descriptor_buffer_positive.cpp
+    unit/gpu_av_descriptor_class_general_buffer.cpp
+    unit/gpu_av_descriptor_class_general_buffer_positive.cpp
+    unit/gpu_av_descriptor_class_texel_buffer.cpp
+    unit/gpu_av_descriptor_class_texel_buffer_positive.cpp
     unit/gpu_av_descriptor_indexing.cpp
     unit/gpu_av_descriptor_indexing_positive.cpp
+    unit/gpu_av_descriptor_post_process.cpp
+    unit/gpu_av_descriptor_post_process_positive.cpp
+    unit/gpu_av_image_layout.cpp
     unit/gpu_av_indirect_buffer.cpp
-    unit/gpu_av_oob.cpp
-    unit/gpu_av_oob_positive.cpp
     unit/gpu_av_positive.cpp
     unit/gpu_av_shader_object_positive.cpp
     unit/gpu_av_shader_debug_info.cpp
