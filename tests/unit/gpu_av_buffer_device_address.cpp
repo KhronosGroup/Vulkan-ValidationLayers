@@ -1427,3 +1427,75 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, NonStructPointer) {
+    TEST_DESCRIPTION("Slang allows BDA pointers to be with POD instead of a struct");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    // Slang code
+    // uniform uint* data_ptr; // only 256 bytes
+    // [numthreads(1,1,1)]
+    // void computeMain() {
+    //    data_ptr[64] = 999;
+    // }
+    char const *shader_source = R"(
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Shader
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %computeMain "main" %globalParams
+               OpExecutionMode %computeMain LocalSize 1 1 1
+               OpDecorate %_ptr_PhysicalStorageBuffer_uint ArrayStride 4
+               OpDecorate %GlobalParams_std140 Block
+               OpMemberDecorate %GlobalParams_std140 0 Offset 0
+               OpDecorate %globalParams Binding 0
+               OpDecorate %globalParams DescriptorSet 0
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %int_64 = OpConstant %int 64
+   %uint_999 = OpConstant %uint 999
+         %12 = OpTypeFunction %void
+%_ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %uint
+%GlobalParams_std140 = OpTypeStruct %_ptr_PhysicalStorageBuffer_uint
+%_ptr_Uniform_GlobalParams_std140 = OpTypePointer Uniform %GlobalParams_std140
+%_ptr_Uniform__ptr_PhysicalStorageBuffer_uint = OpTypePointer Uniform %_ptr_PhysicalStorageBuffer_uint
+%globalParams = OpVariable %_ptr_Uniform_GlobalParams_std140 Uniform
+%computeMain = OpFunction %void None %12
+         %13 = OpLabel
+         %35 = OpAccessChain %_ptr_Uniform__ptr_PhysicalStorageBuffer_uint %globalParams %int_0
+         %36 = OpLoad %_ptr_PhysicalStorageBuffer_uint %35
+         %37 = OpPtrAccessChain %_ptr_PhysicalStorageBuffer_uint %36 %int_64
+               OpStore %37 %uint_999 Aligned 4
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer block_buffer(*m_device, 256, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = block_buffer.Address();
+    in_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

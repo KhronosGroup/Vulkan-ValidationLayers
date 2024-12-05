@@ -126,6 +126,17 @@ void Instruction::ReplaceOperandId(uint32_t old_word, uint32_t new_word) {
     }
 }
 
+bool Instruction::IsArray() const {
+    const uint32_t opcode = Opcode();
+    return opcode == spv::OpTypeArray || opcode == spv::OpTypeRuntimeArray;
+}
+
+bool Instruction::IsAccessChain() const {
+    const uint32_t opcode = Opcode();
+    return opcode == spv::OpAccessChain || opcode == spv::OpPtrAccessChain || opcode == spv::OpInBoundsAccessChain ||
+           opcode == spv::OpInBoundsPtrAccessChain;
+}
+
 // The main challenge with linking to functions from 2 modules is the IDs overlap.
 // TODO - Use the new generated operand to find the IDs.
 void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swap_map) {
