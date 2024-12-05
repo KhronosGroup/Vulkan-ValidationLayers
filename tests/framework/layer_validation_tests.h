@@ -315,11 +315,9 @@ class GraphicsLibraryTest : public VkLayerTest {
 
 class HostImageCopyTest : public VkLayerTest {
   public:
-    void InitHostImageCopyTest(const VkImageCreateInfo &create_info, bool use_1_4 = false);
+    void InitHostImageCopyTest();
     bool CopyLayoutSupported(const std::vector<VkImageLayout> &copy_src_layouts, const std::vector<VkImageLayout> &copy_dst_layouts,
                              VkImageLayout layout);
-    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
-    bool separate_depth_stencil = false;
     std::vector<VkImageLayout> copy_src_layouts;
     std::vector<VkImageLayout> copy_dst_layouts;
 
