@@ -48,10 +48,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const uint32_t opcode = target_instruction_->Opcode();
     const Constant& access_opcode = module_.type_manager_.GetConstantUInt32(opcode);
 
-    // VUID-StandaloneSpirv-PhysicalStorageBuffer64-04708 requires there to be an Aligned operand
-    const uint32_t alignment_word_index = opcode == spv::OpLoad ? 5 : 4;  // OpStore is at [4]
-    const uint32_t alignment_literal = target_instruction_->Word(alignment_word_index);
-    const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(alignment_literal);
+    const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(alignment_literal_);
 
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
@@ -68,6 +65,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 
 void BufferDeviceAddressPass::Reset() {
     target_instruction_ = nullptr;
+    alignment_literal_ = 0;
     type_length_ = 0;
 }
 
@@ -76,6 +74,14 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     if (opcode != spv::OpLoad && opcode != spv::OpStore) {
         return false;
     }
+
+    // We only care if there is an Aligned Memory Operands
+    // VUID-StandaloneSpirv-PhysicalStorageBuffer64-04708 requires there to be an Aligned operand
+    const uint32_t alignment_word_index = opcode == spv::OpLoad ? 5 : 4;  // OpStore is at [4]
+    if (inst.Length() < alignment_word_index) {
+        return false;
+    }
+    alignment_literal_ = inst.Word(alignment_word_index);
 
     // TODO - Should have loop to walk Load/Store to the Pointer,
     // this case will not cover things such as OpCopyObject or double OpAccessChains
