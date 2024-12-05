@@ -37,6 +37,7 @@ class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 
+    uint32_t alignment_literal_ = 0;
     uint32_t type_length_ = 0;
 };
 
