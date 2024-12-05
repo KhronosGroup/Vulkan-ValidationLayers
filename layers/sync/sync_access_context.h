@@ -686,11 +686,13 @@ HazardResult AccessContext::DetectPreviousHazard(Detector &detector, const Resou
     ResourceAccessRangeMap descent_map;
     ResolvePreviousAccess(range, &descent_map, nullptr);
 
-    HazardResult hazard;
-    for (auto prev = descent_map.begin(); prev != descent_map.end() && !hazard.IsHazard(); ++prev) {
-        hazard = detector.Detect(prev);
+    for (auto prev = descent_map.begin(); prev != descent_map.end(); ++prev) {
+        HazardResult hazard = detector.Detect(prev);
+        if (hazard.IsHazard()) {
+            return hazard;
+        }
     }
-    return hazard;
+    return {};
 }
 
 template <typename Predicate>

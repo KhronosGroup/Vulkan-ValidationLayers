@@ -1220,11 +1220,10 @@ const AccessContext *ReplayState::GetRecordedAccessContext() const {
 bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const {
     bool skip = false;
     if (first_use_range.non_empty()) {
-        HazardResult hazard;
         // We're allowing for the Replay(Validate|Record) to modify the exec_context (e.g. for Renderpass operations), so
         // we need to fetch the current access context each time
-        hazard = GetRecordedAccessContext()->DetectFirstUseHazard(exec_context_.GetQueueId(), first_use_range,
-                                                                  *exec_context_.GetCurrentAccessContext());
+        const HazardResult hazard = GetRecordedAccessContext()->DetectFirstUseHazard(exec_context_.GetQueueId(), first_use_range,
+                                                                                     *exec_context_.GetCurrentAccessContext());
 
         if (hazard.IsHazard()) {
             const SyncValidator &sync_state = exec_context_.GetSyncState();

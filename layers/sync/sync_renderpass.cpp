@@ -36,8 +36,7 @@ class ValidateResolveAction {
     void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
                     const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                     SyncOrdering ordering_rule) {
-        HazardResult hazard;
-        hazard = context_.DetectHazard(view_gen, gen_type, current_usage, ordering_rule);
+        const HazardResult hazard = context_.DetectHazard(view_gen, gen_type, current_usage, ordering_rule);
         if (hazard.IsHazard()) {
             const Location loc(command_);
             const auto error = cb_context_.GetSyncState().error_messages_.RenderPassResolveError(
