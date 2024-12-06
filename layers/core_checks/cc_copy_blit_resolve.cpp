@@ -2430,39 +2430,42 @@ void CoreChecks::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuff
     }
 }
 
-bool CoreChecks::UsageHostTransferCheck(const vvl::Image &image_state, bool has_stencil, bool has_non_stencil,
-                                        const char *vuid_09111, const char *vuid_09112, const char *vuid_09113,
-                                        const Location &loc) const {
+bool CoreChecks::UsageHostTransferCheck(const vvl::Image &image_state, const VkImageAspectFlags aspect_mask, const char *vuid_09111,
+                                        const char *vuid_09112, const char *vuid_09113, const Location &subresource_loc) const {
     bool skip = false;
+    const bool has_stencil = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT);
+    const bool has_non_stencil = (aspect_mask & ~VK_IMAGE_ASPECT_STENCIL_BIT);
+
     if (has_stencil) {
         if (const auto image_stencil_struct =
                 vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(image_state.create_info.pNext)) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-                skip |= LogError(
-                    vuid_09112, image_state.Handle(), loc,
-                    "An element of pRegions has an aspectMask that includes "
-                    "VK_IMAGE_ASPECT_STENCIL_BIT "
-                    "and the image was created with separate stencil usage, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not "
-                    "included in VkImageStencilUsageCreateInfo::stencilUsage used to create image");
+                skip |= LogError(vuid_09112, image_state.Handle(), subresource_loc.dot(Field::aspectMask),
+                                 "(%s) includes VK_IMAGE_ASPECT_STENCIL_BIT and the image was created with "
+                                 "VkImageStencilUsageCreateInfo, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included in "
+                                 "VkImageStencilUsageCreateInfo::stencilUsage (%s) used to create image",
+                                 string_VkImageAspectFlags(aspect_mask).c_str(),
+                                 string_VkImageUsageFlags(image_stencil_struct->stencilUsage).c_str());
             }
         } else {
             if ((image_state.create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-                skip |= LogError(
-                    vuid_09111, image_state.Handle(), loc,
-                    "An element of pRegions has an aspectMask that includes "
-                    "VK_IMAGE_ASPECT_STENCIL_BIT and the "
-                    "image was not created with separate stencil usage, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
-                    "in VkImageCreateInfo::usage used to create image");
+                skip |= LogError(vuid_09111, image_state.Handle(), subresource_loc.dot(Field::aspectMask),
+                                 "(%s) includes VK_IMAGE_ASPECT_STENCIL_BIT and the image was not created with "
+                                 "VkImageStencilUsageCreateInfo, but VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included in "
+                                 "VkImageCreateInfo::usage (%s) used to create image",
+                                 string_VkImageAspectFlags(aspect_mask).c_str(),
+                                 string_VkImageUsageFlags(image_state.create_info.usage).c_str());
             }
         }
     }
     if (has_non_stencil) {
         if ((image_state.create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
-            skip |= LogError(
-                vuid_09113, image_state.Handle(), loc,
-                "An element of pRegions has an aspectMask that includes "
-                "aspects other than VK_IMAGE_ASPECT_STENCIL_BIT, but  VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
-                "in VkImageCreateInfo::usage used to create image");
+            skip |= LogError(vuid_09113, image_state.Handle(), subresource_loc.dot(Field::aspectMask),
+                             "(%s) includes aspects other than VK_IMAGE_ASPECT_STENCIL_BIT, but "
+                             "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT was not included "
+                             "in VkImageCreateInfo::usage (%s) used to create image",
+                             string_VkImageAspectFlags(aspect_mask).c_str(),
+                             string_VkImageUsageFlags(image_state.create_info.usage).c_str());
         }
     }
     return skip;
@@ -2530,8 +2533,12 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
         from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-07973" : "VUID-VkCopyMemoryToImageInfo-dstImage-07973");
 
     bool check_memcpy = (info_ptr->flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT);
-    bool has_stencil = false;
-    bool has_non_stencil = false;
+    const char *vuid_09111 =
+        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09111" : "VUID-VkCopyMemoryToImageInfo-dstImage-09111";
+    const char *vuid_09112 =
+        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09112" : "VUID-VkCopyMemoryToImageInfo-dstImage-09112";
+    const char *vuid_09113 =
+        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09113" : "VUID-VkCopyMemoryToImageInfo-dstImage-09113";
     for (uint32_t i = 0; i < regionCount; i++) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         const Location subresource_loc = region_loc.dot(Field::imageSubresource);
@@ -2542,8 +2549,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
         skip |= ValidateImageArrayLayerRange(device, *image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc);
         skip |= ValidateImageSubresourceLayers(device, &region.imageSubresource, subresource_loc);
-        if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) has_stencil = true;
-        if (region.imageSubresource.aspectMask & ~VK_IMAGE_ASPECT_STENCIL_BIT) has_non_stencil = true;
+        skip |= UsageHostTransferCheck(*image_state, region.imageSubresource.aspectMask, vuid_09111, vuid_09112, vuid_09113,
+                                       subresource_loc);
 
         if (check_memcpy) {
             if (region.imageOffset.x != 0 || region.imageOffset.y != 0 || region.imageOffset.z != 0) {
@@ -2586,14 +2593,6 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
         skip |= ValidateHostCopyCurrentLayout(image_layout, region.imageSubresource, i, *image_state, region_loc.dot(field),
                                               source_or_destination, image_layout_vuid);
     }
-
-    const char *vuid_09111 =
-        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09111" : "VUID-VkCopyMemoryToImageInfo-dstImage-09111";
-    const char *vuid_09112 =
-        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09112" : "VUID-VkCopyMemoryToImageInfo-dstImage-09112";
-    const char *vuid_09113 =
-        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImage-09113" : "VUID-VkCopyMemoryToImageInfo-dstImage-09113";
-    skip |= UsageHostTransferCheck(*image_state, has_stencil, has_non_stencil, vuid_09111, vuid_09112, vuid_09113, loc);
 
     const auto &memory_states = image_state->GetBoundMemoryStates();
     for (const auto &state : memory_states) {
@@ -2830,8 +2829,6 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
                          "is a sparse image with no memory bound");
     }
 
-    bool has_stencil = false;
-    bool has_non_stencil = false;
     for (uint32_t i = 0; i < regionCount; i++) {
         const Location region_loc = loc.dot(Field::pRegions, i);
         const auto &region = info_ptr->pRegions[i];
@@ -2847,12 +2844,12 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
             skip |= ValidateHostCopyMultiplane(region, *dst_image_state, false, region_loc);
         }
 
-        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
-            has_stencil = true;
-        }
-        if ((region.srcSubresource.aspectMask & (~VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-            has_non_stencil = true;
-        }
+        skip |= UsageHostTransferCheck(*src_image_state, region.srcSubresource.aspectMask,
+                                       "VUID-VkCopyImageToImageInfo-srcImage-09111", "VUID-VkCopyImageToImageInfo-srcImage-09112",
+                                       "VUID-VkCopyImageToImageInfo-srcImage-09113", region_loc.dot(Field::srcSubresource));
+        skip |= UsageHostTransferCheck(*dst_image_state, region.dstSubresource.aspectMask,
+                                       "VUID-VkCopyImageToImageInfo-dstImage-09111", "VUID-VkCopyImageToImageInfo-dstImage-09112",
+                                       "VUID-VkCopyImageToImageInfo-dstImage-09113", region_loc.dot(Field::dstSubresource));
 
         skip |= ValidateHostCopyCurrentLayout(info_ptr->srcImageLayout, region.srcSubresource, i, *src_image_state,
                                               region_loc.dot(Field::srcImageLayout), "source",
@@ -2867,12 +2864,6 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
                                     "VUID-VkCopyImageToImageInfo-dstSubresource-07970", false);
     }
 
-    skip |= UsageHostTransferCheck(*src_image_state, has_stencil, has_non_stencil, "VUID-VkCopyImageToImageInfo-srcImage-09111",
-                                   "VUID-VkCopyImageToImageInfo-srcImage-09112", "VUID-VkCopyImageToImageInfo-srcImage-09113",
-                                   error_obj.location);
-    skip |= UsageHostTransferCheck(*dst_image_state, has_stencil, has_non_stencil, "VUID-VkCopyImageToImageInfo-dstImage-09111",
-                                   "VUID-VkCopyImageToImageInfo-dstImage-09112", "VUID-VkCopyImageToImageInfo-dstImage-09113",
-                                   error_obj.location);
     return skip;
 }
 
