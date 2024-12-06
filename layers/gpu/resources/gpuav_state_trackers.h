@@ -115,6 +115,8 @@ class CommandBuffer : public vvl::CommandBuffer {
     void ClearCmdErrorsCountsBuffer(const Location &loc) const;
     void IncrementCommandCount(VkPipelineBindPoint bind_point);
 
+    std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;
+
     void Destroy() final;
     void Reset(const Location &loc) final;
 
