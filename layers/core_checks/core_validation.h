@@ -834,7 +834,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateHostCopyImageLayout(const VkImage image, const uint32_t layout_count, const VkImageLayout* supported_image_layouts,
                                      const VkImageLayout image_layout, const Location& loc, vvl::Field supported_name,
                                      const char* vuid) const;
-    bool ValidateMemcpyExtents(const VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
+    bool ValidateMemcpyExtents(const VkImageCopy2& region, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
                                const Location& region_loc) const;
     bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceLayers& subres_layers,
                                        uint32_t region, const vvl::Image& image_state, const Location& loc, const char* image_label,
@@ -842,8 +842,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceRange& subres_range, uint32_t region,
                                        const vvl::Image& image_state, const Location& loc, const char* image_label,
                                        const char* vuid) const;
-    bool ValidateHostCopyMultiplane(VkImageCopy2 region, const vvl::Image& image_state, bool is_src,
-                                    const Location& region_loc) const;
+    bool ValidateHostCopyMultiplane(const VkImageCopy2& region, const vvl::Image& src_image_state,
+                                    const vvl::Image& dst_image_state, const Location& region_loc) const;
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                  const Location& loc) const;
     bool ValidateBufferViewBuffer(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
@@ -896,12 +896,12 @@ class CoreChecks : public ValidationStateTracker {
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const;
 
-    bool CheckItgExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
-                        const VkExtent3D& granularity, const VkExtent3D& subresource_extent, const VkImageType image_type,
-                        const Location& extent_loc, const char* vuid) const;
+    bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
+                                           const VkExtent3D& granularity, const VkExtent3D& subresource_extent,
+                                           const VkImageType image_type, const Location& extent_loc, const char* vuid) const;
 
-    bool CheckItgOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity,
-                        const Location& offset_loc, const char* vuid) const;
+    bool ValidateTransferGranularityOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity,
+                                           const Location& offset_loc, const char* vuid) const;
     VkExtent3D GetScaledItg(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state) const;
 
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
@@ -1057,7 +1057,7 @@ class CoreChecks : public ValidationStateTracker {
                                          const Location& image_loc, const char* vuid) const;
 
     template <typename HandleT>
-    bool ValidateImageSubresourceLayers(HandleT handle, const VkImageSubresourceLayers* subresource_layers,
+    bool ValidateImageSubresourceLayers(HandleT handle, const VkImageSubresourceLayers& subresource_layers,
                                         const Location& subresource_loc) const;
 
     bool ValidateBufferUsageFlags(const LogObjectList& objlist, const vvl::Buffer& buffer_state, VkFlags desired, bool strict,
@@ -1228,7 +1228,7 @@ class CoreChecks : public ValidationStateTracker {
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT* pCopyImageToMemoryInfo,
                                              const ErrorObject& error_obj) const override;
-    bool PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
+    bool PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT* pCopyImageToImageInfo,
                                             const ErrorObject& error_obj) const override;
@@ -2495,20 +2495,20 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetImageSubresourceLayout(const vvl::Image& image_state, const VkImageSubresource& subresource,
                                            const Location& subresource_loc) const;
     bool PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                              const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                              const VkHostImageLayoutTransitionInfo* pTransitions,
                                               const ErrorObject& error_obj) const override;
     bool PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                  const VkHostImageLayoutTransitionInfoEXT* pTransitions,
                                                  const ErrorObject& error_obj) const override;
     void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                             const VkHostImageLayoutTransitionInfoEXT* pTransitions,
+                                             const VkHostImageLayoutTransitionInfo* pTransitions,
                                              const RecordObject& record_obj) override;
     void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                 const VkHostImageLayoutTransitionInfoEXT* pTransitions,
                                                 const RecordObject& record_obj) override;
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                   VkSubresourceLayout* pLayout, const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
+    bool PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                    VkSubresourceLayout2KHR* pLayout, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2KHR* pSubresource,
                                                       VkSubresourceLayout2KHR* pLayout,
@@ -2569,7 +2569,7 @@ class CoreChecks : public ValidationStateTracker {
                                                    const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
                                                    uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
-                                                   const VkCalibratedTimestampInfoEXT* pTimestampInfos, uint64_t* pTimestamps,
+                                                   const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
                                                    uint64_t* pMaxDeviation, const ErrorObject& error_obj) const override;
 
     bool PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
