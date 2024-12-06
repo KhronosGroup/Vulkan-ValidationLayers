@@ -950,6 +950,8 @@ TEST_F(NegativeMemory, BindMemoryNoCheckImage) {
 TEST_F(NegativeMemory, BindMemoryNoCheckMultiPlane) {
     TEST_DESCRIPTION("Tests case were no call to memory requirements was made prior to binding");
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     // Check for support of format used by all multi-planar tests
@@ -1091,8 +1093,9 @@ TEST_F(NegativeMemory, BindMemory2BindInfos) {
 
 TEST_F(NegativeMemory, BindMemory2BindInfosMultiPlane) {
     TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and invalid VkBindImageMemoryInfo* pBindInfos");
-    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_create_info =
@@ -1881,8 +1884,9 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
 TEST_F(NegativeMemory, MemoryRequirements) {
     TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirments.");
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-
     // Need to make sure disjoint is supported for format
     // Also need to support an arbitrary image usage feature
     VkFormatProperties format_properties;
