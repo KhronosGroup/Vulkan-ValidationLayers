@@ -129,24 +129,6 @@ struct TraitsBase {
     struct Traits<state_type> : public TraitsBase<handle_type, state_type, base_type> {}; \
     }
 
-// For image copies between compressed/uncompressed formats, the extent is provided in source image texels
-// Destination image texel extents must be adjusted by block size for the dest validation checks
-static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
-    VkExtent3D adjusted_extent = extent;
-    if (vkuFormatIsBlockedImage(src_format) && !vkuFormatIsBlockedImage(dst_format)) {
-        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(src_format);
-        adjusted_extent.width /= block_extent.width;
-        adjusted_extent.height /= block_extent.height;
-        adjusted_extent.depth /= block_extent.depth;
-    } else if (!vkuFormatIsBlockedImage(src_format) && vkuFormatIsBlockedImage(dst_format)) {
-        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(dst_format);
-        adjusted_extent.width *= block_extent.width;
-        adjusted_extent.height *= block_extent.height;
-        adjusted_extent.depth *= block_extent.depth;
-    }
-    return adjusted_extent;
-}
-
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
 template <typename RegionType>
 static inline VkDeviceSize GetBufferSizeFromCopyImage(const RegionType& region, VkFormat image_format,

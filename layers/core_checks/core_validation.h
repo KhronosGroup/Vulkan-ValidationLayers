@@ -803,7 +803,7 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& src_image_state,
-                                                          const vvl::Image& dst_image_state, const RegionType* region,
+                                                          const vvl::Image& dst_image_state, const RegionType& region,
                                                           const Location& region_loc) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, vvl::Field image_layer_count_var,
