@@ -853,15 +853,16 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, co
 // Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy/VkBufferImageCopy2 structure
 template <typename RegionType>
 bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const vvl::CommandBuffer &cb_state,
-                                                                        const vvl::Image &image_state, const RegionType *region,
-                                                                        const Location &region_loc, const char *vuid) const {
+                                                                        const vvl::Image &image_state, const RegionType &region,
+                                                                        const Location &region_loc) const {
     bool skip = false;
     const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+    std::string vuid = GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::TransferGranularity_07747);
     VkExtent3D granularity = GetScaledItg(cb_state, image_state);
-    skip |= CheckItgOffset(objlist, region->imageOffset, granularity, region_loc.dot(Field::imageOffset), vuid);
-    VkExtent3D subresource_extent = image_state.GetEffectiveSubresourceExtent(region->imageSubresource);
-    skip |= CheckItgExtent(objlist, region->imageExtent, region->imageOffset, granularity, subresource_extent,
-                           image_state.create_info.imageType, region_loc.dot(Field::imageExtent), vuid);
+    skip |= CheckItgOffset(objlist, region.imageOffset, granularity, region_loc.dot(Field::imageOffset), vuid.c_str());
+    VkExtent3D subresource_extent = image_state.GetEffectiveSubresourceExtent(region.imageSubresource);
+    skip |= CheckItgExtent(objlist, region.imageExtent, region.imageOffset, granularity, subresource_extent,
+                           image_state.create_info.imageType, region_loc.dot(Field::imageExtent), vuid.c_str());
     return skip;
 }
 
@@ -2072,7 +2073,7 @@ bool CoreChecks::ValidateImageBounds(const HandleT handle, const vvl::Image &ima
 
 template <typename RegionType>
 bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image &image_state, const vvl::Buffer &buffer_state,
-                                      const RegionType &region, const Location &region_loc, const char *vuid) const {
+                                      const RegionType &region, const Location &region_loc) const {
     bool skip = false;
 
     const VkDeviceSize buffer_copy_size =
@@ -2083,7 +2084,7 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image &imag
         if (buffer_state.create_info.size < max_buffer_copy) {
             const LogObjectList objlist(cb, buffer_state.Handle());
             skip |=
-                LogError(vuid, objlist, region_loc,
+                LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::ExceedBufferBounds_00171), objlist, region_loc,
                          "is trying to copy %" PRIu64 " bytes + %" PRIu64
                          " offset to/from the VkBuffer (%s) which exceeds the VkBuffer total size of %" PRIu64 " bytes.",
                          buffer_copy_size, region.bufferOffset, FormatHandle(buffer_state).c_str(), buffer_state.create_info.size);
@@ -2237,16 +2238,14 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00189" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189";
         skip |=
             VerifyImageLayoutSubresource(cb_state, *src_image_state, region.imageSubresource, srcImageLayout, src_image_loc, vuid);
-        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747" : "VUID-vkCmdCopyImageToBuffer-imageOffset-07747";
-        skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, &region, region_loc, vuid);
+        skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, region, region_loc);
         skip |= ValidateImageMipLevel(commandBuffer, *src_image_state, region.imageSubresource.mipLevel, subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *src_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc);
 
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-04566" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07970";
         skip |= ValidateImageBounds(commandBuffer, *src_image_state, region, region_loc, vuid, true);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-00183" : "VUID-vkCmdCopyImageToBuffer-pRegions-00183";
-        skip |= ValidateBufferBounds(commandBuffer, *src_image_state, *dst_buffer_state, region, region_loc, vuid);
+        skip |= ValidateBufferBounds(commandBuffer, *src_image_state, *dst_buffer_state, region, region_loc);
     }
 
     // TODO 6898 - ValidateImageBufferCopyMemoryOverlap logic has issues
@@ -2383,16 +2382,14 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImageLayout-00180" : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180";
         skip |=
             VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.imageSubresource, dstImageLayout, dst_image_loc, vuid);
-        vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-imageOffset-07738" : "VUID-vkCmdCopyBufferToImage-imageOffset-07738";
-        skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *dst_image_state, &region, region_loc, vuid);
+        skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *dst_image_state, region, region_loc);
         skip |= ValidateImageMipLevel(commandBuffer, *dst_image_state, region.imageSubresource.mipLevel, subresource_loc);
         skip |= ValidateImageArrayLayerRange(commandBuffer, *dst_image_state, region.imageSubresource.baseArrayLayer,
                                              region.imageSubresource.layerCount, subresource_loc);
 
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-pRegions-04565" : "VUID-vkCmdCopyBufferToImage-imageSubresource-07970";
         skip |= ValidateImageBounds(commandBuffer, *dst_image_state, region, region_loc, vuid, false);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-pRegions-00171" : "VUID-vkCmdCopyBufferToImage-pRegions-00171";
-        skip |= ValidateBufferBounds(commandBuffer, *dst_image_state, *src_buffer_state, region, region_loc, vuid);
+        skip |= ValidateBufferBounds(commandBuffer, *dst_image_state, *src_buffer_state, region, region_loc);
 
         const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
         if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {

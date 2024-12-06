@@ -38,6 +38,13 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
              {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07976"},
              {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07976"},
          }}},
+        {CopyError::TransferGranularity_07747,
+         {{
+             {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageOffset-07737"},
+             {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageOffset-07747"},
+             {Key(Func::vkCmdCopyBufferToImage2), "VUID-vkCmdCopyBufferToImage2-imageOffset-07738"},
+             {Key(Func::vkCmdCopyImageToBuffer2), "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747"},
+         }}},
         {CopyError::BufferOffset_07737,
          {{
              // was split up in 1.3.236 spec (internal MR 5371)
@@ -101,6 +108,13 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
              {Key(Struct::VkBufferImageCopy2), "VUID-VkBufferImageCopy2-aspectMask-09103"},
              {Key(Struct::VkMemoryToImageCopy), "VUID-VkMemoryToImageCopy-aspectMask-09103"},
              {Key(Struct::VkImageToMemoryCopy), "VUID-VkImageToMemoryCopy-aspectMask-09103"},
+         }}},
+        {CopyError::ExceedBufferBounds_00171,
+         {{
+             {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-pRegions-00171"},
+             {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-pRegions-00183"},
+             {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-pRegions-00171"},
+             {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-pRegions-00183"},
          }}},
     };
 

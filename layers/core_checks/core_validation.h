@@ -1108,12 +1108,11 @@ class CoreChecks : public ValidationStateTracker {
 
     template <typename RegionType>
     bool ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image& image_state, const vvl::Buffer& buffer_state,
-                              const RegionType& region, const Location& region_loc, const char* vuid) const;
+                              const RegionType& region, const Location& region_loc) const;
 
     template <typename RegionType>
     bool ValidateCopyBufferImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                                                const RegionType* region, const Location& region_loc,
-                                                                const char* vuid) const;
+                                                                const RegionType& region, const Location& region_loc) const;
 
     template <typename HandleT>
     bool ValidateImageMipLevel(const HandleT handle, const vvl::Image& image_state, uint32_t mip_level,
