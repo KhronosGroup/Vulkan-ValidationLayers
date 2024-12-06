@@ -40,7 +40,7 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
          }}},
         {CopyError::TransferGranularity_07747,
          {{
-             {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageOffset-07737"},
+             {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-imageOffset-07738"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-imageOffset-07747"},
              {Key(Func::vkCmdCopyBufferToImage2), "VUID-vkCmdCopyBufferToImage2-imageOffset-07738"},
              {Key(Func::vkCmdCopyImageToBuffer2), "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747"},
