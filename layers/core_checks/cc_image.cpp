@@ -2472,7 +2472,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         VkImageUsageFlags quantization_map_usage =
             VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR;
         if (image_usage & quantization_map_usage) {
-            skip |= LogError("VUID-VkImageViewCreateInfo-usage-10261", pCreateInfo->image, create_info_loc.dot(Field::viewType),
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-10261", pCreateInfo->image, create_info_loc.dot(Field::viewType),
                              "%s is incompatible with video encode quantization map usage.",
                              string_VkImageViewType(pCreateInfo->viewType));
         }

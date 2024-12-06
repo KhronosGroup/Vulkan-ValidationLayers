@@ -22,6 +22,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "error_message/error_strings.h"
+#include "error_message/logging.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "generated/dispatch_functions.h"
@@ -916,7 +917,7 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
             if constexpr (std::is_same_v<HandleT, VkDevice>) {
                 if (!enabled_features.videoEncodeAV1) {
-                    const char *vuid = "VUID-UNDEFINED";
+                    const char *vuid = kVUIDUndefined;
                     switch (loc.function) {
                         case Func::vkCreateVideoSessionKHR:
                             vuid = "VUID-VkVideoSessionCreateInfoKHR-pVideoProfile-10269";
