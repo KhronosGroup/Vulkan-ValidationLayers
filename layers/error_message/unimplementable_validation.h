@@ -262,7 +262,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkAccelerationStructureBuildGeometryInfoKHR-ppGeometries-parameter",
     "VUID-VkPipelineBinaryCreateInfoKHR-pKeysAndDataInfo-parameter",
     "VUID-vkCmdSetDepthClampRangeEXT-pDepthClampRange-parameter",
-    "VUID-VkRenderingInputAttachmentIndexInfoKHR-pColorAttachmentInputIndices-parameter",
+    "VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-parameter",
     "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-pDepthClampRange-parameter",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",

@@ -15871,7 +15871,7 @@ TEST_F(NegativeVideo, CreateImageViewQuantMapInvalidViewType) {
         image_view_ci.subresourceRange.layerCount = 1;
 
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageViewCreateInfo-subResourceRange-01021");
-        m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-usage-10261");
+        m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-10261");
         VkImageView image_view = VK_NULL_HANDLE;
         vk::CreateImageView(device(), &image_view_ci, nullptr, &image_view);
         m_errorMonitor->VerifyFound();

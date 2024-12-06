@@ -1585,7 +1585,7 @@ TEST_F(NegativePipeline, LineRasterization) {
 
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-lineRasterizationMode-02769"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-lineRasterizationMode-02769"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1596,8 +1596,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-lineRasterizationMode-02769",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-stippledLineEnable-02772"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-lineRasterizationMode-02769",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-stippledLineEnable-02772"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1608,8 +1608,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-lineRasterizationMode-02768",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-stippledLineEnable-02771"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-lineRasterizationMode-02768",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-stippledLineEnable-02771"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1620,8 +1620,8 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-lineRasterizationMode-02770",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-stippledLineEnable-02773"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-lineRasterizationMode-02770",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-stippledLineEnable-02773"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
@@ -1632,7 +1632,7 @@ TEST_F(NegativePipeline, LineRasterization) {
     }
     {
         constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                      "VUID-VkPhysicalDeviceHostImageCopyProperties-stippledLineEnable-02774"};
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfo-stippledLineEnable-02774"};
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
