@@ -330,7 +330,7 @@ void Validator::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t ve
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
@@ -361,7 +361,7 @@ void Validator::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uin
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -390,7 +390,7 @@ void Validator::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
@@ -424,7 +424,7 @@ void Validator::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuff
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
@@ -452,7 +452,7 @@ void Validator::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkB
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -480,7 +480,7 @@ void Validator::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuff
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -527,7 +527,7 @@ void Validator::PostCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
@@ -558,7 +558,7 @@ void Validator::PostCallRecordCmdDrawIndirectByteCountEXT(VkCommandBuffer comman
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -607,7 +607,7 @@ void Validator::PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer comman
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
@@ -632,7 +632,7 @@ void Validator::PostCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, 
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -660,7 +660,7 @@ void Validator::PostCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer command
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -695,7 +695,7 @@ void Validator::PostCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer co
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
@@ -720,7 +720,7 @@ void Validator::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer,
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -748,7 +748,7 @@ void Validator::PostCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comman
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -783,7 +783,7 @@ void Validator::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer c
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
@@ -810,7 +810,7 @@ void Validator::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -838,7 +838,7 @@ void Validator::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer,
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
@@ -869,7 +869,7 @@ void Validator::PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uin
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
@@ -928,7 +928,7 @@ void Validator::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBu
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
@@ -965,7 +965,7 @@ void Validator::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
@@ -1005,7 +1005,7 @@ void Validator::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuf
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
@@ -1032,7 +1032,7 @@ void Validator::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBu
     }
     const VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 void Validator::PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
@@ -1062,7 +1062,7 @@ void Validator::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer com
     }
     const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
     PostCallSetupShaderInstrumentationResources(*this, *cb_state, bind_point, record_obj.location);
-    cb_state->UpdateCommandCount(bind_point);
+    cb_state->IncrementCommandCount(bind_point);
 }
 
 }  // namespace gpuav

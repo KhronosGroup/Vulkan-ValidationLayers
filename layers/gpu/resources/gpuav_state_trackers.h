@@ -113,7 +113,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     const vko::Buffer &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
     void ClearCmdErrorsCountsBuffer(const Location &loc) const;
-    void UpdateCommandCount(VkPipelineBindPoint bind_point);
+    void IncrementCommandCount(VkPipelineBindPoint bind_point);
 
     void Destroy() final;
     void Reset(const Location &loc) final;
