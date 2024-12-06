@@ -897,26 +897,44 @@ bool CoreChecks::ValidateImageSubresourceLayers(HandleT handle, const VkImageSub
     return skip;
 }
 
+// For image copies between compressed/uncompressed formats, the extent is provided in source image texels
+// Destination image texel extents must be adjusted by block size for the dest validation checks
+static inline VkExtent3D GetAdjustedDstImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
+    VkExtent3D adjusted_extent = extent;
+    if (vkuFormatIsBlockedImage(src_format) && !vkuFormatIsBlockedImage(dst_format)) {
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(src_format);
+        adjusted_extent.width /= block_extent.width;
+        adjusted_extent.height /= block_extent.height;
+        adjusted_extent.depth /= block_extent.depth;
+    } else if (!vkuFormatIsBlockedImage(src_format) && vkuFormatIsBlockedImage(dst_format)) {
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(dst_format);
+        adjusted_extent.width *= block_extent.width;
+        adjusted_extent.height *= block_extent.height;
+        adjusted_extent.depth *= block_extent.depth;
+    }
+    return adjusted_extent;
+}
+
 // Check valid usage Image Transfer Granularity requirements for elements of a VkImageCopy/VkImageCopy2KHR structure
 template <typename RegionType>
 bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const vvl::CommandBuffer &cb_state,
                                                                   const vvl::Image &src_image_state,
-                                                                  const vvl::Image &dst_image_state, const RegionType *region,
+                                                                  const vvl::Image &dst_image_state, const RegionType &region,
                                                                   const Location &region_loc) const {
     bool skip = false;
     const bool is_2 = region_loc.function == Func::vkCmdCopyImage2 || region_loc.function == Func::vkCmdCopyImage2KHR;
     const char *vuid;
 
-    const VkExtent3D extent = region->extent;
+    const VkExtent3D extent = region.extent;
     {
         // Source image checks
         const LogObjectList objlist(cb_state.Handle(), src_image_state.Handle());
         const VkExtent3D granularity = GetScaledItg(cb_state, src_image_state);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcOffset-01783" : "VUID-vkCmdCopyImage-srcOffset-01783";
-        skip |= CheckItgOffset(objlist, region->srcOffset, granularity, region_loc.dot(Field::srcOffset), vuid);
-        const VkExtent3D subresource_extent = src_image_state.GetEffectiveSubresourceExtent(region->srcSubresource);
+        skip |= CheckItgOffset(objlist, region.srcOffset, granularity, region_loc.dot(Field::srcOffset), vuid);
+        const VkExtent3D subresource_extent = src_image_state.GetEffectiveSubresourceExtent(region.srcSubresource);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcOffset-01783" : "VUID-vkCmdCopyImage-srcOffset-01783";
-        skip |= CheckItgExtent(objlist, extent, region->srcOffset, granularity, subresource_extent,
+        skip |= CheckItgExtent(objlist, extent, region.srcOffset, granularity, subresource_extent,
                                src_image_state.create_info.imageType, region_loc.dot(Field::extent), vuid);
     }
 
@@ -925,13 +943,13 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const vvl::Com
         const LogObjectList objlist(cb_state.Handle(), dst_image_state.Handle());
         const VkExtent3D granularity = GetScaledItg(cb_state, dst_image_state);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstOffset-01784" : "VUID-vkCmdCopyImage-dstOffset-01784";
-        skip |= CheckItgOffset(objlist, region->dstOffset, granularity, region_loc.dot(Field::dstOffset), vuid);
+        skip |= CheckItgOffset(objlist, region.dstOffset, granularity, region_loc.dot(Field::dstOffset), vuid);
         // Adjust dest extent, if necessary
-        const VkExtent3D dest_effective_extent =
-            GetAdjustedDestImageExtent(src_image_state.create_info.format, dst_image_state.create_info.format, extent);
-        const VkExtent3D subresource_extent = dst_image_state.GetEffectiveSubresourceExtent(region->dstSubresource);
+        const VkExtent3D dst_effective_extent =
+            GetAdjustedDstImageExtent(src_image_state.create_info.format, dst_image_state.create_info.format, extent);
+        const VkExtent3D subresource_extent = dst_image_state.GetEffectiveSubresourceExtent(region.dstSubresource);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstOffset-01784" : "VUID-vkCmdCopyImage-dstOffset-01784";
-        skip |= CheckItgExtent(objlist, dest_effective_extent, region->dstOffset, granularity, subresource_extent,
+        skip |= CheckItgExtent(objlist, dst_effective_extent, region.dstOffset, granularity, subresource_extent,
                                dst_image_state.create_info.imageType, region_loc.dot(Field::extent), vuid);
     }
     return skip;
@@ -948,7 +966,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
     // For comp<->uncomp copies, the copy extent for the dest image must be adjusted
     const VkExtent3D src_copy_extent = region.extent;
     const VkExtent3D dst_copy_extent =
-        GetAdjustedDestImageExtent(src_image_state.create_info.format, dst_image_state.create_info.format, region.extent);
+        GetAdjustedDstImageExtent(src_image_state.create_info.format, dst_image_state.create_info.format, region.extent);
 
     bool slice_override = false;
     uint32_t depth_slices = 0;
@@ -969,8 +987,9 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
     if (src_image_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
         if ((0 != region.srcOffset.y) || (1 != src_copy_extent.height)) {
             const LogObjectList objlist(handle, src_image_state.Handle());
-            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage1D_00146), objlist, region_loc,
-                             "srcOffset.y is %" PRId32 " and extent.height is %" PRIu32
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage1D_00146), objlist,
+                             region_loc.dot(Field::srcOffset).dot(Field::y),
+                             "is %" PRId32 " and extent.height is %" PRIu32
                              ". For 1D images these must "
                              "be 0 and 1, respectively.",
                              region.srcOffset.y, src_copy_extent.height);
@@ -982,8 +1001,9 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
         ((0 != region.srcOffset.z) || (1 != src_copy_extent.depth))) {
         const LogObjectList objlist(handle, src_image_state.Handle());
         const char *image_type = is_host ? "1D or 2D" : "1D";
-        skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage1D_01785), objlist, region_loc,
-                         "srcOffset.z is %" PRId32 " and extent.depth is %" PRIu32
+        skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcImage1D_01785), objlist,
+                         region_loc.dot(Field::srcOffset).dot(Field::z),
+                         "is %" PRId32 " and extent.depth is %" PRIu32
                          ". For %s images "
                          "these must be 0 and 1, respectively.",
                          region.srcOffset.z, src_copy_extent.depth, image_type);
@@ -992,8 +1012,8 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
     if ((src_image_state.create_info.imageType == VK_IMAGE_TYPE_2D) && (0 != region.srcOffset.z) && (!is_host)) {
         const LogObjectList objlist(handle, src_image_state.Handle());
         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01787" : "VUID-vkCmdCopyImage-srcImage-01787";
-        skip |= LogError(vuid, objlist, region_loc, "srcOffset.z is %" PRId32 ". For 2D images the z-offset must be 0.",
-                         region.srcOffset.z);
+        skip |= LogError(vuid, objlist, region_loc.dot(Field::srcOffset).dot(Field::z),
+                         "is %" PRId32 ". For 2D images the z-offset must be 0.", region.srcOffset.z);
     }
 
     {  // Used to be compressed checks, now apply to all
@@ -1078,8 +1098,9 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
     if (dst_image_state.create_info.imageType == VK_IMAGE_TYPE_1D) {
         if ((0 != region.dstOffset.y) || (1 != dst_copy_extent.height)) {
             const LogObjectList objlist(handle, dst_image_state.Handle());
-            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_00152), objlist, region_loc,
-                             "dstOffset.y is %" PRId32 " and dst_copy_extent.height is %" PRIu32
+            skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_00152), objlist,
+                             region_loc.dot(Field::dstOffset).dot(Field::y),
+                             "is %" PRId32 " and extent.height is %" PRIu32
                              ". For 1D images "
                              "these must be 0 and 1, respectively.",
                              region.dstOffset.y, dst_copy_extent.height);
@@ -1091,8 +1112,9 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
         ((0 != region.dstOffset.z) || (1 != dst_copy_extent.depth))) {
         const LogObjectList objlist(handle, dst_image_state.Handle());
         const char *image_type = is_host ? "1D or 2D" : "1D";
-        skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_01786), objlist, region_loc,
-                         "dstOffset.z is %" PRId32 " and extent.depth is %" PRIu32
+        skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstImage1D_01786), objlist,
+                         region_loc.dot(Field::dstOffset).dot(Field::z),
+                         "is %" PRId32 " and extent.depth is %" PRIu32
                          ". For %s images these must be 0 "
                          "and 1, respectively.",
                          region.dstOffset.z, dst_copy_extent.depth, image_type);
@@ -1101,8 +1123,8 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
     if ((dst_image_state.create_info.imageType == VK_IMAGE_TYPE_2D) && (0 != region.dstOffset.z) && !(is_host)) {
         const LogObjectList objlist(handle, dst_image_state.Handle());
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01788" : "VUID-vkCmdCopyImage-dstImage-01788";
-        skip |= LogError(vuid, objlist, region_loc, "dstOffset.z is %" PRId32 ". For 2D images the z-offset must be 0.",
-                         region.dstOffset.z);
+        skip |= LogError(vuid, objlist, region_loc.dot(Field::dstOffset).dot(Field::z),
+                         "is %" PRId32 ". For 2D images the z-offset must be 0.", region.dstOffset.z);
     }
 
     // Handle difference between Maintenance 1
@@ -1254,6 +1276,7 @@ static uint32_t ExceedsBounds(const VkOffset3D *offset, const VkExtent3D *extent
     }
     return result;
 }
+
 template <typename HandleT, typename RegionType>
 bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_image_state, const vvl::Image &dst_image_state,
                                          uint32_t regionCount, const RegionType *pRegions, const Location &loc) const {
@@ -1278,7 +1301,7 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
 
         // For comp/uncomp copies, the copy extent for the dest image must be adjusted
         VkExtent3D src_copy_extent = region.extent;
-        VkExtent3D dst_copy_extent = GetAdjustedDestImageExtent(src_format, dst_format, region.extent);
+        VkExtent3D dst_copy_extent = GetAdjustedDstImageExtent(src_format, dst_format, region.extent);
 
         bool slice_override = false;
         uint32_t depth_slices = 0;
@@ -1474,7 +1497,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
         // For comp/uncomp copies, the copy extent for the dest image must be adjusted
         VkExtent3D src_copy_extent = region.extent;
-        VkExtent3D dst_copy_extent = GetAdjustedDestImageExtent(src_format, dst_format, region.extent);
+        VkExtent3D dst_copy_extent = GetAdjustedDstImageExtent(src_format, dst_format, region.extent);
 
         bool slice_override = false;
         uint32_t depth_slices = 0;
@@ -1700,7 +1723,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, src_image_loc, vuid);
         vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-00133" : "VUID-vkCmdCopyImage-dstImageLayout-00133";
         skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
-        skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, &region, region_loc);
+        skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, region, region_loc);
     }
 
     // The formats of non-multiplane src_image and dst_image must be compatible. Formats are considered compatible if their texel
