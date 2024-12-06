@@ -794,31 +794,39 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
 
     const bool is_2 = loc.function == Func::vkCmdCopyBuffer2 || loc.function == Func::vkCmdCopyBuffer2KHR;
     const char *vuid;
-    const Location src_buffer_loc = loc.dot(Field::srcBuffer);
-    const Location dst_buffer_loc = loc.dot(Field::dstBuffer);
-
-    vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcBuffer-00119" : "VUID-vkCmdCopyBuffer-srcBuffer-00119";
-    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_buffer_state, src_buffer_loc, vuid);
-    vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstBuffer-00121" : "VUID-vkCmdCopyBuffer-dstBuffer-00121";
-    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, dst_buffer_loc, vuid);
-
-    // Validate that SRC & DST buffers have correct usage flags set
-    vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcBuffer-00118" : "VUID-vkCmdCopyBuffer-srcBuffer-00118";
-    skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, srcBuffer), *src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                     true, vuid, src_buffer_loc);
-    vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstBuffer-00120" : "VUID-vkCmdCopyBuffer-dstBuffer-00120";
-    skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, dstBuffer), *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     true, vuid, dst_buffer_loc);
 
     skip |= ValidateCmd(cb_state, loc);
     skip |= ValidateCmdCopyBufferBounds(commandBuffer, *src_buffer_state, *dst_buffer_state, regionCount, pRegions, loc);
 
-    vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01822" : "VUID-vkCmdCopyBuffer-commandBuffer-01822";
-    skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc, vuid);
-    vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01823" : "VUID-vkCmdCopyBuffer-commandBuffer-01823";
-    skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
-    vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01824" : "VUID-vkCmdCopyBuffer-commandBuffer-01824";
-    skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
+    // src buffer
+    {
+        const Location src_buffer_loc = loc.dot(Field::srcBuffer);
+        vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcBuffer-00119" : "VUID-vkCmdCopyBuffer-srcBuffer-00119";
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_buffer_state, src_buffer_loc, vuid);
+
+        vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcBuffer-00118" : "VUID-vkCmdCopyBuffer-srcBuffer-00118";
+        skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, srcBuffer), *src_buffer_state,
+                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
+
+        vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01822" : "VUID-vkCmdCopyBuffer-commandBuffer-01822";
+        skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc, vuid);
+    }
+
+    // dst buffer
+    {
+        const Location dst_buffer_loc = loc.dot(Field::dstBuffer);
+        vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstBuffer-00121" : "VUID-vkCmdCopyBuffer-dstBuffer-00121";
+        skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, dst_buffer_loc, vuid);
+
+        vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstBuffer-00120" : "VUID-vkCmdCopyBuffer-dstBuffer-00120";
+        skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, dstBuffer), *dst_buffer_state,
+                                         VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
+
+        vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01823" : "VUID-vkCmdCopyBuffer-commandBuffer-01823";
+        skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
+        vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01824" : "VUID-vkCmdCopyBuffer-commandBuffer-01824";
+        skip |= ValidateUnprotectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
+    }
 
     return skip;
 }
