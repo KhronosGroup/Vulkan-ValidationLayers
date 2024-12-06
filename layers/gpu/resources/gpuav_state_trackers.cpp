@@ -419,7 +419,7 @@ void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
     cmd_errors_counts_buffer_.UnmapMemory();
 }
 
-void CommandBuffer::UpdateCommandCount(VkPipelineBindPoint bind_point) {
+void CommandBuffer::IncrementCommandCount(VkPipelineBindPoint bind_point) {
     action_command_count++;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
