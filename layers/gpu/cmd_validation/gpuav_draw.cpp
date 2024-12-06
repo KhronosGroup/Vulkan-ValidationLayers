@@ -330,9 +330,12 @@ void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &lo
 
     // Register error logger. Happens per command GPU-AV intercepts
     // ---
+    const uint32_t label_command_i =
+        !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
     CommandBuffer::ErrorLoggerFunc error_logger =
-        [loc, vuid, draw_indirect_struct_name](Validator &gpuav, const CommandBuffer &, const uint32_t *error_record,
-                                               const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+        [loc, vuid, draw_indirect_struct_name, label_command_i](Validator &gpuav, const CommandBuffer &cb_state,
+                                                                const uint32_t *error_record, const LogObjectList &objlist,
+                                                                const std::vector<std::string> &initial_label_stack) {
             bool skip = false;
 
             using namespace glsl;
@@ -346,11 +349,14 @@ void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &lo
 
             const uint32_t index = error_record[kPreActionParamOffset_0];
             const uint32_t invalid_first_instance = error_record[kPreActionParamOffset_1];
+
+            std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+            Location loc_with_debug_region(loc, debug_region_name);
             skip |= gpuav.LogError(
-                vuid, objlist, loc,
+                vuid, objlist, loc_with_debug_region,
                 "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the %s structure at "
                 "index %" PRIu32 " is %" PRIu32 ".",
-                 vvl::String(draw_indirect_struct_name), index, invalid_first_instance);
+                vvl::String(draw_indirect_struct_name), index, invalid_first_instance);
 
             return skip;
         };
@@ -478,15 +484,20 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
 
     // Register error logger
     // ---
+    const uint32_t label_command_i =
+        !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, draw_buffer, draw_buffer_size = draw_buffer_state->create_info.size,
                                                    draw_buffer_offset, draw_indirect_struct_byte_size, draw_cmds_byte_stride,
-                                                   draw_indirect_struct_name, vuid_draw_buffer_size,
-                                                   vuid_max_draw_count](Validator &gpuav, const CommandBuffer &cb_state,
-                                                                        const uint32_t *error_record, const LogObjectList &objlist,
-                                                                        const std::vector<std::string> &initial_label_stack) {
+                                                   draw_indirect_struct_name, vuid_draw_buffer_size, vuid_max_draw_count,
+                                                   label_command_i](Validator &gpuav, const CommandBuffer &cb_state,
+                                                                    const uint32_t *error_record, const LogObjectList &objlist,
+                                                                    const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
 
         using namespace glsl;
+
+        std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+        Location loc_with_debug_region(loc, debug_region_name);
 
         switch (error_record[kHeaderErrorSubCodeOffset]) {
             case kErrorSubCodePreDraw_DrawBufferSize: {
@@ -495,7 +506,7 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
                 const VkDeviceSize draw_size =
                     (draw_cmds_byte_stride * (count - 1) + draw_buffer_offset + draw_indirect_struct_byte_size);
 
-                skip |= gpuav.LogError(vuid_draw_buffer_size, objlist, loc,
+                skip |= gpuav.LogError(vuid_draw_buffer_size, objlist, loc_with_debug_region,
                                        "Indirect draw count of %" PRIu32 " would exceed size (%" PRIu64
                                        ") of buffer (%s). "
                                        "stride = %" PRIu32 " offset = %" PRIu64
@@ -506,7 +517,7 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
             }
             case kErrorSubCodePreDraw_DrawCountLimit: {
                 const uint32_t count = error_record[kPreActionParamOffset_0];
-                skip |= gpuav.LogError(vuid_max_draw_count, objlist, loc,
+                skip |= gpuav.LogError(vuid_max_draw_count, objlist, loc_with_debug_region,
                                        "Indirect draw count of %" PRIu32 " would exceed maxDrawIndirectCount limit of %" PRIu32 ".",
                                        count, gpuav.phys_dev_props.limits.maxDrawIndirectCount);
                 break;
@@ -678,9 +689,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
 
     // Register error logger
     // ---
-    CommandBuffer::ErrorLoggerFunc error_logger = [loc, is_task_shader](Validator &gpuav, const CommandBuffer &cb_state,
-                                                                        const uint32_t *error_record, const LogObjectList &objlist,
-                                                                        const std::vector<std::string> &initial_label_stack) {
+    const uint32_t label_command_i =
+        !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
+    CommandBuffer::ErrorLoggerFunc error_logger = [loc, is_task_shader, label_command_i](
+                                                      Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+                                                      const LogObjectList &objlist,
+                                                      const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
 
         using namespace glsl;
@@ -698,6 +712,9 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
         const char *group_count_name = is_task_shader ? "maxTaskWorkGroupCount" : "maxMeshWorkGroupCount";
         const char *group_count_total_name = is_task_shader ? "maxTaskWorkGroupTotalCount" : "maxMeshWorkGroupTotalCount";
 
+        std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+        Location loc_with_debug_region(loc, debug_region_name);
+
         switch (error_record[kHeaderErrorSubCodeOffset]) {
             case kErrorSubCodePreDrawGroupCountX: {
                 const char *vuid_group_count_exceeds_max =
@@ -705,7 +722,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 const uint32_t group_count_x = error_record[kPreActionParamOffset_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc,
+                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", VkDrawMeshTasksIndirectCommandEXT::groupCountX is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s[0]"
                                        " (%" PRIu32 ").",
@@ -719,7 +736,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 const uint32_t group_count_y = error_record[kPreActionParamOffset_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc,
+                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", VkDrawMeshTasksIndirectCommandEXT::groupCountY is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s[1]"
                                        " (%" PRIu32 ").",
@@ -733,7 +750,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 const uint32_t group_count_z = error_record[kPreActionParamOffset_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2]
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc,
+                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", VkDrawMeshTasksIndirectCommandEXT::groupCountZ is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s[2]"
                                        " (%" PRIu32 ").",
@@ -747,7 +764,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 const uint32_t group_count_total = error_record[kPreActionParamOffset_0];
                 const uint32_t limit = is_task_shader ? gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount
                                                       : gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
-                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc,
+                skip |= gpuav.LogError(vuid_group_count_exceeds_max, objlist, loc_with_debug_region,
                                        "In draw %" PRIu32 ", size of VkDrawMeshTasksIndirectCommandEXT is %" PRIu32
                                        " which is greater than VkPhysicalDeviceMeshShaderPropertiesEXT::%s"
                                        " (%" PRIu32 ").",
@@ -968,11 +985,13 @@ void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
     };
     cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
+    const uint32_t label_command_i =
+        !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc, vuid_oob_vertex, smallest_vertex_buffer_binding = *smallest_vertex_buffer_binding,
-         index_buffer_binding = cb_state.index_buffer_binding](Validator &gpuav, const CommandBuffer &cb_state,
-                                                               const uint32_t *error_record, const LogObjectList &objlist,
-                                                               const std::vector<std::string> &initial_label_stack) {
+         index_buffer_binding = cb_state.index_buffer_binding,
+         label_command_i](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+                          const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
             bool skip = false;
 
             using namespace glsl;
@@ -987,8 +1006,10 @@ void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
                     const uint32_t max_indices_in_buffer =
                         static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
 
-                    gpuav.LogError(
-                        vuid_oob_vertex, objlist, loc,
+                    std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+                    Location loc_with_debug_region(loc, debug_region_name);
+                    skip |= gpuav.LogError(
+                        vuid_oob_vertex, objlist, loc_with_debug_region,
                         "Vertex index %" PRIu32
                         " is not within the smallest bound vertex buffer.\n"
                         "index_buffer[ %" PRIu32 " ] (%" PRIu32 ") + vertexOffset (%" PRIi32 ") = Vertex index %" PRIu32
@@ -1201,11 +1222,13 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, c
     };
     cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
+    const uint32_t label_command_i =
+        !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, vuid_oob_index, draw_buffer, draw_buffer_offset, draw_cmds_byte_stride,
-                                                   index_buffer_binding = cb_state.index_buffer_binding](
-                                                      Validator &gpuav, const CommandBuffer &, const uint32_t *error_record,
-                                                      const LogObjectList &objlist,
-                                                      const std::vector<std::string> &initial_label_stack) {
+                                                   index_buffer_binding = cb_state.index_buffer_binding,
+                                                   label_command_i](Validator &gpuav, const CommandBuffer &cb_state,
+                                                                    const uint32_t *error_record, const LogObjectList &objlist,
+                                                                    const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
 
         using namespace glsl;
@@ -1219,8 +1242,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, c
                 const uint32_t index_bits_size = GetIndexBitsSize(index_buffer_binding.index_type);
                 const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
 
-                gpuav.LogError(
-                    vuid_oob_index, objlist, loc,
+                std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+                Location loc_with_debug_region(loc, debug_region_name);
+                skip |= gpuav.LogError(
+                    vuid_oob_index, objlist, loc_with_debug_region,
                     "Index %" PRIu32 " is not within the bound index buffer. Computed from VkDrawIndexedIndirectCommand[%" PRIu32
                     "] (.firstIndex = %" PRIu32 ", .indexCount = %" PRIu32
                     "), stored in %s\n"
@@ -1428,11 +1453,13 @@ void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, 
         };
     cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
+    const uint32_t label_command_i =
+        !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc, vuid_oob_vertex, draw_buffer, smallest_vertex_buffer_binding = *smallest_vertex_buffer_binding,
-         index_buffer_binding = cb_state.index_buffer_binding](Validator &gpuav, const CommandBuffer &,
-                                                               const uint32_t *error_record, const LogObjectList &objlist,
-                                                               const std::vector<std::string> &initial_label_stack) {
+         index_buffer_binding = cb_state.index_buffer_binding,
+         label_command_i](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+                          const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
             bool skip = false;
 
             using namespace glsl;
@@ -1448,8 +1475,10 @@ void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, 
                     const uint32_t max_indices_in_buffer =
                         static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
 
-                    gpuav.LogError(
-                        vuid_oob_vertex, objlist, loc,
+                    std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+                    Location loc_with_debug_region(loc, debug_region_name);
+                    skip |= gpuav.LogError(
+                        vuid_oob_vertex, objlist, loc_with_debug_region,
                         "Vertex index %" PRIu32
                         " is not within the smallest bound vertex buffer. Computed from VkDrawIndexedIndirectCommand[ %" PRIu32
                         " ], stored in %s.\n"

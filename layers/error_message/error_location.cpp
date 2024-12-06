@@ -50,6 +50,9 @@ std::string Location::Fields() const {
 
 std::string Location::Message() const {
     std::stringstream out;
+    if (debug_region && !debug_region->empty()) {
+        out << "[ Debug region: " << *debug_region << " ] ";
+    }
     out << StringFunc() << "(): ";
     AppendFields(out);
     std::string message = out.str();

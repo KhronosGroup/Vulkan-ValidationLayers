@@ -32,13 +32,14 @@ struct Location {
     static const uint32_t kNoIndex = vvl::kU32Max;
 
     // name of the vulkan function we're checking
-    const vvl::Func function;
+    const vvl::Func function{};
 
-    const vvl::Struct structure;
-    const vvl::Field field;
-    const uint32_t index;  // optional index if checking an array.
-    const bool isPNext;    // will print the struct is from a 'pNext` chain
-    const Location* prev;
+    const vvl::Struct structure{};
+    const vvl::Field field{};
+    const uint32_t index{};  // optional index if checking an array.
+    const bool isPNext{};    // will print the struct is from a 'pNext` chain
+    const Location* prev{};
+    mutable const std::string* debug_region{};
 
     Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
         : function(func), structure(s), field(f), index(i), isPNext(false), prev(nullptr) {}
@@ -46,6 +47,14 @@ struct Location {
         : function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
     Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
         : function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
+    Location(const Location& loc, std::string& debug_region)
+        : function(loc.function),
+          structure(loc.structure),
+          field(loc.field),
+          index(loc.index),
+          isPNext(loc.isPNext),
+          prev(loc.prev),
+          debug_region(&debug_region) {}
 
     void AppendFields(std::ostream &out) const;
     std::string Fields() const;

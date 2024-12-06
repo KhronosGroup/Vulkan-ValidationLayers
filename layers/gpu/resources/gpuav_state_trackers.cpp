@@ -439,6 +439,26 @@ void CommandBuffer::IncrementCommandCount(VkPipelineBindPoint bind_point) {
     }
 }
 
+std::string CommandBuffer::GetDebugLabelRegion(uint32_t label_command_i,
+                                               const std::vector<std::string> &initial_label_stack) const {
+    std::string debug_region_name;
+    if (label_command_i != vvl::kU32Max) {
+        debug_region_name = GetDebugRegionName(GetLabelCommands(), label_command_i, initial_label_stack);
+    } else {
+        // label_command_i == vvl::kU32Max => when the instrumented command was recorded,
+        // no debug label region was yet opened in the corresponding command buffer,
+        // but still a region might have been started in another previously submitted
+        // command buffer. So just compute region name from initial_label_stack.
+        for (const std::string &label_name : initial_label_stack) {
+            if (!debug_region_name.empty()) {
+                debug_region_name += "::";
+            }
+            debug_region_name += label_name;
+        }
+    }
+    return debug_region_name;
+}
+
 bool CommandBuffer::PreProcess(const Location &loc) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 

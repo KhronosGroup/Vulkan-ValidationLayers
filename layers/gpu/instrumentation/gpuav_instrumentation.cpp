@@ -772,33 +772,22 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
         if (instrumented_shader && !instrumented_shader->instrumented_spirv.empty()) {
             ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
         }
-        std::string debug_region_name;
-        if (label_command_i != vvl::kU32Max) {
-            debug_region_name = cb_state.GetDebugRegionName(cb_state.GetLabelCommands(), label_command_i, initial_label_stack);
-        } else {
-            // label_command_i == vvl::kU32Max => when the instrumented command was recorded,
-            // no debug label region was yet opened in the corresponding command buffer,
-            // but still a region might have been started in another previously submitted
-            // command buffer. So just compute region name from initial_label_stack.
-            for (const std::string &label_name : initial_label_stack) {
-                if (!debug_region_name.empty()) {
-                    debug_region_name += "::";
-                }
-                debug_region_name += label_name;
-            }
-        }
+        std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
+        Location loc_with_debug_region(loc, debug_region_name);
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-            cb_state.VkHandle(), debug_region_name, instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
+            cb_state.VkHandle(), instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
             instrumented_shader, shader_id, pipeline_bind_point, operation_index);
 
         if (uses_robustness && oob_access) {
             if (gpuav.gpuav_settings.warn_on_robust_oob) {
-                gpuav.LogWarning(vuid_msg.c_str(), objlist, loc, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
+                gpuav.LogWarning(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(),
+                                 debug_info_message.c_str());
             }
         } else {
-            gpuav.LogError(vuid_msg.c_str(), objlist, loc, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
+            gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(),
+                           debug_info_message.c_str());
         }
     }
 
