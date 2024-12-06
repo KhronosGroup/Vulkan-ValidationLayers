@@ -963,8 +963,12 @@ class CoreChecks : public ValidationStateTracker {
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
 
     template <typename HandleT, typename RegionType>
+    bool ValidateCopyImageRegionCommon(HandleT handle, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
+                                       const RegionType& region, const Location& region_loc) const;
+
+    template <typename HandleT>
     bool ValidateCopyImageCommon(HandleT handle, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
-                                 uint32_t regionCount, const RegionType* pRegions, const Location& loc) const;
+                                 const Location& loc) const;
 
     template <typename RegionType>
     bool ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
