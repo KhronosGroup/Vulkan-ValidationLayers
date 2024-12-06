@@ -824,8 +824,8 @@ class CoreChecks : public ValidationStateTracker {
     template <typename HandleT, typename RegionType>
     bool ValidateHeterogeneousCopyData(const HandleT handle, const RegionType& region, const vvl::Image& image_state,
                                        const Location& region_loc) const;
-    bool UsageHostTransferCheck(const vvl::Image& image_state, bool has_stencil, bool has_non_stencil, const char* vuid_09111,
-                                const char* vuid_09112, const char* vuid_09113, const Location& loc) const;
+    bool UsageHostTransferCheck(const vvl::Image& image_state, const VkImageAspectFlags aspect_mask, const char* vuid_09111,
+                                const char* vuid_09112, const char* vuid_09113, const Location& subresource_loc) const;
     template <typename InfoPointer>
     bool ValidateMemoryImageCopyCommon(InfoPointer iPointer, const Location& loc) const;
     template <typename RegionType>
