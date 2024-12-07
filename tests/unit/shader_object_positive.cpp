@@ -733,7 +733,7 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     createInfos[fail_index].pCode = reinterpret_cast<const void *>(pCode);
 
     VkResult res = vk::CreateShadersEXT(m_device->handle(), 20u, createInfos, nullptr, shaders);
-    ASSERT_EQ(res, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
+    ASSERT_EQ(res, VK_INCOMPATIBLE_SHADER_BINARY_EXT);
 
     for (uint32_t i = 0; i < shaders_count; ++i) {
         if (i < fail_index) {
@@ -1239,7 +1239,7 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 2u;
@@ -1321,11 +1321,11 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
 
     m_command_buffer.Begin();
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = GetDynamicRenderTarget();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &color_attachment;
@@ -1535,7 +1535,7 @@ TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
     const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
 
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.colorAttachmentCount = 0;
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};

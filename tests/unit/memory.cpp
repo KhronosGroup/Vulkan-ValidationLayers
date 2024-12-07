@@ -209,10 +209,10 @@ TEST_F(NegativeMemory, MapMemory2) {
 
     vkt::DeviceMemory memory(*m_device, memory_info);
 
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    VkMemoryMapInfo map_info = vku::InitStructHelper();
     map_info.memory = memory;
 
-    VkMemoryUnmapInfoKHR unmap_info = vku::InitStructHelper();
+    VkMemoryUnmapInfo unmap_info = vku::InitStructHelper();
     unmap_info.memory = memory;
 
     uint8_t *pData;
@@ -313,7 +313,7 @@ TEST_F(NegativeMemory, MapMemory2WithoutHostVisibleBit) {
 
     vkt::DeviceMemory memory(*m_device, mem_alloc);
 
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    VkMemoryMapInfo map_info = vku::InitStructHelper();
     map_info.memory = memory.handle();
     map_info.offset = 0;
     map_info.size = 32;
@@ -349,7 +349,7 @@ TEST_F(NegativeMemory, MapMemoryPlaced) {
 
     vkt::DeviceMemory memory(*m_device, memory_info);
 
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    VkMemoryMapInfo map_info = vku::InitStructHelper();
     map_info.memory = memory;
     map_info.flags = VK_MEMORY_MAP_PLACED_BIT_EXT;
     map_info.offset = 0;
@@ -416,7 +416,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedEnabled) {
 
     VkMemoryMapPlacedInfoEXT placed_info = vku::InitStructHelper();
     placed_info.pPlacedAddress = addr;
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper(&placed_info);
+    VkMemoryMapInfo map_info = vku::InitStructHelper(&placed_info);
     map_info.memory = memory;
     map_info.flags = VK_MEMORY_MAP_PLACED_BIT_EXT;
     map_info.size = VK_WHOLE_SIZE;
@@ -467,7 +467,7 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
 
     VkMemoryMapPlacedInfoEXT placed_info = vku::InitStructHelper();
     placed_info.pPlacedAddress = addr;
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper(&placed_info);
+    VkMemoryMapInfo map_info = vku::InitStructHelper(&placed_info);
     map_info.memory = memory;
     map_info.flags = VK_MEMORY_MAP_PLACED_BIT_EXT;
     map_info.size = VK_WHOLE_SIZE;
@@ -1367,7 +1367,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     auto buffer_info = vkt::Buffer::CreateInfo(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
     auto buffer_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), mem_flags);
-    VkMemoryDedicatedAllocateInfoKHR buffer_dedicated_info = vku::InitStructHelper();
+    VkMemoryDedicatedAllocateInfo buffer_dedicated_info = vku::InitStructHelper();
     buffer_dedicated_info.buffer = buffer.handle();
     buffer_alloc_info.pNext = &buffer_dedicated_info;
     vkt::DeviceMemory dedicated_buffer_memory;
@@ -1398,7 +1398,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vkt::Image image(*m_device, image_info, vkt::no_mem);
     vkt::Image wrong_image(*m_device, image_info, vkt::no_mem);
 
-    VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
+    VkMemoryDedicatedAllocateInfo image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image.handle();
     auto image_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
@@ -1438,7 +1438,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     vkt::Image identical_image(*m_device, image_info, vkt::no_mem);
     vkt::Image post_delete_image(*m_device, image_info, vkt::no_mem);
 
-    VkMemoryDedicatedAllocateInfoKHR image_dedicated_info = vku::InitStructHelper();
+    VkMemoryDedicatedAllocateInfo image_dedicated_info = vku::InitStructHelper();
     image_dedicated_info.image = image.handle();
     auto image_alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), mem_flags);
     image_alloc_info.pNext = &image_dedicated_info;
@@ -1499,8 +1499,8 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
-    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
-    buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT;
+    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
@@ -1512,7 +1512,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     buffer_create_info.pNext = nullptr;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkBufferDeviceAddressInfoEXT info = vku::InitStructHelper();
+    VkBufferDeviceAddressInfo info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02600");
@@ -1546,7 +1546,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXTDisabled) {
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkBufferDeviceAddressInfoEXT info = vku::InitStructHelper();
+    VkBufferDeviceAddressInfo info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
@@ -1566,12 +1566,12 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = sizeof(uint32_t);
-    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
-    buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
+    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
-    VkBufferOpaqueCaptureAddressCreateInfoKHR addr_ci = vku::InitStructHelper();
+    VkBufferOpaqueCaptureAddressCreateInfo addr_ci = vku::InitStructHelper();
     addr_ci.opaqueCaptureAddress = 1;
     buffer_create_info.pNext = &addr_ci;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337");
@@ -1579,7 +1579,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     buffer_create_info.pNext = nullptr;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkBufferDeviceAddressInfoKHR info = vku::InitStructHelper();
+    VkBufferDeviceAddressInfo info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredError("VUID-VkBufferDeviceAddressInfo-buffer-02600");
@@ -1598,7 +1598,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     vk::BindBufferMemory(device(), buffer, buffer_mem, 0);
     m_errorMonitor->VerifyFound();
 
-    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();
+    VkDeviceMemoryOpaqueCaptureAddressInfo mem_opaque_addr_info = vku::InitStructHelper();
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->SetDesiredError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
     vk::GetDeviceMemoryOpaqueCaptureAddressKHR(device(), &mem_opaque_addr_info);
@@ -1611,7 +1611,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     vk::FreeMemory(device(), buffer_mem, NULL);
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     buffer_alloc_info.pNext = &alloc_flags;
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
 
@@ -1637,7 +1637,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkBufferDeviceAddressInfoKHR info = vku::InitStructHelper();
+    VkBufferDeviceAddressInfo info = vku::InitStructHelper();
     info.buffer = buffer;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
@@ -1657,7 +1657,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     m_device->Physical().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
     VkDeviceMemory buffer_mem;
     vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
-    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = vku::InitStructHelper();
+    VkDeviceMemoryOpaqueCaptureAddressInfo mem_opaque_addr_info = vku::InitStructHelper();
     mem_opaque_addr_info.memory = buffer_mem;
     m_errorMonitor->SetDesiredError("VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334");
     m_errorMonitor->SetDesiredError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
@@ -1667,7 +1667,7 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHRDisabled) {
     vk::FreeMemory(device(), buffer_mem, NULL);
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
     buffer_alloc_info.pNext = &alloc_flags;
 
     m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-flags-03330");
@@ -2103,7 +2103,7 @@ TEST_F(NegativeMemory, DeviceImageMemoryRequirementsDisjoint) {
 
     VkDeviceImageMemoryRequirementsKHR device_image_memory_requirements = vku::InitStructHelper();
     device_image_memory_requirements.pCreateInfo = &image_create_info;
-    device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_NONE_KHR;
+    device_image_memory_requirements.planeAspect = VK_IMAGE_ASPECT_NONE;
 
     VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
 

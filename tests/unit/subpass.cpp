@@ -55,7 +55,7 @@ TEST_F(NegativeSubpass, InputAttachmentParameters) {
     reference.layout = VK_IMAGE_LAYOUT_GENERAL;
     reference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    VkSubpassDescription2KHR subpass = vku::InitStructHelper();
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.viewMask = 0;
     subpass.inputAttachmentCount = 1;
@@ -321,8 +321,8 @@ TEST_F(NegativeSubpass, NextSubpassExcessive) {
     m_errorMonitor->VerifyFound();
 
     if (rp2Supported) {
-        auto subpassBeginInfo = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
-        VkSubpassEndInfoKHR subpassEndInfo = vku::InitStructHelper();
+        auto subpassBeginInfo = vku::InitStruct<VkSubpassBeginInfo>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
+        VkSubpassEndInfo subpassEndInfo = vku::InitStructHelper();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass2-None-03102");
 
@@ -358,7 +358,7 @@ TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
     m_errorMonitor->VerifyFound();
 
     if (rp2Supported) {
-        VkSubpassEndInfoKHR subpassEndInfo = vku::InitStructHelper();
+        VkSubpassEndInfo subpassEndInfo = vku::InitStructHelper();
 
         m_command_buffer.Reset();
         m_command_buffer.Begin();

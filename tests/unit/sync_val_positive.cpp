@@ -113,10 +113,10 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
         VkAttachmentDescription attachment = {};
         attachment.format = format;
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
-        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
-        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE_KHR;
-        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE_KHR;
+        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+        attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE;
         attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
         attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         return attachment;
@@ -793,7 +793,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
@@ -873,7 +873,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
@@ -1110,7 +1110,7 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
     image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
     image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    image_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
+    image_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.image = image;
@@ -1167,7 +1167,7 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
     // Form an execution dependency with draw command (FRAGMENT_SHADER). Execution dependency is enough to sync with READ.
-    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
     layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
     layout_transition.dstAccessMask = VK_ACCESS_2_NONE;

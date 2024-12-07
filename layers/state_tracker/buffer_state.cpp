@@ -33,7 +33,7 @@ static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker &dev_da
 }
 
 static VkBufferUsageFlags2KHR GetBufferUsageFlags(const VkBufferCreateInfo &create_info) {
-    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(create_info.pNext);
+    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     return usage_flags2 ? usage_flags2->usage : create_info.usage;
 }
 

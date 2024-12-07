@@ -224,16 +224,16 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     VkDescriptorPoolCreateFlags pool_create_flags = 0;
     VkDescriptorSetLayoutCreateFlags layout_create_flags = 0;
     VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags[1] = {};
     if (descriptor_indexing) {
         ds_binding_flags[0] = 0;
         ds_binding_flags[1] = 0;
-        ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+        ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
         layout_createinfo_binding_flags[0] = vku::InitStructHelper();
         layout_createinfo_binding_flags[0].bindingCount = 3;
         layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
-        layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
         pool_create_flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
         layout_pnext = layout_createinfo_binding_flags;
     }
@@ -247,13 +247,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
                            },
                            layout_create_flags, layout_pnext, pool_create_flags);
 
-    VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variable_count = vku::InitStructHelper();
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     uint32_t desc_counts;
     if (descriptor_indexing) {
         layout_create_flags = 0;
         pool_create_flags = 0;
-        ds_binding_flags[2] =
-            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
+        ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
         desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
         variable_count.descriptorSetCount = 1;
         variable_count.pDescriptorCounts = &desc_counts;
@@ -1659,7 +1658,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
 
     // invalid scratch buffer (invalid usage)
     VkBufferCreateInfo create_info = vku::InitStructHelper();
-    create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     const vkt::Buffer bot_level_as_invalid_scratch = bot_level_as.CreateScratchBuffer(*m_device, &create_info);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureInfoNV-scratch-02781");
     vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,

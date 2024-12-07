@@ -58,14 +58,14 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     }
 
     if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
-        const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoKHR>(
+        const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
             pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
         if (vertex_input_divisor_state && phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
             for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
                 if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
                     skip |= LogError(vuid.vertex_input_09461, objlist, loc,
-                                     "VkPipelineVertexInputDivisorStateCreateInfoKHR::pVertexBindingDivisors[%" PRIu32
+                                     "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32
                                      "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
                                      ", but supportsNonZeroFirstInstance is VK_FALSE.",
                                      i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);

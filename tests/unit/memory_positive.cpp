@@ -41,7 +41,7 @@ TEST_F(PositiveMemory, MapMemory2) {
 
     vkt::DeviceMemory memory(*m_device, memory_info);
 
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    VkMemoryMapInfo map_info = vku::InitStructHelper();
     map_info.memory = memory;
     map_info.offset = 0;
     map_info.size = memory_info.allocationSize;
@@ -104,7 +104,7 @@ TEST_F(PositiveMemory, MapMemoryPlaced) {
     uintptr_t align_1 = map_placed_props.minPlacedMemoryMapAlignment - 1;
     void *addr = reinterpret_cast<void *>((reinterpret_cast<uintptr_t>(reservation) + align_1) & ~align_1);
 
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    VkMemoryMapInfo map_info = vku::InitStructHelper();
     map_info.memory = memory;
     map_info.flags = VK_MEMORY_MAP_PLACED_BIT_EXT;
     map_info.offset = 0;
@@ -127,7 +127,7 @@ TEST_F(PositiveMemory, MapMemoryPlaced) {
     /* Write some data and make sure we don't fault */
     memset(pData, 0x5c, allocation_size);
 
-    VkMemoryUnmapInfoKHR unmap_info = vku::InitStructHelper();
+    VkMemoryUnmapInfo unmap_info = vku::InitStructHelper();
     unmap_info.memory = memory;
     unmap_info.flags = VK_MEMORY_UNMAP_RESERVE_BIT_EXT;
 
@@ -167,9 +167,9 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
         *m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
     // Use extension to get buffer memory requirements
-    VkBufferMemoryRequirementsInfo2KHR buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
-                                                      buffer.handle()};
-    VkMemoryRequirements2KHR buffer_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
+    VkBufferMemoryRequirementsInfo2 buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
+                                                   buffer.handle()};
+    VkMemoryRequirements2 buffer_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
     vk::GetBufferMemoryRequirements2KHR(device(), &buffer_info, &buffer_reqs);
 
     // Allocate and bind buffer memory
@@ -188,9 +188,8 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     // Use extension to get image memory requirements
-    VkImageMemoryRequirementsInfo2KHR image_info = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr,
-                                                    image.handle()};
-    VkMemoryRequirements2KHR image_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
+    VkImageMemoryRequirementsInfo2 image_info = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr, image.handle()};
+    VkMemoryRequirements2 image_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
     vk::GetImageMemoryRequirements2KHR(device(), &image_info, &image_reqs);
 
     // Allocate and bind image memory
@@ -234,8 +233,8 @@ TEST_F(PositiveMemory, BindMemory2) {
     buffer_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0));
 
     // Bind buffer memory with extension
-    VkBindBufferMemoryInfoKHR buffer_bind_info = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO_KHR, nullptr, buffer.handle(),
-                                                  buffer_memory.handle(), 0};
+    VkBindBufferMemoryInfo buffer_bind_info = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO_KHR, nullptr, buffer.handle(),
+                                               buffer_memory.handle(), 0};
     vk::BindBufferMemory2KHR(device(), 1, &buffer_bind_info);
 
     // Create a test image
@@ -253,8 +252,8 @@ TEST_F(PositiveMemory, BindMemory2) {
     image_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
 
     // Bind image memory with extension
-    VkBindImageMemoryInfoKHR image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image.handle(),
-                                                image_memory.handle(), 0};
+    VkBindImageMemoryInfo image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image.handle(),
+                                             image_memory.handle(), 0};
     vk::BindImageMemory2KHR(device(), 1, &image_bind_info);
 
     // Now execute arbitrary commands that use the test buffer and image

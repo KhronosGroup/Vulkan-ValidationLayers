@@ -182,14 +182,14 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     m_command_buffer.Begin();
-    VkBufferMemoryBarrier2KHR buf_barrier = vku::InitStructHelper();
+    VkBufferMemoryBarrier2 buf_barrier = vku::InitStructHelper();
     buf_barrier.buffer = buffer;
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buf_barrier;
 
@@ -239,13 +239,13 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
     m_command_buffer.Begin();
-    VkImageMemoryBarrier2KHR img_barrier = vku::InitStructHelper();
+    VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
     img_barrier.image = image;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
 
@@ -752,8 +752,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
     // Create push descriptor set layout
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding},
-                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);

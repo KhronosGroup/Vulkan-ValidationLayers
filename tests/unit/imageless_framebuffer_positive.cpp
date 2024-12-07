@@ -33,18 +33,18 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR fb_attachment_image_info = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();
     fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     fb_attachment_image_info.width = attachment_width;
     fb_attachment_image_info.height = attachment_height;
     fb_attachment_image_info.layerCount = 1;
     fb_attachment_image_info.viewFormatCount = 1;
     fb_attachment_image_info.pViewFormats = &format;
-    VkFramebufferAttachmentsCreateInfoKHR fb_attachment_ci = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo fb_attachment_ci = vku::InitStructHelper();
     fb_attachment_ci.attachmentImageInfoCount = 1;
     fb_attachment_ci.pAttachmentImageInfos = &fb_attachment_image_info;
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachment_ci);
-    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
     fb_ci.layers = 1;
@@ -155,7 +155,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     rp.AddDepthStencilAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR fb_attachment_image_info = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();
     fb_attachment_image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     fb_attachment_image_info.width = attachment_width;
     fb_attachment_image_info.height = attachment_height;
@@ -163,12 +163,12 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     fb_attachment_image_info.viewFormatCount = 1;
     fb_attachment_image_info.pViewFormats = &format;
 
-    VkFramebufferAttachmentsCreateInfoKHR fb_attachment_ci = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo fb_attachment_ci = vku::InitStructHelper();
     fb_attachment_ci.attachmentImageInfoCount = 1;
     fb_attachment_ci.pAttachmentImageInfos = &fb_attachment_image_info;
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachment_ci);
-    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
     fb_ci.layers = 1;

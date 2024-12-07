@@ -106,7 +106,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
     const VkFormatProperties3KHR format_properties = GetPDFormatProperties(format);
     const VkBufferUsageFlags2KHR usage = buffer_state.usage;
     if ((usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
-        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR)) {
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-format-08778", buffer_state.Handle(), loc.dot(Field::buffer),
                          "was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
                          "Format (%s) doesn't support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
@@ -115,7 +115,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
     if ((usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
-        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) {
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-format-08779", buffer_state.Handle(), loc.dot(Field::buffer),
                          "was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
                          "Format (%s) doesn't support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
@@ -276,7 +276,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext);
+    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext);
     const VkBufferUsageFlags2KHR usage = usage_flags2 ? usage_flags2->usage : pCreateInfo->usage;
 
     const bool has_decode_usage = usage & (VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR);
@@ -431,9 +431,9 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
     }
 
-    if (auto buffer_usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pCreateInfo->pNext)) {
+    if (auto buffer_usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext)) {
         const VkBufferUsageFlags2KHR usage = buffer_usage_flags2->usage;
-        if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR)) != 0) {
+        if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)) != 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,
                              create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage), "is %s.",
                              string_VkBufferUsageFlags2(usage).c_str());

@@ -554,10 +554,10 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
 
 template <typename CreateInfos, typename SafeCreateInfos>
 static void UtilCopyCreatePipelineFeedbackData(CreateInfos &create_info, SafeCreateInfos &safe_create_info) {
-    auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(safe_create_info.pNext);
+    auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(safe_create_info.pNext);
     if (!src_feedback_struct) return;
-    auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfoEXT *>(
-        vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext));
+    auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfo *>(
+        vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext));
     *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;
     for (uint32_t j = 0; j < src_feedback_struct->pipelineStageCreationFeedbackCount; j++) {
         dst_feedback_struct->pPipelineStageCreationFeedbacks[j] = src_feedback_struct->pPipelineStageCreationFeedbacks[j];
@@ -850,7 +850,7 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSe
     auto dsl_bindings = set_layout_state.GetBindings();
     for (uint32_t binding_index = 0; binding_index < dsl_bindings.size(); binding_index++) {
         auto &dsl_binding = dsl_bindings[binding_index];
-        if (dsl_binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+        if (dsl_binding.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
             binding_layouts[dsl_binding.binding] = {start, 1};
             start += 1;
         } else {

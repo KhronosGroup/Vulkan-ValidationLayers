@@ -578,7 +578,7 @@ class Pipeline : public StateObject {
     static bool EnablesRasterizationStates(const CreateInfo &create_info) {
         if (create_info.pDynamicState && create_info.pDynamicState->pDynamicStates) {
             for (uint32_t i = 0; i < create_info.pDynamicState->dynamicStateCount; ++i) {
-                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
+                if (create_info.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) {
                     // If RASTERIZER_DISCARD_ENABLE is dynamic, then we must return true (i.e., rasterization is enabled)
                     // NOTE: create_info must contain pre-raster state, otherwise it is an invalid pipeline and will trigger
                     //       an error outside of this function.

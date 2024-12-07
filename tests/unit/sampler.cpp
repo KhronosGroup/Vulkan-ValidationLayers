@@ -1028,7 +1028,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesCombinedSampler) {
 
         vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
-        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
             GTEST_SKIP() << "R8G8B8A8_UNORM does not support OpImage*Dref* operations";
         }
     }
@@ -1121,7 +1121,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesSeparateSampler) {
 
         vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
 
-        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
             GTEST_SKIP() << "R8G8B8A8_UNORM does not support OpImage*Dref* operations";
         }
     }

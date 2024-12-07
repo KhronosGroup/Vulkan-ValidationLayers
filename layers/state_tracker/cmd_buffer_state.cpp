@@ -704,7 +704,7 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         striped_count += rp_striped_begin->stripeInfoCount;
     }
 
-    activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)
+    activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)
                                  ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
                                  : VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1578,7 +1578,7 @@ void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBa
     }
 }
 
-void CommandBuffer::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
+void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
     if (dev_data.disabled[command_buffer_state]) return;
 
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {

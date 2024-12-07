@@ -318,7 +318,7 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     auto pipeline_layout = vkt::PipelineLayout(*m_device, {&ds_layout});
 
     char const *fsSource = R"glsl(
@@ -461,21 +461,21 @@ TEST_F(NegativeImageLayout, Basic) {
 
     // Equivalent tests using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageCopy2KHR copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                              NULL,
-                                              copy_region.srcSubresource,
-                                              copy_region.srcOffset,
-                                              copy_region.dstSubresource,
-                                              copy_region.dstOffset,
-                                              copy_region.extent};
-        VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                NULL,
-                                                src_image.handle(),
-                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                dst_image.handle(),
-                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                1,
-                                                &copy_region2};
+        const VkImageCopy2 copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+                                           NULL,
+                                           copy_region.srcSubresource,
+                                           copy_region.srcOffset,
+                                           copy_region.dstSubresource,
+                                           copy_region.dstOffset,
+                                           copy_region.extent};
+        VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+                                             NULL,
+                                             src_image.handle(),
+                                             VK_IMAGE_LAYOUT_GENERAL,
+                                             dst_image.handle(),
+                                             VK_IMAGE_LAYOUT_GENERAL,
+                                             1,
+                                             &copy_region2};
 
         vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
 

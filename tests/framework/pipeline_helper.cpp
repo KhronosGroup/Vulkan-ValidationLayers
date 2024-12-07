@@ -62,7 +62,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
 
     // InitLineRasterizationInfo
     line_state_ci_ = vku::InitStructHelper();
-    line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR;
+    line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT;
     line_state_ci_.stippledLineEnable = VK_FALSE;
     line_state_ci_.lineStippleFactor = 0;
     line_state_ci_.lineStipplePattern = 0;

@@ -377,7 +377,7 @@ TEST_F(PositiveSecondaryCommandBuffer, Nested) {
     vkt::CommandBuffer secondary1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkCommandBufferInheritanceRenderingInfoKHR cbiri = vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfo cbiri = vku::InitStructHelper();
     cbiri.colorAttachmentCount = 1;
     cbiri.pColorAttachmentFormats = &m_render_target_fmt;
     cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;

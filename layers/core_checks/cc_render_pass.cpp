@@ -254,14 +254,13 @@ bool CoreChecks::ValidateDependencyCompatibility(const VulkanTypedHandle &rp1_ob
     VkAccessFlags2 secondary_src_access_mask = secondary_dep.srcAccessMask;
     VkAccessFlags2 secondary_dst_access_mask = secondary_dep.dstAccessMask;
 
-    if (const auto primary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(rp1_state.create_info.pNext);
-        primary_barrier) {
+    if (const auto primary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(rp1_state.create_info.pNext); primary_barrier) {
         primary_src_stage_mask = primary_barrier->srcStageMask;
         primary_dst_stage_mask = primary_barrier->dstStageMask;
         primary_src_access_mask = primary_barrier->srcAccessMask;
         primary_dst_access_mask = primary_barrier->dstAccessMask;
     }
-    if (const auto secondary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(rp2_state.create_info.pNext);
+    if (const auto secondary_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(rp2_state.create_info.pNext);
         secondary_barrier) {
         secondary_src_stage_mask = secondary_barrier->srcStageMask;
         secondary_dst_stage_mask = secondary_barrier->dstStageMask;
@@ -1339,8 +1338,8 @@ bool CoreChecks::ValidateAttachmentReference(VkAttachmentReference2 reference, c
                 }
             }
             break;
-        case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR:
-        case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR:
+        case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL:
+        case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL:
             if (!enabled_features.synchronization2) {
                 vuid = (use_rp2) ? "VUID-VkAttachmentReference2-synchronization2-06910"
                                  : "VUID-VkAttachmentReference-synchronization2-06910";
@@ -1357,12 +1356,12 @@ bool CoreChecks::ValidateAttachmentReference(VkAttachmentReference2 reference, c
                                  "attachmentFeedbackLoopLayout feature was not enabled.");
             }
             break;
-        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR:
+        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ:
             if (!enabled_features.dynamicRenderingLocalRead) {
                 vuid = (use_rp2) ? "VUID-VkAttachmentReference2-dynamicRenderingLocalRead-09546"
                                  : "VUID-VkAttachmentReference-dynamicRenderingLocalRead-09546";
                 skip |= LogError(vuid, device, loc,
-                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR, but the "
+                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ, but the "
                                  "dynamicRenderingLocalRead feature was not enabled.");
             }
             break;
@@ -1448,7 +1447,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 skip |= LogError(vuid, device, input_loc.dot(Field::layout), "(%s) is invalid.",
                                  string_VkImageLayout(attachment_layout));
             }
-            if (attachment_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR) {
+            if (attachment_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL) {
                 const char *vuid =
                     use_rp2 ? "VUID-VkSubpassDescription2-attachment-06921" : "VUID-VkSubpassDescription-attachment-06921";
                 skip |= LogError(vuid, device, input_loc.dot(Field::layout), "(%s) is invalid.",
@@ -1501,7 +1500,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 attach_first_use[attachment_index] = false;
 
                 const VkFormatFeatureFlags2 valid_flags =
-                    VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR;
+                    VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
                 const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(attachment_format);
                 const void *pNext = (use_rp2) ? attachment_description.pNext : nullptr;
                 if ((format_features & valid_flags) == 0 && GetExternalFormat(pNext) == 0) {
@@ -1610,7 +1609,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 skip |= LogError(vuid, device, resolve_loc.dot(Field::layout), "(%s) is invalid.",
                                  string_VkImageLayout(attachment_layout));
             }
-            if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+            if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
                 const char *vuid =
                     use_rp2 ? "VUID-VkSubpassDescription2-attachment-06923" : "VUID-VkSubpassDescription-attachment-06923";
                 skip |= LogError(vuid, device, resolve_loc.dot(Field::layout), "(%s) is invalid.",
@@ -1646,8 +1645,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
                 const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(attachment_format);
                 // Can be VK_FORMAT_UNDEFINED with VK_ANDROID_external_format_resolve
-                if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0 &&
-                    attachment_format != VK_FORMAT_UNDEFINED) {
+                if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0 && attachment_format != VK_FORMAT_UNDEFINED) {
                     if (!enabled_features.linearColorAttachment) {
                         const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-09343"
                                                    : "VUID-VkSubpassDescription-pResolveAttachments-02649";
@@ -1726,7 +1724,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 attach_first_use[attachment] = false;
 
                 const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(attachment_format);
-                if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR) == 0) {
+                if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
                     const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900"
                                                : "VUID-VkSubpassDescription-pDepthStencilAttachment-02650";
                     skip |= LogError(vuid, device, attachment_loc.dot(Field::format),
@@ -1889,7 +1887,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                     skip |= LogError(vuid, device, color_loc.dot(Field::layout), "(%s) is invalid.",
                                      string_VkImageLayout(attachment_layout));
                 }
-                if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+                if (attachment_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
                     const char *vuid =
                         use_rp2 ? "VUID-VkSubpassDescription2-attachment-06922" : "VUID-VkSubpassDescription-attachment-06922";
                     skip |= LogError(vuid, device, color_loc.dot(Field::layout), "(%s) is invalid.",
@@ -1995,7 +1993,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
                     const VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(attachment_format);
                     // Can be VK_FORMAT_UNDEFINED with VK_ANDROID_external_format_resolve
-                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0 &&
+                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0 &&
                         attachment_format != VK_FORMAT_UNDEFINED) {
                         if (!enabled_features.linearColorAttachment) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-02898"
@@ -2631,7 +2629,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         }
 
         const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(resolve_attachment_format);
-        if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR) == 0) {
+        if ((potential_format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
             skip |= LogError("VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-02651", device,
                              ds_resolve_loc,
                              "has a format (%s) whose features do not contain VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
@@ -3025,9 +3023,9 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                              "must not be VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT");
         }
 
-        if (attachment_info.resolveImageLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+        if (attachment_info.resolveImageLayout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
             skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06142", commandBuffer,
-                             attachment_loc.dot(Field::resolveImageLayout), "must not be VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR");
+                             attachment_loc.dot(Field::resolveImageLayout), "must not be VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL");
         }
 
         if (resolve_view_state && (image_view_format != resolve_view_state->create_info.format)) {
@@ -3565,10 +3563,10 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
 
     const Location rendering_info_loc = error_obj.location.dot(Field::pRenderingInfo);
 
-    if (cb_state->IsSecondary() && ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) != 0) &&
+    if (cb_state->IsSecondary() && ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0) &&
         !enabled_features.nestedCommandBuffer) {
         skip |= LogError("VUID-vkCmdBeginRendering-commandBuffer-06068", commandBuffer, rendering_info_loc.dot(Field::flags),
-                         "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR in a secondary command buffer.");
+                         "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT in a secondary command buffer.");
     }
 
     if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
@@ -5040,8 +5038,8 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffe
     return skip;
 }
 
-bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR &location_info,
-                                                         const LogObjectList objlist, const Location &loc_info) const {
+bool CoreChecks::ValidateRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo &location_info,
+                                                      const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
 
     if (location_info.pColorAttachmentLocations) {
@@ -5086,7 +5084,7 @@ bool CoreChecks::ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttach
 }
 
 bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                                   const VkRenderingAttachmentLocationInfoKHR *pLocationInfo,
+                                                                   const VkRenderingAttachmentLocationInfo *pLocationInfo,
                                                                    const ErrorObject &error_obj) const {
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     const Location loc_info = error_obj.location;
@@ -5120,7 +5118,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuff
                          pLocationInfo->colorAttachmentCount, rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount);
     }
 
-    skip |= ValidateRenderingAttachmentLocationsKHR(*pLocationInfo, commandBuffer, loc_info.dot(Field::pLocationInfo));
+    skip |= ValidateRenderingAttachmentLocations(*pLocationInfo, commandBuffer, loc_info.dot(Field::pLocationInfo));
 
     return skip;
 }
@@ -5131,8 +5129,8 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandB
     return PreCallValidateCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, error_obj);
 }
 
-bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR &index_info,
-                                                            const LogObjectList objlist, const Location &loc_info) const {
+bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo &index_info,
+                                                         const LogObjectList objlist, const Location &loc_info) const {
     bool skip = false;
 
     if (!enabled_features.dynamicRenderingLocalRead) {
@@ -5203,7 +5201,7 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInp
 }
 
 bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
-                                                                      const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo,
+                                                                      const VkRenderingInputAttachmentIndexInfo *pLocationInfo,
                                                                       const ErrorObject &error_obj) const {
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
@@ -5236,7 +5234,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandB
                          pLocationInfo->colorAttachmentCount, rp_state.create_info.attachmentCount);
     }
 
-    skip |= ValidateRenderingInputAttachmentIndicesKHR(*pLocationInfo, commandBuffer, error_obj.location);
+    skip |= ValidateRenderingInputAttachmentIndices(*pLocationInfo, commandBuffer, error_obj.location);
 
     return skip;
 }

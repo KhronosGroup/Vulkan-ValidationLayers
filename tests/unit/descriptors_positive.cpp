@@ -914,8 +914,8 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT for this format";
     }
 
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT_KHR;
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT;
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&buffer_usage_flags);
     buffer_create_info.size = 1024;

@@ -168,21 +168,21 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
     const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
 
     vkt::ImageView imageView = image.CreateView();
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,
-                                                                          nullptr,
-                                                                          0,
-                                                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                                          attachmentWidth,
-                                                                          attachmentHeight,
-                                                                          1,
-                                                                          1,
-                                                                          &attachmentFormat};
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,
+                                                                       nullptr,
+                                                                       0,
+                                                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                                       attachmentWidth,
+                                                                       attachmentHeight,
+                                                                       1,
+                                                                       1,
+                                                                       &attachmentFormat};
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
     VkFramebufferCreateInfo framebufferCreateInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                                                      &framebufferAttachmentsCreateInfo,
-                                                     VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR,
+                                                     VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT,
                                                      rp.Handle(),
                                                      1,
                                                      reinterpret_cast<const VkImageView *>(1),
@@ -191,8 +191,8 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
                                                      1};
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
 
-    VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
-                                                                        nullptr, 1, &imageView.handle()};
+    VkRenderPassAttachmentBeginInfo renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
+                                                                     nullptr, 1, &imageView.handle()};
     VkRenderPassBeginInfo renderPassBeginInfo =
         vku::InitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, rp.Handle(), framebuffer.handle(),
                                                VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);

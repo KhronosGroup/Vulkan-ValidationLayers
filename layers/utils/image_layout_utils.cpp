@@ -1,5 +1,5 @@
-/* Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
 }
 
 VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_mask, VkImageLayout layout) {
-    if (layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR) {
+    if (layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL) {
         if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
             layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
@@ -57,7 +57,7 @@ VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_ma
         } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
             layout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
         }
-    } else if (layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+    } else if (layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
         if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
             layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {

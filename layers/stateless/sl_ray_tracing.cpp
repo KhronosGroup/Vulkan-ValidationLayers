@@ -308,8 +308,7 @@ bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsNV(const VkPipel
         skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-flags-11008", device, flags_loc, "is %s.",
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
-    if ((flags & VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV) &&
-        (flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT)) {
+    if ((flags & VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV) && (flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
         skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-flags-02957", device, flags_loc, "is %s.",
                          string_VkPipelineCreateFlags2(flags).c_str());
     }
@@ -369,17 +368,17 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
             skip |= ValidatePipelineShaderStageCreateInfoCommon(create_info.pStages[stage_index],
                                                                 create_info_loc.dot(Field::pStages, stage_index));
         }
-        auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
+        auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
             (feedback_struct->pipelineStageCreationFeedbackCount != create_info.stageCount)) {
-            skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651", device,
-                             create_info_loc.dot(Field::stageCount),
-                             "(%" PRIu32 ") must equal VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount (%" PRIu32
-                             ").",
-                             create_info.stageCount, feedback_struct->pipelineStageCreationFeedbackCount);
+            skip |=
+                LogError("VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651", device,
+                         create_info_loc.dot(Field::stageCount),
+                         "(%" PRIu32 ") must equal VkPipelineCreationFeedback::pipelineStageCreationFeedbackCount (%" PRIu32 ").",
+                         create_info.stageCount, feedback_struct->pipelineStageCreationFeedbackCount);
         }
 
-        const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(create_info.pNext);
+        const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
         const VkPipelineCreateFlags2KHR flags =
             create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2KHR>(create_info.flags);
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags)
@@ -392,8 +391,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
         skip |= ValidateCreateRayTracingPipelinesFlagsNV(flags, flags_loc);
 
         if (!enabled_features.pipelineCreationCacheControl) {
-            if (flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
-                         VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
+            if (flags &
+                (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905", device, flags_loc,
                                  "is %s but the pipelineCreationCacheControl feature is not enabled.",
                                  string_VkPipelineCreateFlags2(flags).c_str());
@@ -482,7 +481,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkRayTracingPipelineCreateInfoKHR &create_info = pCreateInfos[i];
 
-        const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(create_info.pNext);
+        const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
         const VkPipelineCreateFlags2KHR flags =
             create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2KHR>(create_info.flags);
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags)
@@ -516,8 +515,8 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
 
         if (!enabled_features.pipelineCreationCacheControl) {
-            if (flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
-                         VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
+            if (flags &
+                (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT)) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905", device, flags_loc,
                                  "vkCreateRayTracingPipelinesKHR(): pCreateInfos[%" PRIu32 "].flags is %s.", i,
                                  string_VkPipelineCreateFlags2(flags).c_str());
@@ -637,7 +636,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
 
         if (deferredOperation != VK_NULL_HANDLE) {
-            if (flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT) {
+            if (flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT) {
                 skip |=
                     LogError("VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03587", device, flags_loc,
                              "is %s, but deferredOperation is not VK_NULL_HANDLE.", string_VkPipelineCreateFlags2(flags).c_str());

@@ -16066,7 +16066,7 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
 
         vkt::Image image(*m_device, image_ci);
 
-        auto image_usage_ci = vku::InitStruct<VkImageViewUsageCreateInfoKHR>();
+        auto image_usage_ci = vku::InitStruct<VkImageViewUsageCreateInfo>();
         image_usage_ci.usage = test_case.usage;
         auto image_view_ci = vku::InitStruct<VkImageViewCreateInfo>(&image_usage_ci);
         image_view_ci.image = image.handle();

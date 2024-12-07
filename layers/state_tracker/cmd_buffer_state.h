@@ -251,7 +251,7 @@ class CommandBuffer : public RefcountedStateObject {
         // VK_DYNAMIC_STATE_SAMPLE_MASK_EXT
         VkSampleCountFlagBits samples_mask_samples;
         // VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_KHR
-        VkLineRasterizationModeKHR line_rasterization_mode;
+        VkLineRasterizationMode line_rasterization_mode;
         // VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT
         bool stippled_line_enable;
         // VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV
@@ -458,10 +458,10 @@ class CommandBuffer : public RefcountedStateObject {
 
     // VK_KHR_dynamic_rendering_local_read works like dynamic state, but lives for the rendering lifetime only
     struct RenderingAttachment {
-        // VkRenderingAttachmentLocationInfoKHR
+        // VkRenderingAttachmentLocationInfo
         bool set_color_locations = false;
         std::vector<uint32_t> color_locations;
-        // VkRenderingInputAttachmentIndexInfoKHR
+        // VkRenderingInputAttachmentIndexInfo
         bool set_color_indexes = false;
         std::vector<uint32_t> color_indexes;
         const uint32_t *depth_index = nullptr;
@@ -665,7 +665,7 @@ class CommandBuffer : public RefcountedStateObject {
     void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                         const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                         const VkImageMemoryBarrier *pImageMemoryBarriers);
-    void RecordBarriers(const VkDependencyInfoKHR &dep_info);
+    void RecordBarriers(const VkDependencyInfo &dep_info);
 
     void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
     void SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout);

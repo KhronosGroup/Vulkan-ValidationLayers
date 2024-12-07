@@ -84,7 +84,7 @@ void InitSubpassContexts(VkQueueFlags queue_flags, const vvl::RenderPass &rp_sta
 
 static SyncAccessIndex GetLoadOpUsageIndex(VkAttachmentLoadOp load_op, syncval_state::AttachmentType type) {
     SyncAccessIndex access_index;
-    if (load_op == VK_ATTACHMENT_LOAD_OP_NONE_KHR) {
+    if (load_op == VK_ATTACHMENT_LOAD_OP_NONE) {
         access_index = SYNC_ACCESS_INDEX_NONE;
     } else if (type == syncval_state::AttachmentType::kColor) {
         access_index = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ

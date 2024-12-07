@@ -142,8 +142,8 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
-    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
+    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags[1] = {};
     layout_createinfo_binding_flags[0] = vku::InitStructHelper();
     layout_createinfo_binding_flags[0].bindingCount = 2;
     layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
@@ -154,7 +154,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 32, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 32, VK_SHADER_STAGE_ALL, nullptr},
                                        },
                                        0, layout_createinfo_binding_flags, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -165,7 +165,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     buffer_info[0].range = sizeof(uint32_t);
 
     const uint32_t test_data = 0xdeadca7;
-    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    VkWriteDescriptorSetInlineUniformBlock write_inline_uniform = vku::InitStructHelper();
     write_inline_uniform.dataSize = 4;
     write_inline_uniform.pData = &test_data;
 
@@ -182,7 +182,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
     descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
 
     char const *csSource = R"glsl(
@@ -232,8 +232,8 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
-    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
+    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags[1] = {};
     layout_createinfo_binding_flags[0] = vku::InitStructHelper();
     layout_createinfo_binding_flags[0].bindingCount = 2;
     layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
@@ -244,7 +244,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 32, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 32, VK_SHADER_STAGE_ALL, nullptr},
                                        },
                                        0, layout_createinfo_binding_flags, 0, nullptr, &pool_inline_info);
 
@@ -254,7 +254,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     buffer_info[0].range = sizeof(uint32_t);
 
     const uint32_t test_data = 0xdeadca7;
-    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    VkWriteDescriptorSetInlineUniformBlock write_inline_uniform = vku::InitStructHelper();
     write_inline_uniform.dataSize = 4;
     write_inline_uniform.pData = &test_data;
 
@@ -271,7 +271,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
     descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
     const uint32_t set_count = m_device->Physical().limits_.maxBoundDescriptorSets + 1;  // account for reserved set
@@ -383,7 +383,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
                                        },
                                        0, nullptr, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -391,7 +391,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     descriptor_set.UpdateDescriptorSets();
 
     const uint32_t update_value = 0;
-    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    VkWriteDescriptorSetInlineUniformBlock write_inline_uniform = vku::InitStructHelper();
     write_inline_uniform.dataSize = 4;
     write_inline_uniform.pData = &update_value;
     VkWriteDescriptorSet descriptor_writes = vku::InitStructHelper(&write_inline_uniform);
@@ -399,7 +399,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     descriptor_writes.dstBinding = 1;
     descriptor_writes.dstArrayElement = 0;
     descriptor_writes.descriptorCount = 4;
-    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);
@@ -454,10 +454,10 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
                                        },
-                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT, nullptr, &pool_inline_info);
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -475,7 +475,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     m_command_buffer.End();
 
     const uint32_t update_value = 0;
-    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    VkWriteDescriptorSetInlineUniformBlock write_inline_uniform = vku::InitStructHelper();
     write_inline_uniform.dataSize = 4;
     write_inline_uniform.pData = &update_value;
     VkWriteDescriptorSet descriptor_writes = vku::InitStructHelper(&write_inline_uniform);
@@ -483,7 +483,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     descriptor_writes.dstBinding = 1;
     descriptor_writes.dstArrayElement = 0;
     descriptor_writes.descriptorCount = 4;
-    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
 
     m_default_queue->Submit(m_command_buffer);
@@ -589,7 +589,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     OneOffDescriptorSet descriptor_set_0(m_device,
                                          {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
-                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
 
     VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
@@ -869,10 +869,10 @@ TEST_F(PositiveGpuAV, BindingPartiallyBound) {
     InitRenderTarget();
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags = vku::InitStructHelper();
+    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
     ds_binding_flags[0] = 0;
     // No Error
-    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
+    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     // Uncomment for Error
     // ds_binding_flags[1] = 0;
 
@@ -1209,8 +1209,8 @@ TEST_F(PositiveGpuAV, AliasImageBindingPartiallyBound) {
         }
     )glsl";
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 2;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -1345,8 +1345,8 @@ TEST_F(PositiveGpuAV, AliasImageMultisample) {
         }
     )glsl";
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -1499,8 +1499,8 @@ TEST_F(PositiveGpuAV, AliasImageMultisampleDescriptorSetsPartiallyBound) {
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView ms_image_view = ms_image.CreateView();
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
     OneOffDescriptorSet descriptor_set0(m_device,
@@ -1599,8 +1599,8 @@ TEST_F(PositiveGpuAV, AliasImageMultisampleDispatches) {
     vkt::Image ms_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView ms_image_view = ms_image.CreateView();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -2487,7 +2487,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
         }
     )glsl";
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreateComputePipelineHelper init_pipe(*this, &pipe_flags2);
     init_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
@@ -2534,7 +2534,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
         pre_process_size = mem_reqs2.memoryRequirements.size;
     }
 
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = pre_process_size;
@@ -2599,8 +2599,8 @@ TEST_F(PositiveGpuAV, NonMultisampleMismatchWithPipeline) {
     buffer_ptr[0] = 1;
     buffer.Memory().Unmap();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 2;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 

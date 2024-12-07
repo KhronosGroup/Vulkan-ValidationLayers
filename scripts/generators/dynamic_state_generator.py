@@ -520,7 +520,7 @@ class DynamicStateOutputGenerator(BaseGenerator):
                 if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
                     ss << "vkCmdSetLineStippleEnableEXT last set stippledLineEnable to VK_TRUE.\\n";
                 } else {
-                    ss << "VkPipelineRasterizationLineStateCreateInfoEXT::stippledLineEnable was VK_TRUE in the last bound graphics pipeline.\\n";
+                    ss << "VkPipelineRasterizationLineStateCreateInfo::stippledLineEnable was VK_TRUE in the last bound graphics pipeline.\\n";
                 }''')
             if 'sampleLocationsEnable' in dependency:
                 out.append('''

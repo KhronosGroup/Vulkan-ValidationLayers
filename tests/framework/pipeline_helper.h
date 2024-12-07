@@ -34,7 +34,7 @@ class CreatePipelineHelper {
     vkt::PipelineLayout pipeline_layout_;
     VkPipelineDynamicStateCreateInfo dyn_state_ci_ = {};
     VkPipelineRasterizationStateCreateInfo rs_state_ci_ = {};
-    VkPipelineRasterizationLineStateCreateInfoKHR line_state_ci_ = {};
+    VkPipelineRasterizationLineStateCreateInfo line_state_ci_ = {};
     VkPipelineColorBlendAttachmentState cb_attachments_ = {};
     VkPipelineColorBlendStateCreateInfo cb_ci_ = {};
     VkPipelineDepthStencilStateCreateInfo ds_ci_ = {};

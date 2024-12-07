@@ -67,21 +67,21 @@ TEST_F(NegativeImage, UsageBits) {
 
     // equvalent test using using KHR_copy_commands2
     if (copy_commands2) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        VkCopyBufferToImageInfo2KHR buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                             NULL,
-                                                             buffer.handle(),
-                                                             image.handle(),
-                                                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                             1,
-                                                             &region2};
+        const VkBufferImageCopy2 region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+                                           NULL,
+                                           region.bufferRowLength,
+                                           region.bufferImageHeight,
+                                           region.bufferImageHeight,
+                                           region.imageSubresource,
+                                           region.imageOffset,
+                                           region.imageExtent};
+        VkCopyBufferToImageInfo2 buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+                                                          NULL,
+                                                          buffer.handle(),
+                                                          image.handle(),
+                                                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                          1,
+                                                          &region2};
         // two separate errors from this call:
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferToImageInfo2-dstImage-00177");
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferToImageInfo2-srcBuffer-00174");
@@ -274,19 +274,18 @@ TEST_F(NegativeImage, BlitFormatTypes) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageBlit2KHR blitRegion2 = {
-            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
-            blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
-            blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
-        const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      unsigned_image.handle(),
-                                                      unsigned_image.Layout(),
-                                                      float_image.handle(),
-                                                      float_image.Layout(),
-                                                      1,
-                                                      &blitRegion2,
-                                                      VK_FILTER_NEAREST};
+        const VkImageBlit2 blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+                                          blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+                                          blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkBlitImageInfo2 blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                   NULL,
+                                                   unsigned_image.handle(),
+                                                   unsigned_image.Layout(),
+                                                   float_image.handle(),
+                                                   float_image.Layout(),
+                                                   1,
+                                                   &blitRegion2,
+                                                   VK_FILTER_NEAREST};
         // Unsigned int vs not an int
         m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-00230");
         if (usrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-srcImage-01999");
@@ -304,19 +303,18 @@ TEST_F(NegativeImage, BlitFormatTypes) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageBlit2KHR blitRegion2 = {
-            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
-            blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
-            blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
-        const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      float_image.handle(),
-                                                      float_image.Layout(),
-                                                      unsigned_image.handle(),
-                                                      unsigned_image.Layout(),
-                                                      1,
-                                                      &blitRegion2,
-                                                      VK_FILTER_NEAREST};
+        const VkImageBlit2 blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+                                          blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+                                          blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkBlitImageInfo2 blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                   NULL,
+                                                   float_image.handle(),
+                                                   float_image.Layout(),
+                                                   unsigned_image.handle(),
+                                                   unsigned_image.Layout(),
+                                                   1,
+                                                   &blitRegion2,
+                                                   VK_FILTER_NEAREST};
         m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-00230");
         if (fsrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-srcImage-01999");
         if (udst) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-dstImage-02000");
@@ -334,19 +332,18 @@ TEST_F(NegativeImage, BlitFormatTypes) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageBlit2KHR blitRegion2 = {
-            VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
-            blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
-            blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
-        const VkBlitImageInfo2KHR blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      signed_image.handle(),
-                                                      signed_image.Layout(),
-                                                      float_image.handle(),
-                                                      float_image.Layout(),
-                                                      1,
-                                                      &blitRegion2,
-                                                      VK_FILTER_NEAREST};
+        const VkImageBlit2 blitRegion2 = {VK_STRUCTURE_TYPE_IMAGE_BLIT_2_KHR, NULL,
+                                          blitRegion.srcSubresource,          {blitRegion.srcOffsets[0], blitRegion.srcOffsets[1]},
+                                          blitRegion.dstSubresource,          {blitRegion.dstOffsets[0], blitRegion.dstOffsets[1]}};
+        const VkBlitImageInfo2 blit_image_info2 = {VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR,
+                                                   NULL,
+                                                   signed_image.handle(),
+                                                   signed_image.Layout(),
+                                                   float_image.handle(),
+                                                   float_image.Layout(),
+                                                   1,
+                                                   &blitRegion2,
+                                                   VK_FILTER_NEAREST};
         m_errorMonitor->SetDesiredError("VUID-VkBlitImageInfo2-srcImage-00229");
         if (ssrc) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-srcImage-01999");
         if (fdst) m_errorMonitor->SetUnexpectedError("VUID-VkBlitImageInfo2-dstImage-02000");
@@ -868,7 +865,7 @@ TEST_F(NegativeImage, Array2DImageType) {
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
     VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                              nullptr,
-                             VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR,
+                             VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
                              VK_IMAGE_TYPE_2D,
                              VK_FORMAT_R8G8B8A8_UNORM,
                              {32, 32, 1},
@@ -1041,7 +1038,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     VkResult res = vk::GetPhysicalDeviceImageFormatProperties(
         m_device->Physical().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_3D, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_BINDING_BIT,
+        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT,
         &formProps);
 
     // If not, skip this part of the test.
@@ -1049,24 +1046,23 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
         GTEST_SKIP() << "Missing supported features";
     }
 
-    // Initialize VkImageCreateInfo with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR and VK_IMAGE_CREATE_SPARSE_BINDING_BIT which
+    // Initialize VkImageCreateInfo with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT and VK_IMAGE_CREATE_SPARSE_BINDING_BIT which
     // are incompatible create flags.
-    imgInfo = {
-        VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        nullptr,
-        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR | VK_IMAGE_CREATE_SPARSE_BINDING_BIT,
-        VK_IMAGE_TYPE_3D,
-        VK_FORMAT_R8G8B8A8_UNORM,
-        {1, 1, 1},
-        1,
-        1,
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_SHARING_MODE_EXCLUSIVE,
-        0,
-        nullptr,
-        VK_IMAGE_LAYOUT_UNDEFINED};
+    imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+               nullptr,
+               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT,
+               VK_IMAGE_TYPE_3D,
+               VK_FORMAT_R8G8B8A8_UNORM,
+               {1, 1, 1},
+               1,
+               1,
+               VK_SAMPLE_COUNT_1_BIT,
+               VK_IMAGE_TILING_OPTIMAL,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+               VK_SHARING_MODE_EXCLUSIVE,
+               0,
+               nullptr,
+               VK_IMAGE_LAYOUT_UNDEFINED};
     VkImage image_sparse;
 
     // Creating a sparse image means we should not bind memory to it.
@@ -1383,7 +1379,7 @@ TEST_F(NegativeImage, ImageViewStencilUsageCreateInfo) {
     // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
     CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02662");
 
-    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+    VkImageStencilUsageCreateInfo image_stencil_create_info = vku::InitStructHelper();
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     image_create_info.pNext = &image_stencil_create_info;
@@ -1623,13 +1619,13 @@ TEST_F(NegativeImage, DeviceImageSubresourceInfoKHR) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    VkImageSubresource2KHR subresource = vku::InitStructHelper();
+    VkImageSubresource2 subresource = vku::InitStructHelper();
     VkImageCreateInfo image_ci = DefaultImageInfo();
     VkDeviceImageSubresourceInfoKHR image_sub_info = vku::InitStructHelper();
     image_sub_info.pCreateInfo = &image_ci;
     image_sub_info.pSubresource = &subresource;
 
-    VkSubresourceLayout2KHR out_layout = vku::InitStructHelper();
+    VkSubresourceLayout2 out_layout = vku::InitStructHelper();
 
     {
         subresource.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
@@ -1996,7 +1992,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     RETURN_IF_SKIP(Init());
 
     auto image_ci = vkt::Image::CreateInfo();
-    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR;
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.extent = {8, 8, 8};
@@ -2740,7 +2736,7 @@ TEST_F(NegativeImage, Stencil) {
 
     RETURN_IF_SKIP(Init());
 
-    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+    VkImageStencilUsageCreateInfo image_stencil_create_info = vku::InitStructHelper();
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_stencil_create_info);
@@ -2825,7 +2821,7 @@ TEST_F(NegativeImage, StencilLimits) {
         GTEST_SKIP() << "maxFramebufferHeight is already UINT32_MAX";
     }
 
-    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+    VkImageStencilUsageCreateInfo image_stencil_create_info = vku::InitStructHelper();
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_stencil_create_info);
     image_create_info.flags = 0;
@@ -4025,11 +4021,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-mipLevel-01716");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4041,11 +4037,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-arrayLayer-01717");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4057,11 +4053,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         vkt::Image image;
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-08886");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4074,11 +4070,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         vkt::Image image;
         if (create_compressed_image(depth_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-04462");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4090,11 +4086,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         vkt::Image image;
         if (create_compressed_image(stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-04463");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4107,11 +4103,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         vkt::Image image;
         if (create_compressed_image(depth_stencil_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-aspectMask-00997");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4124,11 +4120,11 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         if (create_compressed_image(VK_FORMAT_R8G8B8A8_SNORM, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-08886");
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-04464");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4168,11 +4164,11 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
         vkt::Image image;
         if (create_compressed_image(two_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-tiling-08717");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4185,11 +4181,11 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
         vkt::Image image;
         if (create_compressed_image(three_plane_format, VK_IMAGE_TILING_LINEAR, image)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-tiling-08717");
-            VkImageSubresource2EXT subresource = vku::InitStructHelper();
+            VkImageSubresource2 subresource = vku::InitStructHelper();
             subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
 
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
-            VkSubresourceLayout2EXT layout = vku::InitStructHelper(&compressionProperties);
+            VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
             vk::GetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
             m_errorMonitor->VerifyFound();
@@ -4213,9 +4209,9 @@ TEST_F(NegativeImage, GetImageSubresourceLayout2Maintenance5) {
 
     // Exceed MipmapLevel
     m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-mipLevel-01716");
-    VkImageSubresource2KHR subresource = vku::InitStructHelper();
+    VkImageSubresource2 subresource = vku::InitStructHelper();
     subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
-    VkSubresourceLayout2KHR layout = vku::InitStructHelper();
+    VkSubresourceLayout2 layout = vku::InitStructHelper();
     vk::GetImageSubresourceLayout2KHR(m_device->handle(), image.handle(), &subresource, &layout);
     m_errorMonitor->VerifyFound();
 
@@ -4264,14 +4260,14 @@ TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.Begin();
-    VkImageMemoryBarrier2KHR img_barrier = vku::InitStructHelper();
+    VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
     img_barrier.image = image.handle();
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-attachmentFeedbackLoopLayout-07313");

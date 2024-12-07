@@ -548,9 +548,9 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
                     skip |= LogError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04602", device, type_loc,
                                      "is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC.");
                     break;
-                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
                     skip |= LogError("VUID-VkMutableDescriptorTypeListEXT-pDescriptorTypes-04603", device, type_loc,
-                                     "is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.");
+                                     "is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.");
                     break;
                 default:
                     break;
@@ -575,7 +575,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
     bool skip = false;
 
     const bool has_descriptor_buffer_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0;
-    const bool has_push_descriptor_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) != 0;
+    const bool has_push_descriptor_flag = (create_info.flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) != 0;
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (create_info.pBindings != nullptr) {
         const auto *mutable_descriptor_type = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(create_info.pNext);
@@ -633,7 +633,7 @@ bool StatelessValidation::ValidateDescriptorSetLayoutCreateInfo(const VkDescript
             if (has_push_descriptor_flag && binding->descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                 skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04591", device, binding_loc.dot(Field::descriptorType),
                                  "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but flags includes "
-                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR.");
+                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT.");
             }
 
             if (has_descriptor_buffer_flag && ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
@@ -926,7 +926,7 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
         VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT,
+        VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK,
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
         VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,
     };
@@ -1003,10 +1003,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
             }
             if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
                 if (SafeModulo(pCreateInfo->pPoolSizes[i].descriptorCount, 4) != 0) {
-                    skip |=
-                        LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
-                                 "is %" PRIu32 " (not a multiple of 4), but type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT.",
-                                 pCreateInfo->pPoolSizes[i].descriptorCount);
+                    skip |= LogError("VUID-VkDescriptorPoolSize-type-02218", device, pool_loc.dot(Field::descriptorCount),
+                                     "is %" PRIu32 " (not a multiple of 4), but type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.",
+                                     pCreateInfo->pPoolSizes[i].descriptorCount);
                 }
                 if (!non_zero_inline_uniform_count) {
                     skip |=
@@ -1352,7 +1351,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBufferEmbeddedS
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetWithTemplate2(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo *pPushDescriptorSetWithTemplateInfo,
     const ErrorObject &error_obj) const {
     bool skip = false;
 

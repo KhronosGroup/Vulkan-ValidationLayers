@@ -301,9 +301,9 @@ void DispatchObject::ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjects
 // The VK_EXT_pipeline_creation_feedback extension returns data from the driver -- we've created a copy of the pnext chain, so
 // copy the returned data to the caller before freeing the copy's data.
 void CopyCreatePipelineFeedbackData(const void *src_chain, const void *dst_chain) {
-    auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(src_chain);
-    auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfoEXT *>(
-        vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfoEXT>(dst_chain));
+    auto src_feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(src_chain);
+    auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfo *>(
+        vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(dst_chain));
     if (!src_feedback_struct || !dst_feedback_struct) return;
     ASSERT_AND_RETURN(dst_feedback_struct->pPipelineCreationFeedback && src_feedback_struct->pPipelineCreationFeedback);
 
@@ -724,7 +724,7 @@ VkResult DispatchObject::CreateDescriptorUpdateTemplate(VkDevice device, const V
         if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
             local_pCreateInfo->descriptorSetLayout = Unwrap(pCreateInfo->descriptorSetLayout);
         }
-        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
             local_pCreateInfo->pipelineLayout = Unwrap(pCreateInfo->pipelineLayout);
         }
     }
@@ -757,7 +757,7 @@ VkResult DispatchObject::CreateDescriptorUpdateTemplateKHR(VkDevice device, cons
         if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
             local_pCreateInfo->descriptorSetLayout = Unwrap(pCreateInfo->descriptorSetLayout);
         }
-        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
             local_pCreateInfo->pipelineLayout = Unwrap(pCreateInfo->pipelineLayout);
         }
     }
@@ -862,7 +862,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(DispatchObject *layer_data, uint64_t de
                     VkBufferView wrapped_entry = layer_data->Unwrap(*buffer_view_handle);
                     template_entries.emplace_back(offset, kVulkanObjectTypeBufferView, CastToUint64(wrapped_entry), 0);
                 } break;
-                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT: {
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK: {
                     size_t numBytes = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                     allocation_size = std::max(allocation_size, offset + numBytes);
                     // nothing to unwrap, just plain data
@@ -1004,19 +1004,19 @@ void DispatchObject::CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer command
 }
 
 void DispatchObject::CmdPushDescriptorSetWithTemplate2(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo) {
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo *pPushDescriptorSetWithTemplateInfo) {
     if (!wrap_handles)
         return device_dispatch_table.CmdPushDescriptorSetWithTemplate2KHR(commandBuffer, pPushDescriptorSetWithTemplateInfo);
     uint64_t template_handle = CastToUint64(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
     void *unwrapped_buffer = nullptr;
     {
         ReadLockGuard lock(dispatch_lock);
-        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->descriptorUpdateTemplate =
+        const_cast<VkPushDescriptorSetWithTemplateInfo *>(pPushDescriptorSetWithTemplateInfo)->descriptorUpdateTemplate =
             Unwrap(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
-        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->layout =
+        const_cast<VkPushDescriptorSetWithTemplateInfo *>(pPushDescriptorSetWithTemplateInfo)->layout =
             Unwrap(pPushDescriptorSetWithTemplateInfo->layout);
         unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(this, template_handle, pPushDescriptorSetWithTemplateInfo->pData);
-        const_cast<VkPushDescriptorSetWithTemplateInfoKHR *>(pPushDescriptorSetWithTemplateInfo)->pData = unwrapped_buffer;
+        const_cast<VkPushDescriptorSetWithTemplateInfo *>(pPushDescriptorSetWithTemplateInfo)->pData = unwrapped_buffer;
     }
     device_dispatch_table.CmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo);
     free(unwrapped_buffer);

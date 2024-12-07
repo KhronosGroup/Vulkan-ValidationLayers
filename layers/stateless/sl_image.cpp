@@ -179,9 +179,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          string_VkSampleCountFlagBits(pCreateInfo->samples));
     }
 
-    if (!enabled_features.hostImageCopy && (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) != 0) {
+    if (!enabled_features.hostImageCopy && (pCreateInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) != 0) {
         skip |= LogError("VUID-VkImageCreateInfo-usage-10245", device, create_info_loc.dot(Field::usage),
-                         "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, but hostImageCopy feature was not enabled.");
+                         "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT, but hostImageCopy feature was not enabled.");
     }
 
     static const uint64_t drm_format_mod_linear = 0;

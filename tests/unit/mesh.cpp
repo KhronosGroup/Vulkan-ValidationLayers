@@ -197,10 +197,8 @@ TEST_F(NegativeMesh, BasicUsage) {
 
         // invalid dynamic state with mesh shader
         std::vector<VkDynamicState> dyn_states[] = {
-            {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT},
-            {VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT},
-            {VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT},
-            {VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT},
+            {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY},       {VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE},
+            {VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE}, {VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT},
             {VK_DYNAMIC_STATE_VERTEX_INPUT_EXT},
         };
         const char *err_vuids[] = {

@@ -1066,7 +1066,7 @@ const vvl::unordered_map<VkImageLayout, std::array<Entry, 2>> &GetImageLayoutErr
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07006"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07006"},
          }}},
-        {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR,
+        {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ,
          ValueType{{
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09550"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09550"},

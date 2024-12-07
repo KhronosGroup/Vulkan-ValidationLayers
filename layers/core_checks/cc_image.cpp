@@ -105,7 +105,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
 
     // Lack of disjoint format feature support while using the flag
     if (vkuFormatIsMultiplane(image_format) && ((create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
-        ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR) == 0)) {
+        ((tiling_features & VK_FORMAT_FEATURE_2_DISJOINT_BIT) == 0)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260", device, loc.dot(Field::usage),
                          "includes VK_IMAGE_CREATE_DISJOINT_BIT, but %s doesn't support "
                          "VK_FORMAT_FEATURE_DISJOINT_BIT.\n"
@@ -113,11 +113,11 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
                          string_VkFormat(create_info.format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
 
-    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT) == 0) &&
-        (create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
+    if (((tiling_features & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT) == 0) &&
+        (create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) {
         skip |= LogError("VUID-VkImageCreateInfo-imageCreateFormatFeatures-09048", device, loc.dot(Field::usage),
-                         "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT, but %s doesn't support "
-                         "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT.\n"
+                         "includes VK_IMAGE_USAGE_HOST_TRANSFER_BIT, but %s doesn't support "
+                         "VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT.\n"
                          "(supported features: %s)",
                          string_VkFormat(create_info.format), string_VkFormatFeatureFlags2(tiling_features).c_str());
     }
@@ -986,7 +986,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     skip |= ValidateMemoryIsBoundToImage(objlist, image_state, image_loc, "VUID-vkCmdClearColorImage-image-00003");
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR, image_loc,
+        skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT, image_loc,
                                                 "VUID-vkCmdClearColorImage-image-01993");
     }
     skip |= ValidateProtectedImage(cb_state, image_state, image_loc, "VUID-vkCmdClearColorImage-commandBuffer-01805");
@@ -1078,7 +1078,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     skip |= ValidateMemoryIsBoundToImage(objlist, image_state, image_loc, "VUID-vkCmdClearDepthStencilImage-image-00010");
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR, image_loc,
+        skip |= ValidateImageFormatFeatureFlags(commandBuffer, image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT, image_loc,
                                                 "VUID-vkCmdClearDepthStencilImage-image-01994");
     }
     skip |= ValidateClearDepthStencilValue(commandBuffer, *pDepthStencil, error_obj.location.dot(Field::pDepthStencil));
@@ -1251,11 +1251,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 colorAttachment < cb_state.rendering_attachments.color_locations.size() &&
                 cb_state.rendering_attachments.color_locations[colorAttachment] == VK_ATTACHMENT_UNUSED) {
                 const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->VkHandle());
-                skip |=
-                    LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
-                             "cannot be cleared because VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%" PRIu32
-                             "] is VK_ATTACHMENT_UNUSED.",
-                             colorAttachment);
+                skip |= LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
+                                 "cannot be cleared because VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32
+                                 "] is VK_ATTACHMENT_UNUSED.",
+                                 colorAttachment);
             }
 
             color_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicColorAttachmentImageIndex(colorAttachment));
@@ -2677,9 +2676,8 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image,
-                                                           const VkImageSubresource2KHR *pSubresource,
-                                                           VkSubresourceLayout2KHR *pLayout, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2 *pSubresource,
+                                                           VkSubresourceLayout2 *pLayout, const ErrorObject &error_obj) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
@@ -2718,7 +2716,7 @@ bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice 
 }
 
 bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                                      const VkHostImageLayoutTransitionInfoEXT *pTransitions,
+                                                      const VkHostImageLayoutTransitionInfo *pTransitions,
                                                       const ErrorObject &error_obj) const {
     bool skip = false;
 
@@ -2732,11 +2730,11 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
         const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
         const bool has_stencil_mask = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 
-        if ((image_state->create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
+        if ((image_state->create_info.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
             const LogObjectList objlist(device, image_state->Handle());
             skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-image-09055", objlist, transition_loc.dot(Field::image),
                              "was created with usage (%s) which does not contain "
-                             "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT.",
+                             "VK_IMAGE_USAGE_HOST_TRANSFER_BIT.",
                              string_VkImageUsageFlags(image_state->create_info.usage).c_str());
         }
 
@@ -2845,7 +2843,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32
 }
 
 void CoreChecks::PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                                     const VkHostImageLayoutTransitionInfoEXT *pTransitions,
+                                                     const VkHostImageLayoutTransitionInfo *pTransitions,
                                                      const RecordObject &record_obj) {
     ValidationStateTracker::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 

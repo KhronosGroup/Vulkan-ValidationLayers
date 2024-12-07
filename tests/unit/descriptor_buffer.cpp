@@ -157,7 +157,7 @@ TEST_F(NegativeDescriptorBuffer, SetLayoutInlineUniformBlockEXT) {
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inlineUniformProps = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(inlineUniformProps);
 
-    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT,
+    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK,
                                                inlineUniformProps.maxInlineUniformBlockSize + 4, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                nullptr};
     const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, 0U, 1U, &binding);
@@ -178,7 +178,7 @@ TEST_F(NegativeDescriptorBuffer, SetLayoutMutableDescriptorEXT) {
 
     const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutCreateFlags flags =
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE;
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;
     const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1U, &binding);
     VkDescriptorSetLayout dsl;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-08003");
@@ -853,7 +853,7 @@ TEST_F(NegativeDescriptorBuffer, BindingAndOffsets) {
 
     // Allocate common buffer memory
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = buffer_mem_reqs.size;
     m_device->Physical().SetMemoryType(buffer_mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -1564,7 +1564,7 @@ TEST_F(NegativeDescriptorBuffer, Binding) {
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    VkBindDescriptorSetsInfoKHR bind_ds_info = vku::InitStructHelper();
+    VkBindDescriptorSetsInfo bind_ds_info = vku::InitStructHelper();
     bind_ds_info.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     bind_ds_info.layout = pipeline_layout.handle();
     bind_ds_info.firstSet = 0;

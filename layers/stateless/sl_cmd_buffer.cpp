@@ -43,10 +43,10 @@ bool StatelessValidation::ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuff
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::indexType), "is VK_INDEX_TYPE_NONE_KHR.");
     }
 
-    if (indexType == VK_INDEX_TYPE_UINT8_KHR && !enabled_features.indexTypeUint8) {
+    if (indexType == VK_INDEX_TYPE_UINT8 && !enabled_features.indexTypeUint8) {
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-indexType-08787" : "VUID-vkCmdBindIndexBuffer-indexType-08787";
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::indexType),
-                         "is VK_INDEX_TYPE_UINT8_KHR but indexTypeUint8 feature was not enabled.");
+                         "is VK_INDEX_TYPE_UINT8 but indexTypeUint8 feature was not enabled.");
     }
 
     return skip;
@@ -332,7 +332,7 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer,
-                                                                  const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                                  const VkPushConstantsInfo *pPushConstantsInfo,
                                                                   const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size,
@@ -502,7 +502,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCo
     }
 
     for (uint32_t i = 0; i < bufferCount; i++) {
-        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pBindingInfos[i].pNext)) {
+        if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pBindingInfos[i].pNext)) {
             skip |= ValidateFlags(error_obj.location.dot(Field::pBindingInfos, i).dot(Field::usage),
                                   vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits, pBindingInfos[i].usage,
                                   kRequiredFlags, VK_NULL_HANDLE, "VUID-VkDescriptorBufferBindingInfoEXT-None-09499",
@@ -518,7 +518,7 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceExternalBufferP
     VkExternalBufferProperties *pExternalBufferProperties, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfoKHR>(pExternalBufferInfo->pNext)) {
+    if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pExternalBufferInfo->pNext)) {
         skip |= ValidateFlags(error_obj.location.dot(Field::pExternalBufferInfo).dot(Field::usage),
                               vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits, pExternalBufferInfo->usage,
                               kRequiredFlags, VK_NULL_HANDLE, "VUID-VkPhysicalDeviceExternalBufferInfo-None-09499",
@@ -537,7 +537,7 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet(VkCommandBu
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                                      const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                                      const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateWriteDescriptorSet(error_obj.location, pPushDescriptorSetInfo->descriptorWriteCount,

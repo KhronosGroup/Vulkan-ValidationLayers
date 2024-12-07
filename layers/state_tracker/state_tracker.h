@@ -1020,8 +1020,7 @@ class ValidationStateTracker : public ValidationObject {
                                                        const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
                                                        const RecordObject& record_obj) override;
     void PostCallRecordCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
-                                             const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
+    void PreCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer, const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                              const RecordObject& record_obj) override;
     void PreCallRecordCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                 const VkBindDescriptorSetsInfoKHR* pBindDescriptorSetsInfo,
@@ -1212,7 +1211,7 @@ class ValidationStateTracker : public ValidationObject {
                                               VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet* pDescriptorWrites,
                                               const RecordObject& record_obj) override;
-    void PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+    void PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
                                             const RecordObject& record_obj) override;
     void PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
@@ -1233,7 +1232,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                         uint32_t offset, uint32_t size, const void* pValues,
                                         const RecordObject& record_obj) override;
-    void PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+    void PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
                                          const RecordObject& record_obj) override;
     void PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
                                             const RecordObject& record_obj) override;
@@ -1593,13 +1592,13 @@ class ValidationStateTracker : public ValidationObject {
                                                     const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                     const RecordObject& record_obj) override;
     void PostCallRecordCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                          const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                          const VkRenderingAttachmentLocationInfo* pLocationInfo,
                                                           const RecordObject& record_obj) override;
     void PostCallRecordCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                              const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
                                                              const RecordObject& record_obj) override;
     void PostCallRecordCmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
-                                                             const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                             const VkRenderingInputAttachmentIndexInfo* pLocationInfo,
                                                              const RecordObject& record_obj) override;
     void PostCallRecordCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
                                                                 const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,

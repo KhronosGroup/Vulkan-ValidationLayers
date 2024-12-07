@@ -1276,7 +1276,7 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     uint32_t pipeline_color_count = 0;
     const uint32_t* pipeline_color_locations = nullptr;
     if (const auto* pipeline_location_info =
-            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline_state.GetCreateInfoPNext())) {
+            vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(pipeline_state.GetCreateInfoPNext())) {
         pipeline_color_count = pipeline_location_info->colorAttachmentCount;
         pipeline_color_locations = pipeline_location_info->pColorAttachmentLocations;
     } else if (const auto* pipeline_rendering_create_info = pipeline_state.GetPipelineRenderingCreateInfo()) {
@@ -1288,18 +1288,18 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
     if (pipeline_color_count != color_attachment_count) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
-                        "The pipeline VkRenderingAttachmentLocationInfoKHR::colorAttachmentCount is %" PRIu32
+                        "The pipeline VkRenderingAttachmentLocationInfo::colorAttachmentCount is %" PRIu32
                         " but vkCmdSetRenderingAttachmentLocations last set colorAttachmentCount to %" PRIu32 "",
                         pipeline_color_count, color_attachment_count);
     } else if (pipeline_color_locations) {
         for (uint32_t i = 0; i < pipeline_color_count; i++) {
             if (pipeline_color_locations[i] != cb_state.rendering_attachments.color_locations[i]) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
-                skip = LogError(
-                    vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
-                    "The pipeline VkRenderingAttachmentLocationInfoKHR::pColorAttachmentLocations[%" PRIu32 "] is %" PRIu32
-                    " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentLocations[%" PRIu32 "] to %" PRIu32 "",
-                    i, pipeline_color_locations[i], i, cb_state.rendering_attachments.color_locations[i]);
+                skip = LogError(vuid.dynamic_rendering_local_location_09548, objlist, vuid.loc(),
+                                "The pipeline VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32 "] is %" PRIu32
+                                " but vkCmdSetRenderingAttachmentLocations last set pColorAttachmentLocations[%" PRIu32
+                                "] to %" PRIu32 "",
+                                i, pipeline_color_locations[i], i, cb_state.rendering_attachments.color_locations[i]);
                 break;
             }
         }
@@ -1322,7 +1322,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     const uint32_t* pipeline_depth_index = nullptr;
     const uint32_t* pipeline_stencil_index = nullptr;
     if (const auto* pipeline_index_info =
-            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline_state.GetCreateInfoPNext())) {
+            vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline_state.GetCreateInfoPNext())) {
         pipeline_color_count = pipeline_index_info->colorAttachmentCount;
         pipeline_color_indexes = pipeline_index_info->pColorAttachmentInputIndices;
         pipeline_depth_index = pipeline_index_info->pDepthInputAttachmentIndex;
@@ -1336,7 +1336,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
     if (pipeline_color_count != color_index_count) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::colorAttachmentCount is %" PRIu32
+                        "The pipeline VkRenderingInputAttachmentIndexInfo::colorAttachmentCount is %" PRIu32
                         " but vkCmdSetRenderingInputAttachmentIndices last set colorAttachmentCount to %" PRIu32 "",
                         pipeline_color_count, color_index_count);
     } else if (pipeline_color_indexes) {
@@ -1344,7 +1344,7 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
             if (pipeline_color_indexes[i] != cb_state.rendering_attachments.color_indexes[i]) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
                 skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                                "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pColorAttachmentInputIndices[%" PRIu32
+                                "The pipeline VkRenderingInputAttachmentIndexInfo::pColorAttachmentInputIndices[%" PRIu32
                                 "] is %" PRIu32
                                 " but vkCmdSetRenderingInputAttachmentIndices last set pColorAttachmentInputIndices[%" PRIu32
                                 "] to %" PRIu32 "",
@@ -1358,14 +1358,14 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         (pipeline_depth_index != cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pDepthInputAttachmentIndex is 0x%p but "
+                        "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex is 0x%p but "
                         "vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex to 0x%p",
                         pipeline_depth_index, cb_state.rendering_attachments.depth_index);
     } else if (pipeline_depth_index && cb_state.rendering_attachments.depth_index &&
                (*pipeline_depth_index != *cb_state.rendering_attachments.depth_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pDepthInputAttachmentIndex value is %" PRIu32
+                        "The pipeline VkRenderingInputAttachmentIndexInfo::pDepthInputAttachmentIndex value is %" PRIu32
                         " but vkCmdSetRenderingInputAttachmentIndices last set pDepthInputAttachmentIndex value to %" PRIu32 "",
                         *pipeline_depth_index, *cb_state.rendering_attachments.depth_index);
     }
@@ -1374,14 +1374,14 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         (pipeline_stencil_index != cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex is 0x%p but "
+                        "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex is 0x%p but "
                         "vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex to 0x%p",
                         pipeline_stencil_index, cb_state.rendering_attachments.stencil_index);
     } else if (pipeline_stencil_index && cb_state.rendering_attachments.stencil_index &&
                (*pipeline_stencil_index != *cb_state.rendering_attachments.stencil_index)) {
         const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle());
         skip = LogError(vuid.dynamic_rendering_local_index_09549, objlist, vuid.loc(),
-                        "The pipeline VkRenderingInputAttachmentIndexInfoKHR::pStencilInputAttachmentIndex value is %" PRIu32
+                        "The pipeline VkRenderingInputAttachmentIndexInfo::pStencilInputAttachmentIndex value is %" PRIu32
                         " but vkCmdSetRenderingInputAttachmentIndices last set pStencilInputAttachmentIndex value to %" PRIu32 "",
                         *pipeline_stencil_index, *cb_state.rendering_attachments.stencil_index);
     }
@@ -2630,21 +2630,21 @@ bool CoreChecks::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer c
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR && !enabled_features.rectangularLines) {
+    if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR && !enabled_features.rectangularLines) {
         skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418", commandBuffer,
                          error_obj.location.dot(Field::lineRasterizationMode),
-                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR "
+                         "is VK_LINE_RASTERIZATION_MODE_RECTANGULAR "
                          "but the rectangularLines feature was not enabled.");
-    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR && !enabled_features.bresenhamLines) {
+    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM && !enabled_features.bresenhamLines) {
         skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419", commandBuffer,
                          error_obj.location.dot(Field::lineRasterizationMode),
-                         "is VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR "
+                         "is VK_LINE_RASTERIZATION_MODE_BRESENHAM "
                          "but the bresenhamLines feature was not enabled.");
-    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR && !enabled_features.smoothLines) {
+    } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH && !enabled_features.smoothLines) {
         skip |= LogError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420", commandBuffer,
                          error_obj.location.dot(Field::lineRasterizationMode),
                          "is "
-                         "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR but the smoothLines feature was not enabled.");
+                         "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH but the smoothLines feature was not enabled.");
     }
     return skip;
 }

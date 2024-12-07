@@ -189,7 +189,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_st
         create_flags(uint32_t a, uint32_t b) : unprocted_index(a), protected_index(b) {}
     };
     vvl::unordered_map<uint32_t, create_flags> queue_family_map;
-    vvl::unordered_map<uint32_t, VkQueueGlobalPriorityKHR> global_priorities;
+    vvl::unordered_map<uint32_t, VkQueueGlobalPriority> global_priorities;
 
     std::vector<uint32_t> queue_counts;
     for (uint32_t i = 0; i < info_count; ++i) {
@@ -251,8 +251,8 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_st
             }
         }
 
-        VkQueueGlobalPriorityKHR global_priority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;  // Implicit default value
-        const auto *global_priority_ci = vku::FindStructInPNextChain<VkDeviceQueueGlobalPriorityCreateInfoKHR>(infos[i].pNext);
+        VkQueueGlobalPriority global_priority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;  // Implicit default value
+        const auto *global_priority_ci = vku::FindStructInPNextChain<VkDeviceQueueGlobalPriorityCreateInfo>(infos[i].pNext);
         if (global_priority_ci) {
             global_priority = global_priority_ci->globalPriority;
         }
@@ -502,13 +502,13 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysica
                                                                  VkImageFormatProperties2 *pImageFormatProperties,
                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
-    const auto *copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQueryEXT>(pImageFormatProperties->pNext);
+    const auto *copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
-        if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) == 0) {
+        if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
             skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", physical_device, error_obj.location,
                              "pImageFormatProperties includes a chained "
-                             "VkHostImageCopyDevicePerformanceQueryEXT struct, but pImageFormatInfo->usage (%s) does not contain "
-                             "VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT",
+                             "VkHostImageCopyDevicePerformanceQuery struct, but pImageFormatInfo->usage (%s) does not contain "
+                             "VK_IMAGE_USAGE_HOST_TRANSFER_BIT",
                              string_VkBufferUsageFlags(pImageFormatInfo->usage).c_str());
         }
     }
@@ -855,7 +855,7 @@ bool CoreChecks::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const
             skip |= LogError("VUID-VkPipelineBinaryCreateInfoKHR-pipeline-09607", pipeline, create_info_loc.dot(Field::pipeline),
                              "called on a pipeline created without the "
                              "VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR flag set. (Make sure you set it with "
-                             "VkPipelineCreateFlags2CreateInfoKHR)");
+                             "VkPipelineCreateFlags2CreateInfo)");
         }
 
         if (pipeline_state->binary_data_released) {

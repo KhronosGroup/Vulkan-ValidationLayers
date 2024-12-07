@@ -40,8 +40,7 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
                  vvl::enumerate(input_state->pVertexBindingDescriptions, input_state->vertexBindingDescriptionCount)) {
                 bindings.emplace(bd->binding, VertexBindingState(i, bd));
             }
-            const auto *divisor_info =
-                vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(input_state->pNext);
+            const auto *divisor_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(input_state->pNext);
             if (divisor_info) {
                 for (const auto [i, di] :
                      vvl::enumerate(divisor_info->pVertexBindingDivisors, divisor_info->vertexBindingDivisorCount)) {

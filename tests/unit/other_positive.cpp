@@ -268,7 +268,7 @@ TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                        &alloc_flags);
     (void)buffer.Address();
@@ -606,7 +606,7 @@ TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct0) {
 
 TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
     TEST_DESCRIPTION(
-        "Use VkBufferUsageFlags2CreateInfoKHR with VkPhysicalDeviceExternalBufferInfo if VK_KHR_maintenance5 is available");
+        "Use VkBufferUsageFlags2CreateInfo with VkPhysicalDeviceExternalBufferInfo if VK_KHR_maintenance5 is available");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
     if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
@@ -614,14 +614,14 @@ TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
     }
 
 #ifdef _WIN32
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #else
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
 
     // Requires device extension (VK_KHR_maintenance5)
-    VkBufferUsageFlags2CreateInfoKHR bufferUsageFlags2 = vku::InitStructHelper();
-    bufferUsageFlags2.usage = VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT_KHR;
+    VkBufferUsageFlags2CreateInfo bufferUsageFlags2 = vku::InitStructHelper();
+    bufferUsageFlags2.usage = VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
 
     VkPhysicalDeviceExternalBufferInfo externalBufferInfo = vku::InitStructHelper(&bufferUsageFlags2);
     externalBufferInfo.handleType = handle_type;

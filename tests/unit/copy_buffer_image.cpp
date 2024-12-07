@@ -814,21 +814,21 @@ TEST_F(NegativeCopyBufferImage, CompressedImageMip) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkBufferImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2_KHR,
-                                               NULL,
-                                               region.bufferOffset,
-                                               region.bufferRowLength,
-                                               region.bufferImageHeight,
-                                               region.imageSubresource,
-                                               region.imageOffset,
-                                               region.imageExtent};
-        const VkCopyBufferToImageInfo2KHR copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2_KHR,
-                                                                        NULL,
-                                                                        buffer_16.handle(),
-                                                                        image.handle(),
-                                                                        VK_IMAGE_LAYOUT_GENERAL,
-                                                                        1,
-                                                                        &region2};
+        const VkBufferImageCopy2 region2 = {VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+                                            NULL,
+                                            region.bufferOffset,
+                                            region.bufferRowLength,
+                                            region.bufferImageHeight,
+                                            region.imageSubresource,
+                                            region.imageOffset,
+                                            region.imageExtent};
+        const VkCopyBufferToImageInfo2 copy_buffer_to_image_info2 = {VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2,
+                                                                     NULL,
+                                                                     buffer_16.handle(),
+                                                                     image.handle(),
+                                                                     VK_IMAGE_LAYOUT_GENERAL,
+                                                                     1,
+                                                                     &region2};
         // imageOffset not a multiple of block size
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferToImageInfo2-dstImage-07274");
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferToImageInfo2-dstImage-07275");
@@ -871,9 +871,9 @@ TEST_F(NegativeCopyBufferImage, Compressed) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR) ||
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
         !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -910,7 +910,7 @@ TEST_F(NegativeCopyBufferImage, CompressedMipLevels) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -1091,23 +1091,24 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using KHR_copy_commands2
+    // Equivalent test using
+
     if (copy_commands2) {
-        const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
-                                         copy_region.srcSubresource,
-                                         copy_region.srcOffset,
-                                         copy_region.dstSubresource,
-                                         copy_region.dstOffset,
-                                         copy_region.extent};
-        const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      image_1D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      image_2D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      1,
-                                                      &region2};
+        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+                                      NULL,
+                                      copy_region.srcSubresource,
+                                      copy_region.srcOffset,
+                                      copy_region.dstSubresource,
+                                      copy_region.dstOffset,
+                                      copy_region.extent};
+        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+                                                   NULL,
+                                                   image_1D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   image_2D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   1,
+                                                   &region2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-00146");
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcOffset-00145");   // also y-dim overrun
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
@@ -1126,21 +1127,21 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
-                                         copy_region.srcSubresource,
-                                         copy_region.srcOffset,
-                                         copy_region.dstSubresource,
-                                         copy_region.dstOffset,
-                                         copy_region.extent};
-        const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      image_2D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      image_1D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      1,
-                                                      &region2};
+        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+                                      NULL,
+                                      copy_region.srcSubresource,
+                                      copy_region.srcOffset,
+                                      copy_region.dstSubresource,
+                                      copy_region.dstOffset,
+                                      copy_region.extent};
+        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+                                                   NULL,
+                                                   image_2D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   image_1D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   1,
+                                                   &region2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
@@ -1161,21 +1162,21 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
-                                         copy_region.srcSubresource,
-                                         copy_region.srcOffset,
-                                         copy_region.dstSubresource,
-                                         copy_region.dstOffset,
-                                         copy_region.extent};
-        const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      image_1D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      image_2D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      1,
-                                                      &region2};
+        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+                                      NULL,
+                                      copy_region.srcSubresource,
+                                      copy_region.srcOffset,
+                                      copy_region.dstSubresource,
+                                      copy_region.dstOffset,
+                                      copy_region.extent};
+        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+                                                   NULL,
+                                                   image_1D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   image_2D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   1,
+                                                   &region2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-00146");
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcOffset-00145");   // also y-dim overrun
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
@@ -1192,21 +1193,21 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageCopy2KHR region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                         NULL,
-                                         copy_region.srcSubresource,
-                                         copy_region.srcOffset,
-                                         copy_region.dstSubresource,
-                                         copy_region.dstOffset,
-                                         copy_region.extent};
-        const VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                      NULL,
-                                                      image_2D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      image_1D.handle(),
-                                                      VK_IMAGE_LAYOUT_GENERAL,
-                                                      1,
-                                                      &region2};
+        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+                                      NULL,
+                                      copy_region.srcSubresource,
+                                      copy_region.srcOffset,
+                                      copy_region.dstSubresource,
+                                      copy_region.dstOffset,
+                                      copy_region.extent};
+        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+                                                   NULL,
+                                                   image_2D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   image_1D.handle(),
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   1,
+                                                   &region2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
@@ -2415,7 +2416,7 @@ TEST_F(NegativeCopyBufferImage, CopyCommands2V13) {
     bic_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     bic_region.imageExtent = {4, 4, 1};
 
-    VkCopyBufferToImageInfo2KHR buffer_image_info = vku::InitStructHelper();
+    VkCopyBufferToImageInfo2 buffer_image_info = vku::InitStructHelper();
     buffer_image_info.srcBuffer = src_buffer.handle();
     buffer_image_info.dstImage = image.handle();
     buffer_image_info.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -2666,7 +2667,7 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
 
     // Verify format support
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+                                    VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
@@ -2832,21 +2833,21 @@ TEST_F(NegativeCopyBufferImage, ImageMemory) {
     m_errorMonitor->VerifyFound();
 
     if (copy_commands2) {
-        const VkImageCopy2KHR copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR,
-                                              NULL,
-                                              copy_region.srcSubresource,
-                                              copy_region.srcOffset,
-                                              copy_region.dstSubresource,
-                                              copy_region.dstOffset,
-                                              copy_region.extent};
-        VkCopyImageInfo2KHR copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2_KHR,
-                                                NULL,
-                                                image_no_mem.handle(),
-                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                image.handle(),
-                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                1,
-                                                &copy_region2};
+        const VkImageCopy2 copy_region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+                                           NULL,
+                                           copy_region.srcSubresource,
+                                           copy_region.srcOffset,
+                                           copy_region.dstSubresource,
+                                           copy_region.dstOffset,
+                                           copy_region.extent};
+        VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+                                             NULL,
+                                             image_no_mem.handle(),
+                                             VK_IMAGE_LAYOUT_GENERAL,
+                                             image.handle(),
+                                             VK_IMAGE_LAYOUT_GENERAL,
+                                             1,
+                                             &copy_region2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-07966");
         m_errorMonitor->SetUnexpectedError("doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL.");
         vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
@@ -3064,10 +3065,10 @@ TEST_F(NegativeCopyBufferImage, Extents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
-                                             copy_info.size};
-        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
-            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+        const VkBufferCopy2 copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                          copy_info.size};
+        const VkCopyBufferInfo2 copy_buffer_info2 = {
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferInfo2-srcOffset-00113");
         vk::CmdCopyBuffer2KHR(m_command_buffer.handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
@@ -3080,10 +3081,10 @@ TEST_F(NegativeCopyBufferImage, Extents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
-                                             copy_info.size};
-        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
-            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
+        const VkBufferCopy2 copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                          copy_info.size};
+        const VkCopyBufferInfo2 copy_buffer_info2 = {
+            VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferInfo2-dstOffset-00114");
         vk::CmdCopyBuffer2KHR(m_command_buffer.handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
@@ -3096,9 +3097,9 @@ TEST_F(NegativeCopyBufferImage, Extents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
-                                             copy_info.size};
-        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
+        const VkBufferCopy2 copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                          copy_info.size};
+        const VkCopyBufferInfo2 copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferInfo2-size-00115");
         vk::CmdCopyBuffer2KHR(m_command_buffer.handle(), &copy_buffer_info2);
@@ -3112,9 +3113,9 @@ TEST_F(NegativeCopyBufferImage, Extents) {
 
     // equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
-                                             copy_info.size};
-        const VkCopyBufferInfo2KHR copy_buffer_info2 = {
+        const VkBufferCopy2 copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2, NULL, copy_info.srcOffset, copy_info.dstOffset,
+                                          copy_info.size};
+        const VkCopyBufferInfo2 copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredError("VUID-VkCopyBufferInfo2-size-00116");
         vk::CmdCopyBuffer2KHR(m_command_buffer.handle(), &copy_buffer_info2);

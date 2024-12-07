@@ -971,7 +971,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicateKHR) {
 
     uint32_t count = 0;
     vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(Gpu(), &count, nullptr);
-    std::vector<VkTimeDomainEXT> time_domains(count);
+    std::vector<VkTimeDomainKHR> time_domains(count);
     vk::GetPhysicalDeviceCalibrateableTimeDomainsKHR(Gpu(), &count, time_domains.data());
 
     VkCalibratedTimestampInfoEXT timestamp_infos[2];
@@ -999,12 +999,12 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
     vk::GetPhysicalDeviceCalibrateableTimeDomainsEXT(Gpu(), &count, time_domains.data());
 
     for (uint32_t i = 0; i < count; i++) {
-        if (time_domains[i] == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT) {
-            GTEST_SKIP() << "Support for VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT";
+        if (time_domains[i] == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_KHR) {
+            GTEST_SKIP() << "Support for VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_KHR";
         }
     }
     VkCalibratedTimestampInfoEXT timestamp_info = vku::InitStructHelper();
-    timestamp_info.timeDomain = VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT;
+    timestamp_info.timeDomain = VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_KHR;
 
     uint64_t timestamp;
     uint64_t max_deviation;
@@ -1228,9 +1228,9 @@ TEST_F(VkLayerTest, InvalidGetExternalBufferPropertiesUsage) {
     RETURN_IF_SKIP(Init());
 
 #ifdef _WIN32
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #else
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
 
     VkPhysicalDeviceExternalBufferInfo externalBufferInfo = vku::InitStructHelper();
@@ -1273,8 +1273,8 @@ TEST_F(VkLayerTest, MissingExtensionStruct) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
 
     // added in VK_KHR_maintenance5
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT;
 
     VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;

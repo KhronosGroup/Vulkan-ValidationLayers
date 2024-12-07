@@ -367,8 +367,8 @@ TEST_F(PositiveQuery, WriteTimestampNoneAndAll) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 2);
 
     m_command_buffer.Begin();
-    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
-    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
+    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_NONE, query_pool.handle(), 0);
+    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, query_pool.handle(), 1);
     m_command_buffer.End();
 }
 

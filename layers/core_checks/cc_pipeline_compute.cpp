@@ -50,7 +50,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                       "VUID-VkComputePipelineCreateInfo-flags-09007");
 
         if (const auto *pipeline_robustness_info =
-                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext)) {
+                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pCreateInfos[i].pNext)) {
             skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, create_info_loc);
         }
 
@@ -72,7 +72,7 @@ bool CoreChecks::ValidateComputePipelineDerivatives(PipelineStates &pipeline_sta
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
-    if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT_KHR) {
+    if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT) {
         std::shared_ptr<const vvl::Pipeline> base_pipeline;
         const auto &pipeline_ci = pipeline.ComputeCreateInfo();
         const VkPipeline base_handle = pipeline_ci.basePipelineHandle;
@@ -90,7 +90,7 @@ bool CoreChecks::ValidateComputePipelineDerivatives(PipelineStates &pipeline_sta
             base_pipeline = Get<vvl::Pipeline>(base_handle);
         }
 
-        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT_KHR)) {
+        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT)) {
             skip |= LogError("VUID-vkCreateComputePipelines-flags-00696", base_pipeline->Handle(), loc,
                              "base pipeline does not allow derivatives.");
         }

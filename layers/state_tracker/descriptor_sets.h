@@ -213,7 +213,7 @@ class DescriptorSetLayoutDef {
 
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t) const;
-    bool IsPushDescriptor() const { return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR; };
+    bool IsPushDescriptor() const { return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT; };
 
     struct BindingTypeStats {
         uint32_t dynamic_buffer_count;
@@ -766,7 +766,7 @@ using MutableBinding = DescriptorBindingImpl<MutableDescriptor>;
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
-    std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
+    std::vector<VkWriteDescriptorSetInlineUniformBlock> inline_infos;
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
     std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
     DecodedTemplateUpdate(const ValidationStateTracker &device_data, VkDescriptorSet descriptorSet,

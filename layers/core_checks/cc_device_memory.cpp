@@ -358,7 +358,7 @@ bool CoreChecks::IgnoreAllocationSize(const VkMemoryAllocateInfo &allocate_info)
 bool CoreChecks::HasExternalMemoryImportSupport(const vvl::Buffer &buffer, VkExternalMemoryHandleTypeFlagBits handle_type) const {
     VkPhysicalDeviceExternalBufferInfo info = vku::InitStructHelper();
     info.flags = buffer.create_info.flags;
-    // TODO - Add VkBufferUsageFlags2CreateInfoKHR support
+    // TODO - Add VkBufferUsageFlags2CreateInfo support
     info.usage = buffer.create_info.usage;
     info.handleType = handle_type;
     VkExternalBufferProperties properties = vku::InitStructHelper();

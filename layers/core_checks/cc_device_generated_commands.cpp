@@ -247,7 +247,7 @@ bool CoreChecks::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecut
         skip |= LogError("VUID-VkIndirectExecutionSetPipelineInfoEXT-initialPipeline-11153", initial_pipeline->Handle(),
                          pipeline_info_loc.dot(Field::initialPipeline),
                          "is missing VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, was created with flags %s. (Make sure you "
-                         "set it with VkPipelineCreateFlags2CreateInfoKHR)",
+                         "set it with VkPipelineCreateFlags2CreateInfo)",
                          string_VkPipelineCreateFlags2(initial_pipeline->create_flags).c_str());
     }
 
@@ -504,7 +504,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
         BufferAddressValidation<2> buffer_address_validator = {{{
             {"VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11072",
              [](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
-                 if ((buffer_state->usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR) == 0) {
+                 if ((buffer_state->usage & VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT) == 0) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                      }
@@ -512,7 +512,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
                  }
                  return true;
              },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR"; }},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT"; }},
             {"VUID-VkGeneratedCommandsInfoEXT-sequenceCountAddress-11075",
              [this](vvl::Buffer* const buffer_state, std::string* out_error_msg) {
                  return BufferAddressValidation<1>::ValidateMemoryBoundToBuffer(*this, buffer_state, out_error_msg);
@@ -840,7 +840,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
             skip |= LogError("VUID-VkWriteIndirectExecutionSetPipelineEXT-pipeline-11027", update_pipeline->Handle(),
                              set_write_loc.dot(Field::pipeline),
                              "is missing VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT, was created with flags %s. (Make sure you "
-                             "set it with VkPipelineCreateFlags2CreateInfoKHR)",
+                             "set it with VkPipelineCreateFlags2CreateInfo)",
                              string_VkPipelineCreateFlags2(update_pipeline->create_flags).c_str());
         }
 

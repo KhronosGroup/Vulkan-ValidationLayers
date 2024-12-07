@@ -452,7 +452,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                 const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
                 skip |= LogError(vuid, objlist, loc.dot(Field::queryPool),
                                  "(%s) was created with a counter of scope "
-                                 "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but %s is not the first recorded "
+                                 "VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR but %s is not the first recorded "
                                  "command in the command buffer.",
                                  FormatHandle(query_obj.pool).c_str(), loc.StringFunc());
             }
@@ -463,7 +463,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                 const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
                 skip |= LogError(vuid, objlist, loc.dot(Field::queryPool),
                                  "(%s) was created with a counter of scope "
-                                 "VK_QUERY_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
+                                 "VK_PERFORMANCE_COUNTER_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
                                  FormatHandle(query_obj.pool).c_str(), loc.StringFunc());
             }
 
@@ -890,7 +890,7 @@ void CoreChecks::EnqueueVerifyEndQuery(vvl::CommandBuffer &cb_state, const Query
             const Location loc(command);
             skip |= LogError("VUID-vkCmdEndQuery-queryPool-03227", objlist, loc,
                              "Query pool %s was created with a counter of scope "
-                             "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
+                             "VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
                              "command in the command buffer %s.",
                              FormatHandle(query_obj.pool).c_str(), FormatHandle(cb_state_arg).c_str());
         }
@@ -918,7 +918,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
             const LogObjectList objlist(cb_state.Handle(), queryPool);
             skip |= LogError("VUID-vkCmdEndQuery-queryPool-03228", objlist, loc,
                              "Query pool %s was created with a counter of scope "
-                             "VK_QUERY_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
+                             "VK_PERFORMANCE_COUNTER_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
                              FormatHandle(queryPool).c_str(), loc.StringFunc());
         }
     }

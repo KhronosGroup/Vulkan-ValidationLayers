@@ -109,10 +109,10 @@ TEST_F(NegativeSecondaryCommandBuffer, Sync2AsPrimary) {
     secondary.Begin();
     secondary.End();
 
-    VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = secondary.handle();
 
-    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -718,7 +718,7 @@ TEST_F(NegativeSecondaryCommandBuffer, NestedCommandBufferRendering) {
     vkt::CommandBuffer secondary1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkCommandBufferInheritanceRenderingInfoKHR cbiri = vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfo cbiri = vku::InitStructHelper();
     cbiri.colorAttachmentCount = 1;
     cbiri.pColorAttachmentFormats = &m_render_target_fmt;
     cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -754,7 +754,7 @@ TEST_F(NegativeSecondaryCommandBuffer, NestedCommandBufferSimultaneousUse) {
     vkt::CommandBuffer secondary1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkCommandBufferInheritanceRenderingInfoKHR cbiri = vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfo cbiri = vku::InitStructHelper();
     cbiri.colorAttachmentCount = 1;
     cbiri.pColorAttachmentFormats = &m_render_target_fmt;
     cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -797,7 +797,7 @@ TEST_F(NegativeSecondaryCommandBuffer, MaxCommandBufferNestingLevel) {
     vkt::CommandBuffer secondary3(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary4(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkCommandBufferInheritanceRenderingInfoKHR cbiri = vku::InitStructHelper();
+    VkCommandBufferInheritanceRenderingInfo cbiri = vku::InitStructHelper();
     cbiri.colorAttachmentCount = 1;
     cbiri.pColorAttachmentFormats = &m_render_target_fmt;
     cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;

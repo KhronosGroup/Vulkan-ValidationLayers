@@ -1197,7 +1197,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
     raytracing_pipeline_ci.layout = pipeline_layout.handle();
 
     {
-        VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+        VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
         flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
         raytracing_pipeline_ci.pNext = &flags2;
 
@@ -1246,7 +1246,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
     }
 
     {
-        VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+        VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
         flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
         raytracing_pipeline_ci.pNext = &flags2;
 
@@ -1282,7 +1282,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
         feedback.flags = VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT |
                          VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT;
 
-        flags2.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT;
+        flags2.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         flags2.pNext = &binary_info;
         binary_info.pNext = &feedback_create_info;
 

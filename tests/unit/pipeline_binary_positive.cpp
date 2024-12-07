@@ -25,7 +25,7 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromPipeline) {
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
     RETURN_IF_SKIP(Init());
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     CreateComputePipelineHelper pipe(*this, &flags2);
@@ -54,7 +54,7 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
 
     VkResult err;
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     std::vector<uint8_t> binary_data;

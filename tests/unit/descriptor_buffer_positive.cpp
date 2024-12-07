@@ -82,7 +82,7 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
 }
 
 TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
-    TEST_DESCRIPTION("Use descriptor buffer with pipeline created with VkPipelineCreateFlags2CreateInfoKHR");
+    TEST_DESCRIPTION("Use descriptor buffer with pipeline created with VkPipelineCreateFlags2CreateInfo");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance5);
@@ -100,7 +100,7 @@ TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
     const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
 
-    VkPipelineCreateFlags2CreateInfoKHR flags_2_ci = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags_2_ci = vku::InitStructHelper();
     flags_2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT;
 
     CreatePipelineHelper pipe(*this, &flags_2_ci);

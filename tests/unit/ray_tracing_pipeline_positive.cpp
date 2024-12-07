@@ -109,7 +109,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
 }
 
 TEST_F(PositiveRayTracingPipeline, CacheControl) {
-    TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT.");
+    TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);

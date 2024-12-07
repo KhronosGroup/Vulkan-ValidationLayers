@@ -205,7 +205,7 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     void *alloc_pnext = nullptr;
     if (buffer_device_address) {
         usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         alloc_pnext = &alloc_flags;
     }
     vbo->init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);

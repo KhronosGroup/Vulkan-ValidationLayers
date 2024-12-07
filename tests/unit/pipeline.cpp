@@ -776,13 +776,13 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
     InitRenderTarget();
 
     const auto set_graphics_flags = [&](CreatePipelineHelper &helper) {
-        helper.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT;
+        helper.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     };
     CreatePipelineHelper::OneshotTest(*this, set_graphics_flags, kErrorBit,
                                       "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
 
     const auto set_compute_flags = [&](CreateComputePipelineHelper &helper) {
-        helper.cp_ci_.flags = VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT;
+        helper.cp_ci_.flags = VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT;
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
                                              "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
@@ -790,7 +790,7 @@ TEST_F(NegativePipeline, PipelineCreationCacheControl) {
     VkPipelineCache pipeline_cache;
     VkPipelineCacheCreateInfo cache_create_info = vku::InitStructHelper();
     cache_create_info.initialDataSize = 0;
-    cache_create_info.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT;
+    cache_create_info.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892");
     vk::CreatePipelineCache(device(), &cache_create_info, nullptr, &pipeline_cache);
     m_errorMonitor->VerifyFound();
@@ -1532,8 +1532,8 @@ TEST_F(NegativePipeline, CreationFeedbackCount) {
         GTEST_SKIP() << "Driver data writeback check not supported by MockICD";
     }
 
-    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
-    VkPipelineCreationFeedbackEXT feedbacks[3] = {};
+    VkPipelineCreationFeedbackCreateInfo feedback_info = vku::InitStructHelper();
+    VkPipelineCreationFeedback feedbacks[3] = {};
     // Set flags to known value that the driver has to overwrite
     feedbacks[0].flags = VK_PIPELINE_CREATION_FEEDBACK_FLAG_BITS_MAX_ENUM;
 
@@ -1561,8 +1561,8 @@ TEST_F(NegativePipeline, CreationFeedbackCountCompute) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
-    VkPipelineCreationFeedbackEXT feedbacks[3] = {};
+    VkPipelineCreationFeedbackCreateInfo feedback_info = vku::InitStructHelper();
+    VkPipelineCreationFeedback feedbacks[3] = {};
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];
     feedback_info.pipelineStageCreationFeedbackCount = 1;
     feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
@@ -1589,7 +1589,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM;
                 helper.ms_ci_.alphaToCoverageEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1601,7 +1601,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1613,7 +1613,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1625,7 +1625,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -1636,7 +1636,7 @@ TEST_F(NegativePipeline, LineRasterization) {
         CreatePipelineHelper::OneshotTest(
             *this,
             [&](CreatePipelineHelper &helper) {
-                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR;
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT;
                 helper.line_state_ci_.stippledLineEnable = VK_TRUE;
             },
             kErrorBit, vuids);
@@ -2900,7 +2900,7 @@ TEST_F(NegativePipeline, ShaderTileImageDisabled) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -2969,7 +2969,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -3077,7 +3077,7 @@ TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormats) {
     RETURN_IF_SKIP(Init());
 
     VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
-    pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT;
+    pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK;
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_ci);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
@@ -3088,7 +3088,7 @@ TEST_F(NegativePipeline, PipelineRenderingInfoInvalidFormats) {
     m_errorMonitor->VerifyFound();
 
     pipeline_rendering_ci.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    pipeline_rendering_ci.stencilAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT;
+    pipeline_rendering_ci.stencilAttachmentFormat = VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06588");
     pipe.CreateGraphicsPipeline();
@@ -3182,7 +3182,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 
     vkt::ImageView image_view = image.CreateView();
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
@@ -3196,7 +3196,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
     rendering_info.colorAttachmentCount = 1u;
     rendering_info.pColorAttachments = &color_attachment;
 
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
 
@@ -3268,7 +3268,7 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
     vkt::Image ds_image(*m_device, 32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView ds_image_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1u;
     pipeline_rendering_info.pColorAttachmentFormats = &undefined;
     pipeline_rendering_info.depthAttachmentFormat = ds_format;
@@ -3391,7 +3391,7 @@ TEST_F(NegativePipeline, MissingPipelineViewportState) {
     }
     {
         CreatePipelineHelper pipe(*this);
-        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+        pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
         pipe.gp_ci_.pViewportState = nullptr;
 
@@ -3523,18 +3523,18 @@ TEST_F(NegativePipeline, PipelineCreationFlags2CacheControl) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
 
     const auto set_graphics_flags = [&](CreatePipelineHelper &helper) {
         helper.gp_ci_.pNext = &flags2;
-        flags2.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR;
+        flags2.flags = VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     };
     CreatePipelineHelper::OneshotTest(*this, set_graphics_flags, kErrorBit,
                                       "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
 
     const auto set_compute_flags = [&](CreateComputePipelineHelper &helper) {
         helper.cp_ci_.pNext = &flags2;
-        flags2.flags = VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR;
+        flags2.flags = VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT;
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
                                              "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
@@ -3597,13 +3597,13 @@ TEST_F(NegativePipeline, ViewportStateScissorNegative) {
 }
 
 TEST_F(NegativePipeline, PipelineCreateFlags2) {
-    TEST_DESCRIPTION("Test using VkPipelineCreateFlags2CreateInfoKHR");
+    TEST_DESCRIPTION("Test using VkPipelineCreateFlags2CreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
 
     CreatePipelineHelper pipe(*this, &flags2);
@@ -3687,7 +3687,7 @@ TEST_F(NegativePipeline, NoRasterizationStateDynamicRendering) {
     RETURN_IF_SKIP(Init());
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
